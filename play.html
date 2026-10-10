@@ -67,6 +67,13 @@
   .touchmode #prompt{top:44%}
   textarea{width:100%;box-sizing:border-box;height:58px;font-family:monospace;font-size:11px;background:#12151a;color:#efe9da;border:2px solid #6b7480;margin:6px 0;resize:none;word-break:break-all;user-select:text}
   #inviteBtn{pointer-events:auto;font-size:11px;padding:5px 9px;margin-top:6px;background:#3c4651;color:#efe9da}
+  .modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,94vw);max-height:84vh;overflow:auto;background:#1b2028;border:3px solid #f2b134;padding:14px 18px;font-size:13px;color:#cfd5db;z-index:5}
+  .modal button{font-size:12px;padding:5px 9px;margin-left:4px}
+  .modal h3{margin:10px 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8fa3b5}
+  .irow{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #2c333d}
+  .irow span.n{flex:1}
+  .irow i{font-style:normal;color:#8fa3b5;font-size:11px}
+  #itemsBtn,#buildBtn{pointer-events:auto;font-size:11px;padding:5px 9px;margin-top:6px;background:#3c4651;color:#efe9da}
   #invite{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,92vw);background:#1b2028;border:3px solid #f2b134;padding:14px 18px;font-size:13px;color:#cfd5db;z-index:5}
   #invite button{font-size:13px;padding:7px 12px}
   #invStatus,#joinStatus,#mmStatus{min-height:18px;color:#f2b134;margin-top:4px}
@@ -84,7 +91,7 @@
     <div class="bar"><div id="bWater" style="background:#3f95d6"></div><span>Thirst</span></div>
     <div class="bar"><div id="bTemp" style="background:#8fd0a0"></div><span id="tTemp">Warmth</span></div>
     <div id="stats"></div>
-    <button id="menuBtn">Save &amp; exit</button> <button id="inviteBtn">Invite player</button>
+    <button id="menuBtn">Save &amp; exit</button> <button id="inviteBtn">Invite player</button> <button id="itemsBtn">Items</button>
   </div>
   <canvas id="mini" width="170" height="170"></canvas>
   <div id="inv"></div>
@@ -101,6 +108,7 @@
     <div class="row" style="margin:2px 0;justify-content:flex-start"><button id="invGo">Connect</button><button id="invClose" class="alt">Close</button></div>
     <div id="invStatus"></div>
   </div>
+  <div id="items" class="modal hidden"></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
     <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button>
@@ -162,6 +170,24 @@
         <button id="exportBtn" class="alt">Export saves</button>
         <label class="btn alt">Import saves<input id="importFile" type="file" accept=".json" hidden></label>
       </div>
+    </div>
+    <div class="panel">
+      <b>Workshop: make items and manage packs</b>
+      <div>Items you design here can be crafted in the game from wood and scrap. Stronger items cost more.</div>
+      <div class="prow" style="margin-top:6px">
+        <label>Item name<input id="wName" maxlength="24" placeholder="Rebar spear"></label>
+        <label>Kind<select id="wKind"><option value="melee">Melee weapon</option><option value="use">Use item</option><option value="throw">Throwable</option></select></label>
+        <label><span id="wOptL">Shape</span><select id="wOpt"></select></label>
+      </div>
+      <div class="prow" style="margin-top:6px;align-items:flex-end">
+        <label>Power (1 to 100)<input id="wPow" type="number" min="1" max="100" value="40"></label>
+        <label>Color<input type="color" id="wCol" value="#c9a56a" style="height:36px;padding:2px"></label>
+        <label class="chk" style="flex-direction:row;align-items:center;gap:6px;color:#cfd5db"><input type="checkbox" id="wUniq"> One of a kind</label>
+      </div>
+      <div id="wInfo" style="margin-top:6px;color:#8fa3b5"></div>
+      <div class="row"><button id="wAdd" class="alt">Add to my workshop</button><label class="btn alt">Import pack<input id="packFile" type="file" accept=".json" hidden></label></div>
+      <div id="wStatus" style="color:#f2b134;min-height:16px"></div>
+      <div id="packList"></div>
     </div>
     <div class="panel">
       <b>Play together</b>
@@ -797,7 +823,7 @@ function startRun(ws, cs){
   var w = world, sx = 0, sy = 0, found = false, k;
   for (k = 0; !found && k < 6000; k++){ var a = k*0.5, rr = k*0.2; sx = Math.cos(a)*rr; sy = Math.sin(a)*rr; found = !circ(sx, sy, 1) && !inWater(sx, sy, 0); }
   w.spawn = {x:sx, y:sy};
-  P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, body:0, feel:66, light:true, noise:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0};
+  P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:true, noise:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0};
   inv = newInv(true);
   zombies = []; bullets = []; fires = []; cades = []; packs = []; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
   loaded.forEach(function(b){ freeMesh(b.int.g); b.int = null; }); loaded = [];
@@ -809,6 +835,8 @@ function startRun(ws, cs){
   }
   me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0};
   if (cs){ if (cs.bg && SKN && /^(scout|medic|mechanic|builder)$/.test(cs.bg)) me.bg = cs.bg; if (cs.skills) for (k in me.skills) me.skills[k] = Math.max(0, +cs.skills[k] || 0); }
+  throws = []; booms = [];
+  if (cs){ (cs.designs || []).forEach(function(d){ adoptDesign(d); }); for (k in (cs.items || {})) if (DESIGNS[k] && cs.items[k] > 0) P.items[k] = Math.min(99, cs.items[k] | 0); if (cs.weapon && P.items[cs.weapon]) P.weapon = cs.weapon; }
   var resumed = false;
   if (ws && ws.nb === w.buildings.length){
     resumed = true; time = +ws.time || 0; searched = ws.searched | 0; kills = ws.kills | 0;
@@ -828,8 +856,9 @@ function startRun(ws, cs){
 }
 function die(){
   var has = false, k; for (k in inv) if (inv[k] > 0) has = true;
-  if (has){ var np = {id:Date.now() + '-' + Math.floor(Math.random()*1e6), x:P.x, y:P.y, inv:inv, name:'a dropped pack', pack:true}; packs.push(np); emit({k:'pack', p:np}); }
-  inv = newInv(false);
+  for (k in P.items) if (P.items[k] > 0) has = true;
+  if (has) dropPack(inv, P.items);
+  inv = newInv(false); P.items = {}; P.weapon = null;
   P.x = world.spawn.x; P.y = world.spawn.y; P.hp = 100; P.hunger = 60; P.thirst = 60; P.hurt = 0; deaths++; zombies = [];
   toast('You died. You wake where you first arrived; your pack lies where you fell.', 6); updateHud(); saveNow();
 }
@@ -840,7 +869,7 @@ window.addEventListener('keydown', function(e){
   if (!running || /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) return;
   keys[e.code] = true;
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit');
-  if (e.code === 'KeyL') toggleLight();
+  if (e.code === 'KeyL') toggleLight(); if (e.code === 'KeyK') toggleItems(); if (e.code === 'KeyQ') cycleWeapon(); if (e.code === 'KeyG') quickItem();
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
   if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault();
 });
@@ -937,7 +966,7 @@ function findTarget(){
 }
 function loot(o){
   if (o.nest){ clearNest(o.b); return; }
-  if (o.pack){ for (var pk in o.inv) inv[pk] = (inv[pk] || 0) + (o.inv[pk] | 0); packs.splice(packs.indexOf(o), 1); emit({k:'unpack', id:o.id}); feed('Recovered your pack', '#7dff9a'); updateHud(); return; }
+  if (o.pack){ takePack(o); return; }
   var cat, rolls;
   if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
   searched++; addXp('scav', 5);
@@ -950,14 +979,15 @@ function loot(o){
     got[k] = (got[k] || 0) + (k === 'ammo' ? 3 + Math.floor(Math.random()*4) : (k === 'coat' || k === 'radio') ? 1 : 1 + (Math.random() < 0.35 ? 1 : 0));
   }
   for (k in got){ inv[k] += got[k]; feed('+' + got[k] + ' ' + ITEMS[k][0], ITEMS[k][1]); n++; }
+  if (findCustom()) n++;
   if (!n) feed('Nothing useful', '#c0c6cc');
   updateHud();
 }
 function swing(){
-  P.atkCd = 0.45; P.swing = 0.22; var hit = false, i, dx, dy, d, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
+  var ws0 = weaponStats(); P.atkCd = ws0.cd; P.swing = 0.22; var hit = false, i, dx, dy, d, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
   for (i = 0; i < zombies.length; i++){
     var z = zombies[i]; dx = z.x - P.x; dy = z.y - P.y; d = Math.hypot(dx, dy);
-    if (d < 2.0 + AK[z.k].r && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){ hitZombie(z, meleeDmg(), dx/d*8, dy/d*8); hit = true; }
+    if (d < ws0.reach + AK[z.k].r && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){ hitZombie(z, ws0.dmg + 0.25*lvl('melee'), dx/d*8, dy/d*8); hit = true; }
   }
   if (hit){ addXp('melee', 2); return; }
   var bt = null, bd = 2.6;
@@ -1105,7 +1135,7 @@ function update(dt){
   if (P.hunger <= 0) P.hp -= 1.5*dt; if (P.thirst <= 0) P.hp -= 1.5*dt;
   if (P.hunger > 50 && P.thirst > 50 && P.hp < 100) P.hp = Math.min(100, P.hp + 0.6*dt);
   for (i = fires.length - 1; i >= 0; i--){ var f = fires[i]; f.life -= dt; if (f.life <= 0){ fires.splice(i, 1); continue; } if (Math.hypot(f.x - P.x, f.y - P.y) < 5 && P.hp < 100) P.hp = Math.min(100, P.hp + 2*dt); }
-  P.atkCd -= dt; P.swing -= dt; P.shootCd -= dt; P.hurt -= dt; drinkCd -= dt;
+  P.atkCd -= dt; P.swing -= dt; P.shootCd -= dt; P.hurt -= dt; drinkCd -= dt; itemsTick(dt);
   intT -= dt; if (intT <= 0){ intT = 0.1; manageInteriors(3); }
 
   var nt = findTarget(); if (nt !== target) prog = 0; target = nt;
@@ -1316,7 +1346,7 @@ function render(){
   var t = 1/Math.tan(1.22/2), nr = 0.08, fr = 700, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   gl.uniformMatrix4fv(U.vp, false, mul(Pm, V)); gl.uniform3fv(U.cam, e); gl.uniform3fv(U.fwd, f); gl.uniform3fv(U.sky, sky);
   gl.uniform1f(U.amb, (1 - 0.88*dark)*(0.55 + 0.45*wd) + fl); gl.uniform1f(U.dark, dark); gl.uniform1f(U.fogK, QS.fog + 0.004*dark + [0, 0.005, 0.008, 0.001, 0.011][wx.w]); gl.uniform1f(U.flash, P.light ? 1 : 0);
-  var fu = new Float32Array(16), near = fires.slice().sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
+  var fu = new Float32Array(16), near = fires.concat(flares).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
   for (i = 0; i < 4 && i < near.length; i++){ fu[i*4] = near[i].x; fu[i*4+1] = 0.6; fu[i*4+2] = near[i].y; fu[i*4+3] = 1.6 + 0.3*Math.sin(now*13 + i); }
   gl.uniform4fv(U.fires, fu);
   drawMesh(world.gl.ground);
@@ -1334,6 +1364,7 @@ function render(){
     m.pyr(tx, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tx, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
   }
   for (i = 0; i < zombies.length; i++) drawAlien(m, zombies[i]);
+  drawItemsFx(m, now);
   drawWorldFx(m, e, now);
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop) drawPerson(m, ops[i], lookOf(ops[i]), now);
@@ -1363,7 +1394,9 @@ function render(){
   var at = function(a, b, c){ return [e[0] + f[0]*a + s[0]*b + u[0]*c, e[1] + f[1]*a + s[1]*b + u[1]*c, e[2] + f[2]*a + s[2]*b + u[2]*c]; };
   var ax = function(a, b, c){ return [f[0]*a + s[0]*b + u[0]*c, f[1]*a + s[1]*b + u[1]*c, f[2]*a + s[2]*b + u[2]*c]; };
   var bc2 = at(0.75 + sw*0.15, 0.34 - sw*0.5, -0.27 - sw*0.05);
-  vm.box(bc2[0], bc2[1], bc2[2], ax(0.12, -0.08*sw - 0.01, 0.17 - sw*0.14), ax(0, 0.017, 0), ax(-0.014, 0, 0.012), C('#c9a56a'));
+  var wdz = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null, wl = wdz && wdz.shape === 3 ? 1.5 : 1, wt = wdz && wdz.shape === 1 ? 0.4 : 1;
+  vm.box(bc2[0], bc2[1], bc2[2], ax(0.12*wl, (-0.08*sw - 0.01)*wl, (0.17 - sw*0.14)*wl), ax(0, 0.017*wt, 0), ax(-0.014, 0, 0.012).map(function(v){ return v*(wdz && wdz.shape === 1 ? 2.2 : 1); }), C(wdz ? wdz.color : '#c9a56a'));
+  if (wdz && wdz.shape === 2){ var hd = at(0.75 + sw*0.15 + 0.11, 0.34 - sw*0.5 - (0.08*sw + 0.01), -0.27 - sw*0.05 + 0.16 - sw*0.13); vm.box(hd[0], hd[1], hd[2], ax(0.04, 0, 0), ax(0, 0.045, 0), ax(0, 0, 0.04), C('#7d838c')); }
   var rec = Math.max(0, P.shootCd - 0.15)*0.6, pc = at(0.7 - rec, -0.3, -0.24);
   vm.box(pc[0], pc[1], pc[2], ax(0.09, 0, 0), ax(0, 0.014, 0), ax(0, 0, 0.022), C('#2a2d33'));
   var gc = at(0.64 - rec, -0.3, -0.29); vm.box(gc[0], gc[1], gc[2], ax(0.02, 0, 0), ax(0, 0.014, 0), ax(0, 0, 0.04), C('#3c2a1c'));
@@ -1409,7 +1442,7 @@ function worldSave(){
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
-  return {v:2, name:el('pname').value || 'Survivor', hp:P.hp, hunger:P.hunger, thirst:P.thirst, inv:all, deaths:deaths, look:me.look, bg:me.bg, skills:me.skills};
+  return {v:2, name:el('pname').value || 'Survivor', hp:P.hp, hunger:P.hunger, thirst:P.thirst, inv:all, deaths:deaths, look:me.look, bg:me.bg, skills:me.skills, items:allItems(), designs:Object.keys(allItems()).map(function(id){ return DESIGNS[id]; }).filter(Boolean), weapon:P.weapon};
 }
 function saveNow(){
   if (!inRun || !world || !P) return;
@@ -1447,6 +1480,8 @@ el('connect').addEventListener('click', async function(){
     var chd = await dir.getDirectoryHandle('characters');
     for await (var ce of chd.values()) if (ce.kind === 'file' && /\.json$/.test(ce.name)){ try { var ct = await (await ce.getFile()).text(); JSON.parse(ct); lsSet('lastblock:char:' + slug(ce.name.replace(/\.json$/, '')), ct); } catch (e2) {} }
     syncChar(false);
+    var pkd = await dir.getDirectoryHandle('packs');
+    for await (var pe of pkd.values()) if (pe.kind === 'file' && /\.json$/.test(pe.name)){ try { importPackText(await (await pe.getFile()).text(), true); } catch (e3) {} }
     await refreshMaps(); info('');
   } catch (e) { if (e.name !== 'AbortError'){ dir = null; fail('Could not open that folder: ' + (e.message || e.name)); } }
   saveInfo();
@@ -1471,6 +1506,201 @@ el('importFile').addEventListener('change', function(e){
   fr.readAsText(f);
 });
 
+/* ================= custom items and packs (data only: a design is numbers and choices, never code) ================= */
+var BEH = {use:[['heal', 'Heals'], ['feed', 'Feeds'], ['drink', 'Hydrates'], ['warm', 'Warms you']], 'throw':[['boom', 'Explodes'], ['flare', 'Flare: lights up, scares stalkers'], ['lure', 'Lure: draws aliens to it']]};
+var SHAPES = ['Bat', 'Blade', 'Hammer', 'Spear'], DESIGNS = {}, PACKS = {}, throws = [], booms = [];
+function txt(v, n){ return String(v === undefined || v === null ? '' : v).replace(/[<>&"]/g, '').slice(0, n); }
+function cleanDesign(d){
+  if (!d || typeof d !== 'object' || !/^(melee|use|throw)$/.test(d.kind)) return null;
+  var id = String(d.id || '').toLowerCase().replace(/[^a-z0-9-]+/g, '').slice(0, 60); if (!id) return null;
+  var o = {id:id, name:txt(d.name, 24) || 'Item', by:txt(d.by, 16) || 'Unknown', kind:d.kind, power:Math.max(1, Math.min(100, Math.round(+d.power || 1))), color:okCol(d.color, '#c9a56a'), unique:!!d.unique, made:!!d.made,
+    owners:Array.isArray(d.owners) ? d.owners.slice(-10).map(function(x){ return txt(x, 16); }) : []};
+  if (d.kind === 'melee') o.shape = Math.max(0, Math.min(3, d.shape | 0));
+  else o.beh = BEH[d.kind].some(function(b){ return b[0] === d.beh; }) ? d.beh : BEH[d.kind][0][0];
+  return o;
+}
+/* everything an item can do follows from kind, shape or behavior, and power, so no pack can smuggle in a free or overpowered item */
+function stats(d){
+  var p = d.power, o = {};
+  if (d.kind === 'melee'){ o.dmg = 2 + p*0.1; o.reach = [2.0, 1.9, 2.1, 2.9][d.shape]; o.cd = 0.32 + o.dmg*0.035 + (d.shape === 3 ? 0.1 : 0); o.scrap = Math.ceil(p/12) + 1; o.wood = Math.ceil(p/25) + (d.shape === 0 || d.shape === 3 ? 2 : 0); o.desc = SHAPES[d.shape] + ', damage ' + o.dmg.toFixed(1) + ', reach ' + o.reach + ' m'; }
+  else if (d.kind === 'use'){ o.amt = Math.min(60, p); o.scrap = Math.ceil(p/15); o.wood = 1; o.desc = BEH.use.filter(function(b){ return b[0] === d.beh; })[0][1] + ' (' + o.amt + ')'; }
+  else { o.dmg = 2 + p*0.1; o.secs = d.beh === 'flare' ? 20 + p*0.7 : 8 + p*0.25; o.scrap = Math.ceil(p/10) + 1; o.wood = 1; o.desc = BEH['throw'].filter(function(b){ return b[0] === d.beh; })[0][1] + (d.beh === 'boom' ? ', damage ' + o.dmg.toFixed(1) : ', ' + Math.round(o.secs) + ' s'); }
+  return o;
+}
+function weaponStats(){ var d = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null; return d ? stats(d) : {dmg:2, reach:2.0, cd:0.45}; }
+function cleanPack(p){
+  if (!p || !p.lastblockPack) return null; var id = slug(p.id || p.name || 'pack').slice(0, 40);
+  return {lastblockPack:1, id:id, name:txt(p.name, 40) || id, author:txt(p.author, 16) || 'Unknown', version:txt(p.version, 10) || '1', on:p.on !== false, items:(Array.isArray(p.items) ? p.items : []).map(cleanDesign).filter(Boolean).slice(0, 200)};
+}
+function savePack(p){
+  var t = JSON.stringify(p); lsSet('lastblock:pack:' + p.id, t);
+  if (dir) fileChain = fileChain.then(function(){ return writeFile('packs', p.id + '.json', t); }).catch(function(){});
+}
+function rebuildDesigns(){ DESIGNS = {}; for (var k in PACKS) PACKS[k].items.forEach(function(d){ if (!DESIGNS[d.id]) DESIGNS[d.id] = d; }); }
+function loadPacks(){
+  PACKS = {};
+  try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf('lastblock:pack:') === 0){ try { var p = cleanPack(JSON.parse(localStorage.getItem(k))); if (p) PACKS[p.id] = p; } catch (e) {} } } } catch (e) {}
+  if (!PACKS.workshop) PACKS.workshop = {lastblockPack:1, id:'workshop', name:'My workshop', author:'You', version:'1', on:true, items:[]};
+  if (!PACKS.collected) PACKS.collected = {lastblockPack:1, id:'collected', name:'Collected from other worlds', author:'Various', version:'1', on:true, items:[]};
+  rebuildDesigns();
+}
+function craftable(){ var out = [], seen = {}; for (var k in PACKS) if (PACKS[k].on) PACKS[k].items.forEach(function(d){ if (!seen[d.id]){ seen[d.id] = 1; out.push(d); } }); return out; }
+/* a design met in play (carried, picked up, found in a host's world) is kept so the item keeps working at home */
+function adoptDesign(raw){
+  var d = cleanDesign(raw); if (!d) return null; if (DESIGNS[d.id]) return DESIGNS[d.id];
+  if (d.unique) d.made = true;
+  PACKS.collected.items.push(d); savePack(PACKS.collected); DESIGNS[d.id] = d; return d;
+}
+function allItems(){ var o = {}, k; for (k in P.items) if (P.items[k] > 0) o[k] = P.items[k]; if (P.homeItems) for (k in P.homeItems) o[k] = (o[k] || 0) + P.homeItems[k]; return o; }
+function dropPack(basic, items){
+  var its = {}, ds = [], k; for (k in items) if (items[k] > 0 && DESIGNS[k]){ its[k] = items[k]; ds.push(DESIGNS[k]); }
+  var np = {id:Date.now() + '-' + Math.floor(Math.random()*1e6), x:P.x, y:P.y, inv:basic, items:its, designs:ds, from:el('pname').value || 'Survivor', name:'a dropped pack', pack:true};
+  packs.push(np); emit({k:'pack', p:np});
+}
+function takePack(o){
+  var k, n = 0, me2 = el('pname').value || 'Survivor';
+  for (k in (o.inv || {})) if (k in inv) inv[k] += Math.max(0, o.inv[k] | 0);
+  (o.designs || []).forEach(function(d){ adoptDesign(d); });
+  for (k in (o.items || {})){
+    var d = DESIGNS[k]; if (!d) continue; P.items[k] = Math.min(99, (P.items[k] || 0) + Math.max(0, o.items[k] | 0)); n++;
+    if (d.unique && o.from && o.from !== me2){ d.owners.push(me2); savePack(PACKS.collected); feed('One of a kind: ' + d.name + ', made by ' + d.by, '#f2d14a'); }
+  }
+  packs.splice(packs.indexOf(o), 1); emit({k:'unpack', id:o.id}); feed('Picked up a pack' + (n ? ' with ' + n + ' custom item' + (n === 1 ? '' : 's') : ''), '#7dff9a'); updateHud();
+}
+function findCustom(){
+  if (Math.random() > 0.06) return false;
+  var pool = (net.role === 'guest' ? (net.hostDesigns || []) : craftable()).filter(function(d){ return !d.unique; }); if (!pool.length) return false;
+  var d = adoptDesign(pool[Math.floor(Math.random()*pool.length)]); if (!d) return false;
+  P.items[d.id] = (P.items[d.id] || 0) + 1; feed('+1 ' + d.name + ' (by ' + d.by + ')', d.color); return true;
+}
+function craft(id){
+  if (id === 'radio'){ if (inv.scrap < 3) return; inv.scrap -= 3; inv.radio++; feed('Built a radio', ITEMS.radio[1]); renderItems(); updateHud(); return; }
+  var d = DESIGNS[id]; if (!d) return; var st = stats(d);
+  if ((d.unique && d.made) || inv.wood < st.wood || inv.scrap < st.scrap) return;
+  inv.wood -= st.wood; inv.scrap -= st.scrap; P.items[id] = (P.items[id] || 0) + 1;
+  if (d.unique){ d.made = true; d.owners = [el('pname').value || 'Survivor']; for (var k in PACKS) if (PACKS[k].items.indexOf(d) >= 0) savePack(PACKS[k]); }
+  if (d.kind === 'melee' && !P.weapon) P.weapon = id;
+  feed('Crafted ' + d.name, d.color); renderItems(); updateHud();
+}
+function useCustom(id){
+  var d = DESIGNS[id]; if (!d || !(P.items[id] > 0)) return; var st = stats(d);
+  if (d.kind === 'melee'){ P.weapon = P.weapon === id ? null : id; feed(P.weapon ? 'Equipped ' + d.name : 'Back to the bat', d.color); renderItems(); return; }
+  P.items[id]--; P.quick = id;
+  if (d.kind === 'use'){
+    if (d.beh === 'heal') P.hp = Math.min(100, P.hp + st.amt); else if (d.beh === 'feed') P.hunger = Math.min(100, P.hunger + st.amt); else if (d.beh === 'drink') P.thirst = Math.min(100, P.thirst + st.amt); else P.body = Math.min(40, P.body + st.amt*2);
+    feed('Used ' + d.name, d.color);
+  } else {
+    var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), x = P.x, y = P.y, n = 0;
+    while (n < 36 && !hitWall(x + fx*0.25, y + fy*0.25)){ x += fx*0.25; y += fy*0.25; n++; }
+    throws.push({x0:P.x, y0:P.y, x:x, y:y, t:0, id:id}); feed('Threw ' + d.name, d.color);
+  }
+  renderItems(); updateHud();
+}
+function landThrow(t){
+  var d = DESIGNS[t.id]; if (!d) return; var st = stats(d);
+  if (d.beh === 'boom'){
+    booms.push({x:t.x, y:t.y, t:0.35}); P.noise = 4;
+    for (var i = 0; i < zombies.length; i++){ var z = zombies[i], dx = z.x - t.x, dy = z.y - t.y, dd = Math.hypot(dx, dy) || 0.001; if (dd < 5 + AK[z.k].r) hitZombie(z, st.dmg, dx/dd*10, dy/dd*10); }
+    if (Math.hypot(P.x - t.x, P.y - t.y) < 3){ P.hp -= 12; P.hurt = 0.3; }
+  } else if (d.beh === 'flare'){ var f = {x:t.x, y:t.y, life:st.secs}; flares.push(f); emit({k:'flare', f:f}); }
+  else { var l = {x:t.x, y:t.y, life:st.secs}; lures.push(l); emit({k:'lure', l:l}); }
+}
+function itemsTick(dt){
+  var i; for (i = throws.length - 1; i >= 0; i--){ throws[i].t += dt/0.6; if (throws[i].t >= 1){ landThrow(throws[i]); throws.splice(i, 1); } }
+  for (i = booms.length - 1; i >= 0; i--){ booms[i].t -= dt; if (booms[i].t <= 0) booms.splice(i, 1); }
+  for (i = flares.length - 1; i >= 0; i--){ flares[i].life -= dt; if (flares[i].life <= 0) flares.splice(i, 1); }
+  for (i = lures.length - 1; i >= 0; i--){ lures[i].life -= dt; if (lures[i].life <= 0) lures.splice(i, 1); }
+}
+function drawItemsFx(m, now){
+  var i; m.al = 128;
+  for (i = 0; i < throws.length; i++){ var t = throws[i], d = DESIGNS[t.id]; m.ybox(t.x0 + (t.x - t.x0)*t.t, t.y0 + (t.y - t.y0)*t.t, now*9, 0, 0, 1.3 + Math.sin(t.t*3.1416)*1.6 - t.t*1.2, 0.09, 0.09, 0.09, C(d ? d.color : '#ffffff')); }
+  for (i = 0; i < booms.length; i++){ var r = (0.35 - booms[i].t)*12 + 0.4; m.ybox(booms[i].x, booms[i].y, now*5, 0, 0, 1, r, r*0.7, r, C('#ffb347')); }
+  for (i = 0; i < flares.length; i++) m.pyr(flares[i].x, flares[i].y, 0.05, 0.12, 0.5 + Math.sin(now*20 + i)*0.1, C('#ff4a3a'), now*6);
+  for (i = 0; i < lures.length; i++) if (Math.sin(now*10) > 0) m.ybox(lures[i].x, lures[i].y, 0, 0, 0, 0.2, 0.1, 0.1, 0.1, C('#4ad0ff'));
+  m.al = 255;
+}
+function cycleWeapon(){
+  var ids = [null]; for (var k in P.items) if (P.items[k] > 0 && DESIGNS[k] && DESIGNS[k].kind === 'melee') ids.push(k);
+  P.weapon = ids[(ids.indexOf(P.weapon) + 1) % ids.length]; feed(P.weapon ? 'Equipped ' + DESIGNS[P.weapon].name : 'Equipped the bat', '#cfd5db');
+}
+function quickItem(){
+  var id = P.quick && P.items[P.quick] > 0 ? P.quick : null;
+  if (!id) for (var k in P.items) if (P.items[k] > 0 && DESIGNS[k] && DESIGNS[k].kind !== 'melee'){ id = k; break; }
+  if (id) useCustom(id); else feed('No usable custom item. Press K to craft one.', '#cfd5db');
+}
+function dropItem(id){ if (!(P.items[id] > 0)) return; P.items[id]--; if (P.weapon === id && !P.items[id]) P.weapon = null; var o = {}; o[id] = 1; dropPack(newInv(false), o); renderItems(); }
+function renderItems(){
+  var box = el('items'); if (box.classList.contains('hidden')) return;
+  var h = '<b>Items</b> <button id="itClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + '</div><h3>Carried</h3>', any = false, k;
+  for (k in P.items){
+    var d = DESIGNS[k]; if (!d || !(P.items[k] > 0)) continue; any = true;
+    h += '<div class="irow"><span class="sw" style="background:' + d.color + '"></span><span class="n">' + d.name + ' &times;' + P.items[k] + (d.unique ? ' <i>one of a kind</i>' : '') + '<br><i>' + stats(d).desc + ' &middot; by ' + d.by + (d.owners.length ? ' &middot; held by ' + d.owners.join(', ') : '') + '</i></span>' +
+      '<button data-a="use" data-id="' + k + '">' + (d.kind === 'melee' ? (P.weapon === k ? 'Unequip' : 'Equip') : d.kind === 'use' ? 'Use' : 'Throw') + '</button><button class="alt" data-a="drop" data-id="' + k + '">Drop</button></div>';
+  }
+  if (!any) h += '<div><i>No custom items yet.</i></div>';
+  h += '<h3>Craft</h3><div class="irow"><span class="sw" style="background:' + ITEMS.radio[1] + '"></span><span class="n">Radio<br><i>Chat and markers reach any distance &middot; 3 scrap</i></span><button data-a="craft" data-id="radio"' + (inv.scrap < 3 ? ' disabled' : '') + '>Craft</button></div>';
+  craftable().forEach(function(d){
+    var st = stats(d), no = (d.unique && d.made) || inv.wood < st.wood || inv.scrap < st.scrap;
+    h += '<div class="irow"><span class="sw" style="background:' + d.color + '"></span><span class="n">' + d.name + (d.unique ? ' <i>one of a kind</i>' : '') + '<br><i>' + st.desc + ' &middot; ' + st.wood + ' wood, ' + st.scrap + ' scrap &middot; by ' + d.by + '</i></span><button data-a="craft" data-id="' + d.id + '"' + (no ? ' disabled' : '') + '>' + (d.unique && d.made ? 'Made' : 'Craft') + '</button></div>';
+  });
+  h += '<div style="margin-top:8px"><i>Q switches weapon &middot; G uses your last item &middot; K closes this</i></div>';
+  box.innerHTML = h;
+}
+function toggleItems(){ var b = el('items'); b.classList.toggle('hidden'); if (!b.classList.contains('hidden')){ if (document.exitPointerLock) document.exitPointerLock(); renderItems(); } }
+el('itemsBtn').addEventListener('click', toggleItems);
+el('items').addEventListener('click', function(e){
+  var t = e.target; if (t.id === 'itClose'){ toggleItems(); return; }
+  var a = t.getAttribute && t.getAttribute('data-a'), id = a && t.getAttribute('data-id'); if (!a || !running) return;
+  if (a === 'craft') craft(id); else if (a === 'use') useCustom(id); else if (a === 'drop') dropItem(id);
+});
+/* ---- workshop on the start page ---- */
+function wForm(){
+  var kind = el('wKind').value, o = el('wOpt'), keep = o.getAttribute('data-kind') === kind ? o.value : null;
+  if (o.getAttribute('data-kind') !== kind){ o.innerHTML = kind === 'melee' ? SHAPES.map(function(n, i){ return '<option value="' + i + '">' + n + '</option>'; }).join('') : BEH[kind].map(function(b){ return '<option value="' + b[0] + '">' + b[1] + '</option>'; }).join(''); o.setAttribute('data-kind', kind); if (keep) o.value = keep; }
+  el('wOptL').textContent = kind === 'melee' ? 'Shape' : 'What it does';
+  var d = cleanDesign({id:'x', kind:kind, shape:+o.value, beh:o.value, power:el('wPow').value}); if (!d) return null;
+  var st = stats(d); el('wInfo').textContent = st.desc + '. Costs ' + st.wood + ' wood and ' + st.scrap + ' scrap to craft.'; return d;
+}
+function renderPacks(){
+  var h = '';
+  for (var k in PACKS){
+    var p = PACKS[k];
+    h += '<div class="irow"><input type="checkbox" data-p="on" data-id="' + k + '"' + (p.on ? ' checked' : '') + '><span class="n">' + p.name + ' <i>' + p.items.length + ' item' + (p.items.length === 1 ? '' : 's') + ' &middot; by ' + p.author + ' &middot; v' + p.version + '</i><br><i>' + p.items.map(function(d){ return d.name; }).join(', ') + '</i></span>' +
+      '<button class="alt" data-p="exp" data-id="' + k + '"' + (p.items.length ? '' : ' disabled') + '>Export</button>' + (k === 'workshop' || k === 'collected' ? '<button class="alt" data-p="clr" data-id="' + k + '"' + (p.items.length ? '' : ' disabled') + '>Empty</button>' : '<button class="alt" data-p="del" data-id="' + k + '">Remove</button>') + '</div>';
+  }
+  el('packList').innerHTML = h;
+}
+['wKind', 'wOpt', 'wPow'].forEach(function(id){ el(id).addEventListener('input', wForm); });
+el('wAdd').addEventListener('click', function(){
+  var d = wForm(), name = txt(el('wName').value.trim(), 24), by = txt(el('pname').value || 'Survivor', 16); if (!d) return;
+  if (!name){ el('wStatus').textContent = 'Give the item a name.'; return; }
+  d.id = slug(by + '-' + name) + '-' + Math.floor(Math.random()*46656).toString(36); d.name = name; d.by = by; d.color = el('wCol').value; d.unique = el('wUniq').checked;
+  d = cleanDesign(d); PACKS.workshop.items.push(d); PACKS.workshop.author = by; savePack(PACKS.workshop); rebuildDesigns(); renderPacks();
+  el('wStatus').textContent = 'Added ' + name + '. Craft it in the game from the Items panel (K).'; el('wName').value = '';
+});
+el('packList').addEventListener('change', function(e){ var id = e.target.getAttribute('data-id'); if (e.target.getAttribute('data-p') === 'on' && PACKS[id]){ PACKS[id].on = e.target.checked; savePack(PACKS[id]); } });
+el('packList').addEventListener('click', function(e){
+  var a = e.target.getAttribute('data-p'), id = e.target.getAttribute('data-id'), p = PACKS[id]; if (!p || a === 'on') return;
+  if (a === 'exp'){
+    var name = id === 'workshop' ? (el('pname').value || 'Survivor') + "'s workshop" : p.name, out = JSON.parse(JSON.stringify(p));
+    out.id = slug(name); out.name = name; out.on = true; out.items.forEach(function(d){ if (d.unique) d.made = true; });
+    downloadText(out.id + '.pack.json', JSON.stringify(out)); el('wStatus').textContent = 'Exported ' + name + '. Put the file in a friend\'s packs folder, or they can use Import pack.';
+  } else if (a === 'clr'){ p.items = []; savePack(p); rebuildDesigns(); renderPacks(); }
+  else if (a === 'del'){ delete PACKS[id]; try { localStorage.removeItem('lastblock:pack:' + id); } catch (e2) {} rebuildDesigns(); renderPacks(); }
+});
+function importPackText(t, quiet){
+  var p = null; try { p = cleanPack(JSON.parse(t)); } catch (e) {}
+  if (!p || !p.items.length){ if (!quiet) el('wStatus').textContent = 'That file is not a Last Block pack.'; return false; }
+  if (p.id === 'workshop' || p.id === 'collected') p.id += '-imported';
+  p.items.forEach(function(d){ if (d.unique) d.made = true; });
+  PACKS[p.id] = p; lsSet('lastblock:pack:' + p.id, JSON.stringify(p)); rebuildDesigns(); renderPacks();
+  if (!quiet) el('wStatus').textContent = 'Imported ' + p.name + ' (' + p.items.length + ' items).'; return true;
+}
+el('packFile').addEventListener('change', function(e){
+  var f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  var fr = new FileReader(); fr.onload = function(){ if (importPackText(String(fr.result)) && dir) savePack(PACKS[Object.keys(PACKS).pop()]); }; fr.readAsText(f);
+});
+
 /* ================= multiplayer: devices connect directly; the two codes are exchanged by hand ================= */
 function send(dc, obj){ if (dc && dc.readyState === 'open'){ try { dc.send('J' + JSON.stringify(obj)); } catch (e) {} } }
 function broadcast(obj, except){ net.peers.forEach(function(p){ if (p !== except && p.ready) send(p.dc, obj); }); }
@@ -1484,6 +1714,8 @@ function applyEv(e){
   else if (e.k === 'cade'){ if (e.c) cades.push({x:+e.c.x, y:+e.c.y, hp:+e.c.hp || 30, yaw:+e.c.yaw || 0}); }
   else if (e.k === 'cades'){ cades = e.l || []; }
   else if (e.k === 'nest'){ setNest(e.b, e.on); }
+  else if (e.k === 'flare'){ if (e.f) flares.push({x:+e.f.x, y:+e.f.y, life:Math.min(120, +e.f.life || 30)}); }
+  else if (e.k === 'lure'){ if (e.l) lures.push({x:+e.l.x, y:+e.l.y, life:Math.min(60, +e.l.life || 10)}); }
   else if (e.k === 'pack'){ if (e.p) packs.push(e.p); }
   else if (e.k === 'unpack'){ for (var i = 0; i < packs.length; i++) if (packs[i].id === e.id){ packs.splice(i, 1); break; } }
 }
@@ -1563,7 +1795,7 @@ async function hostWelcome(peer){
   el('invStatus').textContent = 'Connected. Sending the world...';
   var text = mapSrc && mapSrc.text ? mapSrc.text : null;
   worldPlayers[charSlug()] = {x:P.x, y:P.y, yaw:P.yaw};
-  send(peer.dc, {t:'hello', pid:peer.id, rule:el('vRule').value, name:world.name, demo:!text, len:text ? text.length : 0, ws:worldSave()});
+  send(peer.dc, {t:'hello', pid:peer.id, rule:el('vRule').value, designs:craftable().filter(function(d){ return !d.unique; }).slice(0, 60), name:world.name, demo:!text, len:text ? text.length : 0, ws:worldSave()});
   if (text) for (var i = 0; i < text.length; i += 12000){
     while (peer.dc.bufferedAmount > 1000000) await new Promise(function(r){ setTimeout(r, 30); });
     if (peer.dc.readyState !== 'open') return; peer.dc.send('C' + text.substr(i, 12000));
@@ -1577,7 +1809,7 @@ function hostMsg(peer, data){
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
   } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; }
   else if (m.t === 'ev'){ applyEv(m.e); broadcast({t:'ev', e:m.e}, peer); }
-  else if (m.t === 'hit'){ for (var i = 0; i < zombies.length; i++) if (zombies[i].id === m.id){ var z = zombies[i]; z.hp -= Math.min(5, +m.d || 0); z.hurt = 0.15; z.kx = +m.kx || 0; z.ky = +m.ky || 0; break; } }
+  else if (m.t === 'hit'){ for (var i = 0; i < zombies.length; i++) if (zombies[i].id === m.id){ var z = zombies[i]; z.hp -= Math.min(15, +m.d || 0); z.hurt = 0.15; z.kx = +m.kx || 0; z.ky = +m.ky || 0; break; } }
 }
 el('inviteBtn').addEventListener('click', function(){
   if (document.exitPointerLock) document.exitPointerLock();
@@ -1618,7 +1850,8 @@ el('joinBtn').addEventListener('click', async function(){
   } catch (e) { st.textContent = 'That invite code did not work. Check that all of it was copied.'; }
 });
 function applyRule(rule){
-  P.home = newInv(false); if (rule !== 'cap' && rule !== 'empty') return;
+  P.home = newInv(false); P.homeItems = {}; if (rule !== 'cap' && rule !== 'empty') return;
+  for (var ik in P.items){ P.homeItems[ik] = P.items[ik]; } P.items = {}; P.weapon = null;
   var held = 0, k, lim = rule === 'cap' ? 5 : 0;
   for (k in inv) if (inv[k] > lim){ P.home[k] = inv[k] - lim; held += inv[k] - lim; inv[k] = lim; }
   me.cap = true; updateHud();
@@ -1634,7 +1867,7 @@ async function guestMsg(g, data){
       var h = g.hello, raw = h.demo ? demoRaw() : parseText(g.chunks.join('')); g.chunks = [];
       buildWorld(raw, h.name); prep3D();
       var cs = await readSave('char', charSlug());
-      net.role = 'guest'; net.pid = h.pid; net.others = []; mapSrc = null;
+      net.role = 'guest'; net.pid = h.pid; net.others = []; mapSrc = null; net.hostDesigns = (h.designs || []).map(cleanDesign).filter(Boolean);
       startRun(h.ws, cs); el('inviteBtn').classList.add('hidden'); el('replyBox').classList.add('hidden'); el('joinCode').value = ''; el('joinStatus').textContent = '';
       applyRule(h.rule);
       send(g.dc, {t:'join', name:el('pname').value || 'Survivor', slug:charSlug(), x:P.x, y:P.y, look:me.look});
@@ -1757,6 +1990,7 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
   syncChar(false);
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
 })();
+loadPacks(); wForm(); renderPacks();
 try { glOK = initGL(); } catch (e) { glOK = false; }
 saveInfo();
 if (!glOK) fail('This browser or device cannot run 3D graphics (WebGL). Try Chrome, Edge, Firefox or Safari.');
