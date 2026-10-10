@@ -68,7 +68,7 @@
   #inviteBtn{pointer-events:auto;font-size:11px;padding:5px 9px;margin-top:6px;background:#3c4651;color:#efe9da}
   #invite{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,92vw);background:#1b2028;border:3px solid #f2b134;padding:14px 18px;font-size:13px;color:#cfd5db;z-index:5}
   #invite button{font-size:13px;padding:7px 12px}
-  #invStatus,#joinStatus{min-height:18px;color:#f2b134;margin-top:4px}
+  #invStatus,#joinStatus,#mmStatus{min-height:18px;color:#f2b134;margin-top:4px}
   @media (max-height:760px){.screen{align-items:flex-start}}
 </style>
 </head>
@@ -122,6 +122,16 @@
       <button id="demo" class="alt">Play demo town</button>
     </div>
     <div id="maplist" class="row"></div>
+    <div class="panel">
+      <b>Make a map</b>
+      <div>Needs internet once; after that the map works offline. Type a town, neighborhood or address.</div>
+      <div class="prow">
+        <label>Place<input id="mmPlace" placeholder="Springfield, Missouri"></label>
+        <label>Size<select id="mmSize"><option value="0.6">Neighborhood (about 1 km across)</option><option value="1.5" selected>District (about 3 km)</option><option value="3">Large (about 6 km)</option><option value="city">Whole city (computers only)</option></select></label>
+      </div>
+      <div class="row"><button id="mmGo" class="alt">Make map</button></div>
+      <div id="mmStatus"></div>
+    </div>
     <label class="chk"><input type="checkbox" id="fresh"> Start a new world (erases saved progress on that map; your survivor is kept)</label>
     <div id="status"></div>
     <div class="panel">
@@ -261,11 +271,29 @@ function fromGeoJson(j){
   });
   return {ways:ways, pois:pois};
 }
+var KEEP = ['building','building:levels','name','shop','amenity','highway','waterway','railway','natural','landuse','leisure','healthcare','craft','military','area'];
+function keepTags(t){ var o = {}, n = 0; if (t) for (var i = 0; i < KEEP.length; i++) if (t[KEEP[i]] !== undefined){ o[KEEP[i]] = t[KEEP[i]]; n++; } return n ? o : null; }
+/* compact map file: only the tags the game uses, coordinates rounded to about 10 cm */
+function toCompact(raw, name){
+  var ways = [], pois = [];
+  raw.ways.forEach(function(w){
+    var t = keepTags(w.tags); if (!t || !w.c || w.c.length < 2) return;
+    var c = []; for (var i = 0; i < w.c.length; i++) c.push(+(+w.c[i][0]).toFixed(6), +(+w.c[i][1]).toFixed(6));
+    ways.push([t, c]);
+  });
+  raw.pois.forEach(function(p){ var t = keepTags(p.tags); if (t && (t.natural === 'tree' || t.shop || t.amenity || t.healthcare || t.craft)) pois.push([+(+p.lon).toFixed(6), +(+p.lat).toFixed(6), t]); });
+  return {lastblockMap:1, name:name, ways:ways, pois:pois};
+}
+function fromCompact(j){
+  return {ways:(j.ways || []).map(function(w){ var c = []; for (var i = 0; i < w[1].length; i += 2) c.push([w[1][i], w[1][i+1]]); return {c:c, tags:w[0]}; }),
+    pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; })};
+}
 function parseText(text){
   var t = text.replace(/^﻿/, '').trim();
   if (t[0] === '<') return fromOsmXml(t);
   if (t[0] === '{' || t[0] === '['){
     var j; try { j = JSON.parse(t); } catch (e) { throw new Error('This file is not valid JSON.'); }
+    if (j.lastblockMap) return fromCompact(j);
     if (j.elements) return fromOverpass(j);
     if (j.features || j.type === 'Feature') return fromGeoJson(j);
   }
@@ -549,6 +577,17 @@ function shell(b, m){
   var tr = b.tri = earclip(p), rc = C(['#5a5450','#6b5a4e','#4f565e','#7a4a3c'][Math.floor(hash(b.id, 2, 8)*4)]);
   for (i = 0; i < tr.length; i += 3) m.tri(p[tr[i]*2], Ht, p[tr[i]*2+1], p[tr[i+2]*2], Ht, p[tr[i+2]*2+1], p[tr[i+1]*2], Ht, p[tr[i+1]*2+1], rc, 0);
 }
+var NULLM = {wall:function(){}, tri:function(){}, quad:function(){}};
+/* building outsides are meshed only for the map pieces near you, and dropped when you move away */
+function manageChunks(budget){
+  var cs = world.gl.chunks, R = QS.chunk + CH, n = 0;
+  for (var i = 0; i < cs.length; i++){
+    var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
+    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(); for (var j = 0; j < c.list.length; j++) shell(c.list[j], m); c.g = upload(m); n++; } }
+    else if (d > R + 150){ freeMesh(c.g); c.g = null; }
+  }
+}
+function dirtyChunk(b){ if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); b.chunk.g = null; } }
 function prep3D(){
   var w = world, g = new Mesh(), chunks = new Map(), i;
   w.areas.forEach(function(a){
@@ -570,11 +609,11 @@ function prep3D(){
   });
   w.buildings.forEach(function(b){
     var cx = Math.floor(b.cx/CH), cy = Math.floor(b.cy/CH), key = gk(cx, cy), c = chunks.get(key);
-    if (!c) chunks.set(key, c = {m:new Mesh(), x:(cx+0.5)*CH, y:(cy+0.5)*CH});
-    shell(b, c.m); b.int = null; b.got = {};
+    if (!c) chunks.set(key, c = {list:[], g:null, x:(cx+0.5)*CH, y:(cy+0.5)*CH});
+    c.list.push(b); b.chunk = c; shell(b, NULLM); b.int = null; b.got = {};
   });
-  if (w.gl){ freeMesh(w.gl.ground); w.gl.chunks.forEach(function(c){ freeMesh(c.g); }); }
-  var list = []; chunks.forEach(function(c){ c.g = upload(c.m); c.m = null; list.push(c); });
+  if (w.gl){ freeMesh(w.gl.ground); w.gl.chunks.forEach(function(c){ if (c.g) freeMesh(c.g); }); }
+  var list = []; chunks.forEach(function(c){ list.push(c); });
   w.gl = {ground:upload(g), chunks:list};
 }
 
@@ -670,6 +709,7 @@ function genInterior(b){
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
 function manageInteriors(budget){
+  manageChunks(budget > 10 ? 9999 : 2);
   var cand = [], c0x = Math.floor(P.x/G), c0y = Math.floor(P.y/G), i; stampN++;
   for (var cy = c0y - 3; cy <= c0y + 3; cy++) for (var cx = c0x - 3; cx <= c0x + 3; cx++){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
@@ -1084,7 +1124,7 @@ function render(){
   for (i = 0; i < 4 && i < near.length; i++){ fu[i*4] = near[i].x; fu[i*4+1] = 0.6; fu[i*4+2] = near[i].y; fu[i*4+3] = 1.6 + 0.3*Math.sin(now*13 + i); }
   gl.uniform4fv(U.fires, fu);
   drawMesh(world.gl.ground);
-  for (i = 0; i < world.gl.chunks.length; i++){ var ch = world.gl.chunks[i]; if (Math.abs(ch.x - P.x) < QS.chunk + CH && Math.abs(ch.y - P.y) < QS.chunk + CH) drawMesh(ch.g); }
+  for (i = 0; i < world.gl.chunks.length; i++){ var ch = world.gl.chunks[i]; if (ch.g && Math.abs(ch.x - P.x) < QS.chunk + CH && Math.abs(ch.y - P.y) < QS.chunk + CH) drawMesh(ch.g); }
   for (i = 0; i < loaded.length; i++) drawMesh(loaded[i].int.g);
 
   var m = new Mesh(), x, y;
@@ -1405,6 +1445,45 @@ async function guestMsg(g, data){
   else if (m.t === 'ev') applyEv(m.e);
   else if (m.t === 'hurt'){ P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; }
 }
+
+/* ================= map maker: one-time download from OpenStreetMap, saved as a compact map file ================= */
+var MM_QUERY = '(way[building];way[highway];way[waterway];way[railway~"^(rail|tram|light_rail)$"];way[natural~"^(water|wood|sand|beach|scrub|grassland|heath)$"];way[landuse];way[leisure];way[amenity=parking];' +
+  'relation[type=multipolygon][building];relation[type=multipolygon][natural=water];relation[type=multipolygon][landuse=forest];relation[type=multipolygon][natural=wood];' +
+  'node[shop];node[amenity~"^(pharmacy|hospital|clinic|doctors|dentist|veterinary|police|fire_station|restaurant|cafe|fast_food|bar|pub|fuel)$"];node[natural=tree];);out geom;';
+function downloadText(name, text){
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'application/json'})); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+async function makeMap(){
+  var st = el('mmStatus'), q = el('mmPlace').value.trim(), size = el('mmSize').value;
+  if (!q){ st.textContent = 'Type a place name first.'; return; }
+  if (!glOK) return;
+  try {
+    st.textContent = 'Looking up the place...';
+    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q));
+    if (!r.ok) throw new Error('the place lookup answered ' + r.status);
+    var j = await r.json(); if (!j.length) throw new Error('that place was not found');
+    var lat = +j[0].lat, lon = +j[0].lon, bb = (j[0].boundingbox || []).map(Number), s, n, w, e;
+    if (size === 'city'){
+      s = bb[0]; n = bb[1]; w = bb[2]; e = bb[3];
+      if (!(n > s) || !(e > w)) throw new Error('that place has no outline to download');
+      if ((n - s)*(e - w) > 0.2) throw new Error('that area is too large; pick a smaller place or size');
+    } else { var km = +size, dlat = km/110.54, dlon = km/(111.32*Math.cos(lat*Math.PI/180)); s = lat - dlat; n = lat + dlat; w = lon - dlon; e = lon + dlon; }
+    st.textContent = 'Downloading map data. A large area can take a few minutes...';
+    r = await fetch('https://overpass-api.de/api/interpreter', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'data=' + encodeURIComponent('[out:json][timeout:240][bbox:' + [s, w, n, e].join(',') + '];' + MM_QUERY)});
+    if (!r.ok) throw new Error('the map server answered ' + r.status + (r.status === 429 || r.status === 504 ? ' (busy; try again shortly or pick a smaller size)' : ''));
+    st.textContent = 'Building the map...';
+    var raw = fromOverpass(await r.json()); if (!raw.ways.length) throw new Error('no map data came back for that area');
+    var name = String(j[0].display_name || q).split(',')[0].trim() + (size === 'city' ? '' : ' ' + ['', 'area'][1] + ' ' + Math.round(+size*2) + 'km');
+    var text = JSON.stringify(toCompact(raw, name)), file = slug(name) + '.lbmap.json';
+    if (dir){ await writeFile('maps', file, text); st.textContent = 'Map saved to the maps folder as ' + file + '.'; }
+    else { downloadText(file, text); st.textContent = 'Map downloaded as ' + file + '. Put it in the maps folder to use it again offline.'; }
+    mapSrc = {text:text}; enter(parseText(text), name);
+  } catch (err) {
+    st.textContent = 'Could not make the map: ' + (err && err.message ? (/fetch|network/i.test(err.message) ? 'no connection to the map servers' : err.message) : 'unknown error') + '. You can still export a map by hand using the steps below.';
+  }
+}
+el('mmGo').addEventListener('click', makeMap);
 
 /* ================= entering and leaving a world ================= */
 async function enter(raw, name){
