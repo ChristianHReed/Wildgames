@@ -127,7 +127,7 @@ Each player keeps a roster of characters on their drive and picks one when enter
 ## Build order
 
 1. **Drive layout and start page.** Folder structure, start page, touch controls, saves on the drive. *Built; awaiting testing on real devices.*
-2. **Two-player hosting.** One device hosts and a second joins by swapping a pairing code, with no server.
+2. **Two-player hosting.** One device hosts and a second joins by swapping a pairing code, with no server. *Built with copy-and-paste codes; QR scanning and testing between real devices remain.*
 3. **Passports.** Characters and inventory travel to a host and come home, with autosave.
 4. **Whole-city map.** The map maker, the Springfield map pack, loading the city in pieces.
 5. **Aliens and weather.**

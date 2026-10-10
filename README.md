@@ -2,7 +2,7 @@
 
 Home of **Last Block**: a lightweight, low-poly, first-person survival game played on your real city, starting with Springfield, MO. The whole game is meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Status: step 1 of 10 in the build order. See [docs/DESIGN.md](docs/DESIGN.md) for the full plan.
+Status: steps 1 and 2 of 10 in the build order. See [docs/DESIGN.md](docs/DESIGN.md) for the full plan.
 
 ## Play
 
@@ -23,19 +23,30 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | `prototypes/` | Earlier versions, kept for reference |
 | `docs/` | The design document |
 
+### Playing together
+
+No server, website or internet is involved; the devices connect to each other directly. Both must be on the same Wi-Fi, phone hotspot or cable, and both need `play.html`.
+
+1. **Host:** start your world, then press **Invite player**. Copy the invite code and send it to your friend (any way you like: a message, a shared note).
+2. **Friend:** on the start page, paste it under **Play together** and press **Create reply code**. Send that reply code back.
+3. **Host:** paste the reply code and press **Connect**. The host's map is sent across automatically.
+
+The visitor plays in the host's world, and what they are carrying when they leave is saved to their own device. Up to 6 players; each one needs their own invite.
+
 Controls on a computer: WASD to move, mouse to look, click or Space to swing, right-click or F to shoot, hold E to search or drink, 1/2/3 to eat, drink and heal, B for a barricade, C for a campfire. On a touch screen, on-screen controls appear automatically.
 
 ## What works and what doesn't yet
 
-Works: first-person play on a loaded map, enterable buildings, looting, day and night, saving and resuming, dying and recovering your dropped pack, touch controls, and three view-distance settings.
+Works: first-person play on a loaded map, enterable buildings, looting, day and night, saving and resuming, dying and recovering your dropped pack, touch controls, and three view-distance settings, and hosting a world that friends join.
 
-Not built yet: multiplayer, the whole-city map maker, aliens and weather (enemies are still the placeholder "infected"), the character creator, the item editor, and packs.
+Not built yet: scanning a QR code in place of copying the invite codes, the whole-city map maker, aliens and weather (enemies are still the placeholder "infected"), the character creator, the item editor, and packs.
 
 Not yet verified:
 
 - It has only been run in an automated test browser without a graphics card, so real frame rates are unmeasured.
 - It has not been tried with a real OpenStreetMap export, only hand-made test maps and the demo town.
 - **Connect game folder** was tested against a stand-in folder, not a real USB drive.
+- Playing together was tested between two browser windows on one computer, not between two separate devices on a network, and not over Bluetooth.
 - Touch controls were tested with simulated touches, not on a real phone, and opening `play.html` from a drive on a phone is untested.
 
 ## Design

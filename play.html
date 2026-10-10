@@ -64,6 +64,11 @@
   .touchmode #mini{width:110px;height:110px}
   .touchmode #hud{width:170px}
   .touchmode #prompt{top:44%}
+  textarea{width:100%;box-sizing:border-box;height:58px;font-family:monospace;font-size:11px;background:#12151a;color:#efe9da;border:2px solid #6b7480;margin:6px 0;resize:none;word-break:break-all;user-select:text}
+  #inviteBtn{pointer-events:auto;font-size:11px;padding:5px 9px;margin-top:6px;background:#3c4651;color:#efe9da}
+  #invite{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,92vw);background:#1b2028;border:3px solid #f2b134;padding:14px 18px;font-size:13px;color:#cfd5db;z-index:5}
+  #invite button{font-size:13px;padding:7px 12px}
+  #invStatus,#joinStatus{min-height:18px;color:#f2b134;margin-top:4px}
   @media (max-height:760px){.screen{align-items:flex-start}}
 </style>
 </head>
@@ -77,13 +82,23 @@
     <div class="bar"><div id="bFood" style="background:#d98f3a"></div><span>Hunger</span></div>
     <div class="bar"><div id="bWater" style="background:#3f95d6"></div><span>Thirst</span></div>
     <div id="stats"></div>
-    <button id="menuBtn">Save &amp; exit</button>
+    <button id="menuBtn">Save &amp; exit</button> <button id="inviteBtn">Invite player</button>
   </div>
   <canvas id="mini" width="170" height="170"></canvas>
   <div id="inv"></div>
   <div id="help">WASD: move &middot; Mouse: look (arrow keys also turn)<br>Click / Space: swing bat &middot; Right-click / F: shoot<br>Hold E: search, drink &middot; 1 eat &middot; 2 drink &middot; 3 medkit<br>B barricade &middot; C campfire &middot; Esc: free the mouse</div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
   <div id="feed"></div>
+  <div id="invite" class="hidden">
+    <b>Invite a player</b>
+    <div>1. Send this invite code to your friend. They paste it on their start page under Play together.</div>
+    <textarea id="invCode" readonly></textarea>
+    <div class="row" style="margin:2px 0 8px;justify-content:flex-start"><button id="copyInv" class="alt">Copy invite code</button></div>
+    <div>2. Paste the reply code they send back, then press Connect.</div>
+    <textarea id="invReply" placeholder="Paste reply code"></textarea>
+    <div class="row" style="margin:2px 0;justify-content:flex-start"><button id="invGo">Connect</button><button id="invClose" class="alt">Close</button></div>
+    <div id="invStatus"></div>
+  </div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
     <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button>
@@ -118,12 +133,24 @@
         <label class="btn alt">Import saves<input id="importFile" type="file" accept=".json" hidden></label>
       </div>
     </div>
+    <div class="panel">
+      <b>Play together</b>
+      <div>To host, start your world and press <b>Invite player</b>. To join a friend's world, paste their invite code here. Both devices must be on the same Wi-Fi, hotspot or cable.</div>
+      <textarea id="joinCode" placeholder="Paste invite code"></textarea>
+      <div class="row"><button id="joinBtn" class="alt">Create reply code</button></div>
+      <div id="replyBox" class="hidden">
+        <textarea id="replyCode" readonly></textarea>
+        <div class="row"><button id="copyReply" class="alt">Copy reply code</button></div>
+        <div>Send this reply code back to the host. The game starts when they press Connect.</div>
+      </div>
+      <div id="joinStatus"></div>
+    </div>
     <ol>
       <li>Go to <b>openstreetmap.org</b> and zoom in on a neighborhood (about 1 km across works best).</li>
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Multiplayer arrives in the next build step.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly.</p>
   </div>
 </div>
 
@@ -695,6 +722,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
+var net = {role:null, peers:[], host:null, others:[], nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
 function toast(msg, secs){ var t = el('toast'); t.textContent = msg; t.style.opacity = 1; toastT = secs || 3; }
@@ -733,7 +761,7 @@ function startRun(ws, cs){
 }
 function die(){
   var has = false, k; for (k in inv) if (inv[k] > 0) has = true;
-  if (has) packs.push({x:P.x, y:P.y, inv:inv, name:'your dropped pack', pack:true});
+  if (has){ var np = {id:Date.now() + '-' + Math.floor(Math.random()*1e6), x:P.x, y:P.y, inv:inv, name:'a dropped pack', pack:true}; packs.push(np); emit({k:'pack', p:np}); }
   inv = {food:0, water:0, medkit:0, ammo:0, wood:0, scrap:0};
   P.x = world.spawn.x; P.y = world.spawn.y; P.hp = 100; P.hunger = 60; P.thirst = 60; P.hurt = 0; deaths++; zombies = [];
   toast('You died. You wake where you first arrived; your pack lies where you fell.', 6); updateHud(); saveNow();
@@ -742,7 +770,7 @@ function die(){
 /* ================= input ================= */
 var keys = {}, wantSwing = false, wantShoot = false, locked = false;
 window.addEventListener('keydown', function(e){
-  if (!running) return;
+  if (!running || /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) return;
   keys[e.code] = true;
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit');
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
@@ -806,10 +834,10 @@ function place(kind){
   if (hitWall((P.x+x)/2, (P.y+y)/2) || hitWall(x, y)) return;
   if (kind === 'cade'){
     if (inv.wood < 2 || inv.scrap < 1){ toast('A barricade needs 2 wood and 1 scrap.', 2.5); return; }
-    inv.wood -= 2; inv.scrap -= 1; cades.push({x:x, y:y, hp:30, yaw:P.yaw + 1.5708});
+    inv.wood -= 2; inv.scrap -= 1; var nc = {x:x, y:y, hp:30, yaw:P.yaw + 1.5708}; cades.push(nc); emit({k:'cade', c:nc});
   } else {
     if (inv.wood < 4){ toast('A campfire needs 4 wood.', 2.5); return; }
-    inv.wood -= 4; fires.push({x:x, y:y, life:150});
+    inv.wood -= 4; var nf = {x:x, y:y, life:150}; fires.push(nf); emit({k:'fire', f:nf});
     toast('Campfire lit. Stand near it to recover health.', 3.5);
   }
   updateHud();
@@ -835,9 +863,9 @@ function findTarget(){
   return null;
 }
 function loot(o){
-  if (o.pack){ for (var pk in o.inv) inv[pk] = (inv[pk] || 0) + (o.inv[pk] | 0); packs.splice(packs.indexOf(o), 1); feed('Recovered your pack', '#7dff9a'); updateHud(); return; }
+  if (o.pack){ for (var pk in o.inv) inv[pk] = (inv[pk] || 0) + (o.inv[pk] | 0); packs.splice(packs.indexOf(o), 1); emit({k:'unpack', id:o.id}); feed('Recovered your pack', '#7dff9a'); updateHud(); return; }
   var cat, rolls;
-  if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; } else { o.looted = true; cat = o.cat; rolls = 2; }
+  if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
   searched++;
   var tab = LOOT[cat], tot = 0, got = {}, k, n = 0;
   for (k in tab) tot += tab[k];
@@ -855,7 +883,7 @@ function swing(){
   P.atkCd = 0.45; P.swing = 0.22; var hit = false, i, dx, dy, d, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
   for (i = 0; i < zombies.length; i++){
     var z = zombies[i]; dx = z.x - P.x; dy = z.y - P.y; d = Math.hypot(dx, dy);
-    if (d < 2.3 && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){ z.hp -= 2; z.hurt = 0.15; z.kx = dx/d*8; z.ky = dy/d*8; hit = true; }
+    if (d < 2.3 && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){ hitZombie(z, 2, dx/d*8, dy/d*8); hit = true; }
   }
   if (hit) return;
   var bt = null, bd = 2.6;
@@ -863,7 +891,7 @@ function swing(){
     var t = world.trees[i]; if (!t.alive) continue; dx = t.x - P.x; dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) continue;
     d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
   }
-  if (bt){ bt.hp--; bt.shake = 0.2; if (bt.hp <= 0){ bt.alive = false; inv.wood += 2; feed('+2 Wood', ITEMS.wood[1]); updateHud(); } }
+  if (bt){ bt.hp--; bt.shake = 0.2; if (bt.hp <= 0){ bt.alive = false; emit({k:'tree', i:world.trees.indexOf(bt)}); inv.wood += 2; feed('+2 Wood', ITEMS.wood[1]); updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
@@ -872,9 +900,11 @@ function shoot(){
   updateHud();
 }
 function spawnZombie(){
-  var a = Math.random()*6.283, d = 40 + Math.random()*28, x = P.x + Math.cos(a)*d, y = P.y + Math.sin(a)*d;
+  var cs = [P]; net.peers.forEach(function(p){ if (p.ready) cs.push(p); });
+  var c0 = cs[Math.floor(Math.random()*cs.length)], a = Math.random()*6.283, d = 40 + Math.random()*28, x = c0.x + Math.cos(a)*d, y = c0.y + Math.sin(a)*d;
+  for (var q = 0; q < cs.length; q++) if (Math.hypot(cs[q].x - x, cs[q].y - y) < 30) return;
   if (circ(x, y, 0.6)) return;
-  zombies.push({x:x, y:y, hp:4, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.8 + Math.random()*0.45, v:Math.random()});
+  zombies.push({id:++net.zid, x:x, y:y, hp:4, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.8 + Math.random()*0.45, v:Math.random()});
 }
 function update(dt){
   time += dt;
@@ -911,43 +941,57 @@ function update(dt){
   if (wantShoot && P.shootCd <= 0) shoot();
   wantSwing = wantShoot = false;
 
-  var night = dark > 0.5, pb = buildingAt(P.x, P.y);
-  for (i = zombies.length - 1; i >= 0; i--){
-    var z = zombies[i], ex = P.x - z.x, ey = P.y - z.y, d = Math.hypot(ex, ey) || 0.001;
-    if (z.hp <= 0){ kills++; zombies.splice(i, 1); continue; }
-    if (d > 120){ zombies.splice(i, 1); continue; }
-    z.cd -= dt; z.hurt -= dt; z.thru -= dt;
-    var tx = P.x, ty = P.y, zb = d < 60 ? buildingAt(z.x, z.y) : null, db = zb !== pb ? (zb || pb) : null;
-    if (db && db.door && d < 60){
-      var out = zb ? 1 : -1, dr = db.door, nx1 = dr.x + dr.nx*1.1*out, ny1 = dr.y + dr.ny*1.1*out;
-      if (z.tb !== db){ z.tb = db; z.thru = 0; }
-      if (z.thru <= 0 && Math.hypot(z.x - nx1, z.y - ny1) < 0.7) z.thru = 1.6;
-      if (z.thru > 0){ tx = dr.x - dr.nx*1.4*out; ty = dr.y - dr.ny*1.4*out; } else { tx = nx1; ty = ny1; }
+  var night = dark > 0.5;
+  if (net.role !== 'guest'){
+    var tg = [{x:P.x, y:P.y, peer:null}], cadesChanged = false;
+    net.peers.forEach(function(p){ if (p.ready) tg.push({x:p.x, y:p.y, peer:p}); });
+    tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); });
+    for (i = zombies.length - 1; i >= 0; i--){
+      var z = zombies[i], T = tg[0], d = 1e9;
+      for (var q2 = 0; q2 < tg.length; q2++){ var dd = Math.hypot(tg[q2].x - z.x, tg[q2].y - z.y); if (dd < d){ d = dd; T = tg[q2]; } }
+      d = d || 0.001; var ex = T.x - z.x, ey = T.y - z.y, pb = T.b;
+      if (z.hp <= 0){ kills++; zombies.splice(i, 1); continue; }
+      if (d > 120){ zombies.splice(i, 1); continue; }
+      z.cd -= dt; z.hurt -= dt; z.thru -= dt;
+      var tx = T.x, ty = T.y, zb = d < 60 ? buildingAt(z.x, z.y) : null, db = zb !== pb ? (zb || pb) : null;
+      if (db && db.door && d < 60){
+        var out = zb ? 1 : -1, dr = db.door, nx1 = dr.x + dr.nx*1.1*out, ny1 = dr.y + dr.ny*1.1*out;
+        if (z.tb !== db){ z.tb = db; z.thru = 0; }
+        if (z.thru <= 0 && Math.hypot(z.x - nx1, z.y - ny1) < 0.7) z.thru = 1.6;
+        if (z.thru > 0){ tx = dr.x - dr.nx*1.4*out; ty = dr.y - dr.ny*1.4*out; } else { tx = nx1; ty = ny1; }
+      }
+      var gx = tx - z.x, gy = ty - z.y, gd = Math.hypot(gx, gy) || 0.001, zs = (night ? 3.7 : 2.6)*z.spd, vx, vy;
+      if (z.av > 0 && z.thru <= 0){ z.av -= dt; vx = z.ax*0.9 + gx/gd*0.2; vy = z.ay*0.9 + gy/gd*0.2; } else { vx = gx/gd; vy = gy/gd; }
+      var ox = z.x, oy = z.y;
+      if (d > 0.8) stepMove(z, (vx*zs + z.kx)*dt, (vy*zs + z.ky)*dt, 0.4);
+      z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
+      if (z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
+      for (var c = cades.length - 1; c >= 0; c--){
+        var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001;
+        if (bl < 1.25){ z.x = cd.x + bx/bl*1.25; z.y = cd.y + by/bl*1.25; cd.hp -= dt*5; if (cd.hp <= 0){ cades.splice(c, 1); cadesChanged = true; } }
+      }
+      if (d < 1.45 && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = 0.9; if (T.peer) send(T.peer.dc, {t:'hurt', d:9}); else { P.hp -= 9; P.hurt = 0.3; } }
+      z.ang = Math.atan2(vy, vx); z.walk = (z.walk || 0) + Math.hypot(z.x - ox, z.y - oy)*4;
     }
-    var gx = tx - z.x, gy = ty - z.y, gd = Math.hypot(gx, gy) || 0.001, zs = (night ? 3.7 : 2.6)*z.spd, vx, vy;
-    if (z.av > 0 && z.thru <= 0){ z.av -= dt; vx = z.ax*0.9 + gx/gd*0.2; vy = z.ay*0.9 + gy/gd*0.2; } else { vx = gx/gd; vy = gy/gd; }
-    var ox = z.x, oy = z.y;
-    if (d > 0.8) stepMove(z, (vx*zs + z.kx)*dt, (vy*zs + z.ky)*dt, 0.4);
-    z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
-    if (z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
-    for (var c = cades.length - 1; c >= 0; c--){
-      var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001;
-      if (bl < 1.25){ z.x = cd.x + bx/bl*1.25; z.y = cd.y + by/bl*1.25; cd.hp -= dt*5; if (cd.hp <= 0) cades.splice(c, 1); }
+    if (cadesChanged && net.role === 'host') broadcast({t:'ev', e:{k:'cades', l:cades}});
+  } else {
+    for (i = 0; i < zombies.length; i++){
+      var gz = zombies[i], k1 = Math.min(1, dt*12), mx = (gz.tx - gz.x)*k1, my = (gz.ty - gz.y)*k1;
+      gz.x += mx; gz.y += my; gz.hurt -= dt; gz.walk = (gz.walk || 0) + Math.hypot(mx, my)*4;
     }
-    if (d < 1.45 && z.cd <= 0 && !hitWall((z.x + P.x)/2, (z.y + P.y)/2)){ z.cd = 0.9; P.hp -= 9; P.hurt = 0.3; }
-    z.ang = Math.atan2(vy, vx); z.walk = (z.walk || 0) + Math.hypot(z.x - ox, z.y - oy)*4;
   }
+  netTick(dt);
   for (i = bullets.length - 1; i >= 0; i--){
     var b = bullets[i], dead = false, st = Math.ceil(Math.hypot(b.vx, b.vy)*dt/0.3); b.t -= dt;
     for (var s = 0; s < st && !dead; s++){
       b.x += b.vx*dt/st; b.y += b.vy*dt/st;
       if (hitWall(b.x, b.y)){ dead = true; break; }
-      for (var q = 0; q < zombies.length; q++){ var zz = zombies[q]; if (Math.hypot(zz.x - b.x, zz.y - b.y) < 0.6){ zz.hp -= 5; zz.hurt = 0.15; dead = true; break; } }
+      for (var q = 0; q < zombies.length; q++){ var zz = zombies[q]; if (Math.hypot(zz.x - b.x, zz.y - b.y) < 0.6){ hitZombie(zz, 5, 0, 0); dead = true; break; } }
     }
     if (dead || b.t <= 0) bullets.splice(i, 1);
   }
   spawnT -= dt;
-  if (spawnT <= 0){ spawnT = 0.5; var cap = Math.min(60, Math.round((5 + day*2)*(1 + dark*1.4)*QS.zmul)); if (zombies.length < cap) spawnZombie(); }
+  if (spawnT <= 0 && net.role !== 'guest'){ spawnT = 0.5; var cap = Math.min(70, Math.round((5 + day*2)*(1 + dark*1.4)*QS.zmul*(1 + 0.6*net.peers.length))); if (zombies.length < cap) spawnZombie(); }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
   el('hurt').style.opacity = Math.max(0, P.hurt)*1.2;
   hudT -= dt; if (hudT <= 0){ hudT = 0.25; updateHud(); }
@@ -958,7 +1002,7 @@ function updateHud(){
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
   el('stats').innerHTML = 'Day ' + (Math.floor(hrs/24) + 1) + ' &middot; ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min + (dark > 0.5 ? ' &middot; <b style="color:#ff8f7a">NIGHT</b>' : '') +
-    '<br>Searched: ' + searched + ' / ' + world.total + '<br>Infected put down: ' + kills + (pb ? '<br>Inside: ' + (pb.name || CAT[pb.cat].label) : '') + (deaths ? '<br>Deaths: ' + deaths : '');
+    '<br>Searched: ' + searched + ' / ' + world.total + '<br>Infected put down: ' + kills + (pb ? '<br>Inside: ' + (pb.name || CAT[pb.cat].label) : '') + (deaths ? '<br>Deaths: ' + deaths : '') + (net.role ? '<br>Players: ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
   var h = '';
   for (var k in ITEMS) h += '<div class="slot"' + (ITEMS[k][2] && ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><span class="sw" style="background:' + ITEMS[k][1] + '"></span>' + ITEMS[k][0] + ' ' + inv[k] + (ITEMS[k][2] ? ' <b>[' + ITEMS[k][2] + ']</b>' : '') + '</div>';
   el('inv').innerHTML = h;
@@ -985,6 +1029,7 @@ function drawMini(){
   c.fillStyle = 'rgba(10,12,20,' + (0.45*dark) + ')'; c.fillRect(0, 0, 170, 170);
   var px = P.x*miniK + miniBg.ox, py = P.y*miniK + miniBg.oy;
   c.fillStyle = '#ff5a3c'; for (var i = 0; i < zombies.length; i++) c.fillRect(zombies[i].x*miniK + miniBg.ox - 1, zombies[i].y*miniK + miniBg.oy - 1, 2, 2);
+  c.fillStyle = '#4fd0ff'; otherPlayers().forEach(function(o){ c.fillRect(o.x*miniK + miniBg.ox - 2, o.y*miniK + miniBg.oy - 2, 5, 5); });
   c.save(); c.translate(px, py); c.rotate(P.yaw); c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 1;
   c.beginPath(); c.moveTo(7, 0); c.lineTo(-4, -4.5); c.lineTo(-2, 0); c.lineTo(-4, 4.5); c.closePath(); c.fill(); c.stroke(); c.restore();
 }
@@ -1059,6 +1104,14 @@ function render(){
     m.ybox(z.x, z.y, z.ang, 0, 0, 1.15, 0.16, 0.36, 0.27, bc); m.ybox(z.x, z.y, z.ang, 0.04, 0, 1.68, 0.16, 0.17, 0.16, hc ? white : skin);
     m.ybox(z.x, z.y, z.ang, 0.38, 0.33, 1.32 + ph*0.3, 0.3, 0.07, 0.07, hc ? white : arm); m.ybox(z.x, z.y, z.ang, 0.38, -0.33, 1.32 - ph*0.3, 0.3, 0.07, 0.07, hc ? white : arm);
   }
+  var ops = otherPlayers(), PC = ['#c4573a','#3a9c6b','#9a5bc4','#c49a3a','#3a8fc4','#c43a7f'];
+  for (i = 0; i < ops.length; i++){
+    var o = ops[i], oc = C(PC[o.id % 6]), ow = Math.sin(now*9 + o.id)*0.12*(o.mv ? 1 : 0);
+    m.ybox(o.x, o.y, o.yaw, ow, 0.14, 0.42, 0.11, 0.42, 0.1, C('#2b2f38')); m.ybox(o.x, o.y, o.yaw, -ow, -0.14, 0.42, 0.11, 0.42, 0.1, C('#2b2f38'));
+    m.ybox(o.x, o.y, o.yaw, 0, 0, 1.2, 0.16, 0.36, 0.27, oc); m.ybox(o.x, o.y, o.yaw, 0.03, 0, 1.73, 0.16, 0.17, 0.16, C('#e8b88a'));
+    m.ybox(o.x, o.y, o.yaw, 0.02, 0.34, 1.15, 0.07, 0.32, 0.07, oc);
+    if (o.sw) m.ybox(o.x, o.y, o.yaw, 0.45, -0.3, 1.35, 0.4, 0.05, 0.05, C('#c9a56a')); else m.ybox(o.x, o.y, o.yaw, 0.02, -0.34, 1.15, 0.07, 0.32, 0.07, oc);
+  }
   var gold = C('#f2b134'), spin = now*2.5;
   for (i = 0; i < loaded.length; i++){
     var cs = loaded[i].int.conts, got = loaded[i].got;
@@ -1132,8 +1185,11 @@ function worldSave(){
 function charSave(){ return {v:1, name:el('pname').value || 'Survivor', hp:P.hp, hunger:P.hunger, thirst:P.thirst, inv:inv, deaths:deaths}; }
 function saveNow(){
   if (!inRun || !world || !P) return;
+  writeSave('char', charSlug(), charSave());
+  if (net.role === 'guest') return;
   worldPlayers[charSlug()] = {x:P.x, y:P.y, yaw:P.yaw};
-  writeSave('world', slug(world.name), worldSave()); writeSave('char', charSlug(), charSave());
+  net.peers.forEach(function(p){ if (p.ready && p.slug) worldPlayers[p.slug] = {x:p.x, y:p.y, yaw:p.yaw}; });
+  writeSave('world', slug(world.name), worldSave());
 }
 window.addEventListener('pagehide', saveNow);
 document.addEventListener('visibilitychange', function(){ if (document.hidden) saveNow(); });
@@ -1151,7 +1207,7 @@ async function refreshMaps(){
     if (ent.kind !== 'file' || !/\.(osm|xml|json|geojson)$/i.test(ent.name)) continue;
     (function(h){
       var b = document.createElement('button'); b.className = 'alt'; b.textContent = 'Play ' + h.name.replace(/\.[^.]+$/, '');
-      b.addEventListener('click', async function(){ info('Reading ' + h.name + '...'); try { enter(parseText(await (await h.getFile()).text()), h.name.replace(/\.[^.]+$/, '')); } catch (e) { fail(e.message || 'Could not read this map.'); } });
+      b.addEventListener('click', async function(){ info('Reading ' + h.name + '...'); try { var mt = await (await h.getFile()).text(); mapSrc = {text:mt}; enter(parseText(mt), h.name.replace(/\.[^.]+$/, '')); } catch (e) { fail(e.message || 'Could not read this map.'); } });
       list.appendChild(b);
     })(ent);
   }
@@ -1184,14 +1240,181 @@ el('importFile').addEventListener('change', function(e){
   fr.readAsText(f);
 });
 
+/* ================= multiplayer: devices connect directly; the two codes are exchanged by hand ================= */
+function send(dc, obj){ if (dc && dc.readyState === 'open'){ try { dc.send('J' + JSON.stringify(obj)); } catch (e) {} } }
+function broadcast(obj, except){ net.peers.forEach(function(p){ if (p !== except && p.ready) send(p.dc, obj); }); }
+function emit(ev){ if (net.role === 'host') broadcast({t:'ev', e:ev}); else if (net.role === 'guest') send(net.host.dc, {t:'ev', e:ev}); }
+function applyEv(e){
+  if (!world || !e) return;
+  if (e.k === 'got'){ var b = world.buildings[e.b]; if (b) b.got[e.i] = 1; }
+  else if (e.k === 'crate'){ if (world.crates[e.i]) world.crates[e.i].looted = true; }
+  else if (e.k === 'tree'){ if (world.trees[e.i]) world.trees[e.i].alive = false; }
+  else if (e.k === 'fire'){ if (e.f) fires.push({x:+e.f.x, y:+e.f.y, life:+e.f.life || 150}); }
+  else if (e.k === 'cade'){ if (e.c) cades.push({x:+e.c.x, y:+e.c.y, hp:+e.c.hp || 30, yaw:+e.c.yaw || 0}); }
+  else if (e.k === 'cades'){ cades = e.l || []; }
+  else if (e.k === 'pack'){ if (e.p) packs.push(e.p); }
+  else if (e.k === 'unpack'){ for (var i = 0; i < packs.length; i++) if (packs[i].id === e.id){ packs.splice(i, 1); break; } }
+}
+function hitZombie(z, dmg, kx, ky){
+  z.hurt = 0.15;
+  if (net.role === 'guest') send(net.host.dc, {t:'hit', id:z.id, d:dmg, kx:kx, ky:ky}); else { z.hp -= dmg; z.kx = kx; z.ky = ky; }
+}
+function otherPlayers(){ return net.role === 'host' ? net.peers.filter(function(p){ return p.ready; }) : net.role === 'guest' ? net.others : []; }
+function r2(v){ return Math.round(v*100)/100; }
+function netTick(dt){
+  if (!net.role) return;
+  var k = Math.min(1, dt*12), list = otherPlayers();
+  list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; });
+  net.t -= dt; if (net.t > 0) return;
+  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.yaw), sw:P.swing > 0 ? 1 : 0}); return; }
+  net.t = 0.1;
+  var ps = [[0, r2(P.x), r2(P.y), r2(P.yaw), P.swing > 0 ? 1 : 0]];
+  net.peers.forEach(function(p){ if (p.ready) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw]); });
+  net.peers.forEach(function(p){
+    if (!p.ready) return;
+    var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 110 && Math.abs(z.y - p.y) < 110) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v)]); }
+    send(p.dc, {t:'s', time:r2(time), z:zs, p:ps});
+  });
+}
+function onSnapshot(m){
+  time = +m.time || time;
+  var old = {}, i; zombies.forEach(function(z){ old[z.id] = z; }); zombies = [];
+  for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5]}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; if (a[4]) z.hurt = 0.15; zombies.push(z); }
+  var po = {}; net.others.forEach(function(o){ po[o.id] = o; }); net.others = [];
+  for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; net.others.push(o); }
+}
+function b64(bytes){ var s = ''; for (var i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(s); }
+function unb64(str){ var s = atob(str), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+async function packCode(obj){
+  var s = JSON.stringify(obj);
+  if (window.CompressionStream){ try { return 'Z' + b64(new Uint8Array(await new Response(new Blob([s]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer())); } catch (e) {} }
+  return 'P' + b64(new TextEncoder().encode(s));
+}
+async function unpackCode(code){
+  code = String(code).replace(/\s+/g, ''); var bytes = unb64(code.slice(1));
+  if (code[0] === 'Z') return JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text());
+  if (code[0] === 'P') return JSON.parse(new TextDecoder().decode(bytes));
+  throw new Error('bad code');
+}
+function iceDone(pc){
+  return new Promise(function(res){
+    if (pc.iceGatheringState === 'complete') return res();
+    var t = setTimeout(res, 4000);
+    pc.addEventListener('icegatheringstatechange', function(){ if (pc.iceGatheringState === 'complete'){ clearTimeout(t); res(); } });
+  });
+}
+function netClose(){
+  var ps = net.peers.slice(), h = net.host; net.peers = []; net.host = null; net.others = []; net.role = null; pending = null;
+  ps.forEach(function(p){ try { p.dc.close(); p.pc.close(); } catch (e) {} });
+  if (h){ try { h.dc.close(); h.pc.close(); } catch (e) {} }
+  el('invite').classList.add('hidden');
+}
+/* ---- hosting ---- */
+var pending = null;
+async function hostInvite(){
+  el('invStatus').textContent = 'Preparing invite code...'; el('invCode').value = ''; el('invReply').value = '';
+  var pc = new RTCPeerConnection({iceServers:[]}), dc = pc.createDataChannel('lb', {ordered:true});
+  var peer = pending = {pc:pc, dc:dc, id:++net.nextId, name:'Guest', slug:'', x:P.x, y:P.y, tx:P.x, ty:P.y, yaw:0, sw:0, ready:false};
+  dc.onopen = function(){ hostWelcome(peer); };
+  dc.onmessage = function(e){ hostMsg(peer, e.data); };
+  dc.onclose = function(){
+    var i = net.peers.indexOf(peer); if (i < 0) return; net.peers.splice(i, 1);
+    if (peer.ready && peer.slug) worldPlayers[peer.slug] = {x:peer.x, y:peer.y, yaw:peer.yaw};
+    toast(peer.name + ' left your world.', 4); if (!net.peers.length) net.role = null; updateHud();
+  };
+  await pc.setLocalDescription(await pc.createOffer()); await iceDone(pc);
+  el('invCode').value = await packCode({s:pc.localDescription.sdp}); el('invStatus').textContent = 'Invite code ready.';
+}
+async function hostWelcome(peer){
+  net.role = 'host'; net.peers.push(peer); if (pending === peer) pending = null;
+  el('invStatus').textContent = 'Connected. Sending the world...';
+  var text = mapSrc && mapSrc.text ? mapSrc.text : null;
+  worldPlayers[charSlug()] = {x:P.x, y:P.y, yaw:P.yaw};
+  send(peer.dc, {t:'hello', pid:peer.id, name:world.name, demo:!text, len:text ? text.length : 0, ws:worldSave()});
+  if (text) for (var i = 0; i < text.length; i += 12000){
+    while (peer.dc.bufferedAmount > 1000000) await new Promise(function(r){ setTimeout(r, 30); });
+    if (peer.dc.readyState !== 'open') return; peer.dc.send('C' + text.substr(i, 12000));
+  }
+  send(peer.dc, {t:'go'});
+}
+function hostMsg(peer, data){
+  if (data[0] !== 'J') return; var m; try { m = JSON.parse(data.slice(1)); } catch (e) { return; }
+  if (m.t === 'join'){
+    peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.ready = true;
+    toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
+  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; }
+  else if (m.t === 'ev'){ applyEv(m.e); broadcast({t:'ev', e:m.e}, peer); }
+  else if (m.t === 'hit'){ for (var i = 0; i < zombies.length; i++) if (zombies[i].id === m.id){ var z = zombies[i]; z.hp -= Math.min(5, +m.d || 0); z.hurt = 0.15; z.kx = +m.kx || 0; z.ky = +m.ky || 0; break; } }
+}
+el('inviteBtn').addEventListener('click', function(){
+  if (document.exitPointerLock) document.exitPointerLock();
+  if (net.peers.length >= 5){ toast('This world is full (6 players).', 3); return; }
+  el('invite').classList.remove('hidden');
+  if (!window.RTCPeerConnection){ el('invStatus').textContent = 'This browser cannot connect devices directly.'; return; }
+  hostInvite().catch(function(e){ el('invStatus').textContent = 'Could not create an invite: ' + (e.message || e.name); });
+});
+el('invGo').addEventListener('click', async function(){
+  if (!pending){ el('invStatus').textContent = 'Create a new invite first (close and press Invite player).'; return; }
+  try { var o = await unpackCode(el('invReply').value); await pending.pc.setRemoteDescription({type:'answer', sdp:o.s}); el('invStatus').textContent = 'Connecting...'; }
+  catch (e) { el('invStatus').textContent = 'That reply code did not work. Check that all of it was copied.'; }
+});
+el('invClose').addEventListener('click', function(){ el('invite').classList.add('hidden'); });
+function copyFrom(id, statusId){
+  var t = el(id); t.select();
+  var done = function(){ el(statusId).textContent = 'Copied.'; };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(done, function(){ try { document.execCommand('copy'); done(); } catch (e) {} });
+  else { try { document.execCommand('copy'); done(); } catch (e) {} }
+}
+el('copyInv').addEventListener('click', function(){ copyFrom('invCode', 'invStatus'); });
+el('copyReply').addEventListener('click', function(){ copyFrom('replyCode', 'joinStatus'); });
+/* ---- joining ---- */
+el('joinBtn').addEventListener('click', async function(){
+  var st = el('joinStatus');
+  if (!glOK) return;
+  if (!window.RTCPeerConnection){ st.textContent = 'This browser cannot connect devices directly.'; return; }
+  try {
+    var o = await unpackCode(el('joinCode').value), pc = new RTCPeerConnection({iceServers:[]}), g = {pc:pc, dc:null, chunks:[], hello:null};
+    pc.ondatachannel = function(e){
+      g.dc = e.channel; net.host = g;
+      g.dc.onmessage = function(ev){ guestMsg(g, ev.data); };
+      g.dc.onclose = function(){ if (net.host === g){ if (inRun) exitToMenu('The host ended the session. Your survivor was saved.'); else { net.host = null; st.textContent = 'The connection closed.'; } } };
+      st.textContent = 'Connected. Receiving the world...';
+    };
+    await pc.setRemoteDescription({type:'offer', sdp:o.s}); await pc.setLocalDescription(await pc.createAnswer()); await iceDone(pc);
+    el('replyCode').value = await packCode({s:pc.localDescription.sdp}); el('replyBox').classList.remove('hidden'); st.textContent = 'Reply code ready. Waiting for the host...';
+  } catch (e) { st.textContent = 'That invite code did not work. Check that all of it was copied.'; }
+});
+async function guestMsg(g, data){
+  if (data[0] === 'C'){ g.chunks.push(data.slice(1)); el('joinStatus').textContent = 'Receiving the map...'; return; }
+  if (data[0] !== 'J') return; var m; try { m = JSON.parse(data.slice(1)); } catch (e) { return; }
+  if (m.t === 'hello'){ g.hello = m; g.chunks = []; }
+  else if (m.t === 'go' && g.hello){
+    try {
+      lsSet('lastblock:name', el('pname').value); QS = QUAL[+el('qual').value] || QUAL[1];
+      var h = g.hello, raw = h.demo ? demoRaw() : parseText(g.chunks.join('')); g.chunks = [];
+      buildWorld(raw, h.name); prep3D();
+      var cs = await readSave('char', charSlug());
+      net.role = 'guest'; net.pid = h.pid; net.others = []; mapSrc = null;
+      startRun(h.ws, cs); el('inviteBtn').classList.add('hidden'); el('replyBox').classList.add('hidden'); el('joinCode').value = ''; el('joinStatus').textContent = '';
+      send(g.dc, {t:'join', name:el('pname').value || 'Survivor', slug:charSlug(), x:P.x, y:P.y});
+      toast('You are visiting ' + h.name + '. What you carry goes home with you.', 6);
+    } catch (e) { el('joinStatus').textContent = 'Could not load the host\'s world: ' + (e.message || e.name); netClose(); }
+  }
+  else if (!inRun) return;
+  else if (m.t === 's') onSnapshot(m);
+  else if (m.t === 'ev') applyEv(m.e);
+  else if (m.t === 'hurt'){ P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; }
+}
+
 /* ================= entering and leaving a world ================= */
 async function enter(raw, name){
   try {
+    netClose();
     lsSet('lastblock:name', el('pname').value); lsSet('lastblock:quality', el('qual').value);
     QS = QUAL[+el('qual').value] || QUAL[1];
     buildWorld(raw, name); prep3D();
     var ws = el('fresh').checked ? null : await readSave('world', slug(name)), cs = await readSave('char', charSlug());
-    el('fresh').checked = false; info(''); startRun(ws, cs);
+    el('fresh').checked = false; info(''); startRun(ws, cs); el('inviteBtn').classList.remove('hidden');
   } catch (e) { fail(e.message || 'Could not load this map.'); }
 }
 function readFile(file){
@@ -1203,23 +1426,23 @@ function readFile(file){
       var text = String(fr.result), raw;
       try { raw = parseText(text); } catch (e) { fail(e.message || 'Could not read this file.'); return; }
       if (dir) fileChain = fileChain.then(function(){ return writeFile('maps', file.name, text); }).catch(function(){});
-      enter(raw, file.name.replace(/\.[^.]+$/, ''));
+      mapSrc = {text:text}; enter(raw, file.name.replace(/\.[^.]+$/, ''));
     }, 30);
   };
   fr.onerror = function(){ fail('Could not read this file.'); };
   fr.readAsText(file);
 }
-function exitToMenu(){
-  saveNow(); running = false; inRun = false; keys = {};
+function exitToMenu(msg){
+  saveNow(); running = false; inRun = false; keys = {}; netClose();
   if (document.exitPointerLock) document.exitPointerLock();
   el('play').classList.add('hidden'); el('prompt').classList.add('hidden'); el('hurt').style.opacity = 0; el('title').classList.remove('hidden');
-  saveInfo(); if (dir) refreshMaps().catch(function(){}); info('Saved.');
+  saveInfo(); if (dir) refreshMaps().catch(function(){}); info(typeof msg === 'string' ? msg : 'Saved.');
 }
-el('menuBtn').addEventListener('click', exitToMenu);
+el('menuBtn').addEventListener('click', function(){ exitToMenu(); });
 el('file').addEventListener('change', function(e){ readFile(e.target.files[0]); e.target.value = ''; });
 window.addEventListener('dragover', function(e){ e.preventDefault(); });
 window.addEventListener('drop', function(e){ e.preventDefault(); if (!running && e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
-el('demo').addEventListener('click', function(){ if (glOK) enter(demoRaw(), 'Demo Town'); });
+el('demo').addEventListener('click', function(){ if (glOK){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); } });
 (function(){
   var n = lsGet('lastblock:name'), q = lsGet('lastblock:quality');
   if (n) el('pname').value = n;
