@@ -60,10 +60,17 @@
   #tFire{right:112px;bottom:142px;width:52px;height:52px}
   #tCade{right:172px;bottom:142px;width:52px;height:52px}
   #tLight{right:186px;bottom:74px;width:52px;height:52px}
+  #tPing{right:232px;bottom:142px;width:52px;height:52px}
   .touchmode #help,.touchmode #lockhint{display:none !important}
   .touchmode #inv{left:50%;transform:translateX(-50%);bottom:6px;max-width:98%;justify-content:center;flex-wrap:nowrap}
   .touchmode #mini{width:110px;height:110px}
   .touchmode #hud{width:170px}
+  .touchmode #hudBtns{position:fixed;left:50%;top:4px;transform:translateX(-50%);white-space:nowrap}
+  .touchmode #hudBtns button{margin-top:0;padding:7px 10px}
+  .touchmode #stats{font-size:10px;line-height:1.35;padding:4px 7px}
+  .touchmode .bar{height:12px;margin-bottom:3px}
+  .touchmode .bar span{font-size:9px;top:0}
+  .touchmode #toast{top:44px;font-size:12px}
   .touchmode #prompt{top:44%}
   textarea{width:100%;box-sizing:border-box;height:58px;font-family:monospace;font-size:11px;background:#12151a;color:#efe9da;border:2px solid #6b7480;margin:6px 0;resize:none;word-break:break-all;user-select:text}
   #inviteBtn{pointer-events:auto;font-size:11px;padding:5px 9px;margin-top:6px;background:#3c4651;color:#efe9da}
@@ -73,7 +80,13 @@
   .irow{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #2c333d}
   .irow span.n{flex:1}
   .irow i{font-style:normal;color:#8fa3b5;font-size:11px}
-  #itemsBtn,#buildBtn{pointer-events:auto;font-size:11px;padding:5px 9px;margin-top:6px;background:#3c4651;color:#efe9da}
+  #chatIn{position:fixed;left:12px;bottom:58px;width:min(340px,70vw);font-family:inherit;font-size:13px;padding:7px;background:#12151a;color:#efe9da;border:2px solid #f2b134;user-select:text}
+  #copMap{position:fixed;inset:0;width:100%;height:100%;background:#5f7a52;touch-action:none}
+  #copBar{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(20,23,27,.9);border:2px solid #f2b134;padding:7px 12px;font-size:13px;text-align:center;max-width:94vw}
+  #copBar button{font-size:12px;padding:5px 9px;margin:4px 2px 0}
+  .copmode #hud,.copmode #mini,.copmode #inv,.copmode #help,.copmode #cross,.copmode #lockhint,.copmode #touch{display:none !important}
+  .touchmode #chatIn{bottom:120px;left:160px}
+  #chatBtn,#itemsBtn,#buildBtn{pointer-events:auto;font-size:11px;padding:5px 9px;margin-top:6px;background:#3c4651;color:#efe9da}
   #invite{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(480px,92vw);background:#1b2028;border:3px solid #f2b134;padding:14px 18px;font-size:13px;color:#cfd5db;z-index:5}
   #invite button{font-size:13px;padding:7px 12px}
   #invStatus,#joinStatus,#mmStatus{min-height:18px;color:#f2b134;margin-top:4px}
@@ -91,13 +104,17 @@
     <div class="bar"><div id="bWater" style="background:#3f95d6"></div><span>Thirst</span></div>
     <div class="bar"><div id="bTemp" style="background:#8fd0a0"></div><span id="tTemp">Warmth</span></div>
     <div id="stats"></div>
-    <button id="menuBtn">Save &amp; exit</button> <button id="inviteBtn">Invite player</button> <button id="itemsBtn">Items</button> <button id="buildBtn">Build</button>
+    <div id="hudBtns"><button id="menuBtn">Save &amp; exit</button> <button id="inviteBtn">Invite player</button> <button id="itemsBtn">Items</button> <button id="buildBtn">Build</button> <button id="chatBtn">Chat</button></div>
   </div>
   <canvas id="mini" width="170" height="170"></canvas>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Mouse: look (arrow keys also turn)<br>Click / Space: swing bat &middot; Right-click / F: shoot<br>Hold E: search, drink &middot; 1 eat &middot; 2 drink &middot; 3 medkit<br>B barricade &middot; C campfire &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; K: items &middot; N: build<br>Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
   <div id="feed"></div>
+  <input id="chatIn" class="hidden" maxlength="120" placeholder="Say something, then press Enter">
+  <canvas id="copMap" class="hidden"></canvas>
+  <div id="copBar" class="hidden"><span id="copTxt"></span><br><button id="copNext" class="alt">Next partner</button><button id="copChat" class="alt">Chat</button><button id="copExit" class="alt">Leave</button></div>
+  <div id="trade" class="modal hidden"></div>
   <div id="invite" class="hidden">
     <b>Invite a player</b>
     <div>1. Send this invite code to your friend. They paste it on their start page under Play together.</div>
@@ -113,7 +130,7 @@
   <div id="chest" class="modal hidden"></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
-    <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button>
+    <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button><button id="tPing">Mark</button>
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-size:11px;color:#8fa3b5">Esc frees the mouse again</span></div>
 </div>
@@ -144,6 +161,7 @@
       <b>Settings</b>
       <div class="prow">
         <label>View distance<select id="qual"><option value="0">Low (phones, older laptops)</option><option value="1">Medium</option><option value="2">High</option></select></label>
+        <label>Goal, for a new world<select id="scen"></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
       </div>
     </div>
@@ -195,6 +213,7 @@
       <b>Play together</b>
       <div>To host, start your world and press <b>Invite player</b>. To join a friend's world, paste their invite code here. Both devices must be on the same Wi-Fi, hotspot or cable.</div>
       <textarea id="joinCode" placeholder="Paste invite code"></textarea>
+      <label class="chk"><input type="checkbox" id="joinCop"> Join as co-pilot: no body in the world; you watch the map and guide a partner (good for a slow device)</label>
       <div class="row"><button id="joinBtn" class="alt">Create reply code</button></div>
       <div id="replyBox" class="hidden">
         <textarea id="replyCode" readonly></textarea>
@@ -208,7 +227,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.3.</p>
   </div>
 </div>
 
@@ -815,6 +834,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
+var VERSION = '0.3';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -856,6 +876,7 @@ function startRun(ws, cs){
   w.nests = {}; wx = {w:0, until:time + DAY/6, tor:null, flash:0}; flares = []; lures = []; w.lastDay = 0;
   if (resumed && !ws.fresh){ (ws.nests || []).forEach(function(i){ if (w.buildings[i]) w.nests[i] = 1; }); if (ws.wx){ wx.w = ws.wx.w | 0; wx.until = +ws.wx.until || 0; } } else pickNests();
   w.total = 0; w.buildings.forEach(function(b){ w.total += b.rolls + 1; }); w.total += w.crates.length;
+  makeVehicles(resumed ? ws.veh : null); makeTraders(); setupScenario(resumed ? ws : null); pings = [];
   manageInteriors(40); makeMini();
   el('title').classList.add('hidden'); el('play').classList.remove('hidden'); el('feed').innerHTML = '';
   running = true; inRun = true; saveT = 20; updateHud();
@@ -866,7 +887,7 @@ function die(){
   for (k in P.items) if (P.items[k] > 0) has = true;
   if (has) dropPack(inv, P.items);
   inv = newInv(false); P.items = {}; P.weapon = null;
-  var bed = world.edits.beds[charSlug()];
+  var bed = world.edits.beds[charSlug()]; if (P.veh) dismount();
   P.x = bed ? bed.x : world.spawn.x; P.y = bed ? bed.y : world.spawn.y; P.hp = 100; P.hunger = 60; P.thirst = 60; P.hurt = 0; P.body = 0; deaths++; if (net.role !== 'host') zombies = [];
   toast('You died. You wake ' + (bed ? 'in your bed' : 'where you first arrived') + '; your pack lies where you fell.', 6); updateHud(); saveNow();
 }
@@ -877,6 +898,8 @@ window.addEventListener('keydown', function(e){
   if (!running || /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) return;
   keys[e.code] = true;
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit');
+  if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
+  if (e.code === 'KeyX') pingAhead();
   if (e.code === 'KeyN') toggleBuild();
   if (e.code === 'KeyL') toggleLight(); if (e.code === 'KeyK') toggleItems(); if (e.code === 'KeyQ') cycleWeapon(); if (e.code === 'KeyG') quickItem();
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
@@ -927,6 +950,7 @@ hold('tShoot', function(){ wantShoot = true; });
 hold('tFire', function(){ place('fire'); });
 hold('tCade', function(){ place('cade'); });
 hold('tLight', toggleLight);
+hold('tPing', function(){ pingAhead(); });
 el('inv').addEventListener('click', function(e){ var n = e.target; while (n && n !== this && !(n.getAttribute && n.getAttribute('data-u'))) n = n.parentNode; if (running && n && n !== this) useItem(n.getAttribute('data-u')); });
 function toggleLight(){ P.light = !P.light; feed(P.light ? 'Flashlight on' : 'Flashlight off', '#cfd5db'); }
 function useItem(k){
@@ -955,6 +979,7 @@ function place(kind){
 
 /* ================= gameplay ================= */
 function findTarget(){
+  if (P.veh) return null;
   var best = null, bd = 2.4, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), i, j, dx, dy, d;
   for (i = 0; i < loaded.length; i++){
     var b = loaded[i]; if (P.x < b.minx - 2.5 || P.x > b.maxx + 2.5 || P.y < b.miny - 2.5 || P.y > b.maxy + 2.5) continue;
@@ -968,6 +993,8 @@ function findTarget(){
     if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = cr; }
   }
   for (i = 0; i < packs.length; i++){ d = Math.hypot(packs[i].x - P.x, packs[i].y - P.y); if (d < bd){ bd = d; best = packs[i]; } }
+  for (i = 0; i < world.traders.length; i++){ d = Math.hypot(world.traders[i].x - P.x, world.traders[i].y - P.y); if (d < Math.min(bd, 2.6)){ bd = d; best = world.traders[i]; } }
+  for (i = 0; i < world.vehicles.length; i++){ var vh = world.vehicles[i]; if (time - (vh.rd || -9) < 0.6) continue; d = Math.hypot(vh.x - P.x, vh.y - P.y); if (d < Math.min(bd, 2.3)){ bd = d; best = vh; } }
   for (i = 0; i < world.edits.chests.length; i++){ var ch = world.edits.chests[i]; d = Math.hypot(ch.x - P.x, ch.y - P.y); if (d < Math.min(bd, 2)){ bd = d; best = ch; } }
   for (i = 0; i < loaded.length; i++) if (world.nests[loaded[i].id]){ var co = nestCore(loaded[i]); d = Math.hypot(co.x - P.x, co.y - P.y); if (d < 2.6){ bd = 0; best = co; } }
   if (best) return best;
@@ -978,7 +1005,7 @@ function loot(o){
   if (o.nest){ clearNest(o.b); return; }
   if (o.pack){ takePack(o); return; }
   var cat, rolls;
-  if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
+  if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); findPart(o.b); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
   searched++; addXp('scav', 5);
   var tab = LOOT[cat], tot = 0, got = {}, k, n = 0;
   for (k in tab) tot += tab[k];
@@ -1090,7 +1117,6 @@ function spreadNests(){
     if (best){ setNest(best.id, 1); emit({k:'nest', b:best.id, on:1}); toast('A nest has spread to another building.', 4); }
   });
 }
-function checkScenario(){}
 
 /* ================= weather and body temperature ================= */
 var SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'], SBASE = [58, 86, 55, 28], WNAME = ['Clear', 'Rain', 'Thunderstorm', 'Heat wave', 'Ice storm'];
@@ -1129,6 +1155,9 @@ function update(dt){
   time += dt;
   var hour = (8 + time/DAY*24) % 24, day = Math.floor((8 + time/DAY*24)/24) + 1, i;
   dark = (hour >= 20 || hour < 5) ? 1 : hour >= 18 ? (hour - 18)/2 : hour < 7 ? 1 - (hour - 5)/2 : 0;
+  for (i = pings.length - 1; i >= 0; i--){ pings[i].life -= dt; if (pings[i].life <= 0) pings.splice(i, 1); }
+  if (P.cop){ copTick(dt); return; }
+  var ePress = keys.KeyE && !P.eWas; P.eWas = !!keys.KeyE; if (P.veh && ePress){ dismount(); ePress = false; }
   if (keys.ArrowLeft) P.yaw -= 2.2*dt; if (keys.ArrowRight) P.yaw += 2.2*dt;
   if (keys.ArrowUp) P.pitch = Math.min(1.45, P.pitch + 1.4*dt); if (keys.ArrowDown) P.pitch = Math.max(-1.45, P.pitch - 1.4*dt);
   var mf = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) - stick.y, ms = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + stick.x;
@@ -1136,8 +1165,8 @@ function update(dt){
   if (net.role !== 'guest') weatherTick(dt, day);
   bodyTick(dt, hour);
   if (mf || ms){
-    var l = Math.hypot(mf, ms), sp = (P.swim ? 2.4 : 5.2)*moveMul()*dt*Math.min(1, l)/l, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw);
-    stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, 0.35); P.bob += dt*10;
+    var l = Math.hypot(mf, ms), V = P.veh, sp = (V ? vehSpeed(dt) : (P.swim ? 2.4 : 5.2)*moveMul())*dt*Math.min(1, l)/l, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y;
+    stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); if (!V) P.bob += dt*10; else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
   var en = 1 - 0.04*lvl('endur'); if (Math.floor(time/10) !== P.xpT){ P.xpT = Math.floor(time/10); addXp('endur', 3); }
@@ -1152,16 +1181,19 @@ function update(dt){
   if (keys.KeyE && target){
     if (target === 'water'){ if (drinkCd <= 0){ drinkCd = 0.8; P.thirst = Math.min(100, P.thirst + 30); feed('Drank', ITEMS.water[1]); } }
     else if (target.chest){ openChest(target); keys.KeyE = false; }
+    else if (target.trader){ openTrade(); keys.KeyE = false; }
+    else if (target.veh){ if (ePress) mount(target); }
     else { prog += dt/(target.nest ? 4 : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; } }
   } else prog = 0;
   var pr = el('prompt');
   if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
-    el('ptxt').textContent = target === 'water' ? 'Hold E to drink' : (target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
+    el('ptxt').textContent = target === 'water' ? 'Hold E to drink' : (target.veh ? (target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
   } else pr.classList.add('hidden');
 
-  if ((wantSwing || keys.Space) && P.atkCd <= 0) swing();
-  if (wantShoot && P.shootCd <= 0) shoot();
+  if ((wantSwing || keys.Space) && P.atkCd <= 0 && !P.veh) swing();
+  if (wantShoot && P.shootCd <= 0 && !P.veh) shoot();
+  scenT -= dt; if (scenT <= 0){ scenT = 0.5; checkScenario(); }
   wantSwing = wantShoot = false;
 
   var night = dark > 0.5;
@@ -1239,7 +1271,7 @@ function updateHud(){
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
   el('stats').innerHTML = 'Day ' + (Math.floor(hrs/24) + 1) + ' &middot; ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min + (dark > 0.5 ? ' &middot; <b style="color:#ff8f7a">NIGHT</b>' : '') +
-    '<br>Searched: ' + searched + ' / ' + world.total + '<br>' + SEASONS[season()] + ' &middot; ' + Math.round(ambientF((8 + time/DAY*24) % 24)) + '&deg;F &middot; ' + WNAME[wx.w] + '<br>Aliens killed: ' + kills + ' &middot; Nests: ' + Object.keys(world.nests).length + (pb ? '<br>Inside: ' + (pb.name || CAT[pb.cat].label) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '') + (deaths ? '<br>Deaths: ' + deaths : '') + (net.role ? '<br>Players: ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
+    '<br>Searched: ' + searched + ' / ' + world.total + '<br>' + SEASONS[season()] + ' &middot; ' + Math.round(ambientF((8 + time/DAY*24) % 24)) + '&deg;F &middot; ' + WNAME[wx.w] + '<br>Aliens killed: ' + kills + ' &middot; Nests: ' + Object.keys(world.nests).length + '<br>' + goalText() + (pb ? '<br>Inside: ' + (pb.name || CAT[pb.cat].label) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '') + (deaths ? '<br>Deaths: ' + deaths : '') + (net.role ? '<br>Players: ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
   var h = '';
   for (var k in ITEMS) if (CORE[k] || inv[k] > 0) h += '<div class="slot"' + (ITEMS[k][2] && ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><span class="sw" style="background:' + ITEMS[k][1] + '"></span>' + ITEMS[k][0] + ' ' + inv[k] + (ITEMS[k][2] ? ' <b>[' + ITEMS[k][2] + ']</b>' : '') + '</div>';
   el('inv').innerHTML = h;
@@ -1268,6 +1300,9 @@ function drawMini(){
   c.fillStyle = '#b05cff'; for (var nk in world.nests){ var nb = world.buildings[nk]; if (nb) c.fillRect(nb.cx*miniK + miniBg.ox - 2, nb.cy*miniK + miniBg.oy - 2, 4, 4); }
   c.fillStyle = '#ff5a3c'; for (var i = 0; i < zombies.length; i++) c.fillRect(zombies[i].x*miniK + miniBg.ox - 1, zombies[i].y*miniK + miniBg.oy - 1, 2, 2);
   c.fillStyle = '#4fd0ff'; otherPlayers().forEach(function(o){ c.fillRect(o.x*miniK + miniBg.ox - 2, o.y*miniK + miniBg.oy - 2, 5, 5); });
+  c.fillStyle = '#5dff8a'; world.traders.forEach(function(t){ c.fillRect(t.x*miniK + miniBg.ox - 2, t.y*miniK + miniBg.oy - 2, 4, 4); });
+  c.fillStyle = '#ffe14a'; pings.forEach(function(q){ c.fillRect(q.x*miniK + miniBg.ox - 2, q.y*miniK + miniBg.oy - 2, 5, 5); });
+  if (world.scen.type === 'escape'){ world.partB.forEach(function(id){ if (!world.found[id]){ var pb2 = world.buildings[id]; c.fillRect(pb2.cx*miniK + miniBg.ox - 2, pb2.cy*miniK + miniBg.oy - 2, 4, 4); } }); c.strokeStyle = '#fff'; c.lineWidth = 2; c.strokeRect(world.evac.x*miniK + miniBg.ox - 4, world.evac.y*miniK + miniBg.oy - 4, 8, 8); }
   c.save(); c.translate(px, py); c.rotate(P.yaw); c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 1;
   c.beginPath(); c.moveTo(7, 0); c.lineTo(-4, -4.5); c.lineTo(-2, 0); c.lineTo(-4, 4.5); c.closePath(); c.fill(); c.stroke(); c.restore();
 }
@@ -1353,7 +1388,7 @@ function render(){
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   var cp = Math.cos(P.pitch), f = [Math.cos(P.yaw)*cp, Math.sin(P.pitch), Math.sin(P.yaw)*cp];
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
-  var e = [P.x, (P.swim ? 0.85 : 1.65) + Math.sin(P.bob)*0.03, P.y];
+  var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65) + Math.sin(P.bob)*0.03, P.y];
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
   var t = 1/Math.tan(1.22/2), nr = 0.08, fr = 700, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   gl.uniformMatrix4fv(U.vp, false, mul(Pm, V)); gl.uniform3fv(U.cam, e); gl.uniform3fv(U.fwd, f); gl.uniform3fv(U.sky, sky);
@@ -1376,7 +1411,7 @@ function render(){
     m.pyr(tx, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tx, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
   }
   for (i = 0; i < zombies.length; i++) drawAlien(m, zombies[i]);
-  drawItemsFx(m, now); drawBuilt(m);
+  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now);
   drawWorldFx(m, e, now);
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop) drawPerson(m, ops[i], lookOf(ops[i]), now);
@@ -1405,6 +1440,11 @@ function render(){
   var vm = new Mesh(), k = P.swing > 0 ? 1 - P.swing/0.22 : 0, sw = Math.sin(k*3.1416);
   var at = function(a, b, c){ return [e[0] + f[0]*a + s[0]*b + u[0]*c, e[1] + f[1]*a + s[1]*b + u[1]*c, e[2] + f[2]*a + s[2]*b + u[2]*c]; };
   var ax = function(a, b, c){ return [f[0]*a + s[0]*b + u[0]*c, f[1]*a + s[1]*b + u[1]*c, f[2]*a + s[2]*b + u[2]*c]; };
+  if (P.veh){
+    var hb = at(0.55, 0, -0.42); vm.box(hb[0], hb[1], hb[2], ax(0.02, 0, 0), ax(0, P.veh.t ? 0.75 : 0.3, 0), ax(0, 0, P.veh.t ? 0.12 : 0.015), C(P.veh.t ? '#2a2d33' : '#8a9199'));
+    if (P.veh.t){ var sw2 = at(0.5, -0.22, -0.3); vm.box(sw2[0], sw2[1], sw2[2], ax(0.015, 0, 0), ax(0, 0.11, 0), ax(0, 0, 0.11), C('#16181c')); }
+    upload(vm, vmb); drawMesh(vmb); return;
+  }
   var bc2 = at(0.75 + sw*0.15, 0.34 - sw*0.5, -0.27 - sw*0.05);
   var wdz = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null, wl = wdz && wdz.shape === 3 ? 1.5 : 1, wt = wdz && wdz.shape === 1 ? 0.4 : 1;
   vm.box(bc2[0], bc2[1], bc2[2], ax(0.12*wl, (-0.08*sw - 0.01)*wl, (0.17 - sw*0.14)*wl), ax(0, 0.017*wt, 0), ax(-0.014, 0, 0.012).map(function(v){ return v*(wdz && wdz.shape === 1 ? 2.2 : 1); }), C(wdz ? wdz.color : '#c9a56a'));
@@ -1420,7 +1460,7 @@ function render(){
 var lastTs = 0;
 function frame(ts){
   var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
-  if (running){ update(dt); if (running){ render(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } }
+  if (running){ update(dt); if (running){ if (P.cop) drawCop(); else { render(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
   requestAnimationFrame(frame);
 }
 function fail(msg){ el('status').style.color = '#ff8f7a'; el('status').textContent = msg; }
@@ -1450,7 +1490,7 @@ function worldSave(){
   var got = {}, cr = [], tr = [];
   world.buildings.forEach(function(b){ var ks = Object.keys(b.got); if (ks.length) got[b.id] = ks.map(Number); });
   world.crates.forEach(function(c, i){ if (c.looted) cr.push(i); }); world.trees.forEach(function(t, i){ if (!t.alive) tr.push(i); });
-  return {v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, fires:fires, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, nests:Object.keys(world.nests).map(Number), wx:{w:wx.w, until:wx.until}, edits:world.edits};
+  return {v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, fires:fires, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), wx:{w:wx.w, until:wx.until}, edits:world.edits};
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
@@ -1458,6 +1498,7 @@ function charSave(){
 }
 function saveNow(){
   if (!inRun || !world || !P) return;
+  if (P.cop) return;
   writeSave('char', charSlug(), charSave());
   if (net.role === 'guest') return;
   worldPlayers[charSlug()] = {x:P.x, y:P.y, yaw:P.yaw};
@@ -1542,7 +1583,7 @@ function stats(d){
 function weaponStats(){ var d = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null; return d ? stats(d) : {dmg:2, reach:2.0, cd:0.45}; }
 function cleanPack(p){
   if (!p || !p.lastblockPack) return null; var id = slug(p.id || p.name || 'pack').slice(0, 40);
-  return {lastblockPack:1, id:id, name:txt(p.name, 40) || id, author:txt(p.author, 16) || 'Unknown', version:txt(p.version, 10) || '1', on:p.on !== false, items:(Array.isArray(p.items) ? p.items : []).map(cleanDesign).filter(Boolean).slice(0, 200)};
+  return {scenarios:(Array.isArray(p.scenarios) ? p.scenarios : []).map(cleanScen).filter(Boolean).slice(0, 10), lastblockPack:1, id:id, name:txt(p.name, 40) || id, author:txt(p.author, 16) || 'Unknown', version:txt(p.version, 10) || '1', on:p.on !== false, items:(Array.isArray(p.items) ? p.items : []).map(cleanDesign).filter(Boolean).slice(0, 200)};
 }
 function savePack(p){
   var t = JSON.stringify(p); lsSet('lastblock:pack:' + p.id, t);
@@ -1702,10 +1743,10 @@ el('packList').addEventListener('click', function(e){
 });
 function importPackText(t, quiet){
   var p = null; try { p = cleanPack(JSON.parse(t)); } catch (e) {}
-  if (!p || !p.items.length){ if (!quiet) el('wStatus').textContent = 'That file is not a Last Block pack.'; return false; }
+  if (!p || !(p.items.length || p.scenarios.length)){ if (!quiet) el('wStatus').textContent = 'That file is not a Last Block pack.'; return false; }
   if (p.id === 'workshop' || p.id === 'collected') p.id += '-imported';
   p.items.forEach(function(d){ if (d.unique) d.made = true; });
-  PACKS[p.id] = p; lsSet('lastblock:pack:' + p.id, JSON.stringify(p)); rebuildDesigns(); renderPacks();
+  PACKS[p.id] = p; lsSet('lastblock:pack:' + p.id, JSON.stringify(p)); rebuildDesigns(); renderPacks(); fillScen();
   if (!quiet) el('wStatus').textContent = 'Imported ' + p.name + ' (' + p.items.length + ' items).'; return true;
 }
 el('packFile').addEventListener('change', function(e){
@@ -1831,6 +1872,174 @@ async function takeEdits(m, g){
   toast('Saved the host\'s building changes for your own copy of ' + m.map + '.', 6);
 }
 
+/* ================= radios: chat and map markers reach 60 m, or any distance when both sides carry a radio ================= */
+var pings = [], scenT = 0;
+function hears(sx, sy, sr, rx, ry, rr){ return Math.hypot(sx - rx, sy - ry) <= 60 || (sr && rr); }
+function showMsg(m){
+  if (m.t === 'chat') feed(txt(m.n, 16) + ': ' + txt(m.txt, 120), '#efe9da');
+  else { pings.push({x:+m.x, y:+m.y, life:40, n:txt(m.n, 16)}); if (pings.length > 20) pings.shift(); feed(txt(m.n, 16) + ' marked a spot on the map', '#ffe14a'); }
+}
+function relay(m, from){
+  if (from && (m.cop || hears(m.sx, m.sy, m.r, P.x, P.y, inv.radio > 0))) showMsg(m);
+  net.peers.forEach(function(p){ if (p !== from && p.ready && (m.cop || p.cop || hears(m.sx, m.sy, m.r, p.x, p.y, p.rd))) send(p.dc, m); });
+}
+function sendMsg(m){
+  m.n = el('pname').value || 'Survivor'; m.sx = P.x; m.sy = P.y; m.r = inv.radio > 0 ? 1 : 0; m.cop = P.cop ? 1 : 0; m.pt = copPartner; showMsg(m);
+  if (net.role === 'host') relay(m, null); else if (net.role === 'guest') send(net.host.dc, m);
+}
+function pingAhead(){
+  var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), x = P.x, y = P.y, n = 0; while (n < 48 && !hitWall(x + fx*0.25, y + fy*0.25)){ x += fx*0.25; y += fy*0.25; n++; }
+  sendMsg({t:'ping', x:r2(x), y:r2(y)});
+}
+function openChat(){ var c = el('chatIn'); c.classList.remove('hidden'); c.value = ''; keys = {}; if (document.exitPointerLock) document.exitPointerLock(); c.focus(); }
+el('chatIn').addEventListener('keydown', function(e){
+  if (e.key === 'Enter'){ var v = this.value.trim(); if (v) sendMsg({t:'chat', txt:v.slice(0, 120)}); this.classList.add('hidden'); this.blur(); }
+  else if (e.key === 'Escape'){ this.classList.add('hidden'); this.blur(); }
+  e.stopPropagation();
+});
+el('chatBtn').addEventListener('click', openChat);
+
+/* ================= co-pilot: no body; a top-down map centred on a partner, tap to mark spots ================= */
+var copPartner = 0, copCv = el('copMap'), CS = 4;
+function startCop(){
+  P.cop = true; copPartner = 0; document.body.classList.add('copmode'); el('copMap').classList.remove('hidden'); el('copBar').classList.remove('hidden');
+  toast('You are a co-pilot. Tap the map to mark spots for your partner.', 6);
+}
+function copTarget(){ for (var i = 0; i < net.others.length; i++) if (net.others[i].id === copPartner) return net.others[i]; return net.others[0] || null; }
+function copTick(dt){
+  var t = copTarget(); if (t){ copPartner = t.id; P.x = t.x; P.y = t.y; }
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i], k = Math.min(1, dt*12); z.x += (z.tx - z.x)*k; z.y += (z.ty - z.y)*k; }
+  netTick(dt); if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
+}
+function drawCop(){
+  var c = copCv.getContext('2d'); if (copCv.width !== W || copCv.height !== H){ copCv.width = W; copCv.height = H; }
+  var ox = W/2 - P.x*CS, oy = H/2 - P.y*CS, x0 = -ox/CS, y0 = -oy/CS, x1 = (W - ox)/CS, y1 = (H - oy)/CS, i, t = copTarget();
+  c.fillStyle = '#5f7a52'; c.fillRect(0, 0, W, H);
+  world.areas.forEach(function(a){ if (a.maxx < x0 || a.minx > x1 || a.maxy < y0 || a.miny > y1) return; c.fillStyle = AREA_COL[a.kind]; path2(c, a.pts, CS, ox, oy, true); c.fill(); });
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  world.roads.forEach(function(r){ if (r.maxx < x0 || r.minx > x1 || r.maxy < y0 || r.miny > y1) return; c.strokeStyle = ROAD_COL[r.kind]; c.lineWidth = Math.max(1, r.w*CS); path2(c, r.pts, CS, ox, oy, false); c.stroke(); });
+  for (i = 0; i < world.buildings.length; i++){ var b = world.buildings[i]; if (b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; c.fillStyle = world.nests[b.id] ? '#6a3f9a' : b.col; path2(c, b.pts, CS, ox, oy, true); c.fill(); c.strokeStyle = 'rgba(20,16,12,.7)'; c.lineWidth = 1; c.stroke(); }
+  c.fillStyle = '#8a6a48'; for (i = 0; i < world.wallSegs.length; i += 4){ c.beginPath(); c.moveTo(world.wallSegs[i]*CS + ox, world.wallSegs[i+1]*CS + oy); c.lineTo(world.wallSegs[i+2]*CS + ox, world.wallSegs[i+3]*CS + oy); c.strokeStyle = '#8a6a48'; c.lineWidth = 3; c.stroke(); }
+  c.fillStyle = '#5dff8a'; world.traders.forEach(function(q){ c.fillRect(q.x*CS + ox - 4, q.y*CS + oy - 4, 8, 8); });
+  for (i = 0; i < zombies.length; i++){ var z = zombies[i], zr = z.k === 2 ? 9 : z.k === 1 ? 5 : 3; c.fillStyle = z.k === 1 ? '#000' : '#ff3a2a'; c.beginPath(); c.arc(z.x*CS + ox, z.y*CS + oy, zr, 0, 6.283); c.fill(); }
+  c.font = 'bold 12px Verdana'; c.textAlign = 'center';
+  pings.forEach(function(q){ c.strokeStyle = '#ffe14a'; c.lineWidth = 3; c.beginPath(); c.arc(q.x*CS + ox, q.y*CS + oy, 9, 0, 6.283); c.stroke(); });
+  net.others.forEach(function(o){ var w = net.who[o.id] || {}; c.fillStyle = o.id === copPartner ? '#fff' : '#4fd0ff'; c.beginPath(); c.arc(o.x*CS + ox, o.y*CS + oy, 6, 0, 6.283); c.fill(); c.fillStyle = '#10161c'; c.fillText(w.name || 'Player', o.x*CS + ox + 1, o.y*CS + oy - 9); c.fillStyle = '#fff'; c.fillText(w.name || 'Player', o.x*CS + ox, o.y*CS + oy - 10); });
+  var wn = t ? (net.who[t.id] || {}).name || 'your partner' : 'nobody yet';
+  el('copTxt').textContent = 'Co-pilot for ' + wn + (t ? ' \u00b7 Health ' + (t.hp | 0) : '') + ' \u00b7 Red dots are aliens, black are stalkers \u00b7 Tap the map to mark a spot';
+}
+copCv.addEventListener('pointerdown', function(e){ if (!running || !P.cop) return; sendMsg({t:'ping', x:r2((e.clientX - W/2)/CS + P.x), y:r2((e.clientY - H/2)/CS + P.y)}); });
+el('copNext').addEventListener('click', function(){ var ids = net.others.map(function(o){ return o.id; }); if (ids.length) copPartner = ids[(ids.indexOf(copPartner) + 1) % ids.length]; });
+el('copChat').addEventListener('click', openChat);
+el('copExit').addEventListener('click', function(){ exitToMenu('You left the session.'); });
+
+/* ================= vehicles: bicycles are quiet; cars are fast, need fuel, and draw aliens ================= */
+function makeVehicles(saved){
+  var w = world, list = [], nb = 0, nc = 0;
+  w.buildings.forEach(function(b){
+    if (!b.door || b.gone) return; var h1 = hash(b.id, 11, 2), d = b.door, tx = -d.ny, ty = d.nx, x, y;
+    if (h1 < 0.06 && nb < 300){ x = d.x - d.nx*1.3 + tx*2.2; y = d.y - d.ny*1.3 + ty*2.2; if (!circ(x, y, 0.7)){ list.push({veh:true, id:'b' + b.id, t:0, name:'the bicycle', x:x, y:y, yaw:Math.atan2(ty, tx), fuel:0}); nb++; } }
+    else if (h1 > 0.975 && nc < 120){ x = d.x - d.nx*5 - tx*2.5; y = d.y - d.ny*5 - ty*2.5; if (!circ(x, y, 1.6)){ list.push({veh:true, id:'c' + b.id, t:1, name:'the car', x:x, y:y, yaw:Math.atan2(ty, tx), fuel:Math.round(30 + hash(b.id, 12, 2)*70)}); nc++; } }
+  });
+  w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = +s2[3] || 0; } });
+}
+function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; }); return o; }
+function mount(v){ P.veh = v; P.x = v.x; P.y = v.y; v.rd = time; el('items').classList.add('hidden'); feed(v.t ? 'Driving. Fuel for about ' + Math.round(v.fuel) + ' s. Press E to get out.' : 'Riding. Press E to get off.', '#cfd5db'); }
+function dismount(){
+  var v = P.veh; if (!v) return; P.veh = null; v.x = P.x; v.y = P.y; v.rd = -9;
+  var sx = -Math.sin(v.yaw), sy = Math.cos(v.yaw), r0 = v.t ? 1.7 : 0.9; if (!circ(P.x + sx*r0, P.y + sy*r0, 0.35)){ P.x += sx*r0; P.y += sy*r0; } else if (!circ(P.x - sx*r0, P.y - sy*r0, 0.35)){ P.x -= sx*r0; P.y -= sy*r0; }
+  emit({k:'veh', id:v.id, x:r2(v.x), y:r2(v.y), yaw:r2(v.yaw), fuel:Math.round(v.fuel)});
+}
+function vehSpeed(dt){
+  var v = P.veh; if (P.swim) return 1.2; if (!v.t) return 10.5;
+  if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = 60; feed('Refuelled the car', ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. Find fuel in workshops or buy it from a trader.', 4); } return 0; } }
+  v.dry = false; return 16;
+}
+function vehMoved(v, dx, dy, dt){
+  var d = Math.hypot(dx, dy); v.x = P.x; v.y = P.y; v.rd = time; if (d < 0.002) return; v.yaw = Math.atan2(dy, dx);
+  if (v.t){ v.fuel = Math.max(0, v.fuel - dt); P.noise = Math.max(P.noise, 1); for (var i = 0; i < zombies.length; i++){ var z = zombies[i], zx = z.x - P.x, zy = z.y - P.y, zd = Math.hypot(zx, zy) || 0.001; if (zd < 1.3 + AK[z.k].r && z.hurt <= 0) hitZombie(z, 6, zx/zd*12, zy/zd*12); } }
+}
+/* ================= traders: fixed posts that swap goods for scrap ================= */
+var BUY = [['food', 1, 3], ['water', 1, 3], ['medkit', 1, 7], ['ammo', 4, 5], ['coat', 1, 8], ['fuel', 1, 6], ['radio', 1, 5]], SELL = [['food', 1, 1], ['water', 1, 1], ['medkit', 1, 3], ['wood', 2, 1], ['fuel', 1, 2], ['coat', 1, 3]];
+function makeTraders(){
+  var w = world, c = [];
+  w.buildings.forEach(function(b){ if (b.door && !b.gone && !w.nests[b.id] && (b.cat === 'shop' || b.cat === 'food')) c.push([hash(b.id, 13, 4), b]); });
+  if (!c.length) w.buildings.forEach(function(b){ if (b.door && !b.gone && !w.nests[b.id] && b.area > 120) c.push([hash(b.id, 13, 4), b]); });
+  c.sort(function(a, b){ return a[0] - b[0]; });
+  w.traders = c.slice(0, Math.max(1, Math.min(6, Math.round(w.buildings.length/150)))).map(function(a, i){ var d = a[1].door; return {trader:true, name:'the trader', id:i, x:d.x - d.nx*1.6 - d.ny*1.6, y:d.y - d.ny*1.6 + d.nx*1.6, yaw:Math.atan2(-d.ny, -d.nx)}; });
+}
+function openTrade(){ el('trade').classList.remove('hidden'); if (document.exitPointerLock) document.exitPointerLock(); renderTrade(); }
+function renderTrade(){
+  var h = '<b>Trading post</b> <button id="trClose" class="alt" style="float:right">Close</button><div>You have ' + inv.scrap + ' scrap.</div><h3>Buy</h3>';
+  BUY.forEach(function(r, i){ h += '<div class="irow"><span class="sw" style="background:' + ITEMS[r[0]][1] + '"></span><span class="n">' + ITEMS[r[0]][0] + (r[1] > 1 ? ' &times;' + r[1] : '') + '</span><i>' + r[2] + ' scrap</i><button data-a="buy" data-id="' + i + '"' + (inv.scrap < r[2] ? ' disabled' : '') + '>Buy</button></div>'; });
+  h += '<h3>Sell</h3>';
+  SELL.forEach(function(r, i){ h += '<div class="irow"><span class="sw" style="background:' + ITEMS[r[0]][1] + '"></span><span class="n">' + ITEMS[r[0]][0] + (r[1] > 1 ? ' &times;' + r[1] : '') + ' <i>you have ' + inv[r[0]] + '</i></span><i>+' + r[2] + ' scrap</i><button class="alt" data-a="sell" data-id="' + i + '"' + (inv[r[0]] < r[1] ? ' disabled' : '') + '>Sell</button></div>'; });
+  el('trade').innerHTML = h;
+}
+el('trade').addEventListener('click', function(e){
+  var t = e.target; if (t.id === 'trClose'){ el('trade').classList.add('hidden'); return; }
+  var a = t.getAttribute && t.getAttribute('data-a'), r; if (!a || !running) return;
+  if (a === 'buy'){ r = BUY[t.getAttribute('data-id') | 0]; if (inv.scrap >= r[2]){ inv.scrap -= r[2]; inv[r[0]] += r[1]; } }
+  else { r = SELL[t.getAttribute('data-id') | 0]; if (inv[r[0]] >= r[1]){ inv[r[0]] -= r[1]; inv.scrap += r[2]; } }
+  renderTrade(); updateHud();
+});
+/* ================= scenarios: the long-term goal of a world, chosen when the world is created ================= */
+var SCEN0 = [{id:'endless', name:'Endless: survive as long as you can', type:'endless', parts:0}, {id:'reclaim', name:'Reclaim: destroy every nest', type:'reclaim', parts:0}, {id:'escape', name:'Escape: find 3 beacon parts, reach the evacuation point', type:'escape', parts:3}];
+function cleanScen(sc){ if (!sc || !/^(endless|reclaim|escape)$/.test(sc.type)) return null; return {id:slug(sc.id || sc.name || sc.type).slice(0, 40), name:txt(sc.name, 70) || sc.type, type:sc.type, parts:Math.max(1, Math.min(8, sc.parts | 0 || 3))}; }
+function scenList(){ var l = SCEN0.slice(); for (var k in PACKS) if (PACKS[k].on) (PACKS[k].scenarios || []).forEach(function(sc){ l.push(sc); }); return l; }
+function fillScen(){ var s0 = el('scen'), cur = s0.value || lsGet('lastblock:scen') || 'endless'; s0.innerHTML = scenList().map(function(sc){ return '<option value="' + sc.id + '">' + sc.name + '</option>'; }).join(''); s0.value = cur; if (!s0.value) s0.value = 'endless'; }
+function setupScenario(ws){
+  var w = world, sc = ws && ws.scen ? cleanScen(ws.scen) : null;
+  if (!sc){ var id = el('scen').value; lsSet('lastblock:scen', id); sc = scenList().filter(function(q){ return q.id === id; })[0] || SCEN0[0]; }
+  w.scen = sc; w.found = {}; w.won = !!(ws && ws.won); w.partB = []; w.evac = {x:0, y:0};
+  if (sc.type === 'escape'){
+    var c = []; w.buildings.forEach(function(b){ if (b.door && !b.gone && !w.nests[b.id] && b.area > 70 && Math.hypot(b.cx - w.spawn.x, b.cy - w.spawn.y) > 50) c.push([hash(b.id, 17, 9), b.id]); });
+    c.sort(function(a, b){ return a[0] - b[0]; }); w.partB = c.slice(0, sc.parts).map(function(a){ return a[1]; });
+    var best = -1; [[w.minx, w.miny], [w.maxx, w.miny], [w.minx, w.maxy], [w.maxx, w.maxy]].forEach(function(p){ var d = Math.hypot(p[0] - w.spawn.x, p[1] - w.spawn.y); if (d > best){ best = d; w.evac = {x:p[0] + (p[0] < 0 ? -12 : 12), y:p[1] + (p[1] < 0 ? -12 : 12)}; } });
+    (ws && ws.found || []).forEach(function(i){ if (w.partB.indexOf(i) >= 0) w.found[i] = 1; });
+  }
+}
+function partsLeft(){ var n = 0; world.partB.forEach(function(id){ if (!world.found[id]) n++; }); return n; }
+function findPart(b){
+  if (world.scen.type !== 'escape' || world.partB.indexOf(b.id) < 0 || world.found[b.id]) return;
+  world.found[b.id] = 1; emit({k:'part', b:b.id}); var left = partsLeft();
+  toast('Beacon part found. ' + (left ? left + ' more to find.' : 'You have them all: head for the evacuation point at the edge of the map.'), 6);
+}
+function goalText(){
+  var sc = world.scen; if (world.won) return 'Goal complete';
+  if (sc.type === 'reclaim') return 'Goal: destroy every nest';
+  if (sc.type === 'escape'){ var left = partsLeft(); return left ? 'Goal: beacon parts ' + (world.partB.length - left) + ' / ' + world.partB.length : 'Goal: reach the evacuation point'; }
+  return 'Goal: survive';
+}
+function winWorld(remote){
+  if (world.won) return; world.won = true; if (!remote) emit({k:'won'});
+  toast((world.scen.type === 'reclaim' ? 'Every nest is destroyed. The city is yours again.' : 'The beacon is lit and help is on the way. You made it out.') + ' This world stays open; keep playing as long as you like.', 12); saveNow();
+}
+function checkScenario(){
+  if (!world.scen || world.won || P.cop) return; var sc = world.scen;
+  if (sc.type === 'reclaim' && net.role !== 'guest' && !Object.keys(world.nests).length) winWorld(false);
+  else if (sc.type === 'escape' && world.partB.length && !partsLeft() && Math.hypot(P.x - world.evac.x, P.y - world.evac.y) < 9) winWorld(false);
+}
+/* vehicles, traders, markers and goal beacons drawn each frame */
+function drawExtras(m, now){
+  var i, w = world;
+  for (i = 0; i < w.vehicles.length; i++){
+    var v = w.vehicles[i]; if (v === P.veh || Math.abs(v.x - P.x) > 130 || Math.abs(v.y - P.y) > 130) continue;
+    if (!v.t){ m.ybox(v.x, v.y, v.yaw, 0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, -0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 0.55, 0.04, 0.035, C('#c8553a')); m.ybox(v.x, v.y, v.yaw, 0.45, 0, 0.95, 0.03, 0.03, 0.25, C('#8a9199')); m.ybox(v.x, v.y, v.yaw, -0.3, 0, 0.9, 0.12, 0.03, 0.07, C('#16181c')); }
+    else { var cc = C(['#8a2f2f', '#2f5f8a', '#6f7480', '#c9b458', '#3f6b4a'][Math.floor(hash(i, 3, 8)*5)]);
+      m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 2.0, 0.34, 0.85, cc); m.ybox(v.x, v.y, v.yaw, -0.2, 0, 1.2, 1.0, 0.26, 0.78, C('#2f4558'));
+      for (var q = 0; q < 4; q++) m.ybox(v.x, v.y, v.yaw, q < 2 ? 1.25 : -1.25, q % 2 ? 0.86 : -0.86, 0.32, 0.32, 0.32, 0.1, C('#16181c')); }
+  }
+  for (i = 0; i < w.traders.length; i++){ var t = w.traders[i]; if (Math.abs(t.x - P.x) > 120 || Math.abs(t.y - P.y) > 120) continue; drawPerson(m, {x:t.x, y:t.y, yaw:t.yaw, id:t.id, mv:0, sw:0}, {build:1, skin:(t.id*2) % 5, shirt:'#3f8f5a', pants:'#3a3f47', hat:1}, now); m.al = 128; m.ybox(t.x, t.y, now*2, 0, 0, 2.5, 0.1, 0.1, 0.1, C('#5dff8a')); m.al = 255; }
+  m.al = 128;
+  for (i = 0; i < pings.length; i++) m.ybox(pings[i].x, pings[i].y, now, 0, 0, 6, 0.06, 6, 0.06, C('#ffe14a'));
+  if (w.scen.type === 'escape'){
+    w.partB.forEach(function(id){ if (w.found[id]) return; var b = w.buildings[id]; if (Math.abs(b.cx - P.x) < 220 && Math.abs(b.cy - P.y) < 220) m.ybox(b.cx, b.cy, now, 0, 0, b.h + 2.2 + Math.sin(now*2)*0.3, 0.4, 0.4, 0.4, C('#ffe14a')); });
+    if (Math.abs(w.evac.x - P.x) < 400 && Math.abs(w.evac.y - P.y) < 400) m.ybox(w.evac.x, w.evac.y, now*0.5, 0, 0, 20, 0.5, 20, 0.5, C('#ffffff'));
+  }
+  m.al = 255;
+}
+
 /* ================= multiplayer: devices connect directly; the two codes are exchanged by hand ================= */
 function send(dc, obj){ if (dc && dc.readyState === 'open'){ try { dc.send('J' + JSON.stringify(obj)); } catch (e) {} } }
 function broadcast(obj, except){ net.peers.forEach(function(p){ if (p !== except && p.ready) send(p.dc, obj); }); }
@@ -1845,6 +2054,9 @@ function applyEv(e){
   else if (e.k === 'cades'){ cades = e.l || []; }
   else if (e.k === 'nest'){ setNest(e.b, e.on); }
   else if (e.k === 'edit'){ applyEdit(e.e); }
+  else if (e.k === 'veh'){ var v = world.vmap[e.id]; if (v){ v.x = +e.x; v.y = +e.y; v.yaw = +e.yaw || 0; v.fuel = +e.fuel || 0; v.rd = -9; } }
+  else if (e.k === 'part'){ if (world.buildings[e.b]) world.found[e.b] = 1; }
+  else if (e.k === 'won'){ winWorld(true); }
   else if (e.k === 'flare'){ if (e.f) flares.push({x:+e.f.x, y:+e.f.y, life:Math.min(120, +e.f.life || 30)}); }
   else if (e.k === 'lure'){ if (e.l) lures.push({x:+e.l.x, y:+e.l.y, life:Math.min(60, +e.l.life || 10)}); }
   else if (e.k === 'pack'){ if (e.p) packs.push(e.p); }
@@ -1860,12 +2072,12 @@ function r2(v){ return Math.round(v*100)/100; }
 function netTick(dt){
   if (!net.role) return;
   var k = Math.min(1, dt*12), list = otherPlayers();
-  list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; });
+  list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; var v = o.vh && world.vmap[o.vh]; if (v){ v.x = o.x; v.y = o.y; v.yaw = o.yaw; v.rd = time; } });
   net.t -= dt; if (net.t > 0) return;
-  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.yaw), sw:P.swing > 0 ? 1 : 0, lt:P.light ? 1 : 0, ld:P.noise > 0 ? 1 : 0}); return; }
+  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:P.light ? 1 : 0, ld:P.noise > 0 ? 1 : 0, rd:inv.radio > 0 ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
   net.t = 0.1;
-  var ps = [[0, r2(P.x), r2(P.y), r2(P.yaw), P.swing > 0 ? 1 : 0]];
-  net.peers.forEach(function(p){ if (p.ready) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw]); });
+  var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0]];
+  net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0]); });
   net.peers.forEach(function(p){
     if (!p.ready) return;
     var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 125 && Math.abs(z.y - p.y) < 125) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v), z.k]); }
@@ -1877,7 +2089,7 @@ function onSnapshot(m){
   var old = {}, i; zombies.forEach(function(z){ old[z.id] = z; }); zombies = [];
   for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5], k:a[6] | 0}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; if (a[4]) z.hurt = 0.15; zombies.push(z); }
   var po = {}; net.others.forEach(function(o){ po[o.id] = o; }); net.others = [];
-  for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; net.others.push(o); }
+  for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; o.hp = b[5]; o.vh = b[6] || 0; net.others.push(o); }
 }
 function b64(bytes){ var s = ''; for (var i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(s); }
 function unb64(str){ var s = atob(str), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
@@ -1926,7 +2138,7 @@ async function hostWelcome(peer){
   el('invStatus').textContent = 'Connected. Sending the world...';
   var text = mapSrc && mapSrc.text ? mapSrc.text : null;
   worldPlayers[charSlug()] = {x:P.x, y:P.y, yaw:P.yaw};
-  send(peer.dc, {t:'hello', pid:peer.id, rule:el('vRule').value, designs:craftable().filter(function(d){ return !d.unique; }).slice(0, 60), name:world.name, demo:!text, len:text ? text.length : 0, ws:worldSave()});
+  send(peer.dc, {t:'hello', v:VERSION, pid:peer.id, rule:el('vRule').value, designs:craftable().filter(function(d){ return !d.unique; }).slice(0, 60), name:world.name, demo:!text, len:text ? text.length : 0, ws:worldSave()});
   if (text) for (var i = 0; i < text.length; i += 12000){
     while (peer.dc.bufferedAmount > 1000000) await new Promise(function(r){ setTimeout(r, 30); });
     if (peer.dc.readyState !== 'open') return; peer.dc.send('C' + text.substr(i, 12000));
@@ -1938,7 +2150,12 @@ function hostMsg(peer, data){
   if (m.t === 'join'){
     peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.look = cleanLook(m.look); peer.cop = !!m.cop; peer.ready = true; sendWho();
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
-  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; }
+  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
+  else if (m.t === 'chat' || m.t === 'ping'){
+    var cm = {t:m.t, n:peer.name, txt:txt(m.txt, 120), x:+m.x || 0, y:+m.y || 0, sx:peer.x, sy:peer.y, r:peer.rd ? 1 : 0, cop:peer.cop ? 1 : 0};
+    if (peer.cop && m.t === 'chat'){ var pt = null; net.peers.forEach(function(q){ if (q.id === (m.pt | 0)) pt = q; }); if (!(pt ? pt.rd : inv.radio > 0)){ send(peer.dc, {t:'sys', txt:'Your partner has no radio, so only your map markers get through.'}); return; } }
+    relay(cm, peer);
+  }
   else if (m.t === 'ev'){ applyEv(m.e); broadcast({t:'ev', e:m.e}, peer); }
   else if (m.t === 'askEdits'){ if (window.confirm(peer.name + ' asks for a copy of your building changes and this map. Share them?')) send(peer.dc, {t:'edits', map:world.name, nb:world.buildings.length, edits:world.edits}); else send(peer.dc, {t:'edits', no:1}); }
   else if (m.t === 'hit'){ for (var i = 0; i < zombies.length; i++) if (zombies[i].id === m.id){ var z = zombies[i]; z.hp -= Math.min(15, +m.d || 0); z.hurt = 0.15; z.kx = +m.kx || 0; z.ky = +m.ky || 0; break; } }
@@ -1992,18 +2209,22 @@ function applyRule(rule){
 async function guestMsg(g, data){
   if (data[0] === 'C'){ g.chunks.push(data.slice(1)); g.mapText = (g.mapText || '') + data.slice(1); el('joinStatus').textContent = 'Receiving the map...'; return; }
   if (data[0] !== 'J') return; var m; try { m = JSON.parse(data.slice(1)); } catch (e) { return; }
-  if (m.t === 'hello'){ g.hello = m; g.chunks = []; }
+  if (m.t === 'hello'){
+    if (m.v !== VERSION){ el('joinStatus').textContent = 'The host is on version ' + txt(m.v || 'older', 8) + ' and you are on ' + VERSION + '. Copy the same play.html to both devices.'; netClose(); return; }
+    g.hello = m; g.chunks = [];
+  }
   else if (m.t === 'go' && g.hello){
     try {
       lsSet('lastblock:name', el('pname').value); QS = QUAL[+el('qual').value] || QUAL[1];
       var h = g.hello, raw = h.demo ? demoRaw() : parseText(g.chunks.join('')); g.chunks = [];
       buildWorld(raw, h.name); prep3D();
-      var cs = await readSave('char', charSlug());
+      var cs = await readSave('char', charSlug()), asCop = el('joinCop').checked;
       net.role = 'guest'; net.pid = h.pid; net.others = []; mapSrc = null; net.hostDesigns = (h.designs || []).map(cleanDesign).filter(Boolean);
       startRun(h.ws, cs); el('inviteBtn').classList.add('hidden'); el('replyBox').classList.add('hidden'); el('joinCode').value = ''; el('joinStatus').textContent = '';
       applyRule(h.rule);
-      send(g.dc, {t:'join', name:el('pname').value || 'Survivor', slug:charSlug(), x:P.x, y:P.y, look:me.look});
-      toast('You are visiting ' + h.name + '. What you carry goes home with you.', 6);
+      if (asCop) startCop();
+      send(g.dc, {t:'join', name:el('pname').value || 'Survivor', slug:asCop ? '' : charSlug(), x:P.x, y:P.y, look:me.look, cop:asCop ? 1 : 0});
+      if (!asCop) toast('You are visiting ' + h.name + '. What you carry goes home with you.', 6);
     } catch (e) { el('joinStatus').textContent = 'Could not load the host\'s world: ' + (e.message || e.name); netClose(); }
   }
   else if (!inRun) return;
@@ -2011,6 +2232,8 @@ async function guestMsg(g, data){
   else if (m.t === 'ev') applyEv(m.e);
   else if (m.t === 'who'){ net.who = {}; (m.l || []).forEach(function(a){ net.who[a[0]] = {name:String(a[1]).slice(0, 16), look:cleanLook(a[2]), cop:!!a[3]}; }); }
   else if (m.t === 'edits'){ takeEdits(m, g); }
+  else if (m.t === 'chat' || m.t === 'ping'){ showMsg(m); }
+  else if (m.t === 'sys'){ toast(txt(m.txt, 160), 5); }
   else if (m.t === 'hurt'){ P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; }
 }
 
@@ -2082,7 +2305,7 @@ function readFile(file){
 function exitToMenu(msg){
   saveNow(); running = false; inRun = false; keys = {}; netClose();
   if (document.exitPointerLock) document.exitPointerLock();
-  el('play').classList.add('hidden'); el('prompt').classList.add('hidden'); el('hurt').style.opacity = 0; el('title').classList.remove('hidden');
+  el('play').classList.add('hidden'); el('prompt').classList.add('hidden'); document.body.classList.remove('copmode'); ['copMap', 'copBar', 'chatIn', 'items', 'build', 'chest', 'trade'].forEach(function(id){ el(id).classList.add('hidden'); }); el('hurt').style.opacity = 0; el('title').classList.remove('hidden');
   saveInfo(); syncChar(false); if (dir) refreshMaps().catch(function(){}); info(typeof msg === 'string' ? msg : 'Saved.');
 }
 el('menuBtn').addEventListener('click', function(){ exitToMenu(); });
@@ -2123,7 +2346,7 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
   syncChar(false);
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
 })();
-loadPacks(); wForm(); renderPacks();
+loadPacks(); wForm(); renderPacks(); fillScen();
 try { glOK = initGL(); } catch (e) { glOK = false; }
 saveInfo();
 if (!glOK) fail('This browser or device cannot run 3D graphics (WebGL). Try Chrome, Edge, Firefox or Safari.');
