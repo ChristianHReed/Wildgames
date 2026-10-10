@@ -20,8 +20,7 @@ The game is one folder on a drive, opened directly in a web browser. There is no
 
 | Folder | Holds |
 | --- | --- |
-| `start` | The page you open to begin: lobby, world picker and settings |
-| `game` | The game itself |
+| `play.html` | The start page and the game in one file, so a single file can be copied to any device |
 | `world` | This drive's persistent world and its edits |
 | `characters` | The player's roster of passports |
 | `packs` | Named content packs: items, building redesigns, alien types, scenarios |
@@ -127,7 +126,7 @@ Each player keeps a roster of characters on their drive and picks one when enter
 
 ## Build order
 
-1. **Drive layout and start page.** Folder structure, start page, touch controls, saves on the drive.
+1. **Drive layout and start page.** Folder structure, start page, touch controls, saves on the drive. *Built; awaiting testing on real devices.*
 2. **Two-player hosting.** One device hosts and a second joins by swapping a pairing code, with no server.
 3. **Passports.** Characters and inventory travel to a host and come home, with autosave.
 4. **Whole-city map.** The map maker, the Springfield map pack, loading the city in pieces.

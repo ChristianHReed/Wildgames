@@ -2,31 +2,41 @@
 
 Home of **Last Block**: a lightweight, low-poly, first-person survival game played on your real city, starting with Springfield, MO. The whole game is meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Status: early prototypes and a design. The full game described in [docs/DESIGN.md](docs/DESIGN.md) is not built yet.
+Status: step 1 of 10 in the build order. See [docs/DESIGN.md](docs/DESIGN.md) for the full plan.
 
-## Play the prototypes
+## Play
 
-Download a file from `prototypes/` and double-click it. Each one is a single self-contained HTML file that runs offline.
+Download this repository (green **Code** button, then **Download ZIP**), unzip it onto a USB stick or SSD, and double-click **`play.html`**. It runs offline in a web browser.
 
-| File | What it is |
+- **Play demo town** starts right away with a built-in map.
+- **Load map file** plays on a real place. To get a map: go to openstreetmap.org, zoom in on a neighborhood (about 1 km across), click **Export**, then the blue **Export** button, and put the downloaded `map.osm` in the `maps` folder.
+- **Connect game folder** (Chrome and Edge on computers) lets the game save into the `world` and `characters` folders on the drive and lists every map in `maps`. Pick the folder that contains `play.html`.
+- In other browsers, progress is kept in the browser, and **Export saves** / **Import saves** move it between devices.
+
+| Folder | Holds |
 | --- | --- |
-| `last-block-3d.html` | First-person 3D survival on a real map. Every building can be entered; interiors are generated from the building's outline. |
-| `last-block-2d.html` | The earlier top-down version of the same idea. |
-| `driftwood-isles.html` | The first experiment: a top-down island-hopping RPG with boat crafting. |
+| `play.html` | The whole game: start page and game in one file |
+| `maps/` | Your map files |
+| `world/` | One save per map, written by the game |
+| `characters/` | One file per survivor, written by the game |
+| `packs/` | Content packs (not used yet) |
+| `prototypes/` | Earlier versions, kept for reference |
+| `docs/` | The design document |
 
-### Loading your own map
+Controls on a computer: WASD to move, mouse to look, click or Space to swing, right-click or F to shoot, hold E to search or drink, 1/2/3 to eat, drink and heal, B for a barricade, C for a campfire. On a touch screen, on-screen controls appear automatically.
 
-1. Go to openstreetmap.org and zoom in on a neighborhood (about 1 km across works best).
-2. Click **Export**, then the blue **Export** button. It downloads `map.osm`.
-3. In a Last Block prototype, click **Load map file** and pick it, or use **Play demo town**.
+## What works and what doesn't yet
 
-## Known limits of the prototypes
+Works: first-person play on a loaded map, enterable buildings, looting, day and night, saving and resuming, dying and recovering your dropped pack, touch controls, and three view-distance settings.
 
-- Tested only with hand-made test maps and the demo town, not yet with a real OpenStreetMap export.
-- Frame rate of the 3D version has not been measured on real hardware.
-- Ground floor only; no stairs or upper floors.
-- Enemies are the old "infected" placeholder, not the aliens in the design.
-- No multiplayer, no touch controls, no saving to the drive yet.
+Not built yet: multiplayer, the whole-city map maker, aliens and weather (enemies are still the placeholder "infected"), the character creator, the item editor, and packs.
+
+Not yet verified:
+
+- It has only been run in an automated test browser without a graphics card, so real frame rates are unmeasured.
+- It has not been tried with a real OpenStreetMap export, only hand-made test maps and the demo town.
+- **Connect game folder** was tested against a stand-in folder, not a real USB drive.
+- Touch controls were tested with simulated touches, not on a real phone, and opening `play.html` from a drive on a phone is untested.
 
 ## Design
 

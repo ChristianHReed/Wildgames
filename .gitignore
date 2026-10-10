@@ -1,5 +1,9 @@
 # Personal data that lives on each player's drive, not in the repo
-world/
-characters/
+world/*
+!world/README.md
+characters/*
+!characters/README.md
+maps/*
+!maps/README.md
 .DS_Store
 Thumbs.db
