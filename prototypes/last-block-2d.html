@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Last Block</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#161a1f;font-family:Verdana,Geneva,sans-serif;color:#efe9da;user-select:none}
+  #game{display:block;width:100%;height:100%;cursor:crosshair}
+  .hidden{display:none !important}
+  #hud{position:fixed;left:12px;top:12px;pointer-events:none;width:220px}
+  .bar{height:16px;background:#14171b;border:2px solid #efe9da;position:relative;margin-bottom:4px}
+  .bar div{height:100%}
+  .bar span{position:absolute;left:6px;top:1px;font-size:11px;font-weight:bold;text-shadow:0 1px 2px #000}
+  #stats{font-size:12px;line-height:1.6;background:rgba(20,23,27,.78);padding:6px 9px;margin-top:6px}
+  #mini{position:fixed;right:12px;top:12px;border:2px solid #efe9da;background:#2b3327}
+  #inv{position:fixed;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:60%;pointer-events:none}
+  .slot{background:rgba(20,23,27,.82);border:1px solid #6b7480;padding:4px 8px;font-size:12px;display:flex;align-items:center;gap:6px}
+  .slot b{color:#f2b134}
+  .sw{width:10px;height:10px;display:inline-block}
+  #help{position:fixed;right:12px;bottom:12px;font-size:11px;background:rgba(20,23,27,.78);padding:6px 9px;pointer-events:none;text-align:right;line-height:1.6}
+  #prompt{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);background:rgba(20,23,27,.9);border:2px solid #f2b134;padding:7px 14px;font-size:13px;pointer-events:none;white-space:nowrap}
+  #toast{position:fixed;left:50%;top:60px;transform:translateX(-50%);background:rgba(20,23,27,.92);border:2px solid #f2b134;padding:9px 16px;font-size:14px;max-width:70%;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+  .screen{position:fixed;inset:0;background:linear-gradient(#232a33,#12151a);display:flex;align-items:center;justify-content:center;overflow:auto}
+  .box{text-align:center;max-width:620px;padding:20px}
+  h1{font-size:48px;margin:0;color:#f2b134;letter-spacing:3px}
+  .box p{font-size:14px;line-height:1.7;color:#cfd5db}
+  .row{margin:16px 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  button,.btn{font-family:inherit;font-size:16px;font-weight:bold;background:#f2b134;color:#1a1410;border:0;padding:10px 20px;cursor:pointer;display:inline-block}
+  button:hover,.btn:hover{background:#ffd06a}
+  button.alt{background:#3c4651;color:#efe9da}
+  button.alt:hover{background:#4d5967}
+  ol{text-align:left;font-size:13px;line-height:1.7;color:#cfd5db;background:rgba(0,0,0,.25);padding:12px 16px 12px 34px;margin:10px 0}
+  #status{font-size:13px;color:#ff8f7a;min-height:18px}
+  .keys{font-size:12px !important;color:#8fa3b5 !important}
+  #over{background:rgba(12,8,8,.88)}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud" class="hidden">
+  <div class="bar"><div id="bHp" style="background:#d8473a"></div><span>Health</span></div>
+  <div class="bar"><div id="bFood" style="background:#d98f3a"></div><span>Hunger</span></div>
+  <div class="bar"><div id="bWater" style="background:#3f95d6"></div><span>Thirst</span></div>
+  <div id="stats"></div>
+</div>
+<canvas id="mini" class="hidden" width="170" height="170"></canvas>
+<div id="inv" class="hidden"></div>
+<div id="help" class="hidden">WASD: move &middot; Mouse: aim &middot; Click / Space: swing bat<br>Right-click / F: shoot &middot; Hold E: search, drink<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; B barricade &middot; C campfire &middot; Wheel: zoom</div>
+<div id="prompt" class="hidden"></div>
+<div id="toast"></div>
+
+<div id="title" class="screen">
+  <div class="box">
+    <h1>LAST BLOCK</h1>
+    <p>A survival game played on real streets. Load a map exported from OpenStreetMap and its buildings, roads, parks and water become your world. Search buildings for supplies, keep fed and watered, and outlast the nights.</p>
+    <div class="row">
+      <label class="btn">Load map file<input id="file" type="file" accept=".osm,.xml,.json,.geojson" hidden></label>
+      <button id="demo" class="alt">Play demo town</button>
+    </div>
+    <div id="status"></div>
+    <ol>
+      <li>Go to <b>openstreetmap.org</b> and zoom in on a neighborhood (about 1 km across works best).</li>
+      <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads a file called <b>map.osm</b>.</li>
+      <li>Click <b>Load map file</b> here and pick it, or drag the file onto this page.</li>
+    </ol>
+    <p class="keys">Also accepts Overpass JSON and GeoJSON. Shops, pharmacies, police stations and restaurants on the map hold different loot.</p>
+  </div>
+</div>
+<div id="over" class="screen hidden">
+  <div class="box">
+    <h1>YOU DIED</h1>
+    <p id="overTxt"></p>
+    <div class="row"><button id="again">Try again on this map</button><button id="other" class="alt">Load another map</button></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+var el = function(id){ return document.getElementById(id); };
+var cv = el('game'), ctx = cv.getContext('2d'), lc = document.createElement('canvas'), lctx = lc.getContext('2d');
+var W = 0, H = 0, S = 12;
+function resize(){ W = cv.width = lc.width = window.innerWidth; H = cv.height = lc.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+function hash(x, y, s){
+  var h = Math.imul(x|0, 374761393) ^ Math.imul(y|0, 668265263) ^ Math.imul(s|0, 1442695041);
+  h = Math.imul(h ^ (h >>> 15), 2246822519); h ^= h >>> 13; h = Math.imul(h, 3266489917); h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/* ================= map file parsing ================= */
+function same(a, b){ return a[0] === b[0] && a[1] === b[1]; }
+function stitch(segs){
+  var rings = []; segs = segs.filter(function(s){ return s.length > 1; });
+  while (segs.length){
+    var cur = segs.pop().slice(), guard = 0;
+    while (!same(cur[0], cur[cur.length-1]) && guard++ < 5000){
+      var end = cur[cur.length-1], found = false;
+      for (var i = 0; i < segs.length; i++){
+        var s = segs[i];
+        if (same(s[0], end)) cur = cur.concat(s.slice(1));
+        else if (same(s[s.length-1], end)) cur = cur.concat(s.slice(0, -1).reverse());
+        else continue;
+        segs.splice(i, 1); found = true; break;
+      }
+      if (!found) break;
+    }
+    if (cur.length >= 4 && same(cur[0], cur[cur.length-1])) rings.push(cur);
+  }
+  return rings;
+}
+function hasKeys(o){ for (var k in o) return true; return false; }
+function fromOsmXml(text){
+  var doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length) throw new Error('This file is not valid OSM XML.');
+  var nodes = new Map(), wayMap = new Map(), ways = [], pois = [], i, j, ch, n, c, tags;
+  var ns = doc.getElementsByTagName('node');
+  for (i = 0; i < ns.length; i++){
+    n = ns[i]; var p = [+n.getAttribute('lon'), +n.getAttribute('lat')]; nodes.set(n.getAttribute('id'), p);
+    if (n.children.length){
+      tags = {}; for (j = 0; j < n.children.length; j++){ ch = n.children[j]; if (ch.tagName === 'tag') tags[ch.getAttribute('k')] = ch.getAttribute('v'); }
+      pois.push({lon:p[0], lat:p[1], tags:tags});
+    }
+  }
+  var ws = doc.getElementsByTagName('way');
+  for (i = 0; i < ws.length; i++){
+    c = []; tags = {};
+    for (j = 0; j < ws[i].children.length; j++){
+      ch = ws[i].children[j];
+      if (ch.tagName === 'nd'){ var q = nodes.get(ch.getAttribute('ref')); if (q) c.push(q); }
+      else if (ch.tagName === 'tag') tags[ch.getAttribute('k')] = ch.getAttribute('v');
+    }
+    var w = {c:c, tags:tags}; wayMap.set(ws[i].getAttribute('id'), w); ways.push(w);
+  }
+  var rs = doc.getElementsByTagName('relation');
+  for (i = 0; i < rs.length; i++){
+    tags = {}; var segs = [], mem = [];
+    for (j = 0; j < rs[i].children.length; j++){
+      ch = rs[i].children[j];
+      if (ch.tagName === 'tag') tags[ch.getAttribute('k')] = ch.getAttribute('v');
+      else if (ch.tagName === 'member' && ch.getAttribute('type') === 'way' && ch.getAttribute('role') !== 'inner') mem.push(wayMap.get(ch.getAttribute('ref')));
+    }
+    if (tags.type !== 'multipolygon') continue;
+    mem.forEach(function(m){ if (m && !(m.tags.building && tags.building)) segs.push(m.c); });
+    stitch(segs).forEach(function(r){ ways.push({c:r, tags:tags}); });
+  }
+  return {ways:ways, pois:pois};
+}
+function fromOverpass(j){
+  var nodes = new Map(), wayMap = new Map(), ways = [], pois = [];
+  j.elements.forEach(function(e){
+    if (e.type === 'node'){ nodes.set(e.id, [e.lon, e.lat]); if (e.tags) pois.push({lon:e.lon, lat:e.lat, tags:e.tags}); }
+  });
+  var geo = function(g){ return g.filter(Boolean).map(function(p){ return [p.lon, p.lat]; }); };
+  j.elements.forEach(function(e){
+    if (e.type !== 'way') return;
+    var c = e.geometry ? geo(e.geometry) : (e.nodes || []).map(function(id){ return nodes.get(id); }).filter(Boolean);
+    var w = {c:c, tags:e.tags || {}}; wayMap.set(e.id, w); ways.push(w);
+  });
+  j.elements.forEach(function(e){
+    if (e.type !== 'relation' || !e.tags || e.tags.type !== 'multipolygon') return;
+    var segs = [];
+    (e.members || []).forEach(function(m){
+      if (m.type !== 'way' || m.role === 'inner') return;
+      var w = wayMap.get(m.ref);
+      if (w){ if (!(w.tags.building && e.tags.building)) segs.push(w.c); }
+      else if (m.geometry) segs.push(geo(m.geometry));
+    });
+    stitch(segs).forEach(function(r){ ways.push({c:r, tags:e.tags}); });
+  });
+  return {ways:ways, pois:pois};
+}
+function fromGeoJson(j){
+  var ways = [], pois = [], feats = j.features || [j];
+  feats.forEach(function(f){
+    var g = f.geometry; if (!g) return;
+    var p = f.properties || {}, tags = (p.tags && typeof p.tags === 'object') ? p.tags : p;
+    if (g.type === 'Point') pois.push({lon:g.coordinates[0], lat:g.coordinates[1], tags:tags});
+    else if (g.type === 'LineString') ways.push({c:g.coordinates, tags:tags});
+    else if (g.type === 'MultiLineString') g.coordinates.forEach(function(c){ ways.push({c:c, tags:tags}); });
+    else if (g.type === 'Polygon') ways.push({c:g.coordinates[0], tags:tags});
+    else if (g.type === 'MultiPolygon') g.coordinates.forEach(function(c){ ways.push({c:c[0], tags:tags}); });
+  });
+  return {ways:ways, pois:pois};
+}
+function parseText(text){
+  var t = text.replace(/^﻿/, '').trim();
+  if (t[0] === '<') return fromOsmXml(t);
+  if (t[0] === '{' || t[0] === '['){
+    var j; try { j = JSON.parse(t); } catch (e) { throw new Error('This file is not valid JSON.'); }
+    if (j.elements) return fromOverpass(j);
+    if (j.features || j.type === 'Feature') return fromGeoJson(j);
+  }
+  throw new Error('Unrecognized file. Use a .osm export, Overpass JSON, or GeoJSON.');
+}
+function demoRaw(){
+  var ways = [], pois = [], u = 1/111320, v = 1/110540, k = 0;
+  var rnd = function(){ return hash(k++, 7, 99); };
+  var LL = function(x, y){ return [x*u, -y*v]; };
+  var poly = function(pts, tags){ var c = pts.map(function(p){ return LL(p[0], p[1]); }); c.push(c[0]); ways.push({c:c, tags:tags}); };
+  var rect = function(x, y, w, h, tags){
+    if (w > 14 && h > 12 && rnd() < 0.3) poly([[x,y],[x+w,y],[x+w,y+h*0.55],[x+w*0.5,y+h*0.55],[x+w*0.5,y+h],[x,y+h]], tags);
+    else poly([[x,y],[x+w,y],[x+w,y+h],[x,y+h]], tags);
+  };
+  var BW = 80, BH = 64, G = 12, NX = 6, NY = 5, i, j;
+  for (i = 0; i <= NX; i++) ways.push({c:[LL(i*(BW+G)-G/2, -G/2), LL(i*(BW+G)-G/2, NY*(BH+G)-G/2)], tags:{highway: i%3 === 0 ? 'secondary' : 'residential'}});
+  for (j = 0; j <= NY; j++) ways.push({c:[LL(-G/2, j*(BH+G)-G/2), LL(NX*(BW+G)-G/2, j*(BH+G)-G/2)], tags:{highway: j%2 === 0 ? 'tertiary' : 'residential'}});
+  var special = [{shop:'supermarket',name:'FreshMart'},{amenity:'pharmacy',name:'Corner Pharmacy'},{amenity:'police',name:'Police Station'},
+    {amenity:'restaurant',name:"Rosa's Diner"},{building:'warehouse',name:'Depot 9'},{amenity:'hospital',name:'Mercy Clinic'},{shop:'hardware',name:'Bolt & Nail'},
+    {shop:'convenience',name:'QuickStop'},{amenity:'cafe',name:'Bean There'},{shop:'clothes',name:'Thread & Co'},{amenity:'fire_station',name:'Fire Station 4'},{shop:'bakery',name:'Daily Bread'}];
+  var count = 0, si = 0;
+  var tagFor = function(){ count++; if (count % 7 === 3 && si < special.length) return Object.assign({building:'yes'}, special[si++]); return {building:'house'}; };
+  for (var by = 0; by < NY; by++) for (var bx = 0; bx < NX; bx++){
+    var x0 = bx*(BW+G), y0 = by*(BH+G), idx = by*NX + bx;
+    if (idx === 8){
+      rect(x0+2, y0+2, BW-4, BH-4, {leisure:'park', name:'Miller Park'});
+      var pts = []; for (i = 0; i < 9; i++){ var a = i/9*6.283; pts.push([x0+BW/2+Math.cos(a)*(14+rnd()*5), y0+BH/2+Math.sin(a)*(10+rnd()*4)]); }
+      poly(pts, {natural:'water'}); continue;
+    }
+    if (idx === 19 || idx === 26){ poly([[x0+2,y0+2],[x0+BW-2,y0+2],[x0+BW-2,y0+BH-2],[x0+2,y0+BH-2]], {natural:'wood'}); continue; }
+    if (idx === 14){ poly([[x0+3,y0+34],[x0+BW-3,y0+34],[x0+BW-3,y0+BH-3],[x0+3,y0+BH-3]], {amenity:'parking'}); }
+    var x = x0 + 3;
+    while (x < x0 + BW - 10){
+      var w = Math.min(10 + rnd()*13, x0 + BW - 3 - x), d1 = 10 + rnd()*11, d2 = 10 + rnd()*11;
+      rect(x, y0+3, w, d1, tagFor());
+      if (idx !== 14) rect(x, y0+BH-3-d2, w, d2, tagFor());
+      x += w + 2 + rnd()*4;
+    }
+  }
+  pois.push({lon:LL(140,150)[0], lat:LL(140,150)[1], tags:{amenity:'pharmacy', name:'Market Stall Medics'}});
+  return {ways:ways, pois:pois};
+}
+
+/* ================= world building ================= */
+var HW = {motorway:12,trunk:11,primary:10,secondary:9,tertiary:8,residential:7,unclassified:7,living_street:6,service:4.5,pedestrian:5,track:3.5,footway:2,path:2,cycleway:2.2,steps:2,bridleway:2};
+var PATHS = {footway:1,path:1,cycleway:1,steps:1,bridleway:1,track:1,pedestrian:1};
+var WW = {river:11,canal:8,stream:3,ditch:2,drain:2};
+var IN = function(v, list){ return !!v && list.indexOf(v) >= 0; };
+function catOf(t, isBuilding){
+  var a = t.amenity, s = t.shop, b = t.building;
+  if (IN(a, ['pharmacy','hospital','clinic','doctors','dentist','veterinary']) || IN(s, ['chemist','medical_supply']) || t.healthcare) return 'medical';
+  if (IN(a, ['police','fire_station']) || IN(s, ['weapons','hunting','outdoor']) || t.military) return 'police';
+  if (IN(a, ['restaurant','cafe','fast_food','bar','pub','food_court','ice_cream','biergarten']) || IN(s, ['supermarket','convenience','bakery','butcher','greengrocer','deli','beverages','alcohol','general','farm'])) return 'food';
+  if (IN(s, ['hardware','doityourself','car_repair','car_parts','trade','tyres']) || a === 'fuel' || t.craft || IN(b, ['industrial','warehouse','garage','garages','shed','hangar','barn'])) return 'industrial';
+  if (s) return 'shop';
+  return isBuilding ? 'house' : null;
+}
+function areaKind(t){
+  if (t.natural === 'water' || IN(t.landuse, ['reservoir','basin']) || t.waterway === 'riverbank' || t.leisure === 'swimming_pool') return 'water';
+  if (t.natural === 'wood' || t.landuse === 'forest') return 'forest';
+  if (IN(t.leisure, ['park','garden','playground','nature_reserve','golf_course']) || IN(t.landuse, ['recreation_ground','village_green','cemetery','allotments'])) return 'park';
+  if (IN(t.landuse, ['grass','meadow','farmland','orchard']) || IN(t.natural, ['grassland','scrub','heath']) || t.leisure === 'pitch') return 'grass';
+  if (t.amenity === 'parking') return 'parking';
+  if (IN(t.natural, ['sand','beach'])) return 'sand';
+  return null;
+}
+var CAT = {
+  house:{label:'Home', icon:'', cols:['#b98f6a','#c9a27c','#a87f62','#bfa58a','#9f8a78']},
+  food:{label:'Food', icon:'F', cols:['#d9953f','#e0a552']},
+  medical:{label:'Medical', icon:'+', cols:['#e4e0d6','#d6d9de']},
+  police:{label:'Armory', icon:'A', cols:['#4a6591','#566f9c']},
+  industrial:{label:'Workshop', icon:'S', cols:['#7f868f','#8e9299']},
+  shop:{label:'Shop', icon:'$', cols:['#5ea39a','#6bb0a2']}
+};
+var ICON_COL = {food:'#b3541e', medical:'#c8322b', police:'#f2d14a', industrial:'#22262b', shop:'#0f4a44'};
+var LOOT = {
+  house:{food:3, water:2, medkit:0.5, ammo:0.4, wood:1, scrap:1.5, none:1.5},
+  food:{food:6, water:4}, medical:{medkit:6, water:1}, police:{ammo:8, medkit:1},
+  industrial:{scrap:5, wood:4}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1}
+};
+var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba','']};
+var AREA_COL = {grass:'#7f9a5c', park:'#6fa25a', forest:'#4f7f4a', sand:'#cdbb8a', parking:'#6a6e75', water:'#3f86b8'};
+var AREA_RANK = {grass:0, park:1, forest:2, sand:3, parking:4, water:5};
+var G = 16, world = null;
+function gk(cx, cy){ return (cx + 50000)*100000 + (cy + 50000); }
+function bbox(o){
+  var p = o.pts; o.minx = o.miny = 1e12; o.maxx = o.maxy = -1e12;
+  for (var i = 0; i < p.length; i += 2){ if (p[i] < o.minx) o.minx = p[i]; if (p[i] > o.maxx) o.maxx = p[i]; if (p[i+1] < o.miny) o.miny = p[i+1]; if (p[i+1] > o.maxy) o.maxy = p[i+1]; }
+  return o;
+}
+function pip(p, x, y){
+  var inside = false;
+  for (var i = 0, j = p.length - 2; i < p.length; j = i, i += 2){
+    var yi = p[i+1], yj = p[j+1];
+    if ((yi > y) !== (yj > y) && x < (p[j] - p[i])*(y - yi)/(yj - yi) + p[i]) inside = !inside;
+  }
+  return inside;
+}
+function segDist(x, y, ax, ay, bx, by){
+  var dx = bx - ax, dy = by - ay, l = dx*dx + dy*dy, t = l ? ((x-ax)*dx + (y-ay)*dy)/l : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t; return Math.hypot(x - ax - dx*t, y - ay - dy*t);
+}
+function polyDist(p, x, y, closed){
+  var best = 1e9, n = p.length;
+  for (var i = 0; i < n - (closed ? 0 : 2); i += 2){ var j = (i + 2) % n, d = segDist(x, y, p[i], p[i+1], p[j], p[j+1]); if (d < best) best = d; }
+  return best;
+}
+function buildWorld(raw, name){
+  var a = 1e9, b = -1e9, c = 1e9, d = -1e9, i;
+  raw.ways.forEach(function(w){ for (var q = 0; q < w.c.length; q++){ var p = w.c[q]; if (p[0] < a) a = p[0]; if (p[0] > b) b = p[0]; if (p[1] < c) c = p[1]; if (p[1] > d) d = p[1]; } });
+  if (a > b) throw new Error('No map shapes found in this file.');
+  var lon0 = (a+b)/2, lat0 = (c+d)/2, kx = Math.cos(lat0*Math.PI/180)*111320, ky = 110540;
+  var proj = function(cs){ var o = []; for (var q = 0; q < cs.length; q++) o.push((cs[q][0]-lon0)*kx, -(cs[q][1]-lat0)*ky); return o; };
+  var w = {name:name, buildings:[], roads:[], areas:[], trees:[], crates:[], grid:new Map(),
+    minx:(a-lon0)*kx, maxx:(b-lon0)*kx, miny:-(d-lat0)*ky, maxy:-(c-lat0)*ky};
+  raw.ways.forEach(function(way){
+    var t = way.tags || {}, cs = way.c; if (!cs || cs.length < 2) return;
+    var closed = cs.length >= 4 && same(cs[0], cs[cs.length-1]), pts = proj(cs);
+    if (closed && t.building && t.building !== 'no'){
+      pts.length -= 2; var ar = 0, cx = 0, cy = 0, n = pts.length;
+      for (i = 0; i < n; i += 2){ var j = (i+2) % n; ar += pts[i]*pts[j+1] - pts[j]*pts[i+1]; cx += pts[i]; cy += pts[i+1]; }
+      ar = Math.abs(ar)/2; if (ar < 6) return;
+      var cat = catOf(t, true), id = w.buildings.length;
+      w.buildings.push(bbox({pts:pts, cat:cat, name:t.name || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), looted:false, stamp:0,
+        col:CAT[cat].cols[Math.floor(hash(id, 3, 5)*CAT[cat].cols.length)], rolls:Math.max(1, Math.min(6, Math.round(1 + ar/160))), time:Math.min(4, 1.2 + ar/400), id:id}));
+      return;
+    }
+    if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road'})); return; }
+    if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water'})); return; }
+    if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail'})); return; }
+    if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k})); } }
+  });
+  if (!w.buildings.length && !w.roads.length) throw new Error('This file has no buildings or roads. Try exporting a built-up area.');
+  w.areas.sort(function(p, q){ return AREA_RANK[p.kind] - AREA_RANK[q.kind]; });
+  w.water = w.areas.filter(function(r){ return r.kind === 'water'; });
+  w.waterLines = w.roads.filter(function(r){ return r.kind === 'water'; });
+  w.roads.sort(function(p, q){ return (p.kind === 'water' ? -1 : p.w) - (q.kind === 'water' ? -1 : q.w); });
+  w.buildings.forEach(function(bd){
+    for (var cy = Math.floor(bd.miny/G); cy <= Math.floor(bd.maxy/G); cy++) for (var cx = Math.floor(bd.minx/G); cx <= Math.floor(bd.maxx/G); cx++){
+      var key = gk(cx, cy), cell = w.grid.get(key); if (!cell) w.grid.set(key, cell = []); cell.push(bd);
+    }
+  });
+  world = w;
+  raw.pois.forEach(function(p, n){
+    var x = (p.lon-lon0)*kx, y = -(p.lat-lat0)*ky, t = p.tags;
+    if (t.natural === 'tree'){ addTree(x, y, n); return; }
+    var cat = catOf(t, false); if (!cat) return;
+    var bd = buildingAt(x, y);
+    if (bd){ if (bd.cat === 'house'){ bd.cat = cat; bd.col = CAT[cat].cols[0]; if (t.name) bd.name = t.name; } }
+    else if (w.crates.length < 400) w.crates.push({x:x, y:y, cat:cat, name:t.name || CAT[cat].label + ' stash', looted:false, rolls:2, time:1.2});
+  });
+  w.areas.forEach(function(ar, n){
+    if (ar.kind !== 'forest' && ar.kind !== 'park') return;
+    var st = ar.kind === 'forest' ? 6.5 : 17;
+    for (var y = ar.miny; y < ar.maxy; y += st) for (var x = ar.minx; x < ar.maxx; x += st){
+      if (w.trees.length > 5000) return;
+      var tx = x + hash(x, y, n)*st, ty = y + hash(x, y, n+77)*st;
+      if (pip(ar.pts, tx, ty) && !blocked(tx, ty) && !inWater(tx, ty, 0)) addTree(tx, ty, w.trees.length);
+    }
+  });
+  return w;
+}
+function addTree(x, y, n){ world.trees.push({x:x, y:y, r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0}); }
+function buildingAt(x, y){
+  var cell = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))); if (!cell) return null;
+  for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (x >= b.minx && x <= b.maxx && y >= b.miny && y <= b.maxy && pip(b.pts, x, y)) return b; }
+  return null;
+}
+function blocked(x, y){ return buildingAt(x, y) !== null; }
+var CX = [1,0.707,0,-0.707,-1,-0.707,0,0.707], CY = [0,0.707,1,0.707,0,-0.707,-1,-0.707];
+function circ(x, y, r){
+  if (blocked(x, y)) return true;
+  for (var i = 0; i < 8; i++) if (blocked(x + CX[i]*r, y + CY[i]*r)) return true;
+  return false;
+}
+function inWater(x, y, r){
+  var i, a;
+  for (i = 0; i < world.water.length; i++){
+    a = world.water[i]; if (x < a.minx - r || x > a.maxx + r || y < a.miny - r || y > a.maxy + r) continue;
+    if (pip(a.pts, x, y) || (r > 0 && polyDist(a.pts, x, y, true) < r)) return true;
+  }
+  for (i = 0; i < world.waterLines.length; i++){
+    a = world.waterLines[i]; var m = a.w/2 + r; if (x < a.minx - m || x > a.maxx + m || y < a.miny - m || y > a.maxy + m) continue;
+    if (polyDist(a.pts, x, y, false) < m) return true;
+  }
+  return false;
+}
+
+/* ================= game state ================= */
+var DAY = 240, P, inv, zombies, bullets, floaters, parts, fires, cades, time, kills, searched, dark = 0, running = false, lastRaw = null, lastName = '';
+var target = null, prog = 0, drinkCd = 0, frameId = 0, spawnT = 0, hudT = 0, miniT = 0, toastT = 0, miniBg = null, miniK = 1;
+function toast(msg, secs){ var t = el('toast'); t.textContent = msg; t.style.opacity = 1; toastT = secs || 3; }
+function floater(x, y, txt, col){ floaters.push({x:x, y:y, txt:txt, col:col || '#fff', t:1.6}); }
+function burst(x, y, col, n){ for (var i = 0; i < n; i++){ var a = Math.random()*6.283, s = 1 + Math.random()*4; parts.push({x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, t:0.45, col:col}); } }
+function startRun(){
+  var w = world, sx = 0, sy = 0, found = false;
+  for (var k = 0; !found && k < 6000; k++){ var a = k*0.5, rr = k*0.2; sx = Math.cos(a)*rr; sy = Math.sin(a)*rr; found = !circ(sx, sy, 0.6) && !inWater(sx, sy, 0); }
+  P = {x:sx, y:sy, hp:100, hunger:100, thirst:100, ang:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false};
+  inv = {food:1, water:1, medkit:0, ammo:8, wood:0, scrap:0};
+  zombies = []; bullets = []; floaters = []; parts = []; fires = []; cades = []; time = 0; kills = 0; searched = 0; prog = 0; target = null;
+  w.buildings.forEach(function(b){ b.looted = false; }); w.crates.forEach(function(c){ c.looted = false; });
+  w.trees.forEach(function(t){ t.alive = true; t.hp = 3; });
+  makeMini();
+  ['title','over'].forEach(function(id){ el(id).classList.add('hidden'); });
+  ['hud','mini','inv','help'].forEach(function(id){ el(id).classList.remove('hidden'); });
+  running = true; updateHud();
+  toast(w.name + ': ' + w.buildings.length + ' buildings, ' + w.roads.length + ' roads. Search buildings (hold E) before dark.', 6);
+}
+function loadRaw(raw, name){
+  buildWorld(raw, name); lastRaw = raw; lastName = name; startRun();
+}
+function gameOver(){
+  running = false;
+  var hrs = time/DAY*24, days = Math.floor(hrs/24), best = 0;
+  try { best = +localStorage.getItem('lastBlock_best') || 0; if (hrs > best){ localStorage.setItem('lastBlock_best', hrs); } } catch (e) {}
+  el('overTxt').innerHTML = 'You survived <b>' + days + ' day' + (days === 1 ? '' : 's') + ' and ' + Math.floor(hrs % 24) + ' hours</b> in ' + world.name +
+    '.<br>Buildings searched: ' + searched + ' &middot; Infected put down: ' + kills + (best > 0 ? '<br>Your best: ' + Math.floor(Math.max(best, hrs)) + ' hours' : '');
+  el('over').classList.remove('hidden'); el('prompt').classList.add('hidden');
+}
+
+/* ================= input ================= */
+var keys = {}, mouse = {x:0, y:0}, wantSwing = false, wantShoot = false;
+window.addEventListener('keydown', function(e){
+  if (!running) return;
+  keys[e.code] = true;
+  if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit');
+  if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
+  if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault();
+});
+window.addEventListener('keyup', function(e){ keys[e.code] = false; });
+window.addEventListener('blur', function(){ keys = {}; });
+cv.addEventListener('mousemove', function(e){ mouse.x = e.clientX; mouse.y = e.clientY; });
+cv.addEventListener('mousedown', function(e){ mouse.x = e.clientX; mouse.y = e.clientY; if (e.button === 2) wantShoot = true; else wantSwing = true; });
+cv.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+cv.addEventListener('wheel', function(e){ S = Math.max(4, Math.min(18, S*(e.deltaY < 0 ? 1.12 : 0.89))); e.preventDefault(); }, {passive:false});
+function useItem(k){
+  if (inv[k] < 1){ toast('No ' + ITEMS[k][0].toLowerCase() + ' left.', 2); return; }
+  inv[k]--;
+  if (k === 'food'){ P.hunger = Math.min(100, P.hunger + 35); floater(P.x, P.y - 1.5, 'Ate food', ITEMS.food[1]); }
+  if (k === 'water'){ P.thirst = Math.min(100, P.thirst + 40); floater(P.x, P.y - 1.5, 'Drank water', ITEMS.water[1]); }
+  if (k === 'medkit'){ P.hp = Math.min(100, P.hp + 50); floater(P.x, P.y - 1.5, '+50 Health', '#7dff9a'); }
+  updateHud();
+}
+function place(kind){
+  var x = P.x + Math.cos(P.ang)*1.8, y = P.y + Math.sin(P.ang)*1.8;
+  if (kind === 'cade'){
+    if (inv.wood < 2 || inv.scrap < 1){ toast('A barricade needs 2 wood and 1 scrap.', 2.5); return; }
+    if (circ(x, y, 0.5)) return; inv.wood -= 2; inv.scrap -= 1; cades.push({x:x, y:y, hp:30});
+  } else {
+    if (inv.wood < 4){ toast('A campfire needs 4 wood.', 2.5); return; }
+    if (circ(x, y, 0.5)) return; inv.wood -= 4; fires.push({x:x, y:y, life:150});
+    toast('Campfire lit. Stand near it to recover health; it burns for a while.', 3.5);
+  }
+  updateHud();
+}
+
+/* ================= gameplay ================= */
+function pmove(e, dx, dy, r, free){
+  if (free || !circ(e.x + dx, e.y, r)) e.x += dx;
+  if (free || !circ(e.x, e.y + dy, r)) e.y += dy;
+}
+function findTarget(){
+  frameId++; var best = null, bd = 2.4, cx0 = Math.floor(P.x/G), cy0 = Math.floor(P.y/G), i, d;
+  for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){
+    var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
+    for (i = 0; i < cell.length; i++){
+      var b = cell[i]; if (b.looted || b.stamp === frameId) continue; b.stamp = frameId;
+      if (P.x < b.minx - bd || P.x > b.maxx + bd || P.y < b.miny - bd || P.y > b.maxy + bd) continue;
+      d = polyDist(b.pts, P.x, P.y, true); if (d < bd){ bd = d; best = b; }
+    }
+  }
+  for (i = 0; i < world.crates.length; i++){ var c = world.crates[i]; if (c.looted) continue; d = Math.hypot(c.x - P.x, c.y - P.y); if (d < Math.min(bd, 2)){ bd = d; best = c; } }
+  if (best) return {o:best};
+  if (P.thirst < 99 && inWater(P.x, P.y, 2)) return {water:true};
+  return null;
+}
+function loot(o){
+  o.looted = true; searched++;
+  var tab = LOOT[o.cat], tot = 0, got = {}, k, n = 0;
+  for (k in tab) tot += tab[k];
+  for (var i = 0; i < o.rolls; i++){
+    var r = Math.random()*tot;
+    for (k in tab){ r -= tab[k]; if (r <= 0) break; }
+    if (k === 'none') continue;
+    got[k] = (got[k] || 0) + (k === 'ammo' ? 3 + Math.floor(Math.random()*4) : 1 + (Math.random() < 0.35 ? 1 : 0));
+  }
+  for (k in got){ inv[k] += got[k]; floater(P.x, P.y - 1.5 - n*0.9, '+' + got[k] + ' ' + ITEMS[k][0], ITEMS[k][1]); n++; }
+  if (!n) floater(P.x, P.y - 1.5, 'Nothing useful', '#c0c6cc');
+  updateHud();
+}
+function swing(){
+  P.atkCd = 0.4; P.swing = 0.18; var hit = false, i, dx, dy, d;
+  for (i = 0; i < zombies.length; i++){
+    var z = zombies[i]; dx = z.x - P.x; dy = z.y - P.y; d = Math.hypot(dx, dy);
+    if (d < 2.4 && (d < 0.8 || (dx*Math.cos(P.ang) + dy*Math.sin(P.ang))/d > 0.35)){ z.hp -= 2; z.hurt = 0.15; z.kx = dx/d*9; z.ky = dy/d*9; hit = true; burst(z.x, z.y, '#7a1f1f', 4); }
+  }
+  if (hit) return;
+  var bt = null, bd = 2.6;
+  for (i = 0; i < world.trees.length; i++){
+    var t = world.trees[i]; if (!t.alive) continue; dx = t.x - P.x; dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) continue;
+    d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*Math.cos(P.ang) + dy*Math.sin(P.ang))/d > 0.2)){ bd = d; bt = t; }
+  }
+  if (bt){ bt.hp--; bt.shake = 0.15; burst(bt.x, bt.y, '#5c8a4a', 4); if (bt.hp <= 0){ bt.alive = false; inv.wood += 2; floater(bt.x, bt.y - 1, '+2 Wood', ITEMS.wood[1]); updateHud(); } }
+}
+function shoot(){
+  if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
+  inv.ammo--; P.shootCd = 0.3;
+  bullets.push({x:P.x + Math.cos(P.ang)*0.9, y:P.y + Math.sin(P.ang)*0.9, vx:Math.cos(P.ang)*70, vy:Math.sin(P.ang)*70, t:0.7});
+  updateHud();
+}
+function viewR(){ return Math.hypot(W, H)/2/S; }
+function spawnZombie(){
+  var a = Math.random()*6.283, d = viewR() + 3 + Math.random()*10, x = P.x + Math.cos(a)*d, y = P.y + Math.sin(a)*d;
+  if (circ(x, y, 0.5)) return;
+  zombies.push({x:x, y:y, hp:4, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, spd:0.8 + Math.random()*0.45, v:Math.random()});
+}
+function update(dt){
+  time += dt;
+  var hour = (8 + time/DAY*24) % 24, day = Math.floor((8 + time/DAY*24)/24) + 1;
+  dark = (hour >= 20 || hour < 5) ? 1 : hour >= 18 ? (hour - 18)/2 : hour < 7 ? 1 - (hour - 5)/2 : 0;
+  P.ang = Math.atan2(mouse.y - H/2, mouse.x - W/2);
+  var dx = 0, dy = 0, i;
+  if (keys.KeyW || keys.ArrowUp) dy -= 1; if (keys.KeyS || keys.ArrowDown) dy += 1;
+  if (keys.KeyA || keys.ArrowLeft) dx -= 1; if (keys.KeyD || keys.ArrowRight) dx += 1;
+  P.swim = inWater(P.x, P.y, 0);
+  if (dx || dy){ var l = Math.hypot(dx, dy), sp = (P.swim ? 2.6 : 5.6)*dt/l; pmove(P, dx*sp, dy*sp, 0.45, blocked(P.x, P.y)); }
+  P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
+  P.hunger = Math.max(0, P.hunger - dt*100/400); P.thirst = Math.max(0, P.thirst - dt*100/300);
+  if (P.hunger <= 0) P.hp -= 1.5*dt; if (P.thirst <= 0) P.hp -= 1.5*dt;
+  if (P.hunger > 50 && P.thirst > 50 && P.hp < 100) P.hp = Math.min(100, P.hp + 0.6*dt);
+  for (i = fires.length - 1; i >= 0; i--){ var f = fires[i]; f.life -= dt; if (f.life <= 0){ fires.splice(i, 1); continue; } if (Math.hypot(f.x - P.x, f.y - P.y) < 5 && P.hp < 100) P.hp = Math.min(100, P.hp + 2*dt); }
+  P.atkCd -= dt; P.swing -= dt; P.shootCd -= dt; P.hurt -= dt; drinkCd -= dt;
+
+  var nt = findTarget();
+  if (!nt || !target || nt.o !== target.o) prog = 0;
+  target = nt;
+  if (keys.KeyE && target){
+    if (target.water){ if (drinkCd <= 0){ drinkCd = 0.8; P.thirst = Math.min(100, P.thirst + 30); floater(P.x, P.y - 1.5, 'Drank', ITEMS.water[1]); } }
+    else { prog += dt/target.o.time; if (prog >= 1){ loot(target.o); prog = 0; target = null; } }
+  } else prog = 0;
+  var pr = el('prompt');
+  if (target){
+    pr.classList.remove('hidden');
+    pr.textContent = target.water ? 'Hold E to drink' : (prog > 0 ? 'Searching ' : 'Hold E to search ') + (target.o.name || (CAT[target.o.cat].label === 'Home' ? 'this home' : 'this ' + CAT[target.o.cat].label.toLowerCase())) +
+      (target.o.cat !== 'house' ? ' (' + CAT[target.o.cat].label + ')' : '');
+  } else pr.classList.add('hidden');
+
+  if ((wantSwing || keys.Space) && P.atkCd <= 0) swing();
+  if (wantShoot && P.shootCd <= 0) shoot();
+  wantSwing = wantShoot = false;
+
+  var far = viewR() + 45, night = dark > 0.5;
+  for (i = zombies.length - 1; i >= 0; i--){
+    var z = zombies[i], ex = P.x - z.x, ey = P.y - z.y, d = Math.hypot(ex, ey) || 0.001;
+    if (z.hp <= 0){ kills++; burst(z.x, z.y, '#5d7a4a', 9); zombies.splice(i, 1); continue; }
+    if (d > far){ zombies.splice(i, 1); continue; }
+    z.cd -= dt; z.hurt -= dt;
+    var zs = (night ? 3.9 : 2.7)*z.spd, vx, vy;
+    if (z.av > 0){ z.av -= dt; vx = z.ax*0.9 + ex/d*0.2; vy = z.ay*0.9 + ey/d*0.2; } else { vx = ex/d; vy = ey/d; }
+    var ox = z.x, oy = z.y;
+    if (d > 0.8) pmove(z, (vx*zs + z.kx)*dt, (vy*zs + z.ky)*dt, 0.42, false);
+    z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
+    if (z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -ey/d*sg; z.ay = ex/d*sg; z.av = 0.6 + Math.random()*0.9; }
+    for (var c = cades.length - 1; c >= 0; c--){
+      var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001;
+      if (bl < 1.25){ z.x = cd.x + bx/bl*1.25; z.y = cd.y + by/bl*1.25; cd.hp -= dt*5; if (cd.hp <= 0){ burst(cd.x, cd.y, '#8a5a2b', 8); cades.splice(c, 1); } }
+    }
+    if (d < 1.15 && z.cd <= 0){ z.cd = 0.9; P.hp -= 9; P.hurt = 0.25; floater(P.x, P.y - 1.5, '-9', '#ff6b5e'); }
+    z.ang = Math.atan2(ey, ex);
+  }
+  for (i = bullets.length - 1; i >= 0; i--){
+    var b = bullets[i], dead = false; b.t -= dt;
+    for (var s = 0; s < 5 && !dead; s++){
+      b.x += b.vx*dt/5; b.y += b.vy*dt/5;
+      if (blocked(b.x, b.y)){ burst(b.x, b.y, '#d8d2c0', 3); dead = true; break; }
+      for (var q = 0; q < zombies.length; q++){ var zz = zombies[q]; if (Math.hypot(zz.x - b.x, zz.y - b.y) < 0.75){ zz.hp -= 5; zz.hurt = 0.15; burst(zz.x, zz.y, '#7a1f1f', 5); dead = true; break; } }
+    }
+    if (dead || b.t <= 0) bullets.splice(i, 1);
+  }
+  spawnT -= dt;
+  if (spawnT <= 0){ spawnT = 0.5; var cap = Math.min(70, Math.round((5 + day*2)*(1 + dark*1.4))); if (zombies.length < cap) spawnZombie(); }
+  for (i = floaters.length - 1; i >= 0; i--){ var fl = floaters[i]; fl.t -= dt; fl.y -= dt*1.2; if (fl.t <= 0) floaters.splice(i, 1); }
+  for (i = parts.length - 1; i >= 0; i--){ var p = parts[i]; p.t -= dt; p.x += p.vx*dt; p.y += p.vy*dt; if (p.t <= 0) parts.splice(i, 1); }
+  if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
+  hudT -= dt; if (hudT <= 0){ hudT = 0.25; updateHud(); }
+  if (P.hp <= 0) gameOver();
+}
+function updateHud(){
+  el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
+  var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10;
+  el('stats').innerHTML = 'Day ' + (Math.floor(hrs/24) + 1) + ' &middot; ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min + (dark > 0.5 ? ' &middot; <b style="color:#ff8f7a">NIGHT</b>' : '') +
+    '<br>Searched: ' + searched + ' / ' + (world.buildings.length + world.crates.length) + '<br>Infected put down: ' + kills;
+  var h = '';
+  for (var k in ITEMS) h += '<div class="slot"><span class="sw" style="background:' + ITEMS[k][1] + '"></span>' + ITEMS[k][0] + ' ' + inv[k] + (ITEMS[k][2] ? ' <b>[' + ITEMS[k][2] + ']</b>' : '') + '</div>';
+  el('inv').innerHTML = h;
+}
+
+/* ================= drawing ================= */
+function path(c, p, s, ox, oy, close){
+  c.beginPath(); c.moveTo(p[0]*s + ox, p[1]*s + oy);
+  for (var i = 2; i < p.length; i += 2) c.lineTo(p[i]*s + ox, p[i+1]*s + oy);
+  if (close) c.closePath();
+}
+function shape(col, x, y, a, s, pts){
+  var ca = Math.cos(a)*s, sa = Math.sin(a)*s; ctx.fillStyle = col; ctx.beginPath();
+  for (var i = 0; i < pts.length; i += 2){ var px = x + pts[i]*ca - pts[i+1]*sa, py = y + pts[i]*sa + pts[i+1]*ca; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }
+  ctx.closePath(); ctx.fill();
+}
+var ROAD_COL = {road:'#4b5059', path:'#b9a57e', water:'#3f86b8', rail:'#2c2f35'};
+function drawFlat(c, s, ox, oy, x0, y0, x1, y1, mini){
+  var i, a;
+  for (i = 0; i < world.areas.length; i++){
+    a = world.areas[i]; if (a.maxx < x0 || a.minx > x1 || a.maxy < y0 || a.miny > y1) continue;
+    c.fillStyle = AREA_COL[a.kind]; path(c, a.pts, s, ox, oy, true); c.fill();
+  }
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  for (i = 0; i < world.roads.length; i++){
+    a = world.roads[i]; if (a.maxx + a.w < x0 || a.minx - a.w > x1 || a.maxy + a.w < y0 || a.miny - a.w > y1) continue;
+    if (mini && a.kind === 'path') continue;
+    c.strokeStyle = ROAD_COL[a.kind]; c.lineWidth = Math.max(mini ? 1 : 1.5, a.w*s); path(c, a.pts, s, ox, oy, false); c.stroke();
+  }
+}
+function makeMini(){
+  var bw = world.maxx - world.minx + 40, bh = world.maxy - world.miny + 40; miniK = 170/Math.max(bw, bh);
+  miniBg = document.createElement('canvas'); miniBg.width = miniBg.height = 170;
+  var c = miniBg.getContext('2d'), ox = 85 - (world.minx + world.maxx)/2*miniK, oy = 85 - (world.miny + world.maxy)/2*miniK;
+  c.fillStyle = '#5f7a52'; c.fillRect(0, 0, 170, 170);
+  drawFlat(c, miniK, ox, oy, -1e9, -1e9, 1e9, 1e9, true);
+  world.buildings.forEach(function(b){ c.fillStyle = b.cat === 'house' ? '#cdb596' : CAT[b.cat].cols[0]; path(c, b.pts, miniK, ox, oy, true); c.fill(); });
+  miniBg.ox = ox; miniBg.oy = oy;
+}
+function drawMini(){
+  var c = el('mini').getContext('2d'); c.drawImage(miniBg, 0, 0);
+  c.fillStyle = 'rgba(10,12,20,' + (0.45*dark) + ')'; c.fillRect(0, 0, 170, 170);
+  var px = P.x*miniK + miniBg.ox, py = P.y*miniK + miniBg.oy, v = viewR()*0.7*miniK;
+  c.strokeStyle = 'rgba(255,255,255,.6)'; c.lineWidth = 1; c.strokeRect(px - v, py - v*H/W, v*2, v*2*H/W);
+  c.fillStyle = '#ff5a3c'; for (var i = 0; i < zombies.length; i++) c.fillRect(zombies[i].x*miniK + miniBg.ox - 1, zombies[i].y*miniK + miniBg.oy - 1, 2, 2);
+  c.fillStyle = '#fff'; c.fillRect(px - 2, py - 2, 5, 5);
+}
+function render(){
+  var ox = Math.round(W/2 - P.x*S), oy = Math.round(H/2 - P.y*S), x0 = -ox/S, y0 = -oy/S, x1 = (W - ox)/S, y1 = (H - oy)/S, i, x, y, now = time;
+  var TS = 10;
+  for (y = Math.floor(y0/TS); y <= Math.floor(y1/TS); y++) for (x = Math.floor(x0/TS); x <= Math.floor(x1/TS); x++){
+    var sx = x*TS*S + ox, sy = y*TS*S + oy, t = TS*S + 1, k1 = 0.9 + hash(x, y, 1)*0.18, k2 = 0.9 + hash(x, y, 2)*0.18;
+    ctx.fillStyle = 'rgb(' + (104*k1|0) + ',' + (132*k1|0) + ',' + (88*k1|0) + ')'; ctx.fillRect(sx, sy, t, t);
+    ctx.fillStyle = 'rgb(' + (104*k2|0) + ',' + (132*k2|0) + ',' + (88*k2|0) + ')'; ctx.beginPath();
+    if (hash(x, y, 3) > 0.5){ ctx.moveTo(sx, sy); ctx.lineTo(sx + t, sy); ctx.lineTo(sx, sy + t); } else { ctx.moveTo(sx + t, sy); ctx.lineTo(sx + t, sy + t); ctx.lineTo(sx, sy + t); }
+    ctx.fill();
+  }
+  drawFlat(ctx, S, ox, oy, x0, y0, x1, y1, false);
+  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 2; ctx.setLineDash([10, 10]);
+  ctx.strokeRect((world.minx - 40)*S + ox, (world.miny - 40)*S + oy, (world.maxx - world.minx + 80)*S, (world.maxy - world.miny + 80)*S); ctx.setLineDash([]);
+
+  /* buildings */
+  var sh = 0.35*S;
+  for (i = 0; i < world.buildings.length; i++){
+    var b = world.buildings[i]; if (b.maxx < x0 - 1 || b.minx > x1 || b.maxy < y0 - 1 || b.miny > y1) continue;
+    var p = b.pts, n = p.length, cx = b.cx*S + ox, cy = b.cy*S + oy;
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; path(ctx, p, S, ox + sh, oy + sh, true); ctx.fill();
+    ctx.fillStyle = b.col; path(ctx, p, S, ox, oy, true); ctx.fill();
+    if (S >= 6){
+      ctx.save(); ctx.clip();
+      for (var e = 0; e < n; e += 2){
+        var j = (e + 2) % n, hs = hash(b.id, e, 9);
+        ctx.fillStyle = hs > 0.5 ? 'rgba(255,255,255,' + ((hs - 0.5)*0.36).toFixed(3) + ')' : 'rgba(0,0,0,' + ((0.5 - hs)*0.36).toFixed(3) + ')';
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(p[e]*S + ox, p[e+1]*S + oy); ctx.lineTo(p[j]*S + ox, p[j+1]*S + oy); ctx.fill();
+      }
+      ctx.restore(); path(ctx, p, S, ox, oy, true);
+    }
+    if (b.looted){ ctx.fillStyle = 'rgba(22,24,30,.5)'; ctx.fill(); }
+    ctx.strokeStyle = 'rgba(30,24,20,.75)'; ctx.lineWidth = Math.max(1, S*0.16); ctx.stroke();
+    if (!b.looted){
+      var ic = CAT[b.cat].icon;
+      if (ic){
+        ctx.fillStyle = 'rgba(255,255,255,.88)'; ctx.beginPath(); ctx.arc(cx, cy, 1.5*S, 0, 6.283); ctx.fill();
+        ctx.fillStyle = ICON_COL[b.cat]; ctx.font = 'bold ' + Math.round(2.2*S) + 'px Verdana'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ic, cx, cy + 0.1*S);
+      } else { ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fillRect(cx - 0.3*S, cy - 0.3*S, 0.6*S, 0.6*S); }
+    }
+  }
+  if (target && target.o && target.o.pts){ ctx.strokeStyle = '#f2b134'; ctx.lineWidth = 3; path(ctx, target.o.pts, S, ox, oy, true); ctx.stroke(); }
+  /* crates, barricades, fires */
+  for (i = 0; i < world.crates.length; i++){
+    var c = world.crates[i]; if (c.x < x0 - 2 || c.x > x1 + 2 || c.y < y0 - 2 || c.y > y1 + 2) continue;
+    var qx = c.x*S + ox, qy = c.y*S + oy;
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(qx - 0.8*S + sh, qy - 0.8*S + sh, 1.6*S, 1.6*S);
+    ctx.fillStyle = c.looted ? '#5a4a3a' : '#a8743e'; ctx.fillRect(qx - 0.8*S, qy - 0.8*S, 1.6*S, 1.6*S);
+    ctx.fillStyle = c.looted ? '#4a3d30' : '#c9905a'; ctx.beginPath(); ctx.moveTo(qx - 0.8*S, qy - 0.8*S); ctx.lineTo(qx + 0.8*S, qy - 0.8*S); ctx.lineTo(qx - 0.8*S, qy + 0.8*S); ctx.fill();
+    if (!c.looted){ ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.round(1.3*S) + 'px Verdana'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(CAT[c.cat].icon, qx, qy); }
+  }
+  for (i = 0; i < cades.length; i++){ var cd = cades[i]; x = cd.x*S + ox; y = cd.y*S + oy; shape('#6b4526', x, y, 0.78, S, [-1.1,-0.2, 1.1,-0.2, 1.1,0.2, -1.1,0.2]); shape('#a8743e', x, y, -0.78, S, [-1.1,-0.2, 1.1,-0.2, 1.1,0.2, -1.1,0.2]); }
+  for (i = 0; i < fires.length; i++){
+    var f = fires[i], fk = 0.8 + 0.25*Math.sin(now*17 + i); x = f.x*S + ox; y = f.y*S + oy;
+    shape('#4a3a2c', x, y, 0, S, [-0.9,0.5, 0.9,0.5, 0.6,0.9, -0.6,0.9]);
+    shape('#e2572b', x, y, 0, S*fk, [-0.7,0.5, 0,-1.1, 0.7,0.5]); shape('#ffd24a', x, y, 0, S*fk, [-0.35,0.5, 0,-0.4, 0.35,0.5]);
+  }
+  /* bullets, zombies, player */
+  ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 2; ctx.beginPath();
+  for (i = 0; i < bullets.length; i++){ var bl = bullets[i]; ctx.moveTo(bl.x*S + ox, bl.y*S + oy); ctx.lineTo((bl.x - bl.vx*0.02)*S + ox, (bl.y - bl.vy*0.02)*S + oy); }
+  ctx.stroke();
+  for (i = 0; i < zombies.length; i++){
+    var z = zombies[i]; x = z.x*S + ox; y = z.y*S + oy; if (x < -30 || x > W + 30 || y < -30 || y > H + 30) continue;
+    var wob = Math.sin(now*7 + z.v*9)*0.12, hc = z.hurt > 0;
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x + sh, y + sh, 0.6*S, 0.5*S, 0, 0, 6.283); ctx.fill();
+    shape(hc ? '#fff' : '#566b46', x, y, z.ang + wob, S, [0.2,-0.55, 1.0,-0.45, 1.0,-0.25, 0.2,-0.3]); shape(hc ? '#fff' : '#566b46', x, y, z.ang - wob, S, [0.2,0.55, 1.0,0.45, 1.0,0.25, 0.2,0.3]);
+    shape(hc ? '#fff' : (z.v > 0.5 ? '#6f5a4a' : '#4f5d6b'), x, y, z.ang, S, [-0.35,-0.62, 0.3,-0.5, 0.3,0.5, -0.35,0.62]);
+    shape(hc ? '#fff' : '#8fa878', x, y, z.ang, S, [-0.2,-0.3, 0.15,-0.36, 0.42,0, 0.15,0.36, -0.2,0.3]);
+  }
+  x = W/2; y = H/2; x = P.x*S + ox; y = P.y*S + oy;
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x + sh, y + sh, 0.6*S, 0.5*S, 0, 0, 6.283); ctx.fill();
+  if (P.swing > 0){ ctx.fillStyle = 'rgba(255,255,255,' + (0.3*P.swing/0.18) + ')'; ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, 2.4*S, P.ang - 1, P.ang + 1); ctx.closePath(); ctx.fill(); }
+  var ba = P.swing > 0 ? P.ang + (P.swing/0.18 - 0.5)*2 : P.ang + 0.5;
+  shape('#c9a56a', x, y, ba, S, [0.3,-0.09, 1.7,-0.14, 1.7,0.14, 0.3,0.09]);
+  shape('#2a2d33', x, y, P.ang, S, [0.3,-0.42, 1.05,-0.42, 1.05,-0.26, 0.3,-0.26]);
+  shape(P.hurt > 0 ? '#ff6b5e' : (P.swim ? '#2b5f8f' : '#3566c4'), x, y, P.ang, S, [-0.38,-0.62, 0.3,-0.52, 0.3,0.52, -0.38,0.62]);
+  shape('#5a3a1e', x, y, P.ang, S, [-0.26,-0.3, 0.12,-0.36, 0.4,0, 0.12,0.36, -0.26,0.3]); shape('#e8b88a', x, y, P.ang, S, [0.08,-0.26, 0.4,0, 0.08,0.26]);
+  /* trees */
+  for (i = 0; i < world.trees.length; i++){
+    var tr = world.trees[i]; if (tr.x < x0 - 4 || tr.x > x1 + 4 || tr.y < y0 - 4 || tr.y > y1 + 4) continue;
+    x = tr.x*S + ox; y = tr.y*S + oy;
+    if (!tr.alive){ shape('#6b4526', x, y, 0, S, [-0.4,-0.3, 0.3,-0.4, 0.45,0.25, -0.2,0.4]); continue; }
+    if (tr.shake > 0){ tr.shake -= 0.016; x += Math.sin(now*80)*2; }
+    var r = tr.r*S, ta = tr.r*5;
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.arc(x + sh*1.5, y + sh*1.5, r, 0, 6.283); ctx.fill();
+    shape('#3f7a3f', x, y, ta, r, [1,0, 0.5,0.87, -0.5,0.87, -1,0, -0.5,-0.87, 0.5,-0.87]);
+    shape('#5a9a52', x, y, ta, r, [0,0, 1,0, 0.5,-0.87, -0.5,-0.87]); shape('#75b266', x, y, ta, r, [0,0, 0.5,-0.87, -0.5,-0.87]);
+  }
+  for (i = 0; i < parts.length; i++){ var pt = parts[i]; ctx.fillStyle = pt.col; ctx.fillRect(pt.x*S + ox - 2, pt.y*S + oy - 2, 4, 4); }
+  /* night */
+  if (dark > 0.01){
+    lctx.globalCompositeOperation = 'source-over'; lctx.clearRect(0, 0, W, H); lctx.fillStyle = 'rgba(6,8,22,' + (0.9*dark) + ')'; lctx.fillRect(0, 0, W, H);
+    lctx.globalCompositeOperation = 'destination-out';
+    var light = function(lx, ly, rad, a0, a1){
+      var g = lctx.createRadialGradient(lx, ly, 0, lx, ly, rad); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.55, 'rgba(0,0,0,.75)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      lctx.fillStyle = g; lctx.beginPath(); lctx.moveTo(lx, ly); lctx.arc(lx, ly, rad, a0, a1); lctx.closePath(); lctx.fill();
+    };
+    var px = P.x*S + ox, py = P.y*S + oy;
+    light(px, py, 7*S, 0, 6.283); light(px, py, 24*S, P.ang - 0.5, P.ang + 0.5);
+    for (i = 0; i < fires.length; i++) light(fires[i].x*S + ox, fires[i].y*S + oy, (11 + Math.sin(now*13 + i))*S, 0, 6.283);
+    ctx.drawImage(lc, 0, 0);
+  }
+  /* search progress + floaters */
+  if (prog > 0){
+    x = P.x*S + ox; y = P.y*S + oy - 2.2*S;
+    ctx.fillStyle = '#14171b'; ctx.fillRect(x - 26, y - 5, 52, 9); ctx.fillStyle = '#f2b134'; ctx.fillRect(x - 24, y - 3, 48*prog, 5);
+  }
+  ctx.font = 'bold 13px Verdana'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  for (i = 0; i < floaters.length; i++){
+    var fl = floaters[i]; ctx.globalAlpha = Math.min(1, fl.t*2);
+    ctx.fillStyle = '#10161c'; ctx.fillText(fl.txt, fl.x*S + ox + 1, fl.y*S + oy + 1); ctx.fillStyle = fl.col; ctx.fillText(fl.txt, fl.x*S + ox, fl.y*S + oy);
+  }
+  ctx.globalAlpha = 1;
+  if (P.hurt > 0){ ctx.fillStyle = 'rgba(200,30,30,' + (P.hurt*0.8) + ')'; ctx.fillRect(0, 0, W, H); }
+}
+
+/* ================= loop + screens ================= */
+var lastTs = 0;
+function frame(ts){
+  var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
+  if (running){ update(dt); if (world){ render(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } }
+  requestAnimationFrame(frame);
+}
+function readFile(file){
+  if (!file) return;
+  el('status').style.color = '#cfd5db'; el('status').textContent = 'Reading ' + file.name + '...';
+  var fr = new FileReader();
+  fr.onload = function(){
+    setTimeout(function(){
+      try { loadRaw(parseText(String(fr.result)), file.name.replace(/\.[^.]+$/, '')); el('status').textContent = ''; }
+      catch (e) { el('status').style.color = '#ff8f7a'; el('status').textContent = e.message || 'Could not read this file.'; }
+    }, 30);
+  };
+  fr.onerror = function(){ el('status').textContent = 'Could not read this file.'; };
+  fr.readAsText(file);
+}
+el('file').addEventListener('change', function(e){ readFile(e.target.files[0]); e.target.value = ''; });
+window.addEventListener('dragover', function(e){ e.preventDefault(); });
+window.addEventListener('drop', function(e){ e.preventDefault(); if (!running && e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
+el('demo').addEventListener('click', function(){ loadRaw(demoRaw(), 'Demo Town'); });
+el('again').addEventListener('click', function(){ startRun(); });
+el('other').addEventListener('click', function(){
+  el('over').classList.add('hidden'); el('title').classList.remove('hidden');
+  ['hud','mini','inv','help'].forEach(function(id){ el(id).classList.add('hidden'); });
+});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

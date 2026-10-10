@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Driftwood Isles</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#12283a;font-family:Verdana,Geneva,sans-serif;color:#f3ead2;user-select:none}
+  #game{display:block;width:100%;height:100%;cursor:crosshair}
+  #hud{position:fixed;left:12px;top:12px;pointer-events:none}
+  .bar{width:230px;height:20px;background:#1c1410;border:2px solid #f3ead2;position:relative}
+  #hpfill{height:100%;width:100%;background:#d8473a}
+  #hptxt{position:absolute;left:0;right:0;top:2px;text-align:center;font-size:12px;font-weight:bold}
+  #stats{margin-top:6px;font-size:12px;line-height:1.6;background:rgba(18,28,40,.72);padding:6px 9px;max-width:230px;box-sizing:border-box}
+  #mini{position:fixed;right:12px;top:12px;width:168px;height:168px;border:2px solid #f3ead2;image-rendering:pixelated;background:#12283a}
+  #inv{position:fixed;left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:70%;pointer-events:none}
+  .slot{background:rgba(18,28,40,.78);border:1px solid #6d7f8c;padding:4px 8px;font-size:12px;display:flex;align-items:center;gap:6px}
+  .sw{width:10px;height:10px;display:inline-block}
+  #help{position:fixed;right:12px;bottom:12px;font-size:11px;background:rgba(18,28,40,.72);padding:6px 9px;pointer-events:none;text-align:right;line-height:1.6}
+  #toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:rgba(18,28,40,.9);border:2px solid #e9b949;padding:9px 16px;font-size:14px;max-width:70%;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+  .hidden{display:none !important}
+  #craft{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);max-height:84vh;overflow:auto;background:#1b2836;border:3px solid #e9b949;padding:14px 18px}
+  #craft h2{margin:0 0 4px;font-size:20px;color:#e9b949}
+  #craft h3{margin:14px 0 4px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#8fb7c9;border-bottom:1px solid #3a4c5c;padding-bottom:3px}
+  .rec{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px}
+  .rec .nm{width:118px;font-weight:bold}
+  .rec .cost{flex:1;font-size:12px;color:#c9d3da}
+  .rec .cost .no{color:#ff7d6e}
+  .rec .cost i{color:#8fb7c9;font-style:normal;display:block;font-size:11px}
+  button{font-family:inherit;font-size:13px;font-weight:bold;background:#e9b949;color:#1c1410;border:0;padding:6px 12px;cursor:pointer}
+  button:disabled{background:#4b5964;color:#8c979f;cursor:default}
+  button:hover:not(:disabled){background:#ffd56a}
+  #title{position:fixed;inset:0;background:linear-gradient(#17405e,#0e2233);display:flex;align-items:center;justify-content:center}
+  #title .box{text-align:center;max-width:560px;padding:20px}
+  #title h1{font-size:46px;margin:0;color:#e9b949;letter-spacing:2px}
+  #title p{font-size:14px;line-height:1.7;color:#d5dde2}
+  #title .row{margin:14px 0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  #title button{font-size:16px;padding:10px 20px}
+  #seedIn{font-family:inherit;font-size:14px;padding:8px;width:150px;background:#0e2233;color:#f3ead2;border:2px solid #6d7f8c}
+  .keys{font-size:12px;color:#8fb7c9}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div class="bar"><div id="hpfill"></div><span id="hptxt"></span></div>
+  <div id="stats"></div>
+</div>
+<canvas id="mini" width="96" height="96"></canvas>
+<div id="inv"></div>
+<div id="help">WASD / arrows: move &middot; Space or click: attack &amp; gather<br>C: crafting &middot; H: use salve</div>
+<div id="toast"></div>
+<div id="craft" class="hidden"></div>
+<div id="title">
+  <div class="box">
+    <h1>DRIFTWOOD ISLES</h1>
+    <p>You are stranded on a small island in an endless, generated sea. Gather wood and fiber, craft a raft, and sail outward. Farther islands hold iron, crystal, tougher monsters, and the three lost Sun Relics.</p>
+    <div class="row">
+      <button id="startCont">Continue</button>
+      <button id="startNew">New World</button>
+      <input id="seedIn" placeholder="Seed (optional)" maxlength="12">
+    </div>
+    <p class="keys">WASD / arrows to move &middot; Space or click to attack and gather &middot; C to craft &middot; H to heal</p>
+  </div>
+</div>
+<script>
+'use strict';
+var T = 40, LAND = 0.57;
+var cv = document.getElementById('game'), ctx = cv.getContext('2d');
+var W = 0, H = 0;
+function resize(){ W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+/* ---------- noise ---------- */
+var seed = 1;
+function hash(x, y, s){
+  var h = Math.imul(x|0, 374761393) ^ Math.imul(y|0, 668265263) ^ Math.imul(s|0, 1442695041);
+  h = Math.imul(h ^ (h >>> 15), 2246822519); h ^= h >>> 13;
+  h = Math.imul(h, 3266489917); h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vnoise(x, y, s){
+  var xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi;
+  fx = fx*fx*(3-2*fx); fy = fy*fy*(3-2*fy);
+  var a = hash(xi,yi,s), b = hash(xi+1,yi,s), c = hash(xi,yi+1,s), d = hash(xi+1,yi+1,s);
+  return a + (b-a)*fx + (c-a)*fy + (a-b-c+d)*fx*fy;
+}
+function fbm(x, y){
+  var v = 0, amp = 1, f = 1;
+  for (var o = 0; o < 4; o++){ v += vnoise(x*f, y*f, seed+o)*amp; amp *= 0.5; f *= 2; }
+  return v / 1.875;
+}
+
+/* ---------- world ---------- */
+var bH = 0, bZone = 1, bTier = 0;
+function base(x, y){
+  var d = Math.hypot(x, y);
+  var h = fbm(x/26, y/26) + 0.3*Math.max(0, 1 - d/11);
+  if (d < 7.5) h = Math.max(h, d < 6.5 ? 0.7 : 0.585);
+  if (d > 11 && d < 19) h -= 0.35*(1 - Math.abs(d-15)/4);
+  var dz = d + (vnoise(x/30+500, y/30+500, seed+50) - 0.5)*24;
+  bH = h; bZone = dz < 75 ? 1 : dz < 180 ? 2 : 3; bTier = dz < 28 ? 0 : bZone;
+}
+var GCOL = [[108,178,78],[84,160,92],[160,152,72],[104,96,128]];
+var SCOL = [[228,207,142],[228,207,142],[214,186,128],[152,144,156]];
+var WCOL = [null,[62,168,198],[36,106,168],[30,48,88]];
+var RCOL = [146,146,156];
+var ZONE_NAME = ['', 'Calm Shallows', 'Open Sea', 'Storm Sea'];
+var BOAT_NAME = ['None', 'Raft', 'Sailboat', 'Galleon'];
+var BOAT_SPEED = [0, 3.2, 5.5, 7];
+var WEAPON_NAME = ['Fists', 'Stone Blade', 'Iron Sword', 'Crystal Blade'];
+var WEAPON_DMG = [2, 4, 7, 11];
+var WEAPON_COL = ['#caa27a', '#9aa0a8', '#dfe6ee', '#6ff0ff'];
+
+function rgb(c, k){ return 'rgb(' + (c[0]*k|0) + ',' + (c[1]*k|0) + ',' + (c[2]*k|0) + ')'; }
+function tkey(x, y){ return (x+32768)*65536 + (y+32768); }
+var tiles = new Map(), removed = new Set();
+function getTile(x, y){
+  var k = tkey(x, y), t = tiles.get(k);
+  if (t) return t;
+  base(x, y);
+  t = { water:false, zone:bZone, tier:bTier, obj:null, s1:hash(x,y,seed+11), diag:hash(x,y,seed+13) > 0.5, cA:'', cB:'', shal:0, key:k };
+  var s2 = hash(x, y, seed+12), r = hash(x, y, seed+7), d = Math.hypot(x, y), col;
+  if (bH <= LAND){
+    t.water = true; t.shal = Math.max(0, 1 - (LAND - bH)/0.06);
+  } else if (bH <= LAND + 0.025){
+    col = SCOL[bTier]; if (r < 0.03) t.obj = 'rock';
+  } else if (bTier >= 1 && vnoise(x/8+900, y/8+900, seed+90) > 0.7){
+    col = RCOL; if (r < 0.14) t.obj = 'pillar'; else if (r > 0.965) t.obj = 'chest';
+  } else {
+    col = GCOL[bTier];
+    if (d < 7.5){ if (r < 0.17) t.obj = 'tree'; else if (r < 0.30) t.obj = 'bush'; else if (r < 0.35) t.obj = 'rock'; }
+    else if (r < 0.10) t.obj = 'tree';
+    else if (r < 0.14) t.obj = 'bush';
+    else if (r < 0.175) t.obj = 'rock';
+    else if (r < 0.20){ if (bTier >= 1) t.obj = 'iron'; }
+    else if (r < 0.215){ if (bTier >= 2) t.obj = 'crystal'; }
+    else if (r > 0.997 && bTier >= 1) t.obj = 'chest';
+  }
+  if (!t.water){ t.cA = rgb(col, 0.88 + 0.2*t.s1); t.cB = rgb(col, 0.88 + 0.2*s2); }
+  if (d < 2.5 || removed.has(k)) t.obj = null;
+  if (tiles.size > 60000) tiles.clear();
+  tiles.set(k, t);
+  return t;
+}
+
+/* ---------- state ---------- */
+var P, inv, relics, won, enemies, floaters, particles, objHits;
+var ITEMS = {
+  wood:['Wood','#a8743e'], fiber:['Fiber','#b9d15a'], stone:['Stone','#9aa0a8'], ore:['Iron Ore','#d08a4a'],
+  crystal:['Crystal','#6ff0ff'], plank:['Plank','#d9a866'], rope:['Rope','#e2cf8e'], cloth:['Sailcloth','#f4f1e6'],
+  ingot:['Iron Ingot','#dfe6ee'], salve:['Salve','#ff8fa3']
+};
+var RECIPES = [
+  {name:'Plank', cat:'Materials', cost:{wood:2}, give:{plank:1}},
+  {name:'Rope', cost:{fiber:2}, give:{rope:1}},
+  {name:'Sailcloth', cost:{fiber:3}, give:{cloth:1}},
+  {name:'Iron Ingot', cost:{ore:2, wood:1}, give:{ingot:1}},
+  {name:'Raft', cat:'Boats', boat:1, cost:{plank:6, rope:3}, desc:'Crosses the Calm Shallows around home'},
+  {name:'Sailboat', boat:2, cost:{plank:12, rope:6, cloth:2, ingot:4}, desc:'Crosses the Open Sea. Faster.'},
+  {name:'Galleon', boat:3, cost:{plank:20, rope:8, cloth:4, ingot:8, crystal:4}, desc:'Braves the Storm Sea. Fastest.'},
+  {name:'Stone Blade', cat:'Gear', weapon:1, cost:{wood:2, stone:4}, desc:'Damage 4'},
+  {name:'Iron Sword', weapon:2, cost:{plank:1, ingot:3}, desc:'Damage 7'},
+  {name:'Crystal Blade', weapon:3, cost:{ingot:2, crystal:3}, desc:'Damage 11'},
+  {name:'Herbal Salve', cost:{fiber:2}, give:{salve:1}, desc:'Heals 40 HP (press H)'}
+];
+var ETYPES = {
+  slime:{hp:6, dmg:4, spd:1.6, xp:3, size:1, drop:'fiber'},
+  crab:{hp:12, dmg:7, spd:2.2, xp:6, size:1, drop:'stone'},
+  skeleton:{hp:22, dmg:11, spd:2.4, xp:12, size:1.1, drop:'ore'},
+  golem:{hp:45, dmg:18, spd:1.7, xp:25, size:1.35, drop:'ore'},
+  wraith:{hp:35, dmg:22, spd:3.0, xp:35, size:1.15, drop:'crystal'}
+};
+var SPAWNS = [['slime'], ['slime','crab'], ['crab','skeleton','golem'], ['skeleton','golem','wraith']];
+var OBJ_HP = {tree:6, bush:1, rock:6, iron:10, crystal:14, chest:1};
+
+function resetState(){
+  P = {x:0.5, y:0.5, hp:50, maxhp:50, lvl:1, xp:0, boat:0, weapon:0, fx:0, fy:1, atkCd:0, swing:0, hurtT:0, lastHit:99, onWater:false};
+  inv = {}; for (var k in ITEMS) inv[k] = 0;
+  relics = 0; won = false; enemies = []; floaters = []; particles = []; objHits = new Map();
+  removed = new Set(); tiles.clear();
+}
+resetState();
+
+/* ---------- save ---------- */
+var SAVE_KEY = 'driftwoodIsles_v1';
+function saveGame(){
+  if (!running) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({seed:seed, p:{x:P.x,y:P.y,hp:P.hp,maxhp:P.maxhp,lvl:P.lvl,xp:P.xp,boat:P.boat,weapon:P.weapon},
+      inv:inv, relics:relics, won:won, removed:Array.from(removed)}));
+  } catch (e) {}
+}
+function readSave(){ try { var s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+function loadGame(s){
+  resetState(); seed = s.seed|0;
+  for (var k in s.p) P[k] = s.p[k];
+  for (var i in s.inv) if (i in inv) inv[i] = s.inv[i];
+  relics = s.relics||0; won = !!s.won; removed = new Set(s.removed||[]);
+}
+window.addEventListener('beforeunload', saveGame);
+
+/* ---------- ui ---------- */
+var el = function(id){ return document.getElementById(id); };
+var toastT = 0;
+function toast(msg, secs){ var t = el('toast'); t.textContent = msg; t.style.opacity = 1; toastT = secs || 3; }
+function has(cost){ for (var k in cost) if (inv[k] < cost[k]) return false; return true; }
+var craftOpen = false;
+function renderCraft(){
+  var h = '<h2>Crafting</h2><div style="font-size:12px;color:#c9d3da">Press C or Esc to close</div>';
+  RECIPES.forEach(function(r, i){
+    if (r.cat) h += '<h3>' + r.cat + '</h3>';
+    var owned = (r.boat && P.boat >= r.boat) || (r.weapon && P.weapon >= r.weapon);
+    var c = [];
+    for (var k in r.cost) c.push('<span class="' + (inv[k] >= r.cost[k] ? '' : 'no') + '">' + r.cost[k] + ' ' + ITEMS[k][0] + ' (' + inv[k] + ')</span>');
+    h += '<div class="rec"><span class="nm">' + r.name + '</span><span class="cost">' + c.join(', ') +
+      (r.desc ? '<i>' + r.desc + '</i>' : '') + '</span><button data-i="' + i + '"' + (owned || !has(r.cost) ? ' disabled' : '') + '>' +
+      (owned ? 'Owned' : 'Craft') + '</button></div>';
+  });
+  el('craft').innerHTML = h;
+}
+function setCraft(open){
+  craftOpen = open;
+  if (open){ renderCraft(); el('craft').classList.remove('hidden'); } else el('craft').classList.add('hidden');
+}
+el('craft').addEventListener('click', function(e){
+  var i = e.target && e.target.getAttribute ? e.target.getAttribute('data-i') : null;
+  if (i === null) return;
+  var r = RECIPES[+i]; if (!has(r.cost)) return;
+  for (var k in r.cost) inv[k] -= r.cost[k];
+  if (r.give) for (var g in r.give) inv[g] += r.give[g];
+  if (r.boat){ P.boat = r.boat; toast('You built a ' + r.name + '! Walk into the water to set sail. ' + r.desc, 5); }
+  if (r.weapon){ P.weapon = r.weapon; toast('Equipped: ' + r.name); }
+  renderCraft(); updateHud(); saveGame();
+});
+function updateHud(){
+  el('hpfill').style.width = Math.max(0, P.hp/P.maxhp*100) + '%';
+  el('hptxt').textContent = Math.ceil(Math.max(0, P.hp)) + ' / ' + P.maxhp;
+  var t = getTile(Math.floor(P.x), Math.floor(P.y));
+  el('stats').innerHTML = 'Level ' + P.lvl + ' &middot; XP ' + P.xp + '/' + (12*P.lvl) +
+    '<br>Boat: ' + BOAT_NAME[P.boat] + '<br>Weapon: ' + WEAPON_NAME[P.weapon] + ' (' + playerDmg() + ' dmg)' +
+    '<br>Region: ' + ZONE_NAME[t.zone] + '<br>Sun Relics: ' + relics + ' / 3';
+  var h = '';
+  for (var k in ITEMS) if (inv[k] > 0) h += '<div class="slot"><span class="sw" style="background:' + ITEMS[k][1] + '"></span>' + ITEMS[k][0] + ' ' + inv[k] + '</div>';
+  el('inv').innerHTML = h || '<div class="slot">Inventory empty: hit trees, bushes and rocks to gather</div>';
+}
+
+/* ---------- input ---------- */
+var keys = {}, attackQueued = false;
+window.addEventListener('keydown', function(e){
+  if (!running) return;
+  keys[e.code] = true;
+  if (e.code === 'KeyC') setCraft(!craftOpen);
+  if (e.code === 'Escape') setCraft(false);
+  if (e.code === 'KeyH' || e.code === 'KeyQ') useSalve();
+  if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault();
+});
+window.addEventListener('keyup', function(e){ keys[e.code] = false; });
+window.addEventListener('blur', function(){ keys = {}; });
+cv.addEventListener('mousedown', function(e){
+  if (!running || craftOpen) return;
+  var dx = e.clientX - W/2, dy = e.clientY - (H/2 - 10), l = Math.hypot(dx, dy);
+  if (l > 4){ P.fx = dx/l; P.fy = dy/l; }
+  attackQueued = true;
+});
+function useSalve(){
+  if (inv.salve < 1){ toast('No salve. Craft one from 2 fiber (C).'); return; }
+  if (P.hp >= P.maxhp) return;
+  inv.salve--; P.hp = Math.min(P.maxhp, P.hp + 40); floater(P.x, P.y - 0.8, '+40 HP', '#7dff9a');
+}
+
+/* ---------- gameplay ---------- */
+function playerDmg(){ return WEAPON_DMG[P.weapon] + (P.lvl - 1); }
+function floater(x, y, txt, col){ floaters.push({x:x, y:y, txt:txt, col:col||'#fff', t:1.2}); }
+function burst(x, y, col, n){
+  for (var i = 0; i < n; i++){ var a = Math.random()*6.283, s = 1 + Math.random()*3; particles.push({x:x, y:y, vx:Math.cos(a)*s, vy:Math.sin(a)*s - 1.5, t:0.5, col:col}); }
+}
+var waterHint = 0, hintCd = 0;
+function blockedAt(x, y, isP){
+  var t = getTile(Math.floor(x), Math.floor(y));
+  if (t.water){
+    if (!isP) return true;
+    if (P.boat >= t.zone) return false;
+    waterHint = t.zone; return true;
+  }
+  return !!t.obj && t.obj !== 'bush';
+}
+function boxBlocked(x, y, isP){
+  var r = 0.28;
+  return blockedAt(x-r, y-r, isP) || blockedAt(x+r, y-r, isP) || blockedAt(x-r, y+r, isP) || blockedAt(x+r, y+r, isP);
+}
+function tryMove(e, dx, dy, isP){
+  var moved = false;
+  if (dx && !boxBlocked(e.x+dx, e.y, isP)){ e.x += dx; moved = true; }
+  if (dy && !boxBlocked(e.x, e.y+dy, isP)){ e.y += dy; moved = true; }
+  return moved;
+}
+function give(item, n, x, y){ inv[item] += n; floater(x, y, '+' + n + ' ' + ITEMS[item][0], ITEMS[item][1]); }
+function gainXp(n){
+  P.xp += n;
+  while (P.xp >= 12*P.lvl){ P.xp -= 12*P.lvl; P.lvl++; P.maxhp += 8; P.hp = P.maxhp; toast('Level up! You are now level ' + P.lvl + '.'); }
+}
+function openChest(t, x, y){
+  var loot;
+  if (t.tier >= 3){
+    loot = {crystal:2, salve:2};
+    if (relics < 3){
+      relics++; floater(x, y - 0.6, 'SUN RELIC!', '#ffd24a');
+      if (relics >= 3 && !won){ won = true; toast('All 3 Sun Relics recovered! You have mastered the Driftwood Isles. Keep exploring as long as you like.', 10); }
+      else toast('You found a Sun Relic! (' + relics + ' / 3)', 5);
+    }
+  } else if (t.tier === 2) loot = {ingot:2, crystal:1, cloth:1, salve:1};
+  else loot = {ore:3, plank:2, salve:1};
+  var i = 0; for (var k in loot){ give(k, loot[k], x, y + i*0.35); i++; }
+  gainXp(5*t.tier);
+}
+function harvest(){
+  var tx = P.x + P.fx*0.8, ty = P.y + P.fy*0.8, best = null, bd = 0.95, bx = 0, by = 0;
+  for (var yy = Math.floor(ty)-1; yy <= Math.floor(ty)+1; yy++) for (var xx = Math.floor(tx)-1; xx <= Math.floor(tx)+1; xx++){
+    var t = getTile(xx, yy); if (!t.obj || !OBJ_HP[t.obj]) continue;
+    var d = Math.hypot(xx+0.5-tx, yy+0.5-ty); if (d < bd){ bd = d; best = t; bx = xx; by = yy; }
+  }
+  if (!best) return;
+  var h = objHits.get(best.key) || {dmg:0, t:0}; h.dmg += playerDmg(); h.t = now; objHits.set(best.key, h);
+  var cx = bx + 0.5, cy = by + 0.5, o = best.obj;
+  burst(cx, cy, o === 'tree' ? '#7a5230' : o === 'bush' ? '#b9d15a' : o === 'crystal' ? '#6ff0ff' : '#9aa0a8', 4);
+  if (h.dmg < OBJ_HP[o]) return;
+  objHits.delete(best.key); removed.add(best.key); best.obj = null;
+  if (o === 'tree') give('wood', 2 + (Math.random() < 0.5 ? 1 : 0), cx, cy);
+  else if (o === 'bush') give('fiber', 1 + (Math.random() < 0.6 ? 1 : 0), cx, cy);
+  else if (o === 'rock') give('stone', 2, cx, cy);
+  else if (o === 'iron'){ give('ore', 1 + (Math.random() < 0.5 ? 1 : 0), cx, cy); give('stone', 1, cx, cy + 0.35); }
+  else if (o === 'crystal') give('crystal', 1 + (Math.random() < 0.25 ? 1 : 0), cx, cy);
+  else if (o === 'chest') openChest(best, cx, cy);
+}
+function doAttack(){
+  P.atkCd = 0.35; P.swing = 0.18;
+  var dmg = playerDmg(), hit = false;
+  for (var i = 0; i < enemies.length; i++){
+    var e = enemies[i], dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy);
+    if (d < 1.6 && (d < 0.6 || (dx*P.fx + dy*P.fy)/d > 0.3)){
+      e.hp -= dmg; e.hurt = 0.15; hit = true;
+      var l = d || 1; e.kx = dx/l*6; e.ky = dy/l*6;
+      floater(e.x, e.y - 0.8, '' + dmg, '#ffe08a');
+    }
+  }
+  if (!hit) harvest();
+}
+function killEnemy(e){
+  burst(e.x, e.y - 0.3, '#ffffff', 8);
+  gainXp(e.def.xp);
+  floater(e.x, e.y - 1.1, '+' + e.def.xp + ' XP', '#c6a8ff');
+  if (Math.random() < 0.35) give(e.def.drop, 1, e.x, e.y - 0.4);
+}
+function spawnEnemy(){
+  var a = Math.random()*6.283, r = 10 + Math.random()*7;
+  var x = Math.floor(P.x + Math.cos(a)*r), y = Math.floor(P.y + Math.sin(a)*r);
+  if (Math.hypot(x, y) < 9) return;
+  var t = getTile(x, y); if (t.water || t.obj) return;
+  var list = SPAWNS[t.tier], type = list[Math.floor(Math.random()*list.length)], def = ETYPES[type];
+  enemies.push({type:type, def:def, x:x+0.5, y:y+0.5, hp:def.hp, cd:0, hurt:0, kx:0, ky:0, wa:Math.random()*6.283, wt:0});
+}
+function die(){
+  ['wood','fiber','stone','ore'].forEach(function(k){ inv[k] = Math.ceil(inv[k]/2); });
+  P.x = 0.5; P.y = 0.5; P.hp = P.maxhp; P.lastHit = 99; enemies = [];
+  toast('You were knocked out and washed ashore at home. Half your raw materials were lost.', 5);
+}
+
+var spawnT = 0, saveT = 0, hudT = 0, lastZone = 1, now = 0;
+function update(dt){
+  now += dt;
+  var dx = 0, dy = 0;
+  if (keys.KeyW || keys.ArrowUp) dy -= 1;
+  if (keys.KeyS || keys.ArrowDown) dy += 1;
+  if (keys.KeyA || keys.ArrowLeft) dx -= 1;
+  if (keys.KeyD || keys.ArrowRight) dx += 1;
+  var here = getTile(Math.floor(P.x), Math.floor(P.y));
+  P.onWater = here.water;
+  if (dx || dy){
+    var l = Math.hypot(dx, dy); dx /= l; dy /= l; P.fx = dx; P.fy = dy;
+    var sp = (P.onWater ? BOAT_SPEED[P.boat] || 3 : 4)*dt;
+    waterHint = 0;
+    tryMove(P, dx*sp, dy*sp, true);
+    if (waterHint && hintCd <= 0){
+      hintCd = 4;
+      toast(P.boat === 0 ? 'You need a boat to cross water. Gather wood and fiber, then press C to craft a Raft.'
+        : 'The ' + ZONE_NAME[waterHint] + ' is too rough for your ' + BOAT_NAME[P.boat] + '. You need a ' + BOAT_NAME[waterHint] + '.', 4);
+    }
+  }
+  hintCd -= dt; P.atkCd -= dt; P.swing -= dt; P.hurtT -= dt; P.lastHit += dt;
+  if ((keys.Space || attackQueued) && P.atkCd <= 0) doAttack();
+  attackQueued = false;
+  if (P.lastHit > 6 && P.hp < P.maxhp) P.hp = Math.min(P.maxhp, P.hp + 2*dt);
+  if (here.zone !== lastZone){ lastZone = here.zone; toast('Entering the ' + ZONE_NAME[here.zone], 2.5); }
+
+  for (var i = enemies.length - 1; i >= 0; i--){
+    var e = enemies[i], ex = P.x - e.x, ey = P.y - e.y, d = Math.hypot(ex, ey);
+    if (e.hp <= 0){ killEnemy(e); enemies.splice(i, 1); continue; }
+    if (d > 26){ enemies.splice(i, 1); continue; }
+    e.cd -= dt; e.hurt -= dt;
+    var mx = 0, my = 0;
+    if (d < 7.5 && d > 0.55){ mx = ex/d*e.def.spd; my = ey/d*e.def.spd; }
+    else if (d >= 7.5){
+      e.wt -= dt; if (e.wt <= 0){ e.wt = 1 + Math.random()*2; e.wa = Math.random()*6.283; }
+      mx = Math.cos(e.wa)*e.def.spd*0.35; my = Math.sin(e.wa)*e.def.spd*0.35;
+    }
+    mx += e.kx; my += e.ky; e.kx *= Math.pow(0.001, dt); e.ky *= Math.pow(0.001, dt);
+    tryMove(e, mx*dt, my*dt, false);
+    if (d < 0.85 && e.cd <= 0 && !P.onWater){
+      e.cd = 1; P.hp -= e.def.dmg; P.hurtT = 0.25; P.lastHit = 0;
+      floater(P.x, P.y - 1, '-' + e.def.dmg, '#ff6b5e');
+      if (P.hp <= 0){ die(); break; }
+    }
+  }
+  spawnT -= dt;
+  if (spawnT <= 0){ spawnT = 1.2; if (enemies.length < 9) spawnEnemy(); }
+
+  for (i = floaters.length - 1; i >= 0; i--){ var f = floaters[i]; f.t -= dt; f.y -= dt*0.9; if (f.t <= 0) floaters.splice(i, 1); }
+  for (i = particles.length - 1; i >= 0; i--){ var p = particles[i]; p.t -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 9*dt; if (p.t <= 0) particles.splice(i, 1); }
+  if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
+  hudT -= dt; if (hudT <= 0){ hudT = 0.2; updateHud(); }
+  saveT -= dt; if (saveT <= 0){ saveT = 10; saveGame(); }
+}
+
+/* ---------- drawing ---------- */
+function poly(col, ox, oy, s, pts){
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(ox + pts[0]*s, oy + pts[1]*s);
+  for (var i = 2; i < pts.length; i += 2) ctx.lineTo(ox + pts[i]*s, oy + pts[i+1]*s);
+  ctx.closePath(); ctx.fill();
+}
+function shadow(x, y, w){ ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x, y, w, w*0.4, 0, 0, 6.283); ctx.fill(); }
+var TREE_COL = [['#2f7d3c','#48a352'],['#27704a','#3d9a63'],['#b5612a','#dc8a3a'],['#4b4560','#6b6485']];
+function drawObj(t, cx, by){
+  var h = objHits.get(t.key);
+  if (h && now - h.t < 0.15) cx += Math.sin(now*70)*2.5;
+  var o = t.obj;
+  if (o === 'tree'){
+    var c = TREE_COL[t.tier], k = 0.9 + t.s1*0.3;
+    shadow(cx, by, 13);
+    ctx.fillStyle = '#6b4526'; ctx.fillRect(cx-3, by-12, 6, 12);
+    poly(c[0], cx, by, k, [-15,-9, 15,-9, 0,-34]); poly(c[1], cx, by, k, [-15,-9, 0,-9, 0,-34]);
+    poly(c[0], cx, by, k, [-11,-23, 11,-23, 0,-46]); poly(c[1], cx, by, k, [-11,-23, 0,-23, 0,-46]);
+  } else if (o === 'bush'){
+    poly('#8fae3c', cx, by, 1, [-12,0, -8,-15, -3,0]); poly('#b9d15a', cx, by, 1, [-4,0, 1,-20, 6,0]); poly('#a3c048', cx, by, 1, [4,0, 10,-13, 13,0]);
+  } else if (o === 'rock' || o === 'iron'){
+    shadow(cx, by, 14);
+    poly('#7d838c', cx, by, 1, [-13,0, -15,-10, -5,-19, 8,-17, 15,-7, 11,0]);
+    poly('#a4abb5', cx, by, 1, [-15,-10, -5,-19, 8,-17, 1,-8]);
+    if (o === 'iron'){ poly('#d08a4a', cx, by, 1, [-8,-6, -3,-11, 1,-5]); poly('#e8a763', cx, by, 1, [4,-9, 9,-12, 10,-5]); poly('#d08a4a', cx, by, 1, [-2,-15, 3,-16, 1,-11]); }
+  } else if (o === 'crystal'){
+    shadow(cx, by, 12);
+    poly('#35b8d6', cx, by, 1, [-10,0, -13,-14, -8,-22, -3,-12]); poly('#6ff0ff', cx, by, 1, [-3,0, -6,-18, 1,-32, 7,-16, 4,0]);
+    poly('#c8fbff', cx, by, 1, [-6,-18, 1,-32, 1,-10]); poly('#35b8d6', cx, by, 1, [6,0, 8,-12, 13,-17, 13,-3]);
+  } else if (o === 'pillar'){
+    shadow(cx, by, 13);
+    ctx.fillStyle = '#6f7480'; ctx.fillRect(cx-10, by-26, 20, 26);
+    poly('#a9aeba', cx, by, 1, [-10,-26, 10,-26, 6,-33, -6,-33]); ctx.fillStyle = '#585c66'; ctx.fillRect(cx+3, by-26, 7, 26);
+  } else if (o === 'chest'){
+    shadow(cx, by, 13);
+    ctx.fillStyle = t.tier >= 3 ? '#5a3b8c' : '#8a5a2b'; ctx.fillRect(cx-12, by-16, 24, 16);
+    ctx.fillStyle = t.tier >= 3 ? '#7e58bf' : '#b07a3e'; ctx.fillRect(cx-12, by-21, 24, 6);
+    ctx.fillStyle = '#ffd24a'; ctx.fillRect(cx-2, by-18, 4, 8);
+  }
+}
+function drawEnemy(e, x, y){
+  var s = e.def.size, w = e.hurt > 0, ty = e.type;
+  shadow(x, y, 11*s);
+  if (ty === 'slime'){
+    var b = Math.sin(now*6 + e.wa)*1.5;
+    poly(w ? '#fff' : '#4fbf5a', x, y, s, [-12,0, -13,-8, -5,-16-b, 6,-16-b, 13,-8, 12,0]); poly(w ? '#fff' : '#86e08c', x, y, s, [-5,-16-b, 6,-16-b, 0,-7]);
+    ctx.fillStyle = '#143018'; ctx.fillRect(x-6*s, y-9*s, 3, 3); ctx.fillRect(x+3*s, y-9*s, 3, 3);
+  } else if (ty === 'crab'){
+    poly(w ? '#fff' : '#d1503c', x, y, s, [-12,-5, -6,-13, 6,-13, 12,-5, 6,0, -6,0]); poly(w ? '#fff' : '#ee7b62', x, y, s, [-6,-13, 6,-13, 0,-5]);
+    poly('#b23a2a', x, y, s, [-12,-7, -19,-14, -14,-3]); poly('#b23a2a', x, y, s, [12,-7, 19,-14, 14,-3]);
+    ctx.fillStyle = '#1c1410'; ctx.fillRect(x-4*s, y-16*s, 2, 4); ctx.fillRect(x+2*s, y-16*s, 2, 4);
+  } else if (ty === 'skeleton'){
+    poly(w ? '#fff' : '#cfc9b8', x, y, s, [-6,0, 6,0, 8,-15, -8,-15]); poly(w ? '#fff' : '#f0ebdc', x, y, s, [-7,-15, 7,-15, 8,-25, 0,-29, -8,-25]);
+    ctx.fillStyle = '#1c1410'; ctx.fillRect(x-5*s, y-23*s, 3, 3); ctx.fillRect(x+2*s, y-23*s, 3, 3);
+    ctx.fillStyle = '#8c8676'; ctx.fillRect(x-5*s, y-10*s, 10*s, 2);
+  } else if (ty === 'golem'){
+    poly(w ? '#fff' : '#77706a', x, y, s, [-14,0, 14,0, 17,-18, 8,-30, -8,-30, -17,-18]); poly(w ? '#fff' : '#9c948c', x, y, s, [-8,-30, 8,-30, 2,-16, -17,-18]);
+    ctx.fillStyle = '#ff9a3c'; ctx.fillRect(x-7*s, y-23*s, 4, 3); ctx.fillRect(x+3*s, y-23*s, 4, 3);
+  } else {
+    var f = Math.sin(now*4 + e.wa)*2 - 4;
+    poly(w ? '#fff' : '#6a3fb0', x, y+f, s, [-12,0, -5,-5, 0,0, 5,-5, 12,0, 8,-22, 0,-32, -8,-22]); poly(w ? '#fff' : '#9468dc', x, y+f, s, [-8,-22, 0,-32, 0,-8]);
+    ctx.fillStyle = '#6ff0ff'; ctx.fillRect(x-5*s, y+f-22*s, 3, 3); ctx.fillRect(x+2*s, y+f-22*s, 3, 3);
+  }
+  if (e.hp < e.def.hp){
+    ctx.fillStyle = '#1c1410'; ctx.fillRect(x-14, y-38*s, 28, 5);
+    ctx.fillStyle = '#d8473a'; ctx.fillRect(x-13, y-38*s+1, 26*Math.max(0, e.hp/e.def.hp), 3);
+  }
+}
+function drawPlayer(x, y){
+  var a = Math.atan2(P.fy, P.fx), hurt = P.hurtT > 0;
+  if (P.onWater){
+    ctx.save(); ctx.translate(x, y - 4); ctx.rotate(a);
+    if (P.boat <= 1){
+      ctx.fillStyle = '#8a5a2b'; ctx.fillRect(-17, -13, 34, 26);
+      ctx.fillStyle = '#b07a3e'; for (var i = 0; i < 4; i++) ctx.fillRect(-17, -13 + i*7, 34, 4);
+      ctx.fillStyle = '#e2cf8e'; ctx.fillRect(-11, -13, 3, 26); ctx.fillRect(8, -13, 3, 26);
+    } else {
+      var s = P.boat === 2 ? 1 : 1.45;
+      poly('#6b4526', 0, 0, s, [-20,-10, 10,-10, 24,0, 10,10, -20,10]); poly('#a8743e', 0, 0, s, [-17,-7, 9,-7, 19,0, 9,7, -17,7]);
+      poly('#f4f1e6', 0, 0, s, [-2,-16, 8,0, -2,16]); poly('#d9d4c2', 0, 0, s, [-2,-16, 2,0, -2,16]);
+      if (P.boat === 3){ poly('#f4f1e6', 0, 0, s, [-13,-12, -6,0, -13,12]); poly('#b33a3a', 0, 0, s, [20,-2, 26,0, 20,2]); }
+    }
+    ctx.restore();
+    poly(hurt ? '#ff6b5e' : '#e8b88a', x, y - 6, 1, [-5,-3, 0,-7, 5,-3, 5,3, 0,7, -5,3]);
+    return;
+  }
+  shadow(x, y, 10);
+  if (P.swing > 0){
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.3*P.swing/0.18) + ')'; ctx.beginPath(); ctx.moveTo(x, y-12);
+    ctx.arc(x, y-12, 1.35*T, a-0.9, a+0.9); ctx.closePath(); ctx.fill();
+  }
+  poly(hurt ? '#ff6b5e' : '#2f5fc0', x, y, 1, [-7,0, 7,0, 9,-15, -9,-15]); poly(hurt ? '#ff9a90' : '#4f83e6', x, y, 1, [-9,-15, 0,-15, 0,0, -7,0]);
+  poly('#e8b88a', x, y-21, 1, [-6,-3, 0,-7, 6,-3, 6,4, 0,7, -6,4]); poly('#5a3a1e', x, y-21, 1, [-6,-3, 0,-8, 6,-3, 0,-1]);
+  var sw = P.swing > 0 ? a + (P.swing/0.18 - 0.5)*1.6 : a;
+  ctx.strokeStyle = WEAPON_COL[P.weapon]; ctx.lineWidth = P.weapon ? 4 : 3; ctx.beginPath(); ctx.moveTo(x + Math.cos(sw)*7, y - 10 + Math.sin(sw)*7);
+  ctx.lineTo(x + Math.cos(sw)*(P.weapon ? 22 : 13), y - 10 + Math.sin(sw)*(P.weapon ? 22 : 13)); ctx.stroke();
+}
+var drawList = [];
+function render(){
+  var ox = Math.floor(W/2 - P.x*T), oy = Math.floor(H/2 - P.y*T);
+  var x0 = Math.floor(-ox/T) - 1, x1 = Math.floor((W-ox)/T) + 1, y0 = Math.floor(-oy/T) - 1, y1 = Math.floor((H-oy)/T) + 2;
+  drawList.length = 0;
+  for (var y = y0; y <= y1; y++) for (var x = x0; x <= x1; x++){
+    var t = getTile(x, y), sx = x*T + ox, sy = y*T + oy, cA, cB;
+    if (t.water){
+      var w = 0.5 + 0.5*Math.sin(now*1.6 + t.s1*6.283), c = WCOL[t.zone];
+      cA = rgb(c, 0.92 + 0.1*w + 0.22*t.shal); cB = rgb(c, 0.92 + 0.1*(1-w) + 0.22*t.shal);
+    } else { cA = t.cA; cB = t.cB; }
+    ctx.fillStyle = cA; ctx.fillRect(sx, sy, T+1, T+1);
+    ctx.fillStyle = cB; ctx.beginPath();
+    if (t.diag){ ctx.moveTo(sx, sy); ctx.lineTo(sx+T+1, sy); ctx.lineTo(sx, sy+T+1); }
+    else { ctx.moveTo(sx+T+1, sy); ctx.lineTo(sx+T+1, sy+T+1); ctx.lineTo(sx, sy+T+1); }
+    ctx.fill();
+    if (t.obj) drawList.push({y:y + 0.85, k:0, t:t, x:x});
+  }
+  for (var i = 0; i < enemies.length; i++) drawList.push({y:enemies[i].y, k:1, e:enemies[i]});
+  drawList.push({y:P.y, k:2});
+  drawList.sort(function(a, b){ return a.y - b.y; });
+  for (i = 0; i < drawList.length; i++){
+    var d = drawList[i];
+    if (d.k === 0) drawObj(d.t, d.x*T + ox + T/2, d.y*T + oy);
+    else if (d.k === 1) drawEnemy(d.e, d.e.x*T + ox, d.e.y*T + oy);
+    else drawPlayer(P.x*T + ox, P.y*T + oy);
+  }
+  for (i = 0; i < particles.length; i++){ var p = particles[i]; ctx.fillStyle = p.col; ctx.fillRect(p.x*T + ox - 2, p.y*T + oy - 2, 4, 4); }
+  ctx.font = 'bold 13px Verdana, sans-serif'; ctx.textAlign = 'center';
+  for (i = 0; i < floaters.length; i++){
+    var f = floaters[i]; ctx.globalAlpha = Math.min(1, f.t*2);
+    ctx.fillStyle = '#10161c'; ctx.fillText(f.txt, f.x*T + ox + 1, f.y*T + oy + 1);
+    ctx.fillStyle = f.col; ctx.fillText(f.txt, f.x*T + ox, f.y*T + oy);
+  }
+  ctx.globalAlpha = 1;
+  if (lastZone === 3){
+    ctx.fillStyle = 'rgba(10,14,30,.22)'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(200,220,255,.45)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (i = 0; i < 90; i++){
+      var rx = (hash(i,1,7)*W + now*300*(0.6 + hash(i,2,7))) % W, ry = (hash(i,3,7)*H + now*900*(0.7 + hash(i,4,7)*0.5)) % H;
+      ctx.moveTo(rx, ry); ctx.lineTo(rx + 5, ry + 16);
+    }
+    ctx.stroke();
+  }
+}
+
+/* ---------- minimap ---------- */
+var mctx = el('mini').getContext('2d'), mimg = null, miniX = 1e9, miniY = 1e9, miniT = 0;
+function drawMini(){
+  var N = 96, S = 3, cx = Math.floor(P.x), cy = Math.floor(P.y);
+  if (!mimg) mimg = mctx.createImageData(N, N);
+  var d = mimg.data, i = 0;
+  for (var py = 0; py < N; py++) for (var px = 0; px < N; px++){
+    base(cx + (px-48)*S, cy + (py-48)*S);
+    var c = bH > LAND + 0.025 ? GCOL[bTier] : bH > LAND ? SCOL[bTier] : WCOL[bZone];
+    d[i++] = c[0]; d[i++] = c[1]; d[i++] = c[2]; d[i++] = 255;
+  }
+  mctx.putImageData(mimg, 0, 0);
+  var hx = 48 - cx/S, hy = 48 - cy/S;
+  if (hx > 1 && hx < 94 && hy > 1 && hy < 94){ mctx.fillStyle = '#ffd24a'; mctx.fillRect(hx-1, hy-1, 3, 3); }
+  mctx.fillStyle = '#fff'; mctx.fillRect(46, 46, 4, 4);
+  miniX = P.x; miniY = P.y;
+}
+
+/* ---------- loop ---------- */
+var running = false, lastTs = 0;
+function frame(ts){
+  var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
+  if (running){
+    if (!craftOpen) update(dt);
+    render();
+    miniT -= dt;
+    if (miniT <= 0 && (Math.abs(P.x - miniX) > 3 || Math.abs(P.y - miniY) > 3)){ miniT = 0.4; drawMini(); }
+  }
+  requestAnimationFrame(frame);
+}
+function startGame(){
+  el('title').classList.add('hidden'); running = true; miniX = 1e9;
+  lastZone = getTile(Math.floor(P.x), Math.floor(P.y)).zone;
+  updateHud();
+  if (P.boat === 0 && P.lvl === 1) toast('Hit trees and bushes (Space) to gather wood and fiber, then press C to craft a Raft.', 7);
+}
+function newGame(seedText){
+  resetState();
+  var s = 0, txt = (seedText || '').trim();
+  if (txt){ for (var i = 0; i < txt.length; i++) s = (Math.imul(s, 31) + txt.charCodeAt(i)) | 0; }
+  else s = (Math.random()*2147483647) | 0;
+  seed = s; startGame(); saveGame();
+}
+var existing = readSave();
+if (!existing) el('startCont').classList.add('hidden');
+el('startCont').addEventListener('click', function(){ loadGame(existing); startGame(); });
+el('startNew').addEventListener('click', function(){ newGame(el('seedIn').value); });
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

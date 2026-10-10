@@ -1,0 +1,5 @@
+# Personal data that lives on each player's drive, not in the repo
+world/
+characters/
+.DS_Store
+Thumbs.db
