@@ -1,54 +1,85 @@
 # Wildgames
 
-Home of **Last Block**: a lightweight, low-poly, first-person survival game played on your real city, starting with Springfield, MO. The whole game is meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
+Home of **Last Block**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The whole game is one file, `play.html`, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Status: steps 1 and 2 of 10 in the build order. See [docs/DESIGN.md](docs/DESIGN.md) for the full plan.
+Version 0.3. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
-Download this repository (green **Code** button, then **Download ZIP**), unzip it onto a USB stick or SSD, and double-click **`play.html`**. It runs offline in a web browser.
+Download this repository (green **Code** button, then **Download ZIP**), unzip it onto a drive, and double-click **`play.html`**.
 
 - **Play demo town** starts right away with a built-in map.
-- **Load map file** plays on a real place. To get a map: go to openstreetmap.org, zoom in on a neighborhood (about 1 km across), click **Export**, then the blue **Export** button, and put the downloaded `map.osm` in the `maps` folder.
-- **Connect game folder** (Chrome and Edge on computers) lets the game save into the `world` and `characters` folders on the drive and lists every map in `maps`. Pick the folder that contains `play.html`.
+- **Make a map** builds a map of a real place from its name. It needs internet once; after that the map works offline.
+- **Load map file** plays a map file you already have (an OpenStreetMap export, or one made by Make a map).
+- **Connect game folder** (Chrome and Edge on computers) lets the game save into the `world`, `characters`, `maps` and `packs` folders on the drive. Pick the folder that contains `play.html`.
 - In other browsers, progress is kept in the browser, and **Export saves** / **Import saves** move it between devices.
 
 | Folder | Holds |
 | --- | --- |
 | `play.html` | The whole game: start page and game in one file |
-| `maps/` | Your map files |
+| `maps/` | Map files |
 | `world/` | One save per map, written by the game |
 | `characters/` | One file per survivor, written by the game |
-| `packs/` | Content packs (not used yet) |
+| `packs/` | Item and scenario packs |
 | `prototypes/` | Earlier versions, kept for reference |
-| `docs/` | The design document |
+| `docs/` | The design document and the testing roadmap |
 
-### Playing together
+## Controls
 
-No server, website or internet is involved; the devices connect to each other directly. Both must be on the same Wi-Fi, phone hotspot or cable, and both need `play.html`.
+| Action | Computer | Touch screen |
+| --- | --- | --- |
+| Move, look | WASD, mouse (arrow keys also turn) | Left stick, drag the view |
+| Swing, shoot | Click or Space, right-click or F | Swing, Shoot |
+| Search, open, ride, trade | E | Search |
+| Eat, drink, medkit | 1, 2, 3 | Tap the item |
+| Flashlight | L | Light |
+| Items and crafting | K | Items |
+| Build | N (B and C for barricade and campfire) | Build, Wall, Fire |
+| Switch weapon, use last item | Q, G | Items panel |
+| Chat, mark a spot | Enter, X | Chat, Mark |
 
-1. **Host:** start your world, then press **Invite player**. Copy the invite code and send it to your friend (any way you like: a message, a shared note).
+## Playing together
+
+No server, website or internet is involved; the devices connect to each other directly. All devices must be on the same Wi-Fi, phone hotspot or cable, and all need the same `play.html`.
+
+1. **Host:** start your world, then press **Invite player**. Copy the invite code and send it to your friend.
 2. **Friend:** on the start page, paste it under **Play together** and press **Create reply code**. Send that reply code back.
 3. **Host:** paste the reply code and press **Connect**. The host's map is sent across automatically.
 
-The visitor plays in the host's world, and what they are carrying when they leave is saved to their own device. Up to 6 players; each one needs their own invite.
+The visitor plays in the host's world, and what they carry when they leave is saved to their own device. Up to 6 players; each needs their own invite. A slow device can tick **Join as co-pilot** to get a top-down map and guide a partner instead.
 
-Controls on a computer: WASD to move, mouse to look, click or Space to swing, right-click or F to shoot, hold E to search or drink, 1/2/3 to eat, drink and heal, B for a barricade, C for a campfire. On a touch screen, on-screen controls appear automatically.
+## What is in the game
 
-## What works and what doesn't yet
+- **World:** real streets and building outlines; every building can be entered, with rooms and furniture generated from its shape. Maps load in pieces, so a whole city can be one world on a computer.
+- **Aliens:** swarmers in groups, a stalker that hunts at night by light and noise, a rare giant, and nests that spread between buildings.
+- **Weather:** four seasons, rain, thunderstorms, heat waves, ice storms and tornadoes, with a body-warmth meter.
+- **Survivors:** a roster of characters with a look, a background and skills that grow with use.
+- **Items and packs:** design your own weapons, use items and throwables; share them as pack files. Items found in a friend's world come home with you.
+- **Building:** barricades, permanent walls, a bed that makes a building your base, storage chests, repainting and demolishing buildings.
+- **Getting around:** bicycles (quiet) and cars (fast, need fuel, draw aliens).
+- **Traders, radios, goals:** trading posts, chat and map markers limited by radio range, and three goals: Endless, Reclaim, Escape.
 
-Works: first-person play on a loaded map, enterable buildings, looting, day and night, saving and resuming, dying and recovering your dropped pack, touch controls, and three view-distance settings, and hosting a world that friends join.
+## Not built yet, or simpler than the design
 
-Not built yet: scanning a QR code in place of copying the invite codes, the whole-city map maker, aliens and weather (enemies are still the placeholder "infected"), the character creator, the item editor, and packs.
+- QR codes for pairing; today the two codes are copied and pasted.
+- A host cannot hand the game itself to someone who lacks `play.html`.
+- The host's visitor rule offers accept, cap, or empty-handed, but not approving items one by one.
+- A co-pilot has the map, markers and chat, but cannot manage a partner's inventory or crafting.
+- Packs hold items and scenarios only. Furniture, alien types, character parts and loot tables cannot be modded yet.
+- Items are made on the start page, not in an in-game editor.
+- Map editing covers repainting, walls and demolition, not new buildings or changing room layouts.
+- When taking a host's building changes, a clash asks one question for all buildings, not one per building.
+- One-of-a-kind items rely on trust: a save file can be copied.
+- Buildings are ground floor only.
+- Other players' gunshots and thrown items are not drawn.
 
-Not yet verified:
+## Not yet verified
 
-- It has only been run in an automated test browser without a graphics card, so real frame rates are unmeasured.
-- It has not been tried with a real OpenStreetMap export, only hand-made test maps and the demo town.
-- **Connect game folder** was tested against a stand-in folder, not a real USB drive.
-- Playing together was tested between two browser windows on one computer, not between two separate devices on a network, and not over Bluetooth.
-- Touch controls were tested with simulated touches, not on a real phone, and opening `play.html` from a drive on a phone is untested.
+Everything has been run only in an automated test browser on one machine with no graphics card.
 
-## Design
-
-See [docs/DESIGN.md](docs/DESIGN.md) for the full design, the build order, and open risks.
+- Real frame rates are unmeasured.
+- **Make a map** was tested against a stand-in for the map servers, never the real ones.
+- No real OpenStreetMap data has been loaded; only hand-made test maps, including a 40,000-building synthetic city.
+- **Connect game folder** was tested against a stand-in folder, not a real drive.
+- Multiplayer was tested between browser windows on one computer, not between separate devices, and not over Bluetooth.
+- Touch controls were tested with simulated touches, not on a phone, and opening `play.html` from a drive on a phone is untried.

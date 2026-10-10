@@ -126,18 +126,20 @@ Each player keeps a roster of characters on their drive and picks one when enter
 
 ## Build order
 
-1. **Drive layout and start page.** Folder structure, start page, touch controls, saves on the drive. *Built; awaiting testing on real devices.*
-2. **Two-player hosting.** One device hosts and a second joins by swapping a pairing code, with no server. *Built with copy-and-paste codes; QR scanning and testing between real devices remain.*
-3. **Passports.** Characters and inventory travel to a host and come home, with autosave.
-4. **Whole-city map.** The map maker, the Springfield map pack, loading the city in pieces.
-5. **Aliens and weather.**
-6. **Character creator.**
-7. **Item editor and packs.**
-8. **Map editing and bases.**
-9. **Radios, co-pilot role, vehicles, traders.**
-10. **Scenarios** as packs.
+Every step has a working first version in `play.html` version 0.3. None has been tested on real devices; see [TESTING.md](TESTING.md).
 
-Steps 1 to 3 prove the core idea: your world on your drive, a friend visits, and their items go home with them.
+| Step | Built | Simpler than the design, or missing |
+| --- | --- | --- |
+| 1. Drive layout and start page | Start page and game in one file, touch controls, saves in the browser and on the drive | Start page and game were merged into `play.html` so one file can be copied to a phone |
+| 2. Hosting | Direct device-to-device play, host's map sent to visitors | Pairing codes are copied and pasted; no QR codes. A host cannot send the game itself |
+| 3. Passports | Survivor and inventory travel and come home; visitor rule | Rule is accept, cap at 5, or empty-handed; no item-by-item approval |
+| 4. Whole-city map | Map maker by place name, compact map files, buildings loaded in pieces | The map file is still read whole into memory, so phones may not manage a whole city |
+| 5. Aliens and weather | Swarmers, stalker, giant, spreading nests; seasons, storms, tornadoes, warmth | Seasons last 4 in-game days |
+| 6. Character creator | Look, background, three skills, roster | |
+| 7. Items and packs | Workshop, behaviors, crafting, packs, one-of-a-kind items | Workshop is on the start page; packs hold items and scenarios only |
+| 8. Map editing and bases | Walls, bed, chest, repaint, demolish, sharing changes on request | No new buildings or room layout changes; clashes ask one question for all buildings |
+| 9. Radios, co-pilot, vehicles, traders | Chat and markers with radio range, co-pilot map view, bicycles, cars, trading posts | Co-pilot cannot manage a partner's inventory or crafting |
+| 10. Scenarios | Endless, Reclaim, Escape; packs can add variants | Pack scenarios can only vary the three built-in types |
 
 ## Open questions and risks
 
