@@ -12,4 +12,5 @@ m = open(os.path.join(R, 'tools/out/springfield.lbmap.json')).read()
 assert '</script' not in m and '<!--' not in m
 put('map', m)
 put('models', open(os.path.join(R, 'tools/out/models.txt')).read())
+put('creatures', open(os.path.join(R, 'tools/out/creatures.txt')).read())
 open(p, 'w').write(s); print('play.html', round(len(s)/1e6, 2), 'MB')

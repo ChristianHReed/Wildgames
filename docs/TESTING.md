@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.11) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.12) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -109,8 +109,9 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 
 ## Stage 4: aliens and weather
 
-- [ ] 4.1 Daytime: small purple swarmers appear in groups and chase you. The bat kills one in a hit or two.
+- [ ] 4.1 Daytime: small green swarmers appear in groups and chase you. The bat kills one in a hit or two.
 - [ ] 4.1b A dead alien that carries anything leaves a body with a gold cube. Search it. Swarmers carry little, stalkers carry ammo and medkits, giants carry the most.
+- [ ] 4.1c Aliens are now creature models, not boxes: small green swarmers, tall dark stalkers with a mace, and a large blue giant. They walk with moving legs and arms, flash when hit, and lie on the ground when dead. Report anything that looks wrong: floating, sliding, facing backwards, or slow frame rate with many on screen.
 - [ ] 4.2 Purple buildings with a floating purple cube are nests. Go in, find the glowing core, hold E for four seconds. The nest count drops.
 - [ ] 4.3 Set Length of a day to 4 minutes, then survive until night (about two and a half minutes after starting). A tall black stalker should eventually hunt you.
 - [ ] 4.4 Press L to turn the flashlight on at night, then off. Stalkers should find you less easily.
