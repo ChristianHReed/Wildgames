@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.7) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.8) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -79,6 +79,18 @@ Needs internet for 3.1 to 3.4 only.
 
 Fail signs: "Could not make the map" (send the exact message), buildings in the wrong place, or a whole-city map that never finishes loading.
 
+## Stage 3b: big regions
+
+Needs internet. This is the 50-mile map: it downloads one square (about 3.4 miles across) at a time.
+
+- [ ] 3b.1 Under **Big region**, type `Springfield, Missouri`, choose a reach, press **Start region**. The first square downloads and the game starts in the middle of town.
+- [ ] 3b.2 Travel to the edge of the square (the full map shows where you are; a car helps). A "Travelling" screen appears, then you carry on in the next square with your items, the time of day and your car.
+- [ ] 3b.3 Note how long that first crossing takes, then cross back. The second time should be quick because the square is kept.
+- [ ] 3b.4 Turn the internet off and walk into a square you have never visited. You are stopped with a message, not dropped out of the game.
+- [ ] 3b.5 Save and exit. The region is listed with how many squares are on the device. Press **Play**; you resume where you left.
+- [ ] 3b.6 Press **Download more** and leave the page open for ten minutes. Report how many squares it saved and any message it stopped with.
+- [ ] 3b.7 Check the seam: do buildings and roads line up as you cross from one square to the next?
+
 ## Stage 4: aliens and weather
 
 - [ ] 4.1 Daytime: small purple swarmers appear in groups and chase you. The bat kills one in a hit or two.
@@ -118,7 +130,8 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 ## Stage 8: vehicles, traders and goals
 
 - [ ] 8.1 Find a bicycle near a house. E to ride, E to get off. It stays where you left it.
-- [ ] 8.2 Find a car. Drive it; fuel runs down; aliens are drawn to it.
+- [ ] 8.1b Streets have lights and hydrants, parks have benches, shops have dumpsters, houses have bushes. Report any standing in a road or inside a wall.
+- [ ] 8.2 Find a car (they now look like cars; police stations have police cars). Drive it; fuel runs down; aliens are drawn to it.
 - [ ] 8.3 Find a trader (green dot on the minimap, green cube overhead). Buy and sell with scrap.
 - [ ] 8.4 Start a new world with the goal **Reclaim** and another with **Escape**. The Goal line in the top-left tracks progress.
 
