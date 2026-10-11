@@ -1180,7 +1180,7 @@ function startRun(ws, cs){
   w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[]}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
-  pickSafe(!resumed && net.role !== 'guest');
+  pickSafe(!resumed && net.role !== 'guest', !(resumed && worldPlayers[charSlug()]));
   w.nests = {}; wx = {w:0, until:time + 150, tor:null, flash:0}; flares = []; lures = []; w.lastDay = 0;
   if (resumed && !ws.fresh){ (ws.nests || []).forEach(function(i){ if (w.buildings[i]) w.nests[i] = 1; }); if (ws.wx){ wx.w = ws.wx.w | 0; wx.until = +ws.wx.until || 0; } } else pickNests();
   w.total = 0; w.buildings.forEach(function(b){ w.total += b.rolls + 1; }); w.total += w.crates.length;
@@ -1498,13 +1498,13 @@ function spawnAliens(day){
 var SAFE_R = 20;
 function safeB(){ return world.safe >= 0 ? world.buildings[world.safe] : null; }
 function inSafe(x, y, extra){ var b = safeB(); return !!b && Math.hypot(x - b.cx, y - b.cy) < SAFE_R + (extra || 0); }
-function pickSafe(fresh){
+function pickSafe(fresh, move){
   var w = world, best = null, bd = 400; w.safe = -1;
   w.buildings.forEach(function(b){ if (!b.door || b.gone || b.area < 45 || b.area > 320) return; var d = Math.hypot(b.cx - w.start.x, b.cy - w.start.y); if (d < bd){ bd = d; best = b; } });
   if (!best) return; w.safe = best.id; dirtyChunk(best);
   var d0 = best.door; w.spawn = {x:d0.x - d0.nx*1.6, y:d0.y - d0.ny*1.6};
+  if (move){ P.x = w.spawn.x; P.y = w.spawn.y; P.yaw = Math.atan2(d0.ny, d0.nx); }
   if (fresh){
-    P.x = w.spawn.x; P.y = w.spawn.y; P.yaw = Math.atan2(d0.ny, d0.nx);
     if (!w.core || /E0 N0$/.test(w.name)){ var cx = best.cx, cy = best.cy; if (!pip(best.pts, cx, cy)){ cx = d0.x + d0.nx*2; cy = d0.y + d0.ny*2; }
       w.edits.chests.push({chest:true, name:'the supply chest', id:'safe', x:cx, y:cy, inv:{food:3, water:3, medkit:1, battery:2, ammo:12, wood:6, scrap:4, lantern:1, coat:1}, items:{}, designs:[]}); }
   }
