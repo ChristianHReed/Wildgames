@@ -89,3 +89,7 @@ Everything has been run only in an automated test browser on one machine with no
 The game uses the Afterstreet design pack in `design/afterstreet_handoff/`. `tools/build_art.py` turns the pack's textures, icons and Springfield map data into three files, and `tools/embed_art.py` writes them into `play.html`, so the game stays one file that works offline. Run both again after changing any art.
 
 Map data © OpenStreetMap contributors, available under the Open Database License.
+
+## iPhone and iPad
+
+The Files app on iPhone and iPad will not run the game from a drive. On those devices open https://christianhreed.github.io/Wildgames/ once in Safari, then Share → **Add to Home Screen**. `sw.js` keeps a copy on the device so it plays with no internet after that. Saves stay in the browser there; use Export saves and Import saves to move them.

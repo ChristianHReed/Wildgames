@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <title>Afterstreet</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Afterstreet">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f5ead8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>
   /* Afterstreet "field journal" look, from design/afterstreet_handoff/design_tokens.json */
@@ -2478,6 +2485,8 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
 })();
 loadPacks(); wForm(); renderPacks(); fillScen();
+/* opened from a web address (the iPhone and iPad route): keep a copy so it plays with no internet */
+if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
 (function(){
   var ic = (el('artIcons').textContent || '').replace(/<!--.*?-->/g, '').trim(); if (ic) document.documentElement.style.setProperty('--icons', 'url(data:image/png;base64,' + ic + ')');
   /* no web fonts: the game never reaches out to the internet on its own */
