@@ -289,7 +289,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.6.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.7.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -417,11 +417,11 @@ function toCompact(raw, name){
     ways.push([t, c]);
   });
   raw.pois.forEach(function(p){ var t = keepTags(p.tags); if (t && (t.natural === 'tree' || t.shop || t.amenity || t.healthcare || t.craft)) pois.push([+(+p.lon).toFixed(6), +(+p.lat).toFixed(6), t]); });
-  return {lastblockMap:1, name:name, ways:ways, pois:pois};
+  var out = {lastblockMap:1, name:name, ways:ways, pois:pois}; if (raw.elev) out.elev = raw.elev; return out;
 }
 function fromCompact(j){
   return {ways:(j.ways || []).map(function(w){ var c = []; for (var i = 0; i < w[1].length; i += 2) c.push([w[1][i], w[1][i+1]]); return {c:c, tags:w[0]}; }),
-    pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; }), name:j.name ? String(j.name).replace(/[<>&"]/g, '').slice(0, 60) : '', spawn:Array.isArray(j.spawn) ? j.spawn : null};
+    pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; }), name:j.name ? String(j.name).replace(/[<>&"]/g, '').slice(0, 60) : '', spawn:Array.isArray(j.spawn) ? j.spawn : null, elev:j.elev && typeof j.elev === 'object' ? j.elev : null};
 }
 function parseText(text){
   var t = text.replace(/^﻿/, '').trim();
@@ -434,7 +434,15 @@ function parseText(text){
   }
   throw new Error('Unrecognized file. Use a .osm export, Overpass JSON, or GeoJSON.');
 }
-function demoRaw(){
+function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }
+/* the demo town gets made-up rolling hills so terrain can be seen without downloading anything */
+function demoElev(){
+  var n = 81, d = new Int16Array(n*n), span = 0.012, u = 111320, v = 110540;
+  for (var j = 0; j < n; j++) for (var i = 0; i < n; i++){ var x = (-span + 2*span*i/(n - 1))*u, y = (span - 2*span*j/(n - 1))*v; d[j*n + i] = Math.round((6*Math.sin(x/170) + 5*Math.cos(y/130) + 3*Math.sin((x + y)/75))*10); }
+  return {s:-span, n:span, w:-span, e:span, cols:n, rows:n, d:b64of(new Uint8Array(d.buffer))};
+}
+function b64of(u8){ var t = ''; for (var i = 0; i < u8.length; i += 8000) t += String.fromCharCode.apply(null, u8.subarray(i, i + 8000)); return btoa(t); }
+function demoRaw0(){
   var ways = [], pois = [], u = 1/111320, v = 1/110540, k = 0;
   var rnd = function(){ return hash(k++, 7, 99); };
   var LL = function(x, y){ return [x*u, -y*v]; };
@@ -549,6 +557,7 @@ function buildWorld(raw, name){
   var w = {name:name, buildings:[], roads:[], areas:[], trees:[], crates:[], grid:new Map(),
     minx:(a-lon0)*kx, maxx:(b-lon0)*kx, miny:-(d-lat0)*ky, maxy:-(c-lat0)*ky,
     start:raw.spawn ? {x:(raw.spawn[0]-lon0)*kx, y:-(raw.spawn[1]-lat0)*ky} : {x:0, y:0}};
+  buildHeights(w, raw, lon0, lat0, kx, ky);
   raw.ways.forEach(function(way){
     var t = way.tags || {}, cs = way.c; if (!cs || cs.length < 2) return;
     var closed = cs.length >= 4 && same(cs[0], cs[cs.length-1]), pts = proj(cs);
@@ -597,6 +606,87 @@ function buildWorld(raw, name){
   });
   return w;
 }
+/* ---- terrain: real elevation, stored with the map as a grid of heights ---- */
+function decodeElev(e){
+  try {
+    if (!e || !(e.n > e.s) || !(e.e > e.w) || !(e.cols >= 2 && e.cols <= 2000) || !(e.rows >= 2 && e.rows <= 2000) || typeof e.d !== 'string') return null;
+    var bin = atob(e.d); if (bin.length !== e.cols*e.rows*2) return null;
+    var d = new Int16Array(e.cols*e.rows); for (var i = 0; i < d.length; i++){ var v = bin.charCodeAt(i*2) | (bin.charCodeAt(i*2 + 1) << 8); d[i] = v > 32767 ? v - 65536 : v; }
+    return {s:+e.s, n:+e.n, w:+e.w, e:+e.e, cols:e.cols | 0, rows:e.rows | 0, d:d};
+  } catch (er){ return null; }
+}
+function buildHeights(w, raw, lon0, lat0, kx, ky){
+  w.hg = null; var E = decodeElev(raw.elev); if (!E) return;
+  var M = 400, wd = w.maxx - w.minx + 2*M, ht = w.maxy - w.miny + 2*M, cell = Math.max(20, Math.ceil(Math.max(wd, ht)/1400)), cols = Math.ceil(wd/cell) + 1, rows = Math.ceil(ht/cell) + 1, d = new Float32Array(cols*rows);
+  var samp = function(x, y){
+    var u = ((lon0 + x/kx) - E.w)/(E.e - E.w)*(E.cols - 1), v = (E.n - (lat0 - y/ky))/(E.n - E.s)*(E.rows - 1);
+    u = Math.max(0, Math.min(E.cols - 1.001, u)); v = Math.max(0, Math.min(E.rows - 1.001, v)); var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*E.cols + i;
+    return ((E.d[k]*(1 - fu) + E.d[k + 1]*fu)*(1 - fv) + (E.d[k + E.cols]*(1 - fu) + E.d[k + E.cols + 1]*fu)*fv)/10;
+  };
+  var z0 = samp(w.start.x, w.start.y), mn = 1e9, mx = -1e9;
+  for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){ var h = samp(w.minx - M + i*cell, w.miny - M + j*cell) - z0; d[j*cols + i] = h; if (h < mn) mn = h; if (h > mx) mx = h; }
+  if (mx - mn < 0.3) return;
+  w.hg = {x0:w.minx - M, y0:w.miny - M, cell:cell, cols:cols, rows:rows, d:d, min:mn, max:mx};
+}
+/* height of the bare ground; each grid square is two flat triangles, the same ones that are drawn */
+function hAt(x, y){
+  var g = world.hg; if (!g) return 0;
+  var u = (x - g.x0)/g.cell, v = (y - g.y0)/g.cell; u = u < 0 ? 0 : u > g.cols - 1.001 ? g.cols - 1.001 : u; v = v < 0 ? 0 : v > g.rows - 1.001 ? g.rows - 1.001 : v;
+  var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*g.cols + i, d = g.d, a = d[k], b = d[k + 1], c = d[k + g.cols], e = d[k + g.cols + 1];
+  return fu + fv <= 1 ? a + (b - a)*fu + (c - a)*fv : e + (c - e)*(1 - fu) + (b - e)*(1 - fv);
+}
+/* height you stand at: a building's level floor indoors, the ground outdoors */
+function groundAt(x, y){ if (!world.hg) return 0; var b = buildingAt(x, y); return b ? b.base : hAt(x, y); }
+/* lay a flat mesh over the hills: cut every triangle along the terrain's own triangles, so each piece lies flat on the ground */
+function drape(m, lift){
+  var g = world.hg, P0 = m.p, C0 = m.c, T0 = m.t, p = [], c = [], t = [], cs = g.cell, n = P0.length/9;
+  var clip = function(poly, a, b, cc){ /* keep the side where a*x + b*z <= cc */
+    var out = [], k = poly.length; if (!k) return out;
+    for (var q = 0; q < k; q += 2){
+      var x0 = poly[q], z0 = poly[q+1], x1 = poly[(q+2) % k], z1 = poly[(q+3) % k], d0 = a*x0 + b*z0 - cc, d1 = a*x1 + b*z1 - cc;
+      if (d0 <= 0) out.push(x0, z0);
+      if ((d0 < 0 && d1 > 0) || (d0 > 0 && d1 < 0)){ var f = d0/(d0 - d1); out.push(x0 + (x1 - x0)*f, z0 + (z1 - z0)*f); }
+    }
+    return out;
+  };
+  for (var i = 0; i < n; i++){
+    var o = i*9, ax = P0[o], az = P0[o+2], bx = P0[o+3], bz = P0[o+5], cx = P0[o+6], cz = P0[o+8], den = (bz - cz)*(ax - cx) + (cx - bx)*(az - cz);
+    if (Math.abs(den) < 1e-6) continue;
+    var y0 = P0[o+1], y1 = P0[o+4], y2 = P0[o+7], co = i*12, to = i*9, tri = [ax, az, bx, bz, cx, cz];
+    var i0 = Math.floor((Math.min(ax, bx, cx) - g.x0)/cs), i1 = Math.floor((Math.max(ax, bx, cx) - g.x0)/cs), j0 = Math.floor((Math.min(az, bz, cz) - g.y0)/cs), j1 = Math.floor((Math.max(az, bz, cz) - g.y0)/cs);
+    for (var gj = j0; gj <= j1; gj++) for (var gi = i0; gi <= i1; gi++){
+      var X = g.x0 + gi*cs, Z = g.y0 + gj*cs, cell = clip(clip(clip(clip(tri, -1, 0, -X), 1, 0, X + cs), 0, -1, -Z), 0, 1, Z + cs); if (cell.length < 6) continue;
+      for (var half = 0; half < 2; half++){
+        var poly = clip(cell, half ? -1 : 1, half ? -1 : 1, (half ? -1 : 1)*(X + Z + cs)); if (poly.length < 6) continue;
+        for (var q = 2; q + 3 < poly.length; q += 2){
+          var vs = [poly[0], poly[1], poly[q], poly[q+1], poly[q+2], poly[q+3]];
+          if (Math.abs((vs[2] - vs[0])*(vs[5] - vs[1]) - (vs[4] - vs[0])*(vs[3] - vs[1])) < 1e-4) continue;
+          for (var k = 0; k < 6; k += 2){
+            var x = vs[k], z = vs[k+1], w0 = ((bz - cz)*(x - cx) + (cx - bx)*(z - cz))/den, w1 = ((cz - az)*(x - cx) + (ax - cx)*(z - cz))/den, w2 = 1 - w0 - w1;
+            p.push(x, y0*w0 + y1*w1 + y2*w2 + hAt(x, z) + lift, z); c.push(C0[co], C0[co+1], C0[co+2], C0[co+3]);
+            t.push(T0[to]*w0 + T0[to+3]*w1 + T0[to+6]*w2, T0[to+1]*w0 + T0[to+4]*w1 + T0[to+7]*w2, T0[to+2]);
+          }
+        }
+      }
+    }
+  }
+  m.p = p; m.c = c; m.t = t;
+}
+var TT = 12;
+function manageTerrain(budget){
+  var g = world.hg; if (!g) return; var T = world.gl.terr, sz = TT*g.cell, R = QS.chunk + sz, n = 0;
+  var i0 = Math.floor((P.x - R - g.x0)/sz), i1 = Math.floor((P.x + R - g.x0)/sz), j0 = Math.floor((P.y - R - g.y0)/sz), j1 = Math.floor((P.y + R - g.y0)/sz);
+  for (var tj = Math.max(0, j0); tj <= j1 && tj*TT < g.rows - 1; tj++) for (var ti = Math.max(0, i0); ti <= i1 && ti*TT < g.cols - 1; ti++){
+    var key = tj*100000 + ti; if (T.has(key) || n >= budget) continue; n++;
+    var m = new Mesh(), col = [236,244,222]; m.pl = [TX.grass, 0.25];
+    for (var j = tj*TT; j < (tj + 1)*TT && j < g.rows - 1; j++) for (var i = ti*TT; i < (ti + 1)*TT && i < g.cols - 1; i++){
+      var x = g.x0 + i*g.cell, y = g.y0 + j*g.cell, x1 = x + g.cell, y1 = y + g.cell, k = j*g.cols + i, a = g.d[k] - 0.03, b = g.d[k + 1] - 0.03, c = g.d[k + g.cols] - 0.03, e = g.d[k + g.cols + 1] - 0.03;
+      m.tri(x, a, y, x1, b, y, x, c, y1, col, 255); m.tri(x1, e, y1, x, c, y1, x1, b, y, col, 255);
+    }
+    T.set(key, {g:upload(m), x:g.x0 + (ti + 0.5)*sz, y:g.y0 + (tj + 0.5)*sz});
+  }
+  T.forEach(function(o, key){ if (Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y)) > R + sz + 200){ freeMesh(o.g); T.delete(key); } });
+}
 function addTree(x, y, n){ world.trees.push({x:x, y:y, r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0}); }
 function buildingAt(x, y){
   var cell = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))); if (!cell) return null;
@@ -629,7 +719,7 @@ var ROAD_COL = {road:'#4b5059', path:'#b9a57e', water:'#3f86b8', rail:'#2c2f35'}
 var FLOOR = {house:'#8a6a48', food:'#b9b4a6', shop:'#b9b4a6', medical:'#cfd6d8', police:'#6f7780', industrial:'#8b8b88'};
 var COLC = {};
 function C(h){ var c = COLC[h]; if (!c){ var n = parseInt(h.slice(1), 16); c = COLC[h] = [n >> 16, (n >> 8) & 255, n & 255]; } return c; }
-function Mesh(){ this.p = []; this.c = []; this.t = []; this.al = 255; this.pl = null; this.wt = null; }
+function Mesh(){ this.p = []; this.c = []; this.t = []; this.al = 255; this.pl = null; this.wt = null; this.yo = 0; }
 Mesh.prototype.tri = function(ax,ay,az,bx,by,bz,cx,cy,cz,col,a){
   this.p.push(ax,ay,az,bx,by,bz,cx,cy,cz); var r = col[0], g = col[1], b = col[2]; this.c.push(r,g,b,a,r,g,b,a,r,g,b,a);
   var pl = this.pl; if (pl){ var k = pl[1]; this.t.push(ax*k,az*k,pl[0], bx*k,bz*k,pl[0], cx*k,cz*k,pl[0]); } else this.t.push(0,0,-1, 0,0,-1, 0,0,-1);
@@ -654,7 +744,7 @@ Mesh.prototype.panel = function(x,z,yaw,lo,y0,y1,hf,tile){
 };
 var BF = [[0,1,3,2],[4,6,7,5],[0,4,5,1],[2,3,7,6],[0,2,6,4],[1,5,7,3]];
 Mesh.prototype.box = function(cx,cy,cz,X,Y,Z,col){
-  var v = [], i, j, k;
+  var v = [], i, j, k; cy += this.yo;
   for (i = -1; i <= 1; i += 2) for (j = -1; j <= 1; j += 2) for (k = -1; k <= 1; k += 2) v.push(cx + i*X[0] + j*Y[0] + k*Z[0], cy + i*X[1] + j*Y[1] + k*Z[1], cz + i*X[2] + j*Y[2] + k*Z[2]);
   for (i = 0; i < 6; i++){ var f = BF[i], a = f[0]*3, b = f[1]*3, c = f[2]*3, d = f[3]*3; this.quad(v[a],v[a+1],v[a+2],v[b],v[b+1],v[b+2],v[c],v[c+1],v[c+2],v[d],v[d+1],v[d+2],col,this.al); }
 };
@@ -663,7 +753,7 @@ Mesh.prototype.ybox = function(x,z,yaw,fo,lo,cy,hf,hy,hl,col){
   var c = Math.cos(yaw), s = Math.sin(yaw);
   this.box(x + c*fo - s*lo, cy, z + s*fo + c*lo, [c*hf,0,s*hf], [0,hy,0], [-s*hl,0,c*hl], col);
 };
-Mesh.prototype.pyr = function(x,z,y0,r,h,col,rot){
+Mesh.prototype.pyr = function(x,z,y0,r,h,col,rot){ y0 += this.yo;
   for (var k = 0; k < 4; k++){ var a = rot + k*1.5708, b = a + 1.5708; this.tri(x + Math.cos(a)*r, y0, z + Math.sin(a)*r, x + Math.cos(b)*r, y0, z + Math.sin(b)*r, x, y0 + h, z, col, this.al); }
 };
 function upload(m, old){
@@ -753,12 +843,19 @@ function shell(b, m, lm){
 var NULLM = {wall:function(){}, tri:function(){}, quad:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  var cs = world.gl.chunks, R = QS.chunk + CH, n = 0;
+  manageTerrain(budget); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
-    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); for (var j = 0; j < c.list.length; j++) shell(c.list[j], m, lm); c.g = upload(m); c.l = upload(lm); n++; } }
+    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } c.g = upload(m); c.l = upload(lm); n++; } }
     else if (d > R + 150){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; }
   }
+}
+function seat(b, m, lm, s0, l0){
+  var q, p = b.pts, n = p.length, base = b.base, low = b.low - 0.5, fc = [172,160,146];
+  for (q = s0 + 1; q < m.p.length; q += 3) m.p[q] += base; for (q = l0 + 1; q < lm.p.length; q += 3) lm.p[q] += base;
+  if (base - low < 0.6) return;
+  for (q = 0; q < n; q += 2){ var r = (q + 2) % n; m.quad(p[q], base, p[q+1], p[r], base, p[r+1], p[r], low, p[r+1], p[q], low, p[q+1], fc, 255); }
+  if (b.door){ var ox = -b.door.nx, oy = -b.door.ny, sx = b.door.x + ox*0.8, sy = b.door.y + oy*0.8, lo = hAt(sx + ox*0.8, sy + oy*0.8) - 0.4; if (base - lo > 0.5) m.ybox(sx, sy, Math.atan2(oy, ox), 0, 0, (base + lo)/2, 0.8, (base - lo)/2, 1.0, [196,186,170]); }
 }
 function dirtyChunk(b){ if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); freeMesh(b.chunk.l); b.chunk.g = null; b.chunk.l = null; } }
 function prep3D(){
@@ -787,15 +884,25 @@ function prep3D(){
     else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.dirt, [150,140,134], false); }
     else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8);
   });
-  g.pl = null;
+  g.pl = null; if (w.hg) drape(g, 0.05);
   w.buildings.forEach(function(b){
+    b.base = 0; b.low = 0;
+    if (w.hg){ var hi = hAt(b.cx, b.cy), lo = hi; for (var q = 0; q < b.pts.length; q += 2){ var hq = hAt(b.pts[q], b.pts[q+1]); if (hq > hi) hi = hq; if (hq < lo) lo = hq; } b.base = hi + 0.04; b.low = lo; }
     var cx = Math.floor(b.cx/CH), cy = Math.floor(b.cy/CH), key = gk(cx, cy), c = chunks.get(key);
     if (!c) chunks.set(key, c = {list:[], g:null, x:(cx+0.5)*CH, y:(cy+0.5)*CH});
     c.list.push(b); b.chunk = c; shell(b, NULLM); b.int = null; b.got = {};
   });
-  if (w.gl){ freeMesh(w.gl.ground); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } }); }
+  if (w.gl){ w.gl.ground.forEach(function(o){ freeMesh(o.g); }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
   var list = []; chunks.forEach(function(c){ list.push(c); });
-  w.gl = {ground:upload(g), chunks:list};
+  /* the ground is cut into squares so only the part near you is drawn */
+  var GT = 256, buckets = new Map(), gt = [];
+  for (i = 0; i < g.p.length; i += 9){
+    var kx = Math.floor((g.p[i] + g.p[i+3] + g.p[i+6])/3/GT), ky = Math.floor((g.p[i+2] + g.p[i+5] + g.p[i+8])/3/GT), key = gk(kx, ky), bm = buckets.get(key);
+    if (!bm){ bm = new Mesh(); bm.x = (kx + 0.5)*GT; bm.y = (ky + 0.5)*GT; buckets.set(key, bm); }
+    for (var q = 0; q < 9; q++){ bm.p.push(g.p[i+q]); bm.t.push(g.t[i+q]); } var ci = i/3*4; for (q = 0; q < 12; q++) bm.c.push(g.c[ci+q]);
+  }
+  buckets.forEach(function(bm){ gt.push({g:upload(bm), x:bm.x, y:bm.y}); });
+  w.gl = {ground:gt, chunks:list, terr:new Map()};
 }
 
 /* ================= interiors (generated when you get close, freed when you leave) ================= */
@@ -912,6 +1019,7 @@ function genInterior(b){
     circs.push(s[0], s[1], Math.min(0.7, rad));
     if (isC) conts.push({x:s[0], y:s[1], h:top + 0.35, name:f.name, i:si, b:b}); else placed++;
   });
+  if (world.hg) for (i = 1; i < m.p.length; i += 3) m.p[i] += b.base;
   return {g:upload(m), segs:segs, circs:circs, conts:conts};
 }
 var loaded = [], stampN = 0;
@@ -971,7 +1079,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.6';
+var VERSION = '0.7';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1360,6 +1468,7 @@ function update(dt){
   if (keys.ArrowUp) P.pitch = Math.min(1.45, P.pitch + 1.4*dt); if (keys.ArrowDown) P.pitch = Math.max(-1.45, P.pitch - 1.4*dt);
   var mf = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) - stick.y, ms = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + stick.x;
   P.swim = inWater(P.x, P.y, 0); P.inside = buildingAt(P.x, P.y);
+  var tgy = world.hg ? (P.inside ? P.inside.base : hAt(P.x, P.y)) : 0; P.gy = P.gy === undefined || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
   if (net.role !== 'guest') weatherTick(dt, day);
   bodyTick(dt, hour);
   if (mf || ms){
@@ -1633,17 +1742,17 @@ function drawAlien(m, z){
 function drawWorldFx(m, e, now){
   var i, k;
   for (k in world.nests){
-    var b = world.buildings[k]; if (!b || Math.abs(b.cx - P.x) > 170 || Math.abs(b.cy - P.y) > 170) continue;
+    var b = world.buildings[k]; if (!b || Math.abs(b.cx - P.x) > 170 || Math.abs(b.cy - P.y) > 170) continue; m.yo = b.base || 0;
     m.al = 128; m.ybox(b.cx, b.cy, now, 0, 0, b.h + 2 + Math.sin(now*2 + b.id)*0.3, 0.45, 0.45, 0.45, C('#b05cff'));
     if (b.int && b.core) m.pyr(b.core.x, b.core.y, 0.1, 0.55, 1.1 + Math.sin(now*4)*0.2, C('#b05cff'), now);
     m.al = 255; if (b.int && b.core) m.ybox(b.core.x, b.core.y, 0.4, 0, 0, 0.12, 0.7, 0.06, 0.7, C('#3c2852'));
   }
   if (wx.tor){
-    var t = wx.tor;
+    var t = wx.tor; m.yo = hAt(t.x, t.y);
     for (i = 0; i < 11; i++){ var r = 1.2 + i*0.85, a = now*(4 - i*0.2) + i; m.ybox(t.x + Math.sin(now*2 + i*0.7)*i*0.25, t.y + Math.cos(now*1.7 + i)*i*0.25, a, 0, 0, 1.5 + i*3, r, 1.5, r, C(i % 2 ? '#5d626b' : '#70757e')); }
   }
   if ((wx.w === 1 || wx.w === 2 || wx.w === 4) && !P.inside){
-    var rc = C(wx.w === 4 ? '#e8eef2' : '#a9c4dc');
+    var rc = C(wx.w === 4 ? '#e8eef2' : '#a9c4dc'); m.yo = P.gy || 0;
     for (i = 0; i < 150; i++){ var py = ((hash(i, 2, 5)*9 - now*13) % 9 + 9) % 9; m.ybox(e[0] + (hash(i, 1, 5) - 0.5)*26, e[2] + (hash(i, 3, 5) - 0.5)*26, 0, 0, 0, py, 0.012, 0.22, 0.012, rc); }
   }
 }
@@ -1655,53 +1764,54 @@ function render(){
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   var cp = Math.cos(P.pitch), f = [Math.cos(P.yaw)*cp, Math.sin(P.pitch), Math.sin(P.yaw)*cp];
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
-  var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65) + Math.sin(P.bob)*0.03, P.y];
+  var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65) + Math.sin(P.bob)*0.03, P.y]; e[1] += P.gy || 0;
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
   var t = 1/Math.tan(1.22/2), nr = 0.08, fr = 700, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   gl.uniformMatrix4fv(U.vp, false, mul(Pm, V)); gl.uniform3fv(U.cam, e); gl.uniform3fv(U.fwd, f); gl.uniform3fv(U.sky, sky);
   gl.uniform1f(U.amb, (1 - 0.88*dark)*(0.55 + 0.45*wd) + fl); gl.uniform1f(U.dark, dark); gl.uniform1f(U.fogK, QS.fog + 0.004*dark + [0, 0.005, 0.008, 0.001, 0.011][wx.w]); gl.uniform1f(U.flash, P.light ? 1 : 0);
   var fu = new Float32Array(16), near = fires.concat(flares).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
-  for (i = 0; i < 4 && i < near.length; i++){ fu[i*4] = near[i].x; fu[i*4+1] = 0.6; fu[i*4+2] = near[i].y; fu[i*4+3] = 1.6 + 0.3*Math.sin(now*13 + i); }
+  for (i = 0; i < 4 && i < near.length; i++){ fu[i*4] = near[i].x; fu[i*4+1] = 0.6 + groundAt(near[i].x, near[i].y); fu[i*4+2] = near[i].y; fu[i*4+3] = 1.6 + 0.3*Math.sin(now*13 + i); }
   gl.uniform4fv(U.fires, fu);
-  drawMesh(world.gl.ground);
+  var GR = QS.chunk + 200; for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (Math.abs(gq.x - P.x) < GR && Math.abs(gq.y - P.y) < GR) drawMesh(gq.g); }
   for (i = 0; i < world.gl.chunks.length; i++){ var ch = world.gl.chunks[i]; if (ch.g && Math.abs(ch.x - P.x) < QS.chunk + CH && Math.abs(ch.y - P.y) < QS.chunk + CH){ drawMesh(ch.g); if (Math.abs(ch.x - P.x) < 170 && Math.abs(ch.y - P.y) < 170) drawMesh(ch.l, gl.LINES); } }
   for (i = 0; i < loaded.length; i++) drawMesh(loaded[i].int.g);
+  var TR = world.gl.terr, trR = QS.chunk + (world.hg ? TT*world.hg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - P.x) < trR && Math.abs(o.y - P.y) < trR) drawMesh(o.g); });
 
-  var m = new Mesh(), x, y;
-  m.pl = [TX.grass, 0.25]; m.quad(P.x - 900, 0, P.y - 900, P.x + 900, 0, P.y - 900, P.x + 900, 0, P.y + 900, P.x - 900, 0, P.y + 900, [236,244,222], 255); m.pl = null;
+  var m = new Mesh(), x, y, far = world.hg ? world.hg.min - 3 : 0;
+  m.pl = [TX.grass, 0.25]; m.quad(P.x - 900, far, P.y - 900, P.x + 900, far, P.y - 900, P.x + 900, far, P.y + 900, P.x - 900, far, P.y + 900, [236,244,222], 255); m.pl = null;
   var trunk = C('#6b4a32'), g1 = C('#56643f'), g2 = C('#7a8a5e');
   for (i = 0; i < world.trees.length; i++){
     var tr = world.trees[i]; x = tr.x - P.x; y = tr.y - P.y; if (x > QS.trees || x < -QS.trees || y > QS.trees || y < -QS.trees) continue;
-    var tx = tr.x; if (tr.shake > 0){ tr.shake -= 0.016; tx += Math.sin(now*70)*0.06; }
+    m.yo = hAt(tr.x, tr.y); var tx = tr.x; if (tr.shake > 0){ tr.shake -= 0.016; tx += Math.sin(now*70)*0.06; }
     if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); continue; }
     m.ybox(tx, tr.y, tr.r, 0, 0, 0.8, 0.16, 0.8, 0.16, trunk);
     m.pyr(tx, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tx, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
   }
-  for (i = 0; i < zombies.length; i++) drawAlien(m, zombies[i]);
+  for (i = 0; i < zombies.length; i++){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
   drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now);
-  drawWorldFx(m, e, now);
+  drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
-  for (i = 0; i < ops.length; i++) if (!ops[i].cop) drawPerson(m, ops[i], lookOf(ops[i]), now);
+  for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); drawPerson(m, ops[i], lookOf(ops[i]), now); }
   var gold = C('#f2b134'), spin = now*2.5;
   for (i = 0; i < loaded.length; i++){
-    var cs = loaded[i].int.conts, got = loaded[i].got;
+    var cs = loaded[i].int.conts, got = loaded[i].got; m.yo = loaded[i].base || 0;
     m.al = 128; for (var j = 0; j < cs.length; j++) if (!got[cs[j].i]) m.ybox(cs[j].x, cs[j].y, spin, 0, 0, cs[j].h + Math.sin(now*3 + j)*0.04, 0.09, 0.09, 0.09, gold); m.al = 255;
   }
   for (i = 0; i < world.crates.length; i++){
-    var cr = world.crates[i]; if (Math.abs(cr.x - P.x) > 120 || Math.abs(cr.y - P.y) > 120) continue;
+    var cr = world.crates[i]; if (Math.abs(cr.x - P.x) > 120 || Math.abs(cr.y - P.y) > 120) continue; m.yo = groundAt(cr.x, cr.y);
     m.ybox(cr.x, cr.y, 0.4, 0, 0, 0.45, 0.5, 0.45, 0.5, C(cr.looted ? '#5a4a3a' : '#a8743e')); if (!cr.looted) m.ybox(cr.x, cr.y, spin, 0, 0, 1.3, 0.1, 0.1, 0.1, gold);
   }
-  for (i = 0; i < corpses.length; i++){ var cp = corpses[i], cr0 = AK[cp.k].r; m.ybox(cp.x, cp.y, cp.x*7 % 3, 0, 0, 0.14, cr0*1.9, 0.14, cr0*1.1, C(cp.k === 1 ? '#201e1d' : '#5a3d6e')); m.ybox(cp.x, cp.y, spin, 0, 0, 0.75, 0.08, 0.08, 0.08, gold); }
-  for (i = 0; i < packs.length; i++){ m.ybox(packs[i].x, packs[i].y, 0.3, 0, 0, 0.25, 0.3, 0.25, 0.22, C('#3566c4')); m.ybox(packs[i].x, packs[i].y, spin, 0, 0, 0.95, 0.1, 0.1, 0.1, gold); }
-  for (i = 0; i < cades.length; i++){ var cd = cades[i]; m.ybox(cd.x, cd.y, cd.yaw, 0, 0, 0.5, 1.1, 0.12, 0.06, C('#a8743e')); m.ybox(cd.x, cd.y, cd.yaw, 0, 0, 1.0, 1.1, 0.12, 0.06, C('#8a5a2b')); m.ybox(cd.x, cd.y, cd.yaw, -0.9, 0, 0.6, 0.07, 0.6, 0.09, C('#6b4526')); m.ybox(cd.x, cd.y, cd.yaw, 0.9, 0, 0.6, 0.07, 0.6, 0.09, C('#6b4526')); }
+  for (i = 0; i < corpses.length; i++){ var cp = corpses[i], cr0 = AK[cp.k].r; m.yo = groundAt(cp.x, cp.y); m.ybox(cp.x, cp.y, cp.x*7 % 3, 0, 0, 0.14, cr0*1.9, 0.14, cr0*1.1, C(cp.k === 1 ? '#201e1d' : '#5a3d6e')); m.ybox(cp.x, cp.y, spin, 0, 0, 0.75, 0.08, 0.08, 0.08, gold); }
+  for (i = 0; i < packs.length; i++){ m.yo = groundAt(packs[i].x, packs[i].y); m.ybox(packs[i].x, packs[i].y, 0.3, 0, 0, 0.25, 0.3, 0.25, 0.22, C('#3566c4')); m.ybox(packs[i].x, packs[i].y, spin, 0, 0, 0.95, 0.1, 0.1, 0.1, gold); }
+  for (i = 0; i < cades.length; i++){ var cd = cades[i]; m.yo = groundAt(cd.x, cd.y); m.ybox(cd.x, cd.y, cd.yaw, 0, 0, 0.5, 1.1, 0.12, 0.06, C('#a8743e')); m.ybox(cd.x, cd.y, cd.yaw, 0, 0, 1.0, 1.1, 0.12, 0.06, C('#8a5a2b')); m.ybox(cd.x, cd.y, cd.yaw, -0.9, 0, 0.6, 0.07, 0.6, 0.09, C('#6b4526')); m.ybox(cd.x, cd.y, cd.yaw, 0.9, 0, 0.6, 0.07, 0.6, 0.09, C('#6b4526')); }
   for (i = 0; i < fires.length; i++){
-    var fi = fires[i], fk = 0.8 + 0.25*Math.sin(now*17 + i);
+    var fi = fires[i], fk = 0.8 + 0.25*Math.sin(now*17 + i); m.yo = groundAt(fi.x, fi.y);
     m.ybox(fi.x, fi.y, 0.5, 0, 0, 0.08, 0.5, 0.08, 0.1, C('#4a3a2c')); m.ybox(fi.x, fi.y, 2.1, 0, 0, 0.08, 0.5, 0.08, 0.1, C('#4a3a2c'));
     m.al = 128; m.pyr(fi.x, fi.y, 0.1, 0.32, 0.9*fk, C('#ff7a2b'), now*3); m.pyr(fi.x, fi.y, 0.1, 0.18, 0.6*fk, C('#ffe27a'), -now*4); m.al = 255;
   }
   var tc = C('#fff2b0');
-  for (i = 0; i < bullets.length; i++){ var b = bullets[i], a = Math.atan2(b.vy, b.vx); m.ybox(b.x, b.y, a, -0.8, 0, 1.35, 0.8, 0.015, 0.015, tc); }
-  upload(m, dyn); drawMesh(dyn);
+  for (i = 0; i < bullets.length; i++){ var b = bullets[i], a = Math.atan2(b.vy, b.vx); m.yo = groundAt(b.x, b.y); m.ybox(b.x, b.y, a, -0.8, 0, 1.35, 0.8, 0.015, 0.015, tc); }
+  m.yo = 0; upload(m, dyn); drawMesh(dyn);
 
   /* held items */
   gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -1934,11 +2044,11 @@ function itemsTick(dt){
 }
 function drawItemsFx(m, now){
   var i; m.al = 128;
-  for (i = 0; i < throws.length; i++){ var t = throws[i], d = DESIGNS[t.id]; m.ybox(t.x0 + (t.x - t.x0)*t.t, t.y0 + (t.y - t.y0)*t.t, now*9, 0, 0, 1.3 + Math.sin(t.t*3.1416)*1.6 - t.t*1.2, 0.09, 0.09, 0.09, C(d ? d.color : '#ffffff')); }
-  for (i = 0; i < booms.length; i++){ var r = (0.35 - booms[i].t)*12 + 0.4; m.ybox(booms[i].x, booms[i].y, now*5, 0, 0, 1, r, r*0.7, r, C('#ffb347')); }
-  for (i = 0; i < flares.length; i++) m.pyr(flares[i].x, flares[i].y, 0.05, 0.12, 0.5 + Math.sin(now*20 + i)*0.1, C('#ff4a3a'), now*6);
-  for (i = 0; i < lures.length; i++) if (Math.sin(now*10) > 0) m.ybox(lures[i].x, lures[i].y, 0, 0, 0, 0.2, 0.1, 0.1, 0.1, C('#4ad0ff'));
-  m.al = 255;
+  for (i = 0; i < throws.length; i++){ var t = throws[i], d = DESIGNS[t.id]; m.yo = groundAt(t.x0 + (t.x - t.x0)*t.t, t.y0 + (t.y - t.y0)*t.t); m.ybox(t.x0 + (t.x - t.x0)*t.t, t.y0 + (t.y - t.y0)*t.t, now*9, 0, 0, 1.3 + Math.sin(t.t*3.1416)*1.6 - t.t*1.2, 0.09, 0.09, 0.09, C(d ? d.color : '#ffffff')); }
+  for (i = 0; i < booms.length; i++){ var r = (0.35 - booms[i].t)*12 + 0.4; m.yo = groundAt(booms[i].x, booms[i].y); m.ybox(booms[i].x, booms[i].y, now*5, 0, 0, 1, r, r*0.7, r, C('#ffb347')); }
+  for (i = 0; i < flares.length; i++){ m.yo = groundAt(flares[i].x, flares[i].y); m.pyr(flares[i].x, flares[i].y, 0.05, 0.12, 0.5 + Math.sin(now*20 + i)*0.1, C('#ff4a3a'), now*6); }
+  for (i = 0; i < lures.length; i++) if (Math.sin(now*10) > 0){ m.yo = groundAt(lures[i].x, lures[i].y); m.ybox(lures[i].x, lures[i].y, 0, 0, 0, 0.2, 0.1, 0.1, 0.1, C('#4ad0ff')); }
+  m.al = 255; m.yo = 0;
 }
 function cycleWeapon(){
   var ids = [null]; for (var k in P.items) if (P.items[k] > 0 && DESIGNS[k] && DESIGNS[k].kind === 'melee') ids.push(k);
@@ -2094,9 +2204,9 @@ el('buildBtn').addEventListener('click', toggleBuild);
 el('build').addEventListener('click', function(e){ if (e.target.id === 'bdClose'){ toggleBuild(); return; } var a = e.target.getAttribute && e.target.getAttribute('data-a'); if (a && running) buildAct(a); });
 function drawBuilt(m){
   var E = world.edits, i, k;
-  for (i = 0; i < E.walls.length; i++){ var w = E.walls[i]; if (Math.abs(w.x - P.x) > 140 || Math.abs(w.y - P.y) > 140) continue; m.ybox(w.x, w.y, w.yaw, 0, 0, 1.25, 0.1, 1.25, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, 2.52, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, 1.25, 0.13, 0.08, 1.5, C('#6b4a30')); }
-  for (k in E.beds){ var bd = E.beds[k]; if (Math.abs(bd.x - P.x) > 60 || Math.abs(bd.y - P.y) > 60) continue; m.ybox(bd.x, bd.y, 0, 0, 0, 0.32, 1, 0.14, 0.5, C('#7a5a3c')); m.ybox(bd.x, bd.y, 0, 0, 0, 0.5, 0.95, 0.06, 0.46, C(k === charSlug() ? '#4f83e6' : '#c9d3e0')); m.ybox(bd.x, bd.y, 0, -0.72, 0, 0.6, 0.2, 0.06, 0.36, C('#f2f2f2')); }
-  for (i = 0; i < E.chests.length; i++){ var c = E.chests[i]; if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60) continue; m.ybox(c.x, c.y, 0.3, 0, 0, 0.4, 0.5, 0.3, 0.35, C('#8a5a2b')); m.ybox(c.x, c.y, 0.3, 0, 0, 0.74, 0.52, 0.05, 0.37, C('#b07a3e')); m.ybox(c.x, c.y, 0.3, 0.52, 0, 0.5, 0.01, 0.08, 0.06, C('#ffd24a')); }
+  for (i = 0; i < E.walls.length; i++){ var w = E.walls[i]; if (Math.abs(w.x - P.x) > 140 || Math.abs(w.y - P.y) > 140) continue; m.yo = groundAt(w.x, w.y); m.ybox(w.x, w.y, w.yaw, 0, 0, 1.25, 0.1, 1.25, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, 2.52, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, 1.25, 0.13, 0.08, 1.5, C('#6b4a30')); }
+  for (k in E.beds){ var bd = E.beds[k]; if (Math.abs(bd.x - P.x) > 60 || Math.abs(bd.y - P.y) > 60) continue; m.yo = groundAt(bd.x, bd.y); m.ybox(bd.x, bd.y, 0, 0, 0, 0.32, 1, 0.14, 0.5, C('#7a5a3c')); m.ybox(bd.x, bd.y, 0, 0, 0, 0.5, 0.95, 0.06, 0.46, C(k === charSlug() ? '#4f83e6' : '#c9d3e0')); m.ybox(bd.x, bd.y, 0, -0.72, 0, 0.6, 0.2, 0.06, 0.36, C('#f2f2f2')); }
+  for (i = 0; i < E.chests.length; i++){ var c = E.chests[i]; if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60) continue; m.yo = groundAt(c.x, c.y); m.ybox(c.x, c.y, 0.3, 0, 0, 0.4, 0.5, 0.3, 0.35, C('#8a5a2b')); m.ybox(c.x, c.y, 0.3, 0, 0, 0.74, 0.52, 0.05, 0.37, C('#b07a3e')); m.ybox(c.x, c.y, 0.3, 0.52, 0, 0.5, 0.01, 0.08, 0.06, C('#ffd24a')); }
 }
 /* ---- chests ---- */
 var curChest = null;
@@ -2288,18 +2398,18 @@ function checkScenario(){
 function drawExtras(m, now){
   var i, w = world;
   for (i = 0; i < w.vehicles.length; i++){
-    var v = w.vehicles[i]; if (v === P.veh || Math.abs(v.x - P.x) > 130 || Math.abs(v.y - P.y) > 130) continue;
+    var v = w.vehicles[i]; if (v === P.veh || Math.abs(v.x - P.x) > 130 || Math.abs(v.y - P.y) > 130) continue; m.yo = groundAt(v.x, v.y);
     if (!v.t){ m.ybox(v.x, v.y, v.yaw, 0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, -0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 0.55, 0.04, 0.035, C('#c8553a')); m.ybox(v.x, v.y, v.yaw, 0.45, 0, 0.95, 0.03, 0.03, 0.25, C('#8a9199')); m.ybox(v.x, v.y, v.yaw, -0.3, 0, 0.9, 0.12, 0.03, 0.07, C('#16181c')); }
     else { var cc = C(['#8a2f2f', '#2f5f8a', '#6f7480', '#c9b458', '#3f6b4a'][Math.floor(hash(i, 3, 8)*5)]);
       m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 2.0, 0.34, 0.85, cc); m.ybox(v.x, v.y, v.yaw, -0.2, 0, 1.2, 1.0, 0.26, 0.78, C('#2f4558'));
       for (var q = 0; q < 4; q++) m.ybox(v.x, v.y, v.yaw, q < 2 ? 1.25 : -1.25, q % 2 ? 0.86 : -0.86, 0.32, 0.32, 0.32, 0.1, C('#16181c')); }
   }
-  for (i = 0; i < w.traders.length; i++){ var t = w.traders[i]; if (Math.abs(t.x - P.x) > 120 || Math.abs(t.y - P.y) > 120) continue; drawPerson(m, {x:t.x, y:t.y, yaw:t.yaw, id:t.id, mv:0, sw:0}, {build:1, skin:(t.id*2) % 5, shirt:'#3f8f5a', pants:'#3a3f47', hat:1}, now); m.al = 128; m.ybox(t.x, t.y, now*2, 0, 0, 2.5, 0.1, 0.1, 0.1, C('#5dff8a')); m.al = 255; }
+  for (i = 0; i < w.traders.length; i++){ var t = w.traders[i]; if (Math.abs(t.x - P.x) > 120 || Math.abs(t.y - P.y) > 120) continue; m.yo = groundAt(t.x, t.y); drawPerson(m, {x:t.x, y:t.y, yaw:t.yaw, id:t.id, mv:0, sw:0}, {build:1, skin:(t.id*2) % 5, shirt:'#3f8f5a', pants:'#3a3f47', hat:1}, now); m.al = 128; m.ybox(t.x, t.y, now*2, 0, 0, 2.5, 0.1, 0.1, 0.1, C('#5dff8a')); m.al = 255; }
   m.al = 128;
-  for (i = 0; i < pings.length; i++) m.ybox(pings[i].x, pings[i].y, now, 0, 0, 6, 0.06, 6, 0.06, C('#ffe14a'));
+  for (i = 0; i < pings.length; i++){ m.yo = groundAt(pings[i].x, pings[i].y); m.ybox(pings[i].x, pings[i].y, now, 0, 0, 6, 0.06, 6, 0.06, C('#ffe14a')); }
   if (w.scen.type === 'escape'){
-    w.partB.forEach(function(id){ if (w.found[id]) return; var b = w.buildings[id]; if (Math.abs(b.cx - P.x) < 220 && Math.abs(b.cy - P.y) < 220) m.ybox(b.cx, b.cy, now, 0, 0, b.h + 2.2 + Math.sin(now*2)*0.3, 0.4, 0.4, 0.4, C('#ffe14a')); });
-    if (Math.abs(w.evac.x - P.x) < 400 && Math.abs(w.evac.y - P.y) < 400) m.ybox(w.evac.x, w.evac.y, now*0.5, 0, 0, 20, 0.5, 20, 0.5, C('#ffffff'));
+    w.partB.forEach(function(id){ if (w.found[id]) return; var b = w.buildings[id]; if (Math.abs(b.cx - P.x) < 220 && Math.abs(b.cy - P.y) < 220){ m.yo = b.base || 0; m.ybox(b.cx, b.cy, now, 0, 0, b.h + 2.2 + Math.sin(now*2)*0.3, 0.4, 0.4, 0.4, C('#ffe14a')); } });
+    m.yo = hAt(w.evac.x, w.evac.y); if (Math.abs(w.evac.x - P.x) < 400 && Math.abs(w.evac.y - P.y) < 400) m.ybox(w.evac.x, w.evac.y, now*0.5, 0, 0, 20, 0.5, 20, 0.5, C('#ffffff'));
   }
   m.al = 255;
 }
@@ -2510,6 +2620,28 @@ var MM_QUERY = '(way[building];way[highway];way[waterway];way[railway~"^(rail|tr
 function downloadText(name, text){
   var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'application/json'})); a.download = name; document.body.appendChild(a); a.click(); a.remove();
 }
+/* real elevation: free public terrain tiles (Terrarium format), read once and stored with the map */
+async function fetchElev(s, w, n, e){
+  var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer = setTimeout(function(){ if (ctl) ctl.abort(); }, 25000);
+  try {
+    var z = 13, tx = function(lon, z){ return (lon + 180)/360*Math.pow(2, z); }, ty = function(lat, z){ var r = lat*Math.PI/180; return (1 - Math.log(Math.tan(r) + 1/Math.cos(r))/Math.PI)/2*Math.pow(2, z); };
+    while (z > 7 && (Math.floor(tx(e, z)) - Math.floor(tx(w, z)) + 1)*(Math.floor(ty(s, z)) - Math.floor(ty(n, z)) + 1) > 30) z--;
+    var x0 = Math.floor(tx(w, z)), x1 = Math.floor(tx(e, z)), y0 = Math.floor(ty(n, z)), y1 = Math.floor(ty(s, z)), tiles = {}, jobs = [], cv = document.createElement('canvas'); cv.width = cv.height = 256; var cx = cv.getContext('2d', {willReadFrequently:true});
+    for (var X = x0; X <= x1; X++) for (var Y = y0; Y <= y1; Y++) jobs.push((function(X, Y){
+      return fetch('https://s3.amazonaws.com/elevation-tiles-prod/terrarium/' + z + '/' + X + '/' + Y + '.png', ctl ? {signal:ctl.signal} : {}).then(function(r){ if (!r.ok) throw new Error('tile ' + r.status); return r.blob(); })
+        .then(function(b){ return createImageBitmap(b); }).then(function(im){ cx.clearRect(0, 0, 256, 256); cx.drawImage(im, 0, 0); var px = cx.getImageData(0, 0, 256, 256).data, h = new Float32Array(65536); for (var i = 0; i < 65536; i++) h[i] = px[i*4]*256 + px[i*4+1] + px[i*4+2]/256 - 32768; tiles[X + '/' + Y] = h; });
+    })(X, Y));
+    await Promise.all(jobs);
+    var km = Math.cos((s + n)/2*Math.PI/180)*111.32, cols = Math.max(2, Math.min(600, Math.round((e - w)*km*1000/25) + 1)), rows = Math.max(2, Math.min(600, Math.round((n - s)*110540/25) + 1)), d = new Int16Array(cols*rows);
+    var at = function(gx, gy){ var X = Math.max(x0, Math.min(x1, Math.floor(gx/256))), Y = Math.max(y0, Math.min(y1, Math.floor(gy/256))), t = tiles[X + '/' + Y]; return t[Math.max(0, Math.min(255, Math.floor(gy - Y*256)))*256 + Math.max(0, Math.min(255, Math.floor(gx - X*256)))]; };
+    for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){
+      var gx = tx(w + (e - w)*i/(cols - 1), z)*256 - 0.5, gy = ty(n - (n - s)*j/(rows - 1), z)*256 - 0.5, fx = gx - Math.floor(gx), fy = gy - Math.floor(gy);
+      var h = (at(gx, gy)*(1 - fx) + at(gx + 1, gy)*fx)*(1 - fy) + (at(gx, gy + 1)*(1 - fx) + at(gx + 1, gy + 1)*fx)*fy;
+      d[j*cols + i] = Math.max(-32000, Math.min(32000, Math.round(h*10)));
+    }
+    return {s:s, n:n, w:w, e:e, cols:cols, rows:rows, d:b64of(new Uint8Array(d.buffer))};
+  } finally { clearTimeout(timer); }
+}
 async function makeMap(){
   var st = el('mmStatus'), q = el('mmPlace').value.trim(), size = el('mmSize').value;
   if (!q){ st.textContent = 'Type a place name first.'; return; }
@@ -2532,9 +2664,11 @@ async function makeMap(){
     st.textContent = 'Building the map...';
     var raw = fromOverpass(await r.json()); if (!raw.ways.length) throw new Error('no map data came back for that area');
     var name = String(j[0].display_name || q).split(',')[0].trim() + (size === 'city' ? '' : ' ' + Math.round(+size*2) + 'km');
+    st.textContent = 'Adding hills and valleys...'; var hills = true;
+    try { raw.elev = await fetchElev(s, w, n, e); } catch (er){ raw.elev = null; hills = false; }
     var text = JSON.stringify(toCompact(raw, name)), file = slug(name) + '.lbmap.json';
-    if (dir){ await writeFile('maps', file, text); st.textContent = 'Map saved to the maps folder as ' + file + '.'; }
-    else { downloadText(file, text); st.textContent = 'Map downloaded as ' + file + '. Put it in the maps folder to use it again offline.'; }
+    if (dir){ await writeFile('maps', file, text); st.textContent = 'Map saved to the maps folder as ' + file + '.' + (hills ? '' : ' The terrain could not be downloaded, so this map is flat.'); }
+    else { downloadText(file, text); st.textContent = 'Map downloaded as ' + file + '. Put it in the maps folder to use it again offline.' + (hills ? '' : ' The terrain could not be downloaded, so this map is flat.'); }
     mapSrc = {text:text}; enter(parseText(text), name);
   } catch (err) {
     st.textContent = 'Could not make the map: ' + (err && err.message ? (/fetch|network/i.test(err.message) ? 'no connection to the map servers' : err.message) : 'unknown error') + '. You can still export a map by hand using the steps below.';
@@ -2578,10 +2712,20 @@ el('menuBtn').addEventListener('click', function(){ exitToMenu(); });
 el('file').addEventListener('change', function(e){ readFile(e.target.files[0]); e.target.value = ''; });
 window.addEventListener('dragover', function(e){ e.preventDefault(); });
 window.addEventListener('drop', function(e){ e.preventDefault(); if (!running && e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
-el('spring').addEventListener('click', function(){
+el('spring').addEventListener('click', async function(){
   if (!glOK) return; var t = (el('artMap').textContent || '').replace(/<!--\/?ART:map-->/g, '').trim();
   if (!t){ fail('The built-in map is missing from this copy of the game.'); return; }
-  info('Loading Springfield...'); setTimeout(function(){ try { mapSrc = {text:t}; enter(parseText(t), 'Springfield'); } catch (e) { fail(e.message || 'Could not load the built-in map.'); } }, 30);
+  info('Loading Springfield...');
+  try {
+    var j = JSON.parse(t), ev = null; try { ev = JSON.parse(lsGet('lastblock:elev:springfield') || 'null'); } catch (e0){}
+    if (!ev && navigator.onLine){
+      info('Loading Springfield and downloading its hills (first time only)...');
+      var a = 1e9, b = -1e9, c = 1e9, d = -1e9; j.ways.forEach(function(w){ for (var q = 0; q < w[1].length; q += 2){ var x = w[1][q], y = w[1][q+1]; if (x < a) a = x; if (x > b) b = x; if (y < c) c = y; if (y > d) d = y; } });
+      try { ev = await fetchElev(c - 0.004, a - 0.005, d + 0.004, b + 0.005); lsSet('lastblock:elev:springfield', JSON.stringify(ev)); } catch (e1){ ev = null; }
+    }
+    if (ev){ j.elev = ev; t = JSON.stringify(j); }
+    mapSrc = {text:t}; await enter(parseText(t), 'Springfield'); if (!ev) toast('Playing Springfield without hills: the terrain is downloaded the first time you start it with internet.', 6);
+  } catch (e) { fail(e.message || 'Could not load the built-in map.'); }
 });
 el('demo').addEventListener('click', function(){ if (glOK){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); } });
 function savedChars(){

@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.6) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.7) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -43,6 +43,16 @@ Fail signs: a blank or black view, a message that the browser cannot run 3D grap
 - [ ] 1b.3 At night, windows glow.
 - [ ] 1b.4 The six hotbar slots at the bottom show picture icons. The round map in the corner follows you with north up.
 - [ ] 1b.5 Titles use a plain serif font and labels a typewriter-style font. The design pack's own fonts are not built in yet.
+
+## Stage 1c: hills and valleys
+
+- [ ] 1c.1 Play demo town. The streets rise and fall (the demo's hills are made up). Walking uphill and downhill feels smooth.
+- [ ] 1c.2 Buildings on slopes sit level on a grey foundation, with a step at the door. Stepping in and out does not jolt badly.
+- [ ] 1c.3 With internet on, press Play Springfield, MO. The first time it says it is downloading the hills. Report if it instead says it is playing without hills.
+- [ ] 1c.4 Springfield's ground matches what you know: which way a street you know slopes.
+- [ ] 1c.5 Look for roads or sidewalks that float above the ground or sink into it, and for gaps in the ground.
+- [ ] 1c.6 Turn the internet off and play Springfield again. The hills are still there.
+- [ ] 1c.7 Make a map with the map maker. It says "Adding hills and valleys" and the new map has them.
 
 ## Stage 2: saving onto the drive (make-or-break)
 
