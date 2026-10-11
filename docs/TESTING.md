@@ -40,7 +40,7 @@ Fail signs: a blank or black view, a message that the browser cannot run 3D grap
 - [ ] 1b.2 Look at a distant wall while walking. Report any shimmering, flickering or seams between texture tiles.
 - [ ] 1b.3 At night, windows glow.
 - [ ] 1b.4 The six hotbar slots at the bottom show picture icons. The round map in the corner follows you with north up.
-- [ ] 1b.5 With internet on, titles use a chunky display font; offline they fall back to a plain serif. Both are expected.
+- [ ] 1b.5 Titles use a plain serif font and labels a typewriter-style font. The design pack's own fonts are not built in yet.
 
 ## Stage 2: saving onto the drive (make-or-break)
 

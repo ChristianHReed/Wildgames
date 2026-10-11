@@ -2480,8 +2480,7 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
 loadPacks(); wForm(); renderPacks(); fillScen();
 (function(){
   var ic = (el('artIcons').textContent || '').replace(/<!--.*?-->/g, '').trim(); if (ic) document.documentElement.style.setProperty('--icons', 'url(data:image/png;base64,' + ic + ')');
-  /* the three display fonts are optional: they load when there is internet, and built-in fonts stand in when there is not */
-  if (navigator.onLine){ var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700;800&family=Special+Elite&display=swap'; document.head.appendChild(l); }
+  /* no web fonts: the game never reaches out to the internet on its own */
 })();
 try { glOK = initGL(); } catch (e) { glOK = false; }
 saveInfo();
