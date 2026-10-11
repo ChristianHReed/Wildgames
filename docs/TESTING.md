@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.10) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.11) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -98,6 +98,14 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3b.5 Save and exit. The region is listed with how many squares are on the device. Press **Play**; you resume where you left.
 - [ ] 3b.6 Press **Download more** and leave the page open for ten minutes. Report how many squares it saved and any message it stopped with.
 - [ ] 3b.7 Check the seam: do buildings and roads line up as you cross from one square to the next?
+
+## Stage 3c: buildings match their real use
+
+- [ ] 3c.1 In Springfield, open the full map and zoom in. Buildings other than homes are labelled: restaurant, church, office building, school, clinic and so on. Check a few you know.
+- [ ] 3c.2 Homes have pitched roofs and some have chimneys; larger buildings have a low wall round a flat roof with machinery on top; shops and restaurants have an awning and sign over the door; churches have a steeple.
+- [ ] 3c.3 Stand inside a building. The line under the compass says what it is, for example "Inside St. Michael's, a restaurant".
+- [ ] 3c.4 Loot fits the place: a restaurant gives food and water, a clinic medkits, a hardware store wood, scrap and batteries, a clothing store coats, an office batteries and water, a church water, food and lanterns.
+- [ ] 3c.5 Report any building whose use is wrong, with its name or location, and any roof that looks broken.
 
 ## Stage 4: aliens and weather
 

@@ -326,7 +326,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.10.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.11.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -443,7 +443,7 @@ function fromGeoJson(j){
   });
   return {ways:ways, pois:pois};
 }
-var KEEP = ['building','building:levels','name','shop','amenity','highway','waterway','railway','natural','landuse','leisure','healthcare','craft','military','area'];
+var KEEP = ['office','tourism','building','building:levels','name','shop','amenity','highway','waterway','railway','natural','landuse','leisure','healthcare','craft','military','area'];
 function keepTags(t){ var o = {}, n = 0; if (t) for (var i = 0; i < KEEP.length; i++) if (t[KEEP[i]] !== undefined){ o[KEEP[i]] = t[KEEP[i]]; n++; } return n ? o : null; }
 /* compact map file: only the tags the game uses, coordinates rounded to about 10 cm */
 function toCompact(raw, name){
@@ -540,6 +540,91 @@ function areaKind(t){
   if (IN(t.natural, ['sand','beach'])) return 'sand';
   return null;
 }
+/* ---- what a building was used for, read from the map's tags; this decides its shape, furniture and loot ---- */
+function kindOf(t){
+  var a = t.amenity, s = t.shop, b = t.building, l = t.leisure, to = t.tourism;
+  if (a === 'hospital' || b === 'hospital') return 'hospital';
+  if (IN(a, ['pharmacy','clinic','doctors','dentist','veterinary']) || IN(s, ['chemist','medical_supply']) || t.healthcare) return 'clinic';
+  if (IN(a, ['police','prison']) || t.military) return 'police';
+  if (a === 'fire_station' || b === 'fire_station') return 'fire';
+  if (IN(s, ['weapons','hunting','outdoor','fishing','sports'])) return 'outdoors';
+  if (IN(a, ['bar','pub','biergarten','nightclub']) || IN(s, ['alcohol','beverages'])) return 'bar';
+  if (IN(a, ['restaurant','cafe','fast_food','food_court','ice_cream'])) return 'restaurant';
+  if (IN(s, ['supermarket','convenience','bakery','butcher','greengrocer','deli','general','farm','confectionery']) || a === 'marketplace') return 'grocery';
+  if (a === 'fuel') return 'fuel';
+  if (IN(s, ['hardware','doityourself','trade','car_repair','car_parts','tyres','car','bicycle','storage_rental']) || t.craft) return 'hardware';
+  if (IN(s, ['clothes','shoes','department_store','second_hand','laundry','fashion'])) return 'clothes';
+  if (IN(s, ['electronics','mobile_phone','computer','hifi','music'])) return 'electronics';
+  if (IN(a, ['school','university','college','kindergarten','childcare']) || IN(b, ['school','university','college','kindergarten'])) return 'school';
+  if (a === 'library' || s === 'books') return 'library';
+  if (a === 'place_of_worship' || IN(b, ['church','chapel','cathedral','mosque','temple','synagogue'])) return 'church';
+  if (a === 'bank') return 'bank';
+  if (IN(to, ['hotel','motel','hostel']) || b === 'hotel') return 'hotel';
+  if (IN(l, ['fitness_centre','sports_centre','ice_rink'])) return 'gym';
+  if (IN(a, ['theatre','cinema','arts_centre','events_venue','community_centre']) || l === 'stadium' || IN(b, ['stadium','grandstand'])) return 'venue';
+  if (a === 'parking' || b === 'parking') return 'parking';
+  if (t.office || IN(a, ['townhall','courthouse','post_office']) || IN(b, ['office','commercial','government','public','civic'])) return 'office';
+  if (IN(b, ['industrial','warehouse','hangar','barn','factory','manufacture'])) return 'warehouse';
+  if (IN(b, ['garage','garages','shed','carport','roof'])) return 'garage';
+  if (IN(b, ['apartments','dormitory','residential'])) return 'apartments';
+  if (s || b === 'retail') return 'shop';
+  if (IN(b, ['house','detached','semidetached_house','terrace','bungalow','cabin','hut'])) return 'house';
+  return null;
+}
+/* cat = broad group (map colour, shopfront art); lv = floors when the map does not say; lh = height of a floor; awn = awning colour for places with a shopfront */
+var KIND = {
+  house:{cat:'house', label:'home', lv:[1,2], roof:'hip'},
+  apartments:{cat:'house', label:'apartment block', lv:[3,5], fac:['brick','brickDark','stucco']},
+  garage:{cat:'industrial', label:'garage', lv:[1,1], lh:2.7, roof:'hip', fac:['sidingCream','stucco']},
+  grocery:{cat:'food', label:'grocery store', lv:[1,1], lh:4.4, awn:'#7a8a5e'},
+  restaurant:{cat:'food', label:'restaurant', lv:[1,2], lh:3.6, awn:'#c67139'},
+  bar:{cat:'food', label:'bar', lv:[1,2], lh:3.6, awn:'#8a6a8a'},
+  clinic:{cat:'medical', label:'clinic', lv:[1,2], lh:3.6, awn:'#f5ead8', fac:['stucco']},
+  hospital:{cat:'medical', label:'hospital', lv:[4,6], fac:['stucco','stone']},
+  police:{cat:'police', label:'police station', lv:[2,2], fac:['stone','brickDark']},
+  fire:{cat:'police', label:'fire station', lv:[2,2], lh:4, fac:['brick']},
+  outdoors:{cat:'police', label:'outdoor store', lv:[1,1], lh:4.2, awn:'#56643f'},
+  hardware:{cat:'industrial', label:'hardware store', lv:[1,1], lh:4.6, awn:'#d9a845'},
+  fuel:{cat:'industrial', label:'gas station', lv:[1,1], lh:3.6, awn:'#c8553a'},
+  warehouse:{cat:'industrial', label:'warehouse', lv:[1,1], lh:7, fac:['stucco','brickDark']},
+  parking:{cat:'industrial', label:'parking garage', lv:[3,4], lh:3, fac:['stucco']},
+  clothes:{cat:'shop', label:'clothing store', lv:[1,2], lh:4, awn:'#5f8a9a'},
+  electronics:{cat:'shop', label:'electronics store', lv:[1,2], lh:4, awn:'#3d3029'},
+  shop:{cat:'shop', label:'shop', lv:[1,2], lh:4, awn:'#5f8a9a'},
+  school:{cat:'civic', label:'school', lv:[2,3], fac:['brick','stone']},
+  library:{cat:'civic', label:'library', lv:[2,2], lh:4, fac:['stone']},
+  church:{cat:'civic', label:'church', lv:[1,1], lh:8, roof:'hip', fac:['stone','brick']},
+  office:{cat:'civic', label:'office building', lv:[2,6], fac:['stucco','stone','brickDark','brick']},
+  bank:{cat:'civic', label:'bank', lv:[2,3], lh:4, fac:['stone']},
+  hotel:{cat:'civic', label:'hotel', lv:[3,5], fac:['brick','stucco']},
+  gym:{cat:'civic', label:'gym', lv:[1,2], lh:5, fac:['stucco']},
+  venue:{cat:'civic', label:'event hall', lv:[2,3], lh:5, fac:['stone','brickDark']}
+};
+function kindLabel(b){ var l = KIND[b.kind].label; return (/^[aeiou]/.test(l) ? 'an ' : 'a ') + l; }
+var LOOTK = {
+  apartments:{food:3, water:2, medkit:0.6, coat:0.6, battery:1, scrap:1, none:1.5},
+  garage:{scrap:4, fuel:2.5, wood:2, battery:1, flashlight:0.3, none:1},
+  grocery:{food:7, water:4, battery:0.5},
+  restaurant:{food:6, water:3, scrap:0.5, none:1},
+  bar:{water:5, food:2, medkit:0.3, none:1.5},
+  clinic:{medkit:6, water:1, battery:0.4}, hospital:{medkit:7, water:2, battery:0.6, coat:0.4, none:1},
+  police:{ammo:8, medkit:1, radio:1, battery:2, flashlight:0.6},
+  fire:{medkit:3, coat:2, fuel:2, radio:1, flashlight:1, scrap:1, water:2},
+  outdoors:{ammo:5, coat:2, lantern:1.5, flashlight:1, food:1, battery:1},
+  hardware:{scrap:5, wood:4, battery:2, fuel:1, flashlight:0.8, lantern:0.6},
+  fuel:{fuel:6, food:2, water:2, battery:1},
+  warehouse:{scrap:5, wood:4, fuel:2, battery:1}, parking:{fuel:4, scrap:3, battery:1, none:2},
+  clothes:{coat:5, scrap:1, none:2},
+  electronics:{battery:5, radio:2, flashlight:2, scrap:2},
+  school:{food:2, water:2, medkit:1, battery:1.5, scrap:1, none:2},
+  library:{battery:1, lantern:0.4, water:1, scrap:1, none:4},
+  church:{water:3, food:2, lantern:1, medkit:0.5, coat:0.5, none:2},
+  office:{battery:2.5, water:2, scrap:1.5, radio:0.5, flashlight:0.5, medkit:0.5, food:0.8, none:2.5},
+  bank:{scrap:2, battery:1, ammo:0.6, none:4},
+  hotel:{food:2, water:3, coat:1.5, medkit:0.8, battery:1, none:1.5},
+  gym:{water:5, medkit:1.5, food:1, coat:0.6, none:1.5},
+  venue:{water:3, food:2, flashlight:0.5, battery:1, none:3}
+};
 var CIVIC = ['library', 'school', 'place_of_worship', 'townhall', 'courthouse', 'university', 'college', 'community_centre'];
 var CAT = {
   house:{label:'Home', icon:'', cols:['#d9c7a8','#e0cfb2','#cdb895']},
@@ -547,7 +632,8 @@ var CAT = {
   medical:{label:'Medical', icon:'+', cols:['#c67139']},
   police:{label:'Armory', icon:'A', cols:['#8a7a5a']},
   industrial:{label:'Workshop', icon:'S', cols:['#8a6a8a']},
-  shop:{label:'Shop', icon:'$', cols:['#5f8a9a']}
+  shop:{label:'Shop', icon:'$', cols:['#5f8a9a']},
+  civic:{label:'Public', icon:'', cols:['#b9ad98','#c4b79e']}
 };
 var ICON_COL = {food:'#b3541e', medical:'#c8322b', police:'#f2d14a', industrial:'#22262b', shop:'#0f4a44'};
 var LOOT = {
@@ -604,8 +690,9 @@ function buildWorld(raw, name){
       pts.length -= 2; var ar = 0, cx = 0, cy = 0, n = pts.length;
       for (i = 0; i < n; i += 2){ var j = (i+2) % n; ar += pts[i]*pts[j+1] - pts[j]*pts[i+1]; cx += pts[i]; cy += pts[i+1]; }
       ar = Math.abs(ar)/2; if (ar < 6) return;
-      var cat = catOf(t, true), id = w.buildings.length;
-      w.buildings.push(bbox({pts:pts, cat:cat, name:t.name || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels'])||0, civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
+      var id = w.buildings.length, kind = kindOf(t), kg = !kind; if (kg){ var hk = hash(id, 17, 4); kind = ar < 280 ? 'house' : hk < 0.45 ? 'office' : hk < 0.7 ? 'shop' : 'apartments'; }
+      var cat = KIND[kind].cat;
+      w.buildings.push(bbox({pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels'])||0, civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
         col:CAT[cat].cols[Math.floor(hash(id, 3, 5)*CAT[cat].cols.length)], rolls:Math.max(1, Math.min(6, Math.round(1 + ar/160))), time:Math.min(4, 1.2 + ar/400), id:id}));
       return;
     }
@@ -628,11 +715,13 @@ function buildWorld(raw, name){
   raw.pois.forEach(function(p, n){
     var x = (p.lon-lon0)*kx, y = -(p.lat-lat0)*ky, t = p.tags;
     if (t.natural === 'tree'){ addTree(x, y, n); return; }
-    if (IN(t.amenity, CIVIC)){ var cb = buildingAt(x, y); if (cb){ cb.civic = true; if (t.name && !cb.name) cb.name = t.name; } return; }
-    var cat = catOf(t, false); if (!cat) return;
-    var bd = buildingAt(x, y);
-    if (bd){ if (bd.cat === 'house'){ bd.cat = cat; bd.col = CAT[cat].cols[0]; if (t.name) bd.name = t.name; } }
-    else if (w.crates.length < 400) w.crates.push({x:x, y:y, cat:cat, name:t.name || CAT[cat].label + ' stash', looted:false, rolls:2, time:1.2});
+    var pk = kindOf(t), cat = catOf(t, false), bd = buildingAt(x, y); if (!pk && !cat) return;
+    if (bd){
+      if (IN(t.amenity, CIVIC)) bd.civic = true;
+      if (pk && (bd.kg || bd.kind === 'house' || bd.kind === 'apartments' || bd.kind === 'office' || bd.kind === 'shop')){ bd.kind = pk; bd.kg = false; bd.cat = KIND[pk].cat; bd.col = CAT[bd.cat].cols[0]; }
+      if (t.name && !bd.name) bd.name = t.name;
+    }
+    else if (cat && w.crates.length < 400) w.crates.push({x:x, y:y, cat:cat, name:t.name || CAT[cat].label + ' stash', looted:false, rolls:2, time:1.2});
   });
   w.areas.forEach(function(ar, n){
     if (ar.kind !== 'forest' && ar.kind !== 'park') return;
@@ -755,7 +844,7 @@ function inWater(x, y, r){
 
 /* ================= meshes ================= */
 var ROAD_COL = {road:'#4b5059', path:'#b9a57e', water:'#3f86b8', rail:'#2c2f35'};
-var FLOOR = {house:'#8a6a48', food:'#b9b4a6', shop:'#b9b4a6', medical:'#cfd6d8', police:'#6f7780', industrial:'#8b8b88'};
+var FLOOR = {civic:'#a89f8e', house:'#8a6a48', food:'#b9b4a6', shop:'#b9b4a6', medical:'#cfd6d8', police:'#6f7780', industrial:'#8b8b88'};
 var COLC = {};
 function C(h){ var c = COLC[h]; if (!c){ var n = parseInt(h.slice(1), 16); c = COLC[h] = [n >> 16, (n >> 8) & 255, n & 255]; } return c; }
 function Mesh(){ this.p = []; this.c = []; this.t = []; this.al = 255; this.pl = null; this.wt = null; this.yo = 0; }
@@ -838,10 +927,10 @@ function shell(b, m, lm){
   var p = b.pts, n = p.length, i, j, ar = 0; lm = lm || NULLM;
   for (i = 0; i < n; i += 2){ j = (i+2) % n; ar += p[i]*p[j+1] - p[j]*p[i+1]; }
   if (ar < 0){ var q = []; for (i = n - 2; i >= 0; i -= 2) q.push(p[i], p[i+1]); p = b.pts = q; }
-  var lv = b.levels || (b.cat === 'house' ? 1 + (hash(b.id, 5, 1) < 0.35 ? 1 : 0) : 1 + (b.area > 600 ? 1 : 0));
-  var Ht = b.h = Math.min(48, Math.max(1, lv)*3.2), hf = hash(b.id, 4, 6);
-  var fac = b.civic ? TX.stone : b.cat === 'house' && b.area < 260 ? (hf < 0.4 ? TX.sidingCream : hf < 0.75 ? TX.sidingRiver : TX.stucco) : [TX.brick, TX.brickDark, TX.stucco, TX.brick, TX.sidingCream][Math.floor(hf*5)];
-  var shop = SHOPT[b.cat], tint = world.nests && world.nests[b.id] ? [176,140,205] : b.id === world.safe ? [186,214,168] : b.col0 ? C(b.col).map(function(v){ return Math.round(255 - (255 - v)*0.8); }) : WHITE;
+  var K = KIND[b.kind] || KIND.house, lv = b.levels || (b.kind === 'house' ? 1 + (hash(b.id, 5, 1) < 0.35 ? 1 : 0) : Math.min(b.area < 350 ? 2 : 9, K.lv[0] + Math.floor(hash(b.id, 5, 1)*(K.lv[1] - K.lv[0] + 1))));
+  var Ht = b.h = Math.min(48, (K.lh || 3.2) + (Math.max(1, lv) - 1)*3.2), hf = hash(b.id, 4, 6);
+  var fac = K.fac ? TX[K.fac[Math.floor(hf*K.fac.length)]] : b.civic ? TX.stone : b.cat === 'house' && b.area < 260 ? (hf < 0.4 ? TX.sidingCream : hf < 0.75 ? TX.sidingRiver : TX.stucco) : [TX.brick, TX.brickDark, TX.stucco, TX.brick, TX.sidingCream][Math.floor(hf*5)];
+  var shop = K.awn ? SHOPT[b.cat] : undefined, tint = world.nests && world.nests[b.id] ? [176,140,205] : b.id === world.safe ? [186,214,168] : b.col0 ? C(b.col).map(function(v){ return Math.round(255 - (255 - v)*0.8); }) : WHITE;
   var best = -1, bl = 1.9;
   for (var tries = 0; tries < 3 && best < 0; tries++) for (i = 0; i < n; i += 2){
     j = (i+2) % n; var l0 = Math.hypot(p[j]-p[i], p[j+1]-p[i+1]); if (l0 <= bl) continue;
@@ -874,12 +963,33 @@ function shell(b, m, lm){
     var h2 = (i + n - 2) % n, pl = Math.hypot(ax - p[h2], az - p[h2+1]) || 1, turn = ((ax - p[h2])/pl)*dz - ((az - p[h2+1])/pl)*dx;
     if (Math.abs(turn) > 0.47) lm.line(ax,0,az, ax,Ht,az, INK);
   }
-  var tr = b.tri = earclip(p);
-  m.pl = [b.cat === 'house' && b.area < 260 ? TX.roofShingle : hash(b.id, 2, 8) < 0.6 ? TX.roofGravel : TX.roofMetal, 1/8];
-  for (i = 0; i < tr.length; i += 3) m.tri(p[tr[i]*2], Ht, p[tr[i]*2+1], p[tr[i+2]*2], Ht, p[tr[i+2]*2+1], p[tr[i+1]*2], Ht, p[tr[i+1]*2+1], tint, 255);
-  m.pl = null;
+  var tr = b.tri = earclip(p), cxr = b.cx, czr = b.cy, hip = K.roof === 'hip' && n <= 24 && b.area < 900 && pip(p, cxr, czr), q, r;
+  if (hip){
+    /* a pitched roof: every wall leans in to a smaller copy of the outline held above the middle */
+    var rise = b.kind === 'church' ? Math.min(6, Math.sqrt(b.area)*0.45) : Math.min(3.2, 0.8 + Math.sqrt(b.area)*0.2), f = 0.3, top = Ht + rise, ip = [];
+    for (i = 0; i < n; i += 2) ip.push(cxr + (p[i] - cxr)*f, czr + (p[i+1] - czr)*f);
+    m.pl = [TX.roofShingle, 1/8];
+    for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(p[i], Ht, p[i+1], p[j], Ht, p[j+1], ip[j], top, ip[j+1], ip[i], top, ip[i+1], tint, 255); lm.line(p[i], Ht, p[i+1], ip[i], top, ip[i+1], INK); lm.line(ip[i], top, ip[i+1], ip[j], top, ip[j+1], INK); }
+    for (i = 0; i < tr.length; i += 3) m.tri(ip[tr[i]*2], top, ip[tr[i]*2+1], ip[tr[i+2]*2], top, ip[tr[i+2]*2+1], ip[tr[i+1]*2], top, ip[tr[i+1]*2+1], tint, 255);
+    m.pl = null;
+    if (b.kind === 'house' && hash(b.id, 9, 2) < 0.6) m.ybox(cxr + (p[0] - cxr)*0.45, czr + (p[1] - czr)*0.45, 0, 0, 0, Ht + rise*0.55 + 0.5, 0.32, rise*0.45 + 0.5, 0.32, [150,92,72]);
+    if (b.kind === 'church'){ m.ybox(cxr, czr, 0.4, 0, 0, top + 1.2, 1.3, 1.6, 1.3, [176,168,156]); m.pyr(cxr, czr, top + 2.8, 1.9, 7, [96,88,92], 0.4); }
+  } else {
+    if (b.kind === 'church' && pip(p, cxr, czr)){ m.ybox(cxr, czr, 0.4, 0, 0, Ht + 2, 1.6, 2, 1.6, [176,168,156]); m.pyr(cxr, czr, Ht + 4, 2.3, 8, [96,88,92], 0.4); }
+    m.pl = [b.cat === 'house' && b.area < 260 ? TX.roofShingle : hash(b.id, 2, 8) < 0.6 ? TX.roofGravel : TX.roofMetal, 1/8];
+    for (i = 0; i < tr.length; i += 3) m.tri(p[tr[i]*2], Ht, p[tr[i]*2+1], p[tr[i+2]*2], Ht, p[tr[i+2]*2+1], p[tr[i+1]*2], Ht, p[tr[i+1]*2+1], tint, 255);
+    m.pl = null;
+    if (b.area > 70){
+      /* a low wall around the flat roof, and machinery on top of the bigger ones */
+      var pc = [Math.round(206*tint[0]/255), Math.round(196*tint[1]/255), Math.round(180*tint[2]/255)];
+      for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(p[i], Ht, p[i+1], p[j], Ht, p[j+1], p[j], Ht + 0.55, p[j+1], p[i], Ht + 0.55, p[i+1], pc, 255); lm.line(p[i], Ht + 0.55, p[i+1], p[j], Ht + 0.55, p[j+1], INK); }
+      if (b.area > 220) for (q = 0, r = Math.min(4, Math.floor(b.area/350) + 1); q < r; q++){ var ux = cxr + (hash(b.id, q, 61) - 0.5)*(b.maxx - b.minx)*0.5, uz = czr + (hash(b.id, q, 62) - 0.5)*(b.maxy - b.miny)*0.5; if (pip(p, ux, uz) && polyDist(p, ux, uz, true) > 1.6) m.ybox(ux, uz, hash(b.id, q, 63) < 0.5 ? 0 : 1.5708, 0, 0, Ht + 0.5, 0.9, 0.5, 0.65, [158,158,152]); }
+    }
+  }
+  /* an awning and a sign board over the door of anything with a shopfront */
+  if (K.awn && b.door && Ht > 3.3){ var dd = b.door, ox = -dd.nx, oz = -dd.ny, ya = Math.atan2(oz, ox), ac = C(K.awn); m.ybox(dd.x + ox*0.65, dd.y + oz*0.65, ya, 0, 0, 2.62, 0.65, 0.06, 1.7, ac); m.ybox(dd.x + ox*0.08, dd.y + oz*0.08, ya, 0, 0, 3.2, 0.05, 0.3, 1.5, [Math.round(ac[0]*0.7), Math.round(ac[1]*0.7), Math.round(ac[2]*0.7)]); }
 }
-var NULLM = {wall:function(){}, tri:function(){}, quad:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
+var NULLM = {ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
   manageTerrain(budget); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0;
@@ -1006,7 +1116,29 @@ Mesh.prototype.model = function(M, x, z, yaw, y0){
     this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255);
   }
 };
-var FSET = {house:[['bed','table','sofa','table','chair','lamp','plant','chair'],['wardrobe','fridge','dresser']], food:[['counter','table'],['shelf','fridge','shelf']], shop:[['counter'],['shelf']],
+var FSETK = {
+  apartments:[['bed','table','sofa','chair','lamp','plant'],['wardrobe','fridge','dresser']],
+  garage:[['bench','barrel'],['crate','locker']],
+  grocery:[['counter'],['shelf','fridge','shelf']],
+  restaurant:[['table','chair','chair','table','counter'],['fridge','shelf']], bar:[['table','chair','counter','chair'],['fridge','shelf']],
+  hospital:[['gurney','gurney','desk','chair'],['cabinet','locker']],
+  fire:[['bench','desk','chair'],['locker','cabinet']],
+  outdoors:[['counter','bench'],['locker','shelf','crate']],
+  hardware:[['counter','bench','barrel'],['shelf','crate']],
+  fuel:[['counter'],['shelf','fridge','crate']],
+  warehouse:[['barrel','bench','barrel'],['crate']], parking:[['barrel'],['crate']],
+  clothes:[['counter','chair'],['dresser','locker']],
+  electronics:[['counter','desk'],['shelf','locker']],
+  school:[['desk','chair','desk','chair','desk'],['locker','wardrobe']],
+  library:[['table','chair','desk','chair'],['wardrobe','wardrobe','dresser']],
+  church:[['bench','bench','bench','table'],['dresser','crate']],
+  office:[['desk','chair','desk','chair','plant','sofa'],['locker','dresser','wardrobe']],
+  bank:[['desk','chair','counter','plant'],['locker']],
+  hotel:[['bed','lamp','chair','table','bed'],['dresser','fridge']],
+  gym:[['bench','bench','chair'],['locker']],
+  venue:[['chair','chair','chair','table'],['locker','crate']]
+};
+var FSET = {civic:[['desk','chair','table'],['locker','wardrobe']], house:[['bed','table','sofa','table','chair','lamp','plant','chair'],['wardrobe','fridge','dresser']], food:[['counter','table'],['shelf','fridge','shelf']], shop:[['counter'],['shelf']],
   medical:[['gurney','desk','chair'],['cabinet']], police:[['desk','desk','bench','chair'],['locker']], industrial:[['barrel','bench','barrel'],['crate']]};
 function genInterior(b){
   var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id, k++, 31); }, i, j;
@@ -1069,7 +1201,7 @@ function genInterior(b){
   });
   spots.sort(function(x, y){ return x[2] - y[2]; });
   if (!spots.length && b.area > 9 && pip(p, b.cx, b.cy)) spots.push([b.cx, b.cy, 0]);
-  var set = FSET[b.cat], nCont = Math.min(spots.length, b.rolls + 1), yaw0 = Math.atan2(uy, ux), placed = 0;
+  var set = FSETK[b.kind] || FSET[b.cat], nCont = Math.min(spots.length, b.rolls + 1), yaw0 = Math.atan2(uy, ux), placed = 0;
   spots.forEach(function(s, si){
     var isC = si < nCont; if (!isC && (placed > 45 || rnd() > 0.6)) return;
     var list = set[isC ? 1 : 0], name = list[Math.floor(rnd()*list.length)], f = FURN[name], yaw = yaw0 + (rnd() < 0.5 ? 0 : 1.5708);
@@ -1140,7 +1272,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.10';
+var VERSION = '0.11';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1374,7 +1506,7 @@ function loot(o){
     var cat, rolls;
     if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); findPart(o.b); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
     searched++; addXp('scav', 5);
-    o.stash = rollStash(LOOT[cat], rolls); rollCustom(o.stash, 0.06);
+    o.stash = rollStash(o.b && LOOTK[o.b.kind] || LOOT[cat], rolls); rollCustom(o.stash, 0.06);
   }
   if (!stashLeft(o)){ feed('Nothing useful', '#c0c6cc'); o.stash = null; updateHud(); return; }
   curLoot = o; el('loot').classList.remove('hidden'); if (document.exitPointerLock) document.exitPointerLock(); renderLoot(); updateHud();
@@ -1500,7 +1632,7 @@ function safeB(){ return world.safe >= 0 ? world.buildings[world.safe] : null; }
 function inSafe(x, y, extra){ var b = safeB(); return !!b && Math.hypot(x - b.cx, y - b.cy) < SAFE_R + (extra || 0); }
 function pickSafe(fresh, move){
   var w = world, best = null, bd = 400; w.safe = -1;
-  w.buildings.forEach(function(b){ if (!b.door || b.gone || b.area < 45 || b.area > 320) return; var d = Math.hypot(b.cx - w.start.x, b.cy - w.start.y); if (d < bd){ bd = d; best = b; } });
+  w.buildings.forEach(function(b){ if (!b.door || b.gone || b.area < 45 || b.area > 320 || b.kind !== 'house') return; var d = Math.hypot(b.cx - w.start.x, b.cy - w.start.y); if (d < bd){ bd = d; best = b; } });
   if (!best) return; w.safe = best.id; dirtyChunk(best);
   var d0 = best.door; w.spawn = {x:d0.x - d0.nx*1.6, y:d0.y - d0.ny*1.6};
   if (move){ P.x = w.spawn.x; P.y = w.spawn.y; P.yaw = Math.atan2(d0.ny, d0.nx); }
@@ -1706,7 +1838,7 @@ function updateHud(){
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
   el('wxStamp').textContent = (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase();
   el('dayLine').textContent = 'Day ' + (Math.floor(hrs/24) + 1) + '  ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min;
-  el('stats').textContent = inSafe(P.x, P.y, 0) ? 'Safe house: aliens keep away' : pb ? 'Inside ' + (pb.name || CAT[pb.cat].label.toLowerCase()) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '';
+  el('stats').textContent = inSafe(P.x, P.y, 0) ? 'Safe house: aliens keep away' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '';
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
   var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/12) + '% 0"></i>' + txt + '</span>'; };
@@ -1751,6 +1883,7 @@ function drawBig(){
   var c = bigCv.getContext('2d'), o = drawMap(c, W, H, big.cx, big.cy, big.sc, true);
   c.font = '700 13px sans-serif'; c.textAlign = 'center';
   otherPlayers().forEach(function(q){ if (q.cop) return; var x = q.x*big.sc + o[0], y = q.y*big.sc + o[1]; c.fillStyle = '#5f8a9a'; c.beginPath(); c.arc(x, y, 7, 0, 6.283); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 3; c.stroke(); c.fillStyle = '#201e1d'; c.fillText(q.name || 'Player', x, y - 12); });
+  if (big.sc >= 0.9){ c.font = '10px sans-serif'; c.fillStyle = 'rgba(32,30,29,.8)'; var vx0 = (0 - o[0])/big.sc, vy0 = (0 - o[1])/big.sc, vx1 = (W - o[0])/big.sc, vy1 = (H - o[1])/big.sc; world.buildings.forEach(function(b){ if (b.gone || b.cx < vx0 || b.cx > vx1 || b.cy < vy0 || b.cy > vy1 || b.kind === 'house' || b.kind === 'apartments' || b.kind === 'garage' || (b.kg && big.sc < 2)) return; c.fillText(KIND[b.kind].label, b.cx*big.sc + o[0], b.cy*big.sc + o[1] + 3); }); c.font = '700 13px sans-serif'; }
   var sfm = safeB(); if (sfm){ c.fillStyle = '#201e1d'; c.fillText('Safe house', sfm.cx*big.sc + o[0], sfm.cy*big.sc + o[1] - 8); }
   var bd = world.edits.beds[charSlug()]; if (bd && world.buildings[bd.b]){ var bb = world.buildings[bd.b]; c.fillStyle = '#201e1d'; c.fillText('Base', bb.cx*big.sc + o[0], bb.cy*big.sc + o[1] - 8); }
   c.save(); c.translate(P.x*big.sc + o[0], P.y*big.sc + o[1]); c.rotate(P.yaw); c.fillStyle = '#c67139'; c.strokeStyle = '#f5ead8'; c.lineWidth = 3;
@@ -2535,7 +2668,7 @@ function drawExtras(m, now){
   for (i = 0; i < w.vehicles.length; i++){
     var v = w.vehicles[i]; if (v === P.veh || Math.abs(v.x - P.x) > 130 || Math.abs(v.y - P.y) > 130) continue; m.yo = groundAt(v.x, v.y);
     if (!v.t){ m.ybox(v.x, v.y, v.yaw, 0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, -0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 0.55, 0.04, 0.035, C('#c8553a')); m.ybox(v.x, v.y, v.yaw, 0.45, 0, 0.95, 0.03, 0.03, 0.25, C('#8a9199')); m.ybox(v.x, v.y, v.yaw, -0.3, 0, 0.9, 0.12, 0.03, 0.07, C('#16181c')); }
-    else if (MODELS.car_sedan && Math.abs(v.x - P.x) < 75 && Math.abs(v.y - P.y) < 75){ var vb = v.id[0] === 'c' ? w.buildings[+v.id.slice(1)] : null; m.model(MODELS[vb && vb.cat === 'police' ? 'car_police' : ['car_sedan', 'car_hatchback', 'car_stationwagon', 'car_taxi', 'car_sedan'][Math.floor(hash(i, 3, 8)*5)]], v.x, v.y, v.yaw, 0); }
+    else if (MODELS.car_sedan && Math.abs(v.x - P.x) < 75 && Math.abs(v.y - P.y) < 75){ var vb = v.id[0] === 'c' ? w.buildings[+v.id.slice(1)] : null; m.model(MODELS[vb && vb.kind === 'police' ? 'car_police' : ['car_sedan', 'car_hatchback', 'car_stationwagon', 'car_taxi', 'car_sedan'][Math.floor(hash(i, 3, 8)*5)]], v.x, v.y, v.yaw, 0); }
     else { var cc = C(['#8a2f2f', '#2f5f8a', '#6f7480', '#c9b458', '#3f6b4a'][Math.floor(hash(i, 3, 8)*5)]);
       m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 2.0, 0.34, 0.85, cc); m.ybox(v.x, v.y, v.yaw, -0.2, 0, 1.2, 1.0, 0.26, 0.78, C('#2f4558'));
       for (var q = 0; q < 4; q++) m.ybox(v.x, v.y, v.yaw, q < 2 ? 1.25 : -1.25, q % 2 ? 0.86 : -0.86, 0.32, 0.32, 0.32, 0.1, C('#16181c')); }
