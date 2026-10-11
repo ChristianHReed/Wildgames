@@ -3,17 +3,18 @@
    - one 2048x2048 texture atlas (window-glow mask stored in the alpha channel)
    - one strip of HUD item icons
    - the built-in downtown Springfield map in the game's compact map format
-Writes tools/out/{atlas.png,icons.png,springfield.lbmap.json}. Run tools/embed_art.py afterwards."""
-import json, os
+Writes tools/out/{atlas.png,icons.png,springfield.lbmap.json}. Run tools/write_assets.py afterwards."""
+import json, os, sys
+S = 2 if 'full' in sys.argv[1:] else 1   # 'full' builds a 4096 px atlas for computers; the default 2048 px one is for phones
 from PIL import Image, ImageChops
 SRC = os.path.join(os.path.dirname(__file__), '..', 'design', 'afterstreet_handoff')
-OUT = os.path.join(os.path.dirname(__file__), 'out'); os.makedirs(OUT, exist_ok=True)
+OUT = os.path.join(os.path.dirname(__file__), 'out', 'full' if S == 2 else 'lite'); os.makedirs(OUT, exist_ok=True)
 T = os.path.join(SRC, 'textures')
 BIG = ['facades/facade_brick', 'facades/facade_brick_dark', 'facades/facade_siding_cream', 'facades/facade_siding_river', 'facades/facade_stucco', 'facades/facade_stone',
        'facades/shopfront_food', 'facades/shopfront_medicine', 'facades/shopfront_materials', 'facades/shopfront_gear', 'facades/shopfront_misc', 'ground/road_lanes']
 SMALL = ['roofs/roof_gravel', 'roofs/roof_metal', 'roofs/roof_shingle_clay', 'ground/asphalt', 'ground/sidewalk', 'ground/grass', 'ground/dirt_lot', 'ground/water',
          'materials/floor_tile', 'materials/wallpaper_interior', 'materials/wood_planks', 'props/store_shelf_front', 'props/bookshelf_front', 'props/fridge_front', 'props/stove_front', 'materials/crate']
-G = 4  # gutter in pixels, filled with wrapped texture so tiling does not bleed
+G = 4*S  # gutter in pixels, filled with wrapped texture so tiling does not bleed
 def tile(name, size):
     im = Image.open(os.path.join(T, name + '.png')).convert('RGB')
     c = size - 2*G; im = im.resize((c, c), Image.LANCZOS)
@@ -26,9 +27,9 @@ def tile(name, size):
     for ox in (-c, 0, c):
         for oy in (-c, 0, c): out.paste(rgba, (G + ox, G + oy))
     return out
-atlas = Image.new('RGBA', (2048, 2048), (0, 0, 0, 255))
-for i, n in enumerate(BIG): atlas.paste(tile(n, 512), ((i % 4)*512, (i//4)*512))
-for j, n in enumerate(SMALL): atlas.paste(tile(n, 256), ((j % 8)*256, 1536 + (j//8)*256))
+atlas = Image.new('RGBA', (2048*S, 2048*S), (0, 0, 0, 255))
+for i, n in enumerate(BIG): atlas.paste(tile(n, 512*S), ((i % 4)*512*S, (i//4)*512*S))
+for j, n in enumerate(SMALL): atlas.paste(tile(n, 256*S), ((j % 8)*256*S, 1536*S + (j//8)*256*S))
 atlas.save(os.path.join(OUT, 'atlas.png'), optimize=True)
 # ---- HUD icons, 96 px each, in the order the game expects
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']

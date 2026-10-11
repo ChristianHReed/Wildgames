@@ -6,14 +6,14 @@ A module is 2 m wide (x from -1 to 1), 3 m tall, with its outside face toward +z
 import sys, os, json, struct, base64
 import numpy as np
 from PIL import Image
-SRC = sys.argv[1]; OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out'); G = 4
+SRC = sys.argv[1]; S = 2 if 'full' in sys.argv[2:] else 1; OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out', 'full' if S == 2 else 'lite'); G = 4*S; T = 512*S
 TILES = ['T_RedBrick_BaseColor', 'T_Trim_BaseColor', 'T_MetalConcrete_BaseColor', 'T_Concrete_BaseColor', 'T_RoofSlate_BaseColor', 'T_Ornaments_BaseColor', 'T_Dirt_BaseColor']
-sheet = Image.new('RGB', (2048, 1024), (128, 120, 110))
+sheet = Image.new('RGB', (4*T, 2*T), (128, 120, 110))
 for i, n in enumerate(TILES):
-    im = Image.open(os.path.join(SRC, 'Textures', n + '.png')).convert('RGB').resize((512 - 2*G, 512 - 2*G), Image.LANCZOS)
+    im = Image.open(os.path.join(SRC, 'Textures', n + '.png')).convert('RGB').resize((T - 2*G, T - 2*G), Image.LANCZOS)
     a = np.asarray(im).astype(np.float64); g = a @ np.array([0.3, 0.59, 0.11]); a = np.clip((a*0.82 + g[:, :, None]*0.18)*0.97 + np.array([9, 5, 0]), 0, 255).astype(np.uint8)   # toward the game's warm, softer palette
-    big = np.pad(a, ((G, G), (G, G), (0, 0)), mode='wrap'); sheet.paste(Image.fromarray(big), ((i % 4)*512, (i//4)*512))
-os.makedirs(OUT, exist_ok=True); sheet.save(os.path.join(OUT, 'atlas2.jpg'), quality=84)
+    big = np.pad(a, ((G, G), (G, G), (0, 0)), mode='wrap'); sheet.paste(Image.fromarray(big), ((i % 4)*T, (i//4)*T))
+os.makedirs(OUT, exist_ok=True); sheet.save(os.path.join(OUT, 'atlas2.jpg'), quality=88 if S == 2 else 84)
 # material -> (tile index or 255 for flat colour, tint)
 MAT = {'MI_RedBrick':(0, (255, 255, 255)), 'MI_RedBrick_Pale':(0, (255, 244, 226)), 'MI_Trim':(1, (255, 255, 255)), 'MI_Trim_Dark':(1, (120, 112, 104)), 'MI_Trim_Green':(1, (150, 178, 140)),
        'MI_Trim_MetalConcrete':(2, (255, 255, 255)), 'MI_Concrete':(3, (255, 255, 255)), 'MI_Roof_Slate':(4, (255, 255, 255)), 'MI_Ornaments':(5, (255, 255, 255)), 'MI_Dirt':(6, (255, 255, 255)),

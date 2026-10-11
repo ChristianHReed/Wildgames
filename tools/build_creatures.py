@@ -7,7 +7,7 @@ Each creature is simplified, coloured one flat colour per triangle from its text
 import sys, os, json, struct, base64, math
 import numpy as np
 from PIL import Image
-SRC = sys.argv[1]; OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out')
+SRC = sys.argv[1]; FULL = 'full' in sys.argv[2:]; OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out', 'full' if FULL else 'lite')
 CT = {5120:('b',1),5121:('B',1),5122:('h',2),5123:('H',2),5125:('I',4),5126:('f',4)}; NC = {'SCALAR':1,'VEC2':2,'VEC3':3,'VEC4':4,'MAT4':16}
 def load(path):
     d = open(path, 'rb').read(); n = struct.unpack('<I', d[12:16])[0]; j = json.loads(d[20:20+n]); b = d[20+n+8:]
@@ -42,8 +42,8 @@ def build(name, glb, tex, target, scale, tintmul=(1, 1, 1)):
             JW.append(w); TR.append(acc(pr['indices']).reshape(-1, 3).astype(int) + base); base += len(p)
     P = np.vstack(P); UV = np.vstack(UV); JI = np.vstack(JI); JW = np.vstack(JW); JW = JW/np.maximum(JW.sum(1, keepdims=True), 1e-9); TR = np.vstack(TR)
     # one flat colour per triangle, read from the texture at the middle of the triangle
-    im = np.asarray(Image.open(tex).convert('RGB').resize((512, 512), Image.LANCZOS)).astype(np.float64); c = UV[TR].mean(1)
-    px = np.clip((c[:, 0] % 1)*512, 0, 511).astype(int); py = np.clip((c[:, 1] % 1)*512, 0, 511).astype(int); col = im[py, px]*np.array(tintmul)
+    im = np.asarray(Image.open(tex).convert('RGB').resize((1024, 1024), Image.LANCZOS)).astype(np.float64); c = UV[TR].mean(1)
+    px = np.clip((c[:, 0] % 1)*1024, 0, 1023).astype(int); py = np.clip((c[:, 1] % 1)*1024, 0, 1023).astype(int); col = im[py, px]*np.array(tintmul)
     g = col @ np.array([0.3, 0.59, 0.11]); col = np.clip((col*0.8 + g[:, None]*0.2), 0, 255)
     # simplify: points that share a small cube of space (and the same main bone) become one point
     dom = JI[np.arange(len(P)), JW.argmax(1)]; lo, hi = 0.004, 0.2
@@ -95,7 +95,7 @@ G = os.path.join(SRC, 'Exports', 'GLB (Godot-Unreal)'); T = os.path.join(SRC, 'T
 JOBS = [('swarmer', 'Puglin.glb', 'T_Puglin_BaseColor_1.png', 620, 1.0, (1, 1, 1)), ('stalker', 'Imp.glb', 'T_Imp_BaseColor_2.png', 1300, 1.3, (0.42, 0.4, 0.5)), ('giant', 'Puglin.glb', 'T_Puglin_BaseColor_3.png', 1500, 4.3, (0.9, 0.86, 1.0))]
 index, blob = {}, b''
 for nm, g, t, target, sc, tm in JOBS:
-    info, data = build(nm, os.path.join(G, g), os.path.join(T, t), target, sc, tm); info['o'] = len(blob); index[nm] = info; blob += data; print(nm, info)
+    info, data = build(nm, os.path.join(G, g), os.path.join(T, t), int(target*(3.2 if FULL else 1)), sc, tm); info['o'] = len(blob); index[nm] = info; blob += data; print(nm, info)
 os.makedirs(OUT, exist_ok=True)
 open(os.path.join(OUT, 'creatures.txt'), 'w').write(json.dumps(index, separators=(',', ':')) + '\n' + base64.b64encode(blob).decode())
 print(round(len(blob)/1024), 'KB')

@@ -1,8 +1,8 @@
 # Wildgames
 
-Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The whole game is one file, `play.html`, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
+Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.13. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.14. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -86,7 +86,13 @@ Everything has been run only in an automated test browser on one machine with no
 
 ## Look and art
 
-The game uses the Afterstreet design pack in `design/afterstreet_handoff/`. `tools/build_art.py` turns the pack's textures, icons and Springfield map data into three files, and `tools/embed_art.py` writes them into `play.html`, so the game stays one file that works offline. Run both again after changing any art.
+The art is in `assets/`, as small script files that `play.html` loads when it starts. Keep that folder beside `play.html`.
+
+- `assets/full/` is loaded on computers: 4096 px textures and more detailed creatures.
+- `assets/lite/` is loaded on phones and when View distance is set to Low.
+- `assets/icons.js`, `models.js`, `kit.js` and `map.js` are shared.
+
+The files are made by the scripts in `tools/` from the Afterstreet design pack in `design/afterstreet_handoff/` and from the packs listed in `CREDITS.md`. To rebuild: run `build_art.py`, `build_kit.py` and `build_creatures.py` twice each (once plain, once with `full`), then `build_models.py`, then `write_assets.py`.
 
 Map data © OpenStreetMap contributors, available under the Open Database License.
 

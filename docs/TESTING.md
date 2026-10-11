@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.13) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.14) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -17,7 +17,8 @@ For anything that fails, send:
 ## Stage 0: set up the drive
 
 - [ ] 0.1 On GitHub, press **Code**, then **Download ZIP**. Unzip it onto the SSD.
-- [ ] 0.2 Confirm the folder holds `play.html` and the folders `maps`, `world`, `characters`, `packs`.
+- [ ] 0.2 Confirm the folder holds `play.html` and the folders `assets`, `maps`, `world`, `characters`, `packs`. The game needs `assets` beside `play.html`; if it is missing the start page says so.
+- [ ] 0.3 Note how long the start page takes to appear from the USB stick the first time (the full art set is about 5 MB).
 
 ## Stage 1: solo play on a computer (make-or-break)
 
