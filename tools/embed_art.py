@@ -13,4 +13,6 @@ assert '</script' not in m and '<!--' not in m
 put('map', m)
 put('models', open(os.path.join(R, 'tools/out/models.txt')).read())
 put('creatures', open(os.path.join(R, 'tools/out/creatures.txt')).read())
+put('kit', open(os.path.join(R, 'tools/out/kit.txt')).read())
+put('atlas2', base64.b64encode(open(os.path.join(R, 'tools/out/atlas2.jpg'), 'rb').read()).decode())
 open(p, 'w').write(s); print('play.html', round(len(s)/1e6, 2), 'MB')

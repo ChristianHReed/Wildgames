@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.12) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.13) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -106,6 +106,14 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3c.3 Stand inside a building. The line under the compass says what it is, for example "Inside St. Michael's, a restaurant".
 - [ ] 3c.4 Loot fits the place: a restaurant gives food and water, a clinic medkits, a hardware store wood, scrap and batteries, a clothing store coats, an office batteries and water, a church water, food and lanterns.
 - [ ] 3c.5 Report any building whose use is wrong, with its name or location, and any roof that looks broken.
+
+## Stage 3d: modelled building fronts
+
+- [ ] 3d.1 Walk up to shops, offices and apartment blocks downtown. Within about 40 to 90 m (by View distance) their fronts change from flat paint to real brickwork with recessed windows, shop windows, a door frame and a cornice along the top.
+- [ ] 3d.2 Watch the change-over as you approach. Report if the pop-in is distracting or if the game stutters while walking through a dense block.
+- [ ] 3d.3 On a phone on Low, note the frame rate downtown compared with a residential street.
+- [ ] 3d.4 Look for fronts that are wrong: windows crossing a doorway, pieces floating off the wall, gaps at corners, stretched windows on very short or very long walls.
+- [ ] 3d.5 Homes and garages keep the painted look; that is intended.
 
 ## Stage 4: aliens and weather
 
