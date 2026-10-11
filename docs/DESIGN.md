@@ -1,4 +1,4 @@
-# Last Block: Game Design
+# Afterstreet (formerly Last Block): Game Design
 
 As of 2026-10-10.
 

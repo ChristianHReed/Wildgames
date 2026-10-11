@@ -1,0 +1,67 @@
+{
+ "cricket_bat": {
+  "dmg": 25,
+  "knock": 2,
+  "speed": 1,
+  "dur": 120
+ },
+ "frying_pan": {
+  "dmg": 20,
+  "knock": 3,
+  "speed": 0.9,
+  "dur": 200
+ },
+ "crowbar": {
+  "dmg": 30,
+  "knock": 1.5,
+  "speed": 0.9,
+  "dur": 250,
+  "also": "pry doors"
+ },
+ "hockey_stick": {
+  "dmg": 18,
+  "knock": 2.5,
+  "speed": 1.2,
+  "dur": 90,
+  "reach": 1.4
+ },
+ "wrench": {
+  "dmg": 22,
+  "knock": 1.5,
+  "speed": 1.1,
+  "dur": 220
+ },
+ "garden_rake": {
+  "dmg": 15,
+  "knock": 2,
+  "speed": 0.8,
+  "dur": 80,
+  "reach": 1.6
+ },
+ "slingshot": {
+  "dmg": 12,
+  "ranged": true,
+  "ammo": "tin_can|sticks",
+  "dur": 150
+ },
+ "flashlight": {
+  "dmg": 5,
+  "stun": 1.5,
+  "night": true,
+  "dur": 300,
+  "ammo": "batteries"
+ },
+ "broom_spear": {
+  "dmg": 28,
+  "speed": 1,
+  "dur": 60,
+  "reach": 1.7
+ },
+ "umbrella": {
+  "dmg": 8,
+  "knock": 4,
+  "speed": 1.3,
+  "dur": 40,
+  "also": "block rain"
+ }
+}

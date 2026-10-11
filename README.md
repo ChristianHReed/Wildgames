@@ -1,8 +1,8 @@
 # Wildgames
 
-Home of **Last Block**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The whole game is one file, `play.html`, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
+Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The whole game is one file, `play.html`, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.3. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.4. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -83,3 +83,9 @@ Everything has been run only in an automated test browser on one machine with no
 - **Connect game folder** was tested against a stand-in folder, not a real drive.
 - Multiplayer was tested between browser windows on one computer, not between separate devices, and not over Bluetooth.
 - Touch controls were tested with simulated touches, not on a phone, and opening `play.html` from a drive on a phone is untried.
+
+## Look and art
+
+The game uses the Afterstreet design pack in `design/afterstreet_handoff/`. `tools/build_art.py` turns the pack's textures, icons and Springfield map data into three files, and `tools/embed_art.py` writes them into `play.html`, so the game stays one file that works offline. Run both again after changing any art.
+
+Map data © OpenStreetMap contributors, available under the Open Database License.

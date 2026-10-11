@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Afterstreet · Springfield world demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#f3dcbc;font-family:Figtree,system-ui,sans-serif;color:#201e1d}
+canvas{display:block;cursor:grab}
+.card{position:absolute;background:#fbf3e4;border:1px solid #d9c7a8;border-radius:6px;box-shadow:2px 3px 0 rgba(61,48,41,.16),0 10px 22px rgba(70,40,15,.14);padding:12px 16px}
+.card:before{content:'';position:absolute;top:-9px;left:50%;width:64px;height:18px;margin-left:-32px;background:rgba(217,168,69,.5);transform:rotate(-3deg)}
+.stamp{display:inline-block;font-family:'Special Elite',monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#5c6a43;border:1.5px solid currentColor;border-radius:3px;padding:2px 8px 1px;transform:rotate(-1.5deg)}
+h1{font-family:Caprasimo,serif;font-weight:400;font-size:26px;margin:6px 0 2px}
+.row{display:flex;gap:10px;align-items:center;font-size:13px;color:#3d3833}
+input[type=range]{accent-color:#c67139;width:180px}
+#prompt{left:50%;bottom:32px;transform:translateX(-50%);display:none;align-items:center;gap:14px}
+#prompt b{font-size:16px}#prompt span{font-family:'Special Elite',monospace;font-size:12px;color:#6b5e50}
+.btn{background:#c67139;color:#fff;border-radius:4px;padding:8px 14px;font-weight:700;box-shadow:0 3px 0 #9a5226}
+#attr{position:absolute;right:10px;bottom:8px;font-size:11px;background:rgba(251,243,228,.9);padding:3px 8px;border-radius:3px}
+#loading{left:50%;top:50%;transform:translate(-50%,-50%)}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="card" style="left:20px;top:24px">
+  <span class="stamp">Springfield, MO · OSM</span>
+  <h1>Afterstreet world</h1>
+  <div class="row"><span>Time</span><input id="time" type="range" min="0" max="24" step="0.1" value="17.8"><span id="clock">17:48</span></div>
+  <div class="row" style="margin-top:6px">WASD walk · Shift run · drag to look · M map view</div>
+</div>
+<div class="card" id="loading"><span class="stamp">Loading</span><h1>Building Springfield…</h1></div>
+<div class="card" id="prompt"><div style="display:flex;flex-direction:column"><b id="pname"></b><span id="ptag"></span></div><span class="btn">Search · E</span></div>
+<div id="attr">© OpenStreetMap contributors</div>
+<script type="module">
+import * as THREE from 'three';
+import { buildWorld } from './engine/world.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 2000);
+addEventListener('resize', () => { cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+const world = await buildWorld(scene, { base: './', renderer });
+document.getElementById('loading').remove();
+window.afterstreet = { renderer, scene, cam, world };
+const S = JSON.parse(localStorage.getItem('afterstreet_demo_v2') || 'null');
+const pos = S ? new THREE.Vector3(...S.p) : world.spawn.clone();
+let yaw = S ? S.yaw : world.yawTo(world.spawn, new THREE.Vector3(world.home.p[0], 0, -world.home.p[1])), pitch = S ? S.pitch : -0.05, mapView = false;
+const timeEl = document.getElementById('time'), clockEl = document.getElementById('clock');
+const setT = v => { world.setTime(+v); const h = Math.floor(v), m = Math.round((v - h) * 60); clockEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; };
+if (S) timeEl.value = S.t; setT(timeEl.value); timeEl.oninput = e => setT(e.target.value);
+
+const keys = {}; addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyM') mapView = !mapView; if (e.code === 'KeyE' && near) { world.markSearched(near); } });
+addEventListener('keyup', e => keys[e.code] = false);
+let drag = null; const cv = renderer.domElement;
+cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag) return; yaw -= (e.clientX - drag[0]) * 0.004; pitch = Math.max(-1.3, Math.min(1.2, pitch - (e.clientY - drag[1]) * 0.004)); drag = [e.clientX, e.clientY]; });
+cv.addEventListener('pointerup', () => drag = null);
+
+const prompt = document.getElementById('prompt'); let near = null, last = performance.now(), saveT = 0;
+renderer.setAnimationLoop(now => {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const sp = (keys.ShiftLeft || keys.ShiftRight ? 9 : 4) * dt * (mapView ? 6 : 1);
+  const f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), r = new THREE.Vector3(-f.z, 0, f.x);
+  if (keys.KeyW) pos.addScaledVector(f, sp); if (keys.KeyS) pos.addScaledVector(f, -sp);
+  if (keys.KeyD) pos.addScaledVector(r, sp); if (keys.KeyA) pos.addScaledVector(r, -sp);
+  if (mapView) { cam.position.set(pos.x + 60, 220, pos.z + 120); cam.lookAt(pos); }
+  else { cam.position.copy(pos); cam.rotation.set(pitch, yaw, 0, 'YXZ'); }
+  world.follow(pos);
+  near = world.nearestPoi(pos, 6);
+  if (near && !mapView) { prompt.style.display = 'flex'; document.getElementById('pname').textContent = near.name || near.osm_tag; document.getElementById('ptag').textContent = near.osm_tag + (near.searchedAt ? ' · searched' : ' · unsearched'); } else prompt.style.display = 'none';
+  if ((saveT += dt) > 1) { saveT = 0; localStorage.setItem('afterstreet_demo_v2', JSON.stringify({ p: pos.toArray(), yaw, pitch, t: +timeEl.value })); }
+  renderer.render(scene, cam);
+});
+</script>
+</body>
+</html>

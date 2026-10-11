@@ -1,0 +1,130 @@
+{
+ "canned_beans": {
+  "cat": "food",
+  "food": 35,
+  "weight": 0.4
+ },
+ "granola_bar": {
+  "cat": "food",
+  "food": 15,
+  "weight": 0.1
+ },
+ "rice_bag": {
+  "cat": "food",
+  "food": 50,
+  "weight": 1,
+  "needs": "campfire"
+ },
+ "soda_can": {
+  "cat": "food",
+  "food": 5,
+  "water": 20,
+  "weight": 0.35
+ },
+ "berries": {
+  "cat": "food",
+  "food": 10,
+  "water": 5,
+  "weight": 0.1
+ },
+ "water_bottle": {
+  "cat": "water",
+  "water": 40,
+  "weight": 0.5
+ },
+ "rain_water": {
+  "cat": "water",
+  "water": 25,
+  "weight": 0.5,
+  "note": "needs water_filter or campfire to be safe"
+ },
+ "bandage": {
+  "cat": "medicine",
+  "health": 20,
+  "weight": 0.05
+ },
+ "painkillers": {
+  "cat": "medicine",
+  "health": 10,
+  "energy": 10,
+  "weight": 0.05
+ },
+ "antibiotics": {
+  "cat": "medicine",
+  "cures": "sick",
+  "weight": 0.05
+ },
+ "first_aid_kit": {
+  "cat": "medicine",
+  "health": 60,
+  "weight": 0.8
+ },
+ "vitamins": {
+  "cat": "medicine",
+  "energy": 15,
+  "weight": 0.05
+ },
+ "planks": {
+  "cat": "materials",
+  "weight": 1.5
+ },
+ "nails": {
+  "cat": "materials",
+  "weight": 0.02
+ },
+ "rope": {
+  "cat": "materials",
+  "weight": 0.4
+ },
+ "duct_tape": {
+  "cat": "materials",
+  "weight": 0.2
+ },
+ "fuel_can": {
+  "cat": "materials",
+  "weight": 4
+ },
+ "batteries": {
+  "cat": "materials",
+  "weight": 0.05
+ },
+ "tin_can": {
+  "cat": "materials",
+  "weight": 0.05
+ },
+ "cloth_scraps": {
+  "cat": "materials",
+  "weight": 0.05
+ },
+ "sticks": {
+  "cat": "materials",
+  "weight": 0.3
+ },
+ "matches": {
+  "cat": "tools",
+  "weight": 0.02
+ },
+ "seeds": {
+  "cat": "tools",
+  "weight": 0.01
+ },
+ "books": {
+  "cat": "misc",
+  "weight": 0.6,
+  "note": "burnable or +comfort at base"
+ },
+ "blanket": {
+  "cat": "gear",
+  "weight": 1,
+  "comfort": 5
+ },
+ "backpack": {
+  "cat": "gear",
+  "weight": 1,
+  "carry": 10
+ },
+ "rain_jacket": {
+  "cat": "gear",
+  "weight": 0.6
+ }
+}

@@ -1,6 +1,6 @@
-# Last Block: testing roadmap
+# Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.3) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone, a real network, or a real OpenStreetMap download. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.4) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -24,7 +24,7 @@ For anything that fails, send:
 Use Chrome or Edge.
 
 - [ ] 1.1 Double-click `play.html`. The start page appears with a Survivor panel and a small preview figure.
-- [ ] 1.2 Press **Play demo town**. You are standing on a street in first person.
+- [ ] 1.2 Press **Play Springfield, MO** (the real downtown map is built in), or **Play demo town**. You are standing on a street in first person.
 - [ ] 1.3 Click the view. The mouse turns the view; WASD moves. Esc frees the mouse.
 - [ ] 1.4 Motion is smooth. If it stutters, set View distance to Low on the start page and try again. Report which setting was needed.
 - [ ] 1.5 Walk through a doorway into a building. You cannot walk through walls or furniture.
@@ -33,6 +33,14 @@ Use Chrome or Edge.
 - [ ] 1.8 Close the browser completely, reopen `play.html`, play the demo town. Progress is still there.
 
 Fail signs: a blank or black view, a message that the browser cannot run 3D graphics, or progress lost after step 1.8.
+
+## Stage 1b: the new look
+
+- [ ] 1b.1 Walls show brick, siding or stone; roads show lane lines; shops have painted shopfronts.
+- [ ] 1b.2 Look at a distant wall while walking. Report any shimmering, flickering or seams between texture tiles.
+- [ ] 1b.3 At night, windows glow.
+- [ ] 1b.4 The six hotbar slots at the bottom show picture icons. The round map in the corner follows you with north up.
+- [ ] 1b.5 With internet on, titles use a chunky display font; offline they fall back to a plain serif. Both are expected.
 
 ## Stage 2: saving onto the drive (make-or-break)
 

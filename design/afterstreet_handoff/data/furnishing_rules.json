@@ -1,0 +1,75 @@
+{
+ "shop=supermarket": [
+  "store_shelf",
+  "store_shelf",
+  "checkout_counter",
+  "fridge",
+  "crate"
+ ],
+ "shop=convenience": [
+  "store_shelf",
+  "checkout_counter",
+  "fridge"
+ ],
+ "amenity=pharmacy": [
+  "store_shelf",
+  "checkout_counter",
+  "crate"
+ ],
+ "shop=hardware": [
+  "store_shelf",
+  "workbench",
+  "crate",
+  "fuel_can"
+ ],
+ "amenity=library": [
+  "bookshelf",
+  "bookshelf",
+  "table",
+  "chair",
+  "sofa"
+ ],
+ "amenity=restaurant|cafe|fast_food|bar": [
+  "table",
+  "chair",
+  "chair",
+  "stove",
+  "fridge",
+  "checkout_counter"
+ ],
+ "building=house|residential|apartments": [
+  "bed",
+  "sofa",
+  "table",
+  "chair",
+  "fridge",
+  "stove",
+  "bookshelf"
+ ],
+ "amenity=school": [
+  "table",
+  "chair",
+  "bookshelf"
+ ],
+ "amenity=place_of_worship": [
+  "bench",
+  "bench",
+  "table"
+ ],
+ "default": [
+  "crate",
+  "table",
+  "chair"
+ ],
+ "street": [
+  "streetlamp",
+  "bench",
+  "mailbox",
+  "traffic_cone",
+  "car_wreck",
+  "dumpster",
+  "tree",
+  "bush",
+  "fence"
+ ]
+}

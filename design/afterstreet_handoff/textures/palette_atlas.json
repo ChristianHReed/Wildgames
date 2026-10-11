@@ -1,0 +1,319 @@
+{
+ "note": "UV centers (u,v with v up, three.js convention) for each swatch. Map flat-shaded low-poly faces to these.",
+ "colors": {
+  "cream": "#f5ead8",
+  "paper": "#fff8ee",
+  "sand": "#ebddc5",
+  "wood": "#c99a62",
+  "wood_dark": "#a2733f",
+  "clay": "#c67139",
+  "clay_deep": "#9a5226",
+  "sage": "#7a8a5e",
+  "sage_light": "#a9b78c",
+  "sage_deep": "#56643f",
+  "ochre": "#d9a845",
+  "river": "#5f8a9a",
+  "river_light": "#9cc0c9",
+  "plum": "#8a6a8a",
+  "metal": "#8f99a0",
+  "metal_light": "#c9d0d3",
+  "stone": "#b8b0a2",
+  "ink": "#3d3029",
+  "undead": "#a8b894",
+  "charcoal": "#4e4440",
+  "brick": "#b56a4c",
+  "brick_dark": "#8a5a48",
+  "asphalt": "#6e6762",
+  "glass_lit": "#ffcf7a"
+ },
+ "uv": {
+  "cream.tint": [
+   0.0625,
+   0.984375
+  ],
+  "cream.base": [
+   0.0625,
+   0.953125
+  ],
+  "cream.shade": [
+   0.0625,
+   0.921875
+  ],
+  "paper.tint": [
+   0.1875,
+   0.984375
+  ],
+  "paper.base": [
+   0.1875,
+   0.953125
+  ],
+  "paper.shade": [
+   0.1875,
+   0.921875
+  ],
+  "sand.tint": [
+   0.3125,
+   0.984375
+  ],
+  "sand.base": [
+   0.3125,
+   0.953125
+  ],
+  "sand.shade": [
+   0.3125,
+   0.921875
+  ],
+  "wood.tint": [
+   0.4375,
+   0.984375
+  ],
+  "wood.base": [
+   0.4375,
+   0.953125
+  ],
+  "wood.shade": [
+   0.4375,
+   0.921875
+  ],
+  "wood_dark.tint": [
+   0.5625,
+   0.984375
+  ],
+  "wood_dark.base": [
+   0.5625,
+   0.953125
+  ],
+  "wood_dark.shade": [
+   0.5625,
+   0.921875
+  ],
+  "clay.tint": [
+   0.6875,
+   0.984375
+  ],
+  "clay.base": [
+   0.6875,
+   0.953125
+  ],
+  "clay.shade": [
+   0.6875,
+   0.921875
+  ],
+  "clay_deep.tint": [
+   0.8125,
+   0.984375
+  ],
+  "clay_deep.base": [
+   0.8125,
+   0.953125
+  ],
+  "clay_deep.shade": [
+   0.8125,
+   0.921875
+  ],
+  "sage.tint": [
+   0.9375,
+   0.984375
+  ],
+  "sage.base": [
+   0.9375,
+   0.953125
+  ],
+  "sage.shade": [
+   0.9375,
+   0.921875
+  ],
+  "sage_light.tint": [
+   0.0625,
+   0.890625
+  ],
+  "sage_light.base": [
+   0.0625,
+   0.859375
+  ],
+  "sage_light.shade": [
+   0.0625,
+   0.828125
+  ],
+  "sage_deep.tint": [
+   0.1875,
+   0.890625
+  ],
+  "sage_deep.base": [
+   0.1875,
+   0.859375
+  ],
+  "sage_deep.shade": [
+   0.1875,
+   0.828125
+  ],
+  "ochre.tint": [
+   0.3125,
+   0.890625
+  ],
+  "ochre.base": [
+   0.3125,
+   0.859375
+  ],
+  "ochre.shade": [
+   0.3125,
+   0.828125
+  ],
+  "river.tint": [
+   0.4375,
+   0.890625
+  ],
+  "river.base": [
+   0.4375,
+   0.859375
+  ],
+  "river.shade": [
+   0.4375,
+   0.828125
+  ],
+  "river_light.tint": [
+   0.5625,
+   0.890625
+  ],
+  "river_light.base": [
+   0.5625,
+   0.859375
+  ],
+  "river_light.shade": [
+   0.5625,
+   0.828125
+  ],
+  "plum.tint": [
+   0.6875,
+   0.890625
+  ],
+  "plum.base": [
+   0.6875,
+   0.859375
+  ],
+  "plum.shade": [
+   0.6875,
+   0.828125
+  ],
+  "metal.tint": [
+   0.8125,
+   0.890625
+  ],
+  "metal.base": [
+   0.8125,
+   0.859375
+  ],
+  "metal.shade": [
+   0.8125,
+   0.828125
+  ],
+  "metal_light.tint": [
+   0.9375,
+   0.890625
+  ],
+  "metal_light.base": [
+   0.9375,
+   0.859375
+  ],
+  "metal_light.shade": [
+   0.9375,
+   0.828125
+  ],
+  "stone.tint": [
+   0.0625,
+   0.796875
+  ],
+  "stone.base": [
+   0.0625,
+   0.765625
+  ],
+  "stone.shade": [
+   0.0625,
+   0.734375
+  ],
+  "ink.tint": [
+   0.1875,
+   0.796875
+  ],
+  "ink.base": [
+   0.1875,
+   0.765625
+  ],
+  "ink.shade": [
+   0.1875,
+   0.734375
+  ],
+  "undead.tint": [
+   0.3125,
+   0.796875
+  ],
+  "undead.base": [
+   0.3125,
+   0.765625
+  ],
+  "undead.shade": [
+   0.3125,
+   0.734375
+  ],
+  "charcoal.tint": [
+   0.4375,
+   0.796875
+  ],
+  "charcoal.base": [
+   0.4375,
+   0.765625
+  ],
+  "charcoal.shade": [
+   0.4375,
+   0.734375
+  ],
+  "brick.tint": [
+   0.5625,
+   0.796875
+  ],
+  "brick.base": [
+   0.5625,
+   0.765625
+  ],
+  "brick.shade": [
+   0.5625,
+   0.734375
+  ],
+  "brick_dark.tint": [
+   0.6875,
+   0.796875
+  ],
+  "brick_dark.base": [
+   0.6875,
+   0.765625
+  ],
+  "brick_dark.shade": [
+   0.6875,
+   0.734375
+  ],
+  "asphalt.tint": [
+   0.8125,
+   0.796875
+  ],
+  "asphalt.base": [
+   0.8125,
+   0.765625
+  ],
+  "asphalt.shade": [
+   0.8125,
+   0.734375
+  ],
+  "glass_lit.tint": [
+   0.9375,
+   0.796875
+  ],
+  "glass_lit.base": [
+   0.9375,
+   0.765625
+  ],
+  "glass_lit.shade": [
+   0.9375,
+   0.734375
+  ]
+ }
+}

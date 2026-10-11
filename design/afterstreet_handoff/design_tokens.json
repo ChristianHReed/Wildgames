@@ -1,0 +1,120 @@
+{
+ "color": {
+  "cream": "#f5ead8",
+  "paper": "#fbf3e4",
+  "sand": "#ebddc5",
+  "sandDeep": "#e0cfb2",
+  "mapBg": "#e6d6bb",
+  "ink": "#201e1d",
+  "inkSoft": "#3d3833",
+  "muted": "#6b5e50",
+  "outline": "#3d3029",
+  "clay": "#c67139",
+  "clayHover": "#ad5d29",
+  "clayDeep": "#9a5226",
+  "clayTint": "#f3dccb",
+  "sage": "#7a8a5e",
+  "sageLight": "#a9b78c",
+  "sageDeep": "#56643f",
+  "sageTint": "#dfe3cf",
+  "sageText": "#47522f",
+  "labelGreen": "#5c6a43",
+  "ochre": "#d9a845",
+  "hudOchre": "#b8913a",
+  "river": "#5f8a9a",
+  "riverLight": "#9cc0c9",
+  "plum": "#8a6a8a",
+  "undeadSkin": "#a8b894",
+  "fogNight": "rgba(52,44,60,0.72)",
+  "panel": "rgba(245,234,216,0.94)",
+  "toast": "rgba(32,30,29,0.78)",
+  "paperEdge": "#d9c7a8",
+  "tape": "rgba(217,168,69,.5)",
+  "celShade": "rgba(91,47,58,.26)",
+  "celRim": "rgba(255,246,224,.75)"
+ },
+ "category": {
+  "food": "#d9a845",
+  "medicine": "#c67139",
+  "water": "#5f8a9a",
+  "materials": "#8a6a8a",
+  "shelter": "#7a8a5e",
+  "gear": "#8a7a5a",
+  "park": "#56643f",
+  "misc": "#b8b0a2"
+ },
+ "vital": {
+  "health": "#c67139",
+  "food": "#b8913a",
+  "water": "#5f8a9a",
+  "energy": "#7a8a5e"
+ },
+ "font": {
+  "display": "Caprasimo, serif",
+  "ui": "Figtree, system-ui, sans-serif",
+  "mono": "'Special Elite', monospace",
+  "google": "https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700;800&family=Special+Elite&display=swap"
+ },
+ "type": {
+  "hero": "76/0.92 Caprasimo",
+  "h1": "52/1 Caprasimo",
+  "h2": "30/1.1 Caprasimo",
+  "h3": "26/1.1 Caprasimo",
+  "body": "17/1.5 Figtree 400",
+  "ui": "15 Figtree 700",
+  "small": "13-14 Figtree 600",
+  "label": "12-13 Figtree 700 uppercase tracking .08-.1em",
+  "tag": "11-12 JetBrains Mono 500"
+ },
+ "radius": {
+  "button": 4,
+  "stamp": 3,
+  "panel": 6,
+  "card": 5,
+  "screen": 10,
+  "avatar": 999,
+  "bar": 999
+ },
+ "space": [
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20,
+  24,
+  28,
+  36,
+  48
+ ],
+ "shadow": {
+  "panel": "2px 3px 0 rgba(61,48,41,.16), 0 10px 22px rgba(70,40,15,.14)",
+  "prompt": "2px 3px 0 rgba(61,48,41,.2), 0 12px 26px rgba(70,40,15,.18)",
+  "button": "0 3px 0 #9a5226",
+  "card": "2px 3px 0 rgba(61,48,41,.12)"
+ },
+ "stroke": {
+  "assetOutline": 2.5,
+  "assetOutlineColor": "#3d3029"
+ },
+ "stamp": {
+  "font": "'Special Elite'",
+  "size": 13,
+  "tracking": ".06em",
+  "case": "uppercase",
+  "border": "1.5px solid currentColor",
+  "padding": "2px 8px 1px",
+  "rotate": "-1.5deg"
+ },
+ "tape": {
+  "width": 64,
+  "height": 18,
+  "top": -9,
+  "rotate": "-3deg",
+  "color": "rgba(217,168,69,.5)"
+ },
+ "pageGrain": "radial-gradient(rgba(61,48,41,.09) 1px, transparent 1.5px) 0 0/18px 18px"
+}

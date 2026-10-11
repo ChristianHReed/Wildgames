@@ -1,0 +1,92 @@
+[
+ {
+  "id": "window_boarded",
+  "in": {
+   "planks": 4,
+   "nails": 8
+  },
+  "time": 40,
+  "station": null
+ },
+ {
+  "id": "water_filter",
+  "in": {
+   "cloth_scraps": 2,
+   "tin_can": 1,
+   "sticks": 2
+  },
+  "time": 30,
+  "station": "workbench"
+ },
+ {
+  "id": "tin_can_alarm",
+  "in": {
+   "tin_can": 4,
+   "rope": 1
+  },
+  "time": 20
+ },
+ {
+  "id": "splint",
+  "in": {
+   "planks": 2,
+   "duct_tape": 1
+  },
+  "time": 15
+ },
+ {
+  "id": "broom_spear",
+  "in": {
+   "sticks": 1,
+   "tin_can": 1,
+   "duct_tape": 1
+  },
+  "time": 25,
+  "station": "workbench"
+ },
+ {
+  "id": "campfire",
+  "in": {
+   "sticks": 6,
+   "matches": 1
+  },
+  "time": 20
+ },
+ {
+  "id": "planter_box",
+  "in": {
+   "planks": 6,
+   "seeds": 1
+  },
+  "time": 60,
+  "base": true
+ },
+ {
+  "id": "rain_barrel",
+  "in": {
+   "planks": 2,
+   "rope": 2
+  },
+  "time": 45,
+  "base": true
+ },
+ {
+  "id": "bunk_bed",
+  "in": {
+   "planks": 8,
+   "nails": 12,
+   "blanket": 1
+  },
+  "time": 90,
+  "base": true
+ },
+ {
+  "id": "workbench",
+  "in": {
+   "planks": 6,
+   "nails": 10
+  },
+  "time": 60,
+  "base": true
+ }
+]

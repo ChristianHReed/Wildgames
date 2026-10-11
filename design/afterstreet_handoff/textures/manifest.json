@@ -1,0 +1,85 @@
+{
+ "units": "metres; world = (x east, y up, -north)",
+ "groups": {
+  "facades": [
+   "facade_brick.png",
+   "facade_brick_dark.png",
+   "facade_brick_dark_emissive.png",
+   "facade_brick_emissive.png",
+   "facade_siding_cream.png",
+   "facade_siding_cream_emissive.png",
+   "facade_siding_river.png",
+   "facade_siding_river_emissive.png",
+   "facade_stone.png",
+   "facade_stone_emissive.png",
+   "facade_stucco.png",
+   "facade_stucco_emissive.png",
+   "shopfront_food.png",
+   "shopfront_food_emissive.png",
+   "shopfront_gear.png",
+   "shopfront_gear_emissive.png",
+   "shopfront_materials.png",
+   "shopfront_materials_emissive.png",
+   "shopfront_medicine.png",
+   "shopfront_medicine_emissive.png",
+   "shopfront_misc.png",
+   "shopfront_misc_emissive.png"
+  ],
+  "roofs": [
+   "roof_gravel.png",
+   "roof_metal.png",
+   "roof_shingle_clay.png"
+  ],
+  "ground": [
+   "asphalt.png",
+   "crosswalk.png",
+   "dirt_lot.png",
+   "grass.png",
+   "road_lanes.png",
+   "sidewalk.png",
+   "water.png"
+  ],
+  "materials": [
+   "bark.png",
+   "barrel_wrap.png",
+   "crate.png",
+   "fabric_clay.png",
+   "fabric_plum.png",
+   "fabric_river.png",
+   "fabric_sage.png",
+   "floor_tile.png",
+   "foliage.png",
+   "metal_painted.png",
+   "wallpaper_interior.png",
+   "wood_planks.png"
+  ],
+  "props": [
+   "boarded_window.png",
+   "bookshelf_front.png",
+   "car_side.png",
+   "fridge_front.png",
+   "store_shelf_front.png",
+   "stove_front.png"
+  ],
+  "sprites": [
+   "characters_atlas.png",
+   "enemies_atlas.png",
+   "items_atlas.png",
+   "pins_atlas.png",
+   "weapons_atlas.png"
+  ],
+  "core": [
+   "toon_ramp.png",
+   "palette_atlas.png"
+  ]
+ },
+ "scale": {
+  "facades": "facade_* = 8 m × 6.4 m (2 bays × 2 floors); shopfront_* = 8 m × 4 m ground floor. *_emissive = night window glow.",
+  "roofs": "8 m tile, mapped in world metres.",
+  "ground": "4 m tile; road_lanes spans the full road width (u) × 8 m (v).",
+  "materials": "Tileable surfaces for procedural props (crate is one box face).",
+  "props": "Single-face decals for box props (front face, +Z).",
+  "sprites": "Billboard / UI atlases, 2× resolution, frames in atlases.json.",
+  "core": "toon_ramp = MeshToonMaterial gradientMap (Nearest filter). palette_atlas = swatches for low-poly models, UVs in palette_atlas.json."
+ }
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700;800&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;background:#f5ead8 radial-gradient(rgba(61,48,41,.08) 1px,transparent 1.5px) 0 0/18px 18px;color:#201e1d;font-family:Figtree,system-ui,sans-serif}
+a{color:#9a5226}a:hover{color:#c67139}
+</style>
+</helmet>
+<div style="max-width:1320px;margin:0 auto;padding:56px 32px 80px;display:flex;flex-direction:column;gap:56px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:760px">
+    <div style="align-self:flex-start;font-family:'Special Elite',monospace;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#5c6a43;border:1.5px solid #5c6a43;border-radius:3px;padding:2px 8px 1px;transform:rotate(-1.5deg)">Afterstreet · Asset sheet</div>
+    <div style="font-family:Caprasimo,serif;font-size:52px;line-height:1">World, loot &amp; enemies</div>
+    <div style="font-size:17px;line-height:1.5;color:#3d3833;text-wrap:pretty">Cel-shaded SVG sprites with a 2.5 px #3d3029 outline, a hard shadow band and a warm rim light, all lit from the upper left. Use them as inventory icons, map markers and billboard sprites, and as color and shape reference for 3D models. Files are in <span style="font-family:'Special Elite',monospace;font-size:14px">afterstreet_handoff/assets/</span>.</div>
+  </div>
+
+  <div data-screen-label="Map data" style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <div style="font-family:Caprasimo,serif;font-size:32px">Springfield, MO · real OSM data</div>
+      <div style="font-size:14px;color:#6b5e50">{{ dataNote }}</div>
+    </div>
+    <div style="position:relative;width:100%;max-width:1256px;aspect-ratio:1256/760;border-radius:6px;overflow:hidden;background:#e6d6bb;box-shadow:0 14px 36px rgba(70,40,15,.18)">
+      <div style="position:absolute;left:0;top:0;width:1256px;height:760px;transform-origin:0 0;transform:scale({{ mapScale }})">
+        <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="20"><img src="{{ t.src }}" alt="" style="position:absolute;left:{{ t.l }}px;top:{{ t.t }}px;width:256px;height:256px;filter:sepia(.4) saturate(.75)"></sc-for>
+        <sc-for list="{{ pois }}" as="p" hint-placeholder-count="0"><img src="{{ p.src }}" alt="" title="{{ p.name }}" style="position:absolute;left:{{ p.x }}px;top:{{ p.y }}px;width:26px;height:32px;margin:-30px 0 0 -13px"></sc-for>
+      </div>
+      <div ref="{{ mapBox }}" style="position:absolute;inset:0;pointer-events:none"></div>
+      <div style="position:absolute;right:16px;bottom:12px;font-size:12px;background:rgba(245,234,216,.9);border-radius:4px;padding:4px 12px">© OpenStreetMap contributors</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <sc-for list="{{ catCounts }}" as="c" hint-placeholder-count="8">
+        <div style="display:flex;align-items:center;gap:8px;background:#ebddc5;border-radius:4px;padding:6px 14px 6px 8px"><img src="{{ c.src }}" alt="" style="width:20px;height:25px"><span style="font-weight:700;font-size:14px">{{ c.name }}</span><span style="font-size:14px;color:#6b5e50">{{ c.n }}</span></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div data-screen-label="3D texture maps" style="display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;flex-direction:column;gap:6px;max-width:820px">
+      <div style="font-family:Caprasimo,serif;font-size:40px;line-height:1">3D texture maps</div>
+      <div style="font-size:16px;line-height:1.5;color:#3d3833;text-wrap:pretty">PNG maps for the three.js world, painted in the same cel style. Load them through <span style="font-family:'Special Elite',monospace;font-size:14px">engine/world.js</span>, which extrudes the OSM footprints, lays the roads and places props. Open <span style="font-family:'Special Elite',monospace;font-size:14px">world_demo.html</span> to walk around Springfield.</div>
+    </div>
+    <sc-for list="{{ texGroups }}" as="tg" hint-placeholder-count="7">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+          <div style="font-family:Caprasimo,serif;font-size:26px">{{ tg.title }}</div>
+          <div style="font-size:14px;color:#6b5e50">{{ tg.note }}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax({{ tg.min }}px,1fr));gap:14px">
+          <sc-for list="{{ tg.items }}" as="t" hint-placeholder-count="6">
+            <div style="position:relative;background:#fbf3e4;border:1px solid #d9c7a8;border-radius:6px;box-shadow:2px 3px 0 rgba(61,48,41,.12);padding:10px;display:flex;flex-direction:column;gap:8px">
+              <img src="{{ t.src }}" alt="{{ t.file }}" style="width:100%;aspect-ratio:{{ tg.ratio }};object-fit:contain;background:{{ t.bg }};border-radius:3px;image-rendering:{{ t.render }}">
+              <div style="font-family:'Special Elite',monospace;font-size:11px;color:#3d3833;word-break:break-all">{{ t.file }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-for list="{{ groups }}" as="g" hint-placeholder-count="5">
+    <div data-screen-label="{{ g.title }}" style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="font-family:Caprasimo,serif;font-size:32px">{{ g.title }}</div>
+        <div style="font-size:15px;color:#3d3833;max-width:760px">{{ g.note }}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px">
+        <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="8">
+          <div style="position:relative;background:#fbf3e4;border:1px solid #d9c7a8;border-radius:6px;box-shadow:2px 3px 0 rgba(61,48,41,.12);padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;gap:8px" style-before="content:'';position:absolute;top:-9px;left:50%;width:64px;height:18px;margin-left:-32px;background:rgba(217,168,69,.5);transform:rotate(-3deg);pointer-events:none">
+            <img src="{{ it.src }}" alt="{{ it.label }}" style="width:100%;max-width:{{ g.size }}px;aspect-ratio:{{ g.ratio }};object-fit:contain">
+            <div style="font-size:14px;font-weight:700;text-align:center">{{ it.label }}</div>
+            <div style="font-family:'Special Elite',monospace;font-size:11px;color:#6b5e50">{{ it.file }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const BASE = '../';
+const MAN = {
+  buildings: ['shop','pharmacy','house','library','restaurant','gas_station'],
+  props: ['bed','bunk_bed','sofa','table','chair','bookshelf','fridge','stove','store_shelf','checkout_counter','crate','rain_barrel','planter_box','campfire','tent','car_wreck','streetlamp','tree','bush','fence','mailbox','traffic_cone','bench','dumpster','window_boarded','workbench','radio','sleeping_bag','fire_hydrant','shopping_cart','sandbags','generator'],
+  items: ['canned_beans','granola_bar','water_bottle','soda_can','rice_bag','berries','bandage','painkillers','antibiotics','first_aid_kit','vitamins','planks','nails','rope','duct_tape','fuel_can','batteries','tin_can','cloth_scraps','seeds','sticks','books','blanket','matches','rain_water','backpack','rain_jacket'],
+  weapons: ['cricket_bat','frying_pan','crowbar','hockey_stick','wrench','garden_rake','slingshot','flashlight','broom_spear','umbrella'],
+  enemies: ['shambler','sprinter','bloat','crawler','horde_marker'],
+  pins: ['food','medicine','water','materials','shelter','gear','park','misc','base','player','crew']
+};
+const META = {
+  buildings: ['Building fronts', 'Facade kits matched to OSM tags: shop=supermarket, amenity=pharmacy, building=house, amenity=library, amenity=restaurant and amenity=fuel. Use them as texture and trim references when extruding footprints.', 150, '1'],
+  props: ['Furniture & world props', 'Drawn in 3/4 view with the light from the upper left: light top faces, a darker side face and a warm rim along the front edges. Interior furniture is placed by building type, and street props go on sidewalks and in parks.', 120, '1'],
+  items: ['Resources & items', 'Loot found at real POIs. The loot_table field in springfield_pois.geojson references these file names.', 96, '1'],
+  weapons: ['Weapons', 'Improvised melee and utility gear. Nothing sharp-edged or bloody, to keep the cozy tone.', 110, '1'],
+  enemies: ['Enemies', 'Sleepy, mossy undead in cardigans and hoodies. No gore: they get knocked down and go back to sleep.', 140, '128/160'],
+  pins: ['Map pins', 'One color per loot category, matching the map legend. Base, player and crew markers sit on top.', 56, '1']
+};
+const label = s => s.replace(/_/g, ' ').replace(/^./, m => m.toUpperCase());
+const C = [37.211, -93.290], Z = 16, W = 1256, H = 760;
+const n = 2 ** Z;
+const px = (lat, lon) => { const r = lat * Math.PI / 180; return [(lon + 180) / 360 * n * 256, (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n * 256]; };
+const [cx, cy] = px(C[0], C[1]); const L = cx - W / 2, T = cy - H / 2;
+const TILES = []; for (let ty = Math.floor(T / 256); ty <= Math.floor((T + H) / 256); ty++) for (let tx = Math.floor(L / 256); tx <= Math.floor((L + W) / 256); tx++) TILES.push({ src: `https://tile.openstreetmap.org/${Z}/${tx}/${ty}.png`, l: Math.round(tx * 256 - L), t: Math.round(ty * 256 - T) });
+class Component extends DCLogic {
+  state = { pois: [], scale: 1 };
+  mapBox = React.createRef();
+  componentDidMount() {
+    const TT = { facades: ['Facades & shopfronts', 1, 220], roofs: ['Roofs', 1, 160], ground: ['Ground', 1, 160], materials: ['Prop materials', 1, 140], props: ['Prop decals', 1, 160], core: ['Toon ramp & palette', 1, 140], sprites: ['Sprite atlases', '2/1', 300] };
+    fetch(BASE + 'textures/manifest.json').then(r => r.json()).then(m => this.setState({ tex: Object.keys(TT).filter(k => m.groups[k]).map(k => ({ title: TT[k][0], ratio: TT[k][1], min: TT[k][2], note: m.scale[k], items: m.groups[k].map(f => { const file = k === 'core' ? f : `${k}/${f}`; return { file, src: `${BASE}textures/${file}`, bg: /emissive/.test(f) ? '#000' : (k === 'sprites' ? '#ebddc5' : 'transparent'), render: k === 'core' ? 'pixelated' : 'auto' }; }) })) })).catch(() => {});
+    fetch(BASE + 'map_data/springfield_pois.geojson').then(r => r.json()).then(j => {
+      const pois = j.features.map(f => { const [x, y] = px(f.geometry.coordinates[1], f.geometry.coordinates[0]); return { x: Math.round(x - L), y: Math.round(y - T), c: f.properties.category, name: f.properties.name || f.properties.osm_tag, src: BASE + 'assets/pins/' + f.properties.category + '.svg' }; }).filter(p => p.x > 0 && p.x < W && p.y > 0 && p.y < H);
+      this.setState({ pois, total: j.features.length });
+    }).catch(() => {});
+    const ro = new ResizeObserver(() => { const el = this.mapBox.current; if (el) this.setState({ scale: el.clientWidth / W }); });
+    this.ro = ro; if (this.mapBox.current) ro.observe(this.mapBox.current);
+  }
+  componentWillUnmount() { this.ro && this.ro.disconnect(); }
+  renderVals() {
+    const counts = {}; this.state.pois.forEach(p => counts[p.c] = (counts[p.c] || 0) + 1);
+    return {
+      tiles: TILES, pois: this.state.pois, mapBox: this.mapBox, mapScale: this.state.scale,
+      dataNote: this.state.total ? `${this.state.total} POIs · 843 buildings · 3,214 road segments` : 'Loading POIs…',
+      catCounts: Object.keys(counts).sort((a, b) => counts[b] - counts[a]).map(k => ({ name: label(k), n: counts[k], src: BASE + 'assets/pins/' + k + '.svg' })),
+      texGroups: this.state.tex || [],
+      groups: Object.keys(MAN).map(g => ({ title: META[g][0], note: META[g][1], size: META[g][2], ratio: META[g][3], items: MAN[g].map(n => ({ label: label(n), file: `${g}/${n}.svg`, src: `${BASE}assets/${g}/${n}.svg` })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>
