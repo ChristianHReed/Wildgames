@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.4) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.5) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -28,7 +28,9 @@ Use Chrome or Edge.
 - [ ] 1.3 Click the view. The mouse turns the view; WASD moves. Esc frees the mouse.
 - [ ] 1.4 Motion is smooth. If it stutters, set View distance to Low on the start page and try again. Report which setting was needed.
 - [ ] 1.5 Walk through a doorway into a building. You cannot walk through walls or furniture.
-- [ ] 1.6 Stand at a container with a floating gold cube and hold E. Items are added.
+- [ ] 1.6 Stand at a container with a floating gold cube and hold E (on a touch screen, tap the view once). A window lists what it holds; **Take** or **Take everything** adds it to your backpack.
+- [ ] 1.6b Press I, or tap the backpack slot at the end of the hotbar. Items are stacked under Food and drink, Medical, Ammo, Materials and Gear.
+- [ ] 1.6c Click or tap the round map. A full map opens; drag it, zoom with + and −, close it.
 - [ ] 1.7 Press **Save & exit**, then **Play demo town** again. You are where you left off, with the same items.
 - [ ] 1.8 Close the browser completely, reopen `play.html`, play the demo town. Progress is still there.
 
@@ -70,6 +72,7 @@ Fail signs: "Could not make the map" (send the exact message), buildings in the 
 ## Stage 4: aliens and weather
 
 - [ ] 4.1 Daytime: small purple swarmers appear in groups and chase you. The bat kills one in a hit or two.
+- [ ] 4.1b A dead alien that carries anything leaves a body with a gold cube. Search it. Swarmers carry little, stalkers carry ammo and medkits, giants carry the most.
 - [ ] 4.2 Purple buildings with a floating purple cube are nests. Go in, find the glowing core, hold E for four seconds. The nest count drops.
 - [ ] 4.3 Survive until night (about two and a half minutes after starting). A tall black stalker should eventually hunt you.
 - [ ] 4.4 Press L to turn the flashlight off. Stalkers should find you less easily.
