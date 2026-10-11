@@ -332,7 +332,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.17.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.18.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1111,9 +1111,14 @@ function genFacade(b){
   for (i = 0; i < n; i += 2){
     j = (i+2) % n; var ax = p[i], az = p[i+1], l = Math.hypot(p[j]-ax, p[j+1]-az); if (l < 1) continue;
     var dx = (p[j]-ax)/l, dz = (p[j+1]-az)/l, isDoor = b.door && Math.abs((ax + p[j])/2 - b.door.x) < 0.02 && Math.abs((az + p[j+1])/2 - b.door.y) < 0.02;
-    var nb = Math.max(1, Math.round(l/2)); if (isDoor && nb % 2 === 0) nb += l/(nb + 1) >= 1.5 ? 1 : -1; nb = Math.max(1, nb); var w = l/nb, sx = w/2;
+    /* stretch this front past each end so it meets its neighbour at the corner (or pull it back where the wall turns inward) */
+    var hp = (i + n - 2) % n, jn = (j + 2) % n, l0 = Math.hypot(ax - p[hp], az - p[hp+1]) || 1, l2 = Math.hypot(p[jn] - p[j], p[jn+1] - p[j+1]) || 1;
+    var d0x = (ax - p[hp])/l0, d0z = (az - p[hp+1])/l0, d2x = (p[jn] - p[j])/l2, d2z = (p[jn+1] - p[j+1])/l2;
+    var ext = function(ux, uz, vx, vz){ var cs = Math.max(-1, Math.min(1, ux*vx + uz*vz)), th = Math.acos(cs), convex = (vx*uz - vz*ux) < 0; return Math.max(-0.5, Math.min(0.6, (OFF + 0.03)*Math.tan(th/2)*(convex ? 1 : -1))); };
+    var e0 = ext(d0x, d0z, dx, dz), e1 = ext(dx, dz, d2x, d2z); if (isDoor) e0 = e1 = Math.min(e0, e1); var L2 = l + e0 + e1; if (L2 < 0.8) continue;
+    var nb = Math.max(1, Math.round(L2/2)); if (isDoor && nb % 2 === 0) nb += L2/(nb + 1) >= 1.5 ? 1 : -1; nb = Math.max(1, nb); var w = L2/nb, sx = w/2;
     for (k = 0; k < nb; k++){
-      var c = (k + 0.5)*w, cx = ax + dx*c, cz = az + dz*c, mid = isDoor && k === (nb - 1)/2;
+      var c = (k + 0.5)*w - e0, cx = ax + dx*c, cz = az + dz*c, mid = isDoor && k === (nb - 1)/2;
       for (f = 0; f < floors; f++){
         var set = f === 0 ? S.g : S.u, win = nb < 3 || (k > 0 && k < nb - 1) ? ((k + f*(sparse > 1 ? 1 : 0)) % sparse === 0) : false, M = KIT[mid && f === 0 ? 'DoorFrame_Metal_Single' : set[win ? 0 : 1]];
         if (mid && f === 0 && sx > 1.25){ m.kit(KIT[S.g[1]], cx, cz, dx, dz, base, sx, sy, 1, OFF, tint); continue; }
@@ -1124,7 +1129,7 @@ function genFacade(b){
     /* a pilaster covers the corner where two fronts meet */
     var h2 = (i + n - 2) % n, pl = Math.hypot(ax - p[h2], az - p[h2+1]) || 1, bx = dz + (az - p[h2+1])/pl, bz = -dx - (ax - p[h2])/pl, bl = Math.hypot(bx, bz);
     if (S === FSTY.metal || S === FSTY.plain){ if (bl > 0.3) m.kit(KIT.Metal_Column_Center, ax + bx/bl*0.2, az + bz/bl*0.2, dx, dz, base, 1, floors*sy, 1, 0, tint); }
-    else if (l > 2.4) for (f = 0; f < floors; f++){ m.kit(KIT.Brick_HalfColumn_Center, ax + dx*0.42, az + dz*0.42, dx, dz, base + f*3*sy, 0.9, sy, 1, OFF + 0.02, tint); m.kit(KIT.Brick_HalfColumn_Center, ax + dx*(l - 0.42), az + dz*(l - 0.42), dx, dz, base + f*3*sy, 0.9, sy, 1, OFF + 0.02, tint); }
+    else if (l > 2.4) for (f = 0; f < floors; f++){ if (d0x*dx + d0z*dz < 0.8) m.kit(KIT.Brick_HalfColumn_Center, ax + dx*(0.44 - e0), az + dz*(0.44 - e0), dx, dz, base + f*3*sy, 0.9, sy, 1, OFF + 0.02, tint); if (dx*d2x + dz*d2z < 0.8) m.kit(KIT.Brick_HalfColumn_Center, ax + dx*(l + e1 - 0.44), az + dz*(l + e1 - 0.44), dx, dz, base + f*3*sy, 0.9, sy, 1, OFF + 0.02, tint); }
   }
   if (S === FSTY.trim && b.door){ var d = b.door, tx = -d.ny, tz = d.nx; [-1, 1].forEach(function(sd){ var x = d.x - d.nx*0.75 + tx*1.75*sd, z = d.y - d.ny*0.75 + tz*1.75*sd; if (!blocked(x, z)) m.kit(KIT.Prop_Planter_Single, x, z, tx, tz, hAt(x, z), 0.38, 0.9, 0.38, 0, [255,255,255]); }); }
   return m.upload();
@@ -1390,7 +1395,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.17';
+var VERSION = '0.18';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
