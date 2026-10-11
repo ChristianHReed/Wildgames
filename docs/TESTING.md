@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.16) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.17) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -73,7 +73,7 @@ Fail signs: a blank or black view, a message that the browser cannot run 3D grap
 
 ## Stage 1f: trees and plants
 
-- [ ] 1f.1 Walk into a park. The nearest trees are full models with leafy branches (pines and broadleaf); farther ones are simple cone shapes. Grass tufts, flowers, ferns, bushes and rocks are scattered on mapped parks, woods and lawns.
+- [ ] 1f.1 Walk into a park. The nearest trees are full models with leafy branches (pines and broadleaf); farther ones are flat pictures of the same trees, which should be hard to tell apart at a distance. Grass tufts, flowers, ferns, bushes and rocks are scattered on mapped parks, woods and lawns.
 - [ ] 1f.2 Leaf edges look clean, not boxy. Report white or dark fringes around leaves, or leaves that vanish at a distance.
 - [ ] 1f.3 Walk through a wooded area and watch the frame rate; note the View distance setting.
 - [ ] 1f.4 Chop a tree (swing at it three times). It becomes a stump and you get wood.

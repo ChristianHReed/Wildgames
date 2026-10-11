@@ -7,13 +7,19 @@ import numpy as np
 from PIL import Image
 SRC = sys.argv[1]; S = 2 if 'full' in sys.argv[2:] else 1; OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out'); SET = os.path.join(OUT, 'full' if S == 2 else 'lite'); G = 4*S; T = 512*S
 TILES = ['Bark_NormalTree', 'Leaves_NormalTree_C', 'Leaf_Pine_C', 'Leaves', 'Grass', 'Flowers', 'Rocks_Diffuse', 'Bark_DeadTree']
-sheet = Image.new('RGBA', (4*T, 2*T), (90, 110, 70, 0))
+sheet = Image.new('RGBA', (4*T, 4*T), (90, 110, 70, 0))   # kept square and a power of two so phones can shrink it cleanly
 for i, n in enumerate(TILES):
     im = Image.open(os.path.join(SRC, 'Textures', n + '.png')).convert('RGBA').resize((T - 2*G, T - 2*G), Image.LANCZOS); a = np.asarray(im).astype(np.float64)
     rgb = a[:, :, :3]; g = rgb @ np.array([0.3, 0.59, 0.11]); rgb = np.clip((rgb*0.84 + g[:, :, None]*0.16)*0.97 + np.array([8, 4, 0]), 0, 255)   # toward the game's softer palette
     # colour bleeds outward under the cut-out so leaf edges do not pick up a dark fringe when the texture is shrunk
     al = a[:, :, 3]; m = al > 40; mean = rgb[m].mean(0) if m.any() else np.array([90, 110, 70]); rgb[~m] = mean
     out = np.dstack([rgb, al]).astype(np.uint8); big = np.pad(out, ((G, G), (G, G), (0, 0)), mode='wrap'); sheet.paste(Image.fromarray(big, 'RGBA'), ((i % 4)*T, (i//4)*T))
+# third row: a picture of each tree (made by rendering the model in the game on a magenta background), used for trees too far away to draw in full
+IMP = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'impostors'); TREES = ['CommonTree_3', 'CommonTree_5', 'Pine_4', 'Pine_5']; sizes = json.load(open(os.path.join(IMP, 'sizes.json')))
+for i, n in enumerate(TREES):
+    a = np.asarray(Image.open(os.path.join(IMP, n + '.png')).convert('RGB').resize((T - 2*G, T - 2*G), Image.LANCZOS)).astype(np.float64)
+    key = (a[:, :, 0] > 150) & (a[:, :, 2] > 150) & (a[:, :, 1] < 110); al = np.where(key, 0, 255).astype(np.float64); rgb = a.copy(); rgb[key] = rgb[~key].mean(0)
+    out = np.dstack([rgb, al]).astype(np.uint8); big = np.zeros((T, T, 4), np.uint8); big[:, :, :3] = rgb[~key].mean(0).astype(np.uint8); big[G:T-G, G:T-G] = out; sheet.paste(Image.fromarray(big, 'RGBA'), (i*T, 2*T))
 os.makedirs(SET, exist_ok=True); sheet.save(os.path.join(SET, 'atlas3.png'), optimize=True)
 MAT = {'Bark_NormalTree':0, 'Leaves_NormalTree':1, 'Leaves_TwistedTree':1, 'Leaves_Pine':2, 'Leaves':3, 'Grass':4, 'Flowers':5, 'Rocks':6, 'Bark_DeadTree':7}
 MODS = ['CommonTree_3', 'CommonTree_5', 'Pine_4', 'Pine_5', 'DeadTree_1', 'Bush_Common', 'Grass_Common_Short', 'Grass_Common_Tall', 'Plant_1', 'Clover_1', 'Flower_3_Single', 'Fern_1', 'Rock_Medium_2']
@@ -39,5 +45,6 @@ for name in MODS:
                     p = P[t[k]]; vd.append(struct.pack('<5h', int(round(p[0]*1000)), int(round(p[1]*1000)), int(round(p[2]*1000)), int(round(max(-15, min(15, uvc[k][0]))*2048)), int(round(max(-15, min(15, uvc[k][1]))*2048)))); hi = max(hi, p[1])
                 td.append(bytes([ti, 255, 255, 255])); nt += 1
     index[name] = {'o': len(blob), 'n': nt, 'h': round(float(hi), 2)}; blob += b''.join(vd) + b''.join(td)
+index['_imp'] = sizes
 if S == 1 or not os.path.exists(os.path.join(OUT, 'nature.txt')): open(os.path.join(OUT, 'nature.txt'), 'w').write(json.dumps(index, separators=(',', ':')) + '\n' + base64.b64encode(blob).decode())
-print({k: v['n'] for k, v in index.items()}); print('nature', round(len(blob)/1024), 'KB, atlas3', round(os.path.getsize(os.path.join(SET, 'atlas3.png'))/1024), 'KB')
+print({k: v['n'] for k, v in index.items() if k[0] != '_'}); print('nature', round(len(blob)/1024), 'KB, atlas3', round(os.path.getsize(os.path.join(SET, 'atlas3.png'))/1024), 'KB')

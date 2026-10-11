@@ -162,6 +162,12 @@
   .touchmode #toast{top:74px;font-size:12px}
   .touchmode #prompt{top:44%}
   .touchmode #chatIn{bottom:210px;left:160px}
+  @media (max-width:560px){
+    .touchmode #hud{top:96px;width:240px}
+    .touchmode #vitals{width:150px}
+    .touchmode #tPing{right:172px;bottom:204px}
+    .touchmode #toast{top:176px;max-width:86vw}
+  }
   @media (max-width:760px){h1{font-size:48px}}
 </style>
 </head>
@@ -326,7 +332,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.16.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.17.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1018,6 +1024,11 @@ function treeTile(key){
     m.yo = hAt(tr.x, tr.y);
     if (tr.hi && tr.alive) return;
     if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); return; }
+    if (IMPR && natTex){
+      var r = IMPR[TREES[tr.sp]]*tr.sc, y0 = m.yo - 0.1, y1 = y0 + 2*r, tile = 68 + tr.sp, UVQ = [0.003,0.997, 0.997,0.997, 0.997,0.003, 0.003,0.003];
+      for (var q = 0; q < 2; q++){ var a = tr.yw + q*1.5708, cx = Math.cos(a)*r, cz = Math.sin(a)*r; m.quadUV([tr.x - cx, y0, tr.y - cz, tr.x + cx, y0, tr.y + cz, tr.x + cx, y1, tr.y + cz, tr.x - cx, y1, tr.y - cz], UVQ, tile, WHITE, 255); }
+      return;
+    }
     m.ybox(tr.x, tr.y, tr.r, 0, 0, 0.8, 0.16, 0.8, 0.16, trunk); m.pyr(tr.x, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tr.x, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
   });
   if (o.g) freeMesh(o.g); o.g = upload(m);
@@ -1379,9 +1390,9 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.16';
+var VERSION = '0.17';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
-var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:55, treeN:12, clutR:26, clutN:50}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:120, treeN:45, clutR:42, clutN:150}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:210, treeN:110, clutR:60, clutN:260}], QS = QUAL[1];
+var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
 function toast(msg, secs){ var t = el('toast'); t.textContent = msg; t.style.opacity = 1; toastT = secs || 3; }
 function feed(txt, col){
@@ -2029,7 +2040,7 @@ function initGL(){
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
     'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas2;uniform sampler2D atlas3;uniform float texOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform vec4 fires[8];uniform vec3 fcol[8];' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
-    'if(k>59.5){float j3=k-60.0;vec2 s3=vec2(504.0/2048.0,504.0/1024.0);vec2 a3=(vec2(mod(j3,4.0)*512.0,floor(j3/4.0+0.01)*512.0)+4.0)/vec2(2048.0,1024.0)+fract(uv)*s3;' + (lod ? 'return texture2DGradEXT(atlas3,a3,dFdx(uv)*s3,dFdy(uv)*s3);}' : 'return texture2D(atlas3,a3);}') +
+    'if(k>59.5){float j3=k-60.0;vec2 s3=vec2(504.0/2048.0,504.0/2048.0);vec2 a3=(vec2(mod(j3,4.0)*512.0,floor(j3/4.0+0.01)*512.0)+4.0)/vec2(2048.0,2048.0)+fract(uv)*s3;' + (lod ? 'return texture2DGradEXT(atlas3,a3,dFdx(uv)*s3,dFdy(uv)*s3);}' : 'return texture2D(atlas3,a3);}') +
     'if(k>39.5){float j2=k-40.0;vec2 s2=vec2(504.0/2048.0,504.0/1024.0);vec2 a2=(vec2(mod(j2,4.0)*512.0,floor(j2/4.0+0.01)*512.0)+4.0)/vec2(2048.0,1024.0)+fract(uv)*s2;' + (lod ? 'return vec4(texture2DGradEXT(atlas2,a2,dFdx(uv)*s2,dFdy(uv)*s2).rgb,1.0);}' : 'return vec4(texture2D(atlas2,a2).rgb,1.0);}') +
     'if(k<11.5){ss=512.0;sx=mod(k,4.0)*512.0;sy=floor(k/4.0+0.01)*512.0;}else{float j=k-12.0;ss=256.0;sx=mod(j,8.0)*256.0;sy=1536.0+floor(j/8.0+0.01)*256.0;}' +
     'float sc=(ss-8.0)/2048.0;vec2 a=(vec2(sx,sy)+4.0)/2048.0+fract(uv)*sc;' +
@@ -2085,7 +2096,7 @@ function initGL(){
         var tx3 = gl.createTexture(); gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, tx3); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im3);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         if (lod){ gl.generateMipmap(gl.TEXTURE_2D); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); } else gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.activeTexture(gl.TEXTURE0); natTex = true; loadNature();
+        gl.activeTexture(gl.TEXTURE0); natTex = true; loadNature(); if (world && world.gl && world.gl.trees && inRun) buildTrees();
       };
       im3.src = 'data:image/png;base64,' + ART.atlas3;
     }
@@ -2121,12 +2132,13 @@ function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
   gl.uniform4f(U.inst, x, gy, y, yaw); gl.uniform1f(U.hurtU, hurt ? 0.85 : 0); drawMesh(c.poses[f]);
 }
 /* ---- nature models: Quaternius "Stylized Nature MegaKit" (CC0), converted by tools/build_nature.py. Each is one ready mesh, drawn wherever needed. ---- */
-var NAT = {}, TREES = ['CommonTree_3', 'CommonTree_5', 'Pine_4', 'Pine_5'], hiTrees = [], clutter = [], clutKey = '', natT = 0;
+var IMPR = null, NAT = {}, TREES = ['CommonTree_3', 'CommonTree_5', 'Pine_4', 'Pine_5'], hiTrees = [], clutter = [], clutKey = '', natT = 0;
 function loadNature(){
   var t = (ART.nature || '').trim(), nl = t.indexOf('\n'); if (nl < 0) return;
   try {
     var idx = JSON.parse(t.slice(0, nl)), bin = atob(t.slice(nl + 1)), buf = new Uint8Array(bin.length), i; for (i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
     var dv = new DataView(buf.buffer);
+    IMPR = idx._imp || null; delete idx._imp;
     for (var n in idx){
       var e = idx[n], nv = e.n*3, pos = new Float32Array(nv*3), tc = new Float32Array(nv*3), col = new Uint8Array(nv*4);
       for (i = 0; i < nv; i++){ var o = e.o + i*10, q = e.o + nv*10 + Math.floor(i/3)*4; pos[i*3] = dv.getInt16(o, true)/1000; pos[i*3+1] = dv.getInt16(o + 2, true)/1000; pos[i*3+2] = dv.getInt16(o + 4, true)/1000; tc[i*3] = dv.getInt16(o + 6, true)/2048; tc[i*3+1] = dv.getInt16(o + 8, true)/2048; tc[i*3+2] = 60 + buf[q]; col[i*4] = buf[q+1]; col[i*4+1] = buf[q+2]; col[i*4+2] = buf[q+3]; col[i*4+3] = 255; }
