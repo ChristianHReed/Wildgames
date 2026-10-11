@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.8) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.9) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -97,13 +97,23 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 4.1b A dead alien that carries anything leaves a body with a gold cube. Search it. Swarmers carry little, stalkers carry ammo and medkits, giants carry the most.
 - [ ] 4.2 Purple buildings with a floating purple cube are nests. Go in, find the glowing core, hold E for four seconds. The nest count drops.
 - [ ] 4.3 Survive until night (about two and a half minutes after starting). A tall black stalker should eventually hunt you.
-- [ ] 4.4 Press L to turn the flashlight off. Stalkers should find you less easily.
+- [ ] 4.4 Press L to turn the flashlight on at night, then off. Stalkers should find you less easily.
 - [ ] 4.5 Light a campfire (C, needs wood from trees). A stalker should circle rather than attack while you stay by the fire.
 - [ ] 4.6 From day 2, a giant can appear. It cannot follow you indoors.
 - [ ] 4.7 Watch the weather line in the top-left. Rain and storms should show; a storm can bring a tornado warning.
 - [ ] 4.8 The Warmth bar: stand outside in rain or at night and it falls; go indoors or stand by a fire and it recovers.
 
 Report anything that feels unfair or pointless: too many aliens, too few, a stalker that cannot be escaped, weather that kills too fast.
+
+## Stage 4b: batteries, flashlight, radio and lanterns
+
+- [ ] 4b.1 A new survivor starts with a radio, a flashlight and 2 batteries (see the backpack, under Power and light).
+- [ ] 4b.2 The flashlight starts off. At dusk a reminder appears. L (or the Light button) turns it on.
+- [ ] 4b.3 Leave it on: its charge in the top-left card falls, one set of batteries lasts about one game day, and a spare is loaded by itself. With no spares it dies and says so.
+- [ ] 4b.4 Press R (or Scan in the backpack). The radio reports a trader, nest or supplies with a distance and direction, and marks it on the map. Each scan uses charge.
+- [ ] 4b.5 Craft a lantern (K, 3 scrap), then press T (or Place in the backpack). It needs batteries, lights the area at night, and can be picked up again.
+- [ ] 4b.6 Batteries turn up when searching houses, shops, police stations and dead stalkers and giants. Report if they are too rare or too common.
+- [ ] 4b.7 With two players: chat reaches any distance only while both radios have charge.
 
 ## Stage 5: characters
 

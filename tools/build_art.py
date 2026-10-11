@@ -34,9 +34,32 @@ atlas.save(os.path.join(OUT, 'atlas.png'), optimize=True)
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']
 sheet_src = Image.open(os.path.join(T, 'sprites', 'items_atlas.png')).convert('RGBA')
 ORDER = ['canned_beans', 'water_bottle', 'first_aid_kit', 'batteries', 'planks', 'tin_can', 'rain_jacket', 'fuel_can', 'backpack']
-icons = Image.new('RGBA', (96*len(ORDER), 96))
+icons = Image.new('RGBA', (96*(len(ORDER) + 4), 96))
 for i, n in enumerate(ORDER):
     f = fr[n]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (i*96, 0))
+# four more: nails stand for ammo, the pack's flashlight, and a hand-drawn lantern and radio in the same flat outlined style
+from PIL import ImageDraw
+f = fr['nails']; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (9*96, 0))
+wf = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['weapons']['frames']['flashlight']; wsrc = Image.open(os.path.join(T, 'sprites', 'weapons_atlas.png')).convert('RGBA')
+icons.paste(wsrc.crop((wf['x'], wf['y'], wf['x'] + wf['w'], wf['y'] + wf['h'])).resize((96, 96), Image.LANCZOS), (10*96, 0))
+big = Image.new('RGBA', (384*2, 384)); d = ImageDraw.Draw(big); INKC = (61, 48, 41, 255); LW = 14
+# lantern
+d.ellipse([112, 330, 272, 362], fill=(61, 48, 41, 60))
+d.arc([128, 30, 256, 150], 180, 360, fill=INKC, width=LW)
+d.rounded_rectangle([120, 84, 264, 128], 14, fill=(198, 113, 57, 255), outline=INKC, width=LW)
+d.rounded_rectangle([132, 122, 252, 290], 18, fill=(246, 222, 150, 255), outline=INKC, width=LW)
+d.ellipse([168, 170, 216, 250], fill=(217, 168, 69, 255))
+d.rounded_rectangle([112, 282, 272, 338], 14, fill=(198, 113, 57, 255), outline=INKC, width=LW)
+# radio
+ox = 384
+d.ellipse([ox + 70, 330, ox + 320, 362], fill=(61, 48, 41, 60))
+d.line([ox + 250, 120, ox + 300, 26], fill=INKC, width=LW)
+d.rounded_rectangle([ox + 64, 112, ox + 320, 338], 26, fill=(122, 138, 94, 255), outline=INKC, width=LW)
+d.ellipse([ox + 92, 170, ox + 212, 290], fill=(235, 221, 197, 255), outline=INKC, width=LW)
+for k in range(3): d.line([ox + 116, 206 + k*24, ox + 188, 206 + k*24], fill=INKC, width=8)
+d.rounded_rectangle([ox + 236, 150, ox + 296, 196], 8, fill=(217, 168, 69, 255), outline=INKC, width=10)
+d.ellipse([ox + 244, 230, ox + 288, 274], fill=(198, 113, 57, 255), outline=INKC, width=10)
+icons.paste(big.resize((192, 96), Image.LANCZOS), (11*96, 0))
 icons.save(os.path.join(OUT, 'icons.png'), optimize=True)
 # ---- built-in Springfield map
 M = os.path.join(SRC, 'map_data')
