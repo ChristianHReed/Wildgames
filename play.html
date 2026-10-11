@@ -326,7 +326,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.14.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.15.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -806,7 +806,7 @@ function drape(m, lift){
 }
 var TT = 12;
 function manageTerrain(budget){
-  var g = world.hg; if (!g) return; var T = world.gl.terr, sz = TT*g.cell, R = QS.chunk + sz, n = 0;
+  var g = world.hg; if (!g) return; var T = world.gl.terr, sz = TT*g.cell, R = QS.far + sz, n = 0; budget *= 4;
   var i0 = Math.floor((P.x - R - g.x0)/sz), i1 = Math.floor((P.x + R - g.x0)/sz), j0 = Math.floor((P.y - R - g.y0)/sz), j1 = Math.floor((P.y + R - g.y0)/sz);
   for (var tj = Math.max(0, j0); tj <= j1 && tj*TT < g.rows - 1; tj++) for (var ti = Math.max(0, i0); ti <= i1 && ti*TT < g.cols - 1; ti++){
     var key = tj*100000 + ti; if (T.has(key) || n >= budget) continue; n++;
@@ -934,6 +934,7 @@ function shell(b, m, lm){
   var K = KIND[b.kind] || KIND.house, lv = b.levels || (b.kind === 'house' ? 1 + (hash(b.id, 5, 1) < 0.35 ? 1 : 0) : Math.min(b.area < 350 ? 2 : 9, K.lv[0] + Math.floor(hash(b.id, 5, 1)*(K.lv[1] - K.lv[0] + 1))));
   var Ht = b.h = Math.min(48, (K.lh || 3.2) + (Math.max(1, lv) - 1)*3.2), hf = hash(b.id, 4, 6);
   var fac = K.fac ? TX[K.fac[Math.floor(hf*K.fac.length)]] : b.civic ? TX.stone : b.cat === 'house' && b.area < 260 ? (hf < 0.4 ? TX.sidingCream : hf < 0.75 ? TX.sidingRiver : TX.stucco) : [TX.brick, TX.brickDark, TX.stucco, TX.brick, TX.sidingCream][Math.floor(hf*5)];
+  b.ft = fac; b.rt = b.cat === 'house' && b.area < 260 ? TX.roofShingle : hash(b.id, 2, 8) < 0.6 ? TX.roofGravel : TX.roofMetal;
   var shop = K.awn ? SHOPT[b.cat] : undefined, tint = world.nests && world.nests[b.id] ? [176,140,205] : b.id === world.safe ? [186,214,168] : b.col0 ? C(b.col).map(function(v){ return Math.round(255 - (255 - v)*0.8); }) : WHITE;
   var best = -1, bl = 1.9;
   for (var tries = 0; tries < 3 && best < 0; tries++) for (i = 0; i < n; i += 2){
@@ -996,12 +997,34 @@ function shell(b, m, lm){
 var NULLM = {ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  manageTerrain(budget); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0;
+  manageTerrain(budget); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } c.g = upload(m); c.l = upload(lm); n++; } }
     else if (d > R + 150){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; }
+    if (!c.far){ if (d < QS.far + CH && nf < Math.min(budget*3, 90)){ var fm = new Mesh(); for (var q = 0; q < c.list.length; q++) shellFar(c.list[q], fm); c.far = upload(fm); nf++; } }
+    else if (d > QS.far + CH + 300){ freeMesh(c.far); c.far = null; }
   }
+}
+function shellFar(b, m){
+  if (b.gone || !b.tri) return; var p = b.pts, n = p.length, y0 = b.base || 0, lo = (world.hg ? b.low : 0) - 0.4, top = y0 + b.h, tr = b.tri, i, j;
+  for (i = 0; i < n; i += 2){ j = (i+2) % n; var l = Math.hypot(p[j]-p[i], p[j+1]-p[i+1]); if (l < 0.01) continue; m.wallT(p[j], p[j+1], p[i], p[i+1], lo, top, 0.5 - l/16, 0.5 + l/16, 1 - (lo - y0)/6.4, 1 - b.h/6.4, b.ft, WHITE, 255); }
+  m.pl = [b.rt, 1/8]; for (i = 0; i < tr.length; i += 3) m.tri(p[tr[i]*2], top, p[tr[i]*2+1], p[tr[i+2]*2], top, p[tr[i+2]*2+1], p[tr[i+1]*2], top, p[tr[i+1]*2+1], WHITE, 255); m.pl = null;
+}
+var TREE_T = 256;
+function treeTile(key){
+  var T = world.gl.trees, o = T.get(key); if (!o) return; var m = new Mesh(), trunk = C('#6b4a32'), g1 = C('#56643f'), g2 = C('#7a8a5e');
+  o.list.forEach(function(tr){
+    m.yo = hAt(tr.x, tr.y);
+    if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); return; }
+    m.ybox(tr.x, tr.y, tr.r, 0, 0, 0.8, 0.16, 0.8, 0.16, trunk); m.pyr(tr.x, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tr.x, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
+  });
+  if (o.g) freeMesh(o.g); o.g = upload(m);
+}
+function buildTrees(){
+  var T = world.gl.trees; if (T) T.forEach(function(o){ if (o.g) freeMesh(o.g); }); T = world.gl.trees = new Map();
+  world.trees.forEach(function(tr){ var kx = Math.floor(tr.x/TREE_T), ky = Math.floor(tr.y/TREE_T), key = gk(kx, ky), o = T.get(key); if (!o) T.set(key, o = {list:[], g:null, x:(kx + 0.5)*TREE_T, y:(ky + 0.5)*TREE_T}); o.list.push(tr); tr.tk = key; });
+  T.forEach(function(o, key){ treeTile(key); });
 }
 function seat(b, m, lm, s0, l0){
   var q, p = b.pts, n = p.length, base = b.base, low = b.low - 0.5, fc = [172,160,146];
@@ -1107,7 +1130,7 @@ function manageFacades(budget){
   facTris = 0; for (i = 0; i < facs.length; i++) facTris += facs[i].fac.n/3;
   for (i = 0; i < cand.length && i < budget && facTris < QS.facMax; i++){ var bb = cand[i][1]; bb.fac = genFacade(bb); facs.push(bb); facTris += bb.fac.n/3; }
 }
-function dirtyChunk(b){ if (b && b.fac){ freeMesh(b.fac); b.fac = null; } if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); freeMesh(b.chunk.l); b.chunk.g = null; b.chunk.l = null; } }
+function dirtyChunk(b){ if (b && b.fac){ freeMesh(b.fac); b.fac = null; } if (b && b.chunk && b.chunk.far){ freeMesh(b.chunk.far); b.chunk.far = null; } if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); freeMesh(b.chunk.l); b.chunk.g = null; b.chunk.l = null; } }
 function prep3D(){
   var w = world, g = new Mesh(), chunks = new Map(), i;
   var ATILE = {grass:[TX.grass, [236,244,222]], park:[TX.grass, [214,236,196]], forest:[TX.grass, [176,204,160]], sand:[TX.dirt, WHITE], parking:[TX.asphalt, [226,222,214]], water:[TX.water, WHITE]};
@@ -1143,7 +1166,7 @@ function prep3D(){
     c.list.push(b); b.chunk = c; shell(b, NULLM); b.int = null; b.fac = null; b.got = {};
   });
   facs.forEach(function(fb){ if (fb.fac){ freeMesh(fb.fac); fb.fac = null; } }); facs = [];
-  if (w.gl){ w.gl.ground.forEach(function(o){ freeMesh(o.g); }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
+  if (w.gl){ w.gl.ground.forEach(function(o){ freeMesh(o.g); }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
   var list = []; chunks.forEach(function(c){ list.push(c); });
   g.pl = null; placeProps(g);
   /* the ground is cut into squares so only the part near you is drawn */
@@ -1354,9 +1377,9 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.14';
+var VERSION = '0.15';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
-var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000}], QS = QUAL[1];
+var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
 function toast(msg, secs){ var t = el('toast'); t.textContent = msg; t.style.opacity = 1; toastT = secs || 3; }
 function feed(txt, col){
@@ -1398,7 +1421,7 @@ function startRun(ws, cs){
   w.nests = {}; wx = {w:0, until:time + 150, tor:null, flash:0}; flares = []; lures = []; w.lastDay = 0;
   if (resumed && !ws.fresh){ (ws.nests || []).forEach(function(i){ if (w.buildings[i]) w.nests[i] = 1; }); if (ws.wx){ wx.w = ws.wx.w | 0; wx.until = +ws.wx.until || 0; } } else pickNests();
   w.total = 0; w.buildings.forEach(function(b){ w.total += b.rolls + 1; }); w.total += w.crates.length;
-  makeVehicles(resumed ? ws.veh : null); makeTraders(); setupScenario(resumed ? ws : null); pings = [];
+  buildTrees(); makeVehicles(resumed ? ws.veh : null); makeTraders(); setupScenario(resumed ? ws : null); pings = [];
   manageInteriors(40); makeMini();
   el('title').classList.add('hidden'); el('play').classList.remove('hidden'); el('feed').innerHTML = '';
   running = true; inRun = true; saveT = 20; updateHud();
@@ -1647,7 +1670,7 @@ function swing(){
     var t = world.trees[i]; if (!t.alive) continue; dx = t.x - P.x; dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) continue;
     d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
   }
-  if (bt){ bt.hp--; bt.shake = 0.2; if (bt.hp <= 0){ bt.alive = false; emit({k:'tree', i:world.trees.indexOf(bt)}); inv.wood += 2; feed('+2 Wood', ITEMS.wood[1]); updateHud(); } }
+  if (bt){ bt.hp--; bt.shake = 0.2; if (bt.hp <= 0){ bt.alive = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); inv.wood += 2; feed('+2 Wood', ITEMS.wood[1]); updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
@@ -2002,7 +2025,7 @@ function initGL(){
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c;vt=t;vec3 q=p*iscl;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas2;uniform float texOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform float flash;uniform float hurtU;uniform vec4 fires[8];uniform vec3 fcol[8];' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas2;uniform float texOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform vec4 fires[8];uniform vec3 fcol[8];' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>39.5){float j2=k-40.0;vec2 s2=vec2(504.0/2048.0,504.0/1024.0);vec2 a2=(vec2(mod(j2,4.0)*512.0,floor(j2/4.0+0.01)*512.0)+4.0)/vec2(2048.0,1024.0)+fract(uv)*s2;' + (lod ? 'return vec4(texture2DGradEXT(atlas2,a2,dFdx(uv)*s2,dFdy(uv)*s2).rgb,1.0);}' : 'return vec4(texture2D(atlas2,a2).rgb,1.0);}') +
     'if(k<11.5){ss=512.0;sx=mod(k,4.0)*512.0;sy=floor(k/4.0+0.01)*512.0;}else{float j=k-12.0;ss=256.0;sx=mod(j,8.0)*256.0;sy=1536.0+floor(j/8.0+0.01)*256.0;}' +
@@ -2021,12 +2044,12 @@ function initGL(){
     'for(int i=0;i<8;i++){float fd=distance(wp,fires[i].xyz);lit+=fcol[i]*fires[i].w*dark/(1.0+fd*fd*0.05);}' +
     'if(emis)lit=vec3(1.0);' +
     'col=mix(col,vec3(1.0),hurtU);vec3 outc=col*min(lit,vec3(1.15))+vec3(1.0,0.8,0.48)*glow*dark*0.85;' +
-    'float fog=1.0-exp(-pow(d*fogK,2.0));gl_FragColor=vec4(mix(outc,sky,fog),1.0);}';
+    'float fog=max(smoothstep(fade.x,fade.y,d),1.0-exp(-pow(d*fogK,2.0)));gl_FragColor=vec4(mix(outc,sky,fog),1.0);}';
   var mk = function(type, src){ var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fires','fcol','flash','atlas','atlas2','texOn','inst','iscl','hurtU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','atlas','atlas2','texOn','inst','iscl','hurtU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); loadCreatures();
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
   dyn = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; vmb = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0};
@@ -2157,29 +2180,31 @@ function render(){
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
   var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65) + Math.sin(P.bob)*0.03, P.y]; e[1] += P.gy || 0;
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
-  var t = 1/Math.tan(1.22/2), nr = 0.08, fr = 700, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
+  var t = 1/Math.tan(1.22/2), nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   gl.uniformMatrix4fv(U.vp, false, mul(Pm, V)); gl.uniform3fv(U.cam, e); gl.uniform3fv(U.fwd, f); gl.uniform3fv(U.sky, sky);
-  gl.uniform1f(U.amb, (1 - 0.88*dark)*(0.55 + 0.45*wd) + fl); gl.uniform1f(U.dark, dark); gl.uniform1f(U.fogK, QS.fog + 0.004*dark + [0, 0.005, 0.008, 0.001, 0.011][wx.w]); gl.uniform1f(U.flash, lightOn() ? 1 : 0);
+  gl.uniform1f(U.amb, (1 - 0.88*dark)*(0.55 + 0.45*wd) + fl); gl.uniform1f(U.dark, dark); gl.uniform1f(U.fogK, [0, 0.004, 0.007, 0.0008, 0.01][wx.w]); gl.uniform2f(U.fade, QS.far*0.8, QS.far*1.02); gl.uniform1f(U.flash, lightOn() ? 1 : 0);
   var fu = new Float32Array(32), fcl = new Float32Array(24), near = fires.concat(flares, lamps.filter(function(l){ return l.life > 0; })).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
   for (i = 0; i < 8 && i < near.length; i++){ var lp = near[i].lamp; fu[i*4] = near[i].x; fu[i*4+1] = 0.6 + groundAt(near[i].x, near[i].y); fu[i*4+2] = near[i].y; fu[i*4+3] = lp ? 1.5 : 1.6 + 0.3*Math.sin(now*13 + i); fcl[i*3] = 1; fcl[i*3+1] = lp ? 0.9 : 0.6; fcl[i*3+2] = lp ? 0.68 : 0.25; }
   gl.uniform3fv(U.fcol, fcl);
   gl.uniform4fv(U.fires, fu);
-  var GR = QS.chunk + 200; for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (Math.abs(gq.x - P.x) < GR && Math.abs(gq.y - P.y) < GR) drawMesh(gq.g); }
-  for (i = 0; i < world.gl.chunks.length; i++){ var ch = world.gl.chunks[i]; if (ch.g && Math.abs(ch.x - P.x) < QS.chunk + CH && Math.abs(ch.y - P.y) < QS.chunk + CH){ drawMesh(ch.g); if (Math.abs(ch.x - P.x) < 170 && Math.abs(ch.y - P.y) < 170) drawMesh(ch.l, gl.LINES); } }
+  /* ground paint (parks, sidewalks, roads) is drawn in painting order and nudged toward the eye, so far-off layers do not flicker */
+  var GR = Math.min(QS.far, 800) + 130; gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1.5, -6); gl.depthFunc(gl.LEQUAL);
+  for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (Math.abs(gq.x - P.x) < GR && Math.abs(gq.y - P.y) < GR) drawMesh(gq.g); }
+  gl.disable(gl.POLYGON_OFFSET_FILL); gl.depthFunc(gl.LESS);
+  /* buildings: the detailed version near you, the plain version out to the draw distance */
+  var NR = QS.chunk + CH, FRR = QS.far + CH;
+  for (i = 0; i < world.gl.chunks.length; i++){
+    var ch = world.gl.chunks[i], cdx = Math.abs(ch.x - P.x), cdy = Math.abs(ch.y - P.y);
+    if (ch.g && cdx < NR && cdy < NR){ drawMesh(ch.g); if (cdx < 170 && cdy < 170) drawMesh(ch.l, gl.LINES); }
+    else if (ch.far && cdx < FRR && cdy < FRR) drawMesh(ch.far);
+  }
+  if (world.gl.trees) world.gl.trees.forEach(function(o){ if (Math.abs(o.x - P.x) < FRR + 130 && Math.abs(o.y - P.y) < FRR + 130) drawMesh(o.g); });
   for (i = 0; i < loaded.length; i++) drawMesh(loaded[i].int.g);
   for (i = 0; i < facs.length; i++) if (facs[i].fac) drawMesh(facs[i].fac);
-  var TR = world.gl.terr, trR = QS.chunk + (world.hg ? TT*world.hg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - P.x) < trR && Math.abs(o.y - P.y) < trR) drawMesh(o.g); });
+  var TR = world.gl.terr, trR = QS.far + (world.hg ? TT*world.hg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - P.x) < trR && Math.abs(o.y - P.y) < trR) drawMesh(o.g); });
 
   var m = new Mesh(), x, y, far = world.hg ? world.hg.min - 3 : 0;
-  m.pl = [TX.grass, 0.25]; m.quad(P.x - 900, far, P.y - 900, P.x + 900, far, P.y - 900, P.x + 900, far, P.y + 900, P.x - 900, far, P.y + 900, [236,244,222], 255); m.pl = null;
-  var trunk = C('#6b4a32'), g1 = C('#56643f'), g2 = C('#7a8a5e');
-  for (i = 0; i < world.trees.length; i++){
-    var tr = world.trees[i]; x = tr.x - P.x; y = tr.y - P.y; if (x > QS.trees || x < -QS.trees || y > QS.trees || y < -QS.trees) continue;
-    m.yo = hAt(tr.x, tr.y); var tx = tr.x; if (tr.shake > 0){ tr.shake -= 0.016; tx += Math.sin(now*70)*0.06; }
-    if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); continue; }
-    m.ybox(tx, tr.y, tr.r, 0, 0, 0.8, 0.16, 0.8, 0.16, trunk);
-    m.pyr(tx, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tx, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
-  }
+  m.pl = [TX.grass, 0.25]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [236,244,222], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
   drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now);
   drawWorldFx(m, e, now); m.yo = 0;
@@ -2828,7 +2853,7 @@ function applyEv(e){
   else if (e.k === 'crate'){ if (world.crates[e.i]) world.crates[e.i].looted = true; }
   else if (e.k === 'corpse'){ var c0 = e.c; if (c0 && typeof c0.id === 'string' && isFinite(c0.x) && isFinite(c0.y) && ANAME[c0.k] && c0.stash){ var st = {inv:{}, items:{}}, kk; for (kk in c0.stash.inv) if (kk in ITEMS) st.inv[kk] = Math.max(0, Math.min(20, c0.stash.inv[kk] | 0)); for (kk in c0.stash.items || {}) if (DESIGNS[kk]) st.items[kk] = 1; corpses.push({corpse:1, id:c0.id, x:+c0.x, y:+c0.y, k:c0.k, name:'dead ' + ANAME[c0.k], stash:st, t:time}); if (corpses.length > 40) corpses.shift(); } }
   else if (e.k === 'uncorpse'){ for (var ci = 0; ci < corpses.length; ci++) if (corpses[ci].id === e.id){ if (corpses[ci] === curLoot){ curLoot = null; el('loot').classList.add('hidden'); } corpses.splice(ci, 1); break; } }
-  else if (e.k === 'tree'){ if (world.trees[e.i]) world.trees[e.i].alive = false; }
+  else if (e.k === 'tree'){ if (world.trees[e.i]){ world.trees[e.i].alive = false; treeTile(world.trees[e.i].tk); } }
   else if (e.k === 'lamp'){ if (e.l && isFinite(e.l.x) && isFinite(e.l.y)) lamps.push({lamp:true, name:'lantern', x:+e.l.x, y:+e.l.y, life:LAMP_SECS}); }
   else if (e.k === 'unlamp'){ for (var li = 0; li < lamps.length; li++) if (Math.abs(lamps[li].x - e.x) < 0.01 && Math.abs(lamps[li].y - e.y) < 0.01){ lamps.splice(li, 1); break; } }
   else if (e.k === 'fire'){ if (e.f) fires.push({x:+e.f.x, y:+e.f.y, life:+e.f.life || 150}); }

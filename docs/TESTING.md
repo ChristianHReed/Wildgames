@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.14) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.15) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -62,6 +62,14 @@ Fail signs: a blank or black view, a message that the browser cannot run 3D grap
 - [ ] 1d.3 Aliens do not come into the safe house or its yard, and do not chase you while you are in it. Dying returns you there unless you have a bed.
 - [ ] 1d.4 The screen shows a thin health bar and three small bars top-left, a compass and clock top-centre, the round map top-right, and a small hotbar. The menu button beside the map opens Items, Build, Chat, Invite, Controls and Save and exit.
 - [ ] 1d.5 On a phone, nothing on screen overlaps the touch buttons, and all text is readable against bright sky and at night.
+
+## Stage 1e: long views without fog
+
+- [ ] 1e.1 In clear weather there is no fog. Down a long street you see buildings, trees and hills out to the draw distance (about 400 m on Low, 800 m on Medium, 1,400 m on High), where they fade into the sky.
+- [ ] 1e.2 Distant buildings are plain boxes with painted walls. Walking toward one, it gains its roof shape, trim and (for shops and offices) its modelled front. Report if the change is jarring.
+- [ ] 1e.3 Look at far-off roads and sidewalks for flickering or shimmering stripes.
+- [ ] 1e.4 Note the frame rate looking down the longest street you can find, on each View distance setting. This is the heaviest view in the game.
+- [ ] 1e.5 Rain, storms and ice storms still shorten how far you can see. That is intended.
 
 ## Stage 2: saving onto the drive (make-or-break)
 
