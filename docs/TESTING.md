@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.9) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.10) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -54,6 +54,14 @@ Fail signs: a blank or black view, a message that the browser cannot run 3D grap
 - [ ] 1c.6 Turn the internet off and play Springfield again. The hills are still there.
 - [ ] 1c.7 Make a map with the map maker. It says "Adding hills and valleys" and the new map has them.
 
+## Stage 1d: clock, safe house and the cleaner screen
+
+- [ ] 1d.1 A game day lasts 12 real hours: one real hour moves the clock two hours. For quick tests, set **Length of a day** on the start page to 4 minutes.
+- [ ] 1d.2 A new world starts you at the door of a green-tinted house with a green marker above it. Its chest holds starting supplies.
+- [ ] 1d.3 Aliens do not come into the safe house or its yard, and do not chase you while you are in it. Dying returns you there unless you have a bed.
+- [ ] 1d.4 The screen shows a thin health bar and three small bars top-left, a compass and clock top-centre, the round map top-right, and a small hotbar. The menu button beside the map opens Items, Build, Chat, Invite, Controls and Save and exit.
+- [ ] 1d.5 On a phone, nothing on screen overlaps the touch buttons, and all text is readable against bright sky and at night.
+
 ## Stage 2: saving onto the drive (make-or-break)
 
 - [ ] 2.1 On the start page press **Connect game folder** and pick the folder that contains `play.html`. Allow the permission prompt.
@@ -96,7 +104,7 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 4.1 Daytime: small purple swarmers appear in groups and chase you. The bat kills one in a hit or two.
 - [ ] 4.1b A dead alien that carries anything leaves a body with a gold cube. Search it. Swarmers carry little, stalkers carry ammo and medkits, giants carry the most.
 - [ ] 4.2 Purple buildings with a floating purple cube are nests. Go in, find the glowing core, hold E for four seconds. The nest count drops.
-- [ ] 4.3 Survive until night (about two and a half minutes after starting). A tall black stalker should eventually hunt you.
+- [ ] 4.3 Set Length of a day to 4 minutes, then survive until night (about two and a half minutes after starting). A tall black stalker should eventually hunt you.
 - [ ] 4.4 Press L to turn the flashlight on at night, then off. Stalkers should find you less easily.
 - [ ] 4.5 Light a campfire (C, needs wood from trees). A stalker should circle rather than attack while you stay by the fire.
 - [ ] 4.6 From day 2, a giant can appear. It cannot follow you indoors.
