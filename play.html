@@ -257,7 +257,7 @@
         <label>Background<select id="cBg"><option value="scout">Scout: moves faster</option><option value="medic">Medic: medkits heal more</option><option value="mechanic">Mechanic: building costs less</option><option value="builder">Builder: stronger barricades</option></select></label>
       </div>
       <div class="prow" style="align-items:flex-end;margin-top:8px">
-        <canvas id="cPrev" width="128" height="208" style="width:64px;height:104px"></canvas>
+        <canvas id="cPrev" width="192" height="312" style="width:96px;height:156px"></canvas>
         <label>Build<select id="cBuild"><option value="0">Slim</option><option value="1" selected>Average</option><option value="2">Broad</option></select></label>
         <label>Skin<select id="cSkin"><option value="0">Tone 1</option><option value="1" selected>Tone 2</option><option value="2">Tone 3</option><option value="3">Tone 4</option><option value="4">Tone 5</option></select></label>
         <label>Body<select id="cBody"><option value="0">Masculine</option><option value="1">Feminine</option></select></label>
@@ -266,6 +266,11 @@
         <label>Hat<select id="cHat"><option value="0">None</option><option value="1">Cap</option><option value="2">Beanie</option><option value="3">Helmet</option></select></label>
         <label>Shirt<input type="color" id="cShirt" value="#3566c4" style="height:36px;padding:2px"></label>
         <label>Pants<input type="color" id="cPants" value="#2b2f38" style="height:36px;padding:2px"></label>
+        <label>Face<select id="cFace"><option value="0">Calm</option><option value="1">Glasses</option><option value="2">Stubble</option><option value="3">Freckles</option><option value="4">Tired</option><option value="5">Moustache</option><option value="6">Dark glasses</option><option value="7">Scar</option></select></label>
+        <label>Top<select id="cTop"><option value="0">T-shirt</option><option value="1">Striped tee</option><option value="2">Flannel shirt</option><option value="3">Spotted top</option><option value="4">Hoodie</option><option value="5">Open jacket</option><option value="6">Jumper</option><option value="7">Dungarees</option></select></label>
+        <label>Bottoms<select id="cBot"><option value="0">Jeans</option><option value="1">Shorts</option><option value="2">Cargo trousers</option><option value="3">Capri trousers</option><option value="4">Track pants</option><option value="5">Rolled jeans</option></select></label>
+        <label>Shoes<select id="cShoe"><option value="0">Trainers</option><option value="1">Boots</option><option value="2">Rain boots</option></select></label>
+        <label>Second colour<input type="color" id="cAcc" value="#e9dab0" style="height:36px;padding:2px"></label>
       </div>
       <div id="cInfo" style="margin-top:6px"></div>
     </div>
@@ -353,7 +358,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.30.1.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.30.2.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -363,7 +368,7 @@
 var ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['icons', 'models', 'kit', 'nature', 'map', set + '/atlas', set + '/atlas2', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
+  ['icons', 'people_tex', 'models', 'kit', 'nature', 'map', set + '/atlas', set + '/atlas2', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
   return set;
 })();
 </script>
@@ -1920,7 +1925,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.30.1';
+var VERSION = '0.30.2';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2273,8 +2278,8 @@ function shoot(){
 var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:'Scavenging', melee:'Melee', endur:'Endurance'};
 var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0}, cap:false};
 function okCol(c, d){ return /^#[0-9a-f]{6}$/i.test(c) ? c : d; }
-function cleanLook(l){ l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(3, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(5, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0))}; }
-function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value}); }
+function cleanLook(l){ l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(3, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(5, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(7, l.face | 0)), top:Math.max(0, Math.min(7, l.top | 0)), bot:Math.max(0, Math.min(5, l.bot | 0)), shoe:Math.max(0, Math.min(2, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0')}; }
+function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value, face:el('cFace').value, top:el('cTop').value, bot:el('cBot').value, shoe:el('cShoe').value, acc:el('cAcc').value}); }
 function xpLvl(xp){ return Math.min(10, Math.floor(Math.sqrt((+xp || 0)/20))); }
 function lvl(k){ var v = xpLvl(me.skills[k]); return me.cap ? Math.min(v, 2) : v; }
 function addXp(k, n){ var a = xpLvl(me.skills[k]); me.skills[k] = (+me.skills[k] || 0) + n; if (xpLvl(me.skills[k]) > a) feed(SKN[k] + ' is now level ' + xpLvl(me.skills[k]), '#f2d14a'); }
@@ -3061,14 +3066,15 @@ function drawMini(){
 }
 
 /* ================= renderer ================= */
-var prog3, aP, aC, aT, U = {}, dyn = null, vmb = null, glOK = false, texReady = false, kitTex = false, natTex = false;
+var prog3, aP, aC, aT, U = {}, dyn = null, vmb = null, glOK = false, texReady = false, kitTex = false, natTex = false, pplTex = false;
 function initGL(){
   if (!gl) return false;
   var deriv = gl.getExtension('OES_standard_derivatives'), lod = deriv && gl.getExtension('EXT_shader_texture_lod');
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c;vt=t;vec3 q=p*iscl;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas2;uniform sampler2D atlas3;uniform float texOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas2;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];' +
+    'vec3 ppl(vec2 uv,float j){vec2 a4=(vec2(mod(j,8.0)*256.0,floor(j/8.0+0.01)*256.0)+1.0+fract(uv)*254.0)/2048.0;vec4 tp=texture2D(atlas4,a4);float idx=floor(tp.g*8.0);vec3 pc=pp[0];for(int i=1;i<8;i++){if(float(i)==idx)pc=pp[i];}return pc*tp.r*1.99;}' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>59.5){float j3=k-60.0;vec2 s3=vec2(504.0/2048.0,504.0/2048.0);vec2 a3=(vec2(mod(j3,4.0)*512.0,floor(j3/4.0+0.01)*512.0)+4.0)/vec2(2048.0,2048.0)+fract(uv)*s3;' + (lod ? 'return texture2DGradEXT(atlas3,a3,dFdx(uv)*s3,dFdy(uv)*s3);}' : 'return texture2D(atlas3,a3);}') +
     'if(k>39.5){float j2=k-40.0;vec2 s2=vec2(504.0/2048.0,504.0/1024.0);vec2 a2=(vec2(mod(j2,4.0)*512.0,floor(j2/4.0+0.01)*512.0)+4.0)/vec2(2048.0,1024.0)+fract(uv)*s2;' + (lod ? 'return vec4(texture2DGradEXT(atlas2,a2,dFdx(uv)*s2,dFdy(uv)*s2).rgb,1.0);}' : 'return vec4(texture2D(atlas2,a2).rgb,1.0);}') +
@@ -3080,8 +3086,9 @@ function initGL(){
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
     'vec3 col=vc.rgb;float glow=0.0;float k=floor(vt.z+0.5);' +
     'if(back){if(texOn>0.5)col=samp(21.0,vec2((wp.x+wp.z)*0.5,-wp.y*0.5)).rgb;else col=vec3(0.92,0.86,0.76);}' +
+    'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){vec2 u1=vt.xy+vec2(tm*0.035,tm*0.02);vec2 u2=vt.xy*1.9+vec2(-tm*0.03,tm*0.045);vec3 ww=(samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5;float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
-    'float band=step(0.18,dot(n,vec3(-0.44,0.8,0.4)));if(unlit||emis)band=1.0;' +
+    'float band=step(0.18,dot(n,vec3(-0.44,0.8,0.4)));if(k>79.5)band=smoothstep(-0.45,0.6,dot(n,vec3(-0.44,0.8,0.4)));if(unlit||emis)band=1.0;' +
     'col=mix(col*vec3(0.74,0.66,0.68),col,band);' +
     'float spot=smoothstep(0.78,0.95,dot(V/d,fwd))*0.95/(1.0+d*d*0.004)+0.22/(1.0+d*d*0.12);' +
     'vec3 lit=vec3(amb+dark*spot*flash);' +
@@ -3093,7 +3100,8 @@ function initGL(){
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas2','atlas3','texOn','inst','iscl','hurtU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas2','atlas3','atlas4','pp','texOn','pplOn','inst','iscl','hurtU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  gl.uniform1f(U.pplOn, 0);
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); loadCreatures(); loadPeople();
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
   dyn = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; vmb = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0};
@@ -3119,6 +3127,15 @@ function initGL(){
         gl.activeTexture(gl.TEXTURE0); kitTex = true;
       };
       im2.src = 'data:image/jpeg;base64,' + b2;
+    }
+    if (ART.ptex){   /* the survivors' painted texture: shade in red, which of their colours in green. Sharp pixels, so the colours never blend */
+      var im4 = new Image();
+      im4.onload = function(){
+        var tx4 = gl.createTexture(); gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, tx4); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im4);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.activeTexture(gl.TEXTURE0); pplTex = true;
+      };
+      im4.src = 'data:image/png;base64,' + ART.ptex;
     }
     if (ART.atlas3){
       var im3 = new Image();
@@ -3166,8 +3183,10 @@ function loadPeople(){
     var dv = new DataView(buf.buffer), nf = 0;
     for (var n in idx){ var e = idx[n]; if (!e.hair) for (k in e.clips) nf = Math.max(nf, e.clips[k][0] + e.clips[k][1]); }
     for (n in idx){
-      var e2 = idx[n], nv3 = e2.nt*3, tc = new Float32Array(nv3*3), o = {n:nv3, nt:e2.nt, clips:e2.clips, hd:e2.hd, h:e2.h, poses:[], cbs:{}, hair:!!e2.hair};
-      var p0 = e2.o + e2.nt*6 + (e2.hair ? 0 : e2.nt*2); o.reg = e2.hair ? null : buf.subarray(e2.o + e2.nt*6, e2.o + e2.nt*7); o.sh = e2.hair ? null : buf.subarray(e2.o + e2.nt*7, e2.o + e2.nt*8);
+      var e2 = idx[n], nv3 = e2.nt*3, tc = new Float32Array(nv3*3), o = {n:nv3, nt:e2.nt, clips:e2.clips, hd:e2.hd, h:e2.h, poses:[], cbs:{}, tbs:{}, hair:!!e2.hair};
+      var tx = e2.hair ? !!idx.male.tex : !!e2.tex, p0 = e2.o + e2.nt*6 + (e2.hair ? 0 : e2.nt*2) + (tx ? e2.nt*12 : 0); o.reg = e2.hair ? null : buf.subarray(e2.o + e2.nt*6, e2.o + e2.nt*7);
+      if (tx){ var u0 = e2.o + e2.nt*6 + (e2.hair ? 0 : e2.nt*2); o.kind = e2.hair ? null : buf.subarray(e2.o + e2.nt*7, e2.o + e2.nt*8); o.uv = new Float32Array(nv3*2); for (i = 0; i < nv3*2; i++) o.uv[i] = dv.getUint16(u0 + i*2, true)/16000; o.sh = null; }
+      else o.sh = e2.hair ? null : buf.subarray(e2.o + e2.nt*7, e2.o + e2.nt*8);
       for (i = 0; i < nv3; i++) tc[i*3 + 2] = -1;
       o.tb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, o.tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW);
       for (var ps = 0; ps < nf; ps++){
@@ -3183,8 +3202,20 @@ function loadPeople(){
 function pplCols(o, look){
   var key = o.hair ? 'h' + look.hc : look.skin + look.shirt + look.pants + look.build; if (o.cbs[key]) return o.cbs[key];
   var col = new Uint8Array(o.n*4), i, k, pal = o.hair ? null : [C(SKIN[look.skin]), C(look.shirt), C(look.pants), C('#2b2420'), C(HAIRC[look.hc]), C('#151515')], hc = C(HAIRC[look.hc]);
-  for (i = 0; i < o.nt; i++){ var c = o.hair ? hc : pal[o.reg[i]], sh = o.hair ? 0.9 + ((i*7) % 5)*0.04 : o.sh[i]/200; for (k = 0; k < 3; k++){ var q = (i*3 + k)*4; col[q] = Math.min(255, c[0]*sh); col[q+1] = Math.min(255, c[1]*sh); col[q+2] = Math.min(255, c[2]*sh); col[q+3] = 255; } }
+  for (i = 0; i < o.nt; i++){ var c = o.hair ? hc : pal[o.reg[i]], sh = o.hair ? 0.9 + ((i*7) % 5)*0.04 : o.sh ? o.sh[i]/200 : 1; for (k = 0; k < 3; k++){ var q = (i*3 + k)*4; col[q] = Math.min(255, c[0]*sh); col[q+1] = Math.min(255, c[1]*sh); col[q+2] = Math.min(255, c[2]*sh); col[q+3] = 255; } }
   var cb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, cb); gl.bufferData(gl.ARRAY_BUFFER, col, gl.STATIC_DRAW); return (o.cbs[key] = cb);
+}
+/* texture coordinates for one choice of face, top, bottoms and shoes, made the first time it is seen */
+var PTILE = [0, 8, 16, 24, 32], SHOEC = ['#e9e2d4', '#5b3b26', '#d8a83a'];
+function pplTb(o, l){
+  if (!o.uv) return o.tb; var key = o.hair ? 'h' : l.face + ',' + l.top + ',' + l.bot + ',' + l.shoe; if (o.tbs[key]) return o.tbs[key];
+  var vari = [l.face, l.top, l.top, l.bot, l.shoe], tc = new Float32Array(o.n*3);
+  for (var i = 0; i < o.n; i++){ var t = Math.floor(i/3), tile = o.hair ? 40 : PTILE[o.kind[t]] + vari[o.kind[t]]; tc[i*3] = o.uv[i*2]; tc[i*3+1] = o.uv[i*2+1]; tc[i*3+2] = 80 + tile; }
+  var tb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW); return (o.tbs[key] = tb);
+}
+function pplPal(l){
+  var a = [SKIN[l.skin], l.shirt, l.pants, SHOEC[l.shoe], HAIRC[l.hc], l.acc, '#1f1a17', '#f2ede4'], f = new Float32Array(24);
+  for (var i = 0; i < 8; i++){ var c = C(a[i]); f[i*3] = c[0]/255; f[i*3+1] = c[1]/255; f[i*3+2] = c[2]/255; } return f;
 }
 function pplClip(o, B){
   var c = o.dead || o.hp <= 0 ? 'dead' : o.act ? o.act : o.sw ? 'attack' : o.swim ? (o.mv ? 'swim' : 'swimidle') : o.mv ? (o.vis < 1 ? 'crouchwalk' : o.vis > 1 ? 'run' : 'walk') : o.vis < 1 ? 'crouch' : o.talk ? 'talk' : o.lit ? 'light' : 'idle';
@@ -3196,19 +3227,22 @@ function queuePerson(m, o, look, now){
   var clip = pplClip(o, B), cl = B.clips[clip], sp = clip === 'run' ? 1.5 : clip === 'walk' ? 1.1 : clip === 'attack' || clip === 'shoot' ? 2.6 : clip === 'crouchwalk' ? 0.9 : clip === 'swim' ? 0.8 : 0.35, t = clip === 'attack' && o.swk !== undefined ? o.swk*0.999 : clip === 'throw' ? (time - (P.thrT || 0))/0.5*0.999 : clip === 'shoot' && o.shk !== undefined ? o.shk*0.999 : now*sp + (o.id || 0)*0.37;
   var f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1], sc = [0.95, 1, 1.06][l.build];
   pplQ.push({B:B, f:f, x:o.x, y:o.y, gy:m.yo, yaw:o.yaw, look:l, sc:sc});
-  if (l.hat){ var hd = B.hd[f], cs = Math.cos(o.yaw), sn = Math.sin(o.yaw), hx = o.x + (cs*hd[0] - sn*hd[2])*sc, hy = o.y + (sn*hd[0] + cs*hd[2])*sc, hz = hd[1]*sc + 0.16;
-    if (l.hat === 1){ m.ybox(hx, hy, o.yaw, 0, 0, hz - 0.02, 0.15, 0.06, 0.15, C('#b33a3a')); m.ybox(hx, hy, o.yaw, 0.17, 0, hz - 0.06, 0.09, 0.015, 0.13, C('#8a2a2a')); }
-    else if (l.hat === 2) m.ybox(hx, hy, o.yaw, 0, 0, hz - 0.02, 0.155, 0.08, 0.155, C('#4a6a8a'));
-    else m.ybox(hx, hy, o.yaw, 0, 0, hz - 0.01, 0.17, 0.09, 0.17, C('#6a7a5a')); }
+  if (l.hat){ var hd = B.hd[f], cs = Math.cos(o.yaw), sn = Math.sin(o.yaw), hx = o.x + (cs*hd[0] - sn*hd[2])*sc, hy = o.y + (sn*hd[0] + cs*hd[2])*sc, top = (hd[1] + (B.ht || 0.16))*sc, hf = (B.hf || 0.1)*sc;
+    top += l.hair ? 0.02 : 0;
+    if (l.hat === 1){ var cc = C(l.acc || '#b33a3a'); m.ybox(hx, hy, o.yaw, 0.01, 0, top - 0.004, 0.124, 0.046, 0.12, cc); m.ybox(hx, hy, o.yaw, hf + 0.05, 0, top - 0.042, 0.08, 0.01, 0.1, cc.map(function(v){ return v*0.8; })); }   /* cap */
+    else if (l.hat === 2){ var bc = C(l.acc || '#4a6a8a'); m.ybox(hx, hy, o.yaw, 0.015, 0, top - 0.004, 0.135, 0.06, 0.128, bc); m.ybox(hx, hy, o.yaw, 0.015, 0, top - 0.058, 0.138, 0.02, 0.131, bc.map(function(v){ return v*0.8; })); }   /* knitted beanie with a turned-up band */
+    else { m.ybox(hx, hy, o.yaw, 0.01, 0, top - 0.002, 0.136, 0.05, 0.132, C('#6a7a5a')); m.ybox(hx, hy, o.yaw, 0.01, 0, top - 0.05, 0.142, 0.01, 0.14, C('#55634a')); } }
   return true;
 }
 function drawPeople(){
   if (!pplQ.length) return;
   for (var i = 0; i < pplQ.length; i++){
-    var q = pplQ[i], B = q.B, cb = pplCols(B, q.look); gl.uniform4f(U.inst, q.x, q.gy, q.y, q.yaw); gl.uniform1f(U.iscl, q.sc); drawMesh({vb:B.poses[q.f], cb:cb, tb:B.tb, n:B.n});
-    var H = q.look.hair ? PPL[(q.look.body ? 'female' : 'male') + ':' + HAIRN[q.look.hair]] : null; if (H) drawMesh({vb:H.poses[q.f], cb:pplCols(H, q.look), tb:H.tb, n:H.n});
+    var q = pplQ[i], B = q.B, cb = pplCols(B, q.look); gl.uniform4f(U.inst, q.x, q.gy, q.y, q.yaw); gl.uniform1f(U.iscl, q.sc);
+    if (pplTex && B.uv){ gl.uniform1f(U.pplOn, 1); gl.uniform3fv(U.pp, q.look.pal || (q.look.pal = pplPal(q.look))); }
+    drawMesh({vb:B.poses[q.f], cb:cb, tb:pplTb(B, q.look), n:B.n});
+    var H = q.look.hair ? PPL[(q.look.body ? 'female' : 'male') + ':' + HAIRN[q.look.hair]] : null; if (H) drawMesh({vb:H.poses[q.f], cb:pplCols(H, q.look), tb:pplTb(H, q.look), n:H.n});
   }
-  gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); pplQ.length = 0;
+  gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.pplOn, 0); pplQ.length = 0;
 }
 var CNAME = ['swarmer', 'stalker', 'giant'];
 function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
@@ -3335,7 +3369,7 @@ function render(){
   gl.viewport(0, 0, W, H);
   var wd = [1, 0.8, 0.6, 1, 0.86][wx.w], fl = wx.flash > 0 ? 0.5 : 0, sk0 = skyAt((8 + time/DAY*24) % 24), sky = [sk0[0]*wd + fl, sk0[1]*wd + fl, sk0[2]*wd + fl], i, now = time;
   if (wx.w === 4){ sky[0] = sky[0]*0.6 + 0.36*(1 - dark); sky[1] = sky[1]*0.6 + 0.36*(1 - dark); sky[2] = sky[2]*0.6 + 0.37*(1 - dark); }
-  gl.uniform1i(U.atlas, 0); gl.uniform1i(U.atlas2, 1); gl.uniform1i(U.atlas3, 2); gl.uniform1f(U.tm, (performance.now()/1000) % 10000); gl.uniform1f(U.texOn, texReady ? 1 : 0);
+  gl.uniform1i(U.atlas, 0); gl.uniform1i(U.atlas2, 1); gl.uniform1i(U.atlas3, 2); gl.uniform1i(U.atlas4, 3); gl.uniform1f(U.tm, (performance.now()/1000) % 10000); gl.uniform1f(U.texOn, texReady ? 1 : 0);
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   var cp = Math.cos(P.pitch), f = [Math.cos(P.yaw)*cp, Math.sin(P.pitch), Math.sin(P.yaw)*cp];
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
@@ -4020,7 +4054,7 @@ function drawExtras(m, now){
       m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 2.0, 0.34, 0.85, cc); m.ybox(v.x, v.y, v.yaw, -0.2, 0, 1.2, 1.0, 0.26, 0.78, C('#2f4558'));
       for (var q = 0; q < 4; q++) m.ybox(v.x, v.y, v.yaw, q < 2 ? 1.25 : -1.25, q % 2 ? 0.86 : -0.86, 0.32, 0.32, 0.32, 0.1, C('#16181c')); }
   }
-  for (i = 0; i < w.traders.length; i++){ var t = w.traders[i]; if (Math.abs(t.x - P.x) > 120 || Math.abs(t.y - P.y) > 120) continue; m.yo = groundAt(t.x, t.y); queuePerson(m, {x:t.x, y:t.y, yaw:t.yaw, id:t.id, mv:0, sw:0, talk:1}, {build:1, skin:(t.id*2) % 5, shirt:'#3f8f5a', pants:'#3a3f47', hat:1, body:t.id % 2, hair:1 + t.id % 5, hc:t.id % 5}, now); m.al = 128; m.ybox(t.x, t.y, now*2, 0, 0, 2.5, 0.1, 0.1, 0.1, C('#5dff8a')); m.al = 255; }
+  for (i = 0; i < w.traders.length; i++){ var t = w.traders[i]; if (Math.abs(t.x - P.x) > 120 || Math.abs(t.y - P.y) > 120) continue; m.yo = groundAt(t.x, t.y); queuePerson(m, {x:t.x, y:t.y, yaw:t.yaw, id:t.id, mv:0, sw:0, talk:1}, {build:1, skin:(t.id*2) % 5, shirt:['#3f8f5a', '#8a3a3a', '#c9a24a', '#3a5f8a'][t.id % 4], pants:'#3a3f47', hat:1, body:t.id % 2, hair:1 + t.id % 5, hc:t.id % 5, face:(t.id*3) % 8, top:(t.id*5 + 2) % 8, bot:t.id % 6, shoe:t.id % 3, acc:['#e9dab0', '#2f3a4a', '#d9603a'][t.id % 3]}, now); m.al = 128; m.ybox(t.x, t.y, now*2, 0, 0, 2.5, 0.1, 0.1, 0.1, C('#5dff8a')); m.al = 255; }
   m.al = 128;
   for (i = 0; i < pings.length; i++){ m.yo = groundAt(pings[i].x, pings[i].y); m.ybox(pings[i].x, pings[i].y, now, 0, 0, 6, 0.06, 6, 0.06, C('#ffe14a')); }
   if (w.scen.type === 'escape'){
@@ -4464,7 +4498,21 @@ function savedChars(){
   return out.sort(function(a, b){ return a.slug < b.slug ? -1 : 1; });
 }
 /* the survivor on the start page: the real model in its first idle frame, drawn flat-shaded on a small canvas */
-var PRAW = {};
+var PRAW = {}, PTIMG = null;
+/* the painted tiles a look uses, coloured for the preview: each is drawn twice side by side, because coordinates may run past the back seam */
+function prevTiles(l){
+  if (!ART.ptex) return null;
+  if (!PTIMG){ PTIMG = new Image(); PTIMG.onload = function(){ PTIMG.ok = true; drawPrev(); }; PTIMG.src = 'data:image/png;base64,' + ART.ptex; return null; }
+  if (!PTIMG.ok) return null;
+  var key = JSON.stringify(l); if (prevTiles.key === key) return prevTiles.out; var out = {}, pal = pplPal(l);
+  var src = document.createElement('canvas'); src.width = 256; src.height = 256; var sx = src.getContext('2d');
+  [PTILE[0] + l.face, PTILE[1] + l.top, PTILE[2] + l.top, PTILE[3] + l.bot, PTILE[4] + l.shoe, 40].forEach(function(tile){
+    sx.clearRect(0, 0, 256, 256); sx.drawImage(PTIMG, (tile % 8)*256, Math.floor(tile/8)*256, 256, 256, 0, 0, 256, 256); var d = sx.getImageData(0, 0, 256, 256), p = d.data;
+    for (var i = 0; i < p.length; i += 4){ var k = (p[i+1] >> 5)*3, f = p[i]/128; p[i] = Math.min(255, pal[k]*255*f); p[i+1] = Math.min(255, pal[k+1]*255*f); p[i+2] = Math.min(255, pal[k+2]*255*f); p[i+3] = 255; }
+    var cv = document.createElement('canvas'); cv.width = 512; cv.height = 256; var cx = cv.getContext('2d'); cx.putImageData(d, 0, 0); cx.putImageData(d, 256, 0); out[tile] = cv;
+  });
+  prevTiles.key = key; prevTiles.out = out; return out;
+}
 function pplRaw(key){
   if (PRAW[key] !== undefined) return PRAW[key];
   PRAW[key] = null;
@@ -4472,10 +4520,11 @@ function pplRaw(key){
     var t = (ART.people || '').trim(), nl = t.indexOf('\n'); if (nl < 0) return null;
     var idx = JSON.parse(t.slice(0, nl)), e = idx[key], body = idx.male; if (!e) return null;
     var f0 = body.clips.idle[0], need = function(o, n){ var bin = atob(t.slice(nl + 1 + Math.floor(o/3)*4, nl + 1 + Math.ceil((o + n)/3)*4 + 4)), a = new Uint8Array(n), sk = o % 3; for (var i = 0; i < n; i++) a[i] = bin.charCodeAt(i + sk); return a; };
-    var hdr = e.nt*6 + (e.hair ? 0 : e.nt*2), raw = need(e.o, hdr), dv = new DataView(raw.buffer), pr = need(e.o + hdr + f0*e.nv*6, e.nv*6), dp = new DataView(pr.buffer), r = {nt:e.nt, tri:[], reg:e.hair ? null : raw.subarray(e.nt*6, e.nt*7), sh:e.hair ? null : raw.subarray(e.nt*7, e.nt*8), p:[]};
+    var tx = !!body.tex, hdr = e.nt*6 + (e.hair ? 0 : e.nt*2) + (tx ? e.nt*12 : 0), raw = need(e.o, hdr), dv = new DataView(raw.buffer), pr = need(e.o + hdr + f0*e.nv*6, e.nv*6), dp = new DataView(pr.buffer), r = {nt:e.nt, tri:[], reg:e.hair ? null : raw.subarray(e.nt*6, e.nt*7), sh:e.hair || tx ? null : raw.subarray(e.nt*7, e.nt*8), p:[], hair:!!e.hair};
     for (var i = 0; i < e.nt*3; i++) r.tri.push(dv.getUint16(i*2, true));
+    if (tx){ var u0 = e.nt*6 + (e.hair ? 0 : e.nt*2); r.kind = e.hair ? null : raw.subarray(e.nt*7, e.nt*8); r.uv = []; for (i = 0; i < e.nt*6; i++) r.uv.push(dv.getUint16(u0 + i*2, true)/16000); }
     for (i = 0; i < e.nv; i++) r.p.push([dp.getInt16(i*6, true)/1000, dp.getInt16(i*6 + 2, true)/1000, dp.getInt16(i*6 + 4, true)/1000]);
-    r.hd = e.hd ? e.hd[f0] : null; PRAW[key] = r;
+    r.hd = e.hd ? e.hd[f0] : null; r.ht = e.ht; PRAW[key] = r;
   } catch (er){ PRAW[key] = null; }
   return PRAW[key];
 }
@@ -4489,12 +4538,25 @@ function drawPrev(){
   parts.forEach(function(pt){ var M = pt[0];
     for (var i = 0; i < M.nt; i++){ var a = P3(M.p[M.tri[i*3]]), b = P3(M.p[M.tri[i*3+1]]), d = P3(M.p[M.tri[i*3+2]]);
       var ux = b[0]-a[0], uy = b[1]-a[1], uz = b[2]-a[2], vx = d[0]-a[0], vy = d[1]-a[1], vz = d[2]-a[2], nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx, nl2 = Math.hypot(nx, ny, nz) || 1;
-      var lit = 0.55 + 0.45*Math.abs((nx*0.75 + ny*0.45 + nz*0.3)/nl2), col = pt[1] || pal[M.reg[i]], shd = pt[1] ? 1 : M.sh[i]/200;
-      tris.push([(a[0] + b[0] + d[0])/3, a, b, d, 'rgb(' + Math.min(255, col[0]*lit*shd|0) + ',' + Math.min(255, col[1]*lit*shd|0) + ',' + Math.min(255, col[2]*lit*shd|0) + ')']); } });
+      var lit = 0.55 + 0.45*Math.abs((nx*0.75 + ny*0.45 + nz*0.3)/nl2), col = pt[1] || pal[M.reg[i]], shd = pt[1] || !M.sh ? 1 : M.sh[i]/200;
+      var pt5 = M.uv ? {tile:M.hair ? 40 : PTILE[M.kind[i]] + [l.face, l.top, l.top, l.bot, l.shoe][M.kind[i]], uv:M.uv.slice(i*6, i*6 + 6)} : null;
+      tris.push([(a[0] + b[0] + d[0])/3, a, b, d, 'rgb(' + Math.min(255, col[0]*lit*shd|0) + ',' + Math.min(255, col[1]*lit*shd|0) + ',' + Math.min(255, col[2]*lit*shd|0) + ')', pt5, lit]); } });
   tris.sort(function(x, y){ return x[0] - y[0]; });   /* far side first: the model faces +x, which this view turns toward the viewer */
-  var X = function(p){ return W2/2 - p[2]*sc; }, Y = function(p){ return H2 - 4 - p[1]*sc; };
-  tris.forEach(function(t){ c.fillStyle = c.strokeStyle = t[4]; c.lineWidth = 0.6; c.beginPath(); c.moveTo(X(t[1]), Y(t[1])); c.lineTo(X(t[2]), Y(t[2])); c.lineTo(X(t[3]), Y(t[3])); c.closePath(); c.fill(); c.stroke(); });
-  if (l.hat && B.hd){ var hp = P3(B.hd), hx = X(hp), hy = Y([0, hp[1] + 0.16]); c.fillStyle = ['', '#b33a3a', '#4a6a8a', '#6a7a5a'][l.hat]; c.fillRect(hx - 0.16*sc, hy - 0.07*sc, 0.32*sc, 0.13*sc); if (l.hat === 1) c.fillRect(hx - 0.3*sc, hy + 0.03*sc, 0.16*sc, 0.03*sc); }
+  var X = function(p){ return W2/2 - p[2]*sc; }, Y = function(p){ return H2 - 4 - p[1]*sc; }, TT = prevTiles(l);
+  tris.forEach(function(t){
+    var x0 = X(t[1]), y0 = Y(t[1]), x1 = X(t[2]), y1 = Y(t[2]), x2 = X(t[3]), y2 = Y(t[3]);
+    if (TT && t[5]){   /* painted: map the triangle's patch of texture onto it */
+      var cv = TT[t[5].tile], uv = t[5].uv, k = 256, u0 = uv[0]*k, v0 = uv[1]*k, u1 = uv[2]*k, v1 = uv[3]*k, u2 = uv[4]*k, v2 = uv[5]*k, det = (u1 - u0)*(v2 - v0) - (u2 - u0)*(v1 - v0);
+      if (cv && Math.abs(det) > 1e-6){
+        var a = ((x1 - x0)*(v2 - v0) - (x2 - x0)*(v1 - v0))/det, b2 = ((x2 - x0)*(u1 - u0) - (x1 - x0)*(u2 - u0))/det, d2 = ((y1 - y0)*(v2 - v0) - (y2 - y0)*(v1 - v0))/det, e2 = ((y2 - y0)*(u1 - u0) - (y1 - y0)*(u2 - u0))/det;
+        var mx = (x0 + x1 + x2)/3, my = (y0 + y1 + y2)/3, g = function(x, m){ return x + (x - m)*0.12; };
+        c.save(); c.beginPath(); c.moveTo(g(x0, mx), g(y0, my)); c.lineTo(g(x1, mx), g(y1, my)); c.lineTo(g(x2, mx), g(y2, my)); c.closePath(); c.clip();
+        c.setTransform(a, d2, b2, e2, x0 - a*u0 - b2*v0, y0 - d2*u0 - e2*v0); c.drawImage(cv, 0, 0); c.setTransform(1, 0, 0, 1, 0, 0);
+        c.fillStyle = 'rgba(30,20,30,' + (1 - t[6]).toFixed(2) + ')'; c.fill(); c.restore(); return;
+      }
+    }
+    c.fillStyle = c.strokeStyle = t[4]; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineTo(x2, y2); c.closePath(); c.fill(); c.stroke(); });
+  if (l.hat && B.hd){ var hp = P3(B.hd), hx = X(hp), hy = Y([0, hp[1] + (B.ht || 0.16) - 0.06]); c.fillStyle = l.hat === 3 ? '#6a7a5a' : l.acc; c.fillRect(hx - 0.13*sc, hy - 0.065*sc, 0.26*sc, 0.13*sc); if (l.hat === 1) c.fillRect(hx - 0.26*sc, hy + 0.035*sc, 0.15*sc, 0.025*sc); if (l.hat === 2){ c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(hx - 0.135*sc, hy + 0.035*sc, 0.27*sc, 0.05*sc); } }
 }
 function syncChar(fromRoster){
   var list = savedChars(), r = el('roster'), cur = fromRoster ? r.value : charSlug(), found = null, h = '';
@@ -4502,7 +4564,7 @@ function syncChar(fromRoster){
   r.innerHTML = h + '<option value="">New survivor</option>'; r.value = found ? found.slug : '';
   if (found){
     var c = found.c, l = cleanLook(c.look); if (fromRoster) el('pname').value = c.name || found.slug;
-    el('cBuild').value = l.build; el('cSkin').value = l.skin; el('cShirt').value = l.shirt; el('cPants').value = l.pants; el('cHat').value = l.hat; el('cBody').value = l.body; el('cHair').value = l.hair; el('cHairC').value = l.hc;
+    el('cBuild').value = l.build; el('cSkin').value = l.skin; el('cShirt').value = l.shirt; el('cPants').value = l.pants; el('cHat').value = l.hat; el('cBody').value = l.body; el('cHair').value = l.hair; el('cHairC').value = l.hc; el('cFace').value = l.face; el('cTop').value = l.top; el('cBot').value = l.bot; el('cShoe').value = l.shoe; el('cAcc').value = l.acc;
     if (c.bg) el('cBg').value = c.bg; el('cBg').disabled = !!c.bg;
     var sk = c.skills || {}; el('cInfo').textContent = 'Scavenging ' + xpLvl(sk.scav) + ' \u00b7 Melee ' + xpLvl(sk.melee) + ' \u00b7 Endurance ' + xpLvl(sk.endur) + ' \u00b7 Deaths ' + (c.deaths | 0) + '. Background is fixed once a survivor has played.';
   } else { el('cBg').disabled = false; if (fromRoster) el('pname').value = ''; el('cInfo').textContent = 'New survivor. Pick a name, a look and a background.'; }
@@ -4510,7 +4572,7 @@ function syncChar(fromRoster){
 }
 el('roster').addEventListener('change', function(){ syncChar(true); });
 el('pname').addEventListener('input', function(){ syncChar(false); });
-['cBuild', 'cSkin', 'cShirt', 'cPants', 'cHat', 'cBody', 'cHair', 'cHairC'].forEach(function(id){ el(id).addEventListener('input', drawPrev); });
+['cBuild', 'cSkin', 'cShirt', 'cPants', 'cHat', 'cBody', 'cHair', 'cHairC', 'cFace', 'cTop', 'cBot', 'cShoe', 'cAcc'].forEach(function(id){ el(id).addEventListener('input', drawPrev); });
 (function(){
   var n = lsGet('lastblock:name'), q = lsGet('lastblock:quality'), vr = lsGet('lastblock:vrule');
   if (n) el('pname').value = n; if (vr) el('vRule').value = vr;

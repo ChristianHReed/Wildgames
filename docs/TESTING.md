@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.30.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.30.2) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -249,6 +249,13 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3p.4 Let an alien see you get into a wardrobe (it drags you out). Hide in the same wardrobe again later at night: a hunting stalker comes to check it.
 - [ ] 3p.5 Climb onto a roof with a stalker after you: it climbs the ladder and attacks. Climb down or jump: it drops off the roof after you. Swarmers and giants still wait below.
 - [ ] 3p.6 Save and resume: the stalker still remembers the hiding places.
+
+## Stage 3q: the painted survivors
+
+- [ ] 3q.1 On the start page, change Face, Top, Bottoms, Shoes and Second colour: the small figure updates with the painted details.
+- [ ] 3q.2 In the game press P for third person: your survivor shows the same face, clothes and colours, at a smooth frame rate on the iPhone.
+- [ ] 3q.3 Traders each look different. A friend joining shows their own look.
+- [ ] 3q.4 A cap, beanie or helmet sits above the eyes.
 
 ## Stage 4: aliens and weather
 

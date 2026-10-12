@@ -3,8 +3,10 @@
 "Universal Animation Library" packs (CC0), which share the same skeleton.
 Usage: python3 tools/build_people.py <Universal Base Characters folder> <Universal Animation Library 2 folder> [<Universal Animation Library folder>] [full] [preview]
 Every clip is sampled into a handful of frames and the skinned body is baked for each frame, so the game only swaps meshes.
-Each triangle stores which part of the body it is (skin, shirt, trousers, shoes, hair, eyes) so the game can colour it from the
-survivor's chosen look. Output: tools/out/<lite|full>/people.txt. The packs themselves are not copied into the repo."""
+Each triangle stores which part of the body it is (skin, shirt, trousers, shoes, hair) for plain colours, and which painted tile it
+uses (head, torso, arm, legs, feet, hair) with texture coordinates made by wrapping each part in a cylinder in the rest pose, so the
+detail (faces, collars, stripes, pockets, laces) comes from tools/paint_people.py rather than from extra geometry. The packs' own
+eye and eyebrow meshes are left out: eyes and brows are painted. Output: tools/out/<lite|full>/people.txt. The packs are not copied into the repo."""
 import sys, os, json, struct, base64, math, glob
 import numpy as np
 from PIL import Image
@@ -70,6 +72,9 @@ lib = [p for p in glob.glob(os.path.join(glob.escape(UAL2), '**', '*.glb'), recu
 if UAL1: lib = [p for p in glob.glob(os.path.join(glob.escape(UAL1), '**', '*.glb'), recursive=True) if not p.endswith('_RM.glb') and 'Mannequin' not in p] + lib
 CL = Clips(lib); print('clips', len(CL.c))
 
+HEADS = 1.24
+# softer, less heroic proportions: thinner limbs and a narrower chest (each bone's own y axis runs along it)
+SHAPE = {'upperarm_l':(0.84, 1, 0.84), 'upperarm_r':(0.84, 1, 0.84), 'thigh_l':(0.88, 1, 0.88), 'thigh_r':(0.88, 1, 0.88), 'spine_03':(0.92, 1, 0.9), 'spine_02':(0.95, 1, 0.93)}
 LEG = ('pelvis', 'thigh', 'calf', 'foot', 'ball', 'root')
 REG = {'skin':0, 'shirt':1, 'pants':2, 'shoes':3, 'hair':4, 'eyes':5}
 
@@ -91,9 +96,12 @@ def build(gltf, tex, target, hair_files):
         for c in nd.get('children', []): par[c] = i
     rest = [(np.array(nd.get('translation', [0, 0, 0]), float), np.array(nd.get('rotation', [0, 0, 0, 1]), float), np.array(nd.get('scale', [1, 1, 1]), float)) for nd in N]
     name = [nd.get('name') for nd in N]; jname = [name[i] for i in joints]
-    P, UV, JI, JW, TR, MAT = [], [], [], [], [], []; base = 0
+    P, UV, JI, JW, TR, MAT = [], [], [], [], [], []; base = 0; eyes = None
     for i, nd in enumerate(N):
         if 'mesh' not in nd: continue
+        if nd.get('name') in ('Eyes', 'Eyebrows'):
+            if nd.get('name') == 'Eyes': ep = acc(j['meshes'][nd['mesh']]['primitives'][0]['attributes']['POSITION']); eyes = ep[ep[:, 0] > 0].mean(0)
+            continue
         for pr in j['meshes'][nd['mesh']]['primitives']:
             a = pr['attributes']; p = acc(a['POSITION']); P.append(p); UV.append(acc(a['TEXCOORD_0'])); JI.append(acc(a['JOINTS_0']).astype(int)); JW.append(acc(a['WEIGHTS_0']))
             t = acc(pr['indices']).reshape(-1, 3).astype(int) + base; TR.append(t); MAT += [j['materials'][pr['material']]['name']]*len(t); base += len(p)
@@ -150,6 +158,42 @@ def build(gltf, tex, target, hair_files):
     for i in np.argsort(-dd): rep[inv[i]] = i
     VI = JI[rep]; VW = JW[rep]; treg = reg[keep]; tsh = shade[keep]
     used = np.unique(tri); remap = -np.ones(nv, int); remap[used] = np.arange(len(used)); tri = remap[tri]; V = V[used]; VI = VI[used]; VW = VW[used]
+    # which painted tile each triangle uses, and where it falls on it
+    vb = np.array([jname[k] for k in JI[np.arange(len(P)), JW.argmax(1)][rep]]); vb = vb[used] if len(vb) != len(V) else vb
+    tb = vb[tri]   # bone of each corner
+    def kind_of(names):
+        n = names[0]
+        if n.startswith(('Head', 'neck')): return 0
+        if n.startswith(('spine', 'clavicle')): return 1
+        if n.startswith(('upperarm', 'lowerarm', 'hand', 'index', 'middle', 'pinky', 'ring', 'thumb')): return 2
+        if n.startswith(('foot', 'ball')): return 4
+        return 3
+    tkind = np.array([kind_of(tb[k]) for k in range(len(tri))])
+    vk = lambda kk: V[np.unique(tri[tkind == kk])]
+    vbn = lambda pre: V[np.array([b.startswith(pre) for b in vb])]
+    H, T, A, L, F = vk(0), vk(1), vk(2), vk(3), vk(4)
+    neck = vbn('neck'); hand = vbn(('hand', 'index', 'middle', 'pinky', 'ring', 'thumb')); thigh = vbn('thigh'); calf = vbn('calf'); pelv = vbn('pelvis'); upa = vbn('upperarm')
+    ey = eyes if eyes is not None else np.array([0.03, H[:, 1].min() + 0.6*(H[:, 1].max() - H[:, 1].min()), 0.07])
+    K = dict(h0=neck[:, 1].min(), he=ey[1], h1=H[:, 1].max(), hz=H[:, 2].mean() - 0.01, t0=pelv[:, 1].max() - 0.06, t1=neck[:, 1].min() + 0.02, tz=T[:, 2].mean(),
+             a0=np.abs(upa[:, 0]).min(), aw=np.abs(hand[:, 0]).min(), a1=np.abs(A[:, 0]).max(), ay=A[:, 1].mean(), az=A[:, 2].mean(),
+             knee=(thigh[:, 1].min() + calf[:, 1].max())/2, waist=pelv[:, 1].max(), lx=np.abs(thigh[:, 0]).mean(), lz=thigh[:, 2].mean(), fz0=F[:, 2].min(), fz1=F[:, 2].max(), fy1=F[:, 1].max())
+    pw = lambda x, xs, vs: np.interp(x, xs, vs)
+    def uv_of(p, kk, cen=None):
+        x, y, z = p[:, 0], p[:, 1], p[:, 2]
+        if kk == 0: return 0.5 + np.arctan2(x, z - K['hz'])/(2*np.pi), pw(y, [K['h0'], K['he'], K['h1']], [0.02, 0.6, 0.98])
+        if kk == 1: return 0.5 + np.arctan2(x, z - K['tz'])/(2*np.pi), pw(y, [K['t0'], K['t1']], [0.02, 0.98])
+        if kk == 2: return 0.5 + np.arctan2(y - K['ay'], z - K['az'])/(2*np.pi), pw(np.abs(x), [K['a0'], K['aw'], K['a1']], [0.02, 0.7, 0.98])
+        if kk == 3:
+            if cen: u = 0.5 + np.arctan2(x, z - K['tz'])/(2*np.pi)
+            else: u = 0.5 + np.arctan2(np.abs(x) - K['lx'], z - K['lz'])/(2*np.pi)
+            return u, pw(y, [0, K['knee'], K['waist']], [0.02, 0.5, 0.98])
+        return pw(z, [K['fz0'], K['fz1']], [0.04, 0.96]), pw(y, [-0.01, K['fy1']], [0.04, 0.96])
+    tuv = np.zeros((len(tri), 3, 2))
+    for k in range(len(tri)):
+        kk = tkind[k]; cen = kk == 3 and all(b.startswith(('pelvis', 'root')) for b in tb[k])
+        u, v = uv_of(V[tri[k]], kk, cen)
+        if kk != 4 and u.max() - u.min() > 0.5: u = np.where(u < 0.5, u + 1, u)   # across the seam at the back
+        tuv[k, :, 0] = u; tuv[k, :, 1] = np.clip(v, 0.01, 0.99)
     hj_ = joints.index(name.index('Head')) if 'Head' in name else 0
     def world_mats(sample):
         L = []
@@ -157,6 +201,7 @@ def build(gltf, tex, target, hair_files):
             t, r, s = rest[i]; a = sample.get(name[i], {}) if sample else {}
             if 'rotation' in a: r = a['rotation']
             if 'translation' in a and name[i] in ('pelvis',): t = a['translation']
+            if name[i] in SHAPE: s = s*np.array(SHAPE[name[i]])
             L.append(trs(t, r, s))
         W = [None]*len(N)
         def wm(i):
@@ -164,13 +209,19 @@ def build(gltf, tex, target, hair_files):
             return W[i]
         return [wm(i) for i in range(len(N))]
     def pose(sample, extra=None):
-        W = world_mats(sample); Ms = np.stack([W[joints[k]] @ IBM[k] for k in range(len(joints))])
+        W = world_mats(sample); W[name.index('Head')] = W[name.index('Head')] @ np.diag([HEADS, HEADS, HEADS, 1.0])   # a bigger head, for a friendlier, more readable figure
+        Ms = np.stack([W[joints[k]] @ IBM[k] for k in range(len(joints))])
         Vh = np.c_[V, np.ones(len(V))]; o = np.zeros((len(V), 3))
         for k in range(4): o += VW[:, k:k+1]*np.einsum('nij,nj->ni', Ms[VI[:, k]], Vh)[:, :3]
         hm = Ms[hj_]; hs = []
         for _, hp, _ in hairs: hs.append((np.c_[hp, np.ones(len(hp))] @ (hm).T)[:, :3])
         return o, hs, W[joints[hj_]][:3, 3]
-    return dict(V=V, tri=tri, reg=treg, shade=tsh, pose=pose, hairs=hairs)
+    huv = []
+    for _, hp, ht in hairs:
+        c = H[:, [0, 2]].mean(0); x, y, z = hp[:, 0], hp[:, 1], hp[:, 2]; u = 0.5 + np.arctan2(x - c[0], z - c[1])/(2*np.pi); v = np.clip((y - K['h0'])/(K['h1'] + 0.06 - K['h0']), 0.01, 0.99)
+        uu = u[ht]; vv = v[ht]; sw = (uu.max(1) - uu.min(1)) > 0.5; uu[sw] = np.where(uu[sw] < 0.5, uu[sw] + 1, uu[sw]); huv.append(np.stack([uu, vv], 2))
+    hjy = [ (np.linalg.inv(IBM[k]))[1, 3] for k in [hj_] ][0]
+    return dict(V=V, tri=tri, reg=treg, kind=tkind, uv=tuv, huv=huv, pose=pose, hairs=hairs, ht=float((K['h1'] - hjy)*HEADS), hf=float((H[:, 2].max() - H[:, 2].mean())*HEADS))
 
 def frames(clip, n, t0=0, t1=None):
     L = CL.length(clip); t1 = L if t1 is None else t1
@@ -225,11 +276,12 @@ for key, gl, tex in [('male', 'Superhero_Male_FullBody.gltf', 'T_Superhero_Male_
     lift = -min(p[:, 1].min() for i, p in enumerate(poses) if i < clips['dead'][0] or i >= clips['dead'][0] + 1)
     lift = -np.median([p[:, 1].min() for p in poses])
     q = lambda p: np.clip(np.round(FWD(p + np.array([0, lift, 0]))*1000), -32000, 32000).astype('<i2')
-    data = B['tri'].astype('<u2').tobytes() + B['reg'].astype(np.uint8).tobytes() + np.round(B['shade']*200).astype(np.uint8).tobytes() + b''.join(q(p).tobytes() for p in poses)
-    info = {'nv': len(B['V']), 'nt': len(B['tri']), 'clips': clips, 'h': round(float(poses[0][:, 1].max() + lift), 2), 'o': len(blob), 'hd': [[round(float(v), 3) for v in FWD(np.array([h]) + np.array([0, lift, 0]))[0]] for h in heads]}
+    quv = lambda a: np.clip(np.round(a*16000), 0, 65535).astype('<u2').tobytes()
+    data = B['tri'].astype('<u2').tobytes() + B['reg'].astype(np.uint8).tobytes() + B['kind'].astype(np.uint8).tobytes() + quv(B['uv']) + b''.join(q(p).tobytes() for p in poses)
+    info = {'tex': 1, 'ht': round(B['ht'], 3), 'hf': round(B['hf'], 3), 'nv': len(B['V']), 'nt': len(B['tri']), 'clips': clips, 'h': round(float(poses[0][:, 1].max() + lift), 2), 'o': len(blob), 'hd': [[round(float(v), 3) for v in FWD(np.array([h]) + np.array([0, lift, 0]))[0]] for h in heads]}
     blob += data; index[key] = info
     for k, (hn, hp, ht) in enumerate(B['hairs']):
-        hd2 = ht.astype('<u2').tobytes() + b''.join(q(p).tobytes() for p in hairp[k]); index[key + ':' + hn] = {'nv': len(hp), 'nt': len(ht), 'o': len(blob), 'hair': 1}; blob += hd2
+        hd2 = ht.astype('<u2').tobytes() + quv(B['huv'][k]) + b''.join(q(p).tobytes() for p in hairp[k]); index[key + ':' + hn] = {'nv': len(hp), 'nt': len(ht), 'o': len(blob), 'hair': 1}; blob += hd2
     print(key, info['nv'], info['nt'], 'frames', len(poses), 'h', info['h'], 'hair', [(h[0], len(h[1])) for h in B['hairs']])
     if PREVIEW:
         import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
