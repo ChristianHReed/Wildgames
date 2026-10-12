@@ -358,7 +358,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.30.3.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.31.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1438,7 +1438,13 @@ var PLAN = {
 PLAN.apartments = PLAN.house; PLAN.food = PLAN.restaurant; PLAN.medical = PLAN.clinic; PLAN.industrial = PLAN.garage; PLAN.civic = PLAN.office;
 /* ---- upstairs: homes two storeys or taller get a staircase and a second floor. FH is the height of one storey ---- */
 var FH = 3.0, RUN = 3.6, PLAN_UP = {one:'bedroom', two:['bedroom', 'bath'], rooms:['bedroom', 'bath', 'bedroom'], more:['bedroom', 'store', 'office'], small:'bath'};
-function hasUp(b){ return b.cat === 'house' && b.h > 6 && !!b.door && b.area >= 60 && b.area < 900; }
+/* what is upstairs depends on the building: bedrooms over a home, a flat over a shop, offices, wards, bunks, classrooms... */
+var UPP = {flat:{one:'studio', two:['living_k', 'bedroom'], rooms:['living_k', 'bedroom', 'bath'], more:['bedroom', 'store'], small:'bath'}, office:{one:'office', rooms:['office', 'breakroom', 'office'], more:['office', 'store']},
+  clinic:{one:'ward', rooms:['ward', 'exam', 'office'], more:['ward', 'office']}, police:{one:'office', rooms:['office', 'store'], more:['office']}, fire:{one:'bunkroom', rooms:['bunkroom', 'breakroom'], more:['office']},
+  school:{one:'classroom', rooms:['classroom', 'office'], more:['classroom']}, library:{one:'libhall', rooms:['libhall', 'office'], more:['office']}, hotel:{one:'hroom', rooms:['hroom', 'hroom', 'bath'], more:['hroom'], small:'bath'}};
+var UPK = {house:PLAN_UP, apartments:PLAN_UP, office:UPP.office, bank:UPP.office, clinic:UPP.clinic, hospital:UPP.clinic, police:UPP.police, fire:UPP.fire, school:UPP.school, library:UPP.library, hotel:UPP.hotel}, NOUP = {garage:1, parking:1, church:1, warehouse:1, venue:1, gym:1, fuel:1};
+function upPlan(b){ return UPK[b.kind] || (b.cat === 'house' ? PLAN_UP : b.cat === 'civic' ? UPP.office : b.cat === 'medical' ? UPP.clinic : UPP.flat); }
+function hasUp(b){ return !NOUP[b.kind] && b.h > 6 && !!b.door && b.area >= 60 && b.area < 900; }
 /* where along the stairs a point is: 0 at the bottom step, 1 at the top, -1 when not on them */
 function stairT(b, x, y){
   var S = b && b.int && b.int.stair; if (!S) return -1; var u = x*S.ux + y*S.uy, v = x*S.vx + y*S.vy, a = S.A ? v : u, c = S.A ? u : v;
@@ -1478,6 +1484,7 @@ function condTick(dt){
   for (var i = drops.length - 1; i >= 0; i--) if (time - drops[i].t > 90) drops.splice(i, 1);
   var tm = el('tiredMask'); if (tm) tm.style.opacity = sl ? 0 : P.rest < 12 ? (0.18 + 0.3*Math.max(0, Math.sin(time*0.8))*Math.max(0, Math.sin(time*0.23))).toFixed(2) : 0;
 }
+function drawHatch(m){ var H = P.roof && hatchOf(P.roof); if (!H) return; m.yo = roofY(P.roof); m.ybox(H.x, H.y, 0, 0, 0, 0.04, 0.46, 0.04, 0.46, [70,72,76]); m.ybox(H.x, H.y, 0, 0, 0, 0.085, 0.36, 0.01, 0.36, [120,124,128]); m.yo = 0; }
 function drawDrops(m){ for (var i = 0; i < drops.length; i++){ var d = drops[i]; if (Math.abs(d.x - P.x) > 40 || Math.abs(d.y - P.y) > 40) continue; m.yo = d.y0; m.ybox(d.x, d.y, i, 0, 0, 0.025, 0.07, 0.006, 0.05, [120,18,18]); } m.yo = 0; }
 function condText(){
   var c = []; if (P.bleed > 0) c.push('Bleeding'); else if (P.wound) c.push('Open wound'); if (P.inf) c.push('Infected'); if (P.leg === 1) c.push('Broken leg'); else if (P.leg === 2) c.push('Splinted leg ' + Math.ceil(P.legT/60) + ' min');
@@ -1490,17 +1497,19 @@ function ladNear(x, y, r){
   for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){ var cell = world.grid.get(gk(cx, cy)); if (!cell) continue; for (var i = 0; i < cell.length; i++){ var L = cell[i].lad; if (!L || cell[i].gone) continue; var d = Math.hypot(L.fx - x, L.fy - y); if (d < bd){ bd = d; best = L; } } }
   return best;
 }
+function hatchOf(b){ var h = b && b.int && b.int.hatch; if (!h) return null; return h.L || (h.L = {hatch:1, b:b, x:h.x, y:h.y, fx:h.x, fy:h.y, tx:h.x, ty:h.y, nx:1, ny:0}); }
 function ladTarget(L, up){ var k = up ? 'tgU' : 'tgD'; return L[k] || (L[k] = {fix:'ladder', up:up, L:L, b:L.b, x:up ? L.fx : L.tx, y:up ? L.fy : L.ty}); }
 function startClimb(L, up){
-  if (P.hide || P.veh) return; if (P.leg === 1){ toast('You cannot climb a ladder on a broken leg. Splint it first.', 3); return; } P.climbL = {L:L, up:up, t:0, dur:Math.max(1.6, (roofY(L.b) - groundAt(L.fx, L.fy))/2.2)};
-  P.x = L.fx; P.y = L.fy; P.yaw = Math.atan2(-L.ny, -L.nx); P.roof = null; P.crouch = false; sfx('metal', L.x, L.y, 0.5, 0.8);
+  if (P.hide || P.veh) return; if (P.leg === 1){ toast('You cannot climb a ladder on a broken leg. Splint it first.', 3); return; } P.climbL = {L:L, up:up, t:0, dur:Math.max(1.6, (roofY(L.b) - climbBase(L))/2.2)};
+  P.x = L.fx; P.y = L.fy; if (!L.hatch) P.yaw = Math.atan2(-L.ny, -L.nx); P.roof = null; P.crouch = false; sfx('metal', L.x, L.y, 0.5, 0.8);
 }
 function climbTick(dt){
   var c = P.climbL; c.t += dt/c.dur; P.x = c.L.fx; P.y = c.L.fy; if (Math.floor(c.t*8) !== c.s){ c.s = Math.floor(c.t*8); sfx('metal', c.L.x, c.L.y, 0.25, 0.9 + Math.random()*0.3); }
-  if (c.t < 1) return; P.climbL = null;
-  if (c.up){ P.roof = c.L.b; P.x = c.L.tx; P.y = c.L.ty; if (!P.roofSaid){ P.roofSaid = true; toast('On the roof. Aliens cannot climb up, but they can see you from the street. Walk off the edge and you fall.', 6); } }
+  if (c.t < 1) return; P.climbL = null; if (!c.up && c.L.hatch){ P.lvl = 1; return; }
+  if (c.up){ P.roof = c.L.b; P.x = c.L.tx; P.y = c.L.ty; if (!P.roofSaid){ P.roofSaid = true; toast('On the roof. Most aliens cannot climb up, though stalkers use ladders, and they can see you from the street. Walk off the edge and you fall.', 6); } }
 }
-function climbH(){ var c = P.climbL, g = groundAt(c.L.fx, c.L.fy), r = roofY(c.L.b), f = c.up ? c.t : 1 - c.t; return g + (r - g)*Math.max(0, Math.min(1, f)); }
+function climbBase(L){ return L.hatch ? (L.b.base || 0) + FH : groundAt(L.fx, L.fy); }
+function climbH(){ var c = P.climbL, g = climbBase(c.L), r = roofY(c.L.b), f = c.up ? c.t : 1 - c.t; return g + (r - g)*Math.max(0, Math.min(1, f)); }
 function roofOk(b, x, y){ return pip(b.pts, x, y) && polyDist(b.pts, x, y, true) > 0.3; }
 function roofMove(e, dx, dy){
   var b = P.roof, n = Math.max(1, Math.ceil(Math.hypot(dx, dy)/0.2));
@@ -1530,7 +1539,7 @@ function clipHalf(poly, ax, val, less){
 }
 function genInterior(b){
   var A = genLevel(b, 0, null, 0), I = {segs:A.segs, circs:A.circs, conts:A.conts, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stair:A.stair}, m = A.m;
-  if (A.stair){ var B = genLevel(b, 1, A.stair, A.cn); m.p = m.p.concat(B.m.p); m.c = m.c.concat(B.m.c); m.t = m.t.concat(B.m.t); I.up = {segs:B.segs, circs:B.circs}; I.conts = I.conts.concat(B.conts); I.fixes = I.fixes.concat(B.fixes); I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up:' + r; })); I.n += B.n; }
+  if (A.stair){ var B = genLevel(b, 1, A.stair, A.cn); m.p = m.p.concat(B.m.p); m.c = m.c.concat(B.m.c); m.t = m.t.concat(B.m.t); I.up = {segs:B.segs, circs:B.circs}; I.conts = I.conts.concat(B.conts); I.fixes = I.fixes.concat(B.fixes); I.hatch = B.hatch; I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up:' + r; })); I.n += B.n; }
   I.g = upload(m); return I;
 }
 function genLevel(b, lvl, ST, CB){
@@ -1594,7 +1603,7 @@ function genLevel(b, lvl, ST, CB){
   var eu = ST ? eu0 : b.door ? b.door.x*ux + b.door.y*uy : b.cx*ux + b.cy*uy, ev = ST ? ev0 : b.door ? b.door.x*vx + b.door.y*vy : b.cx*vx + b.cy*vy;
   var rooms = leaves.map(function(lf){ var cu = (lf[0] + lf[2])/2, cv = (lf[1] + lf[3])/2; return {a0:lf[0], b0:lf[1], a1:lf[2], b1:lf[3], cu:cu, cv:cv, w:lf[2] - lf[0], h:lf[3] - lf[1], area:(lf[2] - lf[0])*(lf[3] - lf[1]), d:Math.hypot(cu - eu, cv - ev)}; });
   rooms.sort(function(x, y){ return x.d - y.d; });
-  var plan = lvl ? PLAN_UP : PLAN[b.kind] || PLAN[b.cat] || PLAN.shop;
+  var plan = lvl ? upPlan(b) : PLAN[b.kind] || PLAN[b.cat] || PLAN.shop;
   rooms.forEach(function(R, ri){ R.type = rooms.length === 1 ? (plan.one || plan.rooms[0]) : rooms.length === 2 && plan.two ? plan.two[ri] : plan.rooms[ri] || plan.more[(ri - plan.rooms.length) % plan.more.length]; });
   if (plan.small && rooms.length >= 3){ var sm = 1; for (i = 2; i < rooms.length; i++) if (rooms[i].area < rooms[sm].area) sm = i; rooms[sm].type = plan.small; }
   function free(cu, cv, hu, hv, R, flat){
@@ -1766,8 +1775,15 @@ function genLevel(b, lvl, ST, CB){
   };
   flat(0.1, WHITE, [b.cat === 'house' ? TX.wood : TX.floorTile, 0.5], lvl ? HU : null);
   flat(ceilY, cc, null, !lvl && STR ? HU : null);
+  var hatch = null;
+  if (lvl && b.lad !== undefined && b.h > FH + 2.4){   /* a flat roof: a ladder at the top of the stairs goes up through a hatch */
+    hatch = {x:LX, y:LY}; var hc = C('#6a6e72'), hd2 = C('#3a3d40');
+    for (var hs = -1; hs <= 1; hs += 2) m.box(LX + hs*0.22, ceilY/2, LY, [0.025, 0, 0], [0, ceilY/2, 0], [0, 0, 0.025], hc);
+    for (var hr = 0.3; hr < ceilY - 0.1; hr += 0.32) m.box(LX, hr, LY, [0.22, 0, 0], [0, 0.015, 0], [0, 0, 0.018], hc);
+    m.box(LX, ceilY - 0.02, LY, [0.42, 0, 0], [0, 0.02, 0], [0, 0, 0.42], hd2);
+  }
   var yo = (world.hg ? b.base : 0) + lvl*FH; if (yo) for (i = 1; i < m.p.length; i += 3) m.p[i] += yo;
-  return {m:m, cn:cn, stair:lvl ? null : SR, segs:segs, circs:circs, conts:conts, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
+  return {hatch:hatch, m:m, cn:cn, stair:lvl ? null : SR, segs:segs, circs:circs, conts:conts, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -1925,7 +1941,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.30.3';
+var VERSION = '0.31';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2135,7 +2151,8 @@ function place(kind){
 /* ================= gameplay ================= */
 function findTarget(){
   if (P.veh || P.climbL) return null;
-  if (P.roof){ var LR = P.roof.lad; return LR && Math.hypot(LR.tx - P.x, LR.ty - P.y) < 1.7 ? ladTarget(LR, false) : null; }
+  if (P.roof){ var HT0 = hatchOf(P.roof); if (HT0 && Math.hypot(HT0.x - P.x, HT0.y - P.y) < 1.5) return ladTarget(HT0, false); var LR = P.roof.lad; return LR && Math.hypot(LR.tx - P.x, LR.ty - P.y) < 1.7 ? ladTarget(LR, false) : null; }
+  if (P.inside && P.lvl === 1){ var HT1 = hatchOf(P.inside); if (HT1 && Math.hypot(HT1.x - P.x, HT1.y - P.y) < 1.1) return ladTarget(HT1, true); }
   var best = null, bd = 2.4, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), i, j, dx, dy, d;
   for (i = 0; i < loaded.length; i++){
     var b = loaded[i]; if (P.x < b.minx - 2.5 || P.x > b.maxx + 2.5 || P.y < b.miny - 2.5 || P.y > b.maxy + 2.5) continue;
@@ -2378,7 +2395,7 @@ function route(z, gx, gy, r, dt){
 /* ---- furniture you can use: beds to sleep in, stoves to cook on, taps and toilet tanks for water ---- */
 function fixText(o){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ';
-  if (o.fix === 'ladder') return E + (o.up ? 'climb the ladder to the roof (' + Math.round(roofY(o.b) - groundAt(o.L.fx, o.L.fy)) + ' m)' : 'climb back down the ladder');
+  if (o.fix === 'ladder') return o.L.hatch ? E + (o.up ? 'climb up through the roof hatch' : 'climb down through the hatch') : E + (o.up ? 'climb the ladder to the roof (' + Math.round(roofY(o.b) - groundAt(o.L.fx, o.L.fy)) + ' m)' : 'climb back down the ladder');
   if (o.fix === 'bed') return E + 'sleep in the ' + o.name + ' until morning';
   if (o.fix === 'stove') return inv.dirty > 0 && inv.wood > 0 ? E + 'boil your water (' + inv.dirty + ' bottle' + (inv.dirty > 1 ? 's' : '') + ', 1 wood)' : (inv.food > 0 || inv.fresh > 0) && inv.wood > 0 ? E + 'cook a hot meal (1 food, 1 wood)' : 'Stove \u00b7 a hot meal takes 1 food and 1 wood; boiling water takes 1 wood';
   if (o.fix === 'bench'){ var bw = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; return !bw ? 'Tool bench \u00b7 equip a made weapon to repair it here' : durOf(bw) >= 1 ? 'Tool bench \u00b7 your ' + DESIGNS[bw].name + ' is in good shape' : E + 'repair your ' + DESIGNS[bw].name + ' (' + pct(durOf(bw)) + ', 1 scrap)'; }
@@ -3409,7 +3426,7 @@ function render(){
   var m = new Mesh(), x, y, far = world.hg ? world.hg.min - 3 : 0;
   m.pl = [TX.grass, 0.25]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [236,244,222], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
-  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m);
+  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); m.yo += ops[i].lvl ? FH : 0; if (ops[i].rf === 1){ var orb = buildingAt(ops[i].x, ops[i].y); if (orb) m.yo = roofY(orb); } queuePerson(m, ops[i], lookOf(ops[i]), now); }

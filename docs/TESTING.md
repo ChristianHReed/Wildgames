@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.30.3) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.31) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -257,6 +257,12 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3q.3 Traders each look different. A friend joining shows their own look.
 - [ ] 3q.4 A cap, beanie or helmet sits above the eyes and stays on the head as it turns and nods.
 - [ ] 3q.5 Walk, run, crouch, swim, swing and die in third person: the new bodies bend at elbows and knees without tearing.
+
+## Stage 3r: upstairs everywhere, and roof hatches
+
+- [ ] 3r.1 Go into a two-storey shop, office, block of flats or school in Springfield: stairs lead to a furnished upper floor (a flat over a shop, offices over an office) with things to search.
+- [ ] 3r.2 In a flat-roofed building, at the top of the stairs there is a ladder up to a hatch in the ceiling. Press E (or tap): you come out on the roof. Stand by the hatch on the roof and press E: you climb back down to the upper floor.
+- [ ] 3r.3 Walking up to a big building should not freeze the game for more than a moment on the iPhone.
 
 ## Stage 4: aliens and weather
 

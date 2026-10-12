@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.30.3. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.31. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -27,6 +27,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.30.1 | The stalker no longer knows where you are until it notices you; then it hunts you for about four game hours, lurks out of sight, and rushes only from close by in a short, very fast burst |
 | 0.30.2 | Survivors redrawn in a flat painted style: bigger heads, softer proportions, painted faces and clothes (8 faces, 8 tops, 6 bottoms, 3 shoes, a second colour) instead of extra geometry |
 | 0.30.3 | New low-poly survivor bodies built on the animation skeleton: big octagonal head, small nose, tube limbs, mitten hands, chunky shoes; blocky hair and hats that turn with the head |
+| 0.31 | Upper floors in shops, offices, flats, schools, clinics and more (each with its own kind of rooms); a roof hatch at the top of the stairs in flat-roofed buildings |
 
 ## Next versions
 
@@ -34,7 +35,6 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.31** | Upper floors for shops, offices and flats (today only homes have them), and stairs up to roofs from inside. | None |
 | **0.32** | Stealth extras: curtains and covered windows so aliens do not see your light; louder footsteps on gravel and glass, quieter on grass; the giant feels sprinting and engines from far away. | None |
 | **0.33** | Power and water fail on a set day; generators and fuel to run them. | None |
 
@@ -63,7 +63,7 @@ Ticked items are in the game.
 - [ ] Curtains or covered windows so aliens do not see your light
 - [x] Furniture uses: sleep, cook, fill water, barricade a door
 - [x] Stairs and upper floors in homes; ladders to flat roofs
-- [ ] Upper floors in shops, offices and flats
+- [x] Upper floors in shops, offices and flats; roof hatches
 - [ ] Power and water fail on a set day; generators
 
 ### Aliens
