@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.31.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.32) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -264,6 +264,13 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3r.1 Go into a two-storey shop, office, block of flats or school in Springfield: stairs lead to a furnished upper floor (a flat over a shop, offices over an office) with things to search.
 - [ ] 3r.2 In a flat-roofed building, at the top of the stairs there is a ladder up to a hatch in the ceiling. Press E (or tap): you come out on the roof. Stand by the hatch on the roof and press E: you climb back down to the upper floor.
 - [ ] 3r.3 Walking up to a big building should not freeze the game for more than a moment on the iPhone.
+
+## Stage 3s: the new buildings
+
+- [ ] 3s.1 Walk through downtown Springfield: shops have glass shopfronts with awnings and a brick floor above with a cornice; offices have glass entrances and ribbon windows; banks and libraries are stone with arched windows; schools have long window bands.
+- [ ] 3s.2 Homes have siding or brick, trimmed windows (many with shutters) and a front porch. Warehouses and garages are metal with roll-up doors near the entrance; the fire station has red bay doors.
+- [ ] 3s.3 Every window you can open lines up with a painted window. At night about half the windows glow.
+- [ ] 3s.4 The frame rate in town on the iPhone is no worse than before (the old modelled fronts are gone, so it may be better).
 
 ## Stage 4: aliens and weather
 
