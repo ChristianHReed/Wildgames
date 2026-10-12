@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.20) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.21) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -156,6 +156,13 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3f.5 On a real map with hills, walk up a steep street and back down. Up is slower.
 - [ ] 3f.6 Swim across a pond. Stamina drains; out of stamina you swim slowly and lose health. Afterwards you stay wet and colder for a while, and dry faster indoors or by a fire.
 - [ ] 3f.7 On the phone, the Run and Crouch buttons sit beside the move stick. Are they easy to reach without hitting the stick?
+
+## Stage 3g: safe zones
+
+- [ ] 3g.1 Stand inside the safe house at night with aliens outside. None come through the door or walls, however long you wait.
+- [ ] 3g.2 On the Springfield map, walk to Park Central Square (the dashed green circle on the map, ringed with green-topped posts). The status line says Town square.
+- [ ] 3g.3 Lead aliens to the square and step inside. They stop at the ring of posts and wander off. They cannot hurt you from outside it.
+- [ ] 3g.4 On a map you downloaded yourself, check where the town square was placed. Report it if it is somewhere odd.
 
 ## Stage 4: aliens and weather
 
