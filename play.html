@@ -353,7 +353,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.30.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.30.1.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1920,7 +1920,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.30';
+var VERSION = '0.30.1';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2452,13 +2452,13 @@ function senses(z, A, tg, dt, night){
     var st = 0.2 + Math.random()*0.08; z.pt = st; var seenT = null, sd = 1e9, ca = Math.cos(z.ang || 0), sa = Math.sin(z.ang || 0);
     for (i = 0; i < tg.length; i++){
       t = tg[i]; if (t.safe || (t.hidden && !z.knowHide)) continue; var dx = t.x - z.x, dy = t.y - z.y; dd = Math.hypot(dx, dy) || 0.01; if (dd > 90) continue;
-      var rs = A.see*t.vis*(night ? (t.lit ? (z.k === 1 ? 2.6 : 1.8) : 0.5) : 1)*(wx.w === 1 || wx.w === 2 || wx.w === 3 ? 0.7 : 1);
+      var rs = A.see*t.vis*(night ? (t.lit ? (z.k === 1 ? 2.6 : 1.8) : 0.5) : 1)*(wx.w === 1 || wx.w === 2 || wx.w === 3 ? 0.7 : 1); if (z.k === 1 && z.st === 2 && z.tp === t.peer) rs = Math.max(rs, 22);   /* once a stalker has you, it keeps you in sight */
       var cone = dd < 2.2 || (dx*ca + dy*sa)/dd > (z.st === 2 ? -0.2 : 0.42), sameF = !t.roof && !z.roof && ((t.lvl || 0) === (z.lvl || 0) || t.onSt || z.onSt);
       if (dd < rs && cone && (t.roof ? z.roof === t.roof || ((dd > 3 + t.roof.h*0.6 || (z.st === 2 && z.tp === t.peer)) && !buildingAt(z.x, z.y)) : sameF && los(z.x, z.y, t.x, t.y, z.lvl))){   /* someone on a roof is seen from the street, once far enough back to see over the edge */
         if (dd < sd){ sd = dd; seenT = t; }
       } else {
         var hr = hearR(t)*A.hear*(z.k === 2 && t.vis > 1 ? 1.6 : 1)*(sameF ? 1 : 0.5); if (t.bleed && z.k === 1) hr = Math.max(hr, 14);   /* a stalker smells blood */
-        if (dd < hr && z.st !== 2){ var er = dd*0.25; z.lx = t.x + (Math.random() - 0.5)*er; z.ly = t.y + (Math.random() - 0.5)*er; if (z.st !== 1){ z.st = 1; z.stT = 9; } z.aw = Math.max(z.aw || 0, dd < hr*0.35 ? 0.6 : 0.3); }
+        if (dd < hr && z.st !== 2){ z.heard = time; var er = dd*0.25; z.lx = t.x + (Math.random() - 0.5)*er; z.ly = t.y + (Math.random() - 0.5)*er; if (z.st !== 1){ z.st = 1; z.stT = 9; } z.aw = Math.max(z.aw || 0, dd < hr*0.35 ? 0.6 : 0.3); }
       }
     }
     for (i = 0; i < noises.length; i++){ var ns = noises[i], nd2 = Math.hypot(ns.x - z.x, ns.y - z.y); if (nd2 < ns.r*A.hear && z.st !== 2){ z.st = 1; z.stT = 10; z.lx = ns.x + (Math.random() - 0.5)*2; z.ly = ns.y + (Math.random() - 0.5)*2; z.aw = Math.max(z.aw || 0, 0.3); } }
@@ -2468,10 +2468,10 @@ function senses(z, A, tg, dt, night){
       if (z.aw >= 1 || z.st === 2) alert(z, seenT); else { z.lx = seenT.x; z.ly = seenT.y; z.face = 1; }
     } else {
       z.aw = Math.max(0, (z.aw || 0) - st*(z.st === 2 ? 0.35 : 0.2));
-      if (z.st === 2){ z.lostT = (z.lostT || 0) + st; if (z.lostT > 1.2){ z.st = 3; z.stT = 10; } }
+      if (z.st === 2){ z.lostT = (z.lostT || 0) + st; if (z.lostT > (z.k === 1 ? 4 : 1.2)){ z.st = 3; z.stT = 10; } }
     }
   }
-  if (z.st === 2){ for (i = 0; i < tg.length; i++) if (tg[i].peer === z.tp){ t = tg[i]; if (t.safe){ z.st = 3; z.stT = 4; return null; } if (z.lostT < 0.05){ z.lx = t.x; z.ly = t.y; } return z.lostT < 1.2 ? t : null; } z.st = 3; z.stT = 6; }
+  if (z.st === 2){ for (i = 0; i < tg.length; i++) if (tg[i].peer === z.tp){ t = tg[i]; if (t.safe){ z.st = 3; z.stT = 4; return null; } if (z.lostT < 0.05){ z.lx = t.x; z.ly = t.y; } return z.lostT < (z.k === 1 ? 4 : 1.2) ? t : null; } z.st = 3; z.stT = 6; }
   if (z.st === 1 || z.st === 3){ z.stT -= dt; if (z.stT <= 0){ z.st = 0; z.aw = 0; z.knowHide = 0; } }
   return null;
 }
@@ -2499,20 +2499,71 @@ function sendScout(h){
 }
 /* ---- the stalker hunts at night: it knows roughly where you are, closes in, and checks hiding places where it has caught anyone before ---- */
 function remember(c){ if (!c) return; world.mem = world.mem || []; for (var i = 0; i < world.mem.length; i++) if (Math.hypot(world.mem[i].x - c.x, world.mem[i].y - c.y) < 1) return; world.mem.push({x:c.x, y:c.y, fx:c.fx || 0, fy:c.fy || 0}); if (world.mem.length > 8) world.mem.shift(); }
-function huntGoal(z, tg, dt){
-  var H = z.hunt, here = H && (Math.hypot(H.x - z.x, H.y - z.y) < 1.8 || (H.spot && Math.hypot(H.spot.x - z.x, H.spot.y - z.y) < 3.4 && buildingAt(z.x, z.y) === H.b && los(z.x, z.y, H.spot.x, H.spot.y, z.lvl))), i, t;
+function huntGoal(z, tg, dt){   /* searching around where it last knew you were, wider and wider, checking remembered hiding places */
+  var O = z.obs, H = z.hunt, i, t, here = H && (Math.hypot(H.x - z.x, H.y - z.y) < 1.8 || (H.spot && buildingAt(z.x, z.y) === H.b && (Math.hypot(H.spot.x - z.x, H.spot.y - z.y) < 2.4 || (Math.hypot(H.spot.x - z.x, H.spot.y - z.y) < 3.4 && los(z.x, z.y, H.spot.x, H.spot.y, z.lvl)))));
   z.huntT = (z.huntT || 0) - dt;
   if (here && H.spot && !H.done){ H.done = 1; z.huntT = Math.min(z.huntT, 1.6); z.ang = Math.atan2(H.spot.y - z.y, H.spot.x - z.x); sfx('wood_hit', H.spot.x, H.spot.y, 0.8, 0.7, 40);
     for (i = 0; i < tg.length; i++){ t = tg[i]; if (t.hidden && Math.hypot(t.x - H.spot.x, t.y - H.spot.y) < 1.4){ z.knowHide = 1; alert(z, t); if (!t.peer) feed('It went straight for your hiding place!', '#ff8f7a'); return null; } } }
   if (H && z.huntT > 0 && !(here && !H.spot)) return H;
   if (H && H.spot && !H.done && z.chk) delete z.chk[H.spot.x + ',' + H.spot.y];   /* never got there: worth another try later */
-  var best = null, bd = 140; for (i = 0; i < tg.length; i++){ t = tg[i]; var d = Math.hypot(t.x - z.x, t.y - z.y); if (!t.safe && d < bd){ bd = d; best = t; } }
-  if (!best){ z.hunt = null; return null; }
-  z.hn = (z.hn || 0) + 1; var R = Math.max(15, 50 - z.hn*7), sp = null, sd = 35;
-  (world.mem || []).forEach(function(m){ var d = Math.hypot(m.x - best.x, m.y - best.y); if (d < sd && !(z.chk && z.chk[m.x + ',' + m.y])){ sd = d; sp = m; } });
-  if (sp && Math.random() < 0.75){ z.chk = z.chk || {}; z.chk[sp.x + ',' + sp.y] = 1; H = {x:sp.x + sp.fx*0.9, y:sp.y + sp.fy*0.9, spot:sp}; z.huntT = 45; }
-  else { var a = Math.random()*6.283, r = Math.random()*R; H = {x:best.x + Math.cos(a)*r, y:best.y + Math.sin(a)*r}; if (inSafe(H.x, H.y, 2)){ H.x = best.x; H.y = best.y; } z.huntT = 18 + Math.random()*8; }
+  O.r = Math.min(70, O.r + 5); var sp = null, sd = O.r + 12;
+  (world.mem || []).forEach(function(m){ var d = Math.hypot(m.x - O.x, m.y - O.y); if (d < sd && !(z.chk && z.chk[m.x + ',' + m.y])){ sd = d; sp = m; } });
+  if (sp && Math.random() < 0.45){ z.chk = z.chk || {}; z.chk[sp.x + ',' + sp.y] = 1; H = {x:sp.x + sp.fx*0.9, y:sp.y + sp.fy*0.9, spot:sp}; z.huntT = 45; }
+  else { var a = Math.random()*6.283, r = Math.sqrt(Math.random())*O.r; H = {x:O.x + Math.cos(a)*r, y:O.y + Math.sin(a)*r}; for (var k = 0; k < 6 && (inSafe(H.x, H.y, 2) || circ(H.x, H.y, 0.5) && !buildingAt(H.x, H.y)); k++){ a = Math.random()*6.283; H.x = O.x + Math.cos(a)*r; H.y = O.y + Math.sin(a)*r; } z.huntT = 14 + Math.random()*8; }
   H.b = buildingAt(H.x, H.y); z.hunt = H; return H;
+}
+/* ---- the stalker: it does not know where you are until it notices you. Then it hunts you for hours of game time.
+   It lurks: creeps up while you are not looking, slips out of sight when you turn towards it, and only rushes you from close by.
+   Its rush is very fast but short; after one it has to get its breath back. ---- */
+var STK = {sprint:10.5, burst:2.4, rest:7, pounce:6.5, creep:2.3, walk:3.3, hours:4};
+function alienHit(z, A, T){
+  z.cd = A.cd; if (T.peer){ send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); return; }
+  if (P.hide){ remember(P.hide.c); exitHide(); feed('It dragged you out of hiding! It will remember this place.', '#ff8f7a'); }
+  sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; injure(z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2;
+}
+function hidePoint(z, T, minR){
+  if (z.hp2 && time < z.hp2.t) return z.hp2.p;
+  var zb = buildingAt(z.x, z.y), best = null, bs = -1e9;
+  for (var k = 0; k < 14; k++){
+    var a = k/14*6.283 + Math.random()*0.3, r = 3 + Math.random()*5, x = z.x + Math.cos(a)*r, y = z.y + Math.sin(a)*r;
+    if (buildingAt(x, y) !== zb || (!zb && circ(x, y, 0.5)) || inSafe(x, y, 1) || inWater(x, y, 0.3)) continue;
+    var dT = Math.hypot(x - T.x, y - T.y), sc = (los(T.x, T.y, x, y, z.lvl) ? 0 : 20) - Math.abs(dT - Math.max(minR + 2, 13))*0.6 - Math.hypot(x - z.x, y - z.y)*0.3;
+    if (sc > bs){ bs = sc; best = [x, y]; }
+  }
+  if (!best){ var dx = z.x - T.x, dy = z.y - T.y, l = Math.hypot(dx, dy) || 1; best = [z.x + dx/l*5, z.y + dy/l*5]; }
+  z.hp2 = {p:best, t:time + 1.5}; return best;
+}
+function relocate(z, tg){   /* it keeps up with you, however far you go */
+  var t = null, bd = 1e9; tg.forEach(function(q){ var d = Math.hypot(q.x - z.x, q.y - z.y); if (!q.safe && d < bd){ bd = d; t = q; } }); if (!t) return false;
+  for (var k = 0; k < 10; k++){ var a = Math.atan2(z.y - t.y, z.x - t.x) + (Math.random() - 0.5)*1.2, r = 95 + Math.random()*25, x = t.x + Math.cos(a)*r, y = t.y + Math.sin(a)*r; if (!circ(x, y, 0.6) && !inSafe(x, y, 10) && !inWater(x, y, 0.5)){ z.x = x; z.y = y; z.path = null; z.hunt = null; if (z.obs){ z.obs.x += (t.x - z.obs.x)*0.5; z.obs.y += (t.y - z.obs.y)*0.5; z.obs.r = Math.max(z.obs.r, 30); } return true; } }
+  return false;
+}
+function stalkerAI(z, A, T, tg, dt){
+  z.sst = Math.min(1, (z.sst === undefined ? 1 : z.sst) + (z.pounce > 0 ? 0 : dt/STK.rest)); z.tired = (z.tired || 0) - dt;
+  if (z.climb || z.roof || (T && T.roof)) return null;   /* ladders and roofs are handled elsewhere */
+  var hold = time + STK.hours*DAY/24;
+  if (T){
+    var dx = T.x - z.x, dy = T.y - z.y, d = Math.hypot(dx, dy) || 0.01, same = (T.lvl || 0) === (z.lvl || 0) || T.onSt || z.onSt;
+    if (!z.obs) feed('Something is watching you.', '#d9a845');
+    if (T.hidden){ z.obs = {until:hold, x:T.x, y:T.y, r:6}; if (d < A.reach + 0.6 && z.cd <= 0) alienHit(z, A, T); return {x:T.x, y:T.y, b:T.b, sp:STK.walk}; }   /* it knows where you are hiding: it comes straight for you */
+    z.obs = {until:hold, x:T.x, y:T.y, r:6}; z.hunt = null;
+    if (z.pounce > 0){
+      z.pounce -= dt; z.sst -= dt/STK.burst;
+      if (d < A.reach + 0.3 && z.cd <= 0 && same && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ alienHit(z, A, T); z.pounce = 0; z.tired = STK.rest*0.6; z.fade = 3 + Math.random()*2; }
+      else if (z.pounce <= 0 || z.sst <= 0){ z.pounce = 0; z.tired = STK.rest; z.fade = 2.5; }
+      return {x:T.x, y:T.y, b:T.b, sp:STK.sprint};
+    }
+    var face = T.yaw !== undefined ? (Math.cos(T.yaw)*-dx + Math.sin(T.yaw)*-dy)/d : 0, minR = T.fire ? 12 : 0, watched = face > 0.72 && d < 30 && los(T.x, T.y, z.x, z.y, z.lvl);
+    if (z.fade > 0 || watched || (minR && d < minR)){ z.fade = (z.fade || 0) - dt; var hp = hidePoint(z, T, minR); return {x:hp[0], y:hp[1], sp:watched || z.fade > 0 ? 4.4 : STK.walk}; }
+    z.hp2 = null;
+    if (d < STK.pounce && !(z.tired > 0) && z.sst > 0.7 && !minR && same && los(z.x, z.y, T.x, T.y, z.lvl)){ z.pounce = STK.burst; alienCall(1, z.x, z.y, true); return {x:T.x, y:T.y, b:T.b, sp:STK.sprint}; }
+    return {x:T.x, y:T.y, b:T.b, sp:z.tired > 0 ? 1.4 : STK.creep};   /* creeping in while you are looking elsewhere */
+  }
+  z.pounce = 0;
+  if (z.heard && time - z.heard < 0.6){ if (z.obs){ z.obs.x = z.lx; z.obs.y = z.ly; z.obs.r = 8; z.obs.until = hold; } else z.obs = {until:hold, x:z.lx, y:z.ly, r:10}; z.hunt = null; z.heard = 0; }   /* it heard you: now it is after you */
+  if (z.obs && time < z.obs.until){ var H = huntGoal(z, tg, dt); if (H) return {x:H.x, y:H.y, b:H.b, sp:STK.walk}; }
+  else z.obs = null;
+  return null;
 }
 /* a stalker on a ladder or a roof */
 function alienRoof(z, A, T, dt, zs){
@@ -2526,7 +2577,7 @@ function alienRoof(z, A, T, dt, zs){
   }
   dx = T.x - z.x; dy = T.y - z.y; d = Math.hypot(dx, dy) || 0.001; z.ang = Math.atan2(dy, dx);
   if (d > 0.8){ var nx = z.x + dx/d*zs*dt, ny = z.y + dy/d*zs*dt; if (roofOk(b, nx, ny)){ z.x = nx; z.y = ny; } else if (roofOk(b, nx, z.y)) z.x = nx; else if (roofOk(b, z.x, ny)) z.y = ny; z.walk = (z.walk || 0) + zs*dt*4; }
-  if (d < A.reach && z.cd <= 0){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; injure(z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
+  if (d < A.reach && z.cd <= 0) alienHit(z, A, T);
 }
 function alert(z, t){
   if (z.st !== 2){ z.st = 2; z.aw = 1; alienCall(z.k, z.x, z.y, true); for (var i = 0; i < zombies.length; i++){ var o = zombies[i]; if (o !== z && o.st !== 2 && Math.hypot(o.x - z.x, o.y - z.y) < (z.k === 0 ? 16 : 8)){ o.st = 1; o.stT = 8; o.lx = t.x; o.ly = t.y; o.aw = Math.max(o.aw || 0, 0.5); } } }
@@ -2826,8 +2877,8 @@ function update(dt){
   var night = dark > 0.5;
   P.noise = Math.max(0, P.noise - dt);
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
-    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
+    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide, yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
+    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, yaw:p.yaw, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); }); heatTick(dt, tg);
     PF.budget = QS.zmul < 1 ? 2 : 4;
@@ -2837,7 +2888,7 @@ function update(dt){
         var t2 = tg[q2], dd = Math.hypot(t2.x - z.x, t2.y - z.y); if (dd < dAny) dAny = dd;
       }
       if (z.hp <= 0){ kills++; addCorpse(z); zombies.splice(i, 1); continue; }
-      if (dAny > 130){ zombies.splice(i, 1); continue; }
+      if (dAny > 130){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
       var zn = zoneAt(z.x, z.y, 0.6); if (zn){ var sdx = z.x - zn.x, sdy = z.y - zn.y, sd = Math.hypot(sdx, sdy) || 1; if (sd < 0.01){ sdx = 1; sdy = 0; sd = 1; } z.x = zn.x + sdx/sd*(zn.r + 0.6); z.y = zn.y + sdy/sd*(zn.r + 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
       setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y) >= 0;
@@ -2845,12 +2896,12 @@ function update(dt){
       z.cd -= dt; z.hurt -= dt; z.thru -= dt;
       var ox = z.x, oy = z.y, zs = (night ? A.nspd : A.spd)*z.spd, vx = 0, vy = 0, L = lureAt(z.x, z.y);
       if (z.climb || z.roof){ alienRoof(z, A, T, dt, zs); continue; }
-      if (!T && !L && z.k === 1 && night && !z.st){ L = huntGoal(z, tg, dt); if (L) zs *= 0.72; } else if (T) z.hunt = null;
+      if (z.k === 1 && !L){ var SA = stalkerAI(z, A, T, tg, dt); if (SA){ L = SA; zs = SA.sp*z.spd; T = null; d = 1e9; } }
       if (!T && !L && (z.st === 1 || z.st === 3)){ L = {x:z.lx, y:z.ly}; if (Math.hypot(z.lx - z.x, z.ly - z.y) < 1.5){ if (z.st === 1){ z.st = 3; z.stT = 7; } z.lx = z.x + (Math.random() - 0.5)*14; z.ly = z.y + (Math.random() - 0.5)*14; } zs *= z.st === 3 ? 0.55 : 0.75; }   /* go and look */
       if (!T && !L && z.face){ z.face = 0; z.ang = Math.atan2(z.ly - z.y, z.lx - z.x); }
       if (!T && !L){
         z.wt = (z.wt || 0) - dt; if (z.wt <= 0){ z.wt = 2 + Math.random()*3; z.wa = Math.random()*6.283;
-          if (z.k === 1 && night){ var hp0 = tg[Math.floor(Math.random()*tg.length)]; if (hp0 && !hp0.safe) z.wa = Math.atan2(hp0.y - z.y, hp0.x - z.x) + (Math.random() - 0.5)*1.6; } }   /* at night the stalker drifts your way, but still has to find you */
+        }   /* at night the stalker drifts your way, but still has to find you */
         vx = Math.cos(z.wa); vy = Math.sin(z.wa); stepMove(z, (vx*zs*0.35 + z.kx)*dt, (vy*zs*0.35 + z.ky)*dt, A.r);
       } else {
         var gx0, gy0, pb = null;
@@ -2919,7 +2970,7 @@ function awareHud(){
     if (z.st === 2 && !z.tp && z.lostT < 1.2){ best = 2; break; }
     if ((z.st === 1 || z.st === 3) && Math.hypot((z.lx || 0) - P.x, (z.ly || 0) - P.y) < 18 && best < 1.5){ best = 1.5; txt = z.st === 3 ? 'Searching for you' : 'Heard something'; }
     else if (z.aw > 0.12 && best < 1.5 && z.aw > best){ best = z.aw; txt = 'Being watched'; }
-    else if (z.hunt && !z.st && dd < 55 && best < 0.5){ best = 0.5; txt = 'Something is hunting you'; } }
+    else if (z.obs && !z.st && dd < 55 && best < 0.5){ best = 0.5; txt = 'Something is hunting you'; } }
   if (best === 2){ txt = 'Spotted'; col = '#d9603a'; } else if (best === 1.5) col = '#d9a845';
   e.classList.toggle('on', best > 0); if (best > 0){ e.querySelector('span').textContent = txt; e.style.setProperty('--a', Math.round(Math.min(1, best >= 1.5 ? 1 : best)*100) + '%'); e.style.setProperty('--c', col); }
 }

@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.30) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.30.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -243,7 +243,9 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 
 - [ ] 3p.1 By day, fire a few shots or smash a door in one spot, then walk 50 m away and watch: a small pack of swarmers turns up to look around where you made the noise. Open the map (M): the spot glows red, fading over a few minutes.
 - [ ] 3p.2 Do the same at night: a single stalker comes instead.
-- [ ] 3p.3 At night, stay still somewhere with a stalker around. "Something is hunting you" shows; it works its way closer over a minute or two rather than walking straight to you.
+- [ ] 3p.3 At night, crouch and keep still with a stalker wandering nearby that has not noticed you: it does not come straight for you.
+- [ ] 3p.3b Let a stalker see you. Keep looking at it: it hangs back about 12 m and slips behind cover. Turn away: it creeps in, then rushes you from about 6 m. Sprint away after its rush misses: it falls behind.
+- [ ] 3p.3c Get away from a stalker that has noticed you and hide somewhere else: "Something is hunting you" shows while it searches the area, for hours of game time, day or night.
 - [ ] 3p.4 Let an alien see you get into a wardrobe (it drags you out). Hide in the same wardrobe again later at night: a hunting stalker comes to check it.
 - [ ] 3p.5 Climb onto a roof with a stalker after you: it climbs the ladder and attacks. Climb down or jump: it drops off the roof after you. Swarmers and giants still wait below.
 - [ ] 3p.6 Save and resume: the stalker still remembers the hiding places.
