@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.32. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.33. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -30,6 +30,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.31 | Upper floors in shops, offices, flats, schools, clinics and more (each with its own kind of rooms); a roof hatch at the top of the stairs in flat-roofed buildings |
 | 0.31.1 | The safe house moves to the edge of town: a small one-storey home on a one-acre lot inside a white picket fence (the only safe zone now; the town square is an ordinary place again) |
 | 0.32 | Fresh build, part 1: every building redone in code by type (docs/BUILDINGS.md); the Downtown City MegaKit fronts and the old facade textures are removed |
+| 0.33 | Fresh build, part 3: a new terrain and map generator (docs/TERRAIN.md). Ground textures painted in code (mown grass, long grass, earth, rock, roads, pavements, water, floors, wallpaper); ground cover by land use, distance from buildings, slope, wetness and height, with soft wood edges and seasons; trees planted by kind (street, yard, park, wood, riverbank). The old design-pack ground textures are removed. The Demo Town gains a creek, a wooded bluff and meadows |
 
 ## Next versions
 
@@ -37,8 +38,7 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.33** | Fresh build, part 2: trees, bushes, grass and rocks from the KayKit Forest Nature Pack, placed by planting rules (street trees, yard trees, park and woodland clusters, riverbank plants). The Stylized Nature MegaKit is removed. | [KayKit Forest Nature Pack](https://kaylousberg.itch.io/kaykit-forest) |
-| **0.34** | Fresh build, part 3: a new terrain and map generator: new ground textures made in code, ground cover by land use, slope and wetness, and the old ground textures removed. | None |
+| **0.34** | Fresh build, part 2: trees, bushes, grass and rocks from the KayKit Forest Nature Pack, fitted to the planting rules from 0.33 (kinds of tree by where they grow, bushes and flowers by yards, wood edges and banks). The Stylized Nature MegaKit is removed. | [KayKit Forest Nature Pack](https://kaylousberg.itch.io/kaykit-forest) |
 | **0.35** | Stealth extras: curtains and covered windows so aliens do not see your light; louder footsteps on gravel and glass, quieter on grass; the giant feels sprinting and engines from far away. | None |
 | **0.36** | Power and water fail on a set day; generators and fuel to run them. | None |
 
@@ -120,7 +120,7 @@ All of these are free. Quaternius and Kenney packs are CC0 (no credit required, 
 
 ### To download, in the order they are needed
 
-1. **KayKit Forest Nature Pack** (free, CC0) for 0.33: [kaylousberg.itch.io/kaykit-forest](https://kaylousberg.itch.io/kaykit-forest). Download the free version and attach the zip.
+1. **KayKit Forest Nature Pack** (free, CC0) for 0.34: [kaylousberg.itch.io/kaykit-forest](https://kaylousberg.itch.io/kaykit-forest). Download the free version and attach the zip.
 
 ### Still missing, no source chosen yet
 

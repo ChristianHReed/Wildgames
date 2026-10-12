@@ -358,7 +358,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.32.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.33.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -508,10 +508,13 @@ function parseText(text){
   throw new Error('Unrecognized file. Use a .osm export, Overpass JSON, or GeoJSON.');
 }
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }
+function DEMO_CK(x){ return 470 + 26*Math.sin(x/95) + 10*Math.sin(x/37); }
 /* the demo town gets made-up rolling hills so terrain can be seen without downloading anything */
 function demoElev(){
-  var n = 81, d = new Int16Array(n*n), span = 0.012, u = 111320, v = 110540;
-  for (var j = 0; j < n; j++) for (var i = 0; i < n; i++){ var x = (-span + 2*span*i/(n - 1))*u, y = (span - 2*span*j/(n - 1))*v; d[j*n + i] = Math.round((6*Math.sin(x/170) + 5*Math.cos(y/130) + 3*Math.sin((x + y)/75))*10); }
+  var n = 161, d = new Int16Array(n*n), span = 0.012, u = 111320, v = 110540;
+  for (var j = 0; j < n; j++) for (var i = 0; i < n; i++){ var x = (-span + 2*span*i/(n - 1))*u, y = (span - 2*span*j/(n - 1))*v; var yy = -y, dc = yy - DEMO_CK(x), h = 6*Math.sin(x/170) + 5*Math.cos(y/130) + 3*Math.sin((x + y)/75);
+    h -= 9*Math.exp(-dc*dc/5000); if (x > -200 && x < 800) h += 13*sstep(18, 46, dc)*sstep(-200, -60, x)*(1 - sstep(660, 800, x));   /* the valley, and a bluff south of the creek */
+    d[j*n + i] = Math.round(h*10); }
   return {s:-span, n:span, w:-span, e:span, cols:n, rows:n, d:b64of(new Uint8Array(d.buffer))};
 }
 function b64of(u8){ var t = ''; for (var i = 0; i < u8.length; i += 8000) t += String.fromCharCode.apply(null, u8.subarray(i, i + 8000)); return btoa(t); }
@@ -550,6 +553,17 @@ function demoRaw0(){
     }
   }
   pois.push({lon:LL(140,150)[0], lat:LL(140,150)[1], tags:{amenity:'pharmacy', name:'Market Stall Medics'}});
+  /* the country round the town: a creek in a valley to the south with a wooded bluff beyond it, meadows east and north. It is laid out
+     evenly about the middle of the town, so the town keeps the same place on the map as before (saved games still line up) */
+  var mx = (NX*(BW+G) - G)/2, my = (NY*(BH+G) - G)/2, X0 = mx - 730, X1 = mx + 730, ck = [], wd = [], q, bot = 0;
+  for (q = X0; q < X1; q += 30) ck.push(LL(q, DEMO_CK(q))); ck.push(LL(X1, DEMO_CK(X1)));
+  ways.push({c:ck, tags:{waterway:'stream', name:'Jordan Creek'}});
+  for (q = X0; q < X1; q += 60) wd.push([q, DEMO_CK(q) + 34]); wd.push([X1, DEMO_CK(X1) + 34]);
+  for (q = X1; q > X0; q -= 90){ var yb = DEMO_CK(q) + 300 + 60*Math.sin(q/130); wd.push([q, yb]); bot = Math.max(bot, yb); }
+  wd.push([X0, DEMO_CK(X0) + 300]); bot = Math.max(bot, DEMO_CK(X0) + 300); poly(wd, {natural:'wood'});
+  poly([[620, -60], [X1, -40], [X1, 380], [640, 400]], {landuse:'meadow'});
+  poly([[-40, 2*my - bot], [560, 2*my - bot], [600, -50], [-60, -40]], {landuse:'farmland'});
+  ways.push({c:[LL(NX*(BW+G)-G/2, 140), LL(700, 150), LL(900, 120)], tags:{highway:'track'}});
   return {ways:ways, pois:pois};
 }
 
@@ -570,8 +584,9 @@ function catOf(t, isBuilding){
 function areaKind(t){
   if (t.natural === 'water' || IN(t.landuse, ['reservoir','basin']) || t.waterway === 'riverbank' || t.leisure === 'swimming_pool') return 'water';
   if (t.natural === 'wood' || t.landuse === 'forest') return 'forest';
-  if (IN(t.leisure, ['park','garden','playground','nature_reserve','golf_course']) || IN(t.landuse, ['recreation_ground','village_green','cemetery','allotments'])) return 'park';
-  if (IN(t.landuse, ['grass','meadow','farmland','orchard']) || IN(t.natural, ['grassland','scrub','heath']) || t.leisure === 'pitch') return 'grass';
+  if (IN(t.leisure, ['park','garden','playground','golf_course']) || IN(t.landuse, ['recreation_ground','village_green','cemetery','allotments'])) return 'park';
+  if (IN(t.landuse, ['grass']) || t.leisure === 'pitch') return 'grass';
+  if (IN(t.landuse, ['meadow','farmland','orchard']) || IN(t.natural, ['grassland','scrub','heath']) || t.leisure === 'nature_reserve') return 'field';
   if (t.amenity === 'parking') return 'parking';
   if (IN(t.natural, ['sand','beach'])) return 'sand';
   return null;
@@ -688,7 +703,7 @@ ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.mea
 var CORE = {food:1, water:1, medkit:1, ammo:1, wood:1, scrap:1};
 function newInv(start){ var o = {}; for (var k in ITEMS) o[k] = 0; if (start){ o.food = 1; o.water = 1; o.ammo = 8; o.radio = 1; o.flashlight = 1; o.battery = 2; } return o; }
 var AREA_COL = {grass:'#7f9a5c', park:'#6fa25a', forest:'#4f7f4a', sand:'#cdbb8a', parking:'#6a6e75', water:'#3f86b8'};
-var AREA_RANK = {grass:0, park:1, forest:2, sand:3, parking:4, water:5};
+var AREA_RANK = {field:0, grass:0, park:1, forest:2, sand:3, parking:4, water:5};
 var G = 16, world = null;
 function gk(cx, cy){ return (cx + 50000)*100000 + (cy + 50000); }
 function bbox(o){
@@ -766,15 +781,7 @@ function buildWorld(raw, name){
     }
     else if (cat && w.crates.length < 400) w.crates.push({x:x, y:y, cat:cat, name:t.name || CAT[cat].label + ' stash', looted:false, rolls:2, time:1.2});
   });
-  w.areas.forEach(function(ar, n){
-    if (ar.kind !== 'forest' && ar.kind !== 'park') return;
-    var st = ar.kind === 'forest' ? 6.5 : 17;
-    for (var y = ar.miny; y < ar.maxy; y += st) for (var x = ar.minx; x < ar.maxx; x += st){
-      if (w.trees.length > 5000) return;
-      var tx = x + hash(x, y, n)*st, ty = y + hash(x, y, n+77)*st;
-      if (pip(ar.pts, tx, ty) && !blocked(tx, ty) && !inWater(tx, ty, 0)) addTree(tx, ty, w.trees.length);
-    }
-  });
+  plantTrees(w, buildCover(w));
   return w;
 }
 /* ---- terrain: real elevation, stored with the map as a grid of heights ---- */
@@ -845,22 +852,182 @@ function drape(m, lift){
   }
   m.p = p; m.c = c; m.t = t;
 }
-var TT = 12;
+/* ---- the ground cover generator (docs/TERRAIN.md) ----
+   The map is covered by a grid of points (half the height grid's spacing, or 10 m on flat maps). Each point gets weights for three layers
+   painted over mown grass: long grass (meadow), bare earth and leaf litter, and rock, plus a colour. They follow a few rules found in
+   how real ground cover is laid out: grass is mown near houses and roads and grows long further out; woods have soft edges 50-100 m
+   wide with a band of tall grass and scrub; ground near water is lush, with mud right at the bank; steep slopes lose their soil and
+   show rock, above all the bluffs along rivers; ridges are drier than hollows; and patches come in clusters (smooth noise), not evenly. */
+function vnoise(x, y, s){
+  var i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j; fx = fx*fx*(3 - 2*fx); fy = fy*fy*(3 - 2*fy);
+  var a = hash(i, j, s), b = hash(i + 1, j, s), c = hash(i, j + 1, s), d = hash(i + 1, j + 1, s);
+  return (a + (b - a)*fx)*(1 - fy) + (c + (d - c)*fx)*fy;
+}
+function fbm2(x, y, s){ return vnoise(x, y, s)*0.57 + vnoise(x*2.1, y*2.1, s + 1)*0.29 + vnoise(x*4.3, y*4.3, s + 2)*0.14; }
+function sstep(a, b, x){ var t = (x - a)/(b - a); t = t < 0 ? 0 : t > 1 ? 1 : t; return t*t*(3 - 2*t); }
+/* chamfer distance (in cells) from the marked points, two passes */
+function chamfer(d, cols, rows){
+  var i, j, k, D = 1.4142;
+  for (j = 0; j < rows; j++) for (i = 0; i < cols; i++){ k = j*cols + i; var v = d[k];
+    if (i > 0 && d[k - 1] + 1 < v) v = d[k - 1] + 1;
+    if (j > 0){ if (d[k - cols] + 1 < v) v = d[k - cols] + 1; if (i > 0 && d[k - cols - 1] + D < v) v = d[k - cols - 1] + D; if (i < cols - 1 && d[k - cols + 1] + D < v) v = d[k - cols + 1] + D; }
+    d[k] = v; }
+  for (j = rows - 1; j >= 0; j--) for (i = cols - 1; i >= 0; i--){ k = j*cols + i; var u = d[k];
+    if (i < cols - 1 && d[k + 1] + 1 < u) u = d[k + 1] + 1;
+    if (j < rows - 1){ if (d[k + cols] + 1 < u) u = d[k + cols] + 1; if (i < cols - 1 && d[k + cols + 1] + D < u) u = d[k + cols + 1] + D; if (i > 0 && d[k + cols - 1] + D < u) u = d[k + cols - 1] + D; }
+    d[k] = u; }
+}
+/* box blur, both ways, radius r cells */
+function blur(d, cols, rows, r){
+  var t = new Float32Array(d.length), i, j, s, n = 2*r + 1;
+  for (j = 0; j < rows; j++){ s = 0; for (i = -r; i <= r; i++) s += d[j*cols + Math.max(0, Math.min(cols - 1, i))];
+    for (i = 0; i < cols; i++){ t[j*cols + i] = s/n; s += d[j*cols + Math.min(cols - 1, i + r + 1)] - d[j*cols + Math.max(0, i - r)]; } }
+  for (i = 0; i < cols; i++){ s = 0; for (j = -r; j <= r; j++) s += t[Math.max(0, Math.min(rows - 1, j))*cols + i];
+    for (j = 0; j < rows; j++){ d[j*cols + i] = s/n; s += t[Math.min(rows - 1, j + r + 1)*cols + i] - t[Math.max(0, j - r)*cols + i]; } }
+}
+function buildCover(w){
+  var hg = w.hg, sub = 1, cell, x0, y0, cols, rows;
+  if (hg){ sub = hg.cols*hg.rows*4 <= 2400000 ? 2 : 1; cell = hg.cell/sub; x0 = hg.x0; y0 = hg.y0; cols = (hg.cols - 1)*sub + 1; rows = (hg.rows - 1)*sub + 1; }
+  else { var M = 300; cell = 10; x0 = w.minx - M; y0 = w.miny - M; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1;
+    while (cols*rows > 2400000){ cell *= 1.5; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1; } }
+  var n = cols*rows, BIG = 1e6, dev = new Float32Array(n).fill(BIG), wat = new Float32Array(n).fill(BIG), fm = new Float32Array(n), pk = new Uint8Array(n), fd = new Uint8Array(n);
+  var node = function(x, y){ var i = Math.round((x - x0)/cell), j = Math.round((y - y0)/cell); return i < 0 || j < 0 || i >= cols || j >= rows ? -1 : j*cols + i; };
+  var walk = function(p, arr){ for (var q = 0; q + 3 < p.length; q += 2){ var l = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), st = Math.max(1, Math.ceil(l/(cell*0.5)));
+    for (var k = 0; k <= st; k++){ var nd = node(p[q] + (p[q+2] - p[q])*k/st, p[q+1] + (p[q+3] - p[q+1])*k/st); if (nd >= 0) arr[nd] = 0; } } };
+  var fill = function(a, fn){ var i0 = Math.max(0, Math.ceil((a.minx - x0)/cell)), i1 = Math.min(cols - 1, Math.floor((a.maxx - x0)/cell)), j0 = Math.max(0, Math.ceil((a.miny - y0)/cell)), j1 = Math.min(rows - 1, Math.floor((a.maxy - y0)/cell));
+    for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) if (pip(a.pts, x0 + i*cell, y0 + j*cell)) fn(j*cols + i); };
+  w.roads.forEach(function(r){ if (r.kind === 'water') walk(r.pts, wat); else if (r.kind !== 'path') walk(r.pts, dev); });
+  w.buildings.forEach(function(b){ var nd = node(b.cx, b.cy); if (nd >= 0) dev[nd] = 0; fill(b, function(k){ dev[k] = 0; }); });
+  w.areas.forEach(function(a){
+    if (a.kind === 'water'){ walk(a.pts.concat(a.pts.slice(0, 2)), wat); fill(a, function(k){ wat[k] = 0; }); }
+    else if (a.kind === 'forest') fill(a, function(k){ fm[k] = 1; });
+    else if (a.kind === 'park' || a.kind === 'grass') fill(a, function(k){ pk[k] = 1; });
+    else if (a.kind === 'field') fill(a, function(k){ fd[k] = 1; });
+    else if (a.kind === 'parking') fill(a, function(k){ dev[k] = 0; });
+  });
+  chamfer(dev, cols, rows); chamfer(wat, cols, rows);
+  var fr = new Float32Array(fm); blur(fr, cols, rows, Math.max(1, Math.round(30/cell)));   /* soft wood edges, about 60 m across */
+  var span = hg ? Math.max(1, hg.max - hg.min) : 1, out = new Uint8Array(n*6);
+  for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){
+    var k = j*cols + i, x = x0 + i*cell, y = y0 + j*cell, D = dev[k]*cell, Wd = wat[k]*cell, f = fr[k];
+    var n1 = fbm2(x/170, y/170, 31), n2 = fbm2(x/45, y/45, 47), sl = 0, alt = 0.5;
+    if (hg){ sl = Math.hypot(hAt(x + cell, y) - hAt(x - cell, y), hAt(x, y + cell) - hAt(x, y - cell))/(2*cell); alt = (hAt(x, y) - hg.min)/span; }
+    var wet = 1 - sstep(8, 70, Wd), bank = 1 - sstep(3, 14, Wd);
+    var wild = sstep(25, 95, D + (n1 - 0.5)*60);                                   /* mown near homes and roads, long grass further out */
+    if (fd[k]) wild = Math.max(wild, 0.85); if (pk[k]) wild = Math.min(wild, 0.12);
+    var wm = wild*(0.45 + 0.55*n2) + f*(1 - f)*1.8 + wet*0.6*(1 - bank) + (1 - wild)*sstep(0.74, 0.86, n2)*0.35;
+    var we = f*0.95*(0.75 + 0.25*n2) + bank*0.75 + sstep(0.2, 0.42, sl)*0.7 + (1 - wild)*(1 - pk[k])*sstep(0.8, 0.9, n2)*0.4;
+    var wr = sstep(0.38, 0.8, sl + (n2 - 0.5)*0.2) + (1 - sstep(25, 90, Wd))*sstep(0.15, 0.45, sl)*0.55*(0.4 + n2);
+    if (pk[k]){ we *= 0.4; wr *= 0.5; }
+    var tr = 246, tg = 250, tb = 238, fdk = f*0.2;                                   /* colour: shade under trees, lush near water, dry on ridges */
+    tr *= 1 - fdk; tg *= 1 - fdk*0.8; tb *= 1 - fdk;
+    tr -= wet*18; tb -= wet*6; var dry = sstep(0.55, 0.95, alt)*(1 - wet)*0.6; tr += dry*12; tb -= dry*30;
+    var br = 0.93 + 0.1*n1; tr *= br; tg *= br; tb *= br;
+    var o = k*6; out[o] = Math.min(255, wm*255); out[o+1] = Math.min(255, we*255); out[o+2] = Math.min(255, wr*255); out[o+3] = Math.min(255, tr); out[o+4] = Math.min(255, tg); out[o+5] = Math.min(255, tb);
+  }
+  w.tg = {x0:x0, y0:y0, cell:cell, cols:cols, rows:rows, sub:sub, c:out, min:hg ? hg.min : 0};
+  return {dev:dev, wat:wat, fr:fr, fm:fm, pk:pk, fd:fd, node:node, cell:cell};
+}
+/* terrain tiles: 24 cover cells square near you, every second point further away (the same surface either way) */
+var TT = 24;
+function terrTile(ti, tj, lod){
+  var g = world.tg, m = new Mesh(), P = m.p, C = m.c, Tt = m.t, fl = !world.hg, st = lod;
+  var vx = function(i, j){
+    var x = g.x0 + i*g.cell, y = g.y0 + j*g.cell, o = (j*g.cols + i)*6, c = g.c;
+    P.push(x, (fl ? 0 : hAt(x, y)) - 0.03, y); C.push(c[o+3], c[o+4], c[o+5], 255); Tt.push(c[o+1]/255, c[o+2]/255, 45 + c[o]/255*1.2);
+  };
+  for (var j = tj*TT; j < (tj + 1)*TT && j + st < g.rows; j += st) for (var i = ti*TT; i < (ti + 1)*TT && i + st < g.cols; i += st){
+    vx(i, j); vx(i + st, j); vx(i, j + st); vx(i + st, j + st); vx(i, j + st); vx(i + st, j);
+  }
+  return m;
+}
 function manageTerrain(budget){
-  var g = world.hg; if (!g) return; var T = world.gl.terr, sz = TT*g.cell, R = QS.far + sz, n = 0; budget *= 4;
+  var g = world.tg; if (!g) return; var T = world.gl.terr, sz = TT*g.cell, R = QS.far + sz, n = 0; budget *= 4;
   var i0 = Math.floor((P.x - R - g.x0)/sz), i1 = Math.floor((P.x + R - g.x0)/sz), j0 = Math.floor((P.y - R - g.y0)/sz), j1 = Math.floor((P.y + R - g.y0)/sz);
   for (var tj = Math.max(0, j0); tj <= j1 && tj*TT < g.rows - 1; tj++) for (var ti = Math.max(0, i0); ti <= i1 && ti*TT < g.cols - 1; ti++){
-    var key = tj*100000 + ti; if (T.has(key) || n >= budget) continue; n++;
-    var m = new Mesh(), col = [236,244,222]; m.pl = [TX.grass, 0.25];
-    for (var j = tj*TT; j < (tj + 1)*TT && j < g.rows - 1; j++) for (var i = ti*TT; i < (ti + 1)*TT && i < g.cols - 1; i++){
-      var x = g.x0 + i*g.cell, y = g.y0 + j*g.cell, x1 = x + g.cell, y1 = y + g.cell, k = j*g.cols + i, a = g.d[k] - 0.03, b = g.d[k + 1] - 0.03, c = g.d[k + g.cols] - 0.03, e = g.d[k + g.cols + 1] - 0.03;
-      m.tri(x, a, y, x1, b, y, x, c, y1, col, 255); m.tri(x1, e, y1, x, c, y1, x1, b, y, col, 255);
-    }
-    T.set(key, {g:upload(m), x:g.x0 + (ti + 0.5)*sz, y:g.y0 + (tj + 0.5)*sz});
+    var key = tj*100000 + ti, o = T.get(key), cx = g.x0 + (ti + 0.5)*sz, cy = g.y0 + (tj + 0.5)*sz;
+    var lod = g.sub > 1 && Math.max(Math.abs(cx - P.x), Math.abs(cy - P.y)) > sz*0.5 + 260 ? 2 : 1;
+    if ((o && o.lod === lod) || n >= budget) continue; n++;
+    if (o) freeMesh(o.g); T.set(key, {g:upload(terrTile(ti, tj, lod)), x:cx, y:cy, lod:lod});
   }
   T.forEach(function(o, key){ if (Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y)) > R + sz + 200){ freeMesh(o.g); T.delete(key); } });
 }
-function addTree(x, y, n){ world.trees.push({x:x, y:y, r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:Math.floor(hash(n, 4, 9)*4), yw:hash(n, 5, 9)*6.283, sc:0.62 + hash(n, 6, 9)*0.36}); }
+/* trees, planted by where they grow (docs/TERRAIN.md): street trees about every 13 m along residential streets, a tree or two in
+   back yards at least 6 m from the house, clusters in parks with open lawn between, thick woods that thin out toward their edges, and
+   lines of trees along rivers and ponds. Every tree keeps a minimum distance from the next (Poisson-disk placement), and none stand
+   in roads, buildings or water. On very big maps each kind is thinned evenly so the total stays light enough for a phone. */
+function plantTrees(w, cov){
+  var RC = 40, RG = new Map(), TC = 8, TG = new Map(), ri;
+  var cellOf = function(M, c, x, y, mk){ var k = gk(Math.floor(x/c), Math.floor(y/c)), l = M.get(k); if (!l && mk) M.set(k, l = []); return l; };
+  w.roads.forEach(function(r){ if (r.kind === 'water') return; var p = r.pts, hw = r.w/2;
+    for (var q = 0; q + 3 < p.length; q += 2){ var sg = [p[q], p[q+1], p[q+2], p[q+3], hw];
+      for (var cy = Math.floor((Math.min(p[q+1], p[q+3]) - hw)/RC); cy <= Math.floor((Math.max(p[q+1], p[q+3]) + hw)/RC); cy++)
+        for (var cx = Math.floor((Math.min(p[q], p[q+2]) - hw)/RC); cx <= Math.floor((Math.max(p[q], p[q+2]) + hw)/RC); cx++){ var k = gk(cx, cy), l = RG.get(k); if (!l) RG.set(k, l = []); l.push(sg); } } });
+  var roadOk = function(x, y, e){ var l = RG.get(gk(Math.floor(x/RC), Math.floor(y/RC))); if (l) for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return false; } return true; };
+  var spaceOk = function(x, y, md){ for (var cy = Math.floor((y - md)/TC); cy <= Math.floor((y + md)/TC); cy++) for (var cx = Math.floor((x - md)/TC); cx <= Math.floor((x + md)/TC); cx++){ var l = TG.get(gk(cx, cy)); if (l) for (var i = 0; i < l.length; i++) if (Math.hypot(l[i].x - x, l[i].y - y) < md) return false; } return true; };
+  var bldOk = function(x, y, c){ return !blocked(x, y) && !blocked(x + c, y) && !blocked(x - c, y) && !blocked(x, y + c) && !blocked(x, y - c); };
+  var wetAt = function(x, y){ var nd = cov.node(x, y); return nd < 0 ? 1e9 : cov.wat[nd]*cov.cell; };
+  var count = {};
+  var put = function(x, y, h, md, bc, rc){
+    if (x < w.minx || x > w.maxx || y < w.miny || y > w.maxy || w.trees.length >= 18000) return false;
+    if (!spaceOk(x, y, md) || !roadOk(x, y, rc) || !bldOk(x, y, bc) || wetAt(x, y) < 5 || inWater(x, y, 1)) return false;
+    addTree(x, y, w.trees.length, h); cellOf(TG, TC, x, y, true).push(w.trees[w.trees.length - 1]); count[h] = (count[h] || 0) + 1; return true;
+  };
+  w.trees.forEach(function(t){ cellOf(TG, TC, t.x, t.y, true).push(t); });
+  /* how much of each kind there would be, so a huge map can be thinned evenly */
+  var streets = w.roads.filter(function(r){ return r.kind === 'road' && r.w >= 6 && r.w <= 9.5; }), slen = 0;
+  streets.forEach(function(r){ for (var q = 0; q + 3 < r.pts.length; q += 2) slen += Math.hypot(r.pts[q+2] - r.pts[q], r.pts[q+3] - r.pts[q+1]); });
+  var houses = w.buildings.filter(function(b){ return b.kind === 'house'; }), fa = 0;
+  for (ri = 0; ri < cov.fm.length; ri++) fa += cov.fm[ri]; fa *= cov.cell*cov.cell;
+  var keepS = Math.min(1, 3500/(slen/13*1.2 + 1)), keepY = Math.min(1, 2500/(houses.length*1.1 + 1)), keepF = Math.min(1, 9000/(fa/40 + 1));
+  /* street trees, on the verge beyond the pavement, both sides, starting clear of the junctions */
+  streets.forEach(function(r, n){
+    if (hash(n, 3, 71) > 0.62) return;                                   /* not every street is planted */
+    var p = r.pts, off = r.w/2 + 3.2, run = 9;
+    for (var q = 0; q + 3 < p.length; q += 2){
+      var ax = p[q], ay = p[q+1], l = Math.hypot(p[q+2] - ax, p[q+3] - ay); if (l < 0.1) continue; var dx = (p[q+2] - ax)/l, dy = (p[q+3] - ay)/l;
+      for (; run < l - 9; run += 13){ for (var sd = -1; sd <= 1; sd += 2){ var rr = run + (sd > 0 ? 6.5 : 0); if (rr > l - 9 || hash(n*7 + q, Math.floor(rr), sd + 5) > keepS) continue;   /* the two sides alternate */
+        put(ax + dx*rr - dy*off*sd, ay + dy*rr + dx*off*sd, 'street', 8, 2.5, 1.5); } }
+      run = Math.max(9, run - l);
+    }
+  });
+  /* yard trees: behind and beside houses, never right against the walls */
+  houses.forEach(function(b, n){
+    var rad = Math.sqrt(Math.max(30, (b.maxx - b.minx)*(b.maxy - b.miny)))/2;
+    for (var t = 0; t < 2; t++){ if (hash(n, t, 91) > (t ? 0.45 : 0.8)*keepY) continue;
+      var a = hash(n, t, 92)*6.283, d = rad + 5 + hash(n, t, 93)*7; put(b.cx + Math.cos(a)*d, b.cy + Math.sin(a)*d, 'yard', 7, 5, 3); }
+  });
+  /* along rivers, streams and ponds: a broken line of trees on each bank */
+  var bank = function(p, hw, closed, n){
+    var pts = closed ? p.concat(p.slice(0, 2)) : p;
+    for (var q = 0; q + 3 < pts.length; q += 2){ var ax = pts[q], ay = pts[q+1], l = Math.hypot(pts[q+2] - ax, pts[q+3] - ay); if (l < 0.1) continue; var dx = (pts[q+2] - ax)/l, dy = (pts[q+3] - ay)/l;
+      for (var r = 0; r < l; r += 7) for (var sd = -1; sd <= 1; sd += 2){ var x = ax + dx*r, y = ay + dy*r;
+        if (hash(Math.floor(x), Math.floor(y), 55 + sd) > 0.65*fbm2(x/70, y/70, 61)*1.4) continue;
+        var o = hw + 5 + hash(Math.floor(x), Math.floor(y), 57)*12; put(x - dy*o*sd, y + dx*o*sd, 'river', 5.5, 3, 2); } }
+  };
+  w.waterLines.forEach(function(r, n){ bank(r.pts, r.w/2, false, n); });
+  w.water.forEach(function(a, n){ bank(a.pts, 0, true, n); });
+  /* parks: groves with open lawn between them, and a few lone trees */
+  w.areas.forEach(function(ar, n){
+    if (ar.kind === 'park' || ar.kind === 'field'){
+      var st = ar.kind === 'park' ? 9 : 22;
+      for (var y = ar.miny; y < ar.maxy; y += st) for (var x = ar.minx; x < ar.maxx; x += st){
+        var tx = x + hash(x, y, n)*st, ty = y + hash(x, y, n + 77)*st, c = fbm2(tx/50, ty/50, 83);
+        var pr = ar.kind === 'park' ? sstep(0.52, 0.68, c)*0.85 + 0.05 : 0.12;
+        if (hash(tx, ty, 79) < pr && pip(ar.pts, tx, ty)) put(tx, ty, ar.kind === 'park' ? 'park' : 'field', 6, 3, 2);
+      }
+    }
+    if (ar.kind === 'forest'){
+      for (var fy = ar.miny; fy < ar.maxy; fy += 5) for (var fx = ar.minx; fx < ar.maxx; fx += 5){
+        var gx = fx + hash(fx, fy, n + 5)*5, gy = fy + hash(fx, fy, n + 6)*5, nd = cov.node(gx, gy); if (nd < 0) continue;
+        var dens = (0.3 + 0.7*sstep(0.35, 0.95, cov.fr[nd]))*(0.55 + 0.6*fbm2(gx/60, gy/60, 87))*keepF;   /* thinner toward the edge, in clumps */
+        if (hash(gx, gy, 88) < dens && pip(ar.pts, gx, gy)) put(gx, gy, 'forest', 4.2, 2.5, 2);
+      }
+    }
+  });
+  w.treeCount = count;
+}
+function addTree(x, y, n, h){ world.trees.push({x:x, y:y, h:h || 'poi', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:Math.floor(hash(n, 4, 9)*4), yw:hash(n, 5, 9)*6.283, sc:0.62 + hash(n, 6, 9)*0.36}); }
 function buildingAt(x, y){
   var cell = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))); if (!cell) return null;
   for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (!b.gone && x >= b.minx && x <= b.maxx && y >= b.miny && y <= b.maxy && pip(b.pts, x, y)) return b; }
@@ -964,9 +1131,9 @@ function earclip(p){
 
 /* ================= building shells (built once) ================= */
 var CH = 96;
-var TX = {brick:0, brickDark:1, sidingCream:2, sidingRiver:3, stucco:4, stone:5, shopFood:6, shopMed:7, shopMat:8, shopGear:9, shopMisc:10, lanes:11,
-  roofGravel:12, roofMetal:13, roofShingle:14, asphalt:15, sidewalk:16, grass:17, dirt:18, water:19, floorTile:20, wallpaper:21, wood:22, shelf:23, bookshelf:24, fridge:25, stove:26, crate:27};
-var SHOPT = {food:6, medical:7, industrial:8, police:9, shop:10}, WHITE = [255,255,255], INK = [61,48,41];
+/* tiles of the ground and indoor atlas (tools/paint_ground.py, packed by tools/build_art.py); 0-3 are the terrain layers, blended as tile 45 */
+var TX = {lawn:0, meadow:1, earth:2, rock:3, lanes:11, gravel:12, asphalt:15, sidewalk:16, grass:17, dirt:18, water:19, floorTile:20, wallpaper:21, wood:22}, TERR = 45;
+var WHITE = [255,255,255], INK = [61,48,41];
 /* ---- building fronts by use (docs/BUILDINGS.md): which painted tile goes on the front ground floor, the other ground-floor walls and the
    upper floors; the plain wall for short stretches; the wall and roof colours; and the trims built on (cornice, belt course, porch) ---- */
 var BT = {siding_win_green:0, siding_win_blue:1, siding_win:2, brick_house_win:3, brick_win:4, storefront:5, comm_upper:6, office_ribbon:7, glass_lobby:8, metal_win:9, rollup:10, firebay:11, stone_arch:12, school_band:13, clinic_panel:14, parking_deck:15, stone_base:16, stucco_win:17, clapboard_arch:18, apt_pair:19, siding_apt:20, metal_high:21,
@@ -1180,11 +1347,13 @@ function manageFacades(){}
 function dirtyChunk(b){ if (b && b.fac){ freeMesh(b.fac); b.fac = null; } if (b && b.chunk && b.chunk.far){ freeMesh(b.chunk.far); b.chunk.far = null; } if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); freeMesh(b.chunk.l); b.chunk.g = null; b.chunk.l = null; } }
 function prep3D(){
   var w = world, g = new Mesh(), chunks = new Map(), i;
-  var ATILE = {grass:[TX.grass, [236,244,222]], park:[TX.grass, [214,236,196]], forest:[TX.grass, [176,204,160]], sand:[TX.dirt, WHITE], parking:[TX.asphalt, [226,222,214]], water:[TX.water, WHITE]};
+  /* lawns in parks and on greens use the terrain's own grass (tile 45 = terrain blend, no other layers), so they meet it without a seam;
+     woods and fields are not drawn as shapes at all: the ground cover generator paints them into the terrain with soft edges */
+  var ATILE = {grass:[TERR, [240,250,232]], park:[TERR, [232,248,226]], sand:[TX.dirt, WHITE], parking:[TX.asphalt, [226,222,214]], water:[TX.water, WHITE]};
   w.areas.forEach(function(a){
-    var p = a.pts;
+    var p = a.pts; if (!ATILE[a.kind]) return;
     if (p.length > 800){ var st = Math.ceil(p.length/800)*2, q = []; for (i = 0; i < p.length; i += st) q.push(p[i], p[i+1]); p = q; }
-    var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], 0.25];
+    var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : 0.25];
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
   });
   var ribbon = function(p, hw, y, tile, col, lanes){
@@ -1201,7 +1370,7 @@ function prep3D(){
   w.roads.forEach(function(r){
     if (r.kind === 'water') ribbon(r.pts, r.w/2, 0.05, TX.water, WHITE, false);
     else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false);
-    else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.dirt, [150,140,134], false); }
+    else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false); }
     else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8);
   });
   g.pl = null; if (w.hg) drape(g, 0.05);
@@ -1895,7 +2064,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.32';
+var VERSION = '0.33';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2644,6 +2813,7 @@ function pickLot(){
     w.roads.forEach(function(r){ if (r.kind === 'path') return; var p = r.pts; for (var q = 0; q + 3 < p.length; q += 2){ var L2 = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), n = Math.max(1, Math.ceil(L2/3)); for (var s2 = 0; s2 <= n; s2++){ var x = p[q] + (p[q+2] - p[q])*s2/n, y = p[q+1] + (p[q+3] - p[q+1])*s2/n; if (inz(x, y, r.w/2)){ sc += r.kind === 'water' ? 400 : 60; return; } } } });
     w.buildings.forEach(function(o){ if (o !== b && !o.gone && inz(o.cx, o.cy, 6)) sc += o.area > 400 ? 120 : 12; });
     if (inWater(cx, cy, LOT_W)) sc += 400;
+    for (var gs = -1; gs <= 1; gs += 2) for (var ga = -2; ga <= 2; ga += 2){ var gx = cx + ox*(LOT_D + 2.5)*gs + ux*ga, gy = cy + oy*(LOT_D + 2.5)*gs + uy*ga; if (blocked(gx, gy) || inWater(gx, gy, 0.5)) sc += 300; }   /* both gates open onto clear ground */
     if (sc < bs){ bs = sc; best = {b:b, x:cx, y:cy, ux:ux, uy:uy}; }
   });
   return best;
@@ -2692,6 +2862,8 @@ function spreadNests(){
 }
 
 /* ================= weather and body temperature ================= */
+/* the ground through the year: fresh green in spring, drier in summer, gold and russet in autumn, snow lying on the level in winter */
+var GSEA = [[0.98, 1.04, 0.94, 0], [1.03, 1.0, 0.86, 0], [1.1, 0.93, 0.72, 0], [0.9, 0.9, 0.9, 0.66]];
 var SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'], SBASE = [58, 86, 55, 28], WNAME = ['Clear', 'Rain', 'Thunderstorm', 'Heat wave', 'Ice storm'];
 var wx = {w:0, until:0, tor:null, flash:0};
 function dayNum(){ return Math.floor((8 + time/DAY*24)/24) + 1; }
@@ -2747,7 +2919,7 @@ function alienCall(k, x, y, loud){
 function surfAt(x, y){
   var b = buildingAt(x, y); if (b) return b.cat === 'house' ? (hash(Math.floor(x/3), Math.floor(y/3), b.id) < 0.3 ? 'step_carpet' : 'step_wood') : 'step_concrete';
   if (inWater(x, y, 0)) return 'water';
-  for (var i = 0; i < world.areas.length; i++){ var a = world.areas[i]; if (x < a.minx || x > a.maxx || y < a.miny || y > a.maxy) continue; if ((a.kind === 'park' || a.kind === 'grass' || a.kind === 'forest') && pip(a.pts, x, y)) return season() === 3 ? 'step_snow' : 'step_grass'; }
+  for (var i = 0; i < world.areas.length; i++){ var a = world.areas[i]; if (x < a.minx || x > a.maxx || y < a.miny || y > a.maxy) continue; if ((a.kind === 'park' || a.kind === 'grass' || a.kind === 'field' || a.kind === 'forest') && pip(a.pts, x, y)) return season() === 3 ? 'step_snow' : 'step_grass'; }
   return season() === 3 && !nearRoad(x, y) ? 'step_snow' : 'step_concrete';
 }
 function nearRoad(x, y){ return false; }
@@ -3088,7 +3260,7 @@ function initGL(){
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c;vt=t;vec3 q=p*iscl;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;' +
     'vec3 ppl(vec2 uv,float j){vec2 a4=(vec2(mod(j,8.0)*256.0,floor(j/8.0+0.01)*256.0)+1.0+fract(uv)*254.0)/2048.0;vec4 tp=texture2D(atlas4,a4);float idx=floor(tp.g*8.0);vec3 pc=pp[0];for(int i=1;i<8;i++){if(float(i)==idx)pc=pp[i];}return pc*tp.r*1.99;}' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>199.5){float j5=k-200.0;vec2 s5=vec2(252.0/2048.0);vec2 a5=(vec2(mod(j5,8.0)*256.0,floor(j5/8.0+0.01)*256.0)+2.0)/2048.0+fract(uv)*s5;' + (lod ? 'return texture2DGradEXT(atlas5,a5,dFdx(uv)*s5,dFdy(uv)*s5);}' : 'return texture2D(atlas5,a5);}') +
@@ -3096,6 +3268,17 @@ function initGL(){
     'if(k<11.5){ss=512.0;sx=mod(k,4.0)*512.0;sy=floor(k/4.0+0.01)*512.0;}else{float j=k-12.0;ss=256.0;sx=mod(j,8.0)*256.0;sy=1536.0+floor(j/8.0+0.01)*256.0;}' +
     'float sc=(ss-8.0)/2048.0;vec2 a=(vec2(sx,sy)+4.0)/2048.0+fract(uv)*sc;' +
     (lod ? 'return texture2DGradEXT(atlas,a,dFdx(uv)*sc,dFdy(uv)*sc);}' : 'return texture2D(atlas,a);}') +
+    /* terrain: mown grass with long grass, earth and rock painted over it by weight; each layer shows first where its own picture is
+       high (tufts, leaves, stone tops), and a soft noise breaks up the even spacing of the cover grid */
+    'float h2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}' +
+    'float vn(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h2(i),h2(i+vec2(1.0,0.0)),f.x),mix(h2(i+vec2(0.0,1.0)),h2(i+vec2(1.0,1.0)),f.x),f.y);}' +
+    'float lay(float w,float h,float m){w=clamp(w+(m-0.5)*w*(1.0-w)*2.4,0.0,1.0);float t=(1.0-h)*0.8;return smoothstep(t+0.02,t+0.2,w);}' +
+    'vec4 terr(vec2 uv,vec3 w,vec2 q){vec4 g=samp(0.0,uv);vec3 c=g.rgb;float hh=g.a;float m=vn(q*0.08)*0.65+vn(q*0.23)*0.35;' +
+    'float wm=clamp((w.z-45.0)/1.2,0.0,1.0);float we=clamp(w.x,0.0,1.0);float wr=clamp(w.y,0.0,1.0);' +
+    'if(wm>0.004){vec4 l=samp(1.0,uv*0.93+0.21);float f=lay(wm,l.a,m);c=mix(c,l.rgb,f);hh=mix(hh,l.a,f);}' +
+    'if(we>0.004){vec4 l=samp(2.0,uv*1.07+0.53);float f=lay(we,l.a,1.0-m);c=mix(c,l.rgb,f);hh=mix(hh,l.a,f);}' +
+    'if(wr>0.004){vec4 l=samp(3.0,uv*0.5+0.11);float f=lay(wr,l.a,m);c=mix(c,l.rgb,f);hh=mix(hh,0.4,f);}' +
+    'return vec4(c,hh);}' +
     'void main(){vec3 V=wp-cam;float d=length(V);' +
     'bool unlit=vc.a>0.6&&vc.a<0.9;bool emis=vc.a>0.25&&vc.a<0.6;bool back=vc.a<0.25&&!gl_FrontFacing;' +
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
@@ -3103,6 +3286,8 @@ function initGL(){
     'if(back){if(texOn>0.5)col=samp(21.0,vec2((wp.x+wp.z)*0.5,-wp.y*0.5)).rgb;else col=vec3(0.92,0.86,0.76);}' +
     'else if(k>199.5){if(texOn>0.5&&bldOn>0.5){vec4 tb=samp(k,vt.xy);if(tb.a>0.75)col=tb.rgb*vc.rgb;else{col=tb.rgb;if(tb.a>0.25){float wh=fract(sin(dot(floor(vec2(wp.x+wp.z,wp.y)*vec2(0.25,0.3125)),vec2(12.9898,78.233)))*43758.5453);glow=step(0.5,wh)*1.7;col=mix(col,col*0.5,dark);}}}}' +
     'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
+    'else if(k>44.5&&k<46.5){vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
+    'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){vec2 u1=vt.xy+vec2(tm*0.035,tm*0.02);vec2 u2=vt.xy*1.9+vec2(-tm*0.03,tm*0.045);vec3 ww=(samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5;float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
     'float band=step(0.18,dot(n,vec3(-0.44,0.8,0.4)));if(k>79.5)band=smoothstep(-0.45,0.6,dot(n,vec3(-0.44,0.8,0.4)));if(unlit||emis)band=1.0;' +
     'col=mix(col*vec3(0.74,0.66,0.68),col,band);' +
@@ -3116,7 +3301,7 @@ function initGL(){
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0);
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); loadCreatures(); loadPeople();
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
@@ -3400,7 +3585,7 @@ function render(){
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
   var t = 1/Math.tan(1.22/2), nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   gl.uniformMatrix4fv(U.vp, false, mul(Pm, V)); gl.uniform3fv(U.cam, e); gl.uniform3fv(U.fwd, f); gl.uniform3fv(U.sky, sky);
-  gl.uniform1f(U.amb, (1 - 0.88*dark)*(0.55 + 0.45*wd) + fl); gl.uniform1f(U.dark, dark); gl.uniform1f(U.fogK, [0, 0.004, 0.007, 0.0008, 0.01][wx.w]); gl.uniform2f(U.fade, QS.far*0.8, QS.far*1.02); gl.uniform1f(U.flash, lightOn() ? 1 : 0);
+  var gs = GSEA[season()]; gl.uniform4f(U.gsea, gs[0], gs[1], gs[2], gs[3]); gl.uniform1f(U.amb, (1 - 0.88*dark)*(0.55 + 0.45*wd) + fl); gl.uniform1f(U.dark, dark); gl.uniform1f(U.fogK, [0, 0.004, 0.007, 0.0008, 0.01][wx.w]); gl.uniform2f(U.fade, QS.far*0.8, QS.far*1.02); gl.uniform1f(U.flash, lightOn() ? 1 : 0);
   var fu = new Float32Array(32), fcl = new Float32Array(24), near = fires.concat(flares, lamps.filter(function(l){ return l.life > 0; })).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
   for (i = 0; i < 8 && i < near.length; i++){ var lp = near[i].lamp; fu[i*4] = near[i].x; fu[i*4+1] = 0.6 + groundAt(near[i].x, near[i].y); fu[i*4+2] = near[i].y; fu[i*4+3] = lp ? 1.5 : 1.6 + 0.3*Math.sin(now*13 + i); fcl[i*3] = 1; fcl[i*3+1] = lp ? 0.9 : 0.6; fcl[i*3+2] = lp ? 0.68 : 0.25; }
   gl.uniform3fv(U.fcol, fcl);
@@ -3420,10 +3605,10 @@ function render(){
   if (world.fence && Math.abs(world.fence.x - P.x) < 400 && Math.abs(world.fence.y - P.y) < 400) drawMesh(world.fence.g);
   for (i = 0; i < loaded.length; i++) drawMesh(loaded[i].int.g);
   for (i = 0; i < facs.length; i++) if (facs[i].fac) drawMesh(facs[i].fac);
-  var TR = world.gl.terr, trR = QS.far + (world.hg ? TT*world.hg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - P.x) < trR && Math.abs(o.y - P.y) < trR) drawMesh(o.g); });
+  var TR = world.gl.terr, trR = QS.far + (world.tg ? TT*world.tg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - P.x) < trR && Math.abs(o.y - P.y) < trR) drawMesh(o.g); });
 
-  var m = new Mesh(), x, y, far = world.hg ? world.hg.min - 3 : 0;
-  m.pl = [TX.grass, 0.25]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [236,244,222], 255); m.pl = null;
+  var m = new Mesh(), x, y, far = world.tg ? world.tg.min - 3 : 0;
+  m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
   drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
   drawWorldFx(m, e, now); m.yo = 0;

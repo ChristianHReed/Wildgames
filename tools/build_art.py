@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Builds the art embedded in play.html from design/afterstreet_handoff:
-   - one 2048x2048 texture atlas (window-glow mask stored in the alpha channel)
-   - one strip of HUD item icons
+"""Builds the art embedded in play.html:
+   - one 2048x2048 texture atlas of the ground and indoor tiles painted by tools/paint_ground.py (run that first)
+   - one strip of HUD item icons (from design/afterstreet_handoff)
    - the built-in downtown Springfield map in the game's compact map format
 Writes tools/out/{atlas.png,icons.png,springfield.lbmap.json}. Run tools/write_assets.py afterwards."""
 import json, os, sys
@@ -10,27 +10,26 @@ from PIL import Image, ImageChops
 SRC = os.path.join(os.path.dirname(__file__), '..', 'design', 'afterstreet_handoff')
 OUT = os.path.join(os.path.dirname(__file__), 'out', 'full' if S == 2 else 'lite'); os.makedirs(OUT, exist_ok=True)
 T = os.path.join(SRC, 'textures')
-BIG = ['facades/facade_brick', 'facades/facade_brick_dark', 'facades/facade_siding_cream', 'facades/facade_siding_river', 'facades/facade_stucco', 'facades/facade_stone',
-       'facades/shopfront_food', 'facades/shopfront_medicine', 'facades/shopfront_materials', 'facades/shopfront_gear', 'facades/shopfront_misc', 'ground/road_lanes']
-SMALL = ['roofs/roof_gravel', 'roofs/roof_metal', 'roofs/roof_shingle_clay', 'ground/asphalt', 'ground/sidewalk', 'ground/grass', 'ground/dirt_lot', 'ground/water',
-         'materials/floor_tile', 'materials/wallpaper_interior', 'materials/wood_planks', 'props/store_shelf_front', 'props/bookshelf_front', 'props/fridge_front', 'props/stove_front', 'materials/crate']
+GD = os.path.join(os.path.dirname(__file__), 'out', 'ground')   # painted in code by tools/paint_ground.py
+# big 512 px slots: the four terrain layers (their alpha is a height map for blending), road lanes; the rest are spare
+BIG = ['lawn', 'meadow', 'earth', 'rock', None, None, None, None, None, None, None, 'lanes']
+# small 256 px slots, numbered from 12 in the game (see TX in play.html)
+SMALL = ['gravel', None, None, 'asphalt', 'sidewalk', 'grass', 'dirt', 'water', 'floortile', 'wallpaper', 'wood']
 G = 4*S  # gutter in pixels, filled with wrapped texture so tiling does not bleed
 def tile(name, size):
-    im = Image.open(os.path.join(T, name + '.png')).convert('RGB')
-    c = size - 2*G; im = im.resize((c, c), Image.LANCZOS)
-    glow = None; ep = os.path.join(T, name + '_emissive.png')
-    if os.path.exists(ep): glow = Image.open(ep).convert('L').resize((c, c), Image.LANCZOS)
-    alpha = Image.new('L', (c, c), 255)
-    if glow is not None: alpha = glow.point(lambda v: 255 - min(127, int(v*0.5)))   # 255 = no glow, 128 = full glow
-    rgba = Image.merge('RGBA', (*im.split(), alpha))
+    im = Image.open(os.path.join(GD, name + '.png')).convert('RGBA')
+    c = size - 2*G; rgba = im.resize((c, c), Image.LANCZOS)
     out = Image.new('RGBA', (size, size))
     for ox in (-c, 0, c):
         for oy in (-c, 0, c): out.paste(rgba, (G + ox, G + oy))
     return out
-atlas = Image.new('RGBA', (2048*S, 2048*S), (0, 0, 0, 255))
-for i, n in enumerate(BIG): atlas.paste(tile(n, 512*S), ((i % 4)*512*S, (i//4)*512*S))
-for j, n in enumerate(SMALL): atlas.paste(tile(n, 256*S), ((j % 8)*256*S, 1536*S + (j//8)*256*S))
-atlas.save(os.path.join(OUT, 'atlas.png'), optimize=True)
+atlas = Image.new('RGBA', (2048*S, 2048*S), (128, 128, 128, 255))
+for i, n in enumerate(BIG):
+    if n: atlas.paste(tile(n, 512*S), ((i % 4)*512*S, (i//4)*512*S))
+for j, n in enumerate(SMALL):
+    if n: atlas.paste(tile(n, 256*S), ((j % 8)*256*S, 1536*S + (j//8)*256*S))
+# a 256-colour palette keeps the file small; the painted style has few colours, so it looks the same
+atlas.quantize(256, method=Image.FASTOCTREE, dither=Image.Dither.NONE).save(os.path.join(OUT, 'atlas.png'), optimize=True)
 # ---- HUD icons, 96 px each, in the order the game expects
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']
 sheet_src = Image.open(os.path.join(T, 'sprites', 'items_atlas.png')).convert('RGBA')

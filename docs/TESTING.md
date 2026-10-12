@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.32) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.33) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -271,6 +271,14 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3s.2 Homes have siding or brick, trimmed windows (many with shutters) and a front porch. Warehouses and garages are metal with roll-up doors near the entrance; the fire station has red bay doors.
 - [ ] 3s.3 Every window you can open lines up with a painted window. At night about half the windows glow.
 - [ ] 3s.4 The frame rate in town on the iPhone is no worse than before (the old modelled fronts are gone, so it may be better).
+
+## Stage 3t: the new ground and trees
+
+- [ ] 3t.1 Near homes and roads the grass is short and green; walk out of town and it turns into long grass with flowers. Woods have leaf litter underfoot and thin out gradually at their edges.
+- [ ] 3t.2 By rivers and ponds there is a muddy strip at the water and a line of trees along the bank; steep slopes and river bluffs show bare earth and rock.
+- [ ] 3t.3 Residential streets are lined with trees on both sides (alternating), houses have a tree or two in the yard, and parks have groves with open lawn between.
+- [ ] 3t.4 In autumn the grass turns gold; in winter snow lies on level ground. The Demo Town now has a creek, a wooded bluff and meadows around it.
+- [ ] 3t.5 The frame rate in the country and in town on the iPhone is still smooth, and a big map still loads in reasonable time.
 
 ## Stage 4: aliens and weather
 

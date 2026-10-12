@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.32. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.33. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -66,6 +66,7 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 - **Upstairs and roofs:** most two-storey buildings have stairs to a furnished upper floor with its own loot: bedrooms over homes, a flat over shops, restaurants and bars, offices over offices and banks, wards over clinics, bunks over fire stations, classrooms over schools. In flat-roofed buildings a ladder at the top of the stairs goes up through a hatch to the roof (aliens on the other floor cannot see you, but they can hear you and follow you up). Most low flat-roofed buildings have a ladder: press E at its foot to climb. Aliens cannot climb, but they can see you from the street and will wait under the ladder for a while. Walk off a roof edge (sprint at the low wall round bigger roofs) and you fall: drops over 3 m hurt, about 8 health per metre beyond that.
 - **Furniture that works:** sleep in beds until morning (the bed becomes where you wake if you die), cook hot meals on stoves (1 food, 1 wood), fill bottles at sinks, baths and toilet cisterns until they run dry, and shove emptied wardrobes, dressers, fridges and lockers against doors.
 - **Sound:** footsteps that change with the ground, doors, glass, hits, gunfire, alien calls you hear before you see them, rain, wind and thunder. Volume is on the start page.
+- **Ground and trees:** the ground is laid out by code from how real land is covered: mown grass near homes and roads and long grass with wild flowers further out, leaf litter under woods whose edges thin out gradually, lush ground and muddy banks by water, bare earth and limestone on steep slopes and river bluffs, drier ridges. Trees are planted by kind: street trees along residential streets, yard trees behind houses, groves in parks, thick woods and lines of trees along rivers. The ground changes with the seasons, with snow in winter. See `docs/TERRAIN.md`.
 - **Plants:** bushes, flowers, ferns, grass and rocks can be gathered for berries, herbs, fiber and stones, and grow back. Maps load in pieces, so a whole city can be one world on a computer.
 - **Aliens:** swarmers in groups, a stalker that hunts at night by light and noise, a rare giant, and nests that spread between buildings.
 - **Weather:** four seasons, rain, thunderstorms, heat waves, ice storms and tornadoes, with a body-warmth meter.
@@ -86,7 +87,6 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 - Map editing covers repainting, walls and demolition, not new buildings or changing room layouts.
 - When taking a host's building changes, a clash asks one question for all buildings, not one per building.
 - One-of-a-kind items rely on trust: a save file can be copied.
-- Buildings are ground floor only.
 - Kitchen, bathroom, shop and church furniture is built from plain boxes until matching models are added.
 - Doors and windows inside a building (between rooms) are open doorways; only outside doors and ground-floor windows work.
 - Other players' gunshots and thrown items are not drawn.
@@ -110,7 +110,7 @@ The art is in `assets/`, as small script files that `play.html` loads when it st
 - `assets/lite/` is loaded on phones and when View distance is set to Low.
 - `assets/icons.js`, `btex.js`, `people_tex.js`, `models.js`, `nature.js` and `map.js` are shared.
 
-The files are made by the scripts in `tools/` from the Afterstreet design pack in `design/afterstreet_handoff/` and from the packs listed in `CREDITS.md`. To rebuild: run `paint_buildings.py` and `paint_people.py`, then `build_art.py`, `build_creatures.py`, `build_nature.py` and `build_people.py` twice each (once plain, once with `full`), then `build_models.py` and `write_assets.py`, and `build_sounds.py` for the sounds.
+The files are made by the scripts in `tools/` from the packs listed in `CREDITS.md` (the HUD icons and the built-in map come from the Afterstreet design pack in `design/afterstreet_handoff/`). To rebuild: run `paint_ground.py`, `paint_buildings.py` and `paint_people.py`, then `build_art.py`, `build_creatures.py`, `build_nature.py` and `build_people.py` twice each (once plain, once with `full`), then `build_models.py` and `write_assets.py`, and `build_sounds.py` for the sounds.
 
 Map data © OpenStreetMap contributors, available under the Open Database License.
 
