@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.34.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.34.2) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -285,9 +285,9 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3u.1 Press Play Springfield, MO. You start at the safe house on the edge of town; the full map shows real streets you know.
 - [ ] 3u.2 Walk or drive out of the first square. The next square loads in a second or two and a message says which town you are near (Nixa, Ozark, Republic and so on).
 - [ ] 3u.3 Out in the country: pasture with lone trees and hedgerows, oak-hickory woods on the slopes, pines to the south-east, tree-lined creeks, lakes to the south (Table Rock) and north (Stockton).
-- [ ] 3u.4 On the iPhone: on the start page under Big region, press **Save for offline** next to Springfield (built in). It counts up to 711 squares. Then turn on airplane mode and travel: every square still loads.
+- [ ] 3u.4 On the iPhone: on the start page under Big region, press **Save for offline** next to Springfield (built in). It counts up to 711 squares (about 80 MB). Then turn on airplane mode and travel: every square still loads.
 - [ ] 3u.5 Save and exit in a far square, then Play Springfield again: you resume in that square. Report any square that takes very long to load.
-- [ ] 3u.6 Known gaps in the map pack: east Nixa, Ozark and a few rural edges have no buildings yet, and many farms are missing in the country.
+- [ ] 3u.6 The map pack's gaps are filled in: Ozark and east Nixa have streets of homes with a few shops on the bigger roads, and the country has farmsteads (house, barn, shed, a drive and often a stock pond) every few hundred metres along county roads. Report anywhere a filled-in house sits on a road or in a creek.
 
 ## Stage 3v: getting unstuck
 
