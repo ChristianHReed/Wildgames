@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.26) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.27) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -209,6 +209,15 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3l.5 Turn the sound on (tap the screen once on iPhone). Footsteps change on grass, pavement, wooden and carpeted floors. Doors creak and bang, glass breaks, rain and wind follow the weather, aliens call from out of sight and screech when they spot you.
 - [ ] 3l.6 The volume slider on the start page works, and 0 is silent.
 - [ ] 3l.7 Your survivor now walks, runs, crouch-walks, swims, shoots and dies with proper movements (third-person view, P).
+
+## Stage 3m: furniture that works
+
+- [ ] 3m.1 At night, press E at a bed with no aliens near. The screen goes dark and the clock runs fast to morning. Health refills; food and water drop only a little. You now wake at that bed if you die.
+- [ ] 3m.2 Try to sleep with an alien close by: it refuses. Sleep, then let an alien find you: it wakes you.
+- [ ] 3m.3 With 1 food and 1 wood, cook at a stove. Eat the hot meal from the backpack: it fills you more than food and warms you.
+- [ ] 3m.4 Fill bottles at a kitchen sink (2), a bath (2), a basin or a toilet cistern (1 each) until each runs dry. It stays dry after you save and come back.
+- [ ] 3m.5 Empty a wardrobe, dresser, fridge or locker, then press B (or Wall) next to it. It slides against the nearest door. Aliens have to batter through it; you can pull it away with E.
+- [ ] 3m.6 Leave and resume. Shoved furniture, shut and locked doors and dry taps are as you left them.
 
 ## Stage 4: aliens and weather
 

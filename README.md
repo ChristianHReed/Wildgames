@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.26. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.27. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -34,6 +34,8 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | First or third person | P | Menu, First or third person |
 | Hide in an emptied wardrobe or locker | E | Tap it; move or Search to come out |
 | Pry a locked door, smash it | Hold E, swing at it | Hold Search, Swing |
+| Shove emptied heavy furniture against the nearest door | B | Wall |
+| Sleep, cook, fill a bottle | E at a bed, stove, sink, bath or toilet | Tap it |
 | Swing, shoot | Click or Space, right-click or F | Swing, Shoot |
 | Search, gather, open or shut a door or window, ride, trade | E | Tap it, or Search |
 | Eat, drink, medkit | 1, 2, 3 | Tap the item |
@@ -57,6 +59,7 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 
 - **World:** real streets and building outlines; every building can be entered. Rooms are laid out by what the building is (a home gets a living room, kitchen, bedrooms and bathroom; a church gets pews facing an altar), and what you find depends on the container. Doors and windows open, shut, break and can be boarded up; aliens batter their way in.
 - **Doors and hiding:** inside doors open and shut and block an alien's view; about a third of outside doors are locked (keys, pry quietly, or smash loudly); empty wardrobes and lockers are hiding places.
+- **Furniture that works:** sleep in beds until morning (the bed becomes where you wake if you die), cook hot meals on stoves (1 food, 1 wood), fill bottles at sinks, baths and toilet cisterns until they run dry, and shove emptied wardrobes, dressers, fridges and lockers against doors.
 - **Sound:** footsteps that change with the ground, doors, glass, hits, gunfire, alien calls you hear before you see them, rain, wind and thunder. Volume is on the start page.
 - **Plants:** bushes, flowers, ferns, grass and rocks can be gathered for berries, herbs, fiber and stones, and grow back. Maps load in pieces, so a whole city can be one world on a computer.
 - **Aliens:** swarmers in groups, a stalker that hunts at night by light and noise, a rare giant, and nests that spread between buildings.

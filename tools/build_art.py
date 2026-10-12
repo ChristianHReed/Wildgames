@@ -35,7 +35,7 @@ atlas.save(os.path.join(OUT, 'atlas.png'), optimize=True)
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']
 sheet_src = Image.open(os.path.join(T, 'sprites', 'items_atlas.png')).convert('RGBA')
 ORDER = ['canned_beans', 'water_bottle', 'first_aid_kit', 'batteries', 'planks', 'tin_can', 'rain_jacket', 'fuel_can', 'backpack']
-icons = Image.new('RGBA', (96*(len(ORDER) + 9), 96))
+icons = Image.new('RGBA', (96*(len(ORDER) + 10), 96))
 for i, n in enumerate(ORDER):
     f = fr[n]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (i*96, 0))
 # four more: nails stand for ammo, the pack's flashlight, and a hand-drawn lantern and radio in the same flat outlined style
@@ -74,6 +74,12 @@ d3.ellipse([60, 90, 200, 230], fill=(217, 168, 69, 255), outline=INKC, width=LW)
 d3.rounded_rectangle([186, 140, 330, 182], 10, fill=(217, 168, 69, 255), outline=INKC, width=LW)
 d3.rectangle([262, 176, 290, 240], fill=(217, 168, 69, 255), outline=INKC, width=10); d3.rectangle([300, 176, 324, 222], fill=(217, 168, 69, 255), outline=INKC, width=10)
 icons.paste(ky.resize((96, 96), Image.LANCZOS), (17*96, 0))
+# a hot meal in a bowl, for cooking
+bw = Image.new('RGBA', (384, 384)); d4 = ImageDraw.Draw(bw); d4.ellipse([60, 320, 330, 360], fill=(61, 48, 41, 60))
+for k in range(3): d4.arc([110 + k*50, 40, 170 + k*50, 160], 200, 340, fill=(235, 221, 197, 255), width=10)
+d4.chord([50, 120, 334, 330], 0, 180, fill=(198, 113, 57, 255), outline=INKC, width=LW); d4.ellipse([56, 170, 328, 230], fill=(217, 168, 69, 255), outline=INKC, width=LW)
+d4.ellipse([110, 180, 160, 205], fill=(150, 90, 50, 255)); d4.ellipse([200, 186, 250, 212], fill=(122, 138, 94, 255))
+icons.paste(bw.resize((96, 96), Image.LANCZOS), (18*96, 0))
 icons.save(os.path.join(OUT, 'icons.png'), optimize=True)
 # ---- built-in Springfield map
 M = os.path.join(SRC, 'map_data')

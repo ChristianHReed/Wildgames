@@ -52,7 +52,7 @@
   #vTemp{float:right;font-weight:400;opacity:.85;text-transform:none}
   #power{margin-top:8px;font-size:11px;font-weight:600;opacity:.92;display:flex;gap:12px;align-items:center}
   #power span{display:inline-flex;align-items:center;gap:4px}
-  #power .ic{position:static;width:18px;height:18px;background-size:324px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+  #power .ic{position:static;width:18px;height:18px;background-size:342px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   #power .off{opacity:.45}
   #hud{position:fixed;left:50%;top:12px;transform:translateX(-50%);pointer-events:none;text-align:center;color:#fff;text-shadow:var(--sh);width:300px}
   #compass{position:relative;height:20px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);border-bottom:1px solid rgba(255,255,255,.35)}
@@ -78,7 +78,7 @@
   .slot{position:relative;width:52px;height:52px;background:rgba(32,30,29,.42);border-radius:10px;box-shadow:0 0 0 1px rgba(245,234,216,.22)}
   .slot[data-u],.slot[data-pack]{cursor:pointer}
   .slot.zero{opacity:.5}
-  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:648px 36px;background-repeat:no-repeat}
+  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:684px 36px;background-repeat:no-repeat}
   .slot .cnt{position:absolute;right:4px;bottom:2px;font-size:12px;font-weight:800;color:#fff;text-shadow:var(--sh)}
   .slot .key{position:absolute;left:5px;top:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,.7)}
   .sw{width:12px;height:12px;display:inline-block;border-radius:3px;border:1px solid var(--outline)}
@@ -93,6 +93,7 @@
   #feed div{display:table;margin:2px auto;text-shadow:var(--sh)}
   #hurt{position:fixed;inset:0;background:var(--clay);opacity:0;pointer-events:none}
   #hideMask{position:fixed;inset:0;pointer-events:none;display:none;background:repeating-linear-gradient(90deg,rgba(28,20,14,.96) 0 46px,rgba(28,20,14,.25) 46px 58px);box-shadow:inset 0 0 160px 60px rgba(0,0,0,.85)} #hideMask.on{display:block}
+  #sleepMask{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,16,24,.92);color:#f5ead8;font-size:20px;font-weight:700;letter-spacing:.06em;z-index:6} #sleepMask.on{display:flex}
   #hitDir{position:fixed;left:50%;top:50%;width:0;height:0;pointer-events:none;opacity:0;z-index:5} #hitDir i{position:absolute;left:-46px;top:-150px;width:92px;height:22px;border-radius:50% 50% 0 0;border-top:7px solid #e0442a;filter:drop-shadow(0 0 4px rgba(0,0,0,.5))}
   #toast{position:fixed;left:50%;top:104px;transform:translateX(-50%);background:rgba(32,30,29,.72);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;max-width:min(520px,60vw);text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
   #chatIn{position:fixed;left:22px;bottom:90px;width:min(340px,70vw);border-color:var(--clay);user-select:text}
@@ -125,7 +126,7 @@
   .irow span.n{flex:1;color:var(--ink);font-weight:600}
   .irow i{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
   #miniWrap{pointer-events:auto;cursor:pointer}
-  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:540px 30px;display:inline-block}
+  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:570px 30px;display:inline-block}
   #bigMap{position:fixed;inset:0;z-index:6;background:#e6d6bb}
   #bigCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
   #bigBar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);white-space:nowrap}
@@ -163,7 +164,7 @@
   .touchmode #hudBtns{right:112px;top:44px;width:170px}
   .touchmode #inv{bottom:6px;gap:5px}
   .touchmode .slot{width:44px;height:44px;border-radius:8px}
-  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:540px 30px}
+  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:570px 30px}
   .touchmode .slot .cnt{font-size:11px}
   .touchmode .slot .key{display:none}
   .touchmode #toast{top:74px;font-size:12px}
@@ -180,7 +181,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hurt"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
+<div id="hurt"></div><div id="sleepMask"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
 <div id="play" class="hidden">
   <div id="cross"></div>
   <div id="vitals">
@@ -345,7 +346,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.26.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.27.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -665,7 +666,7 @@ var LOOT = {
   industrial:{scrap:5, wood:4, fuel:2, battery:1}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
 var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba','']};
-ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096',''];
+ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096',''];
 var CORE = {food:1, water:1, medkit:1, ammo:1, wood:1, scrap:1};
 function newInv(start){ var o = {}; for (var k in ITEMS) o[k] = 0; if (start){ o.food = 1; o.water = 1; o.ammo = 8; o.radio = 1; o.flashlight = 1; o.battery = 2; } return o; }
 var AREA_COL = {grass:'#7f9a5c', park:'#6fa25a', forest:'#4f7f4a', sand:'#cdbb8a', parking:'#6a6e75', water:'#3f86b8'};
@@ -1242,7 +1243,7 @@ var FURN = {
   shelf:{name:'shelves', tex:23, boxes:[[0,.9,0,1.1,.9,.22,'#d6c4a4']]},
   counter:{boxes:[[0,.5,0,1,.5,.35,'#5a6470'],[0,1.02,0,1.05,.03,.4,'#c9ccd1']]},
   cabinet:{name:'medicine cabinet', boxes:[[0,.9,0,.5,.9,.25,'#eef1f3'],[0,1.3,.26,.3,.07,.01,'#c8322b'],[0,1.3,.26,.07,.3,.01,'#c8322b']]},
-  gurney:{boxes:[[0,.55,0,1,.08,.4,'#e6eaee'],[0,.25,0,.9,.03,.35,'#8a9199']]},
+  gurney:{fix:'bed', boxes:[[0,.55,0,1,.08,.4,'#e6eaee'],[0,.25,0,.9,.03,.35,'#8a9199']]},
   locker:{name:'locker', hide:1, boxes:[[0,1,0,.6,1,.28,'#3f5a85'],[0,1.5,.29,.5,.04,.01,'#22344f']]},
   desk:{boxes:[[0,.72,0,.8,.04,.4,'#7a5a3c'],[-.6,.35,0,.15,.35,.38,'#5a4028'],[.6,.35,0,.15,.35,.38,'#5a4028']]},
   crate:{name:'crate', tex:27, boxes:[[0,.45,0,.5,.45,.5,'#b98a52']]},
@@ -1274,8 +1275,8 @@ Mesh.prototype.model = function(M, x, z, yaw, y0){
 };
 /* ---- more furniture. Everything is built with its back at -z so the layout rules can push it against a wall. s = half width, half depth of the floor space it takes. ---- */
 FURN.bed.boxes = [[0,.25,0,.7,.25,1,'#7a5a3c'],[0,.55,.04,.65,.08,.94,'#c9d3e0'],[0,.68,-.7,.5,.07,.22,'#f2f2f2'],[0,.55,-1.02,.72,.55,.04,'#5a4028']];
-FURN.bed.models = ['bed_single_A']; FURN.bed.s = [.72,1.15];
-FURN.bed2 = {models:['bed_double_A','bed_double_B'], s:[1.2,1.15], boxes:[[0,.25,0,1.1,.25,1,'#7a5a3c'],[0,.55,.04,1.05,.08,.94,'#b9c7d6'],[0,.68,-.7,.9,.07,.22,'#f2f2f2'],[0,.55,-1.02,1.12,.55,.04,'#5a4028']]};
+FURN.bed.models = ['bed_single_A']; FURN.bed.s = [.72,1.15]; FURN.bed.fix = 'bed';
+FURN.bed2 = {fix:'bed', models:['bed_double_A','bed_double_B'], s:[1.2,1.15], boxes:[[0,.25,0,1.1,.25,1,'#7a5a3c'],[0,.55,.04,1.05,.08,.94,'#b9c7d6'],[0,.68,-.7,.9,.07,.22,'#f2f2f2'],[0,.55,-1.02,1.12,.55,.04,'#5a4028']]};
 FURN.sofa.models = ['couch','couch_pillows']; FURN.sofa.s = [1.15,.62];
 FURN.armchair = {models:['armchair'], s:[.7,.62], boxes:[[0,.25,0,.5,.25,.42,'#5f7f9a'],[0,.6,-.32,.5,.3,.1,'#4f6b85']]};
 FURN.table.models = ['table_medium']; FURN.table.s = [.78,.78]; FURN.table.boxes = [[0,.72,0,.7,.04,.7,'#a8743e'],[0,.35,0,.08,.35,.08,'#6b4526']];
@@ -1295,12 +1296,12 @@ FURN.cabinet.lt = {medkit:6, none:1};
 FURN.bench.name = 'tool bench'; FURN.bench.lt = {scrap:4, battery:1, flashlight:.5, wood:1, none:1};
 FURN.rug = {flat:1, models:['k_rug'], s:[1.3,.9], boxes:[[0,.006,0,1.3,.006,.9,'#9a5a4a'],[0,.008,0,1.1,.006,.7,'#c9a87a']]};
 FURN.mat = {flat:1, s:[.9,.4], boxes:[[0,.03,0,.9,.03,.4,'#3d6b8c']]};
-FURN.stove = {models:['k_stove'], s:[.45,.47], boxes:[[0,.45,0,.38,.45,.32,'#d9d9d6'],[0,.91,0,.38,.01,.32,'#2a2c30'],[0,1.05,-.3,.38,.13,.03,'#c9c9c6'],[0,.5,.33,.3,.22,.005,'#2a2c30']]};
-FURN.sink = {models:['k_sink'], s:[.45,.47], boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,.925,0,.25,.02,.2,'#9aa3aa'],[0,1.08,-.22,.03,.14,.03,'#b9c0c6']]};
+FURN.stove = {fix:'stove', models:['k_stove'], s:[.45,.47], boxes:[[0,.45,0,.38,.45,.32,'#d9d9d6'],[0,.91,0,.38,.01,.32,'#2a2c30'],[0,1.05,-.3,.38,.13,.03,'#c9c9c6'],[0,.5,.33,.3,.22,.005,'#2a2c30']]};
+FURN.sink = {fix:'tap', taps:2, models:['k_sink'], s:[.45,.47], boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,.925,0,.25,.02,.2,'#9aa3aa'],[0,1.08,-.22,.03,.14,.03,'#b9c0c6']]};
 FURN.kcab = {models:['k_cab'], s:[.45,.47], name:'cupboard', lt:{food:4, water:1, battery:.5, none:2}, boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,1.8,-.15,.6,.35,.17,'#8a6a48']]};
-FURN.toilet = {models:['k_toilet'], s:[.33,.5], boxes:[[0,.2,.08,.2,.2,.26,'#f2f2ee'],[0,.42,.08,.22,.03,.28,'#e6e6e0'],[0,.6,-.24,.22,.3,.1,'#f2f2ee']]};
-FURN.tub = {models:['k_tub'], s:[1.25,.59], boxes:[[0,.28,0,.85,.28,.4,'#f2f2ee'],[0,.5,0,.75,.07,.3,'#bcd6e0']]};
-FURN.basin = {models:['k_basin'], s:[.36,.43], name:'bathroom cabinet', lt:{medkit:3, water:1, none:3}, boxes:[[0,.42,0,.3,.42,.22,'#e9e6de'],[0,.86,0,.32,.03,.24,'#f6f6f2'],[0,1.5,-.2,.28,.3,.03,'#a9c4cf']]};
+FURN.toilet = {fix:'tap', taps:1, models:['k_toilet'], s:[.33,.5], boxes:[[0,.2,.08,.2,.2,.26,'#f2f2ee'],[0,.42,.08,.22,.03,.28,'#e6e6e0'],[0,.6,-.24,.22,.3,.1,'#f2f2ee']]};
+FURN.tub = {fix:'tap', taps:2, models:['k_tub'], s:[1.25,.59], boxes:[[0,.28,0,.85,.28,.4,'#f2f2ee'],[0,.5,0,.75,.07,.3,'#bcd6e0']]};
+FURN.basin = {fix:'tap', taps:1, models:['k_basin'], s:[.36,.43], name:'bathroom cabinet', lt:{medkit:3, water:1, none:3}, boxes:[[0,.42,0,.3,.42,.22,'#e9e6de'],[0,.86,0,.32,.03,.24,'#f6f6f2'],[0,1.5,-.2,.28,.3,.03,'#a9c4cf']]};
 FURN.tv = {models:['k_tv'], s:[.84,.33], boxes:[[0,.25,0,.6,.25,.2,'#4a3a2c'],[0,.85,0,.55,.32,.03,'#15171a'],[0,.85,.031,.5,.27,.003,'#27323a']]};
 FURN.nightstand = {models:['k_night'], s:[.28,.24], name:'nightstand', lt:{battery:2, flashlight:1, medkit:.5, ammo:.4, key:.8, none:3}, boxes:[[0,.28,0,.22,.28,.22,'#7a5a3c'],[0,.62,0,.05,.06,.05,'#6b4526'],[0,.78,0,.12,.1,.12,'#e8d9a8']]};
 FURN.closet = {models:['k_closet'], s:[.42,.27], hide:1, name:'wardrobe', lt:{coat:3, scrap:.5, none:3}, boxes:[[0,1,0,.6,1,.3,'#6b4a30'],[0,1,.305,.012,.92,.005,'#3a2a1c'],[-.08,1,.31,.02,.1,.01,'#c9a84a'],[.08,1,.31,.02,.1,.01,'#c9a84a']]};
@@ -1310,7 +1311,7 @@ FURN.checkout = {name:'till', lt:{battery:1, scrap:1, none:3}, boxes:[[0,.5,0,.9
 FURN.rack = {name:'clothes rack', lt:{coat:5, none:2}, s:[.8,.22], boxes:[[0,1.05,0,.7,.4,.18,'#8a5a6a'],[0,1.5,0,.8,.03,.03,'#b9c0c6'],[-.78,.75,0,.03,.75,.03,'#b9c0c6'],[.78,.75,0,.03,.75,.03,'#b9c0c6'],[.3,1.0,0,.2,.42,.19,'#5a7a8a'],[-.35,1.02,0,.15,.4,.19,'#b9a05a']]};
 FURN.vending = {name:'vending machine', lt:{food:4, water:4, none:1}, boxes:[[0,.95,0,.45,.95,.38,'#b03a2e'],[-.08,1.1,.385,.3,.6,.005,'#1c2a33'],[.36,1.1,.385,.05,.2,.005,'#d9d9d6']]};
 FURN.filing = {name:'filing cabinet', lt:{scrap:1, battery:.5, none:5}, boxes:[[0,.65,0,.25,.65,.3,'#8a9199'],[0,.95,.305,.12,.02,.005,'#55595f'],[0,.55,.305,.12,.02,.005,'#55595f'],[0,.15,.305,.12,.02,.005,'#55595f']]};
-FURN.bunk = {models:['k_bunk'], s:[.6,1.15], boxes:[[0,.3,0,.48,.06,1,'#55595f'],[0,.42,0,.45,.07,.95,'#c9d3e0'],[0,1.4,0,.48,.06,1,'#55595f'],[0,1.52,0,.45,.07,.95,'#c9d3e0'],[-.46,.9,-.98,.03,.9,.03,'#3a3f46'],[.46,.9,-.98,.03,.9,.03,'#3a3f46'],[-.46,.9,.98,.03,.9,.03,'#3a3f46'],[.46,.9,.98,.03,.9,.03,'#3a3f46']]};
+FURN.bunk = {fix:'bed', models:['k_bunk'], s:[.6,1.15], boxes:[[0,.3,0,.48,.06,1,'#55595f'],[0,.42,0,.45,.07,.95,'#c9d3e0'],[0,1.4,0,.48,.06,1,'#55595f'],[0,1.52,0,.45,.07,.95,'#c9d3e0'],[-.46,.9,-.98,.03,.9,.03,'#3a3f46'],[.46,.9,-.98,.03,.9,.03,'#3a3f46'],[-.46,.9,.98,.03,.9,.03,'#3a3f46'],[.46,.9,.98,.03,.9,.03,'#3a3f46']]};
 FURN.board = {soft:1, s:[1.2,.05], boxes:[[0,1.5,0,1.2,.5,.03,'#2f4a3a'],[0,.98,.03,1.2,.03,.05,'#8a6a48']]};
 FURN.safe = {name:'safe', lt:{ammo:3, medkit:1, radio:1, battery:1, none:2}, boxes:[[0,.6,0,.45,.6,.4,'#3a3f46'],[0,.6,.405,.1,.1,.005,'#c9a84a'],[.25,.6,.405,.03,.15,.005,'#b9c0c6']]};
 FURN.gunlocker = {name:'gun locker', lt:{ammo:7, flashlight:1, none:1}, boxes:[[0,1,0,.5,1,.28,'#3d4a3a'],[0,1,.285,.01,.9,.005,'#22291f'],[.1,1,.29,.02,.1,.01,'#c9ccd1']]};
@@ -1322,6 +1323,7 @@ FURN.stage = {s:[2.5,1.2], boxes:[[0,.3,0,2.5,.3,1.2,'#5a4028'],[0,.61,0,2.5,.01
 /* ---- what goes in each kind of room. [thing, where, how many, extras]
    where: wall (back to a wall), door (wall nearest the way in), far (wall farthest from it), corner, end (middle of the far end wall), mid (centre of the room), rows (lines with aisles)
    how many: a negative number means one per that many square metres. extras: ring = chairs around it, seat = a chair in front, side = something beside it, face 'far' = rows all facing the far end ---- */
+['dresser', 'fridge', 'closet', 'locker', 'wardrobe', 'shelf', 'filing', 'gunlocker', 'vending'].forEach(function(n){ FURN[n].heavy = 1; });   /* things you can shove against a door */
 var ROOMS = {
   living:[['rug','mid',1],['sofa','wall',1],['tv','wall',1],['ctable','mid',1],['armchair','corner',1],['wardrobe','wall',1],['lamp','corner',1],['plant','corner',1]],
   living_k:[['fridge','wall',1],['stove','wall',1],['kcab','wall',1],['sink','wall',1],['sofa','wall',1],['tv','wall',1],['table','mid',1,{ring:4}],['lamp','corner',1]],
@@ -1566,15 +1568,17 @@ function genInterior(b){
     off.sort(function(x, y){ return y.cls - x.cls; });
     for (e = 0; e < off.length && e < 60; e++){ var x1 = off[e]; x1.on = 1; if (flood().length) x1.on = 0; }
   })();
-  var nOn = 0;
-  items.forEach(function(it){
+  var nOn = 0, cn = 0, fixes = [], gone = (world.edits.moved || {})[b.id] || [];
+  items.forEach(function(it, ii){
     if (!it.on) return; nOn++;
+    var ci0 = it.f.name ? cn++ : -1; if (gone.indexOf(ii) >= 0) return;   /* pushed against a door: drawn there instead */
+    if (it.f.fix) fixes.push({fix:it.f.fix, x:it.x, y:it.y, b:b, ii:ii, fx:it.fx, fy:it.fy, taps:it.f.taps || 0, name:it.f.fix === 'bed' ? 'bed' : it.f.fix === 'stove' ? 'stove' : {sink:'sink', toilet:'toilet', tub:'bath', basin:'basin'}[Object.keys(FURN).filter(function(n){ return FURN[n] === it.f; })[0]] || 'tap'});
     var f = it.f, x = it.x, y = it.y, yaw = it.yaw, M = f.models && QS.models ? MODELS[f.models[it.mi]] : null, top = f.boxes[0][1] + f.boxes[0][4];
     if (M){ m.model(M, x, y, yaw, 0.1); top = M.h; }
     else f.boxes.forEach(function(bx){ m.ybox(x, y, yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
     if (f.tex !== undefined){ var b0 = f.boxes[0]; m.panel(x, y, yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
     for (q = 0; q < it.cl.length; q++) circs.push(it.cl[q]);
-    if (f.name) conts.push({x:x, y:y, h:top + 0.35, name:f.name, i:conts.length, b:b, lt:f.lt, hide:!!f.hide, fx:it.fx, fy:it.fy});
+    if (f.name) conts.push({x:x, y:y, h:top + 0.35, name:f.name, i:ci0, b:b, lt:f.lt, hide:!!f.hide, heavy:!!f.heavy, ii:ii, mdl:M ? f.models[it.mi] : (f.models ? f.models[0] : null), fx:it.fx, fy:it.fy});
   });
   total = nOn;
   /* a tiny building still gets one thing to search */
@@ -1583,7 +1587,7 @@ function genInterior(b){
   var ord = conts.map(function(c, ci){ return [hash(b.id, ci, 77), c]; }).sort(function(x, y){ return x[0] - y[0]; });
   ord.forEach(function(e2, ci){ if (ci > b.rolls + 1) e2[1].poor = 1; });
   if (world.hg) for (i = 1; i < m.p.length; i += 3) m.p[i] += b.base;
-  return {g:upload(m), segs:segs, circs:circs, conts:conts, idoors:idoors, rooms:rooms.map(function(R){ return R.type; }), n:total};
+  return {g:upload(m), segs:segs, circs:circs, conts:conts, idoors:idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -1612,7 +1616,9 @@ function pushSegs(e, r, s){
 /* ---- doors and windows. Door: 0 shut, 1 open, 2 broken. Window: 0 shut, 1 open, 2 broken, 3 boarded up. Only changes from the starting state are saved. ---- */
 function doorState(b){ var s = world.edits.ports[b.id]; return s && s.d !== undefined ? s.d : (b.id === world.safe ? 0 : hash(b.id, 31, 7) < 0.22 ? 1 : 0); }
 /* inside doors: k = 1000 + doorway number. Most stand open; a shut one blocks sight and has to be opened (aliens push them open) */
-function innerState(b, i){ var s = world.edits.ports[b.id]; return s && s.i && s.i[i] !== undefined ? s.i[i] : (hash(b.id, i, 41) < 0.65 ? 1 : 0); }
+/* furniture shoved against a door: k is -1 for the front door or 1000 + n for an inside door */
+function blockOf(b, k){ var B = world.edits.blocks[b.id]; return B && B[k] || null; }
+function innerState(b, i){ if (blockOf(b, 1000 + i)) return 0; var s = world.edits.ports[b.id]; return s && s.i && s.i[i] !== undefined ? s.i[i] : (hash(b.id, i, 41) < 0.65 ? 1 : 0); }
 function innerBar(b){
   if (!b.int || !b.int.idoors) return []; if (b.ibar) return b.ibar; var a = [];
   b.int.idoors.forEach(function(d, i){ if (innerState(b, i) === 0) a.push(d[0], d[1], d[2], d[3]); }); return b.ibar = a;
@@ -1630,7 +1636,7 @@ function setPort(b, k, st, quiet){
 /* the pieces of wall that are solid right now: the shut door and every window that is not open */
 function barOf(b){
   if (b.bar) return b.bar; var a = [], w = b.wsegs || [];
-  if (b.dseg && doorState(b) === 0) a.push(b.dseg[0], b.dseg[1], b.dseg[2], b.dseg[3]);
+  if (b.dseg && (doorState(b) === 0 || blockOf(b, -1))) a.push(b.dseg[0], b.dseg[1], b.dseg[2], b.dseg[3]);
   for (var k = 0; k*4 < w.length; k++){ var st = winState(b, k); if (st === 0 || st === 3) a.push(w[k*4], w[k*4+1], w[k*4+2], w[k*4+3]); }
   return b.bar = a;
 }
@@ -1650,12 +1656,14 @@ function portNear(){
 }
 function portText(o){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', B = tch ? 'Wall' : 'B';
+  var bk0 = blockOf(o.b, o.k); if (bk0) return 'Blocked with furniture \u00b7 ' + E + 'pull it away';
   if (o.k >= 1000) return E + (innerState(o.b, o.k - 1000) ? 'close the door' : 'open the door');
   if (o.k < 0 && doorState(o.b) === 0 && lockedOf(o.b)) return 'Locked \u00b7 ' + (inv.key > 0 ? (tch ? 'Tap' : 'Press E') + ' to use your keys' : (tch ? 'Hold' : 'Hold E') + ' to pry it (quiet, slow) \u00b7 Swing to smash it (loud)');
   if (o.k < 0){ var d = doorState(o.b); return d === 0 ? E + 'open the door' : d === 1 ? E + 'close the door' : E + 'repair the door (2 wood)'; }
   var w = winState(o.b, o.k); return w === 0 ? E + 'open the window \u00b7 ' + B + ' boards it up (2 wood)' : w === 1 ? E + 'close the window \u00b7 ' + B + ' boards it up (2 wood)' : w === 2 ? 'Broken window \u00b7 ' + B + ' boards it up (2 wood)' : E + 'pull the boards off';
 }
 function usePort(o){
+  if (blockOf(o.b, o.k)){ doEdit({a:'unblock', b:o.b.id, k:o.k}); sfx('wood_hit', o.x, o.y, 0.6); feed('You dragged the furniture aside', '#c0c6cc'); return; }
   if (o.k >= 1000){ setPort(o.b, o.k, innerState(o.b, o.k - 1000) ? 0 : 1); return; }
   if (o.k < 0 && doorState(o.b) === 0 && lockedOf(o.b)){ if (inv.key > 0){ inv.key--; setPort(o.b, -2, 0); setPort(o.b, -1, 1); feed('Unlocked with your keys', ITEMS.key[1]); updateHud(); } return; }
   if (o.k < 0){ var d = doorState(o.b); if (d === 2){ if (inv.wood < 2){ toast('Repairing the door takes 2 wood.', 2.5); return; } inv.wood -= 2; setPort(o.b, -1, 0); feed('Door repaired', ITEMS.wood[1]); } else setPort(o.b, -1, d === 0 ? 1 : 0); }
@@ -1669,7 +1677,8 @@ function boardPort(o){
 /* an alien at a shut door or window of the building its prey is in batters it until it gives way */
 function alienAtPort(z, A, b, dt){
   if (!b || b.gone || z.x < b.minx - 1.5 || z.x > b.maxx + 1.5 || z.y < b.miny - 1.5 || z.y > b.maxy + 1.5) return;
-  var hit = function(k, s, o){ if (segDist(z.x, z.y, s[o], s[o+1], s[o+2], s[o+3]) > A.r + 0.5) return false; var st = k < 0 ? doorState(b) : winState(b, k); if (k < 0 ? st !== 0 : (st === 1 || st === 2)) return false;
+  var hit = function(k, s, o){ if (segDist(z.x, z.y, s[o], s[o+1], s[o+2], s[o+3]) > A.r + 0.5) return false;
+    var bk = k < 0 ? blockOf(b, -1) : null; if (bk){ bk.hp -= A.dmg*dt*(z.k === 2 ? 3 : 1.1); z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.6; sfx('wood_hit', z.x, z.y, 0.7, 0.8, 50); } if (bk.hp <= 0){ doEdit({a:'unblock', b:b.id, k:-1}); if (Math.hypot(z.x - P.x, z.y - P.y) < 30) feed('The barricade gives way!', '#ff8f7a'); } return true; } var st = k < 0 ? doorState(b) : winState(b, k); if (k < 0 ? st !== 0 : (st === 1 || st === 2)) return false;
     var hp = b.php || (b.php = {}); if (hp[k] === undefined) hp[k] = k < 0 ? 26 : st === 3 ? 40 : 7; hp[k] -= A.dmg*dt*(z.k === 2 ? 3 : 1.1); z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.55 + Math.random()*0.3; sfx(st === 3 || k < 0 ? 'wood_hit' : 'tin', z.x, z.y, 0.7, 0.9, 50); }
     if (hp[k] <= 0){ setPort(b, k, 2); if (Math.hypot(z.x - P.x, z.y - P.y) < 30) feed(k < 0 ? 'A door gives way nearby' : st === 3 ? 'Boards splinter nearby' : 'Glass breaks nearby', '#ff8f7a'); } return true; };
   if (b.dseg && hit(-1, b.dseg, 0)) return; var w = b.wsegs; for (var k = 0; k*4 < w.length; k++) if (hit(k, w, k*4)) return;
@@ -1680,6 +1689,9 @@ function drawPorts(m){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
     for (var i = 0; i < cell.length; i++){
       var b = cell[i]; if (b.stamp === stampN) continue; b.stamp = stampN; if (b.gone || !b.h) continue; m.yo = b.base || 0;
+      var BL = world.edits.blocks[b.id]; if (BL) for (var bkk in BL){ var bo = BL[bkk], kk = bkk | 0, M2 = MODELS[bo.m]; if (!M2) continue; var cx0, cy0, nx0, ny0;
+        if (kk === -1 && b.door){ cx0 = b.door.x; cy0 = b.door.y; nx0 = b.door.nx; ny0 = b.door.ny; } else if (kk >= 1000 && b.int && b.int.idoors && b.int.idoors[kk - 1000]){ var q3 = b.int.idoors[kk - 1000], l3 = Math.hypot(q3[2] - q3[0], q3[3] - q3[1]) || 1; cx0 = (q3[0] + q3[2])/2; cy0 = (q3[1] + q3[3])/2; nx0 = -(q3[3] - q3[1])/l3*(bo.s || 1); ny0 = (q3[2] - q3[0])/l3*(bo.s || 1); } else continue;
+        var dep = Math.min(M2.hx, M2.hz) + 0.12, bx3 = cx0 + nx0*dep, by3 = cy0 + ny0*dep; m.model(M2, bx3, by3, Math.atan2(ny0, nx0) - 1.5708, 0.1); }   /* its back against the door */
       if (b.int && b.int.idoors) for (var iq = 0; iq < b.int.idoors.length; iq++){ var dq2 = b.int.idoors[iq], ln = Math.hypot(dq2[2] - dq2[0], dq2[3] - dq2[1]), uxd = (dq2[2] - dq2[0])/ln, uyd = (dq2[3] - dq2[1])/ln, op = innerState(b, iq), an = op ? 1.6 : 0, wx2 = uxd*Math.cos(an) - uyd*Math.sin(an), wy2 = uyd*Math.cos(an) + uxd*Math.sin(an);
         m.ybox(dq2[0] + wx2*ln/2, dq2[1] + wy2*ln/2, Math.atan2(wy2, wx2), 0, 0, 1.08, ln/2 - 0.03, 1.02, 0.025, [176,138,96]); m.ybox(dq2[0] + wx2*(ln - 0.12), dq2[1] + wy2*(ln - 0.12), Math.atan2(wy2, wx2), 0, 0, 1.05, 0.03, 0.03, 0.06, [214,190,120]); }
       if (b.dseg){ var s = b.dseg, st = doorState(b), L = Math.hypot(s[2] - s[0], s[3] - s[1]), ux = (s[2] - s[0])/L, uz = (s[3] - s[1])/L, col = b.cat === 'house' ? wood : metal;
@@ -1733,7 +1745,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.26';
+var VERSION = '0.27';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1770,7 +1782,7 @@ function startRun(ws, cs){
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
     var mine = worldPlayers[charSlug()]; if (mine){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
   }
-  w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[], ports:{}, picked:{}}; w.wallSegs = [];
+  w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, blocks:{}}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
   pickSafe(!resumed && net.role !== 'guest', !(resumed && worldPlayers[charSlug()]));
@@ -1784,6 +1796,7 @@ function startRun(ws, cs){
   toast(resumed ? 'Welcome back to ' + w.name + '. Your progress was restored.' : w.name + ': ' + w.buildings.length + ' buildings, ' + w.roads.length + ' roads. The green-marked house beside you is a safe house with supplies in its chest. Aliens cannot enter it, or the town square ringed with green lamps (the dashed circle on your map).', 8);
 }
 function die(){
+  if (P.sleep) wakeUp('');
   if (P.hide){ P.hide = null; el('hideMask').classList.remove('on'); }
   var has = false, k; for (k in inv) if (inv[k] > 0) has = true;
   for (k in P.items) if (P.items[k] > 0) has = true;
@@ -1886,6 +1899,7 @@ function radioScan(){
 }
 function takeLamp(o){ var i = lamps.indexOf(o); if (i < 0) return; lamps.splice(i, 1); inv.lantern++; emit({k:'unlamp', x:o.x, y:o.y}); feed('Picked up the lantern', ITEMS.lantern[1]); updateHud(); }
 function useItem(k){
+  if (k === 'meal'){ if (inv.meal < 1) return; inv.meal--; P.hunger = Math.min(100, P.hunger + 55); P.thirst = Math.min(100, P.thirst + 10); P.body = Math.min(40, P.body + 35); feed('Ate a hot meal. You feel warmer.', ITEMS.meal[1]); updateHud(); return; }
   if (k === 'berry'){ if (inv.berry < 1) return; inv.berry--; P.hunger = Math.min(100, P.hunger + 12); P.thirst = Math.min(100, P.thirst + 4); feed('Ate berries', ITEMS.berry[1]); updateHud(); return; }
   if (k === 'herb'){ if (inv.herb < 3 || inv.fiber < 2){ toast('A medkit takes 3 herbs and 2 plant fibre.', 3); return; } inv.herb -= 3; inv.fiber -= 2; inv.medkit++; feed('Made a medkit', ITEMS.medkit[1]); updateHud(); return; }
   if (k === 'stone'){ if (inv.stone < 2){ toast('Two stones make one shot of ammo.', 3); return; } inv.stone -= 2; inv.ammo++; feed('+1 Ammo', ITEMS.ammo[1]); updateHud(); return; }
@@ -1899,6 +1913,7 @@ function useItem(k){
   updateHud();
 }
 function place(kind){
+  if (kind === 'cade' && target && target.shove){ shoveFurniture(target.c); return; }
   var x = P.x + Math.cos(P.yaw)*1.8, y = P.y + Math.sin(P.yaw)*1.8;
   if (hitWall((P.x+x)/2, (P.y+y)/2) || hitWall(x, y)) return;
   if (kind === 'cade' && target && target.port && target.k >= 0){ boardPort(target); return; }
@@ -1927,8 +1942,12 @@ function findTarget(){
   for (i = 0; i < loaded.length; i++){
     var b = loaded[i]; if (P.x < b.minx - 2.5 || P.x > b.maxx + 2.5 || P.y < b.miny - 2.5 || P.y > b.maxy + 2.5) continue;
     for (j = 0; j < b.int.conts.length; j++){
-      var c = b.int.conts[j], hs = b.got[c.i] && !stashLeft(c); if (hs && !c.hide) continue; dx = c.x - P.x; dy = c.y - P.y; d = Math.hypot(dx, dy);
-      if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = hs ? (c.hs || (c.hs = {hideSpot:true, c:c, x:c.x, y:c.y, name:c.name})) : c; }
+      var c = b.int.conts[j], hs = b.got[c.i] && !stashLeft(c); if (hs && !c.hide && !c.heavy) continue; dx = c.x - P.x; dy = c.y - P.y; d = Math.hypot(dx, dy);
+      if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = hs ? (c.hs || (c.hs = {hideSpot:!!c.hide, shove:c.heavy, c:c, x:c.x, y:c.y, name:c.name})) : c; }
+    }
+    for (j = 0; b.int.fixes && j < b.int.fixes.length; j++){
+      var fxo = b.int.fixes[j]; dx = fxo.x - P.x; dy = fxo.y - P.y; d = Math.hypot(dx, dy);
+      if (d < Math.min(bd, 1.9) && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = fxo; }
     }
   }
   for (i = 0; i < world.crates.length; i++){
@@ -1993,7 +2012,7 @@ function closeLoot(){
 function renderLoot(){
   var o = curLoot, box = el('loot'); if (!o || box.classList.contains('hidden')) return;
   var nm = o.corpse ? o.name : o.name + (o.b && o.b.name ? ' – ' + o.b.name : ''), h = '<b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b> <button id="ltClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', k;
-  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
+  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
   for (k in o.stash.items) if (o.stash.items[k] > 0 && DESIGNS[k]) h += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + o.stash.items[k] + '<br><i>' + stats(DESIGNS[k]).desc + ' &middot; by ' + esc(DESIGNS[k].by) + '</i></span><button data-k="c:' + k + '">Take</button></div>';
   box.innerHTML = h + '<div class="row" style="justify-content:flex-start;margin:10px 0 0"><button data-k="all">Take everything</button></div>';
 }
@@ -2008,14 +2027,14 @@ function takeLoot(key){
 el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id === 'ltClose'){ closeLoot(); return; } var k = t.getAttribute && t.getAttribute('data-k'); if (k) takeLoot(k); });
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
-var CATS = [['Food and drink', ['food', 'water', 'berry']], ['Medical', ['medkit', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat', 'key']]];
-var USE = {berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
+var CATS = [['Food and drink', ['meal', 'food', 'water', 'berry']], ['Medical', ['medkit', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat', 'key']]];
+var USE = {meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
 function pct(v){ return Math.round(Math.max(0, v)*100) + '%'; }
 function renderPack(){
   var box = el('pack'); if (box.classList.contains('hidden')) return;
   var h = '<b>Backpack</b> <button id="pkClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', any = false, k;
   CATS.forEach(function(c){
-    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'herb' ? '<br><i>3 herbs and 2 plant fibre make a medkit</i>' : k === 'stone' ? '<br><i>2 stones make 1 ammo</i>' : k === 'fiber' ? '<br><i>used with herbs to make medkits</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + USE[k] + '</button>' : '') + '</div>'; });
+    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'herb' ? '<br><i>3 herbs and 2 plant fibre make a medkit</i>' : k === 'stone' ? '<br><i>2 stones make 1 ammo</i>' : k === 'fiber' ? '<br><i>used with herbs to make medkits</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + USE[k] + '</button>' : '') + '</div>'; });
     if (rows){ h += '<h3>' + c[0] + '</h3>' + rows; any = true; }
   });
   var cu = ''; for (k in P.items) if (P.items[k] > 0 && DESIGNS[k]) cu += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + P.items[k] + (P.weapon === k ? ' <i>equipped</i>' : '') + '<br><i>' + stats(DESIGNS[k]).desc + '</i></span></div>';
@@ -2154,6 +2173,49 @@ function route(z, gx, gy, r, dt){
   return z.path[z.pi];
 }
 /* throw a stone: where it lands makes a noise that aliens come to look at */
+/* ---- furniture you can use: beds to sleep in, stoves to cook on, taps and toilet tanks for water ---- */
+function fixText(o){
+  var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ';
+  if (o.fix === 'bed') return E + 'sleep in the ' + o.name + ' until morning';
+  if (o.fix === 'stove') return inv.food > 0 && inv.wood > 0 ? E + 'cook a hot meal (1 food, 1 wood)' : 'Stove \u00b7 a hot meal takes 1 food and 1 wood';
+  var left = o.taps - (world.edits.taps[o.b.id + ':' + o.ii] || 0); return left > 0 ? E + 'fill a bottle at the ' + o.name : 'The ' + o.name + ' is dry';
+}
+function useFix(o){
+  if (o.fix === 'bed') return goToSleep(o);
+  if (o.fix === 'stove'){ if (!(inv.food > 0 && inv.wood > 0)){ toast('A hot meal takes 1 food and 1 wood for the fire.', 3); return; } inv.food--; inv.wood--; inv.meal = (inv.meal || 0) + 1; sfx('pot', o.x, o.y, 0.8); makeNoise(o.x, o.y, 5); feed('Cooked a hot meal. Eat it from your backpack.', ITEMS.meal[1]); updateHud(); return; }
+  var key = o.b.id + ':' + o.ii, left = o.taps - (world.edits.taps[key] || 0); if (left <= 0){ feed('Nothing left in it', '#c0c6cc'); return; }
+  doEdit({a:'tap', key:key}); inv.water++; sfx('pot', o.x, o.y, 0.5, 1.4); feed(o.name === 'toilet' ? '+1 Water (from the cistern. Better than nothing.)' : left > 1 ? '+1 Water' : '+1 Water. The ' + o.name + ' coughs and runs dry.', ITEMS.water[1]); updateHud();
+}
+/* shove an emptied heavy piece against the nearest door of the same building */
+function shoveFurniture(c){
+  var b = c.b; if (!c.mdl || !MODELS[c.mdl]){ toast('That is too awkward to move.', 2.5); return; }
+  var best = null, bd = 7;
+  if (b.door){ var dd = Math.hypot(b.door.x - P.x, b.door.y - P.y); if (dd < bd){ bd = dd; best = -1; } }
+  (b.int.idoors || []).forEach(function(q, i){ var d2 = Math.hypot((q[0] + q[2])/2 - P.x, (q[1] + q[3])/2 - P.y); if (d2 < bd){ bd = d2; best = 1000 + i; } });
+  if (best === null){ toast('No door close enough to block.', 2.5); return; }
+  if (blockOf(b, best)){ toast('That door is already blocked.', 2.5); return; }
+  var side = 1; if (best >= 1000){ var q2 = b.int.idoors[best - 1000], nx = -(q2[3] - q2[1]), ny = q2[2] - q2[0]; side = ((P.x - (q2[0] + q2[2])/2)*nx + (P.y - (q2[1] + q2[3])/2)*ny) >= 0 ? 1 : -1; setPort(b, best, 0); } else setPort(b, -1, 0);
+  doEdit({a:'shove', b:b.id, ii:c.ii, k:best, m:c.mdl, s:side}); sfx('wood_hit', P.x, P.y, 0.8, 0.7); makeNoise(P.x, P.y, 8);
+  feed('You shoved the ' + c.name + ' against the door', '#c0c6cc');
+}
+/* sleep: the night passes quickly; anything that hurts you or comes for you wakes you. The bed becomes where you wake after dying */
+function goToSleep(o){
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
+  var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
+  P.sleep = {start:time, hp:P.hp}; P.x = o.x + (o.fx || 0)*0.6; P.y = o.y + (o.fy || 0)*0.6;
+  doEdit({a:'bed', s:charSlug(), b:o.b.id, x:P.x, y:P.y}); el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping\u2026'; keys = {};
+}
+function wakeUp(why){ if (!P.sleep) return; var hrs = (time - P.sleep.start)/DAY*24; P.sleep = null; el('sleepMask').classList.remove('on'); toast((why ? why + ' ' : '') + 'You slept ' + (hrs < 1 ? 'a little' : Math.round(hrs) + ' hours') + '. You will wake here if you die.', 5); updateHud(); }
+function sleepTick(dt){
+  if (!P.sleep) return;
+  var hr = (8 + time/DAY*24) % 24, slept = time - P.sleep.start;
+  if (P.hurt > 0 || P.hp < P.sleep.hp - 2) return wakeUp('Something hurt you!');
+  if (P.thirst < 8 || P.hunger < 8) return wakeUp(P.thirst < 8 ? 'You woke up parched.' : 'You woke up starving.');
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (z.st === 2 && !z.tp && Math.hypot(z.x - P.x, z.y - P.y) < 25) return wakeUp('A noise woke you!'); }
+  if (hr >= 7 && hr < 9 && slept > DAY/24) return wakeUp('Morning.');
+  if (slept > DAY/2) return wakeUp('');
+  P.sleep.hp = P.hp; el('sleepMask').textContent = 'Sleeping\u2026 ' + String(Math.floor(hr)).padStart(2, '0') + ':' + String(Math.floor((hr % 1)*60)).padStart(2, '0');
+}
 /* ---- hiding: step into an emptied wardrobe or locker. Aliens that did not see you go in walk past; one that did will drag you out ---- */
 function enterHide(c){
   if (P.veh) return;
@@ -2437,6 +2499,7 @@ function update(dt){
   if (keys.ArrowLeft) P.yaw -= 2.2*dt; if (keys.ArrowRight) P.yaw += 2.2*dt;
   if (keys.ArrowUp) P.pitch = Math.min(1.45, P.pitch + 1.4*dt); if (keys.ArrowDown) P.pitch = Math.max(-1.45, P.pitch - 1.4*dt);
   var mf = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) - stick.y, ms = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + stick.x;
+  if (P.sleep){ sleepTick(dt); mf = ms = 0; if (ePress || tapUse) wakeUp(''); }
   if (P.hide){ if (Math.abs(mf) > 0.3 || Math.abs(ms) > 0.3 || ePress || tapUse){ exitHide(); ePress = false; tapUse = false; keys.KeyE = false; } mf = ms = 0; if (P.hide){ P.x = P.hide.c.x; P.y = P.hide.c.y; } }
   P.swim = inWater(P.x, P.y, 0); P.inside = buildingAt(P.x, P.y);
   var tgy = world.hg ? (P.inside ? P.inside.base : hAt(P.x, P.y)) : 0; P.gy = P.gy === undefined || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
@@ -2453,11 +2516,12 @@ function update(dt){
   if (region && world.core && !zoneBusy && (P.x < world.core.x0 || P.x > world.core.x1 || P.y < world.core.y0 || P.y > world.core.y1)) zoneTravel();
   var en = 1 - 0.04*lvl('endur'); if (Math.floor(time/10) !== P.xpT){ P.xpT = Math.floor(time/10); addXp('endur', 3); }
   /* a full stomach lasts about an hour of play, a full bottle about forty minutes (less when hot, or sprinting) */
+  if (P.sleep) en *= 0.04;   /* a whole night asleep costs about as much food and water as ten minutes awake */
   P.hunger = Math.max(0, P.hunger - dt*100/3600*en*(P.run || keys.ShiftLeft ? 1.5 : 1)); P.thirst = Math.max(0, P.thirst - dt*100/2400*en*(P.body > 55 ? 2.5 : 1)*(P.run || keys.ShiftLeft ? 1.5 : 1));
   if (P.hunger <= 0){ P.hp -= 0.25*dt; P.cause = 'hunger'; } if (P.thirst <= 0){ P.hp -= 0.35*dt; P.cause = 'thirst'; }
   [['hunger', 'You are getting hungry. Eat something (1, or tap the food).', 'You are starving and losing health. Eat now.'], ['thirst', 'You are getting thirsty. Drink something (2, or drink from water).', 'You are dehydrated and losing health. Drink now.']].forEach(function(n){
     var v = P[n[0]], lv = v <= 0 ? 2 : v < 20 ? 1 : 0, kk = n[0] + 'Warn'; if (lv > (P[kk] || 0)) toast(n[lv], 6); P[kk] = v > 30 ? 0 : Math.max(P[kk] || 0, lv); });
-  if (P.hunger > 50 && P.thirst > 50 && P.hp < 100) P.hp = Math.min(100, P.hp + 0.6*dt);
+  if (P.hunger > 50 && P.thirst > 50 && P.hp < 100) P.hp = Math.min(100, P.hp + (P.sleep ? 0.05 : 0.6)*dt);
   for (i = 0; i < lamps.length; i++) if (lamps[i].life > 0) lamps[i].life -= dt;
   if (P.light){ if (!(inv.flashlight > 0)) P.light = false; else { P.fl -= dt/FL_SECS; if (P.fl <= 0){ P.fl = 0; if (!reload('fl', 'flashlight')){ P.light = false; toast('Your flashlight died. Find batteries.', 3.5); } } } }
   if (dark > 0.45 && !P.duskSaid && !lightOn()){ P.duskSaid = true; toast(inv.flashlight > 0 ? 'It is getting dark. Press L, or tap Light, for your flashlight.' : 'It is getting dark and you have no flashlight.', 4); } else if (dark < 0.2) P.duskSaid = false;
@@ -2475,7 +2539,8 @@ function update(dt){
     else if (target.trader){ openTrade(); keys.KeyE = false; autoUse = null; }
     else if (target.veh){ if (ePress || tapped) mount(target); autoUse = null; }
     else if (target.lamp){ if (ePress || tapped) takeLamp(target); autoUse = null; }
-    else if (target.hideSpot){ if (ePress || tapped) enterHide(target.c); autoUse = null; }
+    else if (target.hideSpot || target.shove){ if ((ePress || tapped) && target.hideSpot) enterHide(target.c); autoUse = null; }
+    else if (target.fix){ if (ePress || tapped) useFix(target); autoUse = null; }
     else if (target.port && target.k < 0 && doorState(target.b) === 0 && lockedOf(target.b) && !(inv.key > 0)){ prog += dt/6; if (prog >= 1){ prog = 0; setPort(target.b, -2, 0); setPort(target.b, -1, 1); feed('You pried the door open', '#c0c6cc'); makeNoise(P.x, P.y, 6); autoUse = null; keys.KeyE = false; } }
     else if (target.port){ if (ePress || tapped) usePort(target); autoUse = null; }
     else { prog += dt/(target.nest ? 4 : target.plant ? (target.nm === 'Rock_Medium_2' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
@@ -2486,7 +2551,8 @@ function update(dt){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
     el('ptxt').textContent = target === 'water' ? 'Hold E to drink' : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
     if (target.port) el('ptxt').textContent = portText(target);
-    else if (target.hideSpot) el('ptxt').textContent = (document.body.classList.contains('touchmode') ? 'Tap to hide in the ' : 'Press E to hide in the ') + target.name;
+    else if (target.hideSpot || target.shove){ var tch2 = document.body.classList.contains('touchmode'); el('ptxt').textContent = (target.hideSpot ? (tch2 ? 'Tap to hide in the ' : 'Press E to hide in the ') + target.name + ' \u00b7 ' : 'Empty ' + target.name + ' \u00b7 ') + (tch2 ? 'Wall' : 'B') + ' shoves it against the door'; }
+    else if (target.fix) el('ptxt').textContent = fixText(target);
     else if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
   } else pr.classList.add('hidden');
 
@@ -2541,7 +2607,7 @@ function update(dt){
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
         if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ exitHide(); feed('It dragged you out of hiding!', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
       }
-      if (z.k !== 2 && (T || z.st >= 1)){ var zb2 = buildingAt(z.x, z.y); if (zb2 && zb2.int && zb2.int.idoors) zb2.int.idoors.forEach(function(dq, qi){ if (innerState(zb2, qi) === 0 && segDist(z.x, z.y, dq[0], dq[1], dq[2], dq[3]) < A.r + 0.45){ z.door = (z.door || 0) + dt; if (z.door > 1.2){ z.door = 0; setPort(zb2, 1000 + qi, 1); } } }); }   /* they shove inside doors open */
+      if (z.k !== 2 && (T || z.st >= 1)){ var zb2 = buildingAt(z.x, z.y); if (zb2 && zb2.int && zb2.int.idoors) zb2.int.idoors.forEach(function(dq, qi){ if (innerState(zb2, qi) === 0 && segDist(z.x, z.y, dq[0], dq[1], dq[2], dq[3]) < A.r + 0.45){ var ib1 = blockOf(zb2, 1000 + qi); if (ib1){ ib1.hp -= A.dmg*dt*1.1; z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.6; sfx('wood_hit', z.x, z.y, 0.7, 0.8, 50); } if (ib1.hp <= 0) doEdit({a:'unblock', b:zb2.id, k:1000 + qi}); return; } z.door = (z.door || 0) + dt; if (z.door > 1.2){ z.door = 0; setPort(zb2, 1000 + qi, 1); } } }); }   /* they shove inside doors open */
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
       for (var c = cades.length - 1; c >= 0; c--){
         var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001, br = 0.85 + A.r;
@@ -2577,7 +2643,7 @@ function update(dt){
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
 }
-var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17};
+var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18};
 /* the eye: how close any alien is to spotting you */
 function awareHud(){
   var e = el('aware'), best = 0, txt = '', col = '#e9dcc0', i;
@@ -2600,11 +2666,11 @@ function updateHud(){
   el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? zoneAt(P.x, P.y, 0).name + ': aliens cannot come in here' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
-  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i>' + txt + '</span>'; };
+  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i>' + txt + '</span>'; };
   el('power').innerHTML = pw('flashlight', inv.flashlight > 0 ? pct(P.fl) + (lightOn() ? ' on' : '') : 'none', !lightOn()) + pw('radio', inv.radio > 0 ? pct(P.rd) : 'none', !radioOn()) + pw('battery', '\u00d7' + inv.battery, !inv.battery);
   el('goalLine').textContent = goalText().replace(/^Goal: /, '').replace(/^./, function(ch){ return ch.toUpperCase(); });
   var h = '', other = 0, k;
-  ['food', 'water', 'medkit', 'ammo'].forEach(function(k){ h += '<div class="slot' + (inv[k] > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + inv[k] + '</span></div>'; });
+  ['food', 'water', 'medkit', 'ammo'].forEach(function(k){ h += '<div class="slot' + (inv[k] > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + inv[k] + '</span></div>'; });
   for (k in inv) if (k !== 'food' && k !== 'water' && k !== 'medkit' && k !== 'ammo') other += inv[k]; for (k in P.items) other += P.items[k] | 0;
   h += '<div class="slot" data-pack="1" title="Backpack" style="cursor:pointer"><i class="ic" style="background-position:50% 0"></i><span class="key">I</span><span class="cnt">' + other + '</span></div>';
   renderPack();
@@ -3040,7 +3106,7 @@ function render(){
 var lastTs = 0;
 function frame(ts){
   var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
-  if (running){ update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
+  if (running){ if (P.sleep && !P.cop){ for (var sk = 0; sk < 40 && P.sleep && running; sk++) update(0.75); if (running) update(dt*0.01); } else update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
   requestAnimationFrame(frame);
 }
 (function(){ var h = '', N = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']; for (var r = 0; r < 3; r++) for (var i = 0; i < 8; i++) h += '<b' + (i % 2 ? ' class="m"' : '') + '>' + N[i] + '</b>'; el('compTape').innerHTML = h; })();
@@ -3354,6 +3420,10 @@ function loadEdits(ed){
   (ed.chests || []).slice(0, 100).forEach(function(c){ E.chests.push({chest:true, name:'the chest', id:String(c.id), x:+c.x, y:+c.y, inv:c.inv || {}, items:c.items || {}, designs:c.designs || []}); });
   for (k in (ed.ports || {})){ var pb = world.buildings[k], ps = ed.ports[k]; if (!pb || !ps) continue; var np = {w:{}}; if (ps.d === 0 || ps.d === 1 || ps.d === 2) np.d = ps.d; for (var wk in (ps.w || {})) if (ps.w[wk] >= 1 && ps.w[wk] <= 3) np.w[wk | 0] = ps.w[wk] | 0; E.ports[k] = np; pb.bar = null; }
   for (k in (ed.picked || {})) if (isFinite(ed.picked[k])) E.picked[String(k).slice(0, 24)] = +ed.picked[k];
+  for (k in (ed.ports || {})){ var ps2 = ed.ports[k], np2 = E.ports[k]; if (!np2 || !ps2) continue; if (ps2.l === 0 || ps2.l === 1) np2.l = ps2.l; if (ps2.i){ np2.i = {}; for (var ik in ps2.i) if (ps2.i[ik] === 0 || ps2.i[ik] === 1) np2.i[ik | 0] = ps2.i[ik]; } }
+  for (k in (ed.taps || {})) if (isFinite(ed.taps[k])) E.taps[String(k).slice(0, 24)] = Math.min(9, ed.taps[k] | 0);
+  for (k in (ed.moved || {})) if (world.buildings[k] && Array.isArray(ed.moved[k])) E.moved[k] = ed.moved[k].slice(0, 40).map(function(v){ return v | 0; });
+  for (k in (ed.blocks || {})) if (world.buildings[k] && ed.blocks[k]){ E.blocks[k] = {}; for (var bk in ed.blocks[k]){ var bv = ed.blocks[k][bk]; if (bv && MODELS[bv.m]) E.blocks[k][bk | 0] = {m:String(bv.m), hp:Math.min(80, +bv.hp || 60), s:bv.s < 0 ? -1 : 1}; } }
   rebuildWalls();
 }
 function applyEdit(e){
@@ -3363,9 +3433,13 @@ function applyEdit(e){
   else if (e.a === 'wall' && e.w && E.walls.length < 400){ E.walls.push({id:String(e.w.id), x:+e.w.x, y:+e.w.y, yaw:+e.w.yaw || 0}); rebuildWalls(); }
   else if (e.a === 'unwall'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ E.walls.splice(i, 1); break; } rebuildWalls(); }
   else if (e.a === 'bed' && e.s){ E.beds[slug(e.s)] = {b:e.b | 0, x:+e.x, y:+e.y}; }
+  else if (e.a === 'tap' && typeof e.key === 'string'){ E.taps[e.key.slice(0, 24)] = Math.min(9, (E.taps[e.key] || 0) + 1); }
+  else if (e.a === 'shove' && b && MODELS[e.m]){ var mv = E.moved[b.id] || (E.moved[b.id] = []); if (mv.indexOf(e.ii | 0) < 0) mv.push(e.ii | 0); var bl = E.blocks[b.id] || (E.blocks[b.id] = {}); bl[e.k | 0] = {m:String(e.m), hp:60, s:e.s < 0 ? -1 : 1}; b.bar = b.ibar = null; refreshInterior(b); }
+  else if (e.a === 'unblock' && b){ if (E.blocks[b.id]) delete E.blocks[b.id][e.k | 0]; b.bar = b.ibar = null; }
   else if (e.a === 'chest' && e.c && E.chests.length < 100){ E.chests.push({chest:true, name:'the chest', id:String(e.c.id), x:+e.c.x, y:+e.c.y, inv:{}, items:{}, designs:[]}); }
   else if (e.a === 'chestset'){ for (i = 0; i < E.chests.length; i++) if (E.chests[i].id === e.id){ E.chests[i].inv = e.inv || {}; E.chests[i].items = e.items || {}; E.chests[i].designs = e.designs || []; (e.designs || []).forEach(function(d){ adoptDesign(d); }); if (curChest === E.chests[i]) renderChest(); break; } }
 }
+function refreshInterior(b){ if (b.int){ freeMesh(b.int.g); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } b.ibar = null; }
 function doEdit(e){ applyEdit(e); emit({k:'edit', e:e}); }
 function nearBuilding(){
   if (P.inside) return P.inside; var best = null, bd = 5, cx0 = Math.floor(P.x/G), cy0 = Math.floor(P.y/G);
