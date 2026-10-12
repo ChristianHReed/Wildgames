@@ -49,7 +49,7 @@
   #vTemp{float:right;font-weight:400;opacity:.85;text-transform:none}
   #power{margin-top:8px;font-size:11px;font-weight:600;opacity:.92;display:flex;gap:12px;align-items:center}
   #power span{display:inline-flex;align-items:center;gap:4px}
-  #power .ic{position:static;width:18px;height:18px;background-size:234px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+  #power .ic{position:static;width:18px;height:18px;background-size:306px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   #power .off{opacity:.45}
   #hud{position:fixed;left:50%;top:12px;transform:translateX(-50%);pointer-events:none;text-align:center;color:#fff;text-shadow:var(--sh);width:300px}
   #compass{position:relative;height:20px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);border-bottom:1px solid rgba(255,255,255,.35)}
@@ -75,7 +75,7 @@
   .slot{position:relative;width:52px;height:52px;background:rgba(32,30,29,.42);border-radius:10px;box-shadow:0 0 0 1px rgba(245,234,216,.22)}
   .slot[data-u],.slot[data-pack]{cursor:pointer}
   .slot.zero{opacity:.5}
-  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:468px 36px;background-repeat:no-repeat}
+  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:612px 36px;background-repeat:no-repeat}
   .slot .cnt{position:absolute;right:4px;bottom:2px;font-size:12px;font-weight:800;color:#fff;text-shadow:var(--sh)}
   .slot .key{position:absolute;left:5px;top:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,.7)}
   .sw{width:12px;height:12px;display:inline-block;border-radius:3px;border:1px solid var(--outline)}
@@ -120,7 +120,7 @@
   .irow span.n{flex:1;color:var(--ink);font-weight:600}
   .irow i{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
   #miniWrap{pointer-events:auto;cursor:pointer}
-  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:390px 30px;display:inline-block}
+  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:510px 30px;display:inline-block}
   #bigMap{position:fixed;inset:0;z-index:6;background:#e6d6bb}
   #bigCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
   #bigBar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);white-space:nowrap}
@@ -156,7 +156,7 @@
   .touchmode #hudBtns{right:112px;top:44px;width:170px}
   .touchmode #inv{bottom:6px;gap:5px}
   .touchmode .slot{width:44px;height:44px;border-radius:8px}
-  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:390px 30px}
+  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:510px 30px}
   .touchmode .slot .cnt{font-size:11px}
   .touchmode .slot .key{display:none}
   .touchmode #toast{top:74px;font-size:12px}
@@ -195,7 +195,7 @@
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
   <div id="feed"></div>
   <input id="chatIn" class="hidden" maxlength="120" placeholder="Say something, then press Enter">
@@ -332,7 +332,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.18.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.19.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -652,7 +652,7 @@ var LOOT = {
   industrial:{scrap:5, wood:4, fuel:2, battery:1}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
 var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba','']};
-ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a',''];
+ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096',''];
 var CORE = {food:1, water:1, medkit:1, ammo:1, wood:1, scrap:1};
 function newInv(start){ var o = {}; for (var k in ITEMS) o[k] = 0; if (start){ o.food = 1; o.water = 1; o.ammo = 8; o.radio = 1; o.flashlight = 1; o.battery = 2; } return o; }
 var AREA_COL = {grass:'#7f9a5c', park:'#6fa25a', forest:'#4f7f4a', sand:'#cdbb8a', parking:'#6a6e75', water:'#3f86b8'};
@@ -949,7 +949,7 @@ function shell(b, m, lm){
     if (tries < 2 && (blocked(qx + ox*0.6, qz + oz*0.6) || (tries < 1 && (blocked(qx + ox*1.6, qz + oz*1.6) || blocked(qx + ox*2.8, qz + oz*2.8))))) continue;
     bl = l0; best = i;
   }
-  b.segs = []; b.door = null; b.wins = [];
+  b.segs = []; b.door = null; b.wins = []; b.wsegs = []; b.dseg = null; b.bar = null; b.php = null; var spr = facSparse(p, Ht);
   /* one stretch of wall from s = sL to sR (metres from the left end of an edge of length l), from height y0 up to the roof */
   var W = function(xL, zL, xR, zR, sL, sR, l, y0, front){
     var uL = (sL - l/2)/8 + 0.5, uR = (sR - l/2)/8 + 0.5;
@@ -964,12 +964,22 @@ function shell(b, m, lm){
     if (i === best){
       var mx = (ax+bx)/2, mz = (az+bz)/2, x1 = mx - dx*0.65, z1 = mz - dz*0.65, x2 = mx + dx*0.65, z2 = mz + dz*0.65;
       W(x1,z1,ax,az, l/2 + 0.65, l, l, 0, true); W(bx,bz,x2,z2, 0, l/2 - 0.65, l, 0, true); W(x2,z2,x1,z1, l/2 - 0.65, l/2 + 0.65, l, 2.2, true);
-      b.segs.push(ax,az,x1,z1, x2,z2,bx,bz); b.door = {x:mx, y:mz, nx:nx, ny:nz};
+      b.door = {x:mx, y:mz, nx:nx, ny:nz}; b.dseg = [x1, z1, x2, z2];
       lm.line(x1,0,z1, x1,2.2,z1, INK); lm.line(x2,0,z2, x2,2.2,z2, INK); lm.line(x1,2.2,z1, x2,2.2,z2, INK);
-    } else {
-      W(bx,bz,ax,az, 0, l, l, 0, false); b.segs.push(ax,az,bx,bz);
-      if (l > 3.6){ var cnt = Math.floor(l/3.2); for (var k = 0; k < cnt; k++){ var t = (k + 0.5)/cnt*l; b.wins.push(ax + dx*t, az + dz*t, dx, dz, nx, nz); } }
-    }
+    } else W(bx,bz,ax,az, 0, l, l, 0, false);
+    /* the solid wall is stored in pieces, with a separate short piece for each window so a window can be opened */
+    var wl = [], ops = [], k, ps = 0;
+    if (FKIND[b.kind]){
+      var fb = facBays(p, i, i === best), lastT = -9;
+      if (fb) for (k = 0; k < fb.nb; k++){ var tc = (k + 0.5)*fb.w - fb.e0; if (!(fb.nb < 3 || (k > 0 && k < fb.nb - 1)) || k % spr !== 0) continue; if (i === best && Math.abs(tc - l/2) < 1.7) continue; if (tc < 0.7 || tc > l - 0.7 || tc - lastT < 3.6) continue; wl.push(tc); lastT = tc; }
+    } else if (l > 3.2){ for (k = -Math.ceil(l/8) - 1; k <= Math.ceil(l/8); k++){ var tp = l/2 + (k + 0.5)*4; if (tp > 0.8 && tp < l - 0.8) wl.push(tp); } }   /* the painted fronts have a window every 4 m, counted from the middle of the wall */
+    wl.forEach(function(t){ ops.push([t - 0.45, t + 0.45, t]); }); if (i === best) ops.push([l/2 - 0.65, l/2 + 0.65, -1]); ops.sort(function(x, y){ return x[0] - y[0]; });
+    ops.forEach(function(o){
+      if (o[0] - ps > 0.01) b.segs.push(ax + dx*ps, az + dz*ps, ax + dx*o[0], az + dz*o[0]);
+      if (o[2] >= 0){ b.wins.push(ax + dx*o[2], az + dz*o[2], dx, dz, nx, nz); b.wsegs.push(ax + dx*o[0], az + dz*o[0], ax + dx*o[1], az + dz*o[1]); }
+      ps = o[1];
+    });
+    if (l - ps > 0.01) b.segs.push(ax + dx*ps, az + dz*ps, bx, bz);
     lm.line(ax,Ht,az, bx,Ht,bz, INK); lm.line(ax,0.02,az, bx,0.02,bz, INK);
     var h2 = (i + n - 2) % n, pl = Math.hypot(ax - p[h2], az - p[h2+1]) || 1, turn = ((ax - p[h2])/pl)*dz - ((az - p[h2+1])/pl)*dx;
     if (Math.abs(turn) > 0.47) lm.line(ax,0,az, ax,Ht,az, INK);
@@ -1103,6 +1113,17 @@ var FKIND = {apartments:'brick', school:'brick', fire:'brick', hotel:'brick', li
   shop:'trim', grocery:'trim', restaurant:'trim', bar:'trim', clothes:'trim', electronics:'trim', outdoors:'trim', hardware:'trim', warehouse:'plain'};
 var FTINT = [[255,255,255], [238,226,214], [222,214,226], [250,238,214], [226,232,222]];
 function facadeStyle(b){ var st = FKIND[b.kind]; if (!st || !KIT.Brick_Plain_3) return null; if (st === 'mix'){ var hq = hash(b.id, 21, 5); st = hq < 0.45 ? 'brick' : hq < 0.85 ? 'trim' : 'metal'; } return FSTY[st]; }
+/* where the kit front puts its 2 m bays along wall i, so the windows you can open sit behind the windows you can see */
+function facBays(p, i, isDoor){
+  var n = p.length, j = (i+2) % n, ax = p[i], az = p[i+1], l = Math.hypot(p[j]-ax, p[j+1]-az), OFF = 0.22; if (l < 1) return null;
+  var dx = (p[j]-ax)/l, dz = (p[j+1]-az)/l, hp = (i + n - 2) % n, jn = (j + 2) % n, l0 = Math.hypot(ax - p[hp], az - p[hp+1]) || 1, l2 = Math.hypot(p[jn] - p[j], p[jn+1] - p[j+1]) || 1;
+  var d0x = (ax - p[hp])/l0, d0z = (az - p[hp+1])/l0, d2x = (p[jn] - p[j])/l2, d2z = (p[jn+1] - p[j+1])/l2;
+  var ext = function(ux, uz, vx, vz){ var cs = Math.max(-1, Math.min(1, ux*vx + uz*vz)), th = Math.acos(cs), convex = (vx*uz - vz*ux) < 0; return Math.max(-0.5, Math.min(0.6, (OFF + 0.03)*Math.tan(th/2)*(convex ? 1 : -1))); };
+  var e0 = ext(d0x, d0z, dx, dz), e1 = ext(dx, dz, d2x, d2z); if (isDoor) e0 = e1 = Math.min(e0, e1); var L2 = l + e0 + e1; if (L2 < 0.8) return null;
+  var nb = Math.max(1, Math.round(L2/2)); if (isDoor && nb % 2 === 0) nb += L2/(nb + 1) >= 1.5 ? 1 : -1; nb = Math.max(1, nb);
+  return {e0:e0, nb:nb, w:L2/nb};
+}
+function facSparse(p, Ht){ var n = p.length, bays = 0, F = Math.max(1, Math.round(Ht/3)); for (var i = 0; i < n; i += 2){ var j = (i+2) % n; bays += Math.max(1, Math.round(Math.hypot(p[j]-p[i], p[j+1]-p[i+1])/2)); } var cost = bays*F*95; return cost > 16000 ? 4 : cost > 9000 ? 3 : cost > 4500 ? 2 : 1; }
 function genFacade(b){
   var S = facadeStyle(b), m = new KitMesh(), p = b.pts, n = p.length, Ht = b.h, base = b.base || 0, F = Math.max(1, Math.round(Ht/3)), sy = Ht/(3*F), i, j, k, f;
   var tb = FTINT[Math.floor(hash(b.id, 22, 5)*FTINT.length)], nt = world.nests[b.id] ? [176,140,205] : b.id === world.safe ? [186,214,168] : [255,255,255], tint = [tb[0]*nt[0]/255, tb[1]*nt[1]/255, tb[2]*nt[2]/255];
@@ -1237,30 +1258,125 @@ Mesh.prototype.model = function(M, x, z, yaw, y0){
     this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255);
   }
 };
-var FSETK = {
-  apartments:[['bed','table','sofa','chair','lamp','plant'],['wardrobe','fridge','dresser']],
-  garage:[['bench','barrel'],['crate','locker']],
-  grocery:[['counter'],['shelf','fridge','shelf']],
-  restaurant:[['table','chair','chair','table','counter'],['fridge','shelf']], bar:[['table','chair','counter','chair'],['fridge','shelf']],
-  hospital:[['gurney','gurney','desk','chair'],['cabinet','locker']],
-  fire:[['bench','desk','chair'],['locker','cabinet']],
-  outdoors:[['counter','bench'],['locker','shelf','crate']],
-  hardware:[['counter','bench','barrel'],['shelf','crate']],
-  fuel:[['counter'],['shelf','fridge','crate']],
-  warehouse:[['barrel','bench','barrel'],['crate']], parking:[['barrel'],['crate']],
-  clothes:[['counter','chair'],['dresser','locker']],
-  electronics:[['counter','desk'],['shelf','locker']],
-  school:[['desk','chair','desk','chair','desk'],['locker','wardrobe']],
-  library:[['table','chair','desk','chair'],['wardrobe','wardrobe','dresser']],
-  church:[['bench','bench','bench','table'],['dresser','crate']],
-  office:[['desk','chair','desk','chair','plant','sofa'],['locker','dresser','wardrobe']],
-  bank:[['desk','chair','counter','plant'],['locker']],
-  hotel:[['bed','lamp','chair','table','bed'],['dresser','fridge']],
-  gym:[['bench','bench','chair'],['locker']],
-  venue:[['chair','chair','chair','table'],['locker','crate']]
+/* ---- more furniture. Everything is built with its back at -z so the layout rules can push it against a wall. s = half width, half depth of the floor space it takes. ---- */
+FURN.bed.boxes = [[0,.25,0,.7,.25,1,'#7a5a3c'],[0,.55,.04,.65,.08,.94,'#c9d3e0'],[0,.68,-.7,.5,.07,.22,'#f2f2f2'],[0,.55,-1.02,.72,.55,.04,'#5a4028']];
+FURN.bed.models = ['bed_single_A']; FURN.bed.s = [.72,1.15];
+FURN.bed2 = {models:['bed_double_A','bed_double_B'], s:[1.2,1.15], boxes:[[0,.25,0,1.1,.25,1,'#7a5a3c'],[0,.55,.04,1.05,.08,.94,'#b9c7d6'],[0,.68,-.7,.9,.07,.22,'#f2f2f2'],[0,.55,-1.02,1.12,.55,.04,'#5a4028']]};
+FURN.sofa.models = ['couch','couch_pillows']; FURN.sofa.s = [1.15,.62];
+FURN.armchair = {models:['armchair'], s:[.7,.62], boxes:[[0,.25,0,.5,.25,.42,'#5f7f9a'],[0,.6,-.32,.5,.3,.1,'#4f6b85']]};
+FURN.table.models = ['table_medium']; FURN.table.s = [.78,.78]; FURN.table.boxes = [[0,.72,0,.7,.04,.7,'#a8743e'],[0,.35,0,.08,.35,.08,'#6b4526']];
+FURN.ctable = {models:['table_low'], s:[.9,.58], boxes:[[0,.34,0,.8,.04,.5,'#a8743e'],[0,.16,0,.6,.16,.3,'#6b4526']]};
+FURN.stable = {models:['table_small'], s:[.4,.4], boxes:[[0,.72,0,.36,.04,.36,'#a8743e'],[0,.35,0,.06,.35,.06,'#6b4526']]};
+FURN.desk.s = [1.13,.75]; FURN.desk.boxes = [[0,.72,0,1.1,.04,.7,'#7a5a3c'],[-.9,.35,0,.15,.35,.6,'#5a4028'],[.9,.35,0,.15,.35,.6,'#5a4028']];
+FURN.odesk = {s:[.8,.42], boxes:[[0,.72,0,.8,.04,.4,'#8b8f94'],[-.6,.35,0,.15,.35,.38,'#5d6268'],[.6,.35,0,.15,.35,.38,'#5d6268'],[0,1.02,-.2,.3,.2,.03,'#15171a'],[0,.8,-.2,.05,.06,.05,'#2a2c30'],[.1,.77,.12,.22,.01,.08,'#d9d9d6']]};
+FURN.chair.models = ['chair_A','chair_B_wood','chair_C']; FURN.chair.s = [.3,.34]; FURN.chair.boxes = [[0,.22,0,.24,.22,.24,'#8a6a48'],[0,.66,-.22,.24,.24,.03,'#7a5a3c']];
+FURN.stool = {models:['chair_stool'], s:[.28,.28], boxes:[[0,.3,0,.2,.3,.2,'#5a4028']]};
+FURN.lamp.s = [.22,.22]; FURN.plant.s = [.33,.33]; FURN.dresser.s = [.78,.4];
+FURN.dresser.lt = {coat:2, battery:1, flashlight:.3, none:3};
+FURN.fridge.lt = {food:5, water:3, none:2};
+FURN.cabinet.lt = {medkit:6, none:1};
+FURN.bench.name = 'tool bench'; FURN.bench.lt = {scrap:4, battery:1, flashlight:.5, wood:1, none:1};
+FURN.rug = {flat:1, s:[1.3,.9], boxes:[[0,.006,0,1.3,.006,.9,'#9a5a4a'],[0,.008,0,1.1,.006,.7,'#c9a87a']]};
+FURN.mat = {flat:1, s:[.9,.4], boxes:[[0,.03,0,.9,.03,.4,'#3d6b8c']]};
+FURN.stove = {boxes:[[0,.45,0,.38,.45,.32,'#d9d9d6'],[0,.91,0,.38,.01,.32,'#2a2c30'],[0,1.05,-.3,.38,.13,.03,'#c9c9c6'],[0,.5,.33,.3,.22,.005,'#2a2c30']]};
+FURN.sink = {boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,.925,0,.25,.02,.2,'#9aa3aa'],[0,1.08,-.22,.03,.14,.03,'#b9c0c6']]};
+FURN.kcab = {name:'cupboard', lt:{food:4, water:1, battery:.5, none:2}, boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,1.8,-.15,.6,.35,.17,'#8a6a48']]};
+FURN.toilet = {s:[.26,.36], boxes:[[0,.2,.08,.2,.2,.26,'#f2f2ee'],[0,.42,.08,.22,.03,.28,'#e6e6e0'],[0,.6,-.24,.22,.3,.1,'#f2f2ee']]};
+FURN.tub = {boxes:[[0,.28,0,.85,.28,.4,'#f2f2ee'],[0,.5,0,.75,.07,.3,'#bcd6e0']]};
+FURN.basin = {name:'bathroom cabinet', lt:{medkit:3, water:1, none:3}, s:[.32,.26], boxes:[[0,.42,0,.3,.42,.22,'#e9e6de'],[0,.86,0,.32,.03,.24,'#f6f6f2'],[0,1.5,-.2,.28,.3,.03,'#a9c4cf']]};
+FURN.tv = {s:[.62,.22], boxes:[[0,.25,0,.6,.25,.2,'#4a3a2c'],[0,.85,0,.55,.32,.03,'#15171a'],[0,.85,.031,.5,.27,.003,'#27323a']]};
+FURN.nightstand = {name:'nightstand', lt:{battery:2, flashlight:1, medkit:.5, ammo:.4, none:3}, s:[.24,.24], boxes:[[0,.28,0,.22,.28,.22,'#7a5a3c'],[0,.62,0,.05,.06,.05,'#6b4526'],[0,.78,0,.12,.1,.12,'#e8d9a8']]};
+FURN.closet = {name:'wardrobe', lt:{coat:3, scrap:.5, none:3}, boxes:[[0,1,0,.6,1,.3,'#6b4a30'],[0,1,.305,.012,.92,.005,'#3a2a1c'],[-.08,1,.31,.02,.1,.01,'#c9a84a'],[.08,1,.31,.02,.1,.01,'#c9a84a']]};
+FURN.pew = {s:[1.4,.26], boxes:[[0,.42,0,1.4,.04,.22,'#7a5230'],[0,.7,-.2,1.4,.3,.03,'#6b4526'],[-1.38,.4,0,.03,.4,.24,'#6b4526'],[1.38,.4,0,.03,.4,.24,'#6b4526']]};
+FURN.altar = {boxes:[[0,.5,0,.8,.5,.35,'#e6e0d0'],[0,1.02,0,.85,.02,.4,'#f6f2e6'],[0,1.5,0,.04,.45,.04,'#c9a84a'],[0,1.65,0,.2,.04,.04,'#c9a84a']]};
+FURN.checkout = {name:'till', lt:{battery:1, scrap:1, none:3}, boxes:[[0,.5,0,.9,.5,.3,'#4f5560'],[0,1.02,0,.92,.02,.32,'#c9ccd1'],[.5,1.2,0,.18,.16,.16,'#2a2c30']]};
+FURN.rack = {name:'clothes rack', lt:{coat:5, none:2}, s:[.8,.22], boxes:[[0,1.05,0,.7,.4,.18,'#8a5a6a'],[0,1.5,0,.8,.03,.03,'#b9c0c6'],[-.78,.75,0,.03,.75,.03,'#b9c0c6'],[.78,.75,0,.03,.75,.03,'#b9c0c6'],[.3,1.0,0,.2,.42,.19,'#5a7a8a'],[-.35,1.02,0,.15,.4,.19,'#b9a05a']]};
+FURN.vending = {name:'vending machine', lt:{food:4, water:4, none:1}, boxes:[[0,.95,0,.45,.95,.38,'#b03a2e'],[-.08,1.1,.385,.3,.6,.005,'#1c2a33'],[.36,1.1,.385,.05,.2,.005,'#d9d9d6']]};
+FURN.filing = {name:'filing cabinet', lt:{scrap:1, battery:.5, none:5}, boxes:[[0,.65,0,.25,.65,.3,'#8a9199'],[0,.95,.305,.12,.02,.005,'#55595f'],[0,.55,.305,.12,.02,.005,'#55595f'],[0,.15,.305,.12,.02,.005,'#55595f']]};
+FURN.bunk = {s:[.5,1.02], boxes:[[0,.3,0,.48,.06,1,'#55595f'],[0,.42,0,.45,.07,.95,'#c9d3e0'],[0,1.4,0,.48,.06,1,'#55595f'],[0,1.52,0,.45,.07,.95,'#c9d3e0'],[-.46,.9,-.98,.03,.9,.03,'#3a3f46'],[.46,.9,-.98,.03,.9,.03,'#3a3f46'],[-.46,.9,.98,.03,.9,.03,'#3a3f46'],[.46,.9,.98,.03,.9,.03,'#3a3f46']]};
+FURN.board = {soft:1, s:[1.2,.05], boxes:[[0,1.5,0,1.2,.5,.03,'#2f4a3a'],[0,.98,.03,1.2,.03,.05,'#8a6a48']]};
+FURN.safe = {name:'safe', lt:{ammo:3, medkit:1, radio:1, battery:1, none:2}, boxes:[[0,.6,0,.45,.6,.4,'#3a3f46'],[0,.6,.405,.1,.1,.005,'#c9a84a'],[.25,.6,.405,.03,.15,.005,'#b9c0c6']]};
+FURN.gunlocker = {name:'gun locker', lt:{ammo:7, flashlight:1, none:1}, boxes:[[0,1,0,.5,1,.28,'#3d4a3a'],[0,1,.285,.01,.9,.005,'#22291f'],[.1,1,.29,.02,.1,.01,'#c9ccd1']]};
+FURN.irack = {name:'storage rack', s:[1.2,.42], boxes:[[0,.5,0,1.2,.04,.4,'#c96a2a'],[0,1.3,0,1.2,.04,.4,'#c96a2a'],[0,2.1,0,1.2,.04,.4,'#c96a2a'],[-1.17,1.1,-.37,.04,1.1,.04,'#2f4a7a'],[1.17,1.1,-.37,.04,1.1,.04,'#2f4a7a'],[-1.17,1.1,.37,.04,1.1,.04,'#2f4a7a'],[1.17,1.1,.37,.04,1.1,.04,'#2f4a7a'],[-.6,.8,0,.4,.26,.32,'#b98a52'],[.5,.75,0,.3,.21,.3,'#a87a48'],[.2,1.62,0,.5,.28,.32,'#b98a52'],[-.7,.26,0,.35,.2,.3,'#8a9199']]};
+FURN.display = {name:'display case', boxes:[[0,.45,0,.8,.45,.35,'#e9e6de'],[0,1.0,0,.8,.1,.35,'#a9c4cf'],[-.4,.96,0,.15,.04,.1,'#15171a'],[.3,.96,.05,.2,.04,.12,'#3a3f46']]};
+FURN.weights = {s:[.7,.28], boxes:[[0,.4,0,.7,.04,.25,'#2a2c30'],[0,.8,0,.7,.04,.25,'#2a2c30'],[-.68,.45,0,.03,.45,.26,'#55595f'],[.68,.45,0,.03,.45,.26,'#55595f'],[-.4,.52,0,.08,.08,.2,'#15171a'],[0,.52,0,.1,.1,.2,'#15171a'],[.4,.52,0,.12,.12,.2,'#15171a'],[-.2,.92,0,.1,.1,.2,'#15171a'],[.3,.92,0,.08,.08,.2,'#15171a']]};
+FURN.treadmill = {s:[.4,.85], boxes:[[0,.12,0,.36,.08,.8,'#2a2c30'],[0,.7,-.75,.36,.6,.04,'#55595f'],[0,1.3,-.72,.3,.1,.06,'#15171a']]};
+FURN.stage = {s:[2.5,1.2], boxes:[[0,.3,0,2.5,.3,1.2,'#5a4028'],[0,.61,0,2.5,.01,1.2,'#7a5a3c']]};
+/* ---- what goes in each kind of room. [thing, where, how many, extras]
+   where: wall (back to a wall), door (wall nearest the way in), far (wall farthest from it), corner, end (middle of the far end wall), mid (centre of the room), rows (lines with aisles)
+   how many: a negative number means one per that many square metres. extras: ring = chairs around it, seat = a chair in front, side = something beside it, face 'far' = rows all facing the far end ---- */
+var ROOMS = {
+  living:[['rug','mid',1],['sofa','wall',1],['tv','wall',1],['ctable','mid',1],['armchair','corner',1],['wardrobe','wall',1],['lamp','corner',1],['plant','corner',1]],
+  living_k:[['fridge','wall',1],['stove','wall',1],['kcab','wall',1],['sink','wall',1],['sofa','wall',1],['tv','wall',1],['table','mid',1,{ring:4}],['lamp','corner',1]],
+  kitchen:[['fridge','wall',1],['stove','wall',1],['sink','wall',1],['kcab','wall',2],['table','mid',1,{ring:4}]],
+  bedroom:[['rug','mid',1],['bed','wall',1,{side:'nightstand', alt:'bed2'}],['closet','wall',1],['dresser','wall',1],['lamp','corner',1]],
+  bath:[['toilet','wall',1],['basin','wall',1],['tub','wall',1]],
+  wc:[['toilet','wall',2],['basin','wall',1]],
+  store:[['shelf','wall',1],['crate','wall',2],['barrel','corner',1]],
+  studio:[['bed','wall',1,{side:'nightstand'}],['fridge','wall',1],['stove','wall',1],['kcab','wall',1],['sofa','wall',1],['tv','wall',1],['table','mid',1,{ring:2}],['closet','wall',1],['basin','corner',1]],
+  market:[['checkout','door',2],['fridge','far',-40],['shelf','rows',-9,{gw:.06, gd:1.7, brk:4}],['vending','door',1],['crate','corner',2]],
+  gshop:[['checkout','door',1],['shelf','rows',-12,{gw:.06, gd:1.8, brk:3}],['display','wall',-40],['crate','corner',1]],
+  stock:[['shelf','wall',2],['crate','wall',-10],['irack','wall',1],['barrel','corner',1]],
+  dining:[['counter','door',1],['table','rows',-11,{ring:4, gw:1.7, gd:1.7}],['fridge','far',1],['plant','corner',2]],
+  kitchenC:[['stove','wall',2],['sink','wall',1],['fridge','wall',2],['kcab','wall',2],['counter','mid',1],['shelf','wall',1]],
+  barroom:[['counter','far',2,{front:'stool'}],['fridge','far',1],['shelf','far',1],['stable','rows',-10,{ring:3, gw:1.9, gd:1.9}],['sofa','wall',1]],
+  waiting:[['counter','door',1,{seat:1}],['chair','wall',-6],['plant','corner',2],['vending','wall',1],['cabinet','far',1]],
+  exam:[['gurney','wall',1],['cabinet','wall',2],['odesk','wall',1,{seat:1}],['basin','wall',1],['chair','wall',1]],
+  ward:[['cabinet','wall',3],['gurney','wall',-9,{side:'nightstand'}],['locker','wall',2],['basin','corner',1]],
+  office:[['odesk','wall',-11,{seat:1}],['filing','wall',-18],['wardrobe','wall',1],['plant','corner',1],['locker','wall',1]],
+  lobby:[['counter','door',1,{seat:1}],['sofa','wall',2],['ctable','mid',1],['plant','corner',2],['vending','wall',1],['filing','far',1]],
+  breakroom:[['fridge','wall',1],['kcab','wall',1],['sink','wall',1],['vending','wall',1],['table','mid',1,{ring:4}]],
+  classroom:[['board','end',1],['desk','end',1,{off:1.3}],['stable','rows',-7,{face:'far', seat:1, gw:.9, gd:1.1, mf:4.2}],['locker','wall',3],['wardrobe','wall',1]],
+  libhall:[['counter','door',1,{seat:1}],['wardrobe','rows',-7,{gw:.05, gd:1.5, brk:4}],['table','mid',1,{ring:4}],['dresser','wall',2],['armchair','corner',2]],
+  nave:[['altar','end',1],['pew','rows',-9,{face:'far', gw:1.3, gd:.75, mf:4}],['dresser','wall',1],['crate','corner',1]],
+  vestry:[['closet','wall',1],['dresser','wall',1],['table','mid',1,{ring:2}],['crate','wall',1]],
+  bullpen:[['counter','door',1,{seat:1}],['odesk','rows',-16,{face:'far', seat:1, gw:1.2, gd:1.6}],['gunlocker','far',2],['locker','wall',3],['filing','wall',2]],
+  armory:[['gunlocker','wall',3],['locker','wall',2],['crate','wall',2],['bench','wall',1]],
+  firebay:[['locker','wall',4],['bench','wall',1],['cabinet','wall',1],['crate','wall',2],['barrel','corner',2]],
+  bunkroom:[['bunk','wall',-9],['locker','wall',2],['table','mid',1,{ring:4}],['fridge','wall',1]],
+  workshop:[['bench','wall',2],['irack','wall',1],['locker','wall',1],['crate','wall',2],['barrel','corner',2]],
+  warehouse:[['irack','rows',-22,{gw:.1, gd:2.4, brk:3}],['crate','wall',-30],['barrel','corner',2],['bench','door',1]],
+  parking:[['barrel','corner',2],['crate','wall',2]],
+  boutique:[['checkout','door',1],['rack','rows',-9,{gw:1.1, gd:1.5}],['dresser','wall',2],['closet','far',2],['armchair','corner',1]],
+  estore:[['checkout','door',1],['display','rows',-12,{gw:1.2, gd:1.6}],['shelf','wall',2],['tv','wall',2],['locker','far',1]],
+  hardware:[['checkout','door',1],['shelf','rows',-10,{gw:.06, gd:1.7, brk:4}],['bench','wall',1],['crate','wall',2],['barrel','corner',2]],
+  outfitter:[['checkout','door',1],['rack','rows',-14,{gw:1.1, gd:1.6}],['gunlocker','far',2],['shelf','wall',2],['crate','corner',1]],
+  cstore:[['checkout','door',1],['fridge','far',2],['shelf','rows',-12,{gw:.06, gd:1.7, brk:3}],['vending','wall',1],['crate','corner',1]],
+  bankhall:[['counter','far',3,{seat:1}],['sofa','wall',1],['plant','corner',2],['odesk','wall',1,{seat:1}],['locker','far',1]],
+  vault:[['safe','wall',3],['filing','wall',2],['locker','wall',1]],
+  hroom:[['bed2','wall',1,{side:'nightstand', alt:'bed'}],['tv','wall',1],['dresser','wall',1],['armchair','corner',1],['fridge','corner',1]],
+  gymfloor:[['weights','wall',3],['treadmill','wall',-25],['mat','rows',-14,{gw:1.2, gd:1.4}],['locker','far',3],['vending','door',1]],
+  lockers:[['locker','wall',-5],['pew','mid',1],['basin','wall',1],['cabinet','wall',1]],
+  hall:[['stage','end',1],['chair','rows',-4,{face:'far', gw:.35, gd:.6, mf:4.5, brk:6}],['table','wall',2],['locker','wall',1],['crate','corner',2]]
 };
-var FSET = {civic:[['desk','chair','table'],['locker','wardrobe']], house:[['bed','table','sofa','table','chair','lamp','plant','chair'],['wardrobe','fridge','dresser']], food:[['counter','table'],['shelf','fridge','shelf']], shop:[['counter'],['shelf']],
-  medical:[['gurney','desk','chair'],['cabinet']], police:[['desk','desk','bench','chair'],['locker']], industrial:[['barrel','bench','barrel'],['crate']]};
+var PLAN = {
+  house:{one:'studio', two:['living_k','bedroom'], rooms:['living','kitchen','bedroom','bedroom','store'], more:['bedroom','store','office'], small:'bath'},
+  garage:{rooms:['workshop'], more:['store']},
+  grocery:{rooms:['market'], more:['stock']},
+  restaurant:{rooms:['dining','kitchenC'], more:['stock','wc']},
+  bar:{rooms:['barroom'], more:['stock','wc']},
+  clinic:{one:'exam', rooms:['waiting','exam'], more:['exam','office']},
+  hospital:{one:'ward', rooms:['waiting','ward'], more:['exam','ward','office']},
+  police:{rooms:['bullpen','armory'], more:['office','store']},
+  fire:{rooms:['firebay','bunkroom'], more:['breakroom','office']},
+  outdoors:{rooms:['outfitter'], more:['stock']},
+  hardware:{rooms:['hardware'], more:['stock']},
+  fuel:{rooms:['cstore'], more:['stock']},
+  warehouse:{rooms:['warehouse'], more:['warehouse','office']},
+  parking:{rooms:['parking'], more:['parking']},
+  clothes:{rooms:['boutique'], more:['stock']},
+  electronics:{rooms:['estore'], more:['stock']},
+  shop:{rooms:['gshop'], more:['stock']},
+  school:{rooms:['classroom','classroom','office'], more:['classroom','breakroom']},
+  library:{rooms:['libhall'], more:['libhall','office']},
+  church:{rooms:['nave'], more:['vestry']},
+  office:{one:'office', rooms:['lobby','office'], more:['office','breakroom','office']},
+  bank:{rooms:['bankhall','vault'], more:['office']},
+  hotel:{one:'hroom', rooms:['lobby'], more:['hroom']},
+  gym:{rooms:['gymfloor'], more:['lockers']},
+  venue:{rooms:['hall'], more:['stock','breakroom']}
+};
+PLAN.apartments = PLAN.house; PLAN.food = PLAN.restaurant; PLAN.medical = PLAN.clinic; PLAN.industrial = PLAN.garage; PLAN.civic = PLAN.office;
 function genInterior(b){
   var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id, k++, 31); }, i, j;
   var segs = [], circs = [], doors = [], conts = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
@@ -1294,7 +1410,10 @@ function genInterior(b){
     for (q = 0; q < ts.length - 1; q++){
       var t0 = ts[q], t1 = ts[q+1], L = (t1 - t0)*len; if (L < 1.7) continue;
       var tm = (t0 + t1)/2; if (!pip(p, ax + rx*tm, ay + ry*tm)) continue;
-      var sx0 = ax + rx*t0, sy0 = ay + ry*t0, g0 = L < 2.6 ? (L - 1.1)/2 : 0.6 + rnd()*(L - 2.3), g1 = g0 + 1.1;
+      var sx0 = ax + rx*t0, sy0 = ay + ry*t0, g0 = L < 2.6 ? (L - 1.1)/2 : 0.6 + rnd()*(L - 2.3), g1, tr, gt;
+      /* the doorway has to open onto floor on both sides, not onto a sliver behind the outside wall */
+      for (tr = 0; tr < 40; tr++){ gt = tr === 0 ? g0 : L < 2.6 ? g0 : 0.6 + (L - 2.3)*((tr*0.381966) % 1); var mx0 = sx0 + dxn*(gt + 0.55), my0 = sy0 + dyn*(gt + 0.55), okd = true; for (var sd = -1; sd <= 1 && okd; sd += 2){ var qx = mx0 - dyn*sd*0.9, qy = my0 + dxn*sd*0.9; if (!pip(p, qx, qy) || polyDist(p, qx, qy, true) < 0.5) okd = false; } if (okd){ g0 = gt; break; } }
+      g1 = g0 + 1.1;
       var ax1 = sx0 + dxn*g0, ay1 = sy0 + dyn*g0, ax2 = sx0 + dxn*g1, ay2 = sy0 + dyn*g1, ex = sx0 + dxn*L, ey = sy0 + dyn*L;
       m.wt = [TX.wallpaper, 2, 2]; m.wall(sx0, sy0, ax1, ay1, 0.1, 3, WHITE, 255); m.wall(ax2, ay2, ex, ey, 0.1, 3, WHITE, 255); m.wall(ax1, ay1, ax2, ay2, 2.2, 3, WHITE, 255); m.wt = null;
       if (g0 > 0.05) segs.push(sx0, sy0, ax1, ay1); if (L - g1 > 0.05) segs.push(ax2, ay2, ex, ey);
@@ -1304,37 +1423,150 @@ function genInterior(b){
   function split(a0, b0, a1, b1, d){
     var w = a1 - a0, h = b1 - b0;
     if (d >= maxD || Math.max(w, h) < minS || w*h < 24){ leaves.push([a0, b0, a1, b1]); return; }
-    var f = 0.38 + rnd()*0.24, s;
-    if (w >= h){ s = a0 + w*f; part(s, b0, s, b1); split(a0, b0, s, b1, d+1); split(s, b0, a1, b1, d+1); }
-    else { s = b0 + h*f; part(a0, s, a1, s); split(a0, b0, a1, s, d+1); split(a0, s, a1, b1, d+1); }
+    var f = 0.38 + rnd()*0.24, s, dc = w >= h ? eu0 : ev0, lo = w >= h ? a0 : b0, hi = w >= h ? a1 : b1;
+    s = lo + (hi - lo)*f;
+    if (Math.abs(s - dc) < 1.5){ s = dc + (s >= dc ? 1.5 : -1.5); if (s < lo + 2.2 || s > hi - 2.2) s = dc + (s >= dc ? -1.5 : 1.5); if (s < lo + 2.2 || s > hi - 2.2){ leaves.push([a0, b0, a1, b1]); return; } }   /* never run a wall into the front door */
+    if (w >= h){ part(s, b0, s, b1); split(a0, b0, s, b1, d+1); split(s, b0, a1, b1, d+1); }
+    else { part(a0, s, a1, s); split(a0, b0, a1, s, d+1); split(a0, s, a1, b1, d+1); }
   }
+  var eu0 = b.door ? b.door.x*ux + b.door.y*uy : 1e9, ev0 = b.door ? b.door.x*vx + b.door.y*vy : 1e9;
   split(u0, v0, u1, v1, 0);
-  var spots = [];
-  leaves.forEach(function(lf){
-    var w = lf[2] - lf[0], h = lf[3] - lf[1], gs = Math.max(3.2, Math.sqrt(w*h/70)), nu = w < 2.6 ? 1 : Math.max(1, Math.round((w - 1.8)/gs)) + 1, nv = h < 2.6 ? 1 : Math.max(1, Math.round((h - 1.8)/gs)) + 1;
-    for (var iu = 0; iu < nu; iu++) for (var iv = 0; iv < nv; iv++){
-      var su = nu === 1 ? lf[0] + w/2 : lf[0] + 0.9 + iu*(w - 1.8)/(nu - 1), sv = nv === 1 ? lf[1] + h/2 : lf[1] + 0.9 + iv*(h - 1.8)/(nv - 1);
-      var x = su*ux + sv*vx, y = su*uy + sv*vy, ok = pip(p, x, y) && polyDist(p, x, y, true) > 0.75, q;
-      for (q = 0; ok && q < segs.length; q += 4) if (segDist(x, y, segs[q], segs[q+1], segs[q+2], segs[q+3]) < 0.75) ok = false;
-      for (q = 0; ok && q < doors.length; q += 2) if (Math.hypot(x - doors[q], y - doors[q+1]) < 1.7) ok = false;
-      if (ok) spots.push([x, y, rnd()]);
+  /* ---- furnish: every room gets a job, then that job's list is laid out against walls, in rows or in the middle ---- */
+  var keep = [], rects = [], total = 0, q, items = [], cls = 2;
+  for (i = 0; i < doors.length; i += 2) keep.push(doors[i]*ux + doors[i+1]*uy, doors[i]*vx + doors[i+1]*vy, 1.0);
+  for (i = 0; i < b.wins.length; i += 6) keep.push(b.wins[i]*ux + b.wins[i+1]*uy, b.wins[i]*vx + b.wins[i+1]*vy, 0.75);
+  var eu = b.door ? b.door.x*ux + b.door.y*uy : b.cx*ux + b.cy*uy, ev = b.door ? b.door.x*vx + b.door.y*vy : b.cx*vx + b.cy*vy;
+  var rooms = leaves.map(function(lf){ var cu = (lf[0] + lf[2])/2, cv = (lf[1] + lf[3])/2; return {a0:lf[0], b0:lf[1], a1:lf[2], b1:lf[3], cu:cu, cv:cv, w:lf[2] - lf[0], h:lf[3] - lf[1], area:(lf[2] - lf[0])*(lf[3] - lf[1]), d:Math.hypot(cu - eu, cv - ev)}; });
+  rooms.sort(function(x, y){ return x.d - y.d; });
+  var plan = PLAN[b.kind] || PLAN[b.cat] || PLAN.shop;
+  rooms.forEach(function(R, ri){ R.type = rooms.length === 1 ? (plan.one || plan.rooms[0]) : rooms.length === 2 && plan.two ? plan.two[ri] : plan.rooms[ri] || plan.more[(ri - plan.rooms.length) % plan.more.length]; });
+  if (plan.small && rooms.length >= 3){ var sm = 1; for (i = 2; i < rooms.length; i++) if (rooms[i].area < rooms[sm].area) sm = i; rooms[sm].type = plan.small; }
+  function free(cu, cv, hu, hv, R, flat){
+    if (cu - hu < R.a0 + 0.04 || cu + hu > R.a1 - 0.04 || cv - hv < R.b0 + 0.04 || cv + hv > R.b1 - 0.04) return false;
+    for (q = 0; q < 5; q++){ var pu = cu + [0,-1,1,-1,1][q]*hu, pv = cv + [0,-1,-1,1,1][q]*hv; if (!pip(p, pu*ux + pv*vx, pu*uy + pv*vy)) return false; }
+    if (flat) return true;
+    for (q = 0; q < keep.length; q += 3){ var du = Math.max(Math.abs(keep[q] - cu) - hu, 0), dv = Math.max(Math.abs(keep[q+1] - cv) - hv, 0); if (du*du + dv*dv < keep[q+2]*keep[q+2]) return false; }
+    for (q = 0; q < rects.length; q += 4) if (Math.abs(cu - rects[q]) < hu + rects[q+2] + 0.1 && Math.abs(cv - rects[q+1]) < hv + rects[q+3] + 0.1) return false;
+    return true;
+  }
+  function put(name, cu, cv, dir, R){
+    var f = FURN[name], s = f.s || [f.boxes[0][3], f.boxes[0][5]], hu = dir & 1 ? s[0] : s[1], hv = dir & 1 ? s[1] : s[0];
+    if (total >= 110 || !free(cu, cv, hu, hv, R, f.flat)) return null;
+    var bu = [1,0,-1,0][dir], bv = [0,1,0,-1][dir], yaw = Math.atan2(bu*uy + bv*vy, bu*ux + bv*vx) + 1.5708, x = cu*ux + cv*vx, y = cu*uy + cv*vy;
+    var mi = f.models ? Math.floor(rnd()*f.models.length) : 0, cl = [];
+    total++; if (window.LAYDBG) LAYDBG.push([name, x, y, hu, hv, dir, ux, uy]);
+    if (!f.flat){
+      rects.push(cu, cv, hu, hv);
+      if (!f.soft){ var r = Math.max(0.22, Math.min(0.6, hu, hv)), L = Math.max(hu, hv) - r, nc = L < 0.15 ? 1 : Math.ceil(2*L/(r*1.4)) + 1; for (q = 0; q < nc; q++){ var o = nc === 1 ? 0 : -L + 2*L*q/(nc - 1), pu = cu + (hu >= hv ? o : 0), pv = cv + (hu >= hv ? 0 : o); cl.push(pu*ux + pv*vx, pu*uy + pv*vy, r); } }
     }
+    items.push({f:f, x:x, y:y, yaw:yaw, mi:mi, cl:cl, R:R, cls:f.name ? 3 : cls, on:1});
+    return {cu:cu, cv:cv, hu:hu, hv:hv, dir:dir, s:s};
+  }
+  function extras(it, o, R){
+    if (!it || !o) return;
+    var bu = [1,0,-1,0][it.dir], bv = [0,1,0,-1][it.dir], cs = FURN.chair.s, e, k2, c0 = cls; cls = 0;
+    if (o.ring){ var sp = [[0, 1, 1], [0, -1, 3], [1, 0, 0], [-1, 0, 2]]; for (e = 0; e < o.ring && e < 4; e++) put('chair', it.cu + sp[e][0]*(it.hu + cs[1] + 0.12), it.cv + sp[e][1]*(it.hv + cs[1] + 0.12), sp[e][2], R); }
+    if (o.seat) put('chair', it.cu - bu*(it.s[1] + cs[1] + 0.14), it.cv - bv*(it.s[1] + cs[1] + 0.14), (it.dir + 2) % 4, R);
+    if (o.front){ var fs = FURN[o.front].s; for (e = -1; e <= 1; e += 2) put(o.front, it.cu - bu*(it.s[1] + fs[1] + 0.2) - bv*e*0.5, it.cv - bv*(it.s[1] + fs[1] + 0.2) + bu*e*0.5, (it.dir + 2) % 4, R); }
+    if (o.side){ var ss = FURN[o.side].s; for (e = -1, k2 = null; e <= 1 && !k2; e += 2) k2 = put(o.side, it.cu + bu*(it.s[1] - ss[1]) - bv*e*(it.s[0] + ss[0] + 0.06), it.cv + bv*(it.s[1] - ss[1]) + bu*e*(it.s[0] + ss[0] + 0.06), it.dir, R); }
+    cls = c0;
+  }
+  function farEnd(R){ return R.w >= R.h ? (Math.abs(eu - R.a0) < Math.abs(eu - R.a1) ? 0 : 2) : (Math.abs(ev - R.b0) < Math.abs(ev - R.b1) ? 1 : 3); }  /* which wall is the far end, as the direction a thing's back points when it stands against it */
+  function onWall(name, R, mode){
+    var s = FURN[name].s || [FURN[name].boxes[0][3], FURN[name].boxes[0][5]], cand = [], dir, t0, lo, hi, cu, cv, sc;
+    for (dir = 0; dir < 4; dir++){
+      lo = (dir & 1 ? R.a0 : R.b0) + s[0] + 0.1; hi = (dir & 1 ? R.a1 : R.b1) - s[0] - 0.1; if (hi < lo) continue;
+      var fix = dir === 0 ? R.a1 - s[1] - 0.06 : dir === 2 ? R.a0 + s[1] + 0.06 : dir === 1 ? R.b1 - s[1] - 0.06 : R.b0 + s[1] + 0.06;
+      for (t0 = lo; t0 <= hi + 0.001; t0 += 0.45){
+        cu = dir & 1 ? t0 : fix; cv = dir & 1 ? fix : t0;
+        sc = mode === 'door' ? Math.hypot(cu - eu, cv - ev) : mode === 'far' ? -Math.hypot(cu - eu, cv - ev) : mode === 'corner' ? Math.min(t0 - lo, hi - t0) + rnd()*0.3 : rnd();
+        cand.push([sc, cu, cv, dir]);
+      }
+    }
+    cand.sort(function(x, y){ return x[0] - y[0]; });
+    for (var ci = 0; ci < cand.length; ci++){ var it = put(name, cand[ci][1], cand[ci][2], cand[ci][3], R); if (it) return it; }
+    return null;
+  }
+  rooms.forEach(function(R){
+    (ROOMS[R.type] || ROOMS.store).forEach(function(rule){
+      var name = rule[0], mode = rule[1], o = rule[3] || {}, cnt = rule[2] < 0 ? Math.max(1, Math.min(40, Math.round(R.area/-rule[2]))) : rule[2], f = FURN[name], s = f.s || [f.boxes[0][3], f.boxes[0][5]], e, it, fe;
+      cls = mode === 'rows' || mode === 'mid' ? 1 : 2;
+      if (mode === 'rows'){
+        var dir = o.face === 'far' ? (farEnd(R) + (o.seat ? 0 : 2)) % 4 : (R.w >= R.h ? 1 : 0), hu = dir & 1 ? s[0] : s[1], hv = dir & 1 ? s[1] : s[0], mg = 1.25, ex = (o.ring || o.seat) ? 0.7 : 0;
+        var su = 2*hu + (dir & 1 ? o.gw : o.gd) + (dir & 1 ? 0 : ex), sv = 2*hv + (dir & 1 ? o.gd : o.gw) + (dir & 1 ? ex : 0);
+        var lu = R.a0 + mg + hu, hiu = R.a1 - mg - hu, lv = R.b0 + mg + hv, hiv = R.b1 - mg - hv;
+        if (o.mf){ fe = farEnd(R); if (fe === 0) hiu -= o.mf - mg; else if (fe === 2) lu += o.mf - mg; else if (fe === 1) hiv -= o.mf - mg; else lv += o.mf - mg; }
+        var nu = Math.floor((hiu - lu)/su) + 1, nv = Math.floor((hiv - lv)/sv) + 1, n2 = 0; if (hiu < lu || hiv < lv) return;
+        lu += ((hiu - lu) - (nu - 1)*su)/2; lv += ((hiv - lv) - (nv - 1)*sv)/2;
+        for (var iu = 0; iu < nu && n2 < cnt; iu++) for (var iv = 0; iv < nv && n2 < cnt; iv++){
+          if (o.brk && ((dir & 1 ? iu : iv) + 1) % o.brk === 0) continue;
+          it = put(name, lu + iu*su, lv + iv*sv, dir, R); if (it){ n2++; extras(it, o, R); }
+        }
+        return;
+      }
+      for (e = 0; e < cnt; e++){
+        it = null;
+        if (mode === 'mid'){ var offs = [0,0, 0.8,0, -0.8,0, 0,0.8, 0,-0.8, 1.6,0, -1.6,0, 0,1.6, 0,-1.6], md = R.w >= R.h ? 1 : 0; for (var q1 = 0; q1 < offs.length && !it; q1 += 2) it = put(name, R.cu + offs[q1], R.cv + offs[q1+1], md, R); }
+        else if (mode === 'end'){ fe = farEnd(R); var off = o.off || 0, sh = [0, 0.7, -0.7, 1.4, -1.4, 2.1, -2.1]; for (var q2 = 0; q2 < sh.length && !it; q2++) it = fe === 0 ? put(name, R.a1 - s[1] - 0.06 - off, R.cv + sh[q2], 0, R) : fe === 2 ? put(name, R.a0 + s[1] + 0.06 + off, R.cv + sh[q2], 2, R) : fe === 1 ? put(name, R.cu + sh[q2], R.b1 - s[1] - 0.06 - off, 1, R) : put(name, R.cu + sh[q2], R.b0 + s[1] + 0.06 + off, 3, R); }
+        else { it = onWall(name, R, mode); if (!it && o.alt){ it = onWall(o.alt, R, mode); } }
+        if (!it) break; extras(it, o, R);
+      }
+    });
   });
-  spots.sort(function(x, y){ return x[2] - y[2]; });
-  if (!spots.length && b.area > 9 && pip(p, b.cx, b.cy)) spots.push([b.cx, b.cy, 0]);
-  var set = FSETK[b.kind] || FSET[b.cat], nCont = Math.min(spots.length, b.rolls + 1), yaw0 = Math.atan2(uy, ux), placed = 0;
-  spots.forEach(function(s, si){
-    var isC = si < nCont; if (!isC && (placed > 45 || rnd() > 0.6)) return;
-    var list = set[isC ? 1 : 0], name = list[Math.floor(rnd()*list.length)], f = FURN[name], yaw = yaw0 + (rnd() < 0.5 ? 0 : 1.5708);
-    var M = f.models && QS.models ? MODELS[f.models[Math.floor(rnd()*f.models.length)]] : null, rad = Math.max(f.boxes[0][3], f.boxes[0][5]), top = f.boxes[0][1] + f.boxes[0][4];
-    if (M){ m.model(M, s[0], s[1], yaw + (rnd() < 0.5 ? 0 : 3.1416), 0.1); rad = Math.max(M.hx, M.hz)*0.8; top = M.h; }
-    else f.boxes.forEach(function(bx){ m.ybox(s[0], s[1], yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
-    if (f.tex !== undefined){ var b0 = f.boxes[0]; m.panel(s[0], s[1], yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); m.panel(s[0], s[1], yaw, -b0[5] - 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
-    circs.push(s[0], s[1], Math.min(0.7, rad));
-    if (isC) conts.push({x:s[0], y:s[1], h:top + 0.35, name:f.name, i:si, b:b}); else placed++;
+  /* ---- walk test: flood out from the front door, and take furniture away until everything you can search can be walked to ---- */
+  (function(){
+    var st = 0.25, PR = 0.34, W = Math.ceil((u1 - u0)/st) + 1, H = Math.ceil((v1 - v0)/st) + 1, base = new Uint8Array(W*H), blk = new Uint8Array(W*H), seen = new Uint8Array(W*H), gi, gj, e, it, c, stage;
+    if (W*H > 60000 || !b.door) return;
+    for (gj = 0; gj < H; gj++) for (gi = 0; gi < W; gi++){
+      var gu = u0 + gi*st, gv = v0 + gj*st, x = gu*ux + gv*vx, y = gu*uy + gv*vy, ok = pip(p, x, y) && polyDist(p, x, y, true) >= PR;
+      for (q = 0; ok && q < segs.length; q += 4) if (segDist(x, y, segs[q], segs[q+1], segs[q+2], segs[q+3]) < PR) ok = false;
+      base[gj*W + gi] = ok ? 1 : 0;
+    }
+    function flood(bare){
+      blk.set(base); seen.fill(0);
+      for (e = 0; e < items.length; e++){ it = items[e]; if (!it.on || bare) continue; c = it.cl;
+        for (q = 0; q < c.length; q += 3){ var cu = c[q]*ux + c[q+1]*uy, cv = c[q]*vx + c[q+1]*vy, rr = c[q+2] + PR - 0.03, i0 = Math.max(0, Math.floor((cu - rr - u0)/st)), i1 = Math.min(W - 1, Math.ceil((cu + rr - u0)/st)), j0 = Math.max(0, Math.floor((cv - rr - v0)/st)), j1 = Math.min(H - 1, Math.ceil((cv + rr - v0)/st));
+          for (gj = j0; gj <= j1; gj++) for (gi = i0; gi <= i1; gi++){ var du = u0 + gi*st - cu, dv = v0 + gj*st - cv; if (du*du + dv*dv < rr*rr) blk[gj*W + gi] = 0; } } }
+      var Q = [], si = Math.round(((b.door.x + b.door.nx*0.6)*ux + (b.door.y + b.door.ny*0.6)*uy - u0)/st), sj = Math.round(((b.door.x + b.door.nx*0.6)*vx + (b.door.y + b.door.ny*0.6)*vy - v0)/st), k2;
+      for (gj = sj - 3; gj <= sj + 3; gj++) for (gi = si - 3; gi <= si + 3; gi++){ if (gi < 0 || gj < 0 || gi >= W || gj >= H) continue; k2 = gj*W + gi; if (blk[k2] && !seen[k2]){ seen[k2] = 1; Q.push(k2); } }
+      while (Q.length){ k2 = Q.pop(); gi = k2 % W; if (gi > 0 && blk[k2-1] && !seen[k2-1]){ seen[k2-1] = 1; Q.push(k2-1); } if (gi < W - 1 && blk[k2+1] && !seen[k2+1]){ seen[k2+1] = 1; Q.push(k2+1); } if (k2 >= W && blk[k2-W] && !seen[k2-W]){ seen[k2-W] = 1; Q.push(k2-W); } if (k2 < W*H - W && blk[k2+W] && !seen[k2+W]){ seen[k2+W] = 1; Q.push(k2+W); } }
+      var bad = [], RR = Math.ceil(1.6/st);
+      for (e = 0; e < items.length; e++){ it = items[e]; if (!it.on || it.cls !== 3) continue;
+        var ci = Math.round((it.x*ux + it.y*uy - u0)/st), cj = Math.round((it.x*vx + it.y*vy - v0)/st), hit = false;
+        for (gj = Math.max(0, cj - RR); gj <= Math.min(H - 1, cj + RR) && !hit; gj++) for (gi = Math.max(0, ci - RR); gi <= Math.min(W - 1, ci + RR); gi++) if (seen[gj*W + gi] && (gi - ci)*(gi - ci) + (gj - cj)*(gj - cj) <= RR*RR){ hit = true; break; }
+        if (!hit) bad.push(it); }
+      return bad;
+    }
+    flood(true).forEach(function(x){ x.on = 0; });   /* walled off even in an empty building: not worth keeping */
+    var off = [], bad;
+    for (stage = 0; stage < 6; stage++){
+      bad = flood(); if (!bad.length) break;
+      if (stage === 5){ bad.forEach(function(x){ x.on = 0; }); break; }
+      var want = stage % 3, all = stage >= 3;
+      items.forEach(function(x){ if (!x.on || x.cls > want || x.f.flat) return; var hit = all; for (var z = 0; z < bad.length && !hit; z++) if (bad[z].R === x.R) hit = true; if (hit){ x.on = 0; off.push(x); } });
+    }
+    /* put back whatever turns out not to have been in the way */
+    off.sort(function(x, y){ return y.cls - x.cls; });
+    for (e = 0; e < off.length && e < 60; e++){ var x1 = off[e]; x1.on = 1; if (flood().length) x1.on = 0; }
+  })();
+  var nOn = 0;
+  items.forEach(function(it){
+    if (!it.on) return; nOn++;
+    var f = it.f, x = it.x, y = it.y, yaw = it.yaw, M = f.models && QS.models ? MODELS[f.models[it.mi]] : null, top = f.boxes[0][1] + f.boxes[0][4];
+    if (M){ m.model(M, x, y, yaw, 0.1); top = M.h; }
+    else f.boxes.forEach(function(bx){ m.ybox(x, y, yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
+    if (f.tex !== undefined){ var b0 = f.boxes[0]; m.panel(x, y, yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
+    for (q = 0; q < it.cl.length; q++) circs.push(it.cl[q]);
+    if (f.name) conts.push({x:x, y:y, h:top + 0.35, name:f.name, i:conts.length, b:b, lt:f.lt});
   });
+  total = nOn;
+  /* a tiny building still gets one thing to search */
+  if (!conts.length && b.area > 9 && pip(p, b.cx, b.cy)){ m.ybox(b.cx, b.cy, 0, 0, 0, 0.55, 0.5, 0.45, 0.5, C('#b98a52')); circs.push(b.cx, b.cy, 0.5); conts.push({x:b.cx, y:b.cy, h:1.3, name:'crate', i:0, b:b}); }
+  /* only some of what you can open is still stocked: the rest was picked over long ago */
+  var ord = conts.map(function(c, ci){ return [hash(b.id, ci, 77), c]; }).sort(function(x, y){ return x[0] - y[0]; });
+  ord.forEach(function(e2, ci){ if (ci > b.rolls + 1) e2[1].poor = 1; });
   if (world.hg) for (i = 1; i < m.p.length; i += 3) m.p[i] += b.base;
-  return {g:upload(m), segs:segs, circs:circs, conts:conts};
+  return {g:upload(m), segs:segs, circs:circs, conts:conts, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -1360,6 +1592,77 @@ function pushSegs(e, r, s){
     if (d < r && d > 1e-6){ e.x += px/d*(r - d); e.y += py/d*(r - d); }
   }
 }
+/* ---- doors and windows. Door: 0 shut, 1 open, 2 broken. Window: 0 shut, 1 open, 2 broken, 3 boarded up. Only changes from the starting state are saved. ---- */
+function doorState(b){ var s = world.edits.ports[b.id]; return s && s.d !== undefined ? s.d : (b.id === world.safe ? 0 : hash(b.id, 31, 7) < 0.22 ? 1 : 0); }
+function winState(b, k){ var s = world.edits.ports[b.id]; return (s && s.w && s.w[k]) || 0; }
+function setPort(b, k, st, quiet){
+  var E = world.edits.ports, s = E[b.id] || (E[b.id] = {w:{}}); if (!s.w) s.w = {};
+  if (k < 0) s.d = st; else if (st) s.w[k] = st; else delete s.w[k];
+  b.bar = null; if (b.php) delete b.php[k]; if (!quiet) emit({k:'port', b:b.id, i:k, s:st});
+}
+/* the pieces of wall that are solid right now: the shut door and every window that is not open */
+function barOf(b){
+  if (b.bar) return b.bar; var a = [], w = b.wsegs || [];
+  if (b.dseg && doorState(b) === 0) a.push(b.dseg[0], b.dseg[1], b.dseg[2], b.dseg[3]);
+  for (var k = 0; k*4 < w.length; k++){ var st = winState(b, k); if (st === 0 || st === 3) a.push(w[k*4], w[k*4+1], w[k*4+2], w[k*4+3]); }
+  return b.bar = a;
+}
+function portNear(){
+  var best = null, bd = 1.9, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), c0x = Math.floor(P.x/G), c0y = Math.floor(P.y/G); stampN++;
+  for (var cy = c0y - 1; cy <= c0y + 1; cy++) for (var cx = c0x - 1; cx <= c0x + 1; cx++){
+    var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
+    for (var i = 0; i < cell.length; i++){
+      var b = cell[i]; if (b.stamp === stampN) continue; b.stamp = stampN; if (b.gone || P.x < b.minx - 2 || P.x > b.maxx + 2 || P.y < b.miny - 2 || P.y > b.maxy + 2) continue;
+      var chk = function(k, x, y, lim){ var dx = x - P.x, dy = y - P.y, d = Math.hypot(dx, dy); if (d < lim && d < bd && (d < 0.7 || (dx*fx + dy*fy)/d > 0.5)){ bd = d; var pt = b.pt || (b.pt = {}); best = pt[k] || (pt[k] = {port:true, b:b, k:k, name:k < 0 ? 'door' : 'window', x:x, y:y}); } };
+      if (b.door) chk(-1, b.door.x, b.door.y, 1.9);
+      for (var k = 0; k*6 < b.wins.length; k++) chk(k, b.wins[k*6], b.wins[k*6+1], 1.35);
+    }
+  }
+  return best ? {o:best, d:bd} : null;
+}
+function portText(o){
+  var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', B = tch ? 'Wall' : 'B';
+  if (o.k < 0){ var d = doorState(o.b); return d === 0 ? E + 'open the door' : d === 1 ? E + 'close the door' : E + 'repair the door (2 wood)'; }
+  var w = winState(o.b, o.k); return w === 0 ? E + 'open the window \u00b7 ' + B + ' boards it up (2 wood)' : w === 1 ? E + 'close the window \u00b7 ' + B + ' boards it up (2 wood)' : w === 2 ? 'Broken window \u00b7 ' + B + ' boards it up (2 wood)' : E + 'pull the boards off';
+}
+function usePort(o){
+  if (o.k < 0){ var d = doorState(o.b); if (d === 2){ if (inv.wood < 2){ toast('Repairing the door takes 2 wood.', 2.5); return; } inv.wood -= 2; setPort(o.b, -1, 0); feed('Door repaired', ITEMS.wood[1]); } else setPort(o.b, -1, d === 0 ? 1 : 0); }
+  else { var w = winState(o.b, o.k); if (w === 2) return; if (w === 3){ setPort(o.b, o.k, 0); inv.wood++; feed('+1 Wood', ITEMS.wood[1]); } else setPort(o.b, o.k, w === 0 ? 1 : 0); }
+  updateHud();
+}
+function boardPort(o){
+  if (o.k < 0 || winState(o.b, o.k) === 3) return; if (inv.wood < 2){ toast('Boarding a window takes 2 wood.', 2.5); return; }
+  inv.wood -= 2; setPort(o.b, o.k, 3); feed('Window boarded up', ITEMS.wood[1]); updateHud();
+}
+/* an alien at a shut door or window of the building its prey is in batters it until it gives way */
+function alienAtPort(z, A, b, dt){
+  if (!b || b.gone || z.x < b.minx - 1.5 || z.x > b.maxx + 1.5 || z.y < b.miny - 1.5 || z.y > b.maxy + 1.5) return;
+  var hit = function(k, s, o){ if (segDist(z.x, z.y, s[o], s[o+1], s[o+2], s[o+3]) > A.r + 0.5) return false; var st = k < 0 ? doorState(b) : winState(b, k); if (k < 0 ? st !== 0 : (st === 1 || st === 2)) return false;
+    var hp = b.php || (b.php = {}); if (hp[k] === undefined) hp[k] = k < 0 ? 26 : st === 3 ? 40 : 7; hp[k] -= A.dmg*dt*(z.k === 2 ? 3 : 1.1);
+    if (hp[k] <= 0){ setPort(b, k, 2); if (Math.hypot(z.x - P.x, z.y - P.y) < 30) feed(k < 0 ? 'A door gives way nearby' : st === 3 ? 'Boards splinter nearby' : 'Glass breaks nearby', '#ff8f7a'); } return true; };
+  if (b.dseg && hit(-1, b.dseg, 0)) return; var w = b.wsegs; for (var k = 0; k*4 < w.length; k++) if (hit(k, w, k*4)) return;
+}
+function drawPorts(m){
+  var c0x = Math.floor(P.x/G), c0y = Math.floor(P.y/G), wood = [122,84,56], metal = [78,92,100], dark = [28,30,36], plank = [150,108,70]; stampN++;
+  for (var cy = c0y - 3; cy <= c0y + 3; cy++) for (var cx = c0x - 3; cx <= c0x + 3; cx++){
+    var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
+    for (var i = 0; i < cell.length; i++){
+      var b = cell[i]; if (b.stamp === stampN) continue; b.stamp = stampN; if (b.gone || !b.h) continue; m.yo = b.base || 0;
+      if (b.dseg){ var s = b.dseg, st = doorState(b), L = Math.hypot(s[2] - s[0], s[3] - s[1]), ux = (s[2] - s[0])/L, uz = (s[3] - s[1])/L, col = b.cat === 'house' ? wood : metal;
+        if (st === 2){ m.ybox(s[0] + b.door.nx*1.1 + ux*0.3, s[1] + b.door.ny*1.1 + uz*0.3, 0.9 + b.id, 0, 0, 0.15, L/2, 0.03, 0.42, col); }
+        else { var a = st === 1 ? 1.75 : 0, wx = ux*Math.cos(a) + b.door.nx*Math.sin(a), wz = uz*Math.cos(a) + b.door.ny*Math.sin(a), yw = Math.atan2(wz, wx);
+          m.ybox(s[0] + wx*L/2, s[1] + wz*L/2, yw, 0, 0, 1.15, L/2, 1.05, 0.035, col); m.ybox(s[0] + wx*(L - 0.14), s[1] + wz*(L - 0.14), yw, 0, 0, 1.1, 0.03, 0.03, 0.08, [214,190,120]); }
+      }
+      var od = FKIND[b.kind] && KIT.Brick_Plain_3 ? 0.31 : 0.035;
+      for (var k = 0; k*6 < b.wins.length; k++){ var ws = winState(b, k); if (!ws) continue; var q = k*6, x = b.wins[q], z = b.wins[q+1], yw2 = Math.atan2(b.wins[q+3], b.wins[q+2]);
+        if (ws === 3){ for (var e = 0; e < 4; e++){ m.ybox(x, z, yw2 + ((e*7 + k) % 3 - 1)*0.05, 0, -od - 0.06, 1.12 + e*0.31, 0.62, 0.11, 0.025, e & 1 ? plank : [134,96,62]); m.ybox(x, z, yw2 + ((e*5 + k) % 3 - 1)*0.05, 0, 0.07, 1.12 + e*0.31, 0.62, 0.11, 0.02, plank); } }
+        else if (ws === 1){ m.ybox(x, z, yw2, 0, -od, 1.3, 0.44, 0.3, 0.012, dark); m.ybox(x, z, yw2, 0, -od - 0.02, 1.62, 0.46, 0.035, 0.03, [226,214,200]); }
+        else { m.ybox(x, z, yw2, 0, -od, 1.6, 0.44, 0.6, 0.012, dark); m.ybox(x, z, yw2 + 0.5, -0.2, -od - 0.02, 1.2, 0.16, 0.05, 0.012, [190,208,216]); m.ybox(x, z, yw2 - 0.7, 0.24, -od - 0.02, 2.0, 0.14, 0.04, 0.012, [190,208,216]); m.ybox(x, z, yw2, 0.3, -od - 0.02, 1.12, 0.1, 0.1, 0.012, [170,190,200]); }
+      }
+    }
+  }
+  m.yo = 0;
+}
 function collide(e, r){
   var cx0 = Math.floor(e.x/G), cy0 = Math.floor(e.y/G);
   for (var pass = 0; pass < 2; pass++){
@@ -1369,7 +1672,7 @@ function collide(e, r){
       for (var i = 0; i < cell.length; i++){
         var b = cell[i]; if (b.stamp === stampN) continue; b.stamp = stampN;
         if (b.gone || e.x < b.minx - r || e.x > b.maxx + r || e.y < b.miny - r || e.y > b.maxy + r) continue;
-        pushSegs(e, r, b.segs);
+        pushSegs(e, r, b.segs); var br0 = barOf(b); if (br0.length) pushSegs(e, r, br0);
         if (b.int){
           pushSegs(e, r, b.int.segs); var c = b.int.circs;
           for (var q = 0; q < c.length; q += 3){ var dx = e.x - c[q], dy = e.y - c[q+1], d = Math.hypot(dx, dy), rr = r + c[q+2]; if (d < rr && d > 1e-6){ e.x += dx/d*(rr - d); e.y += dy/d*(rr - d); } }
@@ -1384,6 +1687,7 @@ function hitWall(x, y){
   for (var i = 0; i < cell.length; i++){
     var b = cell[i]; if (b.gone || x < b.minx - 0.2 || x > b.maxx + 0.2 || y < b.miny - 0.2 || y > b.maxy + 0.2) continue;
     var s = b.segs, q; for (q = 0; q < s.length; q += 4) if (segDist(x, y, s[q], s[q+1], s[q+2], s[q+3]) < 0.14) return true;
+    s = barOf(b); for (q = 0; q < s.length; q += 4) if (segDist(x, y, s[q], s[q+1], s[q+2], s[q+3]) < 0.14) return true;
     if (b.int){ s = b.int.segs; for (q = 0; q < s.length; q += 4) if (segDist(x, y, s[q], s[q+1], s[q+2], s[q+3]) < 0.14) return true; }
   }
   return false;
@@ -1395,7 +1699,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.18';
+var VERSION = '0.19';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1412,7 +1716,7 @@ function startRun(ws, cs){
   inv = newInv(true);
   zombies = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
   loaded.forEach(function(b){ freeMesh(b.int.g); b.int = null; }); loaded = []; facs = [];
-  w.buildings.forEach(function(b){ b.got = {}; }); w.crates.forEach(function(c){ c.looted = false; });
+  w.buildings.forEach(function(b){ b.got = {}; b.bar = null; b.php = null; }); w.crates.forEach(function(c){ c.looted = false; });
   w.trees.forEach(function(t){ t.alive = true; t.hp = 3; });
   if (cs && cs.inv){
     for (k in inv) inv[k] = Math.max(0, cs.inv[k] | 0);
@@ -1432,7 +1736,7 @@ function startRun(ws, cs){
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
     var mine = worldPlayers[charSlug()]; if (mine){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
   }
-  w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[]}; w.wallSegs = [];
+  w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[], ports:{}, picked:{}}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
   pickSafe(!resumed && net.role !== 'guest', !(resumed && worldPlayers[charSlug()]));
@@ -1542,6 +1846,10 @@ function radioScan(){
 }
 function takeLamp(o){ var i = lamps.indexOf(o); if (i < 0) return; lamps.splice(i, 1); inv.lantern++; emit({k:'unlamp', x:o.x, y:o.y}); feed('Picked up the lantern', ITEMS.lantern[1]); updateHud(); }
 function useItem(k){
+  if (k === 'berry'){ if (inv.berry < 1) return; inv.berry--; P.hunger = Math.min(100, P.hunger + 12); P.thirst = Math.min(100, P.thirst + 4); feed('Ate berries', ITEMS.berry[1]); updateHud(); return; }
+  if (k === 'herb'){ if (inv.herb < 3 || inv.fiber < 2){ toast('A medkit takes 3 herbs and 2 plant fibre.', 3); return; } inv.herb -= 3; inv.fiber -= 2; inv.medkit++; feed('Made a medkit', ITEMS.medkit[1]); updateHud(); return; }
+  if (k === 'stone'){ if (inv.stone < 2){ toast('Two stones make one shot of ammo.', 3); return; } inv.stone -= 2; inv.ammo++; feed('+1 Ammo', ITEMS.ammo[1]); updateHud(); return; }
+  if (k === 'fiber') return;
   if (k === 'flashlight'){ toggleLight(); return; } if (k === 'radio'){ radioScan(); return; } if (k === 'lantern'){ place('lamp'); return; } if (k === 'battery') return;
   if (inv[k] < 1){ toast('No ' + ITEMS[k][0].toLowerCase() + ' left.', 2); return; }
   inv[k]--;
@@ -1553,6 +1861,7 @@ function useItem(k){
 function place(kind){
   var x = P.x + Math.cos(P.yaw)*1.8, y = P.y + Math.sin(P.yaw)*1.8;
   if (hitWall((P.x+x)/2, (P.y+y)/2) || hitWall(x, y)) return;
+  if (kind === 'cade' && target && target.port && target.k >= 0){ boardPort(target); return; }
   if (kind === 'lamp'){
     if (!(inv.lantern > 0)){ toast('You have no lantern. Craft one from 3 scrap (K).', 3); return; }
     if (!(inv.battery > 0)){ toast('A lantern needs batteries to light.', 3); return; }
@@ -1589,6 +1898,8 @@ function findTarget(){
   for (i = 0; i < packs.length; i++){ d = Math.hypot(packs[i].x - P.x, packs[i].y - P.y); if (d < bd){ bd = d; best = packs[i]; } }
   for (i = 0; i < corpses.length; i++){ d = Math.hypot(corpses[i].x - P.x, corpses[i].y - P.y); if (d < bd){ bd = d; best = corpses[i]; } }
   for (i = 0; i < lamps.length; i++){ d = Math.hypot(lamps[i].x - P.x, lamps[i].y - P.y); if (d < Math.min(bd, 2.5)){ bd = d; best = lamps[i]; } }
+  for (i = 0; i < clutter.length && i < 40; i++){ d = Math.hypot(clutter[i].x - P.x, clutter[i].y - P.y); if (d < Math.min(bd, 1.5)){ bd = d; best = clutter[i]; } }
+  var pt0 = portNear(); if (pt0 && pt0.d < bd + 0.4 && (!best || best.plant || pt0.d < bd)){ best = pt0.o; bd = pt0.d; }
   for (i = 0; i < world.traders.length; i++){ d = Math.hypot(world.traders[i].x - P.x, world.traders[i].y - P.y); if (d < Math.min(bd, 2.6)){ bd = d; best = world.traders[i]; } }
   for (i = 0; i < world.vehicles.length; i++){ var vh = world.vehicles[i]; if (time - (vh.rd || -9) < 0.6) continue; d = Math.hypot(vh.x - P.x, vh.y - P.y); if (d < Math.min(bd, 2.3)){ bd = d; best = vh; } }
   for (i = 0; i < world.edits.chests.length; i++){ var ch = world.edits.chests[i]; d = Math.hypot(ch.x - P.x, ch.y - P.y); if (d < Math.min(bd, 2)){ bd = d; best = ch; } }
@@ -1625,11 +1936,12 @@ function addCorpse(z){
 function loot(o){
   if (o.nest){ clearNest(o.b); return; }
   if (o.pack){ takePack(o); return; }
+  if (o.plant){ gather(o); return; }
   if (!o.corpse && !o.stash){
     var cat, rolls;
     if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); findPart(o.b); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
     searched++; addXp('scav', 5);
-    o.stash = rollStash(o.b && LOOTK[o.b.kind] || LOOT[cat], rolls); rollCustom(o.stash, 0.06);
+    if (o.poor && Math.random() < 0.6) o.stash = rollStash({none:1}, 1); else { o.stash = rollStash(o.lt && Math.random() < 0.65 ? o.lt : o.b && LOOTK[o.b.kind] || LOOT[cat], rolls); rollCustom(o.stash, 0.06); }
   }
   if (!stashLeft(o)){ feed('Nothing useful', '#c0c6cc'); o.stash = null; updateHud(); return; }
   curLoot = o; el('loot').classList.remove('hidden'); if (document.exitPointerLock) document.exitPointerLock(); renderLoot(); updateHud();
@@ -1641,7 +1953,7 @@ function closeLoot(){
 function renderLoot(){
   var o = curLoot, box = el('loot'); if (!o || box.classList.contains('hidden')) return;
   var nm = o.corpse ? o.name : o.name + (o.b && o.b.name ? ' – ' + o.b.name : ''), h = '<b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b> <button id="ltClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', k;
-  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/12) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
+  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
   for (k in o.stash.items) if (o.stash.items[k] > 0 && DESIGNS[k]) h += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + o.stash.items[k] + '<br><i>' + stats(DESIGNS[k]).desc + ' &middot; by ' + esc(DESIGNS[k].by) + '</i></span><button data-k="c:' + k + '">Take</button></div>';
   box.innerHTML = h + '<div class="row" style="justify-content:flex-start;margin:10px 0 0"><button data-k="all">Take everything</button></div>';
 }
@@ -1656,14 +1968,14 @@ function takeLoot(key){
 el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id === 'ltClose'){ closeLoot(); return; } var k = t.getAttribute && t.getAttribute('data-k'); if (k) takeLoot(k); });
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
-var CATS = [['Food and drink', ['food', 'water']], ['Medical', ['medkit']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat']]];
-var USE = {food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
+var CATS = [['Food and drink', ['food', 'water', 'berry']], ['Medical', ['medkit', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat']]];
+var USE = {berry:'Eat', herb:'Make a medkit', stone:'Make ammo', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
 function pct(v){ return Math.round(Math.max(0, v)*100) + '%'; }
 function renderPack(){
   var box = el('pack'); if (box.classList.contains('hidden')) return;
   var h = '<b>Backpack</b> <button id="pkClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', any = false, k;
   CATS.forEach(function(c){
-    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/12) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + USE[k] + '</button>' : '') + '</div>'; });
+    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'herb' ? '<br><i>3 herbs and 2 plant fibre make a medkit</i>' : k === 'stone' ? '<br><i>2 stones make 1 ammo</i>' : k === 'fiber' ? '<br><i>used with herbs to make medkits</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + USE[k] + '</button>' : '') + '</div>'; });
     if (rows){ h += '<h3>' + c[0] + '</h3>' + rows; any = true; }
   });
   var cu = ''; for (k in P.items) if (P.items[k] > 0 && DESIGNS[k]) cu += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + P.items[k] + (P.weapon === k ? ' <i>equipped</i>' : '') + '<br><i>' + stats(DESIGNS[k]).desc + '</i></span></div>';
@@ -1688,7 +2000,7 @@ function swing(){
     var t = world.trees[i]; if (!t.alive) continue; dx = t.x - P.x; dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) continue;
     d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
   }
-  if (bt){ bt.hp--; bt.shake = 0.2; if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); inv.wood += 2; feed('+2 Wood', ITEMS.wood[1]); updateHud(); } }
+  if (bt){ bt.hp--; bt.shake = 0.2; if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.food++; feed('+1 Food (fruit from the tree)', ITEMS.food[1]); } updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
@@ -1866,13 +2178,15 @@ function update(dt){
     else if (target.trader){ openTrade(); keys.KeyE = false; autoUse = null; }
     else if (target.veh){ if (ePress || tapped) mount(target); autoUse = null; }
     else if (target.lamp){ if (ePress || tapped) takeLamp(target); autoUse = null; }
-    else { prog += dt/(target.nest ? 4 : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
+    else if (target.port){ if (ePress || tapped) usePort(target); autoUse = null; }
+    else { prog += dt/(target.nest ? 4 : target.plant ? (target.nm === 'Rock_Medium_2' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
   } else prog = 0;
   var pr = el('prompt');
   if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
-    el('ptxt').textContent = target === 'water' ? 'Hold E to drink' : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
-    if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
+    el('ptxt').textContent = target === 'water' ? 'Hold E to drink' : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
+    if (target.port) el('ptxt').textContent = portText(target);
+    else if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
   } else pr.classList.add('hidden');
 
   if ((wantSwing || keys.Space) && P.atkCd <= 0 && !P.veh) swing();
@@ -1916,6 +2230,7 @@ function update(dt){
         else if (z.av > 0 && z.thru <= 0){ z.av -= dt; vx = z.ax*0.9 + gx/gd*0.2; vy = z.ay*0.9 + gy/gd*0.2; } else { vx = gx/gd; vy = gy/gd; }
         if (d > 0.8 || shy) stepMove(z, (vx*zs + z.kx)*dt, (vy*zs + z.ky)*dt, A.r);
         if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
+        if (T && T.b && z.k !== 2) alienAtPort(z, A, T.b, dt);
         if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg}); else { P.hp -= A.dmg; P.hurt = 0.3; } }
       }
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
@@ -1952,7 +2267,7 @@ function update(dt){
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
 }
-var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12};
+var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16};
 function updateHud(){
   el('bTemp').style.width = (P.body + 100)/2 + '%'; el('bTemp').style.background = P.body < -55 ? '#5f8a9a' : P.body > 55 ? '#c67139' : '#7a8a5e';
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
@@ -1964,13 +2279,13 @@ function updateHud(){
   el('stats').textContent = inSafe(P.x, P.y, 0) ? 'Safe house: aliens keep away' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '';
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
-  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/12) + '% 0"></i>' + txt + '</span>'; };
+  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i>' + txt + '</span>'; };
   el('power').innerHTML = pw('flashlight', inv.flashlight > 0 ? pct(P.fl) + (lightOn() ? ' on' : '') : 'none', !lightOn()) + pw('radio', inv.radio > 0 ? pct(P.rd) : 'none', !radioOn()) + pw('battery', '\u00d7' + inv.battery, !inv.battery);
   el('goalLine').textContent = goalText().replace(/^Goal: /, '').replace(/^./, function(ch){ return ch.toUpperCase(); });
   var h = '', other = 0, k;
-  ['food', 'water', 'medkit', 'ammo'].forEach(function(k){ h += '<div class="slot' + (inv[k] > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/12) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + inv[k] + '</span></div>'; });
+  ['food', 'water', 'medkit', 'ammo'].forEach(function(k){ h += '<div class="slot' + (inv[k] > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + inv[k] + '</span></div>'; });
   for (k in inv) if (k !== 'food' && k !== 'water' && k !== 'medkit' && k !== 'ammo') other += inv[k]; for (k in P.items) other += P.items[k] | 0;
-  h += '<div class="slot" data-pack="1" title="Backpack" style="cursor:pointer"><i class="ic" style="background-position:66.667% 0"></i><span class="key">I</span><span class="cnt">' + other + '</span></div>';
+  h += '<div class="slot" data-pack="1" title="Backpack" style="cursor:pointer"><i class="ic" style="background-position:50% 0"></i><span class="key">I</span><span class="cnt">' + other + '</span></div>';
   renderPack();
   el('inv').innerHTML = h;
 }
@@ -2043,7 +2358,7 @@ function initGL(){
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c;vt=t;vec3 q=p*iscl;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas2;uniform sampler2D atlas3;uniform float texOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform vec4 fires[8];uniform vec3 fcol[8];' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas2;uniform sampler2D atlas3;uniform float texOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>59.5){float j3=k-60.0;vec2 s3=vec2(504.0/2048.0,504.0/2048.0);vec2 a3=(vec2(mod(j3,4.0)*512.0,floor(j3/4.0+0.01)*512.0)+4.0)/vec2(2048.0,2048.0)+fract(uv)*s3;' + (lod ? 'return texture2DGradEXT(atlas3,a3,dFdx(uv)*s3,dFdy(uv)*s3);}' : 'return texture2D(atlas3,a3);}') +
     'if(k>39.5){float j2=k-40.0;vec2 s2=vec2(504.0/2048.0,504.0/1024.0);vec2 a2=(vec2(mod(j2,4.0)*512.0,floor(j2/4.0+0.01)*512.0)+4.0)/vec2(2048.0,1024.0)+fract(uv)*s2;' + (lod ? 'return vec4(texture2DGradEXT(atlas2,a2,dFdx(uv)*s2,dFdy(uv)*s2).rgb,1.0);}' : 'return vec4(texture2D(atlas2,a2).rgb,1.0);}') +
@@ -2055,7 +2370,7 @@ function initGL(){
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
     'vec3 col=vc.rgb;float glow=0.0;float k=floor(vt.z+0.5);' +
     'if(back){if(texOn>0.5)col=samp(21.0,vec2((wp.x+wp.z)*0.5,-wp.y*0.5)).rgb;else col=vec3(0.92,0.86,0.76);}' +
-    'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
+    'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){vec2 u1=vt.xy+vec2(tm*0.035,tm*0.02);vec2 u2=vt.xy*1.9+vec2(-tm*0.03,tm*0.045);vec3 ww=(samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5;float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
     'float band=step(0.18,dot(n,vec3(-0.44,0.8,0.4)));if(unlit||emis)band=1.0;' +
     'col=mix(col*vec3(0.74,0.66,0.68),col,band);' +
     'float spot=smoothstep(0.78,0.95,dot(V/d,fwd))*0.95/(1.0+d*d*0.004)+0.22/(1.0+d*d*0.12);' +
@@ -2068,7 +2383,7 @@ function initGL(){
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','atlas','atlas2','atlas3','texOn','inst','iscl','hurtU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas2','atlas3','texOn','inst','iscl','hurtU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); loadCreatures();
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
   dyn = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; vmb = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0};
@@ -2168,9 +2483,18 @@ function manageNature(){
     var x = (cx + hash(cx, cy, 70 + i))*cs, y = (cy + hash(cx, cy, 80 + i))*cs, d = Math.hypot(x - P.x, y - P.y); if (d > QS.clutR) continue;
     var kind = null; for (k = A.length - 1; k >= 0 && !kind; k--){ var a = A[k]; if (x < a.minx || x > a.maxx || y < a.miny || y > a.maxy || !pick[a.kind]) continue; if (pip(a.pts, x, y)) kind = a.kind; }
     if (!kind || blocked(x, y) || inWater(x, y, 0.3)) continue;
-    var nm = pick[kind][Math.floor(hash(cx, cy, 90 + i)*5)]; clutter.push({d:d, m:NAT[nm], x:x, y:y, gy:hAt(x, y), yw:hash(cx, cy, 95 + i)*6.283, sc:(SC[nm] || 1)*(0.75 + hash(cx, cy, 99 + i)*0.5)});
+    var pkk = cx + ':' + cy + ':' + i, pkt = world.edits.picked[pkk]; if (pkt !== undefined && time - pkt < REGROW) continue;
+    var nm = pick[kind][Math.floor(hash(cx, cy, 90 + i)*5)]; clutter.push({plant:true, key:pkk, nm:nm, name:PNAME[nm], d:d, m:NAT[nm], x:x, y:y, gy:hAt(x, y), yw:hash(cx, cy, 95 + i)*6.283, sc:(SC[nm] || 1)*(0.75 + hash(cx, cy, 99 + i)*0.5)});
   }
   clutter.sort(function(a, b){ return a.d - b.d; }); clutter.length = Math.min(clutter.length, QS.clutN);
+}
+/* what each kind of plant gives when gathered: [least, most] of each thing */
+var REGROW = 1500, PNAME = {Bush_Common:'the bush', Flower_3_Single:'the flowers', Fern_1:'the fern', Plant_1:'the plant', Clover_1:'the clover', Grass_Common_Short:'the grass', Grass_Common_Tall:'the tall grass', Rock_Medium_2:'the rock'};
+var DROPS = {Bush_Common:{berry:[1,3], wood:[0,1]}, Flower_3_Single:{herb:[1,2]}, Fern_1:{fiber:[1,2]}, Plant_1:{fiber:[1,1], herb:[0,1]}, Clover_1:{herb:[0,1], fiber:[0,1]}, Grass_Common_Short:{fiber:[0,1]}, Grass_Common_Tall:{fiber:[1,2]}, Rock_Medium_2:{stone:[1,3]}};
+function gather(o){
+  var d = DROPS[o.nm] || {}, any = false, k; for (k in d){ var n = d[k][0] + Math.floor(Math.random()*(d[k][1] - d[k][0] + 1)); if (n > 0){ inv[k] += n; feed('+' + n + ' ' + ITEMS[k][0], ITEMS[k][1]); any = true; } }
+  if (!any) feed('Nothing worth taking', '#c0c6cc');
+  world.edits.picked[o.key] = time; var i = clutter.indexOf(o); if (i >= 0) clutter.splice(i, 1); emit({k:'pick', key:o.key}); addXp('scav', 1); updateHud();
 }
 function drawNature(){
   if (!NAT.Pine_5 || !natTex) return; var i;
@@ -2245,7 +2569,7 @@ function render(){
   gl.viewport(0, 0, W, H);
   var wd = [1, 0.8, 0.6, 1, 0.86][wx.w], fl = wx.flash > 0 ? 0.5 : 0, sk0 = skyAt((8 + time/DAY*24) % 24), sky = [sk0[0]*wd + fl, sk0[1]*wd + fl, sk0[2]*wd + fl], i, now = time;
   if (wx.w === 4){ sky[0] = sky[0]*0.6 + 0.36*(1 - dark); sky[1] = sky[1]*0.6 + 0.36*(1 - dark); sky[2] = sky[2]*0.6 + 0.37*(1 - dark); }
-  gl.uniform1i(U.atlas, 0); gl.uniform1i(U.atlas2, 1); gl.uniform1i(U.atlas3, 2); gl.uniform1f(U.texOn, texReady ? 1 : 0);
+  gl.uniform1i(U.atlas, 0); gl.uniform1i(U.atlas2, 1); gl.uniform1i(U.atlas3, 2); gl.uniform1f(U.tm, (performance.now()/1000) % 10000); gl.uniform1f(U.texOn, texReady ? 1 : 0);
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   var cp = Math.cos(P.pitch), f = [Math.cos(P.yaw)*cp, Math.sin(P.pitch), Math.sin(P.yaw)*cp];
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
@@ -2277,7 +2601,7 @@ function render(){
   var m = new Mesh(), x, y, far = world.hg ? world.hg.min - 3 : 0;
   m.pl = [TX.grass, 0.25]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [236,244,222], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
-  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now);
+  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); drawPerson(m, ops[i], lookOf(ops[i]), now); }
@@ -2640,6 +2964,8 @@ function loadEdits(ed){
   (ed.walls || []).slice(0, 400).forEach(function(w){ E.walls.push({id:String(w.id), x:+w.x, y:+w.y, yaw:+w.yaw || 0}); });
   for (k in (ed.beds || {})) E.beds[slug(k)] = {b:ed.beds[k].b | 0, x:+ed.beds[k].x, y:+ed.beds[k].y};
   (ed.chests || []).slice(0, 100).forEach(function(c){ E.chests.push({chest:true, name:'the chest', id:String(c.id), x:+c.x, y:+c.y, inv:c.inv || {}, items:c.items || {}, designs:c.designs || []}); });
+  for (k in (ed.ports || {})){ var pb = world.buildings[k], ps = ed.ports[k]; if (!pb || !ps) continue; var np = {w:{}}; if (ps.d === 0 || ps.d === 1 || ps.d === 2) np.d = ps.d; for (var wk in (ps.w || {})) if (ps.w[wk] >= 1 && ps.w[wk] <= 3) np.w[wk | 0] = ps.w[wk] | 0; E.ports[k] = np; pb.bar = null; }
+  for (k in (ed.picked || {})) if (isFinite(ed.picked[k])) E.picked[String(k).slice(0, 24)] = +ed.picked[k];
   rebuildWalls();
 }
 function applyEdit(e){
@@ -2922,6 +3248,8 @@ function applyEv(e){
   if (!world || !e) return;
   if (e.k === 'got'){ var b = world.buildings[e.b]; if (b) b.got[e.i] = 1; }
   else if (e.k === 'crate'){ if (world.crates[e.i]) world.crates[e.i].looted = true; }
+  else if (e.k === 'port'){ var pb2 = world.buildings[e.b]; if (pb2 && (e.i | 0) >= -1 && (e.s | 0) >= 0 && (e.s | 0) <= 3) setPort(pb2, e.i | 0, e.s | 0, true); }
+  else if (e.k === 'pick'){ if (typeof e.key === 'string'){ world.edits.picked[e.key.slice(0, 24)] = time; for (var pi = 0; pi < clutter.length; pi++) if (clutter[pi].key === e.key){ clutter.splice(pi, 1); break; } } }
   else if (e.k === 'corpse'){ var c0 = e.c; if (c0 && typeof c0.id === 'string' && isFinite(c0.x) && isFinite(c0.y) && ANAME[c0.k] && c0.stash){ var st = {inv:{}, items:{}}, kk; for (kk in c0.stash.inv) if (kk in ITEMS) st.inv[kk] = Math.max(0, Math.min(20, c0.stash.inv[kk] | 0)); for (kk in c0.stash.items || {}) if (DESIGNS[kk]) st.items[kk] = 1; corpses.push({corpse:1, id:c0.id, x:+c0.x, y:+c0.y, k:c0.k, name:'dead ' + ANAME[c0.k], stash:st, t:time}); if (corpses.length > 40) corpses.shift(); } }
   else if (e.k === 'uncorpse'){ for (var ci = 0; ci < corpses.length; ci++) if (corpses[ci].id === e.id){ if (corpses[ci] === curLoot){ curLoot = null; el('loot').classList.add('hidden'); } corpses.splice(ci, 1); break; } }
   else if (e.k === 'tree'){ if (world.trees[e.i]){ world.trees[e.i].alive = false; treeTile(world.trees[e.i].tk); } }

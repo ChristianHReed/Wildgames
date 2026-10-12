@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.18) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.19) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -131,6 +131,21 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3d.3 On a phone on Low, note the frame rate downtown compared with a residential street.
 - [ ] 3d.4 Look for fronts that are wrong: windows crossing a doorway, pieces floating off the wall, gaps at corners, stretched windows on very short or very long walls.
 - [ ] 3d.5 Homes and garages keep the painted look; that is intended.
+
+## Stage 3e: doors, windows, rooms and plants
+
+- [ ] 3e.1 Walk up to a closed front door. It stops you. Press E (or tap it) to open it, walk in, and close it behind you.
+- [ ] 3e.2 Stand at a window. E opens it and you can climb through. With 2 wood, B (Build) boards it up and nothing gets through.
+- [ ] 3e.3 The window you opened looks open from outside, and it lines up with a window drawn on the wall. Note any building where it does not.
+- [ ] 3e.4 Shut yourself in a house at night with aliens outside. They batter the door or a window and break in after a while. Boards last longer than glass.
+- [ ] 3e.5 Leave the game and resume. Doors and windows are as you left them.
+- [ ] 3e.6 Walk through five homes. Each has a living room, a kitchen with fridge and stove, bedrooms with a bed against a wall, and a bathroom. Report furniture blocking a doorway or a room you cannot get into.
+- [ ] 3e.7 Visit a grocery store (aisles and tills), a restaurant (tables with chairs, kitchen at the back), a church (pews facing the altar), a school (desks facing the board) and a clinic. Does each look like what it is?
+- [ ] 3e.8 Search a fridge, a medicine cabinet, a wardrobe and a gun locker. The contents should mostly suit the container. Some containers are empty.
+- [ ] 3e.9 In a park, hold E on a bush, flowers, a fern and a rock. You get berries, herbs, fiber and stones. The plant disappears and grows back after about 25 minutes.
+- [ ] 3e.10 Open the backpack. Eat berries; turn 3 herbs and 2 fiber into a medkit; turn 2 stones into ammo.
+- [ ] 3e.11 Chop a pine and a leafy tree. The pine gives more wood; the leafy tree sometimes gives food.
+- [ ] 3e.12 Look at a pond or river. The surface moves and glints. Check the frame rate does not drop on the phone.
 
 ## Stage 4: aliens and weather
 

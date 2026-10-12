@@ -35,7 +35,7 @@ atlas.save(os.path.join(OUT, 'atlas.png'), optimize=True)
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']
 sheet_src = Image.open(os.path.join(T, 'sprites', 'items_atlas.png')).convert('RGBA')
 ORDER = ['canned_beans', 'water_bottle', 'first_aid_kit', 'batteries', 'planks', 'tin_can', 'rain_jacket', 'fuel_can', 'backpack']
-icons = Image.new('RGBA', (96*(len(ORDER) + 4), 96))
+icons = Image.new('RGBA', (96*(len(ORDER) + 8), 96))
 for i, n in enumerate(ORDER):
     f = fr[n]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (i*96, 0))
 # four more: nails stand for ammo, the pack's flashlight, and a hand-drawn lantern and radio in the same flat outlined style
@@ -61,6 +61,13 @@ for k in range(3): d.line([ox + 116, 206 + k*24, ox + 188, 206 + k*24], fill=INK
 d.rounded_rectangle([ox + 236, 150, ox + 296, 196], 8, fill=(217, 168, 69, 255), outline=INKC, width=10)
 d.ellipse([ox + 244, 230, ox + 288, 274], fill=(198, 113, 57, 255), outline=INKC, width=10)
 icons.paste(big.resize((192, 96), Image.LANCZOS), (11*96, 0))
+# gathered things: berries, herbs (the pack's seeds), fibre (rope) and a hand-drawn stone
+for k, nme in enumerate(['berries', 'seeds', 'rope']):
+    f = fr[nme]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), ((13 + k)*96, 0))
+st = Image.new('RGBA', (384, 384)); d2 = ImageDraw.Draw(st); d2.ellipse([70, 330, 320, 362], fill=(61, 48, 41, 60))
+d2.polygon([(70, 250), (110, 140), (210, 90), (300, 150), (322, 262), (250, 330), (120, 326)], fill=(168, 160, 150, 255), outline=INKC); d2.line([(70, 250), (110, 140), (210, 90), (300, 150), (322, 262), (250, 330), (120, 326), (70, 250)], fill=INKC, width=LW, joint='curve')
+d2.line([(150, 170), (210, 150), (250, 190)], fill=(120, 112, 104, 255), width=10)
+icons.paste(st.resize((96, 96), Image.LANCZOS), (16*96, 0))
 icons.save(os.path.join(OUT, 'icons.png'), optimize=True)
 # ---- built-in Springfield map
 M = os.path.join(SRC, 'map_data')

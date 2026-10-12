@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.18. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.19. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -30,7 +30,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | --- | --- | --- |
 | Move, look | WASD, mouse (arrow keys also turn) | Left stick, drag the view |
 | Swing, shoot | Click or Space, right-click or F | Swing, Shoot |
-| Search, open, ride, trade | E | Search |
+| Search, gather, open or shut a door or window, ride, trade | E | Tap it, or Search |
 | Eat, drink, medkit | 1, 2, 3 | Tap the item |
 | Flashlight | L | Light |
 | Items and crafting | K | Items |
@@ -50,7 +50,8 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 
 ## What is in the game
 
-- **World:** real streets and building outlines; every building can be entered, with rooms and furniture generated from its shape. Maps load in pieces, so a whole city can be one world on a computer.
+- **World:** real streets and building outlines; every building can be entered. Rooms are laid out by what the building is (a home gets a living room, kitchen, bedrooms and bathroom; a church gets pews facing an altar), and what you find depends on the container. Doors and windows open, shut, break and can be boarded up; aliens batter their way in.
+- **Plants:** bushes, flowers, ferns, grass and rocks can be gathered for berries, herbs, fiber and stones, and grow back. Maps load in pieces, so a whole city can be one world on a computer.
 - **Aliens:** swarmers in groups, a stalker that hunts at night by light and noise, a rare giant, and nests that spread between buildings.
 - **Weather:** four seasons, rain, thunderstorms, heat waves, ice storms and tornadoes, with a body-warmth meter.
 - **Survivors:** a roster of characters with a look, a background and skills that grow with use.
@@ -71,6 +72,8 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 - When taking a host's building changes, a clash asks one question for all buildings, not one per building.
 - One-of-a-kind items rely on trust: a save file can be copied.
 - Buildings are ground floor only.
+- Kitchen, bathroom, shop and church furniture is built from plain boxes until matching models are added.
+- Doors and windows inside a building (between rooms) are open doorways; only outside doors and ground-floor windows work.
 - Other players' gunshots and thrown items are not drawn.
 
 ## Not yet verified
