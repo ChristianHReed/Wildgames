@@ -56,7 +56,7 @@ def face(kind):
         s[(du(0.5) < 0.04) & (np.abs(v - EV - 0.01) < 0.006)] = INK                    # bridge
         for c in (0.5 - EU - 0.026, 0.5 + EU + 0.026): s[(du(c - (0.5 - c)*0) < 0.06) & (np.abs(v - EV - 0.012) < 0.005) & (du(0.5) > EU + 0.02) & (du(0.5) < 0.2)] = INK   # arms to the ears
     if kind == 2:   # stubble along the jaw, chin and lip
-        m = (du(0.5) < 0.16) & (v < 0.5) & (v > 0.33) & ~ell(0.5, 0.455, 0.03, 0.012); dots = rng.random((N, N)) < 0.32; s[m & dots] = HAIR; sh[m & dots] = 0.8
+        m = ell(0.5, 0.4, 0.15, 0.1) & (v < 0.49) & ~ell(0.5, 0.455, 0.03, 0.012) & ~(ell(0.5, 0.47, 0.11, 0.025) & (du(0.5) > 0.045)); dots = rng.random((N, N)) < 0.24; s[m & dots] = HAIR; sh[m & dots] = 0.8
     if kind == 5:   # a moustache
         m = ell(0.5, 0.48, 0.04, 0.012) & ~((du(0.5) < 0.004)); s[m] = HAIR; sh[m] = 0.85
     return s, sh
@@ -133,14 +133,14 @@ def legs(kind):
     if kind in (0, 5, 2, 4):
         tw = ((u*90 + v*60) % 1) < 0.5; sh *= np.where(tw, 0.98, 1.02)                               # twill
         for c in (0.25, 0.75): sh[(du(c) < 0.004)] *= 1.12                                            # side seams
-        belt = v > 0.95; s[belt] = INK; sh[belt] = 1.0; s[(v > 0.95) & (du(0.5) < 0.02)] = WHITE
+        belt = v > 0.968; s[belt] = INK; sh[belt] = 1.0; s[(v > 0.968) & (du(0.5) < 0.016)] = WHITE
         if kind != 4:
             for c in (0.38, 0.62): m = (np.abs(v - (0.9 - (du(c) / 0.08)**2*0.06)) < 0.005) & (du(c) < 0.07); sh[m] *= 0.75   # pocket curves
         sh[v < 0.03] *= 1.1
     if kind == 1:   # shorts and socks
         sk = v < 0.56; s[sk] = SKIN; sh[sk] = (0.94 + 0.06*v)[sk]; sh[(v >= 0.56) & (v < 0.59)] *= 0.82
         so = v < 0.1; s[so] = WHITE; s[(v > 0.07) & (v < 0.085)] = ACC
-        belt = v > 0.95; sh[belt] *= 0.8
+        belt = v > 0.968; sh[belt] *= 0.8
     if kind == 2:   # cargo pockets
         for c in (0.25, 0.75):
             p = (du(c) < 0.07) & (v > 0.56) & (v < 0.74); sh[p] *= 0.93; sh[p & ((np.abs(v - 0.74) < 0.008) | (np.abs(du(c) - 0.07) < 0.005))] *= 0.75
@@ -193,6 +193,18 @@ for k in range(8): put(1, k, body_top(k)); put(2, k, arm_top(k))
 for k in range(6): put(3, k, legs(k))
 for k in range(3): put(4, k, shoe(k))
 put(5, 0, hair())
+# ---------------- hats, in the survivor's second colour ----------------
+def hat(kind):
+    s, sh = blank(ACC); sh = sh*grain(0.02)*back()*np.clip(0.85 + 0.25*v, 0.85, 1.08)
+    if kind == 0:   # knitted beanie: ribs, a turned-up band, a darker crown
+        sh *= np.where(((u*72) % 1) < 0.5, 0.9, 1.04); band = v < 0.7; sh[band] *= 0.86; sh[np.abs(v - 0.7) < 0.006] *= 0.7
+    if kind == 1:   # cap: panel seams and a button on top
+        for c in (0.0, 0.25, 0.5, 0.75): sh[du(c) < 0.004] *= 0.75
+        s[v > 0.985] = INK
+    if kind == 2:   # helmet: a rim and a strap
+        sh[v < 0.66] *= 0.82; sh[np.abs(v - 0.66) < 0.008] *= 0.7; s[(du(0.25) < 0.01) | (du(0.75) < 0.01)] = INK
+    return s, sh
+for k in range(3): put(5, 1 + k, hat(k))
 Image.fromarray(atlas, 'RGBA').save(os.path.join(OUT, 'people_tex.png'), optimize=True)
 # a preview in sample colours, to look at while painting
 pal = np.array([[224, 172, 130], [58, 102, 196], [43, 47, 56], [91, 59, 38], [74, 48, 32], [233, 218, 176], [28, 23, 20], [244, 239, 230]], float)

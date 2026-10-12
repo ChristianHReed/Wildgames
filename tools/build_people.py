@@ -10,7 +10,7 @@ eye and eyebrow meshes are left out: eyes and brows are painted. Output: tools/o
 import sys, os, json, struct, base64, math, glob
 import numpy as np
 from PIL import Image
-args = [a for a in sys.argv[1:] if a not in ('full', 'preview')]
+args = [a for a in sys.argv[1:] if a not in ('full', 'preview', 'pack')]
 UBC, UAL2 = args[0], args[1]; UAL1 = args[2] if len(args) > 2 else None
 FULL = 'full' in sys.argv; PREVIEW = 'preview' in sys.argv
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'out', 'full' if FULL else 'lite')
@@ -72,9 +72,10 @@ lib = [p for p in glob.glob(os.path.join(glob.escape(UAL2), '**', '*.glb'), recu
 if UAL1: lib = [p for p in glob.glob(os.path.join(glob.escape(UAL1), '**', '*.glb'), recursive=True) if not p.endswith('_RM.glb') and 'Mannequin' not in p] + lib
 CL = Clips(lib); print('clips', len(CL.c))
 
-HEADS = 1.24
+STYL = 'pack' not in sys.argv   # 'pack' keeps the pack's own body instead of the stylised one
+HEADS = 1.0 if STYL else 1.24
 # softer, less heroic proportions: thinner limbs and a narrower chest (each bone's own y axis runs along it)
-SHAPE = {'upperarm_l':(0.84, 1, 0.84), 'upperarm_r':(0.84, 1, 0.84), 'thigh_l':(0.88, 1, 0.88), 'thigh_r':(0.88, 1, 0.88), 'spine_03':(0.92, 1, 0.9), 'spine_02':(0.95, 1, 0.93)}
+SHAPE = {} if STYL else {'upperarm_l':(0.84, 1, 0.84), 'upperarm_r':(0.84, 1, 0.84), 'thigh_l':(0.88, 1, 0.88), 'thigh_r':(0.88, 1, 0.88), 'spine_03':(0.92, 1, 0.9), 'spine_02':(0.95, 1, 0.93)}
 LEG = ('pelvis', 'thigh', 'calf', 'foot', 'ball', 'root')
 REG = {'skin':0, 'shirt':1, 'pants':2, 'shoes':3, 'hair':4, 'eyes':5}
 
@@ -89,6 +90,113 @@ def simplify(P, TR, dom, target):
     keep = np.where(ok)[0][np.sort(first)]; tri = inv[TR][keep]; nv = len(u)
     cnt = np.bincount(inv, minlength=nv).astype(np.float64); V = np.stack([np.bincount(inv, P[:, a], nv)/cnt for a in range(3)], 1)
     used = np.unique(tri); remap = -np.ones(nv, int); remap[used] = np.arange(len(used)); return V[used], remap[tri]
+
+# ---------------- the stylised body: built here from the skeleton, in the spirit of flat low-poly illustration ----------------
+# Faceted tubes for the torso, limbs and neck, a big octagonal head with a small wedge nose, mitten hands and simple shoes.
+# Each ring of a tube is tied to one or two bones, so the same animations move it. Hair is made the same way, as blocky shells.
+HS = 1.18   # head size
+def make_body(J, fem):
+    Pv, Wv, Tr = [], [], []
+    def vert(p, w): Pv.append(np.array(p, float)); Wv.append(w); return len(Pv) - 1
+    def tube(rings, n, rot, e1, e2, cap0=True, cap1=True):
+        """rings: list of (centre, r1, r2, weights); r1 along e1, r2 along e2"""
+        idx = []
+        for c, a, b, w in rings:
+            row = []
+            for k in range(n):
+                t = rot + 2*np.pi*k/n; row.append(vert(np.array(c) + e1*a*np.cos(t) + e2*b*np.sin(t), w))
+            idx.append(row)
+        for i in range(len(idx) - 1):
+            for k in range(n):
+                a0, a1, b0, b1 = idx[i][k], idx[i][(k + 1) % n], idx[i+1][k], idx[i+1][(k + 1) % n]; Tr.append([a0, a1, b1]); Tr.append([a0, b1, b0])
+        for cap, row, ring in ((cap0, idx[0], rings[0]), (cap1, idx[-1], rings[-1])):
+            if cap: c0 = vert(np.mean([Pv[q] for q in row], 0), ring[3]); [Tr.append([c0, row[k], row[(k + 1) % n]]) for k in range(n)]
+        return idx
+    X, Y, Z = np.array([1., 0, 0]), np.array([0, 1., 0]), np.array([0, 0, 1.])
+    g = lambda n: J[n]
+    pel, s1, s2, s3, nk, hd = g('pelvis'), g('spine_01'), g('spine_02'), g('spine_03'), g('neck_01'), g('Head')
+    # torso: hips to shoulders, an octagon with a flat front
+    T = [(pel[1] - 0.09, 0.168, 0.118, -0.03, {'pelvis': 1}), (pel[1] + 0.035, 0.162, 0.114, -0.03, {'pelvis': 1}), (s1[1] + 0.035, 0.15, 0.106, -0.012, {'spine_01': 1}),
+         (s2[1] + 0.06, 0.162, 0.114, -0.004, {'spine_02': 1}), (s3[1] + 0.1, 0.18, 0.112, -0.014, {'spine_03': 1}), (nk[1] - 0.005, 0.165, 0.098, -0.032, {'spine_03': 1}), (nk[1] + 0.03, 0.07, 0.064, -0.035, {'neck_01': 1})]
+    if fem: T = [(y, a*m1, b*m2, z, w) for (y, a, b, z, w), m1, m2 in zip(T, [1.08, 1.04, 0.9, 0.9, 0.86, 0.86, 0.95], [1.04, 1.02, 0.95, 0.98, 0.98, 0.98, 0.95])]
+    tube([((0, y, z), a, b, w) for y, a, b, z, w in T], 8, np.pi/8, X, Z, True, False)
+    # neck
+    tube([((0, nk[1] + 0.01, nk[2] + 0.005), 0.05, 0.048, {'neck_01': 1}), ((0, hd[1] + 0.03, hd[2] + 0.005), 0.05, 0.048, {'Head': 1})], 6, 0, X, Z, False, False)
+    # head: an octagon, flat in front, with the jaw a little forward
+    H = [(-0.02, 0.07, 0.064, 0.025), (0.035, 0.104, 0.104, 0.014), (0.11, 0.122, 0.12, 0.004), (0.2, 0.12, 0.118, 0.0), (0.262, 0.088, 0.092, -0.006)]
+    hz = hd[2] + 0.015
+    hr = tube([((0, hd[1] + dy*HS, hz + dz*HS), a*HS, b*HS, {'Head': 1}) for dy, a, b, dz in H], 8, np.pi/8, X, Z, True, False)
+    top = vert((0, hd[1] + 0.285*HS, hz - 0.006*HS), {'Head': 1}); [Tr.append([top, hr[-1][k], hr[-1][(k + 1) % 8]]) for k in range(8)]
+    # a small wedge nose on the flat of the face
+    fz = hz + 0.12*HS*np.cos(np.pi/8) + 0.002; ny = hd[1] + 0.1*HS
+    n0, n1, n2, n3 = vert((0, ny + 0.03*HS, fz - 0.004), {'Head': 1}), vert((-0.017*HS, ny - 0.012*HS, fz), {'Head': 1}), vert((0.017*HS, ny - 0.012*HS, fz), {'Head': 1}), vert((0, ny - 0.008*HS, fz + 0.028*HS), {'Head': 1})
+    Tr += [[n0, n1, n3], [n0, n3, n2], [n1, n2, n3]]
+    rf = 0.88 if fem else 1.0; lf = 0.92 if fem else 1.0
+    for sd in ('l', 'r'):
+        sg = 1 if sd == 'l' else -1; ua, la, ha, th, ca, ft, bl = g('upperarm_' + sd), g('lowerarm_' + sd), g('hand_' + sd), g('thigh_' + sd), g('calf_' + sd), g('foot_' + sd), g('ball_' + sd)
+        ex = X*sg
+        # arm: shoulder, elbow, wrist
+        A = [(ua[0] - sg*0.045, 0.06, 0.058, {'upperarm_' + sd: 1}), ((ua[0] + la[0])/2, 0.056, 0.054, {'upperarm_' + sd: 1}), (la[0], 0.05, 0.05, {'upperarm_' + sd: 0.5, 'lowerarm_' + sd: 0.5}), (ha[0] - sg*0.012, 0.04, 0.042, {'lowerarm_' + sd: 1})]
+        tube([((x, ua[1] + (0.0 if i else 0.01), ua[2] + (la[2] - ua[2])*min(1, i/2)), a*rf, b*rf, w) for i, (x, a, b, w) in enumerate(A)], 6, np.pi/6, Y, Z, True, False)
+        # mitten hand and thumb
+        tube([((ha[0] - sg*0.01, ha[1], ha[2] + 0.005), 0.026*rf/0.707, 0.042*rf/0.707, {'hand_' + sd: 1}), ((ha[0] + sg*0.09, ha[1] - 0.004, ha[2] + 0.01), 0.022*rf/0.707, 0.048*rf/0.707, {'hand_' + sd: 1}),
+              ((ha[0] + sg*0.155, ha[1] - 0.01, ha[2] + 0.01), 0.016*rf/0.707, 0.038*rf/0.707, {'hand_' + sd: 1})], 4, np.pi/4, Y, Z)
+        tube([((ha[0] + sg*0.035, ha[1] - 0.004, ha[2] + 0.045), 0.014, 0.014, {'hand_' + sd: 1}), ((ha[0] + sg*0.08, ha[1] - 0.012, ha[2] + 0.075), 0.011, 0.011, {'hand_' + sd: 1})], 4, np.pi/4, Y, X)
+        # leg: hip, thigh, knee, calf, ankle
+        L = [(th[1] + 0.05, 0.09, 0.094, {'pelvis': 0.5, 'thigh_' + sd: 0.5}), ((th[1] + ca[1])/2, 0.082, 0.086, {'thigh_' + sd: 1}), (ca[1], 0.064, 0.068, {'thigh_' + sd: 0.5, 'calf_' + sd: 0.5}),
+             ((ca[1] + ft[1])/2 + 0.04, 0.062, 0.064, {'calf_' + sd: 1}), (ft[1] + 0.03, 0.046, 0.048, {'calf_' + sd: 0.5, 'foot_' + sd: 0.5})]
+        tube([((th[0] - sg*0.005, y, th[2] + (0.0 if i < 2 else (ft[2] - th[2])*0.25*(i - 1))), a*lf, b*lf, w) for i, (y, a, b, w) in enumerate(L)], 8, np.pi/8, Z, X, False, True)
+        # shoe: heel to toe
+        F = [(ft[2] - 0.055, 0.052, 0.05, 0.05, {'foot_' + sd: 1}), (ft[2] + 0.01, 0.058, 0.056, 0.056, {'foot_' + sd: 1}), (bl[2], 0.036, 0.036, 0.055, {'foot_' + sd: 0.4, 'ball_' + sd: 0.6}), (bl[2] + 0.085, 0.026, 0.024, 0.046, {'ball_' + sd: 1})]
+        tube([((ft[0], y, z), h/0.707, wd/0.707, w) for z, y, h, wd, w in F], 4, np.pi/4, Y, X)
+    eyes = np.array([0.05, hd[1] + 0.135*HS, fz])
+    # hair: blocky shells over the head, rigid on the head bone
+    prof = [(dy*HS, a*HS, b*HS, dz*HS) for dy, a, b, dz in H]
+    def head_r(y):
+        ys = [hd[1] + p[0] for p in prof]; return np.interp(y, ys, [p[1] for p in prof]), np.interp(y, ys, [p[2] for p in prof])
+    def shell(bottom, sc, flare=1.0, lift=0.0, segs=None):
+        hp, ht = [], []; n = 8; rows = []
+        tz = hd[1] + 0.285*HS + 0.02 + lift
+        for i, t in enumerate([0, 0.3, 0.6, 0.82, 0.95]):
+            row = []
+            for k in range(n):
+                a = np.pi/8 + 2*np.pi*k/n; yb = hd[1] + bottom(a)*HS; y = yb + (tz - 0.02 - yb)*t; rx, rz = head_r(min(y, hd[1] + 0.262*HS)); m = sc*(flare if i == 0 else 1)*(0.82 if t > 0.9 else 1)
+                row.append(len(hp)); hp.append(np.array([np.sin(a)*rx*m, y, hz + np.cos(a)*rz*m]))
+            rows.append(row)
+        for i in range(len(rows) - 1):
+            for k in range(n):
+                if segs is not None and k not in segs: continue
+                a0, a1, b0, b1 = rows[i][k], rows[i][(k + 1) % n], rows[i+1][k], rows[i+1][(k + 1) % n]; ht += [[a0, a1, b1], [a0, b1, b0]]
+        if segs is None:
+            c = len(hp); hp.append(np.array([0, tz, hz])); ht += [[c, rows[-1][k], rows[-1][(k + 1) % n]] for k in range(n)]
+        return np.array(hp), np.array(ht)
+    def merge(*parts):
+        P_, T_ = [], []; o = 0
+        for p, t in parts: P_.append(p); T_.append(t + o); o += len(p)
+        return np.vstack(P_), np.vstack(T_)
+    def front(a): return np.cos(a)   # 1 in front, -1 behind
+    def blob(c, r):
+        p = [np.array(c) + np.array(d)*r for d in [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)]]
+        t = [[0, 2, 4], [2, 1, 4], [1, 3, 4], [3, 0, 4], [2, 0, 5], [1, 2, 5], [3, 1, 5], [0, 3, 5]]; return np.array(p), np.array(t)
+    buzz = lambda a: 0.13 + 0.07*max(0, front(a)) - 0.05*max(0, -front(a))
+    hairs = [('Hair_Buzzed', *shell(buzz, 1.035)),
+             ('Hair_SimpleParted', *shell(lambda a: 0.12 + 0.07*max(0, front(a)) - 0.08*max(0, -front(a)), 1.1, 1.0, 0.03)),
+             ('Hair_Long', *shell(lambda a: 0.17 if front(a) > 0.8 else -0.01 if front(a) > 0.2 else -0.03, 1.1, 1.17, 0.02)),
+             ('Hair_Buns', *merge(shell(buzz, 1.05), blob((0.085*HS, hd[1] + 0.27*HS, hz - 0.04*HS), 0.06*HS), blob((-0.085*HS, hd[1] + 0.27*HS, hz - 0.04*HS), 0.06*HS))),
+             ('Hair_Beard', *merge(shell(buzz, 1.04), shell(lambda a: -0.03, 1.07, 1.0, -(0.285*HS + 0.02) + 0.07*HS, segs=[7, 0, 1, 2, 5, 6])))]
+    # hats sit over the hair and turn with the head
+    fzz = hz + 0.125*HS*np.cos(np.pi/8)*1.16; by = hd[1] + 0.2*HS
+    brim = (np.array([[-0.1*HS, by, fzz - 0.03], [0.1*HS, by, fzz - 0.03], [0.09*HS, by - 0.012, fzz + 0.085*HS], [-0.09*HS, by - 0.012, fzz + 0.085*HS],
+                      [-0.1*HS, by + 0.012, fzz - 0.03], [0.1*HS, by + 0.012, fzz - 0.03], [0.09*HS, by, fzz + 0.085*HS], [-0.09*HS, by, fzz + 0.085*HS]]),
+            np.array([[0, 1, 2], [0, 2, 3], [4, 6, 5], [4, 7, 6], [3, 2, 6], [3, 6, 7], [0, 3, 7], [0, 7, 4], [1, 5, 6], [1, 6, 2]]))
+    hairs += [('Hat_Beanie', *merge(shell(lambda a: 0.19 + 0.025*front(a), 1.15, 1.0, 0.045), shell(lambda a: 0.185 + 0.025*front(a), 1.19, 1.0, -(0.285*HS + 0.02) + 0.245*HS))),
+              ('Hat_Cap', *merge(shell(lambda a: 0.2 + 0.01*front(a), 1.14, 1.0, 0.01), brim)),
+              ('Hat_Helmet', *shell(lambda a: 0.165 + 0.02*front(a), 1.2, 1.06, 0.05))]
+    JI_, JW_ = [], []
+    for w in Wv:
+        items = sorted(w.items(), key=lambda kv: -kv[1])[:4]; ji = [J['_idx'][k] for k, _ in items] + [0]*(4 - len(items)); jw = [v for _, v in items] + [0]*(4 - len(items)); JI_.append(ji); JW_.append(jw)
+    return np.array(Pv), np.array(JI_, int), np.array(JW_, float), np.array(Tr, int), eyes, hairs
+
 def build(gltf, tex, target, hair_files):
     j, acc = load(gltf); N = j['nodes']; skin = j['skins'][0]; joints = skin['joints']; IBM = acc(skin['inverseBindMatrices']).reshape(-1, 4, 4).transpose(0, 2, 1)
     par = {}
@@ -97,15 +205,19 @@ def build(gltf, tex, target, hair_files):
     rest = [(np.array(nd.get('translation', [0, 0, 0]), float), np.array(nd.get('rotation', [0, 0, 0, 1]), float), np.array(nd.get('scale', [1, 1, 1]), float)) for nd in N]
     name = [nd.get('name') for nd in N]; jname = [name[i] for i in joints]
     P, UV, JI, JW, TR, MAT = [], [], [], [], [], []; base = 0; eyes = None
+    Jp = {jname[k]: np.linalg.inv(IBM[k])[:3, 3] for k in range(len(jname))}; Jp['_idx'] = {n2: k for k, n2 in enumerate(jname)}
+    if STYL:
+        P, JI, JW, TR, eyes, genhairs = make_body(Jp, 'Female' in gltf); UV = np.zeros((len(P), 2)); MAT = np.array(['Body']*len(TR)); target = len(TR) + 50
     for i, nd in enumerate(N):
-        if 'mesh' not in nd: continue
+        if 'mesh' not in nd or STYL: continue
         if nd.get('name') in ('Eyes', 'Eyebrows'):
             if nd.get('name') == 'Eyes': ep = acc(j['meshes'][nd['mesh']]['primitives'][0]['attributes']['POSITION']); eyes = ep[ep[:, 0] > 0].mean(0)
             continue
         for pr in j['meshes'][nd['mesh']]['primitives']:
             a = pr['attributes']; p = acc(a['POSITION']); P.append(p); UV.append(acc(a['TEXCOORD_0'])); JI.append(acc(a['JOINTS_0']).astype(int)); JW.append(acc(a['WEIGHTS_0']))
             t = acc(pr['indices']).reshape(-1, 3).astype(int) + base; TR.append(t); MAT += [j['materials'][pr['material']]['name']]*len(t); base += len(p)
-    P = np.vstack(P); UV = np.vstack(UV); JI = np.vstack(JI); JW = np.vstack(JW); JW = JW/np.maximum(JW.sum(1, keepdims=True), 1e-9); TR = np.vstack(TR); MAT = np.array(MAT)
+    if not STYL: P = np.vstack(P); UV = np.vstack(UV); JI = np.vstack(JI); JW = np.vstack(JW); TR = np.vstack(TR); MAT = np.array(MAT)
+    JW = JW/np.maximum(JW.sum(1, keepdims=True), 1e-9)
     # body part of each triangle, from the bone that moves it most
     dom = JI[np.arange(len(P)), JW.argmax(1)]; tdom = np.array([jname[k] for k in dom[TR[:, 0]]])
     reg = np.zeros(len(TR), int)
@@ -123,8 +235,8 @@ def build(gltf, tex, target, hair_files):
         m = reg == r
         if m.any(): shade[m] = np.clip(lum[m]/max(1, np.median(lum[m])), 0.72, 1.18) if r == 0 else np.clip(0.92 + 0.12*(lum[m]/max(1, np.median(lum[m])) - 1), 0.85, 1.05)
     # extra hair meshes, rigid on the head bone
-    hairs = []
-    for hf in hair_files:
+    hairs = list(genhairs) if STYL else []
+    for hf in ([] if STYL else hair_files):
         hj, hacc = load(hf); hp, ht = [], []; hb = 0
         hpar = {}
         for i, nd in enumerate(hj['nodes']):
@@ -261,7 +373,7 @@ def clipset():
     return S
 
 BD = os.path.join(UBC, 'Base Characters', 'Godot - UE'); HD = os.path.join(UBC, 'Hairstyles', 'Rigged to Head Bone', 'glTF (Godot -Unreal)')
-HAIRS = ['Hair_Buzzed', 'Hair_SimpleParted', 'Hair_Long', 'Hair_Buns', 'Hair_Beard']
+HAIRS = ['Hair_Buzzed', 'Hair_SimpleParted', 'Hair_Long', 'Hair_Buns', 'Hair_Beard'] + (['Hat_Beanie', 'Hat_Cap', 'Hat_Helmet'] if STYL else [])
 S = clipset(); print({k: len(v) for k, v in S.items()})
 index, blob = {}, b''
 FWD = lambda p: np.stack([p[:, 2], p[:, 1], -p[:, 0]], 1)   # the model faces +z; the game wants forward along +x

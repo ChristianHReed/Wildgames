@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.30.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.30.3. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -26,6 +26,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.30 | Noise heat brings scouts (swarmers by day, a stalker by night), shown on the map; the stalker hunts at night, checks remembered hiding places and climbs ladders |
 | 0.30.1 | The stalker no longer knows where you are until it notices you; then it hunts you for about four game hours, lurks out of sight, and rushes only from close by in a short, very fast burst |
 | 0.30.2 | Survivors redrawn in a flat painted style: bigger heads, softer proportions, painted faces and clothes (8 faces, 8 tops, 6 bottoms, 3 shoes, a second colour) instead of extra geometry |
+| 0.30.3 | New low-poly survivor bodies built on the animation skeleton: big octagonal head, small nose, tube limbs, mitten hands, chunky shoes; blocky hair and hats that turn with the head |
 
 ## Next versions
 

@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.30.2. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.30.3. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -67,7 +67,7 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 - **Plants:** bushes, flowers, ferns, grass and rocks can be gathered for berries, herbs, fiber and stones, and grow back. Maps load in pieces, so a whole city can be one world on a computer.
 - **Aliens:** swarmers in groups, a stalker that hunts at night by light and noise, a rare giant, and nests that spread between buildings.
 - **Weather:** four seasons, rain, thunderstorms, heat waves, ice storms and tornadoes, with a body-warmth meter.
-- **Survivors:** a roster of characters with a look, a background and skills that grow with use. Survivors are drawn in a flat, painted style with bigger heads and softer proportions; the detail is painted on rather than modelled. Choose a face (calm, glasses, stubble, freckles, tired, moustache, dark glasses, scar), a top (T-shirt, striped tee, flannel shirt, spotted top, hoodie, open jacket, jumper, dungarees), bottoms (jeans, shorts, cargo trousers, capri trousers, track pants, rolled jeans), shoes (trainers, boots, rain boots), a second colour for stripes, checks, trims and hats, plus hair, hat, skin and colours. The texture is made by `tools/paint_people.py`.
+- **Survivors:** a roster of characters with a look, a background and skills that grow with use. Survivors are simple low-poly figures in a flat, painted style: a big octagonal head with a small nose, plain tube limbs, mitten hands and chunky shoes, with blocky hair (buzzed, short, bob, buns, beard) and hats (cap, beanie, helmet) that turn with the head. The detail is painted on rather than modelled. Choose a face (calm, glasses, stubble, freckles, tired, moustache, dark glasses, scar), a top (T-shirt, striped tee, flannel shirt, spotted top, hoodie, open jacket, jumper, dungarees), bottoms (jeans, shorts, cargo trousers, capri trousers, track pants, rolled jeans), shoes (trainers, boots, rain boots), a second colour for stripes, checks, trims and hats, plus hair, hat, skin and colours. The bodies are built from the skeleton by `tools/build_people.py` and the texture is made by `tools/paint_people.py`.
 - **Items and packs:** design your own weapons, use items and throwables; share them as pack files. Items found in a friend's world come home with you.
 - **Building:** barricades, permanent walls, a bed that makes a building your base, storage chests, repainting and demolishing buildings.
 - **Getting around:** bicycles (quiet) and cars (fast, need fuel, draw aliens).

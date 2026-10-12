@@ -261,7 +261,7 @@
         <label>Build<select id="cBuild"><option value="0">Slim</option><option value="1" selected>Average</option><option value="2">Broad</option></select></label>
         <label>Skin<select id="cSkin"><option value="0">Tone 1</option><option value="1" selected>Tone 2</option><option value="2">Tone 3</option><option value="3">Tone 4</option><option value="4">Tone 5</option></select></label>
         <label>Body<select id="cBody"><option value="0">Masculine</option><option value="1">Feminine</option></select></label>
-        <label>Hair<select id="cHair"><option value="0">None</option><option value="1" selected>Buzzed</option><option value="2">Parted</option><option value="3">Long</option><option value="4">Buns</option><option value="5">Beard</option></select></label>
+        <label>Hair<select id="cHair"><option value="0">None</option><option value="1" selected>Buzzed</option><option value="2">Short</option><option value="3">Bob</option><option value="4">Buns</option><option value="5">Beard</option></select></label>
         <label>Hair colour<select id="cHairC"><option value="0">Black</option><option value="1" selected>Brown</option><option value="2">Auburn</option><option value="3">Blond</option><option value="4">Grey</option></select></label>
         <label>Hat<select id="cHat"><option value="0">None</option><option value="1">Cap</option><option value="2">Beanie</option><option value="3">Helmet</option></select></label>
         <label>Shirt<input type="color" id="cShirt" value="#3566c4" style="height:36px;padding:2px"></label>
@@ -358,7 +358,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.30.2.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.30.3.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1925,7 +1925,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.30.2';
+var VERSION = '0.30.3';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -3194,7 +3194,7 @@ function loadPeople(){
         for (i = 0; i < nv3; i++){ var vi = dv.getUint16(e2.o + i*2, true); pos[i*3] = dv.getInt16(base + vi*6, true)/1000; pos[i*3+1] = dv.getInt16(base + vi*6 + 2, true)/1000; pos[i*3+2] = dv.getInt16(base + vi*6 + 4, true)/1000; }
         var vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW); o.poses.push(vb);
       }
-      PPL[n] = o;
+      o.tile = HATT[n.split(':')[1]] || 40; PPL[n] = o;
     }
   } catch (er){ PPL = {}; }
 }
@@ -3206,11 +3206,11 @@ function pplCols(o, look){
   var cb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, cb); gl.bufferData(gl.ARRAY_BUFFER, col, gl.STATIC_DRAW); return (o.cbs[key] = cb);
 }
 /* texture coordinates for one choice of face, top, bottoms and shoes, made the first time it is seen */
-var PTILE = [0, 8, 16, 24, 32], SHOEC = ['#e9e2d4', '#5b3b26', '#d8a83a'];
+var PTILE = [0, 8, 16, 24, 32], HATN = ['', 'Hat_Cap', 'Hat_Beanie', 'Hat_Helmet'], HATT = {Hat_Beanie:41, Hat_Cap:42, Hat_Helmet:43}, SHOEC = ['#e9e2d4', '#5b3b26', '#d8a83a'];
 function pplTb(o, l){
-  if (!o.uv) return o.tb; var key = o.hair ? 'h' : l.face + ',' + l.top + ',' + l.bot + ',' + l.shoe; if (o.tbs[key]) return o.tbs[key];
+  if (!o.uv) return o.tb; var key = o.hair ? 'h' + (o.tile || 40) : l.face + ',' + l.top + ',' + l.bot + ',' + l.shoe; if (o.tbs[key]) return o.tbs[key];
   var vari = [l.face, l.top, l.top, l.bot, l.shoe], tc = new Float32Array(o.n*3);
-  for (var i = 0; i < o.n; i++){ var t = Math.floor(i/3), tile = o.hair ? 40 : PTILE[o.kind[t]] + vari[o.kind[t]]; tc[i*3] = o.uv[i*2]; tc[i*3+1] = o.uv[i*2+1]; tc[i*3+2] = 80 + tile; }
+  for (var i = 0; i < o.n; i++){ var t = Math.floor(i/3), tile = o.hair ? (o.tile || 40) : PTILE[o.kind[t]] + vari[o.kind[t]]; tc[i*3] = o.uv[i*2]; tc[i*3+1] = o.uv[i*2+1]; tc[i*3+2] = 80 + tile; }
   var tb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW); return (o.tbs[key] = tb);
 }
 function pplPal(l){
@@ -3227,7 +3227,7 @@ function queuePerson(m, o, look, now){
   var clip = pplClip(o, B), cl = B.clips[clip], sp = clip === 'run' ? 1.5 : clip === 'walk' ? 1.1 : clip === 'attack' || clip === 'shoot' ? 2.6 : clip === 'crouchwalk' ? 0.9 : clip === 'swim' ? 0.8 : 0.35, t = clip === 'attack' && o.swk !== undefined ? o.swk*0.999 : clip === 'throw' ? (time - (P.thrT || 0))/0.5*0.999 : clip === 'shoot' && o.shk !== undefined ? o.shk*0.999 : now*sp + (o.id || 0)*0.37;
   var f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1], sc = [0.95, 1, 1.06][l.build];
   pplQ.push({B:B, f:f, x:o.x, y:o.y, gy:m.yo, yaw:o.yaw, look:l, sc:sc});
-  if (l.hat){ var hd = B.hd[f], cs = Math.cos(o.yaw), sn = Math.sin(o.yaw), hx = o.x + (cs*hd[0] - sn*hd[2])*sc, hy = o.y + (sn*hd[0] + cs*hd[2])*sc, top = (hd[1] + (B.ht || 0.16))*sc, hf = (B.hf || 0.1)*sc;
+  if (l.hat && !PPL[(l.body ? 'female' : 'male') + ':' + HATN[l.hat]]){ var hd = B.hd[f], cs = Math.cos(o.yaw), sn = Math.sin(o.yaw), hx = o.x + (cs*hd[0] - sn*hd[2])*sc, hy = o.y + (sn*hd[0] + cs*hd[2])*sc, top = (hd[1] + (B.ht || 0.16))*sc, hf = (B.hf || 0.1)*sc;
     top += l.hair ? 0.02 : 0;
     if (l.hat === 1){ var cc = C(l.acc || '#b33a3a'); m.ybox(hx, hy, o.yaw, 0.01, 0, top - 0.004, 0.124, 0.046, 0.12, cc); m.ybox(hx, hy, o.yaw, hf + 0.05, 0, top - 0.042, 0.08, 0.01, 0.1, cc.map(function(v){ return v*0.8; })); }   /* cap */
     else if (l.hat === 2){ var bc = C(l.acc || '#4a6a8a'); m.ybox(hx, hy, o.yaw, 0.015, 0, top - 0.004, 0.135, 0.06, 0.128, bc); m.ybox(hx, hy, o.yaw, 0.015, 0, top - 0.058, 0.138, 0.02, 0.131, bc.map(function(v){ return v*0.8; })); }   /* knitted beanie with a turned-up band */
@@ -3240,7 +3240,8 @@ function drawPeople(){
     var q = pplQ[i], B = q.B, cb = pplCols(B, q.look); gl.uniform4f(U.inst, q.x, q.gy, q.y, q.yaw); gl.uniform1f(U.iscl, q.sc);
     if (pplTex && B.uv){ gl.uniform1f(U.pplOn, 1); gl.uniform3fv(U.pp, q.look.pal || (q.look.pal = pplPal(q.look))); }
     drawMesh({vb:B.poses[q.f], cb:cb, tb:pplTb(B, q.look), n:B.n});
-    var H = q.look.hair ? PPL[(q.look.body ? 'female' : 'male') + ':' + HAIRN[q.look.hair]] : null; if (H) drawMesh({vb:H.poses[q.f], cb:pplCols(H, q.look), tb:pplTb(H, q.look), n:H.n});
+    var bk = q.look.body ? 'female' : 'male', H = q.look.hair ? PPL[bk + ':' + HAIRN[q.look.hair]] : null; if (H) drawMesh({vb:H.poses[q.f], cb:pplCols(H, q.look), tb:pplTb(H, q.look), n:H.n});
+    var HT = q.look.hat ? PPL[bk + ':' + HATN[q.look.hat]] : null; if (HT) drawMesh({vb:HT.poses[q.f], cb:pplCols(HT, q.look), tb:pplTb(HT, q.look), n:HT.n});
   }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.pplOn, 0); pplQ.length = 0;
 }
@@ -4506,7 +4507,7 @@ function prevTiles(l){
   if (!PTIMG.ok) return null;
   var key = JSON.stringify(l); if (prevTiles.key === key) return prevTiles.out; var out = {}, pal = pplPal(l);
   var src = document.createElement('canvas'); src.width = 256; src.height = 256; var sx = src.getContext('2d');
-  [PTILE[0] + l.face, PTILE[1] + l.top, PTILE[2] + l.top, PTILE[3] + l.bot, PTILE[4] + l.shoe, 40].forEach(function(tile){
+  [PTILE[0] + l.face, PTILE[1] + l.top, PTILE[2] + l.top, PTILE[3] + l.bot, PTILE[4] + l.shoe, 40, 41, 42, 43].forEach(function(tile){
     sx.clearRect(0, 0, 256, 256); sx.drawImage(PTIMG, (tile % 8)*256, Math.floor(tile/8)*256, 256, 256, 0, 0, 256, 256); var d = sx.getImageData(0, 0, 256, 256), p = d.data;
     for (var i = 0; i < p.length; i += 4){ var k = (p[i+1] >> 5)*3, f = p[i]/128; p[i] = Math.min(255, pal[k]*255*f); p[i+1] = Math.min(255, pal[k+1]*255*f); p[i+2] = Math.min(255, pal[k+2]*255*f); p[i+3] = 255; }
     var cv = document.createElement('canvas'); cv.width = 512; cv.height = 256; var cx = cv.getContext('2d'); cx.putImageData(d, 0, 0); cx.putImageData(d, 256, 0); out[tile] = cv;
@@ -4532,14 +4533,14 @@ function drawPrev(){
   var cv2 = el('cPrev'), c = cv2.getContext('2d'), l = readLook(), W2 = cv2.width, H2 = cv2.height, B = pplRaw(l.body ? 'female' : 'male');
   c.clearRect(0, 0, W2, H2);
   if (!B){ var w = [18, 22, 27][l.build]*W2/64, k = W2/64; c.fillStyle = l.pants; c.fillRect(W2/2 - w/2, 62*k, w - 2*k, 36*k); c.fillStyle = l.shirt; c.fillRect(W2/2 - w/2, 30*k, w, 34*k); c.fillStyle = SKIN[l.skin]; c.fillRect(24*k, 12*k, 16*k, 17*k); return; }
-  var parts = [[B, null]], H = l.hair ? pplRaw((l.body ? 'female' : 'male') + ':' + HAIRN[l.hair]) : null; if (H) parts.push([H, C(HAIRC[l.hc])]);
+  var parts = [[B, null]], H = l.hair ? pplRaw((l.body ? 'female' : 'male') + ':' + HAIRN[l.hair]) : null, HTm = l.hat ? pplRaw((l.body ? 'female' : 'male') + ':' + HATN[l.hat]) : null; if (H) parts.push([H, C(HAIRC[l.hc])]); if (HTm){ HTm.tile = HATT[HATN[l.hat]]; parts.push([HTm, C(l.acc)]); }
   var pal = [C(SKIN[l.skin]), C(l.shirt), C(l.pants), C('#2b2420'), C(HAIRC[l.hc]), C('#151515')], ya = -0.55, cs = Math.cos(ya), sn = Math.sin(ya), sc = H2/2.05*[0.95, 1, 1.06][l.build], tris = [];
   var P3 = function(p){ return [p[0]*cs - p[2]*sn, p[1], p[0]*sn + p[2]*cs]; };
   parts.forEach(function(pt){ var M = pt[0];
     for (var i = 0; i < M.nt; i++){ var a = P3(M.p[M.tri[i*3]]), b = P3(M.p[M.tri[i*3+1]]), d = P3(M.p[M.tri[i*3+2]]);
       var ux = b[0]-a[0], uy = b[1]-a[1], uz = b[2]-a[2], vx = d[0]-a[0], vy = d[1]-a[1], vz = d[2]-a[2], nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx, nl2 = Math.hypot(nx, ny, nz) || 1;
       var lit = 0.55 + 0.45*Math.abs((nx*0.75 + ny*0.45 + nz*0.3)/nl2), col = pt[1] || pal[M.reg[i]], shd = pt[1] || !M.sh ? 1 : M.sh[i]/200;
-      var pt5 = M.uv ? {tile:M.hair ? 40 : PTILE[M.kind[i]] + [l.face, l.top, l.top, l.bot, l.shoe][M.kind[i]], uv:M.uv.slice(i*6, i*6 + 6)} : null;
+      var pt5 = M.uv ? {tile:M.hair ? (M.tile || 40) : PTILE[M.kind[i]] + [l.face, l.top, l.top, l.bot, l.shoe][M.kind[i]], uv:M.uv.slice(i*6, i*6 + 6)} : null;
       tris.push([(a[0] + b[0] + d[0])/3, a, b, d, 'rgb(' + Math.min(255, col[0]*lit*shd|0) + ',' + Math.min(255, col[1]*lit*shd|0) + ',' + Math.min(255, col[2]*lit*shd|0) + ')', pt5, lit]); } });
   tris.sort(function(x, y){ return x[0] - y[0]; });   /* far side first: the model faces +x, which this view turns toward the viewer */
   var X = function(p){ return W2/2 - p[2]*sc; }, Y = function(p){ return H2 - 4 - p[1]*sc; }, TT = prevTiles(l);
@@ -4556,7 +4557,7 @@ function drawPrev(){
       }
     }
     c.fillStyle = c.strokeStyle = t[4]; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineTo(x2, y2); c.closePath(); c.fill(); c.stroke(); });
-  if (l.hat && B.hd){ var hp = P3(B.hd), hx = X(hp), hy = Y([0, hp[1] + (B.ht || 0.16) - 0.06]); c.fillStyle = l.hat === 3 ? '#6a7a5a' : l.acc; c.fillRect(hx - 0.13*sc, hy - 0.065*sc, 0.26*sc, 0.13*sc); if (l.hat === 1) c.fillRect(hx - 0.26*sc, hy + 0.035*sc, 0.15*sc, 0.025*sc); if (l.hat === 2){ c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(hx - 0.135*sc, hy + 0.035*sc, 0.27*sc, 0.05*sc); } }
+  if (l.hat && B.hd && !HTm){ var hp = P3(B.hd), hx = X(hp), hy = Y([0, hp[1] + (B.ht || 0.16) - 0.06]); c.fillStyle = l.hat === 3 ? '#6a7a5a' : l.acc; c.fillRect(hx - 0.13*sc, hy - 0.065*sc, 0.26*sc, 0.13*sc); if (l.hat === 1) c.fillRect(hx - 0.26*sc, hy + 0.035*sc, 0.15*sc, 0.025*sc); if (l.hat === 2){ c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(hx - 0.135*sc, hy + 0.035*sc, 0.27*sc, 0.05*sc); } }
 }
 function syncChar(fromRoster){
   var list = savedChars(), r = el('roster'), cur = fromRoster ? r.value : charSlug(), found = null, h = '';
