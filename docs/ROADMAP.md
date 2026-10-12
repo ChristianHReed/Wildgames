@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.35. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.35.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -35,6 +35,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.34.1 | Back to safe house button on the start page for when you are stuck; walking off a roof never drops you inside a building next door (you step onto its roof if it is about as high, otherwise you stop at the edge) |
 | 0.34.2 | The map pack's gaps filled in by its own rules: about 10,000 homes and shops along the streets of the 20 boxes the map server missed (mostly Ozark and east Nixa), and about 29,000 farmsteads (house, barn, shed, drive, and about 18,000 stock ponds) along county roads. All of it is marked as generated, so real map data can replace it later |
 | 0.35 | Stealth extras: aliens see through shut window glass; curtains and blinds (B at a window) stop their eyes and hide your light at night, and a lit window draws aliens from about 45 m; footsteps carry by ground (quiet on grass and carpet, loud on gravel, loudest on broken glass); the giant feels car engines from about 140 m and sprinting from about 65 m |
+| 0.35.1 | Ground-floor windows are real openings (see out, see in); inside walls stop short of windows so every window can be climbed through; windows of flats line up with their painted pairs |
 
 ## Next versions
 

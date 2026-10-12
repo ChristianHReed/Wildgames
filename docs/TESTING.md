@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.35) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.35.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -300,6 +300,11 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3w.2 At night, turn your flashlight on indoors: aliens outside come towards the lit windows. Draw every curtain and they stop coming.
 - [ ] 3w.3 Walk on grass, a gravel track or a railway, and over the glass from a broken window: the steps sound different, and aliens notice you much further away on gravel and glass than on grass.
 - [ ] 3w.4 Drive a car near a giant (or sprint): it turns and comes to look from much further than other aliens.
+
+## Stage 3x: seeing out and climbing through windows
+
+- [ ] 3x.1 Inside a house, look at a ground-floor window: you see the street outside through it. From the street you can see into the rooms.
+- [ ] 3x.2 Tap a window to open it, then walk at it: you climb through, in or out. Try several windows in a house, a shop and a block of flats.
 
 ## Stage 4: aliens and weather
 
