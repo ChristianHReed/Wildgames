@@ -346,7 +346,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.27.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.28.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -790,6 +790,8 @@ function hAt(x, y){
 }
 /* height you stand at: a building's level floor indoors, the ground outdoors */
 function groundAt(x, y){ if (!world.hg) return 0; var b = buildingAt(x, y); return b ? b.base : hAt(x, y); }
+/* the height something is standing at, counting stairs and upper floors */
+function entY(e){ return groundAt(e.x, e.y) + lvlY(buildingAt(e.x, e.y), e); }
 /* lay a flat mesh over the hills: cut every triangle along the terrain's own triangles, so each piece lies flat on the ground */
 function drape(m, lift){
   var g = world.hg, P0 = m.p, C0 = m.c, T0 = m.t, p = [], c = [], t = [], cs = g.cell, n = P0.length/9;
@@ -1020,6 +1022,26 @@ function shell(b, m, lm){
       var pc = [Math.round(206*tint[0]/255), Math.round(196*tint[1]/255), Math.round(180*tint[2]/255)];
       for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(p[i], Ht, p[i+1], p[j], Ht, p[j+1], p[j], Ht + 0.55, p[j+1], p[i], Ht + 0.55, p[i+1], pc, 255); lm.line(p[i], Ht + 0.55, p[i+1], p[j], Ht + 0.55, p[j+1], INK); }
       if (b.area > 220) for (q = 0, r = Math.min(4, Math.floor(b.area/350) + 1); q < r; q++){ var ux = cxr + (hash(b.id, q, 61) - 0.5)*(b.maxx - b.minx)*0.5, uz = czr + (hash(b.id, q, 62) - 0.5)*(b.maxy - b.miny)*0.5; if (pip(p, ux, uz) && polyDist(p, ux, uz, true) > 1.6) m.ybox(ux, uz, hash(b.id, q, 63) < 0.5 ? 0 : 1.5708, 0, 0, Ht + 0.5, 0.9, 0.5, 0.65, [158,158,152]); }
+    }
+    /* a fixed ladder up one side wall of most low flat-roofed buildings: the roof is somewhere to look out from, or to wait it out */
+    if (m === NULLM) b.lad = null;
+    if (m === NULLM && Ht <= 13 && b.area >= 30 && hash(b.id, 8, 71) < 0.75){
+      var lsc = -1;
+      for (i = 0; i < n; i += 2){
+        if (i === best) continue; j = (i+2) % n; var l1 = Math.hypot(p[j]-p[i], p[j+1]-p[i+1]); if (l1 < 3) continue;
+        var ux1 = (p[j]-p[i])/l1, uz1 = (p[j+1]-p[i+1])/l1, wx0 = p[i] + ux1*(l1 - 0.8), wz0 = p[i+1] + uz1*(l1 - 0.8), ox1 = uz1, oz1 = -ux1, tx1 = wx0 - ox1*0.8, tz1 = wz0 - oz1*0.8;
+        if (blocked(wx0 + ox1*1.1, wz0 + oz1*1.1) || blocked(wx0 + ox1*2.0, wz0 + oz1*2.0) || inWater(wx0 + ox1*1.1, wz0 + oz1*1.1, 0.4)) continue;
+        if (!pip(p, tx1, tz1) || polyDist(p, tx1, tz1, true) < 0.5) continue;
+        var sc1 = l1 + hash(b.id, i, 72)*6; if (sc1 > lsc){ lsc = sc1; b.lad = {x:wx0, y:wz0, nx:ox1, ny:oz1, fx:wx0 + ox1*1.05, fy:wz0 + oz1*1.05, tx:tx1, ty:tz1, b:b}; }
+      }
+    }
+    if (b.lad){
+      var LD = b.lad, lyaw = Math.atan2(LD.ny, LD.nx), ly0 = world.hg ? Math.min(0, hAt(LD.fx, LD.fy) - (b.base || 0)) : 0, ltop = Ht + 1.0, lcol = [138,140,138];
+      /* it stands clear of the deepest kit facade, held to the wall by brackets */
+      m.ybox(LD.x, LD.y, lyaw, 0.46, -0.25, (ly0 + ltop)/2, 0.035, (ltop - ly0)/2, 0.035, lcol); m.ybox(LD.x, LD.y, lyaw, 0.46, 0.25, (ly0 + ltop)/2, 0.035, (ltop - ly0)/2, 0.035, lcol);
+      for (var ry = ly0 + 0.3; ry < ltop - 0.05; ry += 0.32) m.ybox(LD.x, LD.y, lyaw, 0.46, 0, ry, 0.022, 0.022, 0.25, lcol);
+      for (var by = 1.5; by < Ht; by += 3) m.ybox(LD.x, LD.y, lyaw, 0.23, 0, by, 0.23, 0.03, 0.27, lcol);
+      m.ybox(LD.x, LD.y, lyaw, 0.08, -0.25, ltop - 0.04, 0.4, 0.035, 0.035, lcol); m.ybox(LD.x, LD.y, lyaw, 0.08, 0.25, ltop - 0.04, 0.4, 0.035, 0.035, lcol);
     }
   }
   /* an awning and a sign board over the door of anything with a shopfront */
@@ -1396,20 +1418,74 @@ var PLAN = {
   venue:{rooms:['hall'], more:['stock','breakroom']}
 };
 PLAN.apartments = PLAN.house; PLAN.food = PLAN.restaurant; PLAN.medical = PLAN.clinic; PLAN.industrial = PLAN.garage; PLAN.civic = PLAN.office;
-function genInterior(b){
-  var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id, k++, 31); }, i, j;
-  var segs = [], circs = [], doors = [], conts = [], idoors = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
-  var ceilY = Math.min(3, b.h - 0.06);
-  for (i = 0; i < t.length; i += 3){
-    var a = t[i]*2, c = t[i+1]*2, d = t[i+2]*2;
-    m.pl = [b.cat === 'house' ? TX.wood : TX.floorTile, 0.5]; m.tri(p[a], 0.1, p[a+1], p[c], 0.1, p[c+1], p[d], 0.1, p[d+1], WHITE, 255);
-    m.pl = null; m.tri(p[a], ceilY, p[a+1], p[c], ceilY, p[c+1], p[d], ceilY, p[d+1], cc, 255);
+/* ---- upstairs: homes two storeys or taller get a staircase and a second floor. FH is the height of one storey ---- */
+var FH = 3.0, RUN = 3.6, PLAN_UP = {one:'bedroom', two:['bedroom', 'bath'], rooms:['bedroom', 'bath', 'bedroom'], more:['bedroom', 'store', 'office'], small:'bath'};
+function hasUp(b){ return b.cat === 'house' && b.h > 6 && !!b.door && b.area >= 60 && b.area < 900; }
+/* where along the stairs a point is: 0 at the bottom step, 1 at the top, -1 when not on them */
+function stairT(b, x, y){
+  var S = b && b.int && b.int.stair; if (!S) return -1; var u = x*S.ux + y*S.uy, v = x*S.vx + y*S.vy, a = S.A ? v : u, c = S.A ? u : v;
+  if (c < S.c0 - 0.05 || c > S.c1 + 0.05) return -1; var t = (a - S.s0)/(S.s1 - S.s0); return t < -0.02 || t > 1.02 ? -1 : Math.max(0, Math.min(1, t));
+}
+/* how high above the building's ground floor something is standing: on the stairs, or on its floor */
+function lvlY(b, e){ if (!b || !b.int || !b.int.stair) return 0; var t = stairT(b, e.x, e.y); return t >= 0 ? t*FH : (e.lvl || 0)*FH; }
+/* ---- roofs: up and down by a ladder, walk inside the edge, a fall hurts from above 3 m ---- */
+function roofY(b){ return (b.base || 0) + b.h; }
+function ladNear(x, y, r){
+  var cx0 = Math.floor(x/G), cy0 = Math.floor(y/G), best = null, bd = r;
+  for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){ var cell = world.grid.get(gk(cx, cy)); if (!cell) continue; for (var i = 0; i < cell.length; i++){ var L = cell[i].lad; if (!L || cell[i].gone) continue; var d = Math.hypot(L.fx - x, L.fy - y); if (d < bd){ bd = d; best = L; } } }
+  return best;
+}
+function ladTarget(L, up){ var k = up ? 'tgU' : 'tgD'; return L[k] || (L[k] = {fix:'ladder', up:up, L:L, b:L.b, x:up ? L.fx : L.tx, y:up ? L.fy : L.ty}); }
+function startClimb(L, up){
+  if (P.hide || P.veh) return; P.climbL = {L:L, up:up, t:0, dur:Math.max(1.6, (roofY(L.b) - groundAt(L.fx, L.fy))/2.2)};
+  P.x = L.fx; P.y = L.fy; P.yaw = Math.atan2(-L.ny, -L.nx); P.roof = null; P.crouch = false; sfx('metal', L.x, L.y, 0.5, 0.8);
+}
+function climbTick(dt){
+  var c = P.climbL; c.t += dt/c.dur; P.x = c.L.fx; P.y = c.L.fy; if (Math.floor(c.t*8) !== c.s){ c.s = Math.floor(c.t*8); sfx('metal', c.L.x, c.L.y, 0.25, 0.9 + Math.random()*0.3); }
+  if (c.t < 1) return; P.climbL = null;
+  if (c.up){ P.roof = c.L.b; P.x = c.L.tx; P.y = c.L.ty; if (!P.roofSaid){ P.roofSaid = true; toast('On the roof. Aliens cannot climb up, but they can see you from the street. Walk off the edge and you fall.', 6); } }
+}
+function climbH(){ var c = P.climbL, g = groundAt(c.L.fx, c.L.fy), r = roofY(c.L.b), f = c.up ? c.t : 1 - c.t; return g + (r - g)*Math.max(0, Math.min(1, f)); }
+function roofOk(b, x, y){ return pip(b.pts, x, y) && polyDist(b.pts, x, y, true) > 0.3; }
+function roofMove(e, dx, dy){
+  var b = P.roof, n = Math.max(1, Math.ceil(Math.hypot(dx, dy)/0.2));
+  for (var i = 0; i < n; i++){
+    var nx = e.x + dx/n, ny = e.y + dy/n;
+    if (roofOk(b, nx, ny)){ e.x = nx; e.y = ny; continue; }
+    if (b.area > 70 && gait(true) !== 2){   /* the low wall round a bigger roof stops you, unless you run at it */
+      if (roofOk(b, nx, e.y)) e.x = nx; else if (roofOk(b, e.x, ny)) e.y = ny;
+      if (!P.edgeSaid){ P.edgeSaid = true; toast('A low wall runs round this roof. Sprint at it to jump down.', 4); } return;
+    }
+    return fallOff(e, nx, ny, dx, dy);
   }
+}
+function fallOff(e, nx, ny, dx, dy){
+  var b = P.roof, l = Math.hypot(dx, dy) || 1, top = roofY(b); P.roof = null; e.x = nx; e.y = ny;
+  for (var k = 0; k < 30 && buildingAt(e.x, e.y) === b; k++){ e.x += dx/l*0.15; e.y += dy/l*0.15; }
+  e.x += dx/l*0.3; e.y += dy/l*0.3; collide(e, 0.35);
+  var drop = top - groundAt(e.x, e.y), dmg = Math.max(0, Math.round((drop - 3)*8));
+  sfx('hurt', undefined, undefined, Math.min(1, 0.3 + drop/10)); makeNoise(e.x, e.y, 6 + drop*1.5); P.fall = 0.01;
+  if (dmg > 0){ P.hp -= dmg; P.hurt = 0.4; P.cause = 'a fall'; feed('You fell ' + Math.round(drop) + ' m: -' + dmg + ' health', '#ff8f7a'); } else feed('You dropped down from the roof', '#c0c6cc');
+}
+function setLvl(e){ var b = buildingAt(e.x, e.y); if (!b || !b.int || !b.int.stair){ if (!b) e.lvl = 0; return; } var t = stairT(b, e.x, e.y); if (t >= 0) e.lvl = t > 0.5 ? 1 : 0; }
+function clipHalf(poly, ax, val, less){
+  var out = [], n = poly.length; for (var i = 0; i < n; i++){ var a = poly[i], b = poly[(i + 1) % n], ia = less ? a[ax] <= val : a[ax] >= val, ib = less ? b[ax] <= val : b[ax] >= val;
+    if (ia) out.push(a); if (ia !== ib){ var t = (val - a[ax])/(b[ax] - a[ax]); out.push([a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t]); } } return out;
+}
+function genInterior(b){
+  var A = genLevel(b, 0, null, 0), I = {segs:A.segs, circs:A.circs, conts:A.conts, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stair:A.stair}, m = A.m;
+  if (A.stair){ var B = genLevel(b, 1, A.stair, A.cn); m.p = m.p.concat(B.m.p); m.c = m.c.concat(B.m.c); m.t = m.t.concat(B.m.t); I.up = {segs:B.segs, circs:B.circs}; I.conts = I.conts.concat(B.conts); I.fixes = I.fixes.concat(B.fixes); I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up:' + r; })); I.n += B.n; }
+  I.g = upload(m); return I;
+}
+function genLevel(b, lvl, ST, CB){
+  var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id + lvl*7919, k++, 31); }, i, j;
+  var segs = [], circs = [], doors = [], conts = [], idoors = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
+  var ceilY = lvl ? Math.min(2.95, b.h - FH - 0.06) : Math.min(3, b.h - 0.06);
   for (i = 0; i < b.wins.length; i += 6){
     var wx = b.wins[i] + b.wins[i+4]*0.04, wz = b.wins[i+1] + b.wins[i+5]*0.04, dx = b.wins[i+2]*0.6, dz = b.wins[i+3]*0.6;
     m.wall(wx - dx, wz - dz, wx + dx, wz + dz, 1, 2.1, sky, 255);
   }
-  if (b.door) doors.push(b.door.x + b.door.nx*0.4, b.door.y + b.door.ny*0.4);
+  if (b.door && !lvl) doors.push(b.door.x + b.door.nx*0.4, b.door.y + b.door.ny*0.4);
   var bi = 0, bl = 0;
   for (i = 0; i < n; i += 2){ j = (i+2) % n; var l = Math.hypot(p[j]-p[i], p[j+1]-p[i+1]); if (l > bl){ bl = l; bi = i; } }
   j = (bi+2) % n; var ux = (p[j]-p[bi])/bl, uy = (p[j+1]-p[bi+1])/bl, vx = -uy, vy = ux, u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
@@ -1436,7 +1512,7 @@ function genInterior(b){
       var ax1 = sx0 + dxn*g0, ay1 = sy0 + dyn*g0, ax2 = sx0 + dxn*g1, ay2 = sy0 + dyn*g1, ex = sx0 + dxn*L, ey = sy0 + dyn*L;
       m.wt = [TX.wallpaper, 2, 2]; m.wall(sx0, sy0, ax1, ay1, 0.1, 3, WHITE, 255); m.wall(ax2, ay2, ex, ey, 0.1, 3, WHITE, 255); m.wall(ax1, ay1, ax2, ay2, 2.2, 3, WHITE, 255); m.wt = null;
       if (g0 > 0.05) segs.push(sx0, sy0, ax1, ay1); if (L - g1 > 0.05) segs.push(ax2, ay2, ex, ey);
-      doors.push((ax1+ax2)/2, (ay1+ay2)/2); idoors.push([ax1, ay1, ax2, ay2]);
+      doors.push((ax1+ax2)/2, (ay1+ay2)/2); if (!lvl) idoors.push([ax1, ay1, ax2, ay2]);
     }
   }
   function split(a0, b0, a1, b1, d){
@@ -1445,19 +1521,24 @@ function genInterior(b){
     var f = 0.38 + rnd()*0.24, s, dc = w >= h ? eu0 : ev0, lo = w >= h ? a0 : b0, hi = w >= h ? a1 : b1;
     s = lo + (hi - lo)*f;
     if (Math.abs(s - dc) < 1.5){ s = dc + (s >= dc ? 1.5 : -1.5); if (s < lo + 2.2 || s > hi - 2.2) s = dc + (s >= dc ? -1.5 : 1.5); if (s < lo + 2.2 || s > hi - 2.2){ leaves.push([a0, b0, a1, b1]); return; } }   /* never run a wall into the front door */
+    if (HR){ var sAx = w >= h ? 0 : 1, rl = sAx ? HR[1] : HR[0], rh = sAx ? HR[3] : HR[2], ol = sAx ? HR[0] : HR[1], oh = sAx ? HR[2] : HR[3], olo = sAx ? a0 : b0, ohi = sAx ? a1 : b1;
+      if (s > rl - 1.1 && s < rh + 1.1 && ohi > ol - 1.1 && olo < oh + 1.1){ s = rl - 1.2 >= lo + 2.2 ? rl - 1.2 : rh + 1.2 <= hi - 2.2 ? rh + 1.2 : null; if (s === null){ leaves.push([a0, b0, a1, b1]); return; } } }   /* upstairs, never wall across the stairwell */
     if (w >= h){ part(s, b0, s, b1); split(a0, b0, s, b1, d+1); split(s, b0, a1, b1, d+1); }
     else { part(a0, s, a1, s); split(a0, b0, a1, s, d+1); split(a0, s, a1, b1, d+1); }
   }
-  var eu0 = b.door ? b.door.x*ux + b.door.y*uy : 1e9, ev0 = b.door ? b.door.x*vx + b.door.y*vy : 1e9;
+  /* upstairs: the stairwell from the floor below, in this building's own u/v frame, and the landing at its top */
+  var HR = null, LX = 0, LY = 0;
+  if (ST){ var a0s = Math.min(ST.s0, ST.s1), a1s = Math.max(ST.s0, ST.s1); HR = ST.A ? [ST.c0, a0s, ST.c1, a1s] : [a0s, ST.c0, a1s, ST.c1]; var sgn0 = Math.sign(ST.s1 - ST.s0), la = ST.land === 'side' ? ST.s1 - sgn0*0.5 : ST.s1 + sgn0*0.9, lc = ST.land === 'side' ? (ST.wallHi ? ST.c0 - 0.95 : ST.c1 + 0.95) : (ST.c0 + ST.c1)/2, lu = ST.A ? lc : la, lv0 = ST.A ? la : lc; LX = lu*ux + lv0*vx; LY = lu*uy + lv0*vy; }
+  var eu0 = ST ? LX*ux + LY*uy : b.door ? b.door.x*ux + b.door.y*uy : 1e9, ev0 = ST ? LX*vx + LY*vy : b.door ? b.door.x*vx + b.door.y*vy : 1e9;
   split(u0, v0, u1, v1, 0);
   /* ---- furnish: every room gets a job, then that job's list is laid out against walls, in rows or in the middle ---- */
   var keep = [], rects = [], total = 0, q, items = [], cls = 2;
   for (i = 0; i < doors.length; i += 2) keep.push(doors[i]*ux + doors[i+1]*uy, doors[i]*vx + doors[i+1]*vy, 1.0);
   for (i = 0; i < b.wins.length; i += 6) keep.push(b.wins[i]*ux + b.wins[i+1]*uy, b.wins[i]*vx + b.wins[i+1]*vy, 0.75);
-  var eu = b.door ? b.door.x*ux + b.door.y*uy : b.cx*ux + b.cy*uy, ev = b.door ? b.door.x*vx + b.door.y*vy : b.cx*vx + b.cy*vy;
+  var eu = ST ? eu0 : b.door ? b.door.x*ux + b.door.y*uy : b.cx*ux + b.cy*uy, ev = ST ? ev0 : b.door ? b.door.x*vx + b.door.y*vy : b.cx*vx + b.cy*vy;
   var rooms = leaves.map(function(lf){ var cu = (lf[0] + lf[2])/2, cv = (lf[1] + lf[3])/2; return {a0:lf[0], b0:lf[1], a1:lf[2], b1:lf[3], cu:cu, cv:cv, w:lf[2] - lf[0], h:lf[3] - lf[1], area:(lf[2] - lf[0])*(lf[3] - lf[1]), d:Math.hypot(cu - eu, cv - ev)}; });
   rooms.sort(function(x, y){ return x.d - y.d; });
-  var plan = PLAN[b.kind] || PLAN[b.cat] || PLAN.shop;
+  var plan = lvl ? PLAN_UP : PLAN[b.kind] || PLAN[b.cat] || PLAN.shop;
   rooms.forEach(function(R, ri){ R.type = rooms.length === 1 ? (plan.one || plan.rooms[0]) : rooms.length === 2 && plan.two ? plan.two[ri] : plan.rooms[ri] || plan.more[(ri - plan.rooms.length) % plan.more.length]; });
   if (plan.small && rooms.length >= 3){ var sm = 1; for (i = 2; i < rooms.length; i++) if (rooms[i].area < rooms[sm].area) sm = i; rooms[sm].type = plan.small; }
   function free(cu, cv, hu, hv, R, flat){
@@ -1506,6 +1587,39 @@ function genInterior(b){
     for (var ci = 0; ci < cand.length; ci++){ var it = put(name, cand[ci][1], cand[ci][2], cand[ci][3], R); if (it) return it; }
     return null;
   }
+  /* ---- the staircase: against the long wall of the biggest room, with space at its foot below and a landing at its top above ---- */
+  var SR = null, wc = C('#a8743e'), wd = C('#7a5230');
+  var U2W = function(a, c, A){ var uu = A ? c : a, vv = A ? a : c; return [uu*ux + vv*vx, uu*uy + vv*vy]; };
+  if (!lvl && hasUp(b)){
+    var cands = rooms.filter(function(R){ return R.type !== 'bath' && R.area > 9; }).sort(function(x, y){ return y.area - x.area; });
+    for (var ri2 = 0; ri2 < cands.length && !SR; ri2++){ var R2 = cands[ri2];
+      for (var A2 = 0; A2 < 2 && !SR; A2++){ var la0 = A2 ? R2.b0 : R2.a0, la1 = A2 ? R2.b1 : R2.a1, lc0 = A2 ? R2.a0 : R2.b0, lc1 = A2 ? R2.a1 : R2.b1;
+        if (la1 - la0 < RUN + 1.15 || lc1 - lc0 < 2.2) continue;
+        for (var vari = 0; vari < 4 && !SR; vari++){ var up = vari & 1 ? -1 : 1, wallHi = vari & 2, s0 = up > 0 ? la0 + 1.05 : la1 - 1.05, s1 = s0 + up*RUN, c0 = wallHi ? lc1 - 1.08 : lc0 + 0.08, c1 = c0 + 1.0, ok2 = true;
+          var tests = [[s0, c0], [s0, c1], [s1, c1], [s1, c0], [(s0 + s1)/2, (c0 + c1)/2]];
+          tests.forEach(function(tq){ var w2 = U2W(tq[0], tq[1], A2); if (!pip(p, w2[0], w2[1])) ok2 = false; });
+          var inn = function(a, c, r){ var w2 = U2W(a, c, A2); return pip(p, w2[0], w2[1]) && polyDist(p, w2[0], w2[1], true) >= r; }, oc = wallHi ? c0 - 0.95 : c1 + 0.95, land = null;
+          if (!inn(s0 - up*0.7, (c0 + c1)/2, 0.35)) ok2 = false;   /* room to step on at the foot */
+          if (ok2) land = inn(s1 + up*0.9, (c0 + c1)/2, 0.45) ? 'end' : inn(s1 - up*0.5, oc, 0.45) ? 'side' : null; if (!land) ok2 = false;   /* and somewhere to step off at the top */
+          var ra = Math.min(s0, s1) - 0.3, rb = Math.max(s0, s1) + 0.3;
+          for (q = 0; ok2 && q < keep.length; q += 3){ var ka = A2 ? keep[q+1] : keep[q], kc = A2 ? keep[q] : keep[q+1]; if (ka > ra - keep[q+2] && ka < rb + keep[q+2] && kc > c0 - keep[q+2] && kc < c1 + keep[q+2]) ok2 = false; }
+          if (ok2) SR = {A:A2, s0:s0, s1:s1, c0:c0, c1:c1, wallHi:!!wallHi, land:land, ux:ux, uy:uy, vx:vx, vy:vy};
+        } } }
+  }
+  var STR = SR || ST;
+  if (STR){
+    var S0 = STR.s0, S1 = STR.s1, upd = Math.sign(S1 - S0), cm = (STR.c0 + STR.c1)/2, am = (S0 + S1)/2, A3 = STR.A, cOpen = STR.wallHi ? STR.c0 : STR.c1, cWall = STR.wallHi ? STR.c1 : STR.c0;
+    rects.push(A3 ? cm : am, A3 ? am : cm, A3 ? 0.55 : RUN/2 + 0.1, A3 ? RUN/2 + 0.1 : 0.55);
+    var side = STR.land === 'side', footA = lvl ? (side ? S1 - upd*0.5 : S1 + upd*0.9) : S0 - upd*0.9, fw = U2W(footA, lvl && side ? (STR.wallHi ? STR.c0 - 0.95 : STR.c1 + 0.95) : cm, A3), fu = fw[0]*ux + fw[1]*uy, fv = fw[0]*vx + fw[1]*vy; keep.push(fu, fv, 0.95);
+    var SEG = function(a0, c0, a1, c1){ var p0 = U2W(a0, c0, A3), p1 = U2W(a1, c1, A3); segs.push(p0[0], p0[1], p1[0], p1[1]); };
+    SEG(lvl ? S0 : S0 + upd*0.9, cOpen, lvl && side ? S1 - upd*1.0 : S1, cOpen); SEG(S0, cWall, S1, cWall);   /* the bottom steps are open at the side, so you can step on from beside them */
+    if (lvl){ SEG(S0, STR.c0, S0, STR.c1); if (side) SEG(S1, STR.c0, S1, STR.c1); } else SEG(S1, STR.c0, S1, STR.c1);
+    var AX = A3 ? [vx, 0, vy] : [ux, 0, uy], CX = A3 ? [ux, 0, uy] : [vx, 0, vy], mul = function(v, f){ return [v[0]*f, v[1]*f, v[2]*f]; };
+    if (!lvl){ for (var st2 = 0; st2 < 15; st2++){ var ta = S0 + upd*(st2 + 0.5)*RUN/15, top2 = (st2 + 1)*FH/15, cw = U2W(ta, cm, A3); m.box(cw[0], top2/2 + 0.05, cw[1], mul(AX, RUN/30), [0, top2/2, 0], mul(CX, 0.5), st2 & 1 ? wc : wd); }
+      for (var rp = 0; rp <= 5; rp++){ var ta2 = S0 + upd*rp*RUN/5, h2 = rp*FH/5, pw = U2W(ta2, cOpen, A3); m.box(pw[0], h2 + 0.55, pw[1], [0.03, 0, 0], [0, 0.5, 0], [0, 0, 0.03], wd); } }
+    else { [[S0, STR.c0, S0, STR.c1], [S0, cOpen, side ? S1 - upd*1.0 : S1, cOpen]].concat(side ? [[S1, STR.c0, S1, STR.c1]] : []).forEach(function(r4){ var p0 = U2W(r4[0], r4[1], A3), p1 = U2W(r4[2], r4[3], A3), mx2 = (p0[0] + p1[0])/2, mz2 = (p0[1] + p1[1])/2, L4 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
+      m.box(mx2, 1.0, mz2, [(p1[0] - p0[0])/2, 0, (p1[1] - p0[1])/2], [0, 0.04, 0], [-(p1[1] - p0[1])/L4*0.04, 0, (p1[0] - p0[0])/L4*0.04], wd); for (var pp = 0; pp <= 4; pp++){ var px2 = p0[0] + (p1[0] - p0[0])*pp/4, pz2 = p0[1] + (p1[1] - p0[1])*pp/4; m.box(px2, 0.55, pz2, [0.03, 0, 0], [0, 0.45, 0], [0, 0, 0.03], wd); } }); }
+  }
   rooms.forEach(function(R){
     (ROOMS[R.type] || ROOMS.store).forEach(function(rule){
       var name = rule[0], mode = rule[1], o = rule[3] || {}, cnt = rule[2] < 0 ? Math.max(1, Math.min(40, Math.round(R.area/-rule[2]))) : rule[2], f = FURN[name], s = f.s || [f.boxes[0][3], f.boxes[0][5]], e, it, fe;
@@ -1535,7 +1649,7 @@ function genInterior(b){
   /* ---- walk test: flood out from the front door, and take furniture away until everything you can search can be walked to ---- */
   (function(){
     var st = 0.25, PR = 0.34, W = Math.ceil((u1 - u0)/st) + 1, H = Math.ceil((v1 - v0)/st) + 1, base = new Uint8Array(W*H), blk = new Uint8Array(W*H), seen = new Uint8Array(W*H), gi, gj, e, it, c, stage;
-    if (W*H > 60000 || !b.door) return;
+    if (W*H > 60000 || (!b.door && !lvl)) return;
     for (gj = 0; gj < H; gj++) for (gi = 0; gi < W; gi++){
       var gu = u0 + gi*st, gv = v0 + gj*st, x = gu*ux + gv*vx, y = gu*uy + gv*vy, ok = pip(p, x, y) && polyDist(p, x, y, true) >= PR;
       for (q = 0; ok && q < segs.length; q += 4) if (segDist(x, y, segs[q], segs[q+1], segs[q+2], segs[q+3]) < PR) ok = false;
@@ -1546,7 +1660,7 @@ function genInterior(b){
       for (e = 0; e < items.length; e++){ it = items[e]; if (!it.on || bare) continue; c = it.cl;
         for (q = 0; q < c.length; q += 3){ var cu = c[q]*ux + c[q+1]*uy, cv = c[q]*vx + c[q+1]*vy, rr = c[q+2] + PR - 0.03, i0 = Math.max(0, Math.floor((cu - rr - u0)/st)), i1 = Math.min(W - 1, Math.ceil((cu + rr - u0)/st)), j0 = Math.max(0, Math.floor((cv - rr - v0)/st)), j1 = Math.min(H - 1, Math.ceil((cv + rr - v0)/st));
           for (gj = j0; gj <= j1; gj++) for (gi = i0; gi <= i1; gi++){ var du = u0 + gi*st - cu, dv = v0 + gj*st - cv; if (du*du + dv*dv < rr*rr) blk[gj*W + gi] = 0; } } }
-      var Q = [], si = Math.round(((b.door.x + b.door.nx*0.6)*ux + (b.door.y + b.door.ny*0.6)*uy - u0)/st), sj = Math.round(((b.door.x + b.door.nx*0.6)*vx + (b.door.y + b.door.ny*0.6)*vy - v0)/st), k2;
+      var SX = lvl ? LX : b.door.x + b.door.nx*0.6, SY = lvl ? LY : b.door.y + b.door.ny*0.6, Q = [], si = Math.round((SX*ux + SY*uy - u0)/st), sj = Math.round((SX*vx + SY*vy - v0)/st), k2;
       for (gj = sj - 3; gj <= sj + 3; gj++) for (gi = si - 3; gi <= si + 3; gi++){ if (gi < 0 || gj < 0 || gi >= W || gj >= H) continue; k2 = gj*W + gi; if (blk[k2] && !seen[k2]){ seen[k2] = 1; Q.push(k2); } }
       while (Q.length){ k2 = Q.pop(); gi = k2 % W; if (gi > 0 && blk[k2-1] && !seen[k2-1]){ seen[k2-1] = 1; Q.push(k2-1); } if (gi < W - 1 && blk[k2+1] && !seen[k2+1]){ seen[k2+1] = 1; Q.push(k2+1); } if (k2 >= W && blk[k2-W] && !seen[k2-W]){ seen[k2-W] = 1; Q.push(k2-W); } if (k2 < W*H - W && blk[k2+W] && !seen[k2+W]){ seen[k2+W] = 1; Q.push(k2+W); } }
       var bad = [], RR = Math.ceil(1.6/st);
@@ -1568,26 +1682,36 @@ function genInterior(b){
     off.sort(function(x, y){ return y.cls - x.cls; });
     for (e = 0; e < off.length && e < 60; e++){ var x1 = off[e]; x1.on = 1; if (flood().length) x1.on = 0; }
   })();
-  var nOn = 0, cn = 0, fixes = [], gone = (world.edits.moved || {})[b.id] || [];
+  var nOn = 0, cn = CB || 0, fixes = [], gone = (world.edits.moved || {})[b.id] || [];
   items.forEach(function(it, ii){
     if (!it.on) return; nOn++;
-    var ci0 = it.f.name ? cn++ : -1; if (gone.indexOf(ii) >= 0) return;   /* pushed against a door: drawn there instead */
-    if (it.f.fix) fixes.push({fix:it.f.fix, x:it.x, y:it.y, b:b, ii:ii, fx:it.fx, fy:it.fy, taps:it.f.taps || 0, name:it.f.fix === 'bed' ? 'bed' : it.f.fix === 'stove' ? 'stove' : {sink:'sink', toilet:'toilet', tub:'bath', basin:'basin'}[Object.keys(FURN).filter(function(n){ return FURN[n] === it.f; })[0]] || 'tap'});
+    ii += lvl*10000; var ci0 = it.f.name ? cn++ : -1; if (gone.indexOf(ii) >= 0) return;   /* pushed against a door: drawn there instead */
+    if (it.f.fix) fixes.push({lvl:lvl, fix:it.f.fix, x:it.x, y:it.y, b:b, ii:ii, fx:it.fx, fy:it.fy, taps:it.f.taps || 0, name:it.f.fix === 'bed' ? 'bed' : it.f.fix === 'stove' ? 'stove' : {sink:'sink', toilet:'toilet', tub:'bath', basin:'basin'}[Object.keys(FURN).filter(function(n){ return FURN[n] === it.f; })[0]] || 'tap'});
     var f = it.f, x = it.x, y = it.y, yaw = it.yaw, M = f.models && QS.models ? MODELS[f.models[it.mi]] : null, top = f.boxes[0][1] + f.boxes[0][4];
     if (M){ m.model(M, x, y, yaw, 0.1); top = M.h; }
     else f.boxes.forEach(function(bx){ m.ybox(x, y, yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
     if (f.tex !== undefined){ var b0 = f.boxes[0]; m.panel(x, y, yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
     for (q = 0; q < it.cl.length; q++) circs.push(it.cl[q]);
-    if (f.name) conts.push({x:x, y:y, h:top + 0.35, name:f.name, i:ci0, b:b, lt:f.lt, hide:!!f.hide, heavy:!!f.heavy, ii:ii, mdl:M ? f.models[it.mi] : (f.models ? f.models[0] : null), fx:it.fx, fy:it.fy});
+    if (f.name) conts.push({lvl:lvl, x:x, y:y, h:top + lvl*FH + 0.35, name:f.name, i:ci0, b:b, lt:f.lt, hide:!!f.hide, heavy:!!f.heavy, ii:ii, mdl:M ? f.models[it.mi] : (f.models ? f.models[0] : null), fx:it.fx, fy:it.fy});
   });
   total = nOn;
   /* a tiny building still gets one thing to search */
-  if (!conts.length && b.area > 9 && pip(p, b.cx, b.cy)){ m.ybox(b.cx, b.cy, 0, 0, 0, 0.55, 0.5, 0.45, 0.5, C('#b98a52')); circs.push(b.cx, b.cy, 0.5); conts.push({x:b.cx, y:b.cy, h:1.3, name:'crate', i:0, b:b}); }
+  if (!conts.length && !lvl && b.area > 9 && pip(p, b.cx, b.cy)){ m.ybox(b.cx, b.cy, 0, 0, 0, 0.55, 0.5, 0.45, 0.5, C('#b98a52')); circs.push(b.cx, b.cy, 0.5); conts.push({x:b.cx, y:b.cy, h:1.3, name:'crate', i:0, b:b}); }
   /* only some of what you can open is still stocked: the rest was picked over long ago */
   var ord = conts.map(function(c, ci){ return [hash(b.id, ci, 77), c]; }).sort(function(x, y){ return x[0] - y[0]; });
-  ord.forEach(function(e2, ci){ if (ci > b.rolls + 1) e2[1].poor = 1; });
-  if (world.hg) for (i = 1; i < m.p.length; i += 3) m.p[i] += b.base;
-  return {g:upload(m), segs:segs, circs:circs, conts:conts, idoors:idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
+  ord.forEach(function(e2, ci){ if (ci > (lvl ? 0 : b.rolls + 1)) e2[1].poor = 1; });
+  /* floors and ceilings, with the stairwell cut out of the ceiling below and the floor above */
+  var HU = null; if (STR){ var hA0 = Math.min(STR.s0, STR.s1), hA1 = Math.max(STR.s0, STR.s1); HU = STR.A ? [STR.c0, hA0, STR.c1, hA1] : [hA0, STR.c0, hA1, STR.c1]; }
+  var flat = function(y, col, tex, hole){
+    for (var i3 = 0; i3 < b.tri.length; i3 += 3){ var tri3 = [b.tri[i3]*2, b.tri[i3+1]*2, b.tri[i3+2]*2].map(function(o){ return [p[o]*ux + p[o+1]*uy, p[o]*vx + p[o+1]*vy]; }), pieces = [tri3];
+      if (hole) pieces = [clipHalf(tri3, 0, hole[0], true), clipHalf(tri3, 0, hole[2], false), clipHalf(clipHalf(clipHalf(tri3, 0, hole[0], false), 0, hole[2], true), 1, hole[1], true), clipHalf(clipHalf(clipHalf(tri3, 0, hole[0], false), 0, hole[2], true), 1, hole[3], false)];
+      pieces.forEach(function(pg){ if (pg.length < 3) return; var W3 = pg.map(function(q3){ return [q3[0]*ux + q3[1]*vx, q3[0]*uy + q3[1]*vy]; }); m.pl = tex;
+        for (var f3 = 1; f3 < W3.length - 1; f3++) m.tri(W3[0][0], y, W3[0][1], W3[f3][0], y, W3[f3][1], W3[f3+1][0], y, W3[f3+1][1], col, 255); m.pl = null; }); }
+  };
+  flat(0.1, WHITE, [b.cat === 'house' ? TX.wood : TX.floorTile, 0.5], lvl ? HU : null);
+  flat(ceilY, cc, null, !lvl && STR ? HU : null);
+  var yo = (world.hg ? b.base : 0) + lvl*FH; if (yo) for (i = 1; i < m.p.length; i += 3) m.p[i] += yo;
+  return {m:m, cn:cn, stair:lvl ? null : SR, segs:segs, circs:circs, conts:conts, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -1720,7 +1844,7 @@ function collide(e, r){
         if (b.gone || e.x < b.minx - r || e.x > b.maxx + r || e.y < b.miny - r || e.y > b.maxy + r) continue;
         pushSegs(e, r, b.segs); var br0 = barOf(b); if (br0.length) pushSegs(e, r, br0);
         if (b.int){
-          pushSegs(e, r, b.int.segs); var ib0 = innerBar(b); if (ib0.length) pushSegs(e, r, ib0); var c = b.int.circs;
+          var upL = e.lvl && b.int.up; pushSegs(e, r, upL ? b.int.up.segs : b.int.segs); if (!upL){ var ib0 = innerBar(b); if (ib0.length) pushSegs(e, r, ib0); } else { if (b.dseg) pushSegs(e, r, b.dseg); if (b.wsegs && b.wsegs.length) pushSegs(e, r, b.wsegs); } var c = upL ? b.int.up.circs : b.int.circs;
           for (var q = 0; q < c.length; q += 3){ var dx = e.x - c[q], dy = e.y - c[q+1], d = Math.hypot(dx, dy), rr = r + c[q+2]; if (d < rr && d > 1e-6){ e.x += dx/d*(rr - d); e.y += dy/d*(rr - d); } }
         }
       }
@@ -1745,7 +1869,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.27';
+var VERSION = '0.28';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1937,17 +2061,18 @@ function place(kind){
 
 /* ================= gameplay ================= */
 function findTarget(){
-  if (P.veh) return null;
+  if (P.veh || P.climbL) return null;
+  if (P.roof){ var LR = P.roof.lad; return LR && Math.hypot(LR.tx - P.x, LR.ty - P.y) < 1.7 ? ladTarget(LR, false) : null; }
   var best = null, bd = 2.4, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), i, j, dx, dy, d;
   for (i = 0; i < loaded.length; i++){
     var b = loaded[i]; if (P.x < b.minx - 2.5 || P.x > b.maxx + 2.5 || P.y < b.miny - 2.5 || P.y > b.maxy + 2.5) continue;
     for (j = 0; j < b.int.conts.length; j++){
-      var c = b.int.conts[j], hs = b.got[c.i] && !stashLeft(c); if (hs && !c.hide && !c.heavy) continue; dx = c.x - P.x; dy = c.y - P.y; d = Math.hypot(dx, dy);
-      if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = hs ? (c.hs || (c.hs = {hideSpot:!!c.hide, shove:c.heavy, c:c, x:c.x, y:c.y, name:c.name})) : c; }
+      var c = b.int.conts[j], hs = b.got[c.i] && !stashLeft(c); if ((c.lvl || 0) !== (P.lvl || 0) || (hs && !c.hide && !c.heavy)) continue; dx = c.x - P.x; dy = c.y - P.y; d = Math.hypot(dx, dy); var de = d*(1.2 - 0.4*(dx*fx + dy*fy)/(d || 1));   /* what you face wins over what is merely nearer */
+      if (de < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = de; best = hs ? (c.hs || (c.hs = {hideSpot:!!c.hide, shove:c.heavy, c:c, x:c.x, y:c.y, name:c.name})) : c; }
     }
     for (j = 0; b.int.fixes && j < b.int.fixes.length; j++){
-      var fxo = b.int.fixes[j]; dx = fxo.x - P.x; dy = fxo.y - P.y; d = Math.hypot(dx, dy);
-      if (d < Math.min(bd, 1.9) && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = fxo; }
+      var fxo = b.int.fixes[j]; if ((fxo.lvl || 0) !== (P.lvl || 0)) continue; dx = fxo.x - P.x; dy = fxo.y - P.y; d = Math.hypot(dx, dy); var de2 = d*(1.2 - 0.4*(dx*fx + dy*fy)/(d || 1));
+      if (de2 < Math.min(bd, 1.9) && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = de2; best = fxo; }
     }
   }
   for (i = 0; i < world.crates.length; i++){
@@ -1958,10 +2083,11 @@ function findTarget(){
   for (i = 0; i < corpses.length; i++){ d = Math.hypot(corpses[i].x - P.x, corpses[i].y - P.y); if (d < bd){ bd = d; best = corpses[i]; } }
   for (i = 0; i < lamps.length; i++){ d = Math.hypot(lamps[i].x - P.x, lamps[i].y - P.y); if (d < Math.min(bd, 2.5)){ bd = d; best = lamps[i]; } }
   for (i = 0; i < clutter.length && i < 40; i++){ d = Math.hypot(clutter[i].x - P.x, clutter[i].y - P.y); if (d < Math.min(bd, 1.5)){ bd = d; best = clutter[i]; } }
-  var pt0 = portNear(); if (pt0 && pt0.d < bd + 0.4 && (!best || best.plant || pt0.d < bd)){ best = pt0.o; bd = pt0.d; }
+  var pt0 = P.lvl ? null : portNear(); if (pt0 && pt0.d < bd + 0.4 && (!best || best.plant || pt0.d < bd)){ best = pt0.o; bd = pt0.d; }
   for (i = 0; i < world.traders.length; i++){ d = Math.hypot(world.traders[i].x - P.x, world.traders[i].y - P.y); if (d < Math.min(bd, 2.6)){ bd = d; best = world.traders[i]; } }
   for (i = 0; i < world.vehicles.length; i++){ var vh = world.vehicles[i]; if (time - (vh.rd || -9) < 0.6) continue; d = Math.hypot(vh.x - P.x, vh.y - P.y); if (d < Math.min(bd, 2.3)){ bd = d; best = vh; } }
   for (i = 0; i < world.edits.chests.length; i++){ var ch = world.edits.chests[i]; d = Math.hypot(ch.x - P.x, ch.y - P.y); if (d < Math.min(bd, 2)){ bd = d; best = ch; } }
+  if (!P.inside){ var LG = ladNear(P.x, P.y, 1.6); if (LG){ d = Math.hypot(LG.fx - P.x, LG.fy - P.y); if (d < bd){ bd = d; best = ladTarget(LG, true); } } }
   for (i = 0; i < loaded.length; i++) if (world.nests[loaded[i].id]){ var co = nestCore(loaded[i]); d = Math.hypot(co.x - P.x, co.y - P.y); if (d < 2.6){ bd = 0; best = co; } }
   if (best) return best;
   if (P.thirst < 99 && inWater(P.x, P.y, 1.5)) return 'water';
@@ -1987,7 +2113,7 @@ function rollCustom(st, chance){
 }
 function stashLeft(o){ var st = o.stash, k; if (!st) return false; for (k in st.inv) if (st.inv[k] > 0) return true; for (k in st.items) if (st.items[k] > 0) return true; return false; }
 function addCorpse(z){
-  var c = {corpse:1, id:'c' + (corpseN++) + '-' + Math.floor(Math.random()*1e6), x:z.x, y:z.y, k:z.k, name:'dead ' + ANAME[z.k], stash:rollStash(ALOOT[z.k], AROLL[z.k]), t:time};
+  var c = {corpse:1, lvl:z.lvl || 0, id:'c' + (corpseN++) + '-' + Math.floor(Math.random()*1e6), x:z.x, y:z.y, k:z.k, name:'dead ' + ANAME[z.k], stash:rollStash(ALOOT[z.k], AROLL[z.k]), t:time};
   if (z.k === 2) rollCustom(c.stash, 0.5);
   if (!stashLeft(c)) return;
   corpses.push(c); if (corpses.length > 40) corpses.shift(); emit({k:'corpse', c:c});
@@ -2104,7 +2230,7 @@ var AK = [{n:'swarmer', hp:2, spd:4.3, nspd:5.0, dmg:3, r:0.3, cd:0.8, see:24, h
    States: 0 wandering, 1 coming to look at a noise, 2 chasing, 3 searching where it lost you ---- */
 function segX(ax, ay, bx, by, cx, cy, dx, dy){ var rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy, den = rx*sy - ry*sx; if (Math.abs(den) < 1e-9) return false; var t = ((cx - ax)*sy - (cy - ay)*sx)/den, u = ((cx - ax)*ry - (cy - ay)*rx)/den; return t > 0.001 && t < 0.999 && u >= 0 && u <= 1; }
 function segsX(L, ax, ay, bx, by){ for (var i = 0; i < L.length; i += 4) if (segX(ax, ay, bx, by, L[i], L[i+1], L[i+2], L[i+3])) return true; return false; }
-function los(ax, ay, bx, by){
+function los(ax, ay, bx, by, lv){
   if (world.wallSegs.length && segsX(world.wallSegs, ax, ay, bx, by)) return false;
   var x0 = Math.floor(Math.min(ax, bx)/G), x1 = Math.floor(Math.max(ax, bx)/G), y0 = Math.floor(Math.min(ay, by)/G), y1 = Math.floor(Math.max(ay, by)/G), cx, cy, i; stampN++;
   if ((x1 - x0 + 1)*(y1 - y0 + 1) > 40) return true;
@@ -2112,14 +2238,14 @@ function los(ax, ay, bx, by){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
     for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone) continue; b.stamp = stampN;
       if (b.maxx < Math.min(ax, bx) || b.minx > Math.max(ax, bx) || b.maxy < Math.min(ay, by) || b.miny > Math.max(ay, by)) continue;
-      if (segsX(b.segs, ax, ay, bx, by) || segsX(barOf(b), ax, ay, bx, by) || (b.int && (segsX(b.int.segs, ax, ay, bx, by) || segsX(innerBar(b), ax, ay, bx, by)))) return false; }
+      if (segsX(b.segs, ax, ay, bx, by) || segsX(barOf(b), ax, ay, bx, by) || (b.int && (lv && b.int.up ? segsX(b.int.up.segs, ax, ay, bx, by) : (segsX(b.int.segs, ax, ay, bx, by) || segsX(innerBar(b), ax, ay, bx, by))))) return false; }
   }
   return true;
 }
 /* ---- finding a way: a small grid around the alien and its goal, walls and shut doors marked, searched with A*.
    Only used when a wall is in the way; a few searches per frame at most ---- */
 var PF = {budget:0}, noises = [], stones = [];
-function findPath(sx, sy, gx, gy, r){
+function findPath(sx, sy, gx, gy, r, lv){
   var cs = 0.6, hs = Math.max(Math.abs(gx - sx), Math.abs(gy - sy))/2 + 12, mx = (sx + gx)/2, my = (sy + gy)/2, x0 = mx - hs, y0 = my - hs, x1 = mx + hs, y1 = my + hs;   /* a square window, so there is room to go round whatever is in the way */
   if (hs > 60) return null;
   var W = Math.ceil((x1 - x0)/cs) + 1, H = Math.ceil((y1 - y0)/cs) + 1, N = W*H, blk = new Uint8Array(N), rad = r + 0.12, rc = Math.ceil(rad/cs), i, j, k;
@@ -2131,7 +2257,7 @@ function findPath(sx, sy, gx, gy, r){
   stampN++;
   for (var cy = Math.floor(y0/G); cy <= Math.floor(y1/G); cy++) for (var cx = Math.floor(x0/G); cx <= Math.floor(x1/G); cx++){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
-    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; b.stamp = stampN; mark(b.segs); mark(barOf(b)); if (b.int){ mark(b.int.segs); } }
+    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; b.stamp = stampN; mark(b.segs); mark(barOf(b)); if (b.int){ mark(lv && b.int.up ? b.int.up.segs : b.int.segs); } if (lv && b.dseg) mark(b.dseg); }
   }
   for (i = 0; i < cades.length; i++){ var cd = cades[i], ci2 = Math.round((cd.x - x0)/cs), cj2 = Math.round((cd.y - y0)/cs), rr = Math.ceil((0.85 + r)/cs); for (j = -rr; j <= rr; j++) for (k = -rr; k <= rr; k++){ var a2 = ci2 + k, b2 = cj2 + j; if (a2 >= 0 && b2 >= 0 && a2 < W && b2 < H && k*k + j*j <= rr*rr) blk[b2*W + a2] = 1; } }
   var si = Math.round((sx - x0)/cs), sj = Math.round((sy - y0)/cs), gi = Math.round((gx - x0)/cs), gj = Math.round((gy - y0)/cs), S = sj*W + si, Gc = gj*W + gi;
@@ -2162,9 +2288,9 @@ function findPath(sx, sy, gx, gy, r){
 function route(z, gx, gy, r, dt){
   z.rt = (z.rt || 0) - dt; z.pAge = (z.pAge || 0) + dt;
   if (z.rt <= 0){
-    z.rt = 0.3 + Math.random()*0.1; z.clear = Math.hypot(gx - z.x, gy - z.y) < 1.5 || los(z.x, z.y, gx, gy);
+    z.rt = 0.3 + Math.random()*0.1; z.clear = Math.hypot(gx - z.x, gy - z.y) < 1.5 || los(z.x, z.y, gx, gy, z.lvl);
     if (!z.clear && (!z.path || Math.hypot((z.pgx || 0) - gx, (z.pgy || 0) - gy) > 3 || z.pAge > 3) && PF.budget > 0 && !(z.pFail > 0)){
-      PF.budget--; z.path = findPath(z.x, z.y, gx, gy, r + 0.25) || findPath(z.x, z.y, gx, gy, r); z.pi = 0; z.pgx = gx; z.pgy = gy; z.pAge = 0; if (!z.path) z.pFail = 1;
+      PF.budget--; z.path = findPath(z.x, z.y, gx, gy, r + 0.25, z.lvl) || findPath(z.x, z.y, gx, gy, r, z.lvl); z.pi = 0; z.pgx = gx; z.pgy = gy; z.pAge = 0; if (!z.path) z.pFail = 1;
     }
   }
   z.pFail = (z.pFail || 0) - dt;
@@ -2176,11 +2302,13 @@ function route(z, gx, gy, r, dt){
 /* ---- furniture you can use: beds to sleep in, stoves to cook on, taps and toilet tanks for water ---- */
 function fixText(o){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ';
+  if (o.fix === 'ladder') return E + (o.up ? 'climb the ladder to the roof (' + Math.round(roofY(o.b) - groundAt(o.L.fx, o.L.fy)) + ' m)' : 'climb back down the ladder');
   if (o.fix === 'bed') return E + 'sleep in the ' + o.name + ' until morning';
   if (o.fix === 'stove') return inv.food > 0 && inv.wood > 0 ? E + 'cook a hot meal (1 food, 1 wood)' : 'Stove \u00b7 a hot meal takes 1 food and 1 wood';
   var left = o.taps - (world.edits.taps[o.b.id + ':' + o.ii] || 0); return left > 0 ? E + 'fill a bottle at the ' + o.name : 'The ' + o.name + ' is dry';
 }
 function useFix(o){
+  if (o.fix === 'ladder') return startClimb(o.L, o.up);
   if (o.fix === 'bed') return goToSleep(o);
   if (o.fix === 'stove'){ if (!(inv.food > 0 && inv.wood > 0)){ toast('A hot meal takes 1 food and 1 wood for the fire.', 3); return; } inv.food--; inv.wood--; inv.meal = (inv.meal || 0) + 1; sfx('pot', o.x, o.y, 0.8); makeNoise(o.x, o.y, 5); feed('Cooked a hot meal. Eat it from your backpack.', ITEMS.meal[1]); updateHud(); return; }
   var key = o.b.id + ':' + o.ii, left = o.taps - (world.edits.taps[key] || 0); if (left <= 0){ feed('Nothing left in it', '#c0c6cc'); return; }
@@ -2249,11 +2377,11 @@ function senses(z, A, tg, dt, night){
     for (i = 0; i < tg.length; i++){
       t = tg[i]; if (t.safe || (t.hidden && !z.knowHide)) continue; var dx = t.x - z.x, dy = t.y - z.y; dd = Math.hypot(dx, dy) || 0.01; if (dd > 90) continue;
       var rs = A.see*t.vis*(night ? (t.lit ? (z.k === 1 ? 2.6 : 1.8) : 0.5) : 1)*(wx.w === 1 || wx.w === 2 || wx.w === 3 ? 0.7 : 1);
-      var cone = dd < 2.2 || (dx*ca + dy*sa)/dd > (z.st === 2 ? -0.2 : 0.42);
-      if (dd < rs && cone && los(z.x, z.y, t.x, t.y)){
+      var cone = dd < 2.2 || (dx*ca + dy*sa)/dd > (z.st === 2 ? -0.2 : 0.42), sameF = !t.roof && ((t.lvl || 0) === (z.lvl || 0) || t.onSt || z.onSt);
+      if (dd < rs && cone && (t.roof ? (dd > 3 + t.roof.h*0.6 || (z.st === 2 && z.tp === t.peer)) && !buildingAt(z.x, z.y) : sameF && los(z.x, z.y, t.x, t.y, z.lvl))){   /* someone on a roof is seen from the street, once far enough back to see over the edge */
         if (dd < sd){ sd = dd; seenT = t; }
       } else {
-        var hr = hearR(t)*A.hear*(z.k === 2 && t.vis > 1 ? 1.6 : 1);
+        var hr = hearR(t)*A.hear*(z.k === 2 && t.vis > 1 ? 1.6 : 1)*(sameF ? 1 : 0.5);
         if (dd < hr && z.st !== 2){ var er = dd*0.25; z.lx = t.x + (Math.random() - 0.5)*er; z.ly = t.y + (Math.random() - 0.5)*er; if (z.st !== 1){ z.st = 1; z.stT = 9; } z.aw = Math.max(z.aw || 0, dd < hr*0.35 ? 0.6 : 0.3); }
       }
     }
@@ -2441,13 +2569,13 @@ function toggleView(){ VIEW = VIEW ? 0 : 1; try { localStorage.setItem('lastbloc
 function toggleCrouch(){ if (!running || P.veh) return; P.crouch = !P.crouch; if (P.crouch) P.run = false; }
 function gait(moving){ return P.veh ? 1 : P.crouch ? 0 : (keys.ShiftLeft || keys.ShiftRight || P.run) && moving && !P.tired && !P.swim ? 2 : 1; }   /* 0 crouch, 1 walk, 2 sprint */
 function slopeMul(dx, dy){
-  if (!world.hg || P.inside) return 1;
+  if (!world.hg || P.inside || P.roof) return 1;
   var l = Math.hypot(dx, dy) || 1, g = (hAt(P.x + dx/l*1.2, P.y + dy/l*1.2) - hAt(P.x, P.y))/1.2;   /* rise per metre the way you are heading */
   return g > 0 ? Math.max(0.4, 1 - g*1.7) : Math.min(1.12, 1 - g*0.3);
 }
 /* climbing through a window takes a moment, and broken glass cuts unless you go through low and slow */
 function windowMul(dt){
-  var b = P.inside || nearB(P.x, P.y, 1), q, k; if (!b || !b.wins) return 1;
+  var b = P.inside || nearB(P.x, P.y, 1), q, k; if (!b || !b.wins || P.roof) return 1;
   for (k = 0; k*6 < b.wins.length; k++){ var st = winState(b, k); if (st !== 1 && st !== 2) continue; q = k*6;
     if (Math.hypot(P.x - b.wins[q], P.y - b.wins[q+1]) < 0.55){ if (st === 2 && !P.crouch && time - (P.cutT || -9) > 4){ P.cutT = time; P.hp -= 5; P.cause = 'broken glass'; P.hurt = 0.25; feed('Cut on the broken glass. Crouch to climb through safely.', '#d9603a'); } P.climb = 0.2; return 0.3; } }
   return 1;
@@ -2484,7 +2612,7 @@ function bodyTick(dt, hour){
   if (wx.tor){
     var dx = wx.tor.x - P.x, dy = wx.tor.y - P.y, d = Math.hypot(dx, dy) || 0.001;
     if (!wx.torWarned){ wx.torWarned = true; var tb = Math.round(((Math.atan2(dy, dx) - P.yaw)*180/Math.PI % 360 + 540) % 360 - 180); toast('Tornado ' + (Math.abs(tb) < 45 ? 'ahead of you' : Math.abs(tb) > 135 ? 'behind you' : tb > 0 ? 'to your right' : 'to your left') + '! Get inside a building. It shows on your map.', 8); }
-    if (!P.inside && d < 10){ P.hp -= 6*dt; P.cause = 'the tornado'; P.hurt = 0.2; stepMove(P, dx/d*4*dt, dy/d*4*dt, 0.35); }
+    if (!P.inside && d < 10){ P.hp -= 6*dt; P.cause = 'the tornado'; P.hurt = 0.2; if (!P.roof && !P.climbL) stepMove(P, dx/d*4*dt, dy/d*4*dt, 0.35); }
   } else wx.torWarned = false;
 }
 
@@ -2501,14 +2629,17 @@ function update(dt){
   var mf = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) - stick.y, ms = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + stick.x;
   if (P.sleep){ sleepTick(dt); mf = ms = 0; if (ePress || tapUse) wakeUp(''); }
   if (P.hide){ if (Math.abs(mf) > 0.3 || Math.abs(ms) > 0.3 || ePress || tapUse){ exitHide(); ePress = false; tapUse = false; keys.KeyE = false; } mf = ms = 0; if (P.hide){ P.x = P.hide.c.x; P.y = P.hide.c.y; } }
-  P.swim = inWater(P.x, P.y, 0); P.inside = buildingAt(P.x, P.y);
-  var tgy = world.hg ? (P.inside ? P.inside.base : hAt(P.x, P.y)) : 0; P.gy = P.gy === undefined || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
+  if (P.climbL){ climbTick(dt); mf = ms = 0; }
+  P.swim = !P.roof && !P.climbL && inWater(P.x, P.y, 0); P.inside = P.roof || P.climbL ? null : buildingAt(P.x, P.y);
+  setLvl(P); if (!P.inside) P.lvl = 0;
+  var tgy = P.climbL ? climbH() : P.roof ? roofY(P.roof) : (world.hg ? (P.inside ? P.inside.base : hAt(P.x, P.y)) : 0) + (P.inside ? lvlY(P.inside, P) : 0);
+  if (P.fall){ P.fall += 9.8*dt; P.gy -= P.fall*dt; if (P.gy <= tgy){ P.gy = tgy; P.fall = 0; } } else P.gy = P.gy === undefined || P.climbL || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
   if (net.role !== 'guest') weatherTick(dt, day);
   bodyTick(dt, hour);
   if (mf || ms){
     var l = Math.hypot(mf, ms), V = P.veh, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y, gt = gait(true);
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
-    stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
+    if (P.roof) roofMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp); else stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
   sndTick(dt, P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
   if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
@@ -2564,8 +2695,8 @@ function update(dt){
   var night = dark > 0.5;
   P.noise = Math.max(0, P.noise - dt);
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide}], cadesChanged = false;
-    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden}); });
+    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y) >= 0, roof:P.roof || null}], cadesChanged = false;
+    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); });
     PF.budget = QS.zmul < 1 ? 2 : 4;
@@ -2578,6 +2709,7 @@ function update(dt){
       if (dAny > 130){ zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
       var zn = zoneAt(z.x, z.y, 0.6); if (zn){ var sdx = z.x - zn.x, sdy = z.y - zn.y, sd = Math.hypot(sdx, sdy) || 1; if (sd < 0.01){ sdx = 1; sdy = 0; sd = 1; } z.x = zn.x + sdx/sd*(zn.r + 0.6); z.y = zn.y + sdy/sd*(zn.r + 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
+      setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y) >= 0;
       T = senses(z, A, tg, dt, night); if (T) d = Math.hypot(T.x - z.x, T.y - z.y);
       z.cd -= dt; z.hurt -= dt; z.thru -= dt;
       var ox = z.x, oy = z.y, zs = (night ? A.nspd : A.spd)*z.spd, vx = 0, vy = 0, L = lureAt(z.x, z.y);
@@ -2590,6 +2722,7 @@ function update(dt){
       } else {
         var gx0, gy0, pb = null;
         if (L && !(T && d < 6)){ gx0 = L.x; gy0 = L.y; T = null; d = Math.hypot(gx0 - z.x, gy0 - z.y) || 0.001; } else { gx0 = T.x; gy0 = T.y; pb = T.b; d = d || 0.001; }
+        if (T && T.roof){ var LT = T.roof.lad; pb = null; if (LT){ var la = (z.id % 7)*0.9; gx0 = LT.fx + LT.nx*(1 + (z.id % 3)*0.8) + Math.cos(la)*0.8; gy0 = LT.fy + LT.ny*(1 + (z.id % 3)*0.8) + Math.sin(la)*0.8; } d = Math.hypot(gx0 - z.x, gy0 - z.y) || 0.001; if (d < 1.6){ z.bored = (z.bored || 0) + dt; if (z.bored > 25){ z.bored = 0; z.st = 3; z.stT = 8; z.aw = 0; z.tp = undefined; } } }   /* they cannot climb: they wait under the ladder */
         var ex = gx0 - z.x, ey = gy0 - z.y, tx = gx0, ty = gy0, zb = (z.k !== 2 && d < 60) ? buildingAt(z.x, z.y) : null, db = z.k !== 2 && zb !== pb ? (zb || pb) : null;
         if (db && db.door && d < 60){
           var out = zb ? 1 : -1, dr = db.door, nx1 = dr.x + dr.nx*1.1*out, ny1 = dr.y + dr.ny*1.1*out;
@@ -2597,15 +2730,17 @@ function update(dt){
           if (z.thru <= 0 && Math.hypot(z.x - nx1, z.y - ny1) < 0.7) z.thru = 1.6;
           if (z.thru > 0){ tx = dr.x - dr.nx*1.4*out; ty = dr.y - dr.ny*1.4*out; } else { tx = nx1; ty = ny1; }
         }
-        if (z.k !== 2 && !(z.thru > 0)){ var wp = route(z, gx0, gy0, A.r, dt); if (wp){ tx = wp[0]; ty = wp[1]; z.av = 0; } }   /* walk around walls and through open doorways */
+        var gb = buildingAt(gx0, gy0), wantL = T ? (T.lvl || 0) : 0;
+        if (gb && gb === buildingAt(z.x, z.y) && gb.int && gb.int.stair && wantL !== (z.lvl || 0)){ var S9 = gb.int.stair, sg9 = Math.sign(S9.s1 - S9.s0), fcn = (S9.c0 + S9.c1)/2, upNow = !(z.lvl || 0), fa = z.onSt ? (upNow ? S9.s1 + sg9*0.3 : S9.s0 - sg9*0.3) : (upNow ? S9.s0 + sg9*0.3 : S9.s1 - sg9*0.3), fuu = S9.A ? fcn : fa, fvv = S9.A ? fa : fcn; gx0 = fuu*S9.ux + fvv*S9.vx; gy0 = fuu*S9.uy + fvv*S9.vy; tx = gx0; ty = gy0; z.stk = z.onSt ? 0 : (z.stk || 0) + dt; if (z.stk > 7){ z.stk = 0; z.x = gx0; z.y = gy0; } } else z.stk = 0;   /* step onto the stairs, then climb (or go down) to reach a survivor on the other floor */
+        if (z.k !== 2 && !(z.thru > 0)){ var wp = route(z, tx, ty, A.r, dt);   /* the next place it is heading: a doorway, the stairs, or you */ if (wp){ tx = wp[0]; ty = wp[1]; z.av = 0; } }   /* walk around walls and through open doorways */
         var gx = tx - z.x, gy = ty - z.y, gd = Math.hypot(gx, gy) || 0.001, shy = z.k === 1 && T && T.fire && d < 11;
         if (shy){ if (d > 9){ vx = -ey/d; vy = ex/d; } else { vx = -ex/d; vy = -ey/d; } }
         else if (z.av > 0 && z.thru <= 0){ z.av -= dt; vx = z.ax*0.9 + gx/gd*0.2; vy = z.ay*0.9 + gy/gd*0.2; } else { vx = gx/gd; vy = gy/gd; }
         if (d > 0.8 || shy) stepMove(z, (vx*zs + z.kx)*dt, (vy*zs + z.ky)*dt, A.r);
         if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
-        if (T && T.b && z.k !== 2) alienAtPort(z, A, T.b, dt);
+        if (T && T.b && !T.roof && z.k !== 2) alienAtPort(z, A, T.b, dt);
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
-        if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ exitHide(); feed('It dragged you out of hiding!', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
+        if (T && !T.roof && !shy && d < A.reach && z.cd <= 0 && (((T.lvl || 0) === (z.lvl || 0)) || z.onSt || T.onSt) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ exitHide(); feed('It dragged you out of hiding!', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
       }
       if (z.k !== 2 && (T || z.st >= 1)){ var zb2 = buildingAt(z.x, z.y); if (zb2 && zb2.int && zb2.int.idoors) zb2.int.idoors.forEach(function(dq, qi){ if (innerState(zb2, qi) === 0 && segDist(z.x, z.y, dq[0], dq[1], dq[2], dq[3]) < A.r + 0.45){ var ib1 = blockOf(zb2, 1000 + qi); if (ib1){ ib1.hp -= A.dmg*dt*1.1; z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.6; sfx('wood_hit', z.x, z.y, 0.7, 0.8, 50); } if (ib1.hp <= 0) doEdit({a:'unblock', b:zb2.id, k:1000 + qi}); return; } z.door = (z.door || 0) + dt; if (z.door > 1.2){ z.door = 0; setPort(zb2, 1000 + qi, 1); } } }); }   /* they shove inside doors open */
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
@@ -2663,7 +2798,7 @@ function updateHud(){
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
   el('wxStamp').textContent = (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase();
   el('dayLine').textContent = 'Day ' + (Math.floor(hrs/24) + 1) + '  ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min;
-  el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? zoneAt(P.x, P.y, 0).name + ': aliens cannot come in here' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
+  el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? zoneAt(P.x, P.y, 0).name + ': aliens cannot come in here' : pb && P.roof ? 'On the roof of ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) : pb && P.climbL ? 'On a ladder' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
   var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i>' + txt + '</span>'; };
@@ -2951,10 +3086,11 @@ function drawCreatures(){
   for (i = 0; i < zombies.length; i++){
     var z = zombies[i], c = CRE[CNAME[z.k]]; if (!c || Math.abs(z.x - P.x) > 150 || Math.abs(z.y - P.y) > 150) continue; any = true;
     var A = AK[z.k], atk = z.cd > A.cd - 0.45;
-    if (atk) drawCreature(c, 'attack', (A.cd - z.cd)/0.45*0.999, z.x, groundAt(z.x, z.y), z.y, z.ang, z.hurt > 0);
-    else drawCreature(c, 'walk', (z.walk || 0)/(z.k === 2 ? 5 : 6.283), z.x, groundAt(z.x, z.y), z.y, z.ang, z.hurt > 0);
+    var zy0 = net.role === 'guest' ? groundAt(z.x, z.y) + (z.lvl ? FH : 0) : entY(z);
+    if (atk) drawCreature(c, 'attack', (A.cd - z.cd)/0.45*0.999, z.x, zy0, z.y, z.ang, z.hurt > 0);
+    else drawCreature(c, 'walk', (z.walk || 0)/(z.k === 2 ? 5 : 6.283), z.x, zy0, z.y, z.ang, z.hurt > 0);
   }
-  for (i = 0; i < corpses.length; i++){ var cp = corpses[i], cc = CRE[CNAME[cp.k]]; if (!cc || Math.abs(cp.x - P.x) > 90 || Math.abs(cp.y - P.y) > 90) continue; any = true; drawCreature(cc, 'dead', 0, cp.x, groundAt(cp.x, cp.y), cp.y, (cp.x*7 + cp.y*3) % 6.283, false); }
+  for (i = 0; i < corpses.length; i++){ var cp = corpses[i], cc = CRE[CNAME[cp.k]]; if (!cc || Math.abs(cp.x - P.x) > 90 || Math.abs(cp.y - P.y) > 90) continue; any = true; drawCreature(cc, 'dead', 0, cp.x, groundAt(cp.x, cp.y) + (cp.lvl ? FH : 0), cp.y, (cp.x*7 + cp.y*3) % 6.283, false); }
   if (any){ gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.hurtU, 0); }
 }
 function drawMesh(o, mode){
@@ -3020,10 +3156,10 @@ function render(){
   var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65 + (P.eyeD || 0)) + Math.sin(P.bob)*0.03, P.y]; e[1] += P.gy || 0;
   var tp = VIEW === 1 && !P.cop && !P.hide;
   if (tp){   /* over the shoulder: back off behind the head, pulled in where a wall is in the way */
-    var ib = buildingAt(P.x, P.y), hx = P.x + s[0]*0.45, hy = P.y + s[2]*0.45, dist = ib ? 2.2 : 3.2;
-    while (dist > 0.6){ var cx2 = hx - f[0]*dist, cy2 = hy - f[2]*dist; if (los(P.x, P.y, cx2 - f[0]*0.3, cy2 - f[2]*0.3) && (ib ? buildingAt(cx2, cy2) === ib : !buildingAt(cx2, cy2))) break; dist -= 0.4; }
+    var rf = P.roof || (P.climbL ? P.climbL.L.b : null), ib = rf ? null : buildingAt(P.x, P.y), hx = P.x + s[0]*0.45, hy = P.y + s[2]*0.45, dist = ib ? 2.2 : 3.2;
+    while (dist > 0.6){ var cx2 = hx - f[0]*dist, cy2 = hy - f[2]*dist; if (P.roof ? buildingAt(cx2, cy2) === rf : rf ? !buildingAt(cx2, cy2) : los(P.x, P.y, cx2 - f[0]*0.3, cy2 - f[2]*0.3) && (ib ? buildingAt(cx2, cy2) === ib : !buildingAt(cx2, cy2))) break; dist -= 0.4; }
     e = [hx - f[0]*dist, e[1] + 0.35 - f[1]*dist, hy - f[2]*dist];
-    var floorY = (ib ? ib.base || 0 : groundAt(e[0], e[2])) + 0.4; if (e[1] < floorY) e[1] = floorY; if (ib && e[1] > (ib.base || 0) + 2.75) e[1] = (ib.base || 0) + 2.75;
+    var floorY = (P.roof ? roofY(P.roof) : ib ? (ib.base || 0) + lvlY(ib, P) : groundAt(e[0], e[2])) + 0.4; if (e[1] < floorY) e[1] = floorY; if (ib && e[1] > (ib.base || 0) + (P.lvl ? FH : 0) + 2.75) e[1] = (ib.base || 0) + (P.lvl ? FH : 0) + 2.75;
   }
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
   var t = 1/Math.tan(1.22/2), nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
@@ -3055,7 +3191,7 @@ function render(){
   drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
-  for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); queuePerson(m, ops[i], lookOf(ops[i]), now); }
+  for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); m.yo += ops[i].lvl ? FH : 0; if (ops[i].rf === 1){ var orb = buildingAt(ops[i].x, ops[i].y); if (orb) m.yo = roofY(orb); } queuePerson(m, ops[i], lookOf(ops[i]), now); }
   var gold = C('#f2b134'), spin = now*2.5;
   for (i = 0; i < loaded.length; i++){
     var cs = loaded[i].int.conts, got = loaded[i].got; m.yo = loaded[i].base || 0;
@@ -3744,22 +3880,22 @@ function netTick(dt){
   var k = Math.min(1, dt*12), list = otherPlayers();
   list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; var v = o.vh && world.vmap[o.vh]; if (v){ v.x = o.x; v.y = o.y; v.yaw = o.yaw; v.rd = time; } });
   net.t -= dt; if (net.t > 0) return;
-  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, mv:P.mv ? 1 : 0, hd:P.hide ? 1 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
+  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, mv:P.mv ? 1 : 0, hd:P.hide ? 1 : 0, lv:P.lvl ? 1 : 0, rf:P.roof ? 1 : P.climbL ? 2 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
   net.t = 0.1;
-  var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0, (P.mv ? 1 : 0) + (P.vis < 1 ? 2 : P.vis > 1 ? 4 : 0)]];
-  net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0, (p.mv ? 1 : 0) + (p.vis < 1 ? 2 : p.vis > 1 ? 4 : 0)]); });
+  var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0, (P.mv ? 1 : 0) + (P.vis < 1 ? 2 : P.vis > 1 ? 4 : 0) + (P.lvl ? 8 : 0) + (P.roof ? 16 : 0)]];
+  net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0, (p.mv ? 1 : 0) + (p.vis < 1 ? 2 : p.vis > 1 ? 4 : 0) + (p.lvl ? 8 : 0) + (p.rf === 1 ? 16 : 0)]); });
   net.peers.forEach(function(p){
     if (!p.ready) return;
-    var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 125 && Math.abs(z.y - p.y) < 125) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v), z.k]); }
+    var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 125 && Math.abs(z.y - p.y) < 125) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v), z.k, z.lvl ? 1 : 0]); }
     send(p.dc, {t:'s', time:r2(time), z:zs, p:ps, wx:[wx.w, wx.tor ? [r2(wx.tor.x), r2(wx.tor.y)] : 0]});
   });
 }
 function onSnapshot(m){
   time = +m.time || time; if (m.wx){ wx.w = m.wx[0] | 0; wx.tor = m.wx[1] ? {x:m.wx[1][0], y:m.wx[1][1]} : null; }
   var old = {}, i; zombies.forEach(function(z){ old[z.id] = z; }); zombies = [];
-  for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5], k:a[6] | 0}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; if (a[4]) z.hurt = 0.15; zombies.push(z); }
+  for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5], k:a[6] | 0}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; z.lvl = a[7] ? 1 : 0; if (a[4]) z.hurt = 0.15; zombies.push(z); }
   var po = {}; net.others.forEach(function(o){ po[o.id] = o; }); net.others = [];
-  for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; o.hp = b[5]; o.vh = b[6] || 0; o.mv = (b[7] | 0) & 1; o.vis = (b[7] | 0) & 2 ? 0.5 : (b[7] | 0) & 4 ? 1.35 : 1; net.others.push(o); }
+  for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; o.hp = b[5]; o.vh = b[6] || 0; o.mv = (b[7] | 0) & 1; o.lvl = (b[7] | 0) & 8 ? 1 : 0; o.rf = (b[7] | 0) & 16 ? 1 : 0; o.vis = (b[7] | 0) & 2 ? 0.5 : (b[7] | 0) & 4 ? 1.35 : 1; net.others.push(o); }
 }
 function b64(bytes){ var s = ''; for (var i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(s); }
 function unb64(str){ var s = atob(str), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
@@ -3820,7 +3956,7 @@ function hostMsg(peer, data){
   if (m.t === 'join'){
     peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.look = cleanLook(m.look); peer.cop = !!m.cop; peer.ready = true; sendWho();
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
-  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.hidden = !!m.hd; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
+  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.hidden = !!m.hd; peer.lvl = m.lv ? 1 : 0; peer.rf = m.rf | 0; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
   else if (m.t === 'chat' || m.t === 'ping'){
     var cm = {t:m.t, n:peer.name, txt:txt(m.txt, 120), x:+m.x || 0, y:+m.y || 0, sx:peer.x, sy:peer.y, r:peer.rd ? 1 : 0, cop:peer.cop ? 1 : 0};
     if (peer.cop && m.t === 'chat'){ var pt = null; net.peers.forEach(function(q){ if (q.id === (m.pt | 0)) pt = q; }); if (!(pt ? pt.rd : radioOn())){ send(peer.dc, {t:'sys', txt:'Your partner has no radio, so only your map markers get through.'}); return; } }
@@ -3976,7 +4112,7 @@ async function enterZone(R, lat, lon, yaw, carry){
   mapSrc = {text:text}; inRun = false; await enter(raw, zoneName(R, ij[0], ij[1])); if (!inRun) throw new Error('that part of the map could not be loaded');
   region = R;
   var g = world.geo, x = (lon - g.lon0)*g.kx, y = -(lat - g.lat0)*g.ky; if (circ(x, y, 0.5) && !buildingAt(x, y)){ x = world.spawn.x; y = world.spawn.y; }
-  P.x = x; P.y = y; P.yaw = yaw || 0; P.gy = undefined;
+  P.x = x; P.y = y; P.yaw = yaw || 0; P.gy = undefined; P.roof = null; P.climbL = null; P.fall = 0;
   if (carry){ time = carry.time; if (carry.veh){ var v = {veh:true, id:'r' + Date.now().toString(36), t:carry.veh.t, name:carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel}; world.vehicles.push(v); world.vmap[v.id] = v; P.veh = v; v.rd = time; } }
   R.last = {lat:lat, lon:lon, yaw:P.yaw}; saveRegions(); manageInteriors(99); updateHud();
 }

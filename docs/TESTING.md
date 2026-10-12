@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.27) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.28) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -218,6 +218,15 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3m.4 Fill bottles at a kitchen sink (2), a bath (2), a basin or a toilet cistern (1 each) until each runs dry. It stays dry after you save and come back.
 - [ ] 3m.5 Empty a wardrobe, dresser, fridge or locker, then press B (or Wall) next to it. It slides against the nearest door. Aliens have to batter through it; you can pull it away with E.
 - [ ] 3m.6 Leave and resume. Shoved furniture, shut and locked doors and dry taps are as you left them.
+
+## Stage 3n: upstairs, roofs and falling
+
+- [ ] 3n.1 Find a two-storey home and walk up the stairs. The view rises smoothly, the upstairs has rooms and things to search, and you cannot walk off the open side of the stairwell.
+- [ ] 3n.2 Stand upstairs with an alien downstairs. It does not see you. Make noise: it comes up the stairs after you.
+- [ ] 3n.3 Find a ladder on the side of a flat-roofed building (shops, offices, garages). Press E (or tap) at its foot: you climb to the roof. Press E near the top to climb down again.
+- [ ] 3n.4 On a big roof, walk into the low wall: it stops you. Sprint at it: you jump off and lose health (about 40 from three storeys). On a small roof with no wall you can just walk off.
+- [ ] 3n.5 On a roof with an alien chasing you: it does not reach you, waits under the ladder, and after about half a minute goes off searching.
+- [ ] 3n.6 In multiplayer, a friend on a roof or upstairs is drawn at the right height.
 
 ## Stage 4: aliens and weather
 
