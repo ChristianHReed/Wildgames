@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.29. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.30. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -23,6 +23,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.27 | Furniture that works: sleep in beds, cook hot meals on stoves, water from sinks, baths and cisterns, shove heavy furniture against doors |
 | 0.28 | Stairs and a furnished upper floor in most two-storey homes; ladders up to flat roofs; fall damage. What you face is picked before what is merely nearer (a wardrobe beside a bed) |
 | 0.29 | Survival depth: bleeding, infection and broken legs with bandages, antibiotics and splints; fresh food that goes off and food poisoning; unboiled water to boil; a Rest bar and exhaustion; weapons that wear out, repaired at tool benches or with duct tape |
+| 0.30 | Noise heat brings scouts (swarmers by day, a stalker by night), shown on the map; the stalker hunts at night, checks remembered hiding places and climbs ladders |
 
 ## Next versions
 
@@ -30,8 +31,9 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.30** | The stalker hunts: it roughly knows your area, checks hiding spots it has caught you in before, and can climb ladders. Noise builds "heat" in an area that brings a scout. | None |
 | **0.31** | Upper floors for shops, offices and flats (today only homes have them), and stairs up to roofs from inside. | None |
+| **0.32** | Stealth extras: curtains and covered windows so aliens do not see your light; louder footsteps on gravel and glass, quieter on grass; the giant feels sprinting and engines from far away. | None |
+| **0.33** | Power and water fail on a set day; generators and fuel to run them. | None |
 
 ## Feature backlog by area
 
@@ -70,8 +72,8 @@ Ticked items are in the game.
 - [x] Pathfinding around walls and through doors
 - [x] Thrown distractions (stones)
 - [x] Stealth takedowns
-- [ ] Noise draws aliens across a block; area "heat"
-- [ ] Stalker that hunts and learns your hiding spots
+- [x] Noise draws aliens across a block; area "heat"
+- [x] Stalker that hunts and learns your hiding spots
 - [ ] Giant that feels sprinting and vehicles from far away
 
 ### Survival
