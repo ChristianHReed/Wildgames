@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.28. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.29. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -38,7 +38,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | Sleep, cook, fill a bottle | E at a bed, stove, sink, bath or toilet | Tap it |
 | Swing, shoot | Click or Space, right-click or F | Swing, Shoot |
 | Search, gather, open or shut a door or window, ride, trade | E | Tap it, or Search |
-| Eat, drink, medkit | 1, 2, 3 | Tap the item |
+| Eat, drink, medkit, bandage | 1, 2, 3, 4 | Tap the item |
 | Flashlight | L | Light |
 | Items and crafting | K | Items |
 | Build | N (B and C for barricade and campfire) | Build, Wall, Fire |
@@ -59,6 +59,7 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 
 - **World:** real streets and building outlines; every building can be entered. Rooms are laid out by what the building is (a home gets a living room, kitchen, bedrooms and bathroom; a church gets pews facing an altar), and what you find depends on the container. Doors and windows open, shut, break and can be boarded up; aliens batter their way in.
 - **Doors and hiding:** inside doors open and shut and block an alien's view; about a third of outside doors are locked (keys, pry quietly, or smash loudly); empty wardrobes and lockers are hiding places.
+- **Survival depth:** alien hits can make you bleed (a bandage or medkit stops it; stalkers smell blood). A wound left open may turn infected: fever and slow health loss until you take antibiotics. Giants and long falls can break a leg: you limp and cannot run or climb until a splint lets it heal (about ten minutes). Fresh food goes off about half an hour after you pick it up, and rotten food can give you food poisoning. Rivers, toilets and, after the first day, taps give unboiled water: boil it at a stove (1 wood) or beside a campfire. A Rest bar runs down over about an hour; tired, you recover stamina slowly, and exhausted, your eyes start closing. Made weapons wear out with use: repair them at a tool bench (1 scrap) or patch them with duct tape. Fibre makes bandages, and wood with fibre makes a splint.
 - **Upstairs and roofs:** most two-storey homes have stairs to a furnished upper floor with its own loot (aliens on the other floor cannot see you, but they can hear you and follow you up). Most low flat-roofed buildings have a ladder: press E at its foot to climb. Aliens cannot climb, but they can see you from the street and will wait under the ladder for a while. Walk off a roof edge (sprint at the low wall round bigger roofs) and you fall: drops over 3 m hurt, about 8 health per metre beyond that.
 - **Furniture that works:** sleep in beds until morning (the bed becomes where you wake if you die), cook hot meals on stoves (1 food, 1 wood), fill bottles at sinks, baths and toilet cisterns until they run dry, and shove emptied wardrobes, dressers, fridges and lockers against doors.
 - **Sound:** footsteps that change with the ground, doors, glass, hits, gunfire, alien calls you hear before you see them, rain, wind and thunder. Volume is on the start page.

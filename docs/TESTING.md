@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.28) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.29) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -227,6 +227,17 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3n.4 On a big roof, walk into the low wall: it stops you. Sprint at it: you jump off and lose health (about 40 from three storeys). On a small roof with no wall you can just walk off.
 - [ ] 3n.5 On a roof with an alien chasing you: it does not reach you, waits under the ladder, and after about half a minute goes off searching.
 - [ ] 3n.6 In multiplayer, a friend on a roof or upstairs is drawn at the right height.
+
+## Stage 3o: injuries, spoiling food, dirty water, tiredness and wear
+
+- [ ] 3o.1 Let an alien hit you until a red BLEEDING tag shows under the bars. Health drains and you leave drops of blood. Press 4 (or tap the bandage slot): it stops.
+- [ ] 3o.2 Let a wound stop bleeding on its own without a bandage. After a few minutes it either heals or turns INFECTED (warmth reads hotter, health slowly drops). Antibiotics from a clinic, hospital or bathroom cabinet cure it.
+- [ ] 3o.3 Jump off a three-storey roof: sometimes your leg breaks. You limp, Run does nothing and ladders refuse you. Use a splint (or make one: 2 wood, 1 fibre); the tag counts down the minutes to healed.
+- [ ] 3o.4 Take fresh food from a fridge. The backpack says when it goes off; wait and it turns into rotten food. Eating rotten food sometimes gives food poisoning.
+- [ ] 3o.5 Fill a bottle at a river (stand in the water with full thirst) or a toilet: it is unboiled water. Boil it at a stove (1 wood) or beside a campfire from the backpack.
+- [ ] 3o.6 Stay up: the Rest bar empties in about an hour. Tired, then exhausted (the screen edges darken), then you lose health. A night in a bed fills it.
+- [ ] 3o.7 Use a made weapon until it breaks (the backpack shows its condition). Search a tool bench in a warehouse or garage, then press E at it to repair your weapon for 1 scrap. Duct tape patches it anywhere.
+- [ ] 3o.8 Quit and resume while bleeding with a splinted leg: both are still there.
 
 ## Stage 4: aliens and weather
 

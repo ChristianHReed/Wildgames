@@ -35,7 +35,7 @@ atlas.save(os.path.join(OUT, 'atlas.png'), optimize=True)
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']
 sheet_src = Image.open(os.path.join(T, 'sprites', 'items_atlas.png')).convert('RGBA')
 ORDER = ['canned_beans', 'water_bottle', 'first_aid_kit', 'batteries', 'planks', 'tin_can', 'rain_jacket', 'fuel_can', 'backpack']
-icons = Image.new('RGBA', (96*(len(ORDER) + 10), 96))
+icons = Image.new('RGBA', (96*26, 96))
 for i, n in enumerate(ORDER):
     f = fr[n]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (i*96, 0))
 # four more: nails stand for ammo, the pack's flashlight, and a hand-drawn lantern and radio in the same flat outlined style
@@ -80,6 +80,21 @@ for k in range(3): d4.arc([110 + k*50, 40, 170 + k*50, 160], 200, 340, fill=(235
 d4.chord([50, 120, 334, 330], 0, 180, fill=(198, 113, 57, 255), outline=INKC, width=LW); d4.ellipse([56, 170, 328, 230], fill=(217, 168, 69, 255), outline=INKC, width=LW)
 d4.ellipse([110, 180, 160, 205], fill=(150, 90, 50, 255)); d4.ellipse([200, 186, 250, 212], fill=(122, 138, 94, 255))
 icons.paste(bw.resize((96, 96), Image.LANCZOS), (18*96, 0))
+# survival depth (0.29): bandage, antibiotics, splint (sticks), fresh and rotten food (hand-drawn), unboiled water, duct tape
+def frame(nme, slot): f = fr[nme]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (slot*96, 0))
+frame('bandage', 19); frame('antibiotics', 20); frame('sticks', 21); frame('rain_water', 24); frame('duct_tape', 25)
+def produce(rot):
+    im = Image.new('RGBA', (384, 384)); d5 = ImageDraw.Draw(im); d5.ellipse([60, 320, 330, 360], fill=(61, 48, 41, 60))
+    bread, crust, apple = ((176, 170, 120, 255), (120, 118, 84, 255), (122, 120, 80, 255)) if rot else ((236, 196, 128, 255), (198, 133, 66, 255), (200, 64, 52, 255))
+    d5.rounded_rectangle([40, 150, 250, 330], 60, fill=bread, outline=INKC, width=LW)
+    for k in range(3): d5.line([90 + k*50, 180, 70 + k*50, 230], fill=crust, width=12)
+    d5.ellipse([196, 170, 344, 318], fill=apple, outline=INKC, width=LW); d5.line([270, 172, 284, 120], fill=INKC, width=LW)
+    d5.ellipse([284, 112, 340, 146], fill=(122, 160, 80, 255) if not rot else (100, 110, 70, 255), outline=INKC, width=8)
+    if rot:
+        for (x, y) in [(110, 70), (180, 50), (240, 84), (150, 110)]: d5.ellipse([x - 10, y - 10, x + 10, y + 10], fill=INKC)
+        d5.ellipse([100, 250, 150, 290], fill=(90, 120, 70, 255)); d5.ellipse([240, 220, 280, 256], fill=(90, 120, 70, 255))
+    return im.resize((96, 96), Image.LANCZOS)
+icons.paste(produce(False), (22*96, 0)); icons.paste(produce(True), (23*96, 0))
 icons.save(os.path.join(OUT, 'icons.png'), optimize=True)
 # ---- built-in Springfield map
 M = os.path.join(SRC, 'map_data')

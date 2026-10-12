@@ -52,7 +52,7 @@
   #vTemp{float:right;font-weight:400;opacity:.85;text-transform:none}
   #power{margin-top:8px;font-size:11px;font-weight:600;opacity:.92;display:flex;gap:12px;align-items:center}
   #power span{display:inline-flex;align-items:center;gap:4px}
-  #power .ic{position:static;width:18px;height:18px;background-size:342px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+  #power .ic{position:static;width:18px;height:18px;background-size:468px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   #power .off{opacity:.45}
   #hud{position:fixed;left:50%;top:12px;transform:translateX(-50%);pointer-events:none;text-align:center;color:#fff;text-shadow:var(--sh);width:300px}
   #compass{position:relative;height:20px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);border-bottom:1px solid rgba(255,255,255,.35)}
@@ -64,6 +64,11 @@
   #wxStamp{opacity:.85;font-weight:400}
   #goalLine{margin-top:2px;font-size:12px;opacity:.9}
   #goalLine::before{content:"\25C6  ";color:var(--ochre);font-size:9px;vertical-align:1px}
+  #conds{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+  #conds span{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(150,30,24,.78);padding:2px 6px;border-radius:8px}
+  #conds span.mild{background:rgba(90,80,60,.7)}
+  #bRest{background:#b9a8e0}
+  #tiredMask{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(10,6,4,.95) 100%)}
   #stats{margin-top:2px;font-size:11px;opacity:.85;min-height:14px}
   #miniWrap{position:fixed;right:18px;top:16px;text-align:center}
   #mini{width:150px;height:150px;border-radius:999px;border:3px solid rgba(245,234,216,.9);box-shadow:0 4px 16px rgba(0,0,0,.35);background:#e6d6bb;display:block}
@@ -78,7 +83,7 @@
   .slot{position:relative;width:52px;height:52px;background:rgba(32,30,29,.42);border-radius:10px;box-shadow:0 0 0 1px rgba(245,234,216,.22)}
   .slot[data-u],.slot[data-pack]{cursor:pointer}
   .slot.zero{opacity:.5}
-  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:684px 36px;background-repeat:no-repeat}
+  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:936px 36px;background-repeat:no-repeat}
   .slot .cnt{position:absolute;right:4px;bottom:2px;font-size:12px;font-weight:800;color:#fff;text-shadow:var(--sh)}
   .slot .key{position:absolute;left:5px;top:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,.7)}
   .sw{width:12px;height:12px;display:inline-block;border-radius:3px;border:1px solid var(--outline)}
@@ -126,7 +131,7 @@
   .irow span.n{flex:1;color:var(--ink);font-weight:600}
   .irow i{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
   #miniWrap{pointer-events:auto;cursor:pointer}
-  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:570px 30px;display:inline-block}
+  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:780px 30px;display:inline-block}
   #bigMap{position:fixed;inset:0;z-index:6;background:#e6d6bb}
   #bigCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
   #bigBar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);white-space:nowrap}
@@ -164,7 +169,7 @@
   .touchmode #hudBtns{right:112px;top:44px;width:170px}
   .touchmode #inv{bottom:6px;gap:5px}
   .touchmode .slot{width:44px;height:44px;border-radius:8px}
-  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:570px 30px}
+  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:780px 30px}
   .touchmode .slot .cnt{font-size:11px}
   .touchmode .slot .key{display:none}
   .touchmode #toast{top:74px;font-size:12px}
@@ -181,7 +186,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hurt"></div><div id="sleepMask"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
+<div id="hurt"></div><div id="tiredMask"></div><div id="sleepMask"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
 <div id="play" class="hidden">
   <div id="cross"></div>
   <div id="vitals">
@@ -191,7 +196,9 @@
       <div class="vs">Food<span id="vFood"></span><div class="bar"><div id="bFood"></div></div></div>
       <div class="vs">Water<span id="vWater"></span><div class="bar"><div id="bWater"></div></div></div>
       <div class="vs"><span id="tTemp">Warmth</span><span id="vTemp"></span><div class="bar"><div id="bTemp"></div></div></div>
+      <div class="vs">Rest<div class="bar"><div id="bRest"></div></div></div>
     </div>
+    <div id="conds"></div>
     <div id="power"></div>
   </div>
   <div id="hud">
@@ -205,7 +212,7 @@
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
   <div id="feed"></div>
   <input id="chatIn" class="hidden" maxlength="120" placeholder="Say something, then press Enter">
@@ -346,7 +353,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.28.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.29.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -666,7 +673,13 @@ var LOOT = {
   industrial:{scrap:5, wood:4, fuel:2, battery:1}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
 var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba','']};
-ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096',''];
+ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096','']; ITEMS.bandage = ['Bandages','#e9e2d0','4']; ITEMS.antibio = ['Antibiotics','#9ad0a0','']; ITEMS.splint = ['Splint','#b08a5a','']; ITEMS.fresh = ['Fresh food','#e07a4a','']; ITEMS.rotten = ['Rotten food','#9a9a62','']; ITEMS.dirty = ['Unboiled water','#7aa0b0','']; ITEMS.tape = ['Duct tape','#9aa3aa',''];
+(function(){   /* 0.29: medical supplies, fresh food and tape join the loot */
+  var add = function(t, o){ for (var k in o) t[k] = (t[k] || 0) + o[k]; };
+  add(LOOT.house, {bandage:.6, fresh:1, tape:.3}); add(LOOT.food, {fresh:3}); add(LOOT.medical, {bandage:3, antibio:1.5, splint:1}); add(LOOT.industrial, {tape:1.2}); add(LOOT.shop, {bandage:.6, tape:.5, fresh:.6});
+  add(LOOTK.grocery, {fresh:4}); add(LOOTK.restaurant, {fresh:4}); add(LOOTK.clinic, {bandage:4, antibio:2, splint:1.5}); add(LOOTK.hospital, {bandage:4, antibio:3, splint:2}); add(LOOTK.fire, {bandage:2, splint:1}); add(LOOTK.police, {bandage:1});
+  add(LOOTK.outdoors, {bandage:1, tape:1}); add(LOOTK.hardware, {tape:3}); add(LOOTK.garage, {tape:1.5}); add(LOOTK.warehouse, {tape:1}); add(LOOTK.school, {bandage:1}); add(LOOTK.gym, {bandage:1}); add(LOOTK.apartments, {fresh:1, bandage:.5}); add(LOOTK.hotel, {fresh:1, bandage:.5});
+})();
 var CORE = {food:1, water:1, medkit:1, ammo:1, wood:1, scrap:1};
 function newInv(start){ var o = {}; for (var k in ITEMS) o[k] = 0; if (start){ o.food = 1; o.water = 1; o.ammo = 8; o.radio = 1; o.flashlight = 1; o.battery = 2; } return o; }
 var AREA_COL = {grass:'#7f9a5c', park:'#6fa25a', forest:'#4f7f4a', sand:'#cdbb8a', parking:'#6a6e75', water:'#3f86b8'};
@@ -1313,9 +1326,9 @@ FURN.washer = {name:'washing machine', lt:{scrap:1, coat:.5, none:4}, models:['k
 FURN.coatrack = {soft:1, models:['k_coat'], s:[.29,.29], boxes:[[0,.8,0,.05,.8,.05,'#7a5a3c']]};
 FURN.bin = {name:'bin', lt:{food:.5, scrap:1, none:5}, models:['k_trash'], s:[.22,.25], boxes:[[0,.42,0,.2,.42,.2,'#55595f']]}; FURN.plant.s = [.33,.33]; FURN.dresser.s = [.78,.4];
 FURN.dresser.lt = {coat:2, battery:1, flashlight:.3, none:3};
-FURN.fridge.lt = {food:5, water:3, none:2};
-FURN.cabinet.lt = {medkit:6, none:1};
-FURN.bench.name = 'tool bench'; FURN.bench.lt = {scrap:4, battery:1, flashlight:.5, wood:1, none:1};
+FURN.fridge.lt = {fresh:4, food:1, water:3, none:2};
+FURN.cabinet.lt = {medkit:5, bandage:3, antibio:1, splint:.6, none:1};
+FURN.bench.name = 'tool bench'; FURN.bench.lt = {scrap:4, battery:1, flashlight:.5, wood:1, tape:1.5, none:1}; FURN.bench.fix2 = 'bench';
 FURN.rug = {flat:1, models:['k_rug'], s:[1.3,.9], boxes:[[0,.006,0,1.3,.006,.9,'#9a5a4a'],[0,.008,0,1.1,.006,.7,'#c9a87a']]};
 FURN.mat = {flat:1, s:[.9,.4], boxes:[[0,.03,0,.9,.03,.4,'#3d6b8c']]};
 FURN.stove = {fix:'stove', models:['k_stove'], s:[.45,.47], boxes:[[0,.45,0,.38,.45,.32,'#d9d9d6'],[0,.91,0,.38,.01,.32,'#2a2c30'],[0,1.05,-.3,.38,.13,.03,'#c9c9c6'],[0,.5,.33,.3,.22,.005,'#2a2c30']]};
@@ -1323,7 +1336,7 @@ FURN.sink = {fix:'tap', taps:2, models:['k_sink'], s:[.45,.47], boxes:[[0,.45,0,
 FURN.kcab = {models:['k_cab'], s:[.45,.47], name:'cupboard', lt:{food:4, water:1, battery:.5, none:2}, boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,1.8,-.15,.6,.35,.17,'#8a6a48']]};
 FURN.toilet = {fix:'tap', taps:1, models:['k_toilet'], s:[.33,.5], boxes:[[0,.2,.08,.2,.2,.26,'#f2f2ee'],[0,.42,.08,.22,.03,.28,'#e6e6e0'],[0,.6,-.24,.22,.3,.1,'#f2f2ee']]};
 FURN.tub = {fix:'tap', taps:2, models:['k_tub'], s:[1.25,.59], boxes:[[0,.28,0,.85,.28,.4,'#f2f2ee'],[0,.5,0,.75,.07,.3,'#bcd6e0']]};
-FURN.basin = {fix:'tap', taps:1, models:['k_basin'], s:[.36,.43], name:'bathroom cabinet', lt:{medkit:3, water:1, none:3}, boxes:[[0,.42,0,.3,.42,.22,'#e9e6de'],[0,.86,0,.32,.03,.24,'#f6f6f2'],[0,1.5,-.2,.28,.3,.03,'#a9c4cf']]};
+FURN.basin = {fix:'tap', taps:1, models:['k_basin'], s:[.36,.43], name:'bathroom cabinet', lt:{medkit:3, bandage:2, antibio:.4, water:1, none:3}, boxes:[[0,.42,0,.3,.42,.22,'#e9e6de'],[0,.86,0,.32,.03,.24,'#f6f6f2'],[0,1.5,-.2,.28,.3,.03,'#a9c4cf']]};
 FURN.tv = {models:['k_tv'], s:[.84,.33], boxes:[[0,.25,0,.6,.25,.2,'#4a3a2c'],[0,.85,0,.55,.32,.03,'#15171a'],[0,.85,.031,.5,.27,.003,'#27323a']]};
 FURN.nightstand = {models:['k_night'], s:[.28,.24], name:'nightstand', lt:{battery:2, flashlight:1, medkit:.5, ammo:.4, key:.8, none:3}, boxes:[[0,.28,0,.22,.28,.22,'#7a5a3c'],[0,.62,0,.05,.06,.05,'#6b4526'],[0,.78,0,.12,.1,.12,'#e8d9a8']]};
 FURN.closet = {models:['k_closet'], s:[.42,.27], hide:1, name:'wardrobe', lt:{coat:3, scrap:.5, none:3}, boxes:[[0,1,0,.6,1,.3,'#6b4a30'],[0,1,.305,.012,.92,.005,'#3a2a1c'],[-.08,1,.31,.02,.1,.01,'#c9a84a'],[.08,1,.31,.02,.1,.01,'#c9a84a']]};
@@ -1428,6 +1441,43 @@ function stairT(b, x, y){
 }
 /* how high above the building's ground floor something is standing: on the stairs, or on its floor */
 function lvlY(b, e){ if (!b || !b.int || !b.int.stair) return 0; var t = stairT(b, e.x, e.y); return t >= 0 ? t*FH : (e.lvl || 0)*FH; }
+/* ---- survival depth: wounds, infection, broken legs, food poisoning, tiredness and food going off ---- */
+var FRESH_S = 1800, MEAL_S = 1500, LEG_S = 600, REST_S = 3600, drops = [];
+function loadConds(cs){
+  var n = function(v, lo, hi, d){ v = +v; return isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; }; cs = cs || {};
+  P.rest = n(cs.rest, 0, 100, 100); P.bleed = n(cs.bleed, 0, 300, 0); P.wound = cs.wound ? 1 : 0; P.woundT = 0; P.inf = n(cs.inf, 0, 1e6, 0); P.leg = [0, 1, 2].indexOf(cs.leg | 0) >= 0 ? cs.leg | 0 : 0; P.legT = n(cs.legT, 0, LEG_S, LEG_S);
+  P.sick = n(cs.sick, 0, 300, 0); P.freshT = n(cs.freshT, 0, FRESH_S, 0); P.mealT = n(cs.mealT, 0, MEAL_S, 0); P.dur = {}; if (cs.dur) for (var k in cs.dur) if (typeof cs.dur[k] === 'number') P.dur[k] = n(cs.dur[k], 0.01, 1, 1);
+  P.restWarn = 0;
+}
+function breakLeg(){ P.leg = 1; sfx('wood_hit', undefined, undefined, 0.9, 0.6); toast('Your leg is broken: you limp, and cannot run or climb. A splint (or 2 wood and 1 fibre to make one) lets it heal.', 7); }
+function injure(k){
+  if (Math.random() < [0.25, 0.4, 0.5][k] || 0){ var was = P.bleed > 0; P.bleed = Math.max(P.bleed || 0, 90 + Math.random()*60); P.wound = 1; P.woundT = 0; if (!was) toast('You are bleeding. Use a bandage (4) or a medkit (3).', 5); }
+  if (k === 2 && !P.leg && Math.random() < 0.3) breakLeg();
+}
+function spoil(k, tk, secs, dt){
+  if (!(inv[k] > 0)){ P[tk] = 0; return; } if (!(P[tk] > 0)) P[tk] = secs; P[tk] -= dt;
+  if (P[tk] <= 0){ P[tk] = 0; feed((k === 'meal' ? 'Your hot meal' : 'Your fresh food') + ' has gone off (' + inv[k] + ')', ITEMS.rotten[1]); inv.rotten += inv[k]; inv[k] = 0; updateHud(); }
+}
+function condTick(dt){
+  var sl = !!P.sleep, k = sl ? 0.04 : 1, kd = dt*k;   /* asleep, the night rushes past: everything but rest slows to match */
+  if (sl) P.rest = Math.min(100, P.rest + dt*100/(DAY*7/24)); else P.rest = Math.max(0, P.rest - dt*100/REST_S*(P.run || keys.ShiftLeft ? 1.4 : 1)*(P.inf ? 1.3 : 1));
+  if (!sl){ var rw = P.rest <= 0 ? 3 : P.rest < 12 ? 2 : P.rest < 30 ? 1 : 0; if (rw > (P.restWarn || 0)) toast(['', 'You are getting tired. Sleep in a bed when it is safe.', 'You are exhausted: slower, weaker, and your eyes keep closing. Find a bed.', 'You are collapsing from exhaustion and losing health. Sleep now.'][rw], 6); P.restWarn = P.rest > 40 ? 0 : Math.max(P.restWarn || 0, rw); }
+  if (P.rest <= 0 && !sl){ P.hp -= 0.05*dt; P.cause = 'exhaustion'; }
+  if (P.bleed > 0){ P.bleed -= kd; P.hp -= 0.25*kd; P.cause = 'bleeding'; P.dripT = (P.dripT || 0) - dt; if (P.dripT <= 0 && !sl){ P.dripT = 0.6; drops.push({x:P.x + (Math.random() - 0.5)*0.3, y:P.y + (Math.random() - 0.5)*0.3, y0:P.gy || 0, t:time}); if (drops.length > 80) drops.shift(); }
+    if (P.bleed <= 0){ P.bleed = 0; feed('The bleeding has stopped, but the wound is open', '#d9a07a'); } }
+  if (P.wound && !P.inf && !(P.bleed > 0)){ P.woundT += kd; if (P.woundT > 150){ P.wound = 0; P.woundT = 0; if (Math.random() < 0.5){ P.inf = 1; toast('Your wound is infected: fever, slow health loss, and you tire faster. Antibiotics cure it.', 7); } else feed('The wound is healing cleanly', '#9bb07a'); } }
+  if (P.inf){ P.inf += kd; P.hp -= 0.04*kd; P.cause = 'an infection'; }
+  if (P.leg === 2){ P.legT -= kd; if (P.legT <= 0){ P.leg = 0; P.legT = LEG_S; toast('Your leg has healed. You can run again.', 4); } }
+  if (P.sick > 0){ P.sick -= kd; P.thirst = Math.max(0, P.thirst - kd*0.5); P.hp -= 0.04*kd; P.cause = 'food poisoning'; if (P.sick <= 0){ P.sick = 0; feed('Your stomach settles', '#9bb07a'); } }
+  spoil('fresh', 'freshT', FRESH_S, kd); spoil('meal', 'mealT', MEAL_S, kd);
+  for (var i = drops.length - 1; i >= 0; i--) if (time - drops[i].t > 90) drops.splice(i, 1);
+  var tm = el('tiredMask'); if (tm) tm.style.opacity = sl ? 0 : P.rest < 12 ? (0.18 + 0.3*Math.max(0, Math.sin(time*0.8))*Math.max(0, Math.sin(time*0.23))).toFixed(2) : 0;
+}
+function drawDrops(m){ for (var i = 0; i < drops.length; i++){ var d = drops[i]; if (Math.abs(d.x - P.x) > 40 || Math.abs(d.y - P.y) > 40) continue; m.yo = d.y0; m.ybox(d.x, d.y, i, 0, 0, 0.025, 0.07, 0.006, 0.05, [120,18,18]); } m.yo = 0; }
+function condText(){
+  var c = []; if (P.bleed > 0) c.push('Bleeding'); else if (P.wound) c.push('Open wound'); if (P.inf) c.push('Infected'); if (P.leg === 1) c.push('Broken leg'); else if (P.leg === 2) c.push('Splinted leg ' + Math.ceil(P.legT/60) + ' min');
+  if (P.sick > 0) c.push('Food poisoning'); if (P.rest < 12) c.push('Exhausted'); else if (P.rest < 30) c.push('Tired'); return c;
+}
 /* ---- roofs: up and down by a ladder, walk inside the edge, a fall hurts from above 3 m ---- */
 function roofY(b){ return (b.base || 0) + b.h; }
 function ladNear(x, y, r){
@@ -1437,7 +1487,7 @@ function ladNear(x, y, r){
 }
 function ladTarget(L, up){ var k = up ? 'tgU' : 'tgD'; return L[k] || (L[k] = {fix:'ladder', up:up, L:L, b:L.b, x:up ? L.fx : L.tx, y:up ? L.fy : L.ty}); }
 function startClimb(L, up){
-  if (P.hide || P.veh) return; P.climbL = {L:L, up:up, t:0, dur:Math.max(1.6, (roofY(L.b) - groundAt(L.fx, L.fy))/2.2)};
+  if (P.hide || P.veh) return; if (P.leg === 1){ toast('You cannot climb a ladder on a broken leg. Splint it first.', 3); return; } P.climbL = {L:L, up:up, t:0, dur:Math.max(1.6, (roofY(L.b) - groundAt(L.fx, L.fy))/2.2)};
   P.x = L.fx; P.y = L.fy; P.yaw = Math.atan2(-L.ny, -L.nx); P.roof = null; P.crouch = false; sfx('metal', L.x, L.y, 0.5, 0.8);
 }
 function climbTick(dt){
@@ -1465,6 +1515,7 @@ function fallOff(e, nx, ny, dx, dy){
   e.x += dx/l*0.3; e.y += dy/l*0.3; collide(e, 0.35);
   var drop = top - groundAt(e.x, e.y), dmg = Math.max(0, Math.round((drop - 3)*8));
   sfx('hurt', undefined, undefined, Math.min(1, 0.3 + drop/10)); makeNoise(e.x, e.y, 6 + drop*1.5); P.fall = 0.01;
+  if (drop > 4.5 && !P.leg && Math.random() < (drop - 4.5)*0.18) breakLeg();
   if (dmg > 0){ P.hp -= dmg; P.hurt = 0.4; P.cause = 'a fall'; feed('You fell ' + Math.round(drop) + ' m: -' + dmg + ' health', '#ff8f7a'); } else feed('You dropped down from the roof', '#c0c6cc');
 }
 function setLvl(e){ var b = buildingAt(e.x, e.y); if (!b || !b.int || !b.int.stair){ if (!b) e.lvl = 0; return; } var t = stairT(b, e.x, e.y); if (t >= 0) e.lvl = t > 0.5 ? 1 : 0; }
@@ -1686,7 +1737,7 @@ function genLevel(b, lvl, ST, CB){
   items.forEach(function(it, ii){
     if (!it.on) return; nOn++;
     ii += lvl*10000; var ci0 = it.f.name ? cn++ : -1; if (gone.indexOf(ii) >= 0) return;   /* pushed against a door: drawn there instead */
-    if (it.f.fix) fixes.push({lvl:lvl, fix:it.f.fix, x:it.x, y:it.y, b:b, ii:ii, fx:it.fx, fy:it.fy, taps:it.f.taps || 0, name:it.f.fix === 'bed' ? 'bed' : it.f.fix === 'stove' ? 'stove' : {sink:'sink', toilet:'toilet', tub:'bath', basin:'basin'}[Object.keys(FURN).filter(function(n){ return FURN[n] === it.f; })[0]] || 'tap'});
+    if (it.f.fix || it.f.fix2) fixes.push({lvl:lvl, fix:it.f.fix || it.f.fix2, x:it.x, y:it.y, b:b, ii:ii, fx:it.fx, fy:it.fy, taps:it.f.taps || 0, name:it.f.fix2 === 'bench' ? 'tool bench' : it.f.fix === 'bed' ? 'bed' : it.f.fix === 'stove' ? 'stove' : {sink:'sink', toilet:'toilet', tub:'bath', basin:'basin'}[Object.keys(FURN).filter(function(n){ return FURN[n] === it.f; })[0]] || 'tap'});
     var f = it.f, x = it.x, y = it.y, yaw = it.yaw, M = f.models && QS.models ? MODELS[f.models[it.mi]] : null, top = f.boxes[0][1] + f.boxes[0][4];
     if (M){ m.model(M, x, y, yaw, 0.1); top = M.h; }
     else f.boxes.forEach(function(bx){ m.ybox(x, y, yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
@@ -1869,7 +1920,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.28';
+var VERSION = '0.29';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1882,7 +1933,7 @@ function startRun(ws, cs){
   var w = world, sx = 0, sy = 0, found = false, k;
   for (k = 0; !found && k < 6000; k++){ var a = k*0.5, rr = k*0.2; sx = w.start.x + Math.cos(a)*rr; sy = w.start.y + Math.sin(a)*rr; found = !circ(sx, sy, 1) && !inWater(sx, sy, 0); }
   w.spawn = {x:sx, y:sy};
-  P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:false, fl:1, rd:1, noise:0, stam:100, crouch:false, run:false, tired:false, vis:1, wet:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0};
+  P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:false, fl:1, rd:1, noise:0, stam:100, crouch:false, run:false, tired:false, vis:1, wet:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0}; loadConds(null);
   inv = newInv(true);
   zombies = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
   loaded.forEach(function(b){ freeMesh(b.int.g); b.int = null; }); loaded = []; facs = [];
@@ -1891,7 +1942,7 @@ function startRun(ws, cs){
   if (cs && cs.inv){
     for (k in inv) inv[k] = Math.max(0, cs.inv[k] | 0);
     if (cs.fl === undefined){ inv.radio = Math.max(1, inv.radio); inv.flashlight = Math.max(1, inv.flashlight); inv.battery += 2; } else { P.fl = Math.max(0, Math.min(1, +cs.fl || 0)); P.rd = Math.max(0, Math.min(1, +cs.rd || 0)); }
-    P.hp = cs.hp > 0 ? Math.min(100, +cs.hp) : 100; P.hunger = Math.max(0, Math.min(100, +cs.hunger || 0)); P.thirst = Math.max(0, Math.min(100, +cs.thirst || 0)); deaths = cs.deaths | 0;
+    P.hp = cs.hp > 0 ? Math.min(100, +cs.hp) : 100; P.hunger = Math.max(0, Math.min(100, +cs.hunger || 0)); P.thirst = Math.max(0, Math.min(100, +cs.thirst || 0)); deaths = cs.deaths | 0; loadConds(cs);
   }
   me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0};
   if (cs){ if (cs.bg && SKN && /^(scout|medic|mechanic|builder)$/.test(cs.bg)) me.bg = cs.bg; if (cs.skills) for (k in me.skills) me.skills[k] = Math.max(0, +cs.skills[k] || 0); }
@@ -1925,7 +1976,7 @@ function die(){
   var has = false, k; for (k in inv) if (inv[k] > 0) has = true;
   for (k in P.items) if (P.items[k] > 0) has = true;
   if (has) dropPack(inv, P.items);
-  inv = newInv(false); P.items = {}; P.weapon = null;
+  inv = newInv(false); P.items = {}; P.weapon = null; loadConds(null); P.roof = null; P.climbL = null; P.fall = 0;
   var bed = world.edits.beds[charSlug()]; if (P.veh) dismount();
   P.x = bed ? bed.x : world.spawn.x; P.y = bed ? bed.y : world.spawn.y; P.hp = 100; P.hunger = 60; P.thirst = 60; P.hurt = 0; P.body = 0; deaths++; if (net.role !== 'host') zombies = [];
   var why = P.cause ? 'Killed by ' + P.cause + '. ' : ''; P.cause = ''; P.hungerWarn = P.thirstWarn = 0;
@@ -1937,7 +1988,7 @@ var keys = {}, wantSwing = false, wantShoot = false, locked = false, tapUse = fa
 window.addEventListener('keydown', function(e){
   if (!running || /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) return;
   keys[e.code] = true;
-  if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit');
+  if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit'); if (e.code === 'Digit4') useItem('bandage');
   if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
   if (e.code === 'KeyX') pingAhead(); if (e.code === 'KeyH') el('help').classList.toggle('on'); if (e.code === 'KeyI') togglePack(); if (e.code === 'KeyT') place('lamp'); if (e.code === 'KeyR') radioScan(); if (e.code === 'KeyM') toggleBig();
   if (e.code === 'KeyN') toggleBuild(); if (e.code === 'KeyZ') toggleCrouch(); if (e.code === 'KeyV') throwStone(); if (e.code === 'KeyP') toggleView();
@@ -2022,8 +2073,24 @@ function radioScan(){
   feed('Radio: ' + c[1] + ', ' + say(c[0][0], c[0][1]) + '. Marked on your map.', ITEMS.radio[1]); updateHud();
 }
 function takeLamp(o){ var i = lamps.indexOf(o); if (i < 0) return; lamps.splice(i, 1); inv.lantern++; emit({k:'unlamp', x:o.x, y:o.y}); feed('Picked up the lantern', ITEMS.lantern[1]); updateHud(); }
+function nearFire(){ for (var i = 0; i < fires.length; i++) if (Math.hypot(fires[i].x - P.x, fires[i].y - P.y) < 4) return true; return false; }
+function makeSick(why){ if (!(P.sick > 0)) toast(why + ' You have food poisoning: thirst drains fast and you lose a little health for a couple of minutes.', 6); P.sick = Math.max(P.sick || 0, 120); }
 function useItem(k){
-  if (k === 'meal'){ if (inv.meal < 1) return; inv.meal--; P.hunger = Math.min(100, P.hunger + 55); P.thirst = Math.min(100, P.thirst + 10); P.body = Math.min(40, P.body + 35); feed('Ate a hot meal. You feel warmer.', ITEMS.meal[1]); updateHud(); return; }
+  if (k === 'food' && inv.fresh > 0) k = 'fresh';   /* key 1 eats whatever would go off first */
+  if (k === 'fiber'){ if (inv.fiber < 2){ toast('A bandage takes 2 plant fibre.', 3); return; } inv.fiber -= 2; inv.bandage++; feed('Made a bandage', ITEMS.bandage[1]); updateHud(); return; }
+  if (k === 'wood'){ if (inv.wood < 2 || inv.fiber < 1){ toast('A splint takes 2 wood and 1 plant fibre.', 3); return; } inv.wood -= 2; inv.fiber--; inv.splint++; feed('Made a splint', ITEMS.splint[1]); updateHud(); return; }
+  if (inv[k] < 1 && ITEMS[k]){ toast('No ' + ITEMS[k][0].toLowerCase() + ' left.', 2); return; }
+  if (k === 'bandage'){ if (!(P.bleed > 0) && !P.wound){ toast('You have no wound to bandage.', 2.5); return; } inv.bandage--; P.bleed = 0; P.wound = 0; P.woundT = 0; sfx('search', undefined, undefined, 0.5); feed('Bandaged. The bleeding stops and the wound stays clean.', ITEMS.bandage[1]); updateHud(); return; }
+  if (k === 'antibio'){ if (!P.inf){ toast('You have no infection. Keep them for when a wound turns bad.', 3); return; } inv.antibio--; P.inf = 0; feed('Took antibiotics. The infection clears.', ITEMS.antibio[1]); updateHud(); return; }
+  if (k === 'splint'){ if (P.leg !== 1){ toast(P.leg === 2 ? 'Your leg is already splinted.' : 'Your legs are fine.', 2.5); return; } inv.splint--; P.leg = 2; P.legT = LEG_S; feed('Splinted. It heals in about ten minutes; no running until then.', ITEMS.splint[1]); updateHud(); return; }
+  if (k === 'tape'){ var wd = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; if (!wd || durOf(wd) >= 1){ toast(wd ? 'Your weapon is in good shape.' : 'Equip a made weapon to patch it.', 2.5); return; } inv.tape--; P.dur[wd] = Math.min(1, durOf(wd) + 0.4); feed('Patched the ' + DESIGNS[wd].name + ' (' + pct(P.dur[wd]) + ')', ITEMS.tape[1]); updateHud(); return; }
+  if (k === 'fresh'){ inv.fresh--; P.hunger = Math.min(100, P.hunger + 45); P.thirst = Math.min(100, P.thirst + 8); feed('Ate fresh food', ITEMS.fresh[1]); updateHud(); return; }
+  if (k === 'rotten'){ inv.rotten--; P.hunger = Math.min(100, P.hunger + 15); feed('Ate rotten food', ITEMS.rotten[1]); if (Math.random() < 0.5) makeSick('That was a mistake.'); updateHud(); return; }
+  if (k === 'dirty'){
+    if (nearFire()){ var nb = inv.dirty; inv.water += nb; inv.dirty = 0; sfx('pot', undefined, undefined, 0.6); feed('Boiled ' + nb + ' bottle' + (nb > 1 ? 's' : '') + ' over the fire', ITEMS.water[1]); updateHud(); return; }
+    inv.dirty--; P.thirst = Math.min(100, P.thirst + 40); feed('Drank unboiled water', ITEMS.dirty[1]); if (Math.random() < 0.35) makeSick('The water tasted off.'); updateHud(); return;
+  }
+  if (k === 'meal'){ inv.meal--; P.hunger = Math.min(100, P.hunger + 55); P.thirst = Math.min(100, P.thirst + 10); P.body = Math.min(40, P.body + 35); feed('Ate a hot meal. You feel warmer.', ITEMS.meal[1]); updateHud(); return; }
   if (k === 'berry'){ if (inv.berry < 1) return; inv.berry--; P.hunger = Math.min(100, P.hunger + 12); P.thirst = Math.min(100, P.thirst + 4); feed('Ate berries', ITEMS.berry[1]); updateHud(); return; }
   if (k === 'herb'){ if (inv.herb < 3 || inv.fiber < 2){ toast('A medkit takes 3 herbs and 2 plant fibre.', 3); return; } inv.herb -= 3; inv.fiber -= 2; inv.medkit++; feed('Made a medkit', ITEMS.medkit[1]); updateHud(); return; }
   if (k === 'stone'){ if (inv.stone < 2){ toast('Two stones make one shot of ammo.', 3); return; } inv.stone -= 2; inv.ammo++; feed('+1 Ammo', ITEMS.ammo[1]); updateHud(); return; }
@@ -2033,7 +2100,7 @@ function useItem(k){
   inv[k]--;
   if (k === 'food'){ P.hunger = Math.min(100, P.hunger + 35); feed('Ate food', ITEMS.food[1]); }
   if (k === 'water'){ P.thirst = Math.min(100, P.thirst + 40); feed('Drank water', ITEMS.water[1]); }
-  if (k === 'medkit'){ var heal = me.bg === 'medic' ? 75 : 50; P.hp = Math.min(100, P.hp + heal); feed('+' + heal + ' Health', '#7dff9a'); }
+  if (k === 'medkit'){ var heal = me.bg === 'medic' ? 75 : 50; P.hp = Math.min(100, P.hp + heal); feed('+' + heal + ' Health' + (P.bleed > 0 || P.wound ? ', wound dressed' : ''), '#7dff9a'); P.bleed = 0; P.wound = 0; P.woundT = 0; if (P.inf && me.bg === 'medic'){ P.inf = 0; feed('As a medic you clean out the infection too', '#7dff9a'); } }
   updateHud();
 }
 function place(kind){
@@ -2090,19 +2157,19 @@ function findTarget(){
   if (!P.inside){ var LG = ladNear(P.x, P.y, 1.6); if (LG){ d = Math.hypot(LG.fx - P.x, LG.fy - P.y); if (d < bd){ bd = d; best = ladTarget(LG, true); } } }
   for (i = 0; i < loaded.length; i++) if (world.nests[loaded[i].id]){ var co = nestCore(loaded[i]); d = Math.hypot(co.x - P.x, co.y - P.y); if (d < 2.6){ bd = 0; best = co; } }
   if (best) return best;
-  if (P.thirst < 99 && inWater(P.x, P.y, 1.5)) return 'water';
+  if (!P.roof && inWater(P.x, P.y, 1.5) && (P.thirst < 99 || inv.dirty < 8)) return 'water';
   return null;
 }
 /* ---- looting: searching something opens a window with what it holds ---- */
 var corpses = [], corpseN = 1, curLoot = null;
 var ANAME = ['swarmer', 'stalker', 'giant'], AROLL = [1, 2, 5];
-var ALOOT = [{scrap:2, water:1, none:4}, {ammo:3, medkit:2, scrap:2, fuel:1, battery:2, none:1}, {scrap:3, fuel:2, medkit:2, ammo:2, radio:1, battery:2}];
+var ALOOT = [{scrap:2, water:1, none:4}, {ammo:3, medkit:2, bandage:1, scrap:2, fuel:1, battery:2, none:1}, {scrap:3, fuel:2, medkit:2, ammo:2, radio:1, battery:2}];
 function rollStash(tab, rolls){
   var tot = 0, got = {}, k; for (k in tab) tot += tab[k];
   for (var i = 0; i < rolls; i++){
     var r = Math.random()*tot; for (k in tab){ r -= tab[k]; if (r <= 0) break; }
     if (k === 'none') continue;
-    got[k] = (got[k] || 0) + (k === 'ammo' ? 3 + Math.floor(Math.random()*4) : (k === 'coat' || k === 'radio' || k === 'flashlight' || k === 'lantern') ? 1 : 1 + (Math.random() < 0.35 ? 1 : 0));
+    got[k] = (got[k] || 0) + (k === 'ammo' ? 3 + Math.floor(Math.random()*4) : (k === 'coat' || k === 'radio' || k === 'flashlight' || k === 'lantern' || k === 'splint' || k === 'antibio') ? 1 : 1 + (Math.random() < 0.35 ? 1 : 0));
   }
   return {inv:got, items:{}};
 }
@@ -2138,7 +2205,7 @@ function closeLoot(){
 function renderLoot(){
   var o = curLoot, box = el('loot'); if (!o || box.classList.contains('hidden')) return;
   var nm = o.corpse ? o.name : o.name + (o.b && o.b.name ? ' – ' + o.b.name : ''), h = '<b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b> <button id="ltClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', k;
-  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
+  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/25) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
   for (k in o.stash.items) if (o.stash.items[k] > 0 && DESIGNS[k]) h += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + o.stash.items[k] + '<br><i>' + stats(DESIGNS[k]).desc + ' &middot; by ' + esc(DESIGNS[k].by) + '</i></span><button data-k="c:' + k + '">Take</button></div>';
   box.innerHTML = h + '<div class="row" style="justify-content:flex-start;margin:10px 0 0"><button data-k="all">Take everything</button></div>';
 }
@@ -2153,17 +2220,20 @@ function takeLoot(key){
 el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id === 'ltClose'){ closeLoot(); return; } var k = t.getAttribute && t.getAttribute('data-k'); if (k) takeLoot(k); });
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
-var CATS = [['Food and drink', ['meal', 'food', 'water', 'berry']], ['Medical', ['medkit', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat', 'key']]];
-var USE = {meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
+var CATS = [['Food and drink', ['meal', 'fresh', 'food', 'water', 'dirty', 'berry', 'rotten']], ['Medical', ['medkit', 'bandage', 'antibio', 'splint', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'tape', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat', 'key']]];
+var USE = {fresh:'Eat', rotten:'Eat (risky)', dirty:function(){ return nearFire() ? 'Boil it all (fire)' : 'Drink (risky)'; }, bandage:'Use', antibio:'Take', splint:'Use', tape:'Patch weapon', fiber:'Make a bandage', wood:'Make a splint', meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
+var NOTE = {fresh:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.freshT || FRESH_S)/60)) + ' min'; }, meal:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.mealT || MEAL_S)/60)) + ' min'; },
+  rotten:function(){ return 'half the time it makes you sick'; }, dirty:function(){ return 'boil it at a stove (1 wood) or beside a campfire'; }, bandage:function(){ return 'stops bleeding and keeps a wound clean'; },
+  antibio:function(){ return 'cures an infected wound'; }, splint:function(){ return 'lets a broken leg heal'; }, tape:function(){ return 'patches your equipped weapon (+40%)'; }, wood:function(){ return '2 wood and 1 plant fibre make a splint'; }};
 function pct(v){ return Math.round(Math.max(0, v)*100) + '%'; }
 function renderPack(){
   var box = el('pack'); if (box.classList.contains('hidden')) return;
   var h = '<b>Backpack</b> <button id="pkClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', any = false, k;
   CATS.forEach(function(c){
-    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'herb' ? '<br><i>3 herbs and 2 plant fibre make a medkit</i>' : k === 'stone' ? '<br><i>2 stones make 1 ammo</i>' : k === 'fiber' ? '<br><i>used with herbs to make medkits</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + USE[k] + '</button>' : '') + '</div>'; });
+    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/25) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'herb' ? '<br><i>3 herbs and 2 plant fibre make a medkit</i>' : k === 'stone' ? '<br><i>2 stones make 1 ammo</i>' : k === 'fiber' ? '<br><i>3 herbs and 2 fibre make a medkit; 2 fibre make a bandage</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : NOTE[k] ? '<br><i>' + NOTE[k]() + '</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + (typeof USE[k] === 'function' ? USE[k]() : USE[k]) + '</button>' : '') + '</div>'; });
     if (rows){ h += '<h3>' + c[0] + '</h3>' + rows; any = true; }
   });
-  var cu = ''; for (k in P.items) if (P.items[k] > 0 && DESIGNS[k]) cu += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + P.items[k] + (P.weapon === k ? ' <i>equipped</i>' : '') + '<br><i>' + stats(DESIGNS[k]).desc + '</i></span></div>';
+  var cu = ''; for (k in P.items) if (P.items[k] > 0 && DESIGNS[k]) cu += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + P.items[k] + (P.weapon === k ? ' <i>equipped</i>' : '') + '<br><i>' + stats(DESIGNS[k]).desc + (DESIGNS[k].kind === 'melee' ? ' &middot; condition ' + pct(durOf(k)) : '') + '</i></span></div>';
   if (cu){ h += '<h3>Made items</h3>' + cu; any = true; }
   if (!any) h += '<div><i>Your backpack is empty.</i></div>';
   box.innerHTML = h + '<div class="row" style="justify-content:flex-start;margin:10px 0 0"><button id="pkItems" class="alt">Craft and equip</button></div>';
@@ -2179,8 +2249,8 @@ function swing(){
     var z = zombies[i]; dx = z.x - P.x; dy = z.y - P.y; d = Math.hypot(dx, dy);
     if (d < ws0.reach + AK[z.k].r && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){
       var behind = (Math.cos(z.ang || 0)*-dx + Math.sin(z.ang || 0)*-dy)/(d || 1) < -0.2, unaware = z.st !== 2 && (z.aw || 0) < 0.7;
-      if (z.k < 2 && unaware && (behind || P.crouch) && (z.k === 0 || (P.crouch && behind))){ hitZombie(z, 999, 0, 0, true); feed('Quiet takedown', '#9bb07a'); addXp('melee', 4); hit = true; continue; }   /* from behind, or crouched, on one that has not noticed you */
-      hitZombie(z, ws0.dmg + 0.25*lvl('melee'), dx/d*8, dy/d*8); hit = true; }
+      if (z.k < 2 && unaware && (behind || P.crouch) && (z.k === 0 || (P.crouch && behind))){ wear(1); hitZombie(z, 999, 0, 0, true); feed('Quiet takedown', '#9bb07a'); addXp('melee', 4); hit = true; continue; }   /* from behind, or crouched, on one that has not noticed you */
+      hitZombie(z, ws0.dmg + 0.25*lvl('melee'), dx/d*8, dy/d*8); hit = true; wear(1); }
   }
   if (hit){ addXp('melee', 2); return; }
   var pn = portNear(); if (pn && pn.o.k < 0 && doorState(pn.o.b) === 0 && pn.d < 2.2){ var db0 = pn.o.b; db0.smash = (db0.smash || 0) + 1; makeNoise(P.x, P.y, 16);
@@ -2190,7 +2260,7 @@ function swing(){
     var t = world.trees[i]; if (!t.alive) continue; dx = t.x - P.x; dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) continue;
     d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
   }
-  if (bt){ bt.hp--; bt.shake = 0.2; sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.food++; feed('+1 Food (fruit from the tree)', ITEMS.food[1]); } updateHud(); } }
+  if (bt){ bt.hp--; bt.shake = 0.2; wear(0.5); sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.fresh++; feed('+1 Fresh food (fruit from the tree)', ITEMS.fresh[1]); } updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
@@ -2304,15 +2374,19 @@ function fixText(o){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ';
   if (o.fix === 'ladder') return E + (o.up ? 'climb the ladder to the roof (' + Math.round(roofY(o.b) - groundAt(o.L.fx, o.L.fy)) + ' m)' : 'climb back down the ladder');
   if (o.fix === 'bed') return E + 'sleep in the ' + o.name + ' until morning';
-  if (o.fix === 'stove') return inv.food > 0 && inv.wood > 0 ? E + 'cook a hot meal (1 food, 1 wood)' : 'Stove \u00b7 a hot meal takes 1 food and 1 wood';
+  if (o.fix === 'stove') return inv.dirty > 0 && inv.wood > 0 ? E + 'boil your water (' + inv.dirty + ' bottle' + (inv.dirty > 1 ? 's' : '') + ', 1 wood)' : (inv.food > 0 || inv.fresh > 0) && inv.wood > 0 ? E + 'cook a hot meal (1 food, 1 wood)' : 'Stove \u00b7 a hot meal takes 1 food and 1 wood; boiling water takes 1 wood';
+  if (o.fix === 'bench'){ var bw = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; return !bw ? 'Tool bench \u00b7 equip a made weapon to repair it here' : durOf(bw) >= 1 ? 'Tool bench \u00b7 your ' + DESIGNS[bw].name + ' is in good shape' : E + 'repair your ' + DESIGNS[bw].name + ' (' + pct(durOf(bw)) + ', 1 scrap)'; }
   var left = o.taps - (world.edits.taps[o.b.id + ':' + o.ii] || 0); return left > 0 ? E + 'fill a bottle at the ' + o.name : 'The ' + o.name + ' is dry';
 }
 function useFix(o){
   if (o.fix === 'ladder') return startClimb(o.L, o.up);
   if (o.fix === 'bed') return goToSleep(o);
-  if (o.fix === 'stove'){ if (!(inv.food > 0 && inv.wood > 0)){ toast('A hot meal takes 1 food and 1 wood for the fire.', 3); return; } inv.food--; inv.wood--; inv.meal = (inv.meal || 0) + 1; sfx('pot', o.x, o.y, 0.8); makeNoise(o.x, o.y, 5); feed('Cooked a hot meal. Eat it from your backpack.', ITEMS.meal[1]); updateHud(); return; }
+  if (o.fix === 'bench'){ var bw2 = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; if (!bw2 || durOf(bw2) >= 1) return; if (!(inv.scrap > 0)){ toast('A repair takes 1 scrap.', 2.5); return; } inv.scrap--; P.dur[bw2] = 1; sfx('metal', o.x, o.y, 0.8); makeNoise(o.x, o.y, 6); feed('Repaired the ' + DESIGNS[bw2].name, '#cfd5db'); updateHud(); return; }
+  if (o.fix === 'stove' && inv.dirty > 0 && inv.wood > 0){ var nb2 = inv.dirty; inv.wood--; inv.water += nb2; inv.dirty = 0; sfx('pot', o.x, o.y, 0.8); makeNoise(o.x, o.y, 5); feed('Boiled ' + nb2 + ' bottle' + (nb2 > 1 ? 's' : '') + ' of water', ITEMS.water[1]); updateHud(); return; }
+  if (o.fix === 'stove'){ if (!((inv.food > 0 || inv.fresh > 0) && inv.wood > 0)){ toast('A hot meal takes 1 food and 1 wood for the fire.', 3); return; } if (inv.fresh > 0) inv.fresh--; else inv.food--; inv.wood--; inv.meal = (inv.meal || 0) + 1; sfx('pot', o.x, o.y, 0.8); makeNoise(o.x, o.y, 5); feed('Cooked a hot meal. Eat it from your backpack.', ITEMS.meal[1]); updateHud(); return; }
   var key = o.b.id + ':' + o.ii, left = o.taps - (world.edits.taps[key] || 0); if (left <= 0){ feed('Nothing left in it', '#c0c6cc'); return; }
-  doEdit({a:'tap', key:key}); inv.water++; sfx('pot', o.x, o.y, 0.5, 1.4); feed(o.name === 'toilet' ? '+1 Water (from the cistern. Better than nothing.)' : left > 1 ? '+1 Water' : '+1 Water. The ' + o.name + ' coughs and runs dry.', ITEMS.water[1]); updateHud();
+  var clean = o.name !== 'toilet' && time < DAY;   /* the mains run clean through the first day; cisterns never are */
+  doEdit({a:'tap', key:key}); if (clean) inv.water++; else inv.dirty++; sfx('pot', o.x, o.y, 0.5, 1.4); feed((clean ? '+1 Water' : '+1 Unboiled water') + (o.name === 'toilet' ? ' (from the cistern)' : !clean && !P.tapSaid ? ' (the mains are no longer safe: boil it)' : '') + (left > 1 ? '' : '. The ' + o.name + ' runs dry.'), clean ? ITEMS.water[1] : ITEMS.dirty[1]); if (!clean) P.tapSaid = true; updateHud();
 }
 /* shove an emptied heavy piece against the nearest door of the same building */
 function shoveFurniture(c){
@@ -2329,13 +2403,14 @@ function shoveFurniture(c){
 /* sleep: the night passes quickly; anything that hurts you or comes for you wakes you. The bed becomes where you wake after dying */
 function goToSleep(o){
   for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
-  var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
+  var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90 && P.rest > 50){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
   P.sleep = {start:time, hp:P.hp}; P.x = o.x + (o.fx || 0)*0.6; P.y = o.y + (o.fy || 0)*0.6;
   doEdit({a:'bed', s:charSlug(), b:o.b.id, x:P.x, y:P.y}); el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping\u2026'; keys = {};
 }
 function wakeUp(why){ if (!P.sleep) return; var hrs = (time - P.sleep.start)/DAY*24; P.sleep = null; el('sleepMask').classList.remove('on'); toast((why ? why + ' ' : '') + 'You slept ' + (hrs < 1 ? 'a little' : Math.round(hrs) + ' hours') + '. You will wake here if you die.', 5); updateHud(); }
 function sleepTick(dt){
   if (!P.sleep) return;
+  if (P.bleed > 0) return wakeUp('You woke up bleeding.');
   var hr = (8 + time/DAY*24) % 24, slept = time - P.sleep.start;
   if (P.hurt > 0 || P.hp < P.sleep.hp - 2) return wakeUp('Something hurt you!');
   if (P.thirst < 8 || P.hunger < 8) return wakeUp(P.thirst < 8 ? 'You woke up parched.' : 'You woke up starving.');
@@ -2381,7 +2456,7 @@ function senses(z, A, tg, dt, night){
       if (dd < rs && cone && (t.roof ? (dd > 3 + t.roof.h*0.6 || (z.st === 2 && z.tp === t.peer)) && !buildingAt(z.x, z.y) : sameF && los(z.x, z.y, t.x, t.y, z.lvl))){   /* someone on a roof is seen from the street, once far enough back to see over the edge */
         if (dd < sd){ sd = dd; seenT = t; }
       } else {
-        var hr = hearR(t)*A.hear*(z.k === 2 && t.vis > 1 ? 1.6 : 1)*(sameF ? 1 : 0.5);
+        var hr = hearR(t)*A.hear*(z.k === 2 && t.vis > 1 ? 1.6 : 1)*(sameF ? 1 : 0.5); if (t.bleed && z.k === 1) hr = Math.max(hr, 14);   /* a stalker smells blood */
         if (dd < hr && z.st !== 2){ var er = dd*0.25; z.lx = t.x + (Math.random() - 0.5)*er; z.ly = t.y + (Math.random() - 0.5)*er; if (z.st !== 1){ z.st = 1; z.stT = 9; } z.aw = Math.max(z.aw || 0, dd < hr*0.35 ? 0.6 : 0.3); }
       }
     }
@@ -2567,7 +2642,7 @@ var SPD = {crouch:2.3, walk:4.6, sprint:7.4, swim:2.4};
 var VIEW = (function(){ try { return +localStorage.getItem('lastblock:view') || 0; } catch (e){ return 0; } })();   /* 0 through your own eyes, 1 from behind your survivor */
 function toggleView(){ VIEW = VIEW ? 0 : 1; try { localStorage.setItem('lastblock:view', VIEW); } catch (e){} feed(VIEW ? 'Third-person view (P to switch back)' : 'First-person view', '#c0c6cc'); }
 function toggleCrouch(){ if (!running || P.veh) return; P.crouch = !P.crouch; if (P.crouch) P.run = false; }
-function gait(moving){ return P.veh ? 1 : P.crouch ? 0 : (keys.ShiftLeft || keys.ShiftRight || P.run) && moving && !P.tired && !P.swim ? 2 : 1; }   /* 0 crouch, 1 walk, 2 sprint */
+function gait(moving){ return P.veh ? 1 : P.crouch ? 0 : (keys.ShiftLeft || keys.ShiftRight || P.run) && moving && !P.tired && !P.swim && !P.leg ? 2 : 1; }   /* 0 crouch, 1 walk, 2 sprint */
 function slopeMul(dx, dy){
   if (!world.hg || P.inside || P.roof) return 1;
   var l = Math.hypot(dx, dy) || 1, g = (hAt(P.x + dx/l*1.2, P.y + dy/l*1.2) - hAt(P.x, P.y))/1.2;   /* rise per metre the way you are heading */
@@ -2577,7 +2652,7 @@ function slopeMul(dx, dy){
 function windowMul(dt){
   var b = P.inside || nearB(P.x, P.y, 1), q, k; if (!b || !b.wins || P.roof) return 1;
   for (k = 0; k*6 < b.wins.length; k++){ var st = winState(b, k); if (st !== 1 && st !== 2) continue; q = k*6;
-    if (Math.hypot(P.x - b.wins[q], P.y - b.wins[q+1]) < 0.55){ if (st === 2 && !P.crouch && time - (P.cutT || -9) > 4){ P.cutT = time; P.hp -= 5; P.cause = 'broken glass'; P.hurt = 0.25; feed('Cut on the broken glass. Crouch to climb through safely.', '#d9603a'); } P.climb = 0.2; return 0.3; } }
+    if (Math.hypot(P.x - b.wins[q], P.y - b.wins[q+1]) < 0.55){ if (st === 2 && !P.crouch && time - (P.cutT || -9) > 4){ P.cutT = time; P.hp -= 5; P.cause = 'broken glass'; P.hurt = 0.25; P.bleed = Math.max(P.bleed || 0, 25); P.wound = 1; P.woundT = 0; feed('Cut on the broken glass. Crouch to climb through safely.', '#d9603a'); } P.climb = 0.2; return 0.3; } }
   return 1;
 }
 function nearB(x, y, r){ var c = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))), i; if (c) for (i = 0; i < c.length; i++){ var b = c[i]; if (!b.gone && x > b.minx - r && x < b.maxx + r && y > b.miny - r && y < b.maxy + r) return b; } return null; }
@@ -2585,11 +2660,11 @@ function stamTick(dt, g, moving){
   var cap = 100, en = 1 + 0.08*lvl('endur');
   if (g === 2){ P.stam -= dt*15/en; if (P.stam <= 0){ P.stam = 0; P.tired = true; P.run = false; feed('Out of breath', '#c0c6cc'); } }
   else if (P.swim && moving) P.stam = Math.max(0, P.stam - dt*5/en);
-  else P.stam = Math.min(cap, P.stam + dt*(moving ? (g === 0 ? 11 : 7) : 16)*(P.hunger < 20 || P.thirst < 20 ? 0.5 : 1));
+  else P.stam = Math.min(cap, P.stam + dt*(moving ? (g === 0 ? 11 : 7) : 16)*(P.hunger < 20 || P.thirst < 20 ? 0.5 : 1)*(P.rest < 30 ? 0.6 : 1)*(P.inf ? 0.6 : 1));
   if (P.tired && P.stam > 25) P.tired = false;
   P.vis = P.veh ? 1 : g === 0 ? 0.5 : g === 2 ? 1.35 : 1; P.eyeD = (P.eyeD || 0) + ((g === 0 ? -0.6 : P.climb > 0 ? -0.35 : 0) - (P.eyeD || 0))*Math.min(1, dt*9); P.climb = (P.climb || 0) - dt;
 }
-function moveMul(){ return (me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
+function moveMul(){ return (P.leg === 1 ? 0.55 : P.leg === 2 ? 0.8 : 1)*(P.rest < 12 ? 0.9 : 1)*(me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
 function weatherTick(dt, day){
   if (world.lastDay !== day){ if (world.lastDay) spreadNests(); world.lastDay = day; }
   if (time >= wx.until){
@@ -2604,6 +2679,7 @@ function bodyTick(dt, hour){
   wx.flash -= dt; if (wx.w === 2 && Math.random() < dt*0.12){ wx.flash = 0.18; var tdl = 0.4 + Math.random()*2; setTimeout(function(){ burst(undefined, undefined, 0.7, 260, 3.2); }, tdl*1000); }
   var f = ambientF(hour), wet = wx.w === 1 || wx.w === 2 || wx.w === 4;
   if (P.inside) f += (66 - f)*0.6; else if (wet) f -= 7;
+  if (P.inf) f += 10;   /* fever */
   if (nearLight(P.x, P.y, 6)) f += 22; if (P.swim) f -= 10; else if (P.wet > 0) f -= Math.min(9, P.wet/8); if (inv.coat > 0 && f < 60) f += 16;
   P.feel = f; var tgt = Math.max(-100, Math.min(100, (f - 66)*(f < 66 ? 2.2 : 3.2)));   /* cold creeps in more slowly than heat: about 34\u00b0F before you freeze */ P.body += Math.max(-6*dt, Math.min(6*dt, tgt - P.body));
   P.warnT -= dt;
@@ -2652,7 +2728,8 @@ function update(dt){
   if (P.hunger <= 0){ P.hp -= 0.25*dt; P.cause = 'hunger'; } if (P.thirst <= 0){ P.hp -= 0.35*dt; P.cause = 'thirst'; }
   [['hunger', 'You are getting hungry. Eat something (1, or tap the food).', 'You are starving and losing health. Eat now.'], ['thirst', 'You are getting thirsty. Drink something (2, or drink from water).', 'You are dehydrated and losing health. Drink now.']].forEach(function(n){
     var v = P[n[0]], lv = v <= 0 ? 2 : v < 20 ? 1 : 0, kk = n[0] + 'Warn'; if (lv > (P[kk] || 0)) toast(n[lv], 6); P[kk] = v > 30 ? 0 : Math.max(P[kk] || 0, lv); });
-  if (P.hunger > 50 && P.thirst > 50 && P.hp < 100) P.hp = Math.min(100, P.hp + (P.sleep ? 0.05 : 0.6)*dt);
+  condTick(dt);
+  if (P.hunger > 50 && P.thirst > 50 && P.hp < 100 && !(P.bleed > 0) && !P.inf && !(P.sick > 0)) P.hp = Math.min(100, P.hp + (P.sleep ? 0.05 : 0.6)*dt);
   for (i = 0; i < lamps.length; i++) if (lamps[i].life > 0) lamps[i].life -= dt;
   if (P.light){ if (!(inv.flashlight > 0)) P.light = false; else { P.fl -= dt/FL_SECS; if (P.fl <= 0){ P.fl = 0; if (!reload('fl', 'flashlight')){ P.light = false; toast('Your flashlight died. Find batteries.', 3.5); } } } }
   if (dark > 0.45 && !P.duskSaid && !lightOn()){ P.duskSaid = true; toast(inv.flashlight > 0 ? 'It is getting dark. Press L, or tap Light, for your flashlight.' : 'It is getting dark and you have no flashlight.', 4); } else if (dark < 0.2) P.duskSaid = false;
@@ -2665,7 +2742,7 @@ function update(dt){
   if (curLoot && Math.hypot(curLoot.x - P.x, curLoot.y - P.y) > 4) closeLoot();
   for (i = corpses.length - 1; i >= 0; i--) if (time - corpses[i].t > 240 && corpses[i] !== curLoot) corpses.splice(i, 1);
   if ((keys.KeyE || autoUse) && target && !curLoot){
-    if (target === 'water'){ if (drinkCd <= 0){ drinkCd = 0.8; P.thirst = Math.min(100, P.thirst + 30); feed('Drank', ITEMS.water[1]); } }
+    if (target === 'water'){ if (drinkCd <= 0){ drinkCd = 0.8; if (P.thirst < 99){ P.thirst = Math.min(100, P.thirst + 30); feed('Drank', ITEMS.water[1]); if (Math.random() < 0.12) makeSick('The river water was bad.'); } else if (inv.dirty < 8){ inv.dirty++; feed('+1 Unboiled water', ITEMS.dirty[1]); updateHud(); } } }
     else if (target.chest){ openChest(target); keys.KeyE = false; autoUse = null; }
     else if (target.trader){ openTrade(); keys.KeyE = false; autoUse = null; }
     else if (target.veh){ if (ePress || tapped) mount(target); autoUse = null; }
@@ -2680,7 +2757,7 @@ function update(dt){
   if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Search to come out' : 'move or press E to come out'); }
   else if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
-    el('ptxt').textContent = target === 'water' ? 'Hold E to drink' : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
+    el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
     if (target.port) el('ptxt').textContent = portText(target);
     else if (target.hideSpot || target.shove){ var tch2 = document.body.classList.contains('touchmode'); el('ptxt').textContent = (target.hideSpot ? (tch2 ? 'Tap to hide in the ' : 'Press E to hide in the ') + target.name + ' \u00b7 ' : 'Empty ' + target.name + ' \u00b7 ') + (tch2 ? 'Wall' : 'B') + ' shoves it against the door'; }
     else if (target.fix) el('ptxt').textContent = fixText(target);
@@ -2695,7 +2772,7 @@ function update(dt){
   var night = dark > 0.5;
   P.noise = Math.max(0, P.noise - dt);
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y) >= 0, roof:P.roof || null}], cadesChanged = false;
+    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
     net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); });
@@ -2740,7 +2817,7 @@ function update(dt){
         if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
         if (T && T.b && !T.roof && z.k !== 2) alienAtPort(z, A, T.b, dt);
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
-        if (T && !T.roof && !shy && d < A.reach && z.cd <= 0 && (((T.lvl || 0) === (z.lvl || 0)) || z.onSt || T.onSt) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ exitHide(); feed('It dragged you out of hiding!', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
+        if (T && !T.roof && !shy && d < A.reach && z.cd <= 0 && (((T.lvl || 0) === (z.lvl || 0)) || z.onSt || T.onSt) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ exitHide(); feed('It dragged you out of hiding!', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; injure(z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
       }
       if (z.k !== 2 && (T || z.st >= 1)){ var zb2 = buildingAt(z.x, z.y); if (zb2 && zb2.int && zb2.int.idoors) zb2.int.idoors.forEach(function(dq, qi){ if (innerState(zb2, qi) === 0 && segDist(z.x, z.y, dq[0], dq[1], dq[2], dq[3]) < A.r + 0.45){ var ib1 = blockOf(zb2, 1000 + qi); if (ib1){ ib1.hp -= A.dmg*dt*1.1; z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.6; sfx('wood_hit', z.x, z.y, 0.7, 0.8, 50); } if (ib1.hp <= 0) doEdit({a:'unblock', b:zb2.id, k:1000 + qi}); return; } z.door = (z.door || 0) + dt; if (z.door > 1.2){ z.door = 0; setPort(zb2, 1000 + qi, 1); } } }); }   /* they shove inside doors open */
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
@@ -2778,7 +2855,7 @@ function update(dt){
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
 }
-var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18};
+var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18, bandage:19, antibio:20, splint:21, fresh:22, rotten:23, dirty:24, tape:25};
 /* the eye: how close any alien is to spotting you */
 function awareHud(){
   var e = el('aware'), best = 0, txt = '', col = '#e9dcc0', i;
@@ -2794,20 +2871,20 @@ function updateHud(){
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
   awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
-  el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('vWater').textContent = Math.round(P.thirst);
+  el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open)/.test(t) ? ' class="mild"' : '') + '>' + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
   el('wxStamp').textContent = (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase();
   el('dayLine').textContent = 'Day ' + (Math.floor(hrs/24) + 1) + '  ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min;
   el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? zoneAt(P.x, P.y, 0).name + ': aliens cannot come in here' : pb && P.roof ? 'On the roof of ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) : pb && P.climbL ? 'On a ladder' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
-  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i>' + txt + '</span>'; };
+  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/25) + '% 0"></i>' + txt + '</span>'; };
   el('power').innerHTML = pw('flashlight', inv.flashlight > 0 ? pct(P.fl) + (lightOn() ? ' on' : '') : 'none', !lightOn()) + pw('radio', inv.radio > 0 ? pct(P.rd) : 'none', !radioOn()) + pw('battery', '\u00d7' + inv.battery, !inv.battery);
   el('goalLine').textContent = goalText().replace(/^Goal: /, '').replace(/^./, function(ch){ return ch.toUpperCase(); });
   var h = '', other = 0, k;
-  ['food', 'water', 'medkit', 'ammo'].forEach(function(k){ h += '<div class="slot' + (inv[k] > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/18) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + inv[k] + '</span></div>'; });
-  for (k in inv) if (k !== 'food' && k !== 'water' && k !== 'medkit' && k !== 'ammo') other += inv[k]; for (k in P.items) other += P.items[k] | 0;
-  h += '<div class="slot" data-pack="1" title="Backpack" style="cursor:pointer"><i class="ic" style="background-position:50% 0"></i><span class="key">I</span><span class="cnt">' + other + '</span></div>';
+  ['food', 'water', 'medkit', 'bandage', 'ammo'].forEach(function(k){ var qn = k === 'food' ? inv.food + inv.fresh : inv[k]; h += '<div class="slot' + (qn > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/25) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + qn + '</span></div>'; });
+  for (k in inv) if (k !== 'food' && k !== 'fresh' && k !== 'water' && k !== 'medkit' && k !== 'bandage' && k !== 'ammo') other += inv[k]; for (k in P.items) other += P.items[k] | 0;
+  h += '<div class="slot" data-pack="1" title="Backpack" style="cursor:pointer"><i class="ic" style="background-position:32% 0"></i><span class="key">I</span><span class="cnt">' + other + '</span></div>';
   renderPack();
   el('inv').innerHTML = h;
 }
@@ -3188,7 +3265,7 @@ function render(){
   var m = new Mesh(), x, y, far = world.hg ? world.hg.min - 3 : 0;
   m.pl = [TX.grass, 0.25]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [236,244,222], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
-  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m);
+  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); m.yo += ops[i].lvl ? FH : 0; if (ops[i].rf === 1){ var orb = buildingAt(ops[i].x, ops[i].y); if (orb) m.yo = roofY(orb); } queuePerson(m, ops[i], lookOf(ops[i]), now); }
@@ -3281,7 +3358,7 @@ function worldSave(){
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
-  return {v:2, name:el('pname').value || 'Survivor', hp:P.hp, hunger:P.hunger, thirst:P.thirst, inv:all, deaths:deaths, look:me.look, bg:me.bg, skills:me.skills, fl:P.fl, rd:P.rd, items:allItems(), designs:Object.keys(allItems()).map(function(id){ return DESIGNS[id]; }).filter(Boolean), weapon:P.weapon};
+  return {v:2, name:el('pname').value || 'Survivor', hp:P.hp, hunger:P.hunger, thirst:P.thirst, inv:all, deaths:deaths, look:me.look, bg:me.bg, skills:me.skills, fl:P.fl, rd:P.rd, rest:P.rest, bleed:P.bleed, wound:P.wound, inf:P.inf, leg:P.leg, legT:P.legT, sick:P.sick, freshT:P.freshT, mealT:P.mealT, dur:P.dur, items:allItems(), designs:Object.keys(allItems()).map(function(id){ return DESIGNS[id]; }).filter(Boolean), weapon:P.weapon};
 }
 function saveNow(){
   if (!inRun || !world || !P) return;
@@ -3366,6 +3443,12 @@ function stats(d){
   else if (d.kind === 'use'){ o.amt = Math.min(60, p); o.scrap = Math.ceil(p/15); o.wood = 1; o.desc = BEH.use.filter(function(b){ return b[0] === d.beh; })[0][1] + ' (' + o.amt + ')'; }
   else { o.dmg = 2 + p*0.1; o.secs = d.beh === 'flare' ? 20 + p*0.7 : 8 + p*0.25; o.scrap = Math.ceil(p/10) + 1; o.wood = 1; o.desc = BEH['throw'].filter(function(b){ return b[0] === d.beh; })[0][1] + (d.beh === 'boom' ? ', damage ' + o.dmg.toFixed(1) : ', ' + Math.round(o.secs) + ' s'); }
   return o;
+}
+function durOf(id){ P.dur = P.dur || {}; return P.dur[id] === undefined ? 1 : P.dur[id]; }
+function wear(n){
+  var id = P.weapon; if (!id || !(P.items[id] > 0) || !DESIGNS[id]) return; var d = DESIGNS[id], v = durOf(id) - n/(25 + d.power*0.5); P.dur[id] = v;
+  if (v < 0.25 && !P.durSaid){ P.durSaid = true; toast('Your ' + d.name + ' is wearing out. Repair it at a tool bench (1 scrap) or patch it with duct tape.', 5); }
+  if (v <= 0){ P.items[id]--; sfx('plank', undefined, undefined, 0.9); feed('Your ' + d.name + ' broke!', '#ff8f7a'); P.durSaid = false; if (P.items[id] > 0) P.dur[id] = 1; else { delete P.dur[id]; P.weapon = null; } renderItems(); updateHud(); }
 }
 function weaponStats(){ var d = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null; return d ? stats(d) : {dmg:2, reach:2.0, cd:0.45}; }
 function cleanPack(p){
@@ -3475,7 +3558,7 @@ function renderItems(){
   var h = '<b>Items</b> <button id="itClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + '</div><h3>Carried</h3>', any = false, k;
   for (k in P.items){
     var d = DESIGNS[k]; if (!d || !(P.items[k] > 0)) continue; any = true;
-    h += '<div class="irow"><span class="sw" style="background:' + d.color + '"></span><span class="n">' + d.name + ' &times;' + P.items[k] + (d.unique ? ' <i>one of a kind</i>' : '') + '<br><i>' + stats(d).desc + ' &middot; by ' + d.by + (d.owners.length ? ' &middot; held by ' + d.owners.join(', ') : '') + '</i></span>' +
+    h += '<div class="irow"><span class="sw" style="background:' + d.color + '"></span><span class="n">' + d.name + ' &times;' + P.items[k] + (d.unique ? ' <i>one of a kind</i>' : '') + '<br><i>' + stats(d).desc + (d.kind === 'melee' ? ' &middot; condition ' + pct(durOf(k)) : '') + ' &middot; by ' + d.by + (d.owners.length ? ' &middot; held by ' + d.owners.join(', ') : '') + '</i></span>' +
       '<button data-a="use" data-id="' + k + '">' + (d.kind === 'melee' ? (P.weapon === k ? 'Unequip' : 'Equip') : d.kind === 'use' ? 'Use' : 'Throw') + '</button><button class="alt" data-a="drop" data-id="' + k + '">Drop</button></div>';
   }
   if (!any) h += '<div><i>No custom items yet.</i></div>';
@@ -3756,7 +3839,7 @@ function vehMoved(v, dx, dy, dt){
   if (v.t){ v.fuel = Math.max(0, v.fuel - dt); P.noise = Math.max(P.noise, 1); for (var i = 0; i < zombies.length; i++){ var z = zombies[i], zx = z.x - P.x, zy = z.y - P.y, zd = Math.hypot(zx, zy) || 0.001; if (zd < 1.3 + AK[z.k].r && z.hurt <= 0) hitZombie(z, 6, zx/zd*12, zy/zd*12); } }
 }
 /* ================= traders: fixed posts that swap goods for scrap ================= */
-var BUY = [['food', 1, 3], ['water', 1, 3], ['medkit', 1, 7], ['ammo', 4, 5], ['coat', 1, 8], ['fuel', 1, 6], ['radio', 1, 5]], SELL = [['food', 1, 1], ['water', 1, 1], ['medkit', 1, 3], ['wood', 2, 1], ['fuel', 1, 2], ['coat', 1, 3]];
+var BUY = [['food', 1, 3], ['water', 1, 3], ['medkit', 1, 7], ['ammo', 4, 5], ['coat', 1, 8], ['fuel', 1, 6], ['radio', 1, 5], ['bandage', 2, 3], ['antibio', 1, 6], ['splint', 1, 3], ['tape', 1, 2]], SELL = [['food', 1, 1], ['water', 1, 1], ['medkit', 1, 3], ['wood', 2, 1], ['fuel', 1, 2], ['coat', 1, 3]];
 function makeTraders(){
   var w = world, c = [];
   w.buildings.forEach(function(b){ if (b.door && !b.gone && !w.nests[b.id] && (b.cat === 'shop' || b.cat === 'food')) c.push([hash(b.id, 13, 4), b]); });
@@ -4041,7 +4124,7 @@ async function guestMsg(g, data){
   else if (m.t === 'edits'){ takeEdits(m, g); }
   else if (m.t === 'chat' || m.t === 'ping'){ showMsg(m); }
   else if (m.t === 'sys'){ toast(txt(m.txt, 160), 5); }
-  else if (m.t === 'hurt'){ sfx('hurt', undefined, undefined, 0.8); P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; P.cause = AK[m.k | 0] ? 'a ' + AK[m.k | 0].n : 'an alien'; }
+  else if (m.t === 'hurt'){ sfx('hurt', undefined, undefined, 0.8); P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; P.cause = AK[m.k | 0] ? 'a ' + AK[m.k | 0].n : 'an alien'; injure(m.k | 0); }
 }
 
 /* ================= map maker: one-time download from OpenStreetMap, saved as a compact map file ================= */
