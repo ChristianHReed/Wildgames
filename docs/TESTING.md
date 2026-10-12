@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.34) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.34.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -288,6 +288,11 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3u.4 On the iPhone: on the start page under Big region, press **Save for offline** next to Springfield (built in). It counts up to 711 squares. Then turn on airplane mode and travel: every square still loads.
 - [ ] 3u.5 Save and exit in a far square, then Play Springfield again: you resume in that square. Report any square that takes very long to load.
 - [ ] 3u.6 Known gaps in the map pack: east Nixa, Ozark and a few rural edges have no buildings yet, and many farms are missing in the country.
+
+## Stage 3v: getting unstuck
+
+- [ ] 3v.1 Downtown, climb a ladder to a roof and walk off the edge where the next building touches it. If the next roof is about as high you walk onto it; if not you stop at the edge. You never land inside a building.
+- [ ] 3v.2 Go somewhere far, press the menu button, then **Back to safe house** on the start page. The map you were on starts again with you at the safe house, carrying what you had.
 
 ## Stage 4: aliens and weather
 

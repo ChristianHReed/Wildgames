@@ -288,6 +288,7 @@
       <label class="btn">Load map file<input id="file" type="file" accept=".osm,.xml,.json,.geojson" hidden></label>
       <button id="spring">Play Springfield, MO</button>
       <button id="demo" class="alt">Play demo town</button>
+      <button id="safeBtn" class="alt" title="Stuck? Starts your last map again at its safe house">Back to safe house</button>
     </div>
     <div id="maplist" class="row"></div>
     <div class="panel">
@@ -358,7 +359,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.34.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.34.1.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1711,9 +1712,16 @@ function roofMove(e, dx, dy){
   }
 }
 function fallOff(e, nx, ny, dx, dy){
-  var b = P.roof, l = Math.hypot(dx, dy) || 1, top = roofY(b); P.roof = null; e.x = nx; e.y = ny;
-  for (var k = 0; k < 30 && buildingAt(e.x, e.y) === b; k++){ e.x += dx/l*0.15; e.y += dy/l*0.15; }
-  e.x += dx/l*0.3; e.y += dy/l*0.3; collide(e, 0.35);
+  var b = P.roof, l = Math.hypot(dx, dy) || 1, top = roofY(b), ox = e.x, oy = e.y, x = nx, y = ny, k, nb;
+  for (k = 0; k < 30 && buildingAt(x, y) === b; k++){ x += dx/l*0.15; y += dy/l*0.15; }
+  /* buildings built wall to wall (downtown): step across onto the next roof if it is about as high, otherwise stay put; never drop into one */
+  nb = buildingAt(x, y);
+  if (nb && nb !== b && !nb.gone){
+    if (Math.abs(roofY(nb) - top) < 1.6 && roofOk(nb, x + dx/l*0.4, y + dy/l*0.4)){ P.roof = nb; e.x = x + dx/l*0.4; e.y = y + dy/l*0.4; return; }
+    e.x = ox; e.y = oy; if (!P.wallSaid){ P.wallSaid = true; toast('The next building stands right against this one, too high or too low to step onto. Find another edge, or the ladder.', 5); } return;
+  }
+  if (buildingAt(x + dx/l*0.3, y + dy/l*0.3)){ e.x = ox; e.y = oy; return; }
+  P.roof = null; e.x = x + dx/l*0.3; e.y = y + dy/l*0.3; collide(e, 0.35);
   var drop = top - groundAt(e.x, e.y), dmg = Math.max(0, Math.round((drop - 3)*8));
   sfx('hurt', undefined, undefined, Math.min(1, 0.3 + drop/10)); makeNoise(e.x, e.y, 6 + drop*1.5); P.fall = 0.01;
   if (drop > 4.5 && !P.leg && Math.random() < (drop - 4.5)*0.18) breakLeg();
@@ -2128,7 +2136,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.34';
+var VERSION = '0.34.1';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2164,12 +2172,13 @@ function startRun(ws, cs){
     (ws.crates || []).forEach(function(i){ if (w.crates[i]) w.crates[i].looted = true; });
     (ws.trees || []).forEach(function(i){ if (w.trees[i]) w.trees[i].alive = false; }); (Array.isArray(ws.cut) ? ws.cut : []).forEach(function(id){ if (typeof id === 'string') w.cut[id.slice(0, 24)] = 1; });
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
-    var mine = worldPlayers[charSlug()]; if (mine){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
+    var mine = worldPlayers[charSlug()]; if (mine && !toSafe){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
   }
   w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, blocks:{}}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
-  pickSafe(!resumed && net.role !== 'guest', !(resumed && worldPlayers[charSlug()]));
+  pickSafe(!resumed && net.role !== 'guest', toSafe || !(resumed && worldPlayers[charSlug()]));
+  if (toSafe){ toSafe = false; P.lvl = 0; P.roof = null; P.climbL = null; P.gy = undefined; P.fall = 0; P.hide = null; el('hideMask').classList.remove('on'); P.veh = null; if (world.safe >= 0) setTimeout(function(){ toast('Back at your safe house.', 4); }, 50); }
   w.nests = {}; wx = {w:0, until:time + 150, tor:null, flash:0}; flares = []; lures = []; w.lastDay = 0;
   if (resumed && !ws.fresh){ (ws.nests || []).forEach(function(i){ if (w.buildings[i]) w.nests[i] = 1; }); if (ws.wx){ wx.w = ws.wx.w | 0; wx.until = +ws.wx.until || 0; } } else pickNests();
   w.total = 0; w.buildings.forEach(function(b){ w.total += b.rolls + 1; }); w.total += w.crates.length;
@@ -4669,9 +4678,10 @@ async function startRegion(){
   } catch (e){ st.textContent = 'Could not start the region: ' + (/fetch|network/i.test(e.message || '') ? 'no connection to the map servers' : e.message || 'unknown error') + '.'; }
 }
 async function playRegion(R){
+  lsSet('lastblock:lastplay', JSON.stringify(R.builtin ? {k:'spring'} : {k:'region', id:R.id}));
   var st = el('rgStatus'), L = R.last || {lat:R.lat, lon:R.lon, yaw:0}; rgStop();
   st.textContent = R.builtin ? 'Loading ' + R.name + '...' : 'Loading ' + R.name + '. A part of the map you have not visited is downloaded first...'; if (R.builtin) info('Loading ' + R.name + '...');
-  try { await enterZone(R, L.lat, L.lon, L.yaw, null, R.builtin && !R.last); st.textContent = ''; }
+  try { await enterZone(R, L.lat, L.lon, L.yaw, null, (R.builtin && !R.last) || toSafe); st.textContent = ''; }
   catch (e){ region = null; if (R.builtin) fail('Could not load Springfield: ' + (e.message === 'offline' ? 'that part of the map is not saved on this device yet. Connect to the internet once, or use Save for offline' : e.message || 'unknown error') + '.'); st.textContent = e.message === 'offline' ? 'That part of ' + R.name + ' is not on this device yet. Connect to the internet to download it.' : 'Could not load ' + R.name + ': ' + (/fetch|network/i.test(e.message || '') ? 'no connection to the map servers' : e.message || 'unknown error') + '.'; }
 }
 function rgStop(){ if (rgDl){ rgDl.stop = true; rgDl = null; } }
@@ -4755,6 +4765,7 @@ el('mmGo').addEventListener('click', makeMap);
 /* ================= entering and leaving a world ================= */
 async function enter(raw, name){
   try {
+    if (!raw.zone) lsSet('lastblock:lastplay', JSON.stringify({k:mapSrc && mapSrc.demo ? 'demo' : 'other'}));
     if (!raw.zone) region = null;
     netClose(); if (raw.name) name = raw.name;
     lsSet('lastblock:name', el('pname').value); lsSet('lastblock:quality', el('qual').value);
@@ -4795,6 +4806,16 @@ el('spring').addEventListener('click', function(){
   playRegion(SPRING);
 });
 el('demo').addEventListener('click', function(){ if (glOK){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); } });
+/* stuck somewhere? play the last map again, starting at its safe house (your things and the world are kept) */
+var toSafe = false;
+el('safeBtn').addEventListener('click', function(){
+  if (!glOK) return; var lp = null; try { lp = JSON.parse(lsGet('lastblock:lastplay') || 'null'); } catch (e){}
+  toSafe = true;
+  if (lp && lp.k === 'demo'){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); return; }
+  if (lp && lp.k === 'region'){ var R = REGIONS.filter(function(r){ return r.id === lp.id; })[0]; if (R){ R.last = null; saveRegions(); playRegion(R); return; } }
+  if ((!lp || lp.k === 'spring') && SPRING){ SPRING.last = null; saveRegions(); playRegion(SPRING); return; }
+  info('Now press Play on the map you were on: you will start at its safe house.');
+});
 function savedChars(){
   var out = []; try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf('lastblock:char:') === 0){ try { var c = JSON.parse(localStorage.getItem(k)); out.push({slug:k.slice(15), c:c}); } catch (e) {} } } } catch (e) {}
   return out.sort(function(a, b){ return a.slug < b.slug ? -1 : 1; });

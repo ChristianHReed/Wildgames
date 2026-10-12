@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.34. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.34.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -32,6 +32,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.32 | Fresh build, part 1: every building redone in code by type (docs/BUILDINGS.md); the Downtown City MegaKit fronts and the old facade textures are removed |
 | 0.33 | Fresh build, part 3: a new terrain and map generator (docs/TERRAIN.md). Ground textures painted in code (mown grass, long grass, earth, rock, roads, pavements, water, floors, wallpaper); ground cover by land use, distance from buildings, slope, wetness and height, with soft wood edges and seasons; trees planted by kind (street, yard, park, wood, riverbank). The old design-pack ground textures are removed. The Demo Town gains a creek, a wooded bluff and meadows |
 | 0.34 | Springfield, MO becomes the whole 50-mile region from the Afterstreet map pack, built in and loading square by square as you travel (no internet needed on a drive; Save for offline on iPhone): about 45,000 typed buildings, all roads and water, real hills, and the pack's terrain types (pasture, oak-hickory and pine-oak woods, scrub, glades, wetlands, lawns) driving the ground and the trees, with woods grown as you approach |
+| 0.34.1 | Back to safe house button on the start page for when you are stuck; walking off a roof never drops you inside a building next door (you step onto its roof if it is about as high, otherwise you stop at the edge) |
 
 ## Next versions
 

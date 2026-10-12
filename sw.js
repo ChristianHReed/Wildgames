@@ -1,7 +1,7 @@
 /* Afterstreet offline copy. Only used when the game is opened from a web address (for iPhone and iPad).
    When there is internet the newest game is always fetched; the saved copy is used only when there is none. */
 /* squares of the built-in Springfield region are kept in their own store, so a new version of the game does not throw them away */
-var SQ = 'afterstreet-squares-1', CACHE = 'afterstreet-v26', FILES = ['./', 'index.html', 'play.html', 'manifest.webmanifest', 'icon.png', 'icon-180.png',
+var SQ = 'afterstreet-squares-1', CACHE = 'afterstreet-v27', FILES = ['./', 'index.html', 'play.html', 'manifest.webmanifest', 'icon.png', 'icon-180.png',
   'assets/icons.js', 'assets/people_tex.js', 'assets/btex.js', 'assets/models.js', 'assets/nature.js', 'assets/map.js', 'assets/lite/atlas3.js', 'assets/lite/atlas.js', 'assets/lite/creatures.js', 'assets/lite/people.js', 'assets/sounds.js'];
 self.addEventListener('install', function(e){ e.waitUntil(caches.open(CACHE).then(function(c){ return Promise.all(FILES.map(function(f){ return fetch(f, {cache:'no-store'}).then(function(r){ if (r.ok) return c.put(f, r); }); })); }).then(function(){ return self.skipWaiting(); })); });
 self.addEventListener('activate', function(e){ e.waitUntil(caches.keys().then(function(ks){ return Promise.all(ks.filter(function(k){ return k !== CACHE && k !== SQ; }).map(function(k){ return caches.delete(k); })); }).then(function(){ return self.clients.claim(); })); });
