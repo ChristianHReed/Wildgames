@@ -145,7 +145,7 @@
   #tCade{right:172px;bottom:142px;width:52px;height:52px}
   #tLight{right:186px;bottom:74px;width:52px;height:52px}
   #tPing{right:232px;bottom:142px;width:52px;height:52px}
-  #tRun{left:160px;bottom:150px;width:56px;height:56px} #tDuck{left:160px;bottom:84px;width:56px;height:56px}
+  #tRun{left:160px;bottom:150px;width:56px;height:56px} #tDuck{left:160px;bottom:84px;width:56px;height:56px} #tThrow{left:160px;bottom:216px;width:50px;height:50px;font-size:11px}
   #touch button.on{background:var(--ochre);color:#fff}
   .touchmode #help,.touchmode #lockhint{display:none !important}
   .touchmode #vitals{left:10px;top:8px;width:170px}
@@ -202,7 +202,7 @@
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Shift: sprint &middot; Z: crouch &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
   <div id="feed"></div>
   <input id="chatIn" class="hidden" maxlength="120" placeholder="Say something, then press Enter">
@@ -228,7 +228,7 @@
   <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><button id="bigClose">Close map</button></div></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
-    <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button><button id="tPing">Mark</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
+    <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button><button id="tPing">Mark</button><button id="tRun">Run</button><button id="tThrow">Throw</button><button id="tDuck">Crouch</button>
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)">Esc frees the mouse &middot; H shows the controls</span></div>
 </div>
@@ -339,7 +339,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.22.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.23.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1707,7 +1707,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.22';
+var VERSION = '0.23';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1775,7 +1775,7 @@ window.addEventListener('keydown', function(e){
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit');
   if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
   if (e.code === 'KeyX') pingAhead(); if (e.code === 'KeyH') el('help').classList.toggle('on'); if (e.code === 'KeyI') togglePack(); if (e.code === 'KeyT') place('lamp'); if (e.code === 'KeyR') radioScan(); if (e.code === 'KeyM') toggleBig();
-  if (e.code === 'KeyN') toggleBuild(); if (e.code === 'KeyZ') toggleCrouch();
+  if (e.code === 'KeyN') toggleBuild(); if (e.code === 'KeyZ') toggleCrouch(); if (e.code === 'KeyV') throwStone();
   if (e.code === 'KeyL') toggleLight(); if (e.code === 'KeyK') toggleItems(); if (e.code === 'KeyQ') cycleWeapon(); if (e.code === 'KeyG') quickItem();
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
   if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault();
@@ -1829,6 +1829,7 @@ hold('tLight', toggleLight);
 hold('tPing', function(){ pingAhead(); });
 hold('tRun', function(){ P.run = !P.run; if (P.run) P.crouch = false; });
 hold('tDuck', toggleCrouch);
+hold('tThrow', throwStone);
 el('inv').addEventListener('click', function(e){ var n = e.target; if (running && n.closest && n.closest('[data-pack]')){ togglePack(); return; } while (n && n !== this && !(n.getAttribute && n.getAttribute('data-u'))) n = n.parentNode; if (running && n && n !== this) useItem(n.getAttribute('data-u')); });
 /* ---- batteries power the flashlight, the radio and lanterns ---- */
 var lamps = [], FL_SECS = 1200, LAMP_SECS = 2400;
@@ -1979,7 +1980,7 @@ el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id ===
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
 var CATS = [['Food and drink', ['food', 'water', 'berry']], ['Medical', ['medkit', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat']]];
-var USE = {berry:'Eat', herb:'Make a medkit', stone:'Make ammo', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
+var USE = {berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
 function pct(v){ return Math.round(Math.max(0, v)*100) + '%'; }
 function renderPack(){
   var box = el('pack'); if (box.classList.contains('hidden')) return;
@@ -2002,7 +2003,10 @@ function swing(){
   var ws0 = weaponStats(); P.atkCd = ws0.cd; P.swing = 0.22; var hit = false, i, dx, dy, d, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
   for (i = 0; i < zombies.length; i++){
     var z = zombies[i]; dx = z.x - P.x; dy = z.y - P.y; d = Math.hypot(dx, dy);
-    if (d < ws0.reach + AK[z.k].r && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){ hitZombie(z, ws0.dmg + 0.25*lvl('melee'), dx/d*8, dy/d*8); hit = true; }
+    if (d < ws0.reach + AK[z.k].r && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){
+      var behind = (Math.cos(z.ang || 0)*-dx + Math.sin(z.ang || 0)*-dy)/(d || 1) < -0.2, unaware = z.st !== 2 && (z.aw || 0) < 0.7;
+      if (z.k < 2 && unaware && (behind || P.crouch) && (z.k === 0 || (P.crouch && behind))){ hitZombie(z, 999, 0, 0, true); feed('Quiet takedown', '#9bb07a'); addXp('melee', 4); hit = true; continue; }   /* from behind, or crouched, on one that has not noticed you */
+      hitZombie(z, ws0.dmg + 0.25*lvl('melee'), dx/d*8, dy/d*8); hit = true; }
   }
   if (hit){ addXp('melee', 2); return; }
   var bt = null, bd = 2.6;
@@ -2062,6 +2066,76 @@ function los(ax, ay, bx, by){
   }
   return true;
 }
+/* ---- finding a way: a small grid around the alien and its goal, walls and shut doors marked, searched with A*.
+   Only used when a wall is in the way; a few searches per frame at most ---- */
+var PF = {budget:0}, noises = [], stones = [];
+function findPath(sx, sy, gx, gy, r){
+  var cs = 0.6, hs = Math.max(Math.abs(gx - sx), Math.abs(gy - sy))/2 + 12, mx = (sx + gx)/2, my = (sy + gy)/2, x0 = mx - hs, y0 = my - hs, x1 = mx + hs, y1 = my + hs;   /* a square window, so there is room to go round whatever is in the way */
+  if (hs > 60) return null;
+  var W = Math.ceil((x1 - x0)/cs) + 1, H = Math.ceil((y1 - y0)/cs) + 1, N = W*H, blk = new Uint8Array(N), rad = r + 0.12, rc = Math.ceil(rad/cs), i, j, k;
+  var mark = function(L){ for (var q = 0; q < L.length; q += 4){ var ax = L[q], ay = L[q+1], bx = L[q+2], by = L[q+3], l = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.ceil(l/(cs*0.5)));
+      if (Math.max(ax, bx) < x0 - 1 || Math.min(ax, bx) > x1 + 1 || Math.max(ay, by) < y0 - 1 || Math.min(ay, by) > y1 + 1) continue;
+      for (var s2 = 0; s2 <= n; s2++){ var px = ax + (bx - ax)*s2/n, py = ay + (by - ay)*s2/n, ci = Math.round((px - x0)/cs), cj = Math.round((py - y0)/cs);
+        for (var dj = -rc; dj <= rc; dj++) for (var di = -rc; di <= rc; di++){ var ii = ci + di, jj = cj + dj; if (ii < 0 || jj < 0 || ii >= W || jj >= H) continue; var ddx = x0 + ii*cs - px, ddy = y0 + jj*cs - py; if (ddx*ddx + ddy*ddy < rad*rad) blk[jj*W + ii] = 1; } } } };
+  if (world.wallSegs.length) mark(world.wallSegs);
+  stampN++;
+  for (var cy = Math.floor(y0/G); cy <= Math.floor(y1/G); cy++) for (var cx = Math.floor(x0/G); cx <= Math.floor(x1/G); cx++){
+    var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
+    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; b.stamp = stampN; mark(b.segs); mark(barOf(b)); if (b.int) mark(b.int.segs); }
+  }
+  for (i = 0; i < cades.length; i++){ var cd = cades[i], ci2 = Math.round((cd.x - x0)/cs), cj2 = Math.round((cd.y - y0)/cs), rr = Math.ceil((0.85 + r)/cs); for (j = -rr; j <= rr; j++) for (k = -rr; k <= rr; k++){ var a2 = ci2 + k, b2 = cj2 + j; if (a2 >= 0 && b2 >= 0 && a2 < W && b2 < H && k*k + j*j <= rr*rr) blk[b2*W + a2] = 1; } }
+  var si = Math.round((sx - x0)/cs), sj = Math.round((sy - y0)/cs), gi = Math.round((gx - x0)/cs), gj = Math.round((gy - y0)/cs), S = sj*W + si, Gc = gj*W + gi;
+  var nearFree = function(ci, cj){ var bst = -1, bd2 = 1e9; for (var j3 = -4; j3 <= 4; j3++) for (var k3 = -4; k3 <= 4; k3++){ var i3 = ci + k3, jj3 = cj + j3; if (i3 < 0 || jj3 < 0 || i3 >= W || jj3 >= H || blk[jj3*W + i3]) continue; if (k3*k3 + j3*j3 < bd2){ bd2 = k3*k3 + j3*j3; bst = jj3*W + i3; } } return bst; };
+  if (blk[S]){ S = nearFree(si, sj); if (S < 0) return null; }
+  if (blk[Gc]){ var bestG = -1, bd = 1e9; for (j = -3; j <= 3; j++) for (k = -3; k <= 3; k++){ var ii2 = gi + k, jj2 = gj + j; if (ii2 < 0 || jj2 < 0 || ii2 >= W || jj2 >= H || blk[jj2*W + ii2]) continue; if (k*k + j*j < bd){ bd = k*k + j*j; bestG = jj2*W + ii2; } } if (bestG < 0) return null; Gc = bestG; gi = Gc % W; gj = (Gc - gi)/W; }
+  var g = new Float32Array(N).fill(1e9), from = new Int32Array(N).fill(-1), closed = new Uint8Array(N), heap = [], hf = [];
+  var push = function(n, f){ heap.push(n); hf.push(f); var c = heap.length - 1; while (c > 0){ var p = (c - 1) >> 1; if (hf[p] <= hf[c]) break; var t = heap[p]; heap[p] = heap[c]; heap[c] = t; t = hf[p]; hf[p] = hf[c]; hf[c] = t; c = p; } };
+  var pop = function(){ var top = heap[0], ln = heap.pop(), lf = hf.pop(); if (heap.length){ heap[0] = ln; hf[0] = lf; var c = 0; for (;;){ var l = c*2 + 1, rr2 = l + 1, m2 = c; if (l < heap.length && hf[l] < hf[m2]) m2 = l; if (rr2 < heap.length && hf[rr2] < hf[m2]) m2 = rr2; if (m2 === c) break; var t = heap[m2]; heap[m2] = heap[c]; heap[c] = t; t = hf[m2]; hf[m2] = hf[c]; hf[c] = t; c = m2; } } return top; };
+  var hh = function(n){ var dx = Math.abs(n % W - gi), dy = Math.abs(((n - n % W)/W) - gj); return Math.max(dx, dy) + 0.414*Math.min(dx, dy); };
+  g[S] = 0; push(S, hh(S)); var found = false, it = 0, D = [1,0,1, -1,0,1, 0,1,1, 0,-1,1, 1,1,1.414, 1,-1,1.414, -1,1,1.414, -1,-1,1.414];
+  while (heap.length && it++ < 14000){
+    var n = pop(); if (closed[n]) continue; closed[n] = 1; if (n === Gc){ found = true; break; }
+    var ni = n % W, nj = (n - ni)/W;
+    for (k = 0; k < 24; k += 3){ var xi = ni + D[k], yj = nj + D[k+1]; if (xi < 0 || yj < 0 || xi >= W || yj >= H) continue; var m3 = yj*W + xi; if (blk[m3] || closed[m3]) continue;
+      if (D[k] && D[k+1] && (blk[nj*W + xi] || blk[yj*W + ni])) continue;
+      var ng = g[n] + D[k+2]; if (ng < g[m3]){ g[m3] = ng; from[m3] = n; push(m3, ng + hh(m3)); } }
+  }
+  if (!found) return null;
+  var cells = []; for (n = Gc; n >= 0; n = from[n]) cells.push(n); cells.reverse();
+  var clear = function(a, b){ var ai = a % W, aj = (a - ai)/W, bi = b % W, bj = (b - bi)/W, st = Math.max(Math.abs(bi - ai), Math.abs(bj - aj))*2; for (var q = 1; q < st; q++){ var qi = Math.round(ai + (bi - ai)*q/st), qj = Math.round(aj + (bj - aj)*q/st); if (blk[qj*W + qi]) return false; } return true; };
+  var out = [], cur = 0;
+  while (cur < cells.length - 1){ var nx2 = cur + 1; for (k = cells.length - 1; k > cur + 1; k--) if (clear(cells[cur], cells[k])){ nx2 = k; break; } out.push([x0 + (cells[nx2] % W)*cs, y0 + Math.floor(cells[nx2]/W)*cs]); cur = nx2; }
+  if (out.length) out[out.length - 1] = [gx, gy];
+  return out;
+}
+/* the next point to walk to, or null to walk straight */
+function route(z, gx, gy, r, dt){
+  z.rt = (z.rt || 0) - dt; z.pAge = (z.pAge || 0) + dt;
+  if (z.rt <= 0){
+    z.rt = 0.3 + Math.random()*0.1; z.clear = Math.hypot(gx - z.x, gy - z.y) < 1.5 || los(z.x, z.y, gx, gy);
+    if (!z.clear && (!z.path || Math.hypot((z.pgx || 0) - gx, (z.pgy || 0) - gy) > 3 || z.pAge > 3) && PF.budget > 0 && !(z.pFail > 0)){
+      PF.budget--; z.path = findPath(z.x, z.y, gx, gy, r + 0.25) || findPath(z.x, z.y, gx, gy, r); z.pi = 0; z.pgx = gx; z.pgy = gy; z.pAge = 0; if (!z.path) z.pFail = 1;
+    }
+  }
+  z.pFail = (z.pFail || 0) - dt;
+  if (z.clear || !z.path) return null;
+  while (z.pi < z.path.length - 1 && Math.hypot(z.path[z.pi][0] - z.x, z.path[z.pi][1] - z.y) < 0.8) z.pi++;
+  return z.path[z.pi];
+}
+/* throw a stone: where it lands makes a noise that aliens come to look at */
+function throwStone(){
+  if (!running || P.veh) return;
+  if (!(inv.stone > 0)){ feed('No stones. Gather them from rocks.', '#c0c6cc'); return; }
+  inv.stone--; var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), L = 16 - Math.max(-6, Math.min(6, P.pitch*10)), x = P.x, y = P.y;
+  for (var q = 1; q <= L; q++){ var nx = P.x + fx*q, ny = P.y + fy*q; if (!los(P.x, P.y, nx, ny)) break; x = nx; y = ny; }
+  stones.push({x0:P.x, y0:P.y, x:x, y:y, t:0}); feed('Threw a stone', '#c0c6cc'); updateHud();
+}
+function makeNoise(x, y, r){ noises.push({x:x, y:y, r:r, life:0.4}); if (net.role === 'guest') emit({k:'noise', x:x, y:y, r:r}); }
+function stoneTick(dt){
+  for (var i = stones.length - 1; i >= 0; i--){ var s = stones[i]; s.t += dt/0.55; if (s.t >= 1){ makeNoise(s.x, s.y, 22); stones.splice(i, 1); } }
+  for (i = noises.length - 1; i >= 0; i--){ noises[i].life -= dt; if (noises[i].life <= 0) noises.splice(i, 1); }
+}
+function drawStones(m){ for (var i = 0; i < stones.length; i++){ var s = stones[i], t = s.t, x = s.x0 + (s.x - s.x0)*t, y = s.y0 + (s.y - s.y0)*t; m.yo = groundAt(x, y); m.ybox(x, y, t*9, 0, 0, 1.4 + Math.sin(t*3.1416)*2.2 - t*1.2, 0.07, 0.06, 0.07, [140,140,136]); } m.yo = 0; }
 function hearR(t){ return t.loud ? 45 : !t.mv ? 0 : t.vis < 1 ? 2.5 : t.vis > 1 ? 18 : 7; }
 function senses(z, A, tg, dt, night){
   var i, t, dd;
@@ -2080,6 +2154,7 @@ function senses(z, A, tg, dt, night){
         if (dd < hr && z.st !== 2){ var er = dd*0.25; z.lx = t.x + (Math.random() - 0.5)*er; z.ly = t.y + (Math.random() - 0.5)*er; if (z.st !== 1){ z.st = 1; z.stT = 9; } z.aw = Math.max(z.aw || 0, dd < hr*0.35 ? 0.6 : 0.3); }
       }
     }
+    for (i = 0; i < noises.length; i++){ var ns = noises[i], nd2 = Math.hypot(ns.x - z.x, ns.y - z.y); if (nd2 < ns.r*A.hear && z.st !== 2){ z.st = 1; z.stT = 10; z.lx = ns.x + (Math.random() - 0.5)*2; z.ly = ns.y + (Math.random() - 0.5)*2; z.aw = Math.max(z.aw || 0, 0.3); } }
     if (seenT){
       var rs2 = A.see*seenT.vis*(night ? (seenT.lit ? 2 : 0.5) : 1);
       z.aw = Math.min(1.3, (z.aw || 0) + (sd < 3 ? 4 : 0.32 + 1.8*Math.max(0, 1 - sd/Math.max(1, rs2)))*st*(seenT.lit ? 1.5 : 1)*(z.st >= 1 ? 1.6 : 1));
@@ -2263,7 +2338,7 @@ function update(dt){
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
     stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
-  P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
+  stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
   if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0) P.hp -= 1.2*dt; } else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
   if (region && world.core && !zoneBusy && (P.x < world.core.x0 || P.x > world.core.x1 || P.y < world.core.y0 || P.y > world.core.y1)) zoneTravel();
@@ -2311,6 +2386,7 @@ function update(dt){
     net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); });
+    PF.budget = QS.zmul < 1 ? 2 : 4;
     for (i = zombies.length - 1; i >= 0; i--){
       var z = zombies[i], A = AK[z.k], T = null, d = 1e9, dAny = 1e9;
       for (var q2 = 0; q2 < tg.length; q2++){
@@ -2339,12 +2415,14 @@ function update(dt){
           if (z.thru <= 0 && Math.hypot(z.x - nx1, z.y - ny1) < 0.7) z.thru = 1.6;
           if (z.thru > 0){ tx = dr.x - dr.nx*1.4*out; ty = dr.y - dr.ny*1.4*out; } else { tx = nx1; ty = ny1; }
         }
+        if (z.k !== 2 && !(z.thru > 0)){ var wp = route(z, gx0, gy0, A.r, dt); if (wp){ tx = wp[0]; ty = wp[1]; z.av = 0; } }   /* walk around walls and through open doorways */
         var gx = tx - z.x, gy = ty - z.y, gd = Math.hypot(gx, gy) || 0.001, shy = z.k === 1 && T && T.fire && d < 11;
         if (shy){ if (d > 9){ vx = -ey/d; vy = ex/d; } else { vx = -ex/d; vy = -ey/d; } }
         else if (z.av > 0 && z.thru <= 0){ z.av -= dt; vx = z.ax*0.9 + gx/gd*0.2; vy = z.ay*0.9 + gy/gd*0.2; } else { vx = gx/gd; vy = gy/gd; }
         if (d > 0.8 || shy) stepMove(z, (vx*zs + z.kx)*dt, (vy*zs + z.ky)*dt, A.r);
         if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
         if (T && T.b && z.k !== 2) alienAtPort(z, A, T.b, dt);
+        else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
         if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg}); else { P.hp -= A.dmg; P.hurt = 0.3; } }
       }
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
@@ -2727,7 +2805,7 @@ function render(){
   var m = new Mesh(), x, y, far = world.hg ? world.hg.min - 3 : 0;
   m.pl = [TX.grass, 0.25]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [236,244,222], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
-  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m);
+  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); drawPerson(m, ops[i], lookOf(ops[i]), now); }
@@ -3390,13 +3468,14 @@ function applyEv(e){
   else if (e.k === 'part'){ if (world.buildings[e.b]) world.found[e.b] = 1; }
   else if (e.k === 'won'){ winWorld(true); }
   else if (e.k === 'flare'){ if (e.f) flares.push({x:+e.f.x, y:+e.f.y, life:Math.min(120, +e.f.life || 30)}); }
+  else if (e.k === 'noise'){ if (net.role === 'host') noises.push({x:+e.x, y:+e.y, r:Math.min(30, +e.r || 0), life:0.4}); }
   else if (e.k === 'lure'){ if (e.l) lures.push({x:+e.l.x, y:+e.l.y, life:Math.min(60, +e.l.life || 10)}); }
   else if (e.k === 'pack'){ if (e.p) packs.push(e.p); }
   else if (e.k === 'unpack'){ for (var i = 0; i < packs.length; i++) if (packs[i].id === e.id){ packs.splice(i, 1); break; } }
 }
-function hitZombie(z, dmg, kx, ky){
-  z.hurt = 0.15;
-  if (net.role === 'guest') send(net.host.dc, {t:'hit', id:z.id, d:dmg, kx:kx, ky:ky}); else { z.hp -= dmg; var kb = z.k === 2 ? 0.08 : 1; z.kx = kx*kb; z.ky = ky*kb; }
+function hitZombie(z, dmg, kx, ky, quiet){
+  if (!quiet) z.hurt = 0.15;
+  if (net.role === 'guest') send(net.host.dc, {t:'hit', id:z.id, d:dmg, kx:kx, ky:ky, td:quiet ? 1 : 0}); else { z.hp -= dmg; var kb = z.k === 2 ? 0.08 : 1; z.kx = kx*kb; z.ky = ky*kb; }
 }
 function sendWho(){ var l = [[0, el('pname').value || 'Host', me.look]]; net.peers.forEach(function(p){ if (p.ready) l.push([p.id, p.name, p.look, p.cop ? 1 : 0]); }); broadcast({t:'who', l:l}); }
 function otherPlayers(){ return net.role === 'host' ? net.peers.filter(function(p){ return p.ready; }) : net.role === 'guest' ? net.others : []; }
@@ -3490,7 +3569,7 @@ function hostMsg(peer, data){
   }
   else if (m.t === 'ev'){ applyEv(m.e); broadcast({t:'ev', e:m.e}, peer); }
   else if (m.t === 'askEdits'){ if (window.confirm(peer.name + ' asks for a copy of your building changes and this map. Share them?')) send(peer.dc, {t:'edits', map:world.name, nb:world.buildings.length, edits:world.edits}); else send(peer.dc, {t:'edits', no:1}); }
-  else if (m.t === 'hit'){ for (var i = 0; i < zombies.length; i++) if (zombies[i].id === m.id){ var z = zombies[i]; z.hp -= Math.min(15, +m.d || 0); z.hurt = 0.15; z.kx = +m.kx || 0; z.ky = +m.ky || 0; break; } }
+  else if (m.t === 'hit'){ for (var i = 0; i < zombies.length; i++) if (zombies[i].id === m.id){ var z = zombies[i]; if (m.td && z.k < 2 && z.st !== 2) z.hp = 0; else { z.hp -= Math.min(15, +m.d || 0); z.hurt = 0.15; } z.kx = +m.kx || 0; z.ky = +m.ky || 0; break; } }
 }
 el('inviteBtn').addEventListener('click', function(){
   if (document.exitPointerLock) document.exitPointerLock();

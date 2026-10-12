@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 11 October 2026, at version 0.22. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 11 October 2026, at version 0.23. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -15,6 +15,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.20 | Sprint and stamina, crouch, slow climbing through windows, hills slow you, swimming and wet clothes |
 | 0.21 | Safe zones with a hard edge; Park Central Square is a safe zone |
 | 0.22 | Aliens see in a cone blocked by walls, hear by how you move, investigate, chase and search; the awareness pill on screen |
+| 0.23 | Aliens find their way around walls and through doorways; thrown stones draw them; quiet takedowns from behind |
 
 ## Next versions
 
@@ -22,7 +23,6 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.23** | Aliens walk around walls and through doorways (pathfinding). Thrown stones and bottles make noise that draws aliens. Quiet takedown from behind on an unaware alien. | None |
 | **0.24** | Interior doors that open and shut. Hide in wardrobes and lockers. Locked outside doors: find a key, pry quietly and slowly, or smash loudly. | Kenney Furniture Kit (A3) |
 | **0.25** | Sound: footsteps by surface, doors, glass, gunfire, alien calls, ambient wind and rain. Aliens are heard before seen. | Kenney Impact Sounds, RPG Audio (A5, A6) |
 | **0.26** | Real animations for survivors and aliens: walk, run, crouch, attack, die. Other players drawn as people instead of markers. | Universal Animation Library, Ultimate Modular Men and Women (A1, A2) |
@@ -64,9 +64,9 @@ Ticked items are in the game.
 - [x] Awareness that builds while you are in view, and an on-screen indicator
 - [x] Investigate, chase, search where they lost you, give up
 - [x] Swarmers alert their group
-- [ ] Pathfinding around walls and through doors
-- [ ] Thrown distractions
-- [ ] Stealth takedowns
+- [x] Pathfinding around walls and through doors
+- [x] Thrown distractions (stones)
+- [x] Stealth takedowns
 - [ ] Noise draws aliens across a block; area "heat"
 - [ ] Stalker that hunts and learns your hiding spots
 - [ ] Giant that feels sprinting and vehicles from far away

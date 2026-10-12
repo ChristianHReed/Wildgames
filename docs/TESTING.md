@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.22) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.23) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -173,6 +173,15 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3h.5 Get chased, then duck behind a building. After about a second the pill says "Searching for you"; the alien goes to where it last saw you and poke around, then gives up.
 - [ ] 3h.6 Aliens behind a wall or a shut door cannot see you. An open door or window lets them.
 - [ ] 3h.7 Fire a gun: everything within about 45 m comes to look. Hit a swarmer: it and its group come for you.
+
+## Stage 3i: aliens find their way; distractions and takedowns
+
+- [ ] 3i.1 Get spotted, then run round the far side of a big building. The alien follows round the corner instead of pressing against the wall.
+- [ ] 3i.2 Go into a house with the front door open. An alien chasing you comes in through the door.
+- [ ] 3i.3 Shut the door behind you. The alien loses sight, searches outside, and may try the door or a window if it heard you.
+- [ ] 3i.4 Gather stones from rocks, then press V (or tap Throw) to throw one past an alien. It walks to where the stone landed and looks around.
+- [ ] 3i.5 Crouch and creep up behind a stalker that has not noticed you, then swing. It drops in one blow ("Quiet takedown"). Standing, or from the front, it does not.
+- [ ] 3i.6 Watch the frame rate with many aliens chasing you around buildings on the phone.
 
 ## Stage 4: aliens and weather
 
