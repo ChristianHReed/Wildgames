@@ -35,7 +35,7 @@ atlas.save(os.path.join(OUT, 'atlas.png'), optimize=True)
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']
 sheet_src = Image.open(os.path.join(T, 'sprites', 'items_atlas.png')).convert('RGBA')
 ORDER = ['canned_beans', 'water_bottle', 'first_aid_kit', 'batteries', 'planks', 'tin_can', 'rain_jacket', 'fuel_can', 'backpack']
-icons = Image.new('RGBA', (96*(len(ORDER) + 8), 96))
+icons = Image.new('RGBA', (96*(len(ORDER) + 9), 96))
 for i, n in enumerate(ORDER):
     f = fr[n]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (i*96, 0))
 # four more: nails stand for ammo, the pack's flashlight, and a hand-drawn lantern and radio in the same flat outlined style
@@ -68,6 +68,12 @@ st = Image.new('RGBA', (384, 384)); d2 = ImageDraw.Draw(st); d2.ellipse([70, 330
 d2.polygon([(70, 250), (110, 140), (210, 90), (300, 150), (322, 262), (250, 330), (120, 326)], fill=(168, 160, 150, 255), outline=INKC); d2.line([(70, 250), (110, 140), (210, 90), (300, 150), (322, 262), (250, 330), (120, 326), (70, 250)], fill=INKC, width=LW, joint='curve')
 d2.line([(150, 170), (210, 150), (250, 190)], fill=(120, 112, 104, 255), width=10)
 icons.paste(st.resize((96, 96), Image.LANCZOS), (16*96, 0))
+# a key, for locked doors
+ky = Image.new('RGBA', (384, 384)); d3 = ImageDraw.Draw(ky); d3.ellipse([70, 330, 320, 362], fill=(61, 48, 41, 60))
+d3.ellipse([60, 90, 200, 230], fill=(217, 168, 69, 255), outline=INKC, width=LW); d3.ellipse([105, 135, 155, 185], fill=(0, 0, 0, 0), outline=INKC, width=10)
+d3.rounded_rectangle([186, 140, 330, 182], 10, fill=(217, 168, 69, 255), outline=INKC, width=LW)
+d3.rectangle([262, 176, 290, 240], fill=(217, 168, 69, 255), outline=INKC, width=10); d3.rectangle([300, 176, 324, 222], fill=(217, 168, 69, 255), outline=INKC, width=10)
+icons.paste(ky.resize((96, 96), Image.LANCZOS), (17*96, 0))
 icons.save(os.path.join(OUT, 'icons.png'), optimize=True)
 # ---- built-in Springfield map
 M = os.path.join(SRC, 'map_data')

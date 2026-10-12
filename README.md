@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.24.1. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.26. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -32,6 +32,8 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | Sprint, crouch | Hold Shift, Z | Run, Crouch (tap on, tap off) |
 | Throw a stone | V | Throw |
 | First or third person | P | Menu, First or third person |
+| Hide in an emptied wardrobe or locker | E | Tap it; move or Search to come out |
+| Pry a locked door, smash it | Hold E, swing at it | Hold Search, Swing |
 | Swing, shoot | Click or Space, right-click or F | Swing, Shoot |
 | Search, gather, open or shut a door or window, ride, trade | E | Tap it, or Search |
 | Eat, drink, medkit | 1, 2, 3 | Tap the item |
@@ -54,6 +56,8 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 ## What is in the game
 
 - **World:** real streets and building outlines; every building can be entered. Rooms are laid out by what the building is (a home gets a living room, kitchen, bedrooms and bathroom; a church gets pews facing an altar), and what you find depends on the container. Doors and windows open, shut, break and can be boarded up; aliens batter their way in.
+- **Doors and hiding:** inside doors open and shut and block an alien's view; about a third of outside doors are locked (keys, pry quietly, or smash loudly); empty wardrobes and lockers are hiding places.
+- **Sound:** footsteps that change with the ground, doors, glass, hits, gunfire, alien calls you hear before you see them, rain, wind and thunder. Volume is on the start page.
 - **Plants:** bushes, flowers, ferns, grass and rocks can be gathered for berries, herbs, fiber and stones, and grow back. Maps load in pieces, so a whole city can be one world on a computer.
 - **Aliens:** swarmers in groups, a stalker that hunts at night by light and noise, a rare giant, and nests that spread between buildings.
 - **Weather:** four seasons, rain, thunderstorms, heat waves, ice storms and tornadoes, with a body-warmth meter.
@@ -98,7 +102,7 @@ The art is in `assets/`, as small script files that `play.html` loads when it st
 - `assets/lite/` is loaded on phones and when View distance is set to Low.
 - `assets/icons.js`, `models.js`, `kit.js`, `nature.js` and `map.js` are shared.
 
-The files are made by the scripts in `tools/` from the Afterstreet design pack in `design/afterstreet_handoff/` and from the packs listed in `CREDITS.md`. To rebuild: run `build_art.py`, `build_kit.py`, `build_creatures.py` and `build_nature.py` twice each (once plain, once with `full`), then `build_models.py`, then `write_assets.py`.
+The files are made by the scripts in `tools/` from the Afterstreet design pack in `design/afterstreet_handoff/` and from the packs listed in `CREDITS.md`. To rebuild: run `build_art.py`, `build_kit.py`, `build_creatures.py`, `build_nature.py` and `build_people.py` twice each (once plain, once with `full`), then `build_models.py` and `write_assets.py`, and `build_sounds.py` for the sounds.
 
 Map data © OpenStreetMap contributors, available under the Open Database License.
 

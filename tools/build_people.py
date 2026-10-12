@@ -193,7 +193,7 @@ def clipset():
     else: S['walk'] = [blend(relaxed, f, LEG + ('spine_01',)) for f in frames('Walk_Carry_Loop', 12)]
     r = pick('Sprint_Loop', 'Jog_Fwd_Loop'); S['run'] = frames(r, 10) if r else S['walk']
     cw = pick('Crouch_Fwd_Loop', 'Crouch_Walk_Loop'); ci = pick('Crouch_Idle_Loop')
-    if cw: S['crouch'] = frames(cw, 12)
+    if cw: S['crouchwalk'] = frames(cw, 12); S['crouch'] = frames(ci, 8) if ci else frames(cw, 1)
     else:
         sd = pick('Farm_PlantSeed'); L = CL.length(sd); best = min(frames(sd, 24), key=lambda s: s.get('pelvis', {}).get('translation', np.array([0, 9, 0]))[1]); S['crouch'] = [blend(relaxed, best, LEG + ('spine',))]
     S['attack'] = frames(pick('Sword_Regular_A', 'Melee_Hook', 'Punch_Jab'), 8)
@@ -203,7 +203,10 @@ def clipset():
     hk = pick('Hit_Chest', 'Hit_Knockback'); S['hit'] = frames(hk, 6, 0, CL.length(hk)*(1 if hk == 'Hit_Chest' else 0.3))
     S['eat'] = frames(pick('Consume'), 8)
     d = pick('Death01', 'Death_A'); S['dead'] = [CL.sample(d, CL.length(d))] if d else [CL.sample('LayToIdle', 0.0)]
-    S['talk'] = frames(pick('Idle_TalkingPhone_Loop', 'Idle_FoldArms_Loop'), 10)
+    S['talk'] = frames(pick('Idle_Talking_Loop', 'Idle_TalkingPhone_Loop', 'Idle_FoldArms_Loop'), 10)
+    if CL.has('Swim_Fwd_Loop'): S['swim'] = frames('Swim_Fwd_Loop', 10); S['swimidle'] = frames(pick('Swim_Idle_Loop', 'Swim_Fwd_Loop'), 8)
+    if CL.has('Pistol_Shoot'): S['shoot'] = frames('Pistol_Shoot', 6)
+    if CL.has('Idle_Torch_Loop'): S['light'] = frames('Idle_Torch_Loop', 8)
     return S
 
 BD = os.path.join(UBC, 'Base Characters', 'Godot - UE'); HD = os.path.join(UBC, 'Hairstyles', 'Rigged to Head Bone', 'glTF (Godot -Unreal)')

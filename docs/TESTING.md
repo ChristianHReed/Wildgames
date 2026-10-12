@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.24) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.26) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -199,6 +199,16 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3k.3 Food lasts about an hour of play and water about forty minutes. You get a warning at 20 and again at empty; empty costs health slowly.
 - [ ] 3k.4 A cool, rainy spring day makes you cold but does not freeze you. Freezing starts around 34\u00b0F.
 - [ ] 3k.5 Tornadoes only come from day 2, are rarer, tell you which way they are, show on the map, and hurt much less.
+
+## Stage 3l: doors, hiding, locks and sound
+
+- [ ] 3l.1 Inside a house, shut a door between two rooms. An alien on the other side cannot see you; one chasing you shoves it open after a moment.
+- [ ] 3l.2 Search a wardrobe or locker until it is empty, then press E (or tap it) to hide. The view goes dark with slats. An alien that did not see you go in walks past; one that did drags you out.
+- [ ] 3l.3 Find a locked front door (about a third are). With keys (nightstands, offices, police) it opens at once. Without, holding E pries it in about 6 seconds, quietly; swinging at it smashes it in four blows, loudly.
+- [ ] 3l.4 Kitchens, bathrooms, bedrooms and offices show real furniture: stove, sink, cupboards, toilet, bath, TV, wardrobe, bunk beds, computer desks.
+- [ ] 3l.5 Turn the sound on (tap the screen once on iPhone). Footsteps change on grass, pavement, wooden and carpeted floors. Doors creak and bang, glass breaks, rain and wind follow the weather, aliens call from out of sight and screech when they spot you.
+- [ ] 3l.6 The volume slider on the start page works, and 0 is silent.
+- [ ] 3l.7 Your survivor now walks, runs, crouch-walks, swims, shoots and dies with proper movements (third-person view, P).
 
 ## Stage 4: aliens and weather
 

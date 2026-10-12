@@ -52,7 +52,7 @@
   #vTemp{float:right;font-weight:400;opacity:.85;text-transform:none}
   #power{margin-top:8px;font-size:11px;font-weight:600;opacity:.92;display:flex;gap:12px;align-items:center}
   #power span{display:inline-flex;align-items:center;gap:4px}
-  #power .ic{position:static;width:18px;height:18px;background-size:306px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+  #power .ic{position:static;width:18px;height:18px;background-size:324px 18px;display:inline-block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
   #power .off{opacity:.45}
   #hud{position:fixed;left:50%;top:12px;transform:translateX(-50%);pointer-events:none;text-align:center;color:#fff;text-shadow:var(--sh);width:300px}
   #compass{position:relative;height:20px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);border-bottom:1px solid rgba(255,255,255,.35)}
@@ -78,7 +78,7 @@
   .slot{position:relative;width:52px;height:52px;background:rgba(32,30,29,.42);border-radius:10px;box-shadow:0 0 0 1px rgba(245,234,216,.22)}
   .slot[data-u],.slot[data-pack]{cursor:pointer}
   .slot.zero{opacity:.5}
-  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:612px 36px;background-repeat:no-repeat}
+  .ic{position:absolute;left:8px;top:6px;width:36px;height:36px;background-image:var(--icons);background-size:648px 36px;background-repeat:no-repeat}
   .slot .cnt{position:absolute;right:4px;bottom:2px;font-size:12px;font-weight:800;color:#fff;text-shadow:var(--sh)}
   .slot .key{position:absolute;left:5px;top:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,.7)}
   .sw{width:12px;height:12px;display:inline-block;border-radius:3px;border:1px solid var(--outline)}
@@ -92,6 +92,7 @@
   #feed{position:fixed;left:50%;top:66%;transform:translateX(-50%);pointer-events:none;text-align:center;font-size:13px;font-weight:600;line-height:1.5}
   #feed div{display:table;margin:2px auto;text-shadow:var(--sh)}
   #hurt{position:fixed;inset:0;background:var(--clay);opacity:0;pointer-events:none}
+  #hideMask{position:fixed;inset:0;pointer-events:none;display:none;background:repeating-linear-gradient(90deg,rgba(28,20,14,.96) 0 46px,rgba(28,20,14,.25) 46px 58px);box-shadow:inset 0 0 160px 60px rgba(0,0,0,.85)} #hideMask.on{display:block}
   #hitDir{position:fixed;left:50%;top:50%;width:0;height:0;pointer-events:none;opacity:0;z-index:5} #hitDir i{position:absolute;left:-46px;top:-150px;width:92px;height:22px;border-radius:50% 50% 0 0;border-top:7px solid #e0442a;filter:drop-shadow(0 0 4px rgba(0,0,0,.5))}
   #toast{position:fixed;left:50%;top:104px;transform:translateX(-50%);background:rgba(32,30,29,.72);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;max-width:min(520px,60vw);text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
   #chatIn{position:fixed;left:22px;bottom:90px;width:min(340px,70vw);border-color:var(--clay);user-select:text}
@@ -124,7 +125,7 @@
   .irow span.n{flex:1;color:var(--ink);font-weight:600}
   .irow i{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
   #miniWrap{pointer-events:auto;cursor:pointer}
-  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:510px 30px;display:inline-block}
+  .irow .ic{position:static;flex:none;width:30px;height:30px;background-size:540px 30px;display:inline-block}
   #bigMap{position:fixed;inset:0;z-index:6;background:#e6d6bb}
   #bigCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
   #bigBar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);white-space:nowrap}
@@ -162,7 +163,7 @@
   .touchmode #hudBtns{right:112px;top:44px;width:170px}
   .touchmode #inv{bottom:6px;gap:5px}
   .touchmode .slot{width:44px;height:44px;border-radius:8px}
-  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:510px 30px}
+  .touchmode .slot .ic{left:7px;top:5px;width:30px;height:30px;background-size:540px 30px}
   .touchmode .slot .cnt{font-size:11px}
   .touchmode .slot .key{display:none}
   .touchmode #toast{top:74px;font-size:12px}
@@ -179,7 +180,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hurt"></div><div id="hitDir"><i></i></div>
+<div id="hurt"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
 <div id="play" class="hidden">
   <div id="cross"></div>
   <div id="vitals">
@@ -264,6 +265,7 @@
       <b>Settings</b>
       <div class="prow">
         <label>Length of a day<select id="dayLen"><option value="43200">12 hours (half of real time)</option><option value="7200">2 hours</option><option value="1440">24 minutes</option><option value="240">4 minutes (quick test)</option></select></label>
+        <label>Sound volume<input id="vol" type="range" min="0" max="100" value="80"></label>
         <label>View distance and art detail<select id="qual"><option value="0">Low (phones, older laptops)</option><option value="1">Medium</option><option value="2">High</option></select></label>
         <label>Goal, for a new world<select id="scen"></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
@@ -343,7 +345,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.24.1.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.26.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -353,7 +355,7 @@
 var ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['icons', 'models', 'kit', 'nature', 'map', set + '/atlas', set + '/atlas2', set + '/atlas3', set + '/creatures', set + '/people'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
+  ['icons', 'models', 'kit', 'nature', 'map', set + '/atlas', set + '/atlas2', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
   return set;
 })();
 </script>
@@ -623,13 +625,13 @@ var KIND = {
 };
 function kindLabel(b){ var l = KIND[b.kind].label; return (/^[aeiou]/.test(l) ? 'an ' : 'a ') + l; }
 var LOOTK = {
-  apartments:{food:3, water:2, medkit:0.6, coat:0.6, battery:1, scrap:1, none:1.5},
+  apartments:{key:0.4, food:3, water:2, medkit:0.6, coat:0.6, battery:1, scrap:1, none:1.5},
   garage:{scrap:4, fuel:2.5, wood:2, battery:1, flashlight:0.3, none:1},
   grocery:{food:7, water:4, battery:0.5},
   restaurant:{food:6, water:3, scrap:0.5, none:1},
   bar:{water:5, food:2, medkit:0.3, none:1.5},
   clinic:{medkit:6, water:1, battery:0.4}, hospital:{medkit:7, water:2, battery:0.6, coat:0.4, none:1},
-  police:{ammo:8, medkit:1, radio:1, battery:2, flashlight:0.6},
+  police:{ammo:8, medkit:1, radio:1, battery:2, flashlight:0.6, key:1.2},
   fire:{medkit:3, coat:2, fuel:2, radio:1, flashlight:1, scrap:1, water:2},
   outdoors:{ammo:5, coat:2, lantern:1.5, flashlight:1, food:1, battery:1},
   hardware:{scrap:5, wood:4, battery:2, fuel:1, flashlight:0.8, lantern:0.6},
@@ -640,7 +642,7 @@ var LOOTK = {
   school:{food:2, water:2, medkit:1, battery:1.5, scrap:1, none:2},
   library:{battery:1, lantern:0.4, water:1, scrap:1, none:4},
   church:{water:3, food:2, lantern:1, medkit:0.5, coat:0.5, none:2},
-  office:{battery:2.5, water:2, scrap:1.5, radio:0.5, flashlight:0.5, medkit:0.5, food:0.8, none:2.5},
+  office:{key:0.6, battery:2.5, water:2, scrap:1.5, radio:0.5, flashlight:0.5, medkit:0.5, food:0.8, none:2.5},
   bank:{scrap:2, battery:1, ammo:0.6, none:4},
   hotel:{food:2, water:3, coat:1.5, medkit:0.8, battery:1, none:1.5},
   gym:{water:5, medkit:1.5, food:1, coat:0.6, none:1.5},
@@ -663,7 +665,7 @@ var LOOT = {
   industrial:{scrap:5, wood:4, fuel:2, battery:1}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
 var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba','']};
-ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096',''];
+ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096',''];
 var CORE = {food:1, water:1, medkit:1, ammo:1, wood:1, scrap:1};
 function newInv(start){ var o = {}; for (var k in ITEMS) o[k] = 0; if (start){ o.food = 1; o.water = 1; o.ammo = 8; o.radio = 1; o.flashlight = 1; o.battery = 2; } return o; }
 var AREA_COL = {grass:'#7f9a5c', park:'#6fa25a', forest:'#4f7f4a', sand:'#cdbb8a', parking:'#6a6e75', water:'#3f86b8'};
@@ -1241,7 +1243,7 @@ var FURN = {
   counter:{boxes:[[0,.5,0,1,.5,.35,'#5a6470'],[0,1.02,0,1.05,.03,.4,'#c9ccd1']]},
   cabinet:{name:'medicine cabinet', boxes:[[0,.9,0,.5,.9,.25,'#eef1f3'],[0,1.3,.26,.3,.07,.01,'#c8322b'],[0,1.3,.26,.07,.3,.01,'#c8322b']]},
   gurney:{boxes:[[0,.55,0,1,.08,.4,'#e6eaee'],[0,.25,0,.9,.03,.35,'#8a9199']]},
-  locker:{name:'locker', boxes:[[0,1,0,.6,1,.28,'#3f5a85'],[0,1.5,.29,.5,.04,.01,'#22344f']]},
+  locker:{name:'locker', hide:1, boxes:[[0,1,0,.6,1,.28,'#3f5a85'],[0,1.5,.29,.5,.04,.01,'#22344f']]},
   desk:{boxes:[[0,.72,0,.8,.04,.4,'#7a5a3c'],[-.6,.35,0,.15,.35,.38,'#5a4028'],[.6,.35,0,.15,.35,.38,'#5a4028']]},
   crate:{name:'crate', tex:27, boxes:[[0,.45,0,.5,.45,.5,'#b98a52']]},
   barrel:{boxes:[[0,.5,0,.35,.5,.35,'#3d6b8c']]},
@@ -1280,32 +1282,35 @@ FURN.table.models = ['table_medium']; FURN.table.s = [.78,.78]; FURN.table.boxes
 FURN.ctable = {models:['table_low'], s:[.9,.58], boxes:[[0,.34,0,.8,.04,.5,'#a8743e'],[0,.16,0,.6,.16,.3,'#6b4526']]};
 FURN.stable = {models:['table_small'], s:[.4,.4], boxes:[[0,.72,0,.36,.04,.36,'#a8743e'],[0,.35,0,.06,.35,.06,'#6b4526']]};
 FURN.desk.s = [1.13,.75]; FURN.desk.boxes = [[0,.72,0,1.1,.04,.7,'#7a5a3c'],[-.9,.35,0,.15,.35,.6,'#5a4028'],[.9,.35,0,.15,.35,.6,'#5a4028']];
-FURN.odesk = {s:[.8,.42], boxes:[[0,.72,0,.8,.04,.4,'#8b8f94'],[-.6,.35,0,.15,.35,.38,'#5d6268'],[.6,.35,0,.15,.35,.38,'#5d6268'],[0,1.02,-.2,.3,.2,.03,'#15171a'],[0,.8,-.2,.05,.06,.05,'#2a2c30'],[.1,.77,.12,.22,.01,.08,'#d9d9d6']]};
+FURN.odesk = {models:['k_desk'], s:[.77,.48], boxes:[[0,.72,0,.8,.04,.4,'#8b8f94'],[-.6,.35,0,.15,.35,.38,'#5d6268'],[.6,.35,0,.15,.35,.38,'#5d6268'],[0,1.02,-.2,.3,.2,.03,'#15171a'],[0,.8,-.2,.05,.06,.05,'#2a2c30'],[.1,.77,.12,.22,.01,.08,'#d9d9d6']]};
 FURN.chair.models = ['chair_A','chair_B_wood','chair_C']; FURN.chair.s = [.3,.34]; FURN.chair.boxes = [[0,.22,0,.24,.22,.24,'#8a6a48'],[0,.66,-.22,.24,.24,.03,'#7a5a3c']];
 FURN.stool = {models:['chair_stool'], s:[.28,.28], boxes:[[0,.3,0,.2,.3,.2,'#5a4028']]};
-FURN.lamp.s = [.22,.22]; FURN.plant.s = [.33,.33]; FURN.dresser.s = [.78,.4];
+FURN.lamp.s = [.22,.22]; FURN.lamp.models = ['lamp_standing', 'k_lamp']; FURN.plant.models = ['cactus_medium_A', 'k_plant']; FURN.stool.models = ['chair_stool', 'k_stool']; FURN.fridge.models = ['k_fridge']; FURN.fridge.s = [.45,.33];
+FURN.washer = {name:'washing machine', lt:{scrap:1, coat:.5, none:4}, models:['k_washer'], s:[.41,.41], boxes:[[0,.48,0,.4,.48,.4,'#e9ecee']]};
+FURN.coatrack = {soft:1, models:['k_coat'], s:[.29,.29], boxes:[[0,.8,0,.05,.8,.05,'#7a5a3c']]};
+FURN.bin = {name:'bin', lt:{food:.5, scrap:1, none:5}, models:['k_trash'], s:[.22,.25], boxes:[[0,.42,0,.2,.42,.2,'#55595f']]}; FURN.plant.s = [.33,.33]; FURN.dresser.s = [.78,.4];
 FURN.dresser.lt = {coat:2, battery:1, flashlight:.3, none:3};
 FURN.fridge.lt = {food:5, water:3, none:2};
 FURN.cabinet.lt = {medkit:6, none:1};
 FURN.bench.name = 'tool bench'; FURN.bench.lt = {scrap:4, battery:1, flashlight:.5, wood:1, none:1};
-FURN.rug = {flat:1, s:[1.3,.9], boxes:[[0,.006,0,1.3,.006,.9,'#9a5a4a'],[0,.008,0,1.1,.006,.7,'#c9a87a']]};
+FURN.rug = {flat:1, models:['k_rug'], s:[1.3,.9], boxes:[[0,.006,0,1.3,.006,.9,'#9a5a4a'],[0,.008,0,1.1,.006,.7,'#c9a87a']]};
 FURN.mat = {flat:1, s:[.9,.4], boxes:[[0,.03,0,.9,.03,.4,'#3d6b8c']]};
-FURN.stove = {boxes:[[0,.45,0,.38,.45,.32,'#d9d9d6'],[0,.91,0,.38,.01,.32,'#2a2c30'],[0,1.05,-.3,.38,.13,.03,'#c9c9c6'],[0,.5,.33,.3,.22,.005,'#2a2c30']]};
-FURN.sink = {boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,.925,0,.25,.02,.2,'#9aa3aa'],[0,1.08,-.22,.03,.14,.03,'#b9c0c6']]};
-FURN.kcab = {name:'cupboard', lt:{food:4, water:1, battery:.5, none:2}, boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,1.8,-.15,.6,.35,.17,'#8a6a48']]};
-FURN.toilet = {s:[.26,.36], boxes:[[0,.2,.08,.2,.2,.26,'#f2f2ee'],[0,.42,.08,.22,.03,.28,'#e6e6e0'],[0,.6,-.24,.22,.3,.1,'#f2f2ee']]};
-FURN.tub = {boxes:[[0,.28,0,.85,.28,.4,'#f2f2ee'],[0,.5,0,.75,.07,.3,'#bcd6e0']]};
-FURN.basin = {name:'bathroom cabinet', lt:{medkit:3, water:1, none:3}, s:[.32,.26], boxes:[[0,.42,0,.3,.42,.22,'#e9e6de'],[0,.86,0,.32,.03,.24,'#f6f6f2'],[0,1.5,-.2,.28,.3,.03,'#a9c4cf']]};
-FURN.tv = {s:[.62,.22], boxes:[[0,.25,0,.6,.25,.2,'#4a3a2c'],[0,.85,0,.55,.32,.03,'#15171a'],[0,.85,.031,.5,.27,.003,'#27323a']]};
-FURN.nightstand = {name:'nightstand', lt:{battery:2, flashlight:1, medkit:.5, ammo:.4, none:3}, s:[.24,.24], boxes:[[0,.28,0,.22,.28,.22,'#7a5a3c'],[0,.62,0,.05,.06,.05,'#6b4526'],[0,.78,0,.12,.1,.12,'#e8d9a8']]};
-FURN.closet = {name:'wardrobe', lt:{coat:3, scrap:.5, none:3}, boxes:[[0,1,0,.6,1,.3,'#6b4a30'],[0,1,.305,.012,.92,.005,'#3a2a1c'],[-.08,1,.31,.02,.1,.01,'#c9a84a'],[.08,1,.31,.02,.1,.01,'#c9a84a']]};
+FURN.stove = {models:['k_stove'], s:[.45,.47], boxes:[[0,.45,0,.38,.45,.32,'#d9d9d6'],[0,.91,0,.38,.01,.32,'#2a2c30'],[0,1.05,-.3,.38,.13,.03,'#c9c9c6'],[0,.5,.33,.3,.22,.005,'#2a2c30']]};
+FURN.sink = {models:['k_sink'], s:[.45,.47], boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,.925,0,.25,.02,.2,'#9aa3aa'],[0,1.08,-.22,.03,.14,.03,'#b9c0c6']]};
+FURN.kcab = {models:['k_cab'], s:[.45,.47], name:'cupboard', lt:{food:4, water:1, battery:.5, none:2}, boxes:[[0,.45,0,.6,.45,.32,'#8a6a48'],[0,.91,0,.62,.02,.34,'#d6d2c8'],[0,1.8,-.15,.6,.35,.17,'#8a6a48']]};
+FURN.toilet = {models:['k_toilet'], s:[.33,.5], boxes:[[0,.2,.08,.2,.2,.26,'#f2f2ee'],[0,.42,.08,.22,.03,.28,'#e6e6e0'],[0,.6,-.24,.22,.3,.1,'#f2f2ee']]};
+FURN.tub = {models:['k_tub'], s:[1.25,.59], boxes:[[0,.28,0,.85,.28,.4,'#f2f2ee'],[0,.5,0,.75,.07,.3,'#bcd6e0']]};
+FURN.basin = {models:['k_basin'], s:[.36,.43], name:'bathroom cabinet', lt:{medkit:3, water:1, none:3}, boxes:[[0,.42,0,.3,.42,.22,'#e9e6de'],[0,.86,0,.32,.03,.24,'#f6f6f2'],[0,1.5,-.2,.28,.3,.03,'#a9c4cf']]};
+FURN.tv = {models:['k_tv'], s:[.84,.33], boxes:[[0,.25,0,.6,.25,.2,'#4a3a2c'],[0,.85,0,.55,.32,.03,'#15171a'],[0,.85,.031,.5,.27,.003,'#27323a']]};
+FURN.nightstand = {models:['k_night'], s:[.28,.24], name:'nightstand', lt:{battery:2, flashlight:1, medkit:.5, ammo:.4, key:.8, none:3}, boxes:[[0,.28,0,.22,.28,.22,'#7a5a3c'],[0,.62,0,.05,.06,.05,'#6b4526'],[0,.78,0,.12,.1,.12,'#e8d9a8']]};
+FURN.closet = {models:['k_closet'], s:[.42,.27], hide:1, name:'wardrobe', lt:{coat:3, scrap:.5, none:3}, boxes:[[0,1,0,.6,1,.3,'#6b4a30'],[0,1,.305,.012,.92,.005,'#3a2a1c'],[-.08,1,.31,.02,.1,.01,'#c9a84a'],[.08,1,.31,.02,.1,.01,'#c9a84a']]};
 FURN.pew = {s:[1.4,.26], boxes:[[0,.42,0,1.4,.04,.22,'#7a5230'],[0,.7,-.2,1.4,.3,.03,'#6b4526'],[-1.38,.4,0,.03,.4,.24,'#6b4526'],[1.38,.4,0,.03,.4,.24,'#6b4526']]};
 FURN.altar = {boxes:[[0,.5,0,.8,.5,.35,'#e6e0d0'],[0,1.02,0,.85,.02,.4,'#f6f2e6'],[0,1.5,0,.04,.45,.04,'#c9a84a'],[0,1.65,0,.2,.04,.04,'#c9a84a']]};
 FURN.checkout = {name:'till', lt:{battery:1, scrap:1, none:3}, boxes:[[0,.5,0,.9,.5,.3,'#4f5560'],[0,1.02,0,.92,.02,.32,'#c9ccd1'],[.5,1.2,0,.18,.16,.16,'#2a2c30']]};
 FURN.rack = {name:'clothes rack', lt:{coat:5, none:2}, s:[.8,.22], boxes:[[0,1.05,0,.7,.4,.18,'#8a5a6a'],[0,1.5,0,.8,.03,.03,'#b9c0c6'],[-.78,.75,0,.03,.75,.03,'#b9c0c6'],[.78,.75,0,.03,.75,.03,'#b9c0c6'],[.3,1.0,0,.2,.42,.19,'#5a7a8a'],[-.35,1.02,0,.15,.4,.19,'#b9a05a']]};
 FURN.vending = {name:'vending machine', lt:{food:4, water:4, none:1}, boxes:[[0,.95,0,.45,.95,.38,'#b03a2e'],[-.08,1.1,.385,.3,.6,.005,'#1c2a33'],[.36,1.1,.385,.05,.2,.005,'#d9d9d6']]};
 FURN.filing = {name:'filing cabinet', lt:{scrap:1, battery:.5, none:5}, boxes:[[0,.65,0,.25,.65,.3,'#8a9199'],[0,.95,.305,.12,.02,.005,'#55595f'],[0,.55,.305,.12,.02,.005,'#55595f'],[0,.15,.305,.12,.02,.005,'#55595f']]};
-FURN.bunk = {s:[.5,1.02], boxes:[[0,.3,0,.48,.06,1,'#55595f'],[0,.42,0,.45,.07,.95,'#c9d3e0'],[0,1.4,0,.48,.06,1,'#55595f'],[0,1.52,0,.45,.07,.95,'#c9d3e0'],[-.46,.9,-.98,.03,.9,.03,'#3a3f46'],[.46,.9,-.98,.03,.9,.03,'#3a3f46'],[-.46,.9,.98,.03,.9,.03,'#3a3f46'],[.46,.9,.98,.03,.9,.03,'#3a3f46']]};
+FURN.bunk = {models:['k_bunk'], s:[.6,1.15], boxes:[[0,.3,0,.48,.06,1,'#55595f'],[0,.42,0,.45,.07,.95,'#c9d3e0'],[0,1.4,0,.48,.06,1,'#55595f'],[0,1.52,0,.45,.07,.95,'#c9d3e0'],[-.46,.9,-.98,.03,.9,.03,'#3a3f46'],[.46,.9,-.98,.03,.9,.03,'#3a3f46'],[-.46,.9,.98,.03,.9,.03,'#3a3f46'],[.46,.9,.98,.03,.9,.03,'#3a3f46']]};
 FURN.board = {soft:1, s:[1.2,.05], boxes:[[0,1.5,0,1.2,.5,.03,'#2f4a3a'],[0,.98,.03,1.2,.03,.05,'#8a6a48']]};
 FURN.safe = {name:'safe', lt:{ammo:3, medkit:1, radio:1, battery:1, none:2}, boxes:[[0,.6,0,.45,.6,.4,'#3a3f46'],[0,.6,.405,.1,.1,.005,'#c9a84a'],[.25,.6,.405,.03,.15,.005,'#b9c0c6']]};
 FURN.gunlocker = {name:'gun locker', lt:{ammo:7, flashlight:1, none:1}, boxes:[[0,1,0,.5,1,.28,'#3d4a3a'],[0,1,.285,.01,.9,.005,'#22291f'],[.1,1,.29,.02,.1,.01,'#c9ccd1']]};
@@ -1320,11 +1325,11 @@ FURN.stage = {s:[2.5,1.2], boxes:[[0,.3,0,2.5,.3,1.2,'#5a4028'],[0,.61,0,2.5,.01
 var ROOMS = {
   living:[['rug','mid',1],['sofa','wall',1],['tv','wall',1],['ctable','mid',1],['armchair','corner',1],['wardrobe','wall',1],['lamp','corner',1],['plant','corner',1]],
   living_k:[['fridge','wall',1],['stove','wall',1],['kcab','wall',1],['sink','wall',1],['sofa','wall',1],['tv','wall',1],['table','mid',1,{ring:4}],['lamp','corner',1]],
-  kitchen:[['fridge','wall',1],['stove','wall',1],['sink','wall',1],['kcab','wall',2],['table','mid',1,{ring:4}]],
+  kitchen:[['fridge','wall',1],['stove','wall',1],['sink','wall',1],['kcab','wall',2],['bin','corner',1],['table','mid',1,{ring:4}]],
   bedroom:[['rug','mid',1],['bed','wall',1,{side:'nightstand', alt:'bed2'}],['closet','wall',1],['dresser','wall',1],['lamp','corner',1]],
   bath:[['toilet','wall',1],['basin','wall',1],['tub','wall',1]],
   wc:[['toilet','wall',2],['basin','wall',1]],
-  store:[['shelf','wall',1],['crate','wall',2],['barrel','corner',1]],
+  store:[['washer','wall',1],['shelf','wall',1],['crate','wall',2],['barrel','corner',1]],
   studio:[['bed','wall',1,{side:'nightstand'}],['fridge','wall',1],['stove','wall',1],['kcab','wall',1],['sofa','wall',1],['tv','wall',1],['table','mid',1,{ring:2}],['closet','wall',1],['basin','corner',1]],
   market:[['checkout','door',2],['fridge','far',-40],['shelf','rows',-9,{gw:.06, gd:1.7, brk:4}],['vending','door',1],['crate','corner',2]],
   gshop:[['checkout','door',1],['shelf','rows',-12,{gw:.06, gd:1.8, brk:3}],['display','wall',-40],['crate','corner',1]],
@@ -1335,8 +1340,8 @@ var ROOMS = {
   waiting:[['counter','door',1,{seat:1}],['chair','wall',-6],['plant','corner',2],['vending','wall',1],['cabinet','far',1]],
   exam:[['gurney','wall',1],['cabinet','wall',2],['odesk','wall',1,{seat:1}],['basin','wall',1],['chair','wall',1]],
   ward:[['cabinet','wall',3],['gurney','wall',-9,{side:'nightstand'}],['locker','wall',2],['basin','corner',1]],
-  office:[['odesk','wall',-11,{seat:1}],['filing','wall',-18],['wardrobe','wall',1],['plant','corner',1],['locker','wall',1]],
-  lobby:[['counter','door',1,{seat:1}],['sofa','wall',2],['ctable','mid',1],['plant','corner',2],['vending','wall',1],['filing','far',1]],
+  office:[['bin','corner',1],['odesk','wall',-11,{seat:1}],['filing','wall',-18],['wardrobe','wall',1],['plant','corner',1],['locker','wall',1]],
+  lobby:[['coatrack','corner',1],['counter','door',1,{seat:1}],['sofa','wall',2],['ctable','mid',1],['plant','corner',2],['vending','wall',1],['filing','far',1]],
   breakroom:[['fridge','wall',1],['kcab','wall',1],['sink','wall',1],['vending','wall',1],['table','mid',1,{ring:4}]],
   classroom:[['board','end',1],['desk','end',1,{off:1.3}],['stable','rows',-7,{face:'far', seat:1, gw:.9, gd:1.1, mf:4.2}],['locker','wall',3],['wardrobe','wall',1]],
   libhall:[['counter','door',1,{seat:1}],['wardrobe','rows',-7,{gw:.05, gd:1.5, brk:4}],['table','mid',1,{ring:4}],['dresser','wall',2],['armchair','corner',2]],
@@ -1391,7 +1396,7 @@ var PLAN = {
 PLAN.apartments = PLAN.house; PLAN.food = PLAN.restaurant; PLAN.medical = PLAN.clinic; PLAN.industrial = PLAN.garage; PLAN.civic = PLAN.office;
 function genInterior(b){
   var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id, k++, 31); }, i, j;
-  var segs = [], circs = [], doors = [], conts = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
+  var segs = [], circs = [], doors = [], conts = [], idoors = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
   var ceilY = Math.min(3, b.h - 0.06);
   for (i = 0; i < t.length; i += 3){
     var a = t[i]*2, c = t[i+1]*2, d = t[i+2]*2;
@@ -1429,7 +1434,7 @@ function genInterior(b){
       var ax1 = sx0 + dxn*g0, ay1 = sy0 + dyn*g0, ax2 = sx0 + dxn*g1, ay2 = sy0 + dyn*g1, ex = sx0 + dxn*L, ey = sy0 + dyn*L;
       m.wt = [TX.wallpaper, 2, 2]; m.wall(sx0, sy0, ax1, ay1, 0.1, 3, WHITE, 255); m.wall(ax2, ay2, ex, ey, 0.1, 3, WHITE, 255); m.wall(ax1, ay1, ax2, ay2, 2.2, 3, WHITE, 255); m.wt = null;
       if (g0 > 0.05) segs.push(sx0, sy0, ax1, ay1); if (L - g1 > 0.05) segs.push(ax2, ay2, ex, ey);
-      doors.push((ax1+ax2)/2, (ay1+ay2)/2);
+      doors.push((ax1+ax2)/2, (ay1+ay2)/2); idoors.push([ax1, ay1, ax2, ay2]);
     }
   }
   function split(a0, b0, a1, b1, d){
@@ -1471,7 +1476,7 @@ function genInterior(b){
       rects.push(cu, cv, hu, hv);
       if (!f.soft){ var r = Math.max(0.22, Math.min(0.6, hu, hv)), L = Math.max(hu, hv) - r, nc = L < 0.15 ? 1 : Math.ceil(2*L/(r*1.4)) + 1; for (q = 0; q < nc; q++){ var o = nc === 1 ? 0 : -L + 2*L*q/(nc - 1), pu = cu + (hu >= hv ? o : 0), pv = cv + (hu >= hv ? 0 : o); cl.push(pu*ux + pv*vx, pu*uy + pv*vy, r); } }
     }
-    items.push({f:f, x:x, y:y, yaw:yaw, mi:mi, cl:cl, R:R, cls:f.name ? 3 : cls, on:1});
+    items.push({f:f, x:x, y:y, yaw:yaw, fx:-Math.sin(yaw), fy:Math.cos(yaw), mi:mi, cl:cl, R:R, cls:f.name ? 3 : cls, on:1});
     return {cu:cu, cv:cv, hu:hu, hv:hv, dir:dir, s:s};
   }
   function extras(it, o, R){
@@ -1569,7 +1574,7 @@ function genInterior(b){
     else f.boxes.forEach(function(bx){ m.ybox(x, y, yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
     if (f.tex !== undefined){ var b0 = f.boxes[0]; m.panel(x, y, yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
     for (q = 0; q < it.cl.length; q++) circs.push(it.cl[q]);
-    if (f.name) conts.push({x:x, y:y, h:top + 0.35, name:f.name, i:conts.length, b:b, lt:f.lt});
+    if (f.name) conts.push({x:x, y:y, h:top + 0.35, name:f.name, i:conts.length, b:b, lt:f.lt, hide:!!f.hide, fx:it.fx, fy:it.fy});
   });
   total = nOn;
   /* a tiny building still gets one thing to search */
@@ -1578,7 +1583,7 @@ function genInterior(b){
   var ord = conts.map(function(c, ci){ return [hash(b.id, ci, 77), c]; }).sort(function(x, y){ return x[0] - y[0]; });
   ord.forEach(function(e2, ci){ if (ci > b.rolls + 1) e2[1].poor = 1; });
   if (world.hg) for (i = 1; i < m.p.length; i += 3) m.p[i] += b.base;
-  return {g:upload(m), segs:segs, circs:circs, conts:conts, rooms:rooms.map(function(R){ return R.type; }), n:total};
+  return {g:upload(m), segs:segs, circs:circs, conts:conts, idoors:idoors, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -1606,11 +1611,21 @@ function pushSegs(e, r, s){
 }
 /* ---- doors and windows. Door: 0 shut, 1 open, 2 broken. Window: 0 shut, 1 open, 2 broken, 3 boarded up. Only changes from the starting state are saved. ---- */
 function doorState(b){ var s = world.edits.ports[b.id]; return s && s.d !== undefined ? s.d : (b.id === world.safe ? 0 : hash(b.id, 31, 7) < 0.22 ? 1 : 0); }
+/* inside doors: k = 1000 + doorway number. Most stand open; a shut one blocks sight and has to be opened (aliens push them open) */
+function innerState(b, i){ var s = world.edits.ports[b.id]; return s && s.i && s.i[i] !== undefined ? s.i[i] : (hash(b.id, i, 41) < 0.65 ? 1 : 0); }
+function innerBar(b){
+  if (!b.int || !b.int.idoors) return []; if (b.ibar) return b.ibar; var a = [];
+  b.int.idoors.forEach(function(d, i){ if (innerState(b, i) === 0) a.push(d[0], d[1], d[2], d[3]); }); return b.ibar = a;
+}
+/* outside doors can be locked: keys open them at once, prying is slow and quiet, smashing is quick and loud */
+function lockedOf(b){ var s = world.edits.ports[b.id]; if (s && s.l !== undefined) return !!s.l; if (s && s.d !== undefined) return false; return b.id !== world.safe && !(world.edits.beds && Object.keys(world.edits.beds).some(function(k){ return world.edits.beds[k].b === b.id; })) && hash(b.id, 51, 3) < (b.cat === 'house' ? 0.3 : 0.45) && doorState(b) === 0; }
 function winState(b, k){ var s = world.edits.ports[b.id]; return (s && s.w && s.w[k]) || 0; }
 function setPort(b, k, st, quiet){
   var E = world.edits.ports, s = E[b.id] || (E[b.id] = {w:{}}); if (!s.w) s.w = {};
-  if (k < 0) s.d = st; else if (st) s.w[k] = st; else delete s.w[k];
+  if (k === -2) s.l = st; else if (k >= 1000){ if (!s.i) s.i = {}; s.i[k - 1000] = st; b.ibar = null; } else if (k < 0) s.d = st; else if (st) s.w[k] = st; else delete s.w[k];
   b.bar = null; if (b.php) delete b.php[k]; if (!quiet) emit({k:'port', b:b.id, i:k, s:st});
+  if (running && time > 2){ var sx = k >= 1000 && b.int && b.int.idoors[k - 1000] ? (b.int.idoors[k - 1000][0] + b.int.idoors[k - 1000][2])/2 : k < 0 && b.door ? b.door.x : b.wins[k*6] || b.cx, sy = k >= 1000 && b.int && b.int.idoors[k - 1000] ? (b.int.idoors[k - 1000][1] + b.int.idoors[k - 1000][3])/2 : k < 0 && b.door ? b.door.y : b.wins[k*6 + 1] || b.cy;
+    if (k === -2) sfx('latch', sx, sy, 0.7); else if (st === 2) sfx(k === -1 ? 'wood_hit' : 'glass', sx, sy, 1, 1, 60); else if (st === 3) sfx('plank', sx, sy, 0.8); else if (k >= 1000) sfx(st ? 'creak' : 'door_close', sx, sy, 0.6); else if (k === -1) sfx(st ? 'door_open' : 'door_close', sx, sy, 0.8); else sfx('creak', sx, sy, 0.5, 1.3); }   /* doors, windows, locks */
 }
 /* the pieces of wall that are solid right now: the shut door and every window that is not open */
 function barOf(b){
@@ -1628,16 +1643,21 @@ function portNear(){
       var chk = function(k, x, y, lim){ var dx = x - P.x, dy = y - P.y, d = Math.hypot(dx, dy); if (d < lim && d < bd && (d < 0.7 || (dx*fx + dy*fy)/d > 0.5)){ bd = d; var pt = b.pt || (b.pt = {}); best = pt[k] || (pt[k] = {port:true, b:b, k:k, name:k < 0 ? 'door' : 'window', x:x, y:y}); } };
       if (b.door) chk(-1, b.door.x, b.door.y, 1.9);
       for (var k = 0; k*6 < b.wins.length; k++) chk(k, b.wins[k*6], b.wins[k*6+1], 1.35);
+      if (b.int && b.int.idoors) for (k = 0; k < b.int.idoors.length; k++){ var dd0 = b.int.idoors[k]; chk(1000 + k, (dd0[0] + dd0[2])/2, (dd0[1] + dd0[3])/2, 1.6); }
     }
   }
   return best ? {o:best, d:bd} : null;
 }
 function portText(o){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', B = tch ? 'Wall' : 'B';
+  if (o.k >= 1000) return E + (innerState(o.b, o.k - 1000) ? 'close the door' : 'open the door');
+  if (o.k < 0 && doorState(o.b) === 0 && lockedOf(o.b)) return 'Locked \u00b7 ' + (inv.key > 0 ? (tch ? 'Tap' : 'Press E') + ' to use your keys' : (tch ? 'Hold' : 'Hold E') + ' to pry it (quiet, slow) \u00b7 Swing to smash it (loud)');
   if (o.k < 0){ var d = doorState(o.b); return d === 0 ? E + 'open the door' : d === 1 ? E + 'close the door' : E + 'repair the door (2 wood)'; }
   var w = winState(o.b, o.k); return w === 0 ? E + 'open the window \u00b7 ' + B + ' boards it up (2 wood)' : w === 1 ? E + 'close the window \u00b7 ' + B + ' boards it up (2 wood)' : w === 2 ? 'Broken window \u00b7 ' + B + ' boards it up (2 wood)' : E + 'pull the boards off';
 }
 function usePort(o){
+  if (o.k >= 1000){ setPort(o.b, o.k, innerState(o.b, o.k - 1000) ? 0 : 1); return; }
+  if (o.k < 0 && doorState(o.b) === 0 && lockedOf(o.b)){ if (inv.key > 0){ inv.key--; setPort(o.b, -2, 0); setPort(o.b, -1, 1); feed('Unlocked with your keys', ITEMS.key[1]); updateHud(); } return; }
   if (o.k < 0){ var d = doorState(o.b); if (d === 2){ if (inv.wood < 2){ toast('Repairing the door takes 2 wood.', 2.5); return; } inv.wood -= 2; setPort(o.b, -1, 0); feed('Door repaired', ITEMS.wood[1]); } else setPort(o.b, -1, d === 0 ? 1 : 0); }
   else { var w = winState(o.b, o.k); if (w === 2) return; if (w === 3){ setPort(o.b, o.k, 0); inv.wood++; feed('+1 Wood', ITEMS.wood[1]); } else setPort(o.b, o.k, w === 0 ? 1 : 0); }
   updateHud();
@@ -1650,7 +1670,7 @@ function boardPort(o){
 function alienAtPort(z, A, b, dt){
   if (!b || b.gone || z.x < b.minx - 1.5 || z.x > b.maxx + 1.5 || z.y < b.miny - 1.5 || z.y > b.maxy + 1.5) return;
   var hit = function(k, s, o){ if (segDist(z.x, z.y, s[o], s[o+1], s[o+2], s[o+3]) > A.r + 0.5) return false; var st = k < 0 ? doorState(b) : winState(b, k); if (k < 0 ? st !== 0 : (st === 1 || st === 2)) return false;
-    var hp = b.php || (b.php = {}); if (hp[k] === undefined) hp[k] = k < 0 ? 26 : st === 3 ? 40 : 7; hp[k] -= A.dmg*dt*(z.k === 2 ? 3 : 1.1);
+    var hp = b.php || (b.php = {}); if (hp[k] === undefined) hp[k] = k < 0 ? 26 : st === 3 ? 40 : 7; hp[k] -= A.dmg*dt*(z.k === 2 ? 3 : 1.1); z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.55 + Math.random()*0.3; sfx(st === 3 || k < 0 ? 'wood_hit' : 'tin', z.x, z.y, 0.7, 0.9, 50); }
     if (hp[k] <= 0){ setPort(b, k, 2); if (Math.hypot(z.x - P.x, z.y - P.y) < 30) feed(k < 0 ? 'A door gives way nearby' : st === 3 ? 'Boards splinter nearby' : 'Glass breaks nearby', '#ff8f7a'); } return true; };
   if (b.dseg && hit(-1, b.dseg, 0)) return; var w = b.wsegs; for (var k = 0; k*4 < w.length; k++) if (hit(k, w, k*4)) return;
 }
@@ -1660,6 +1680,8 @@ function drawPorts(m){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
     for (var i = 0; i < cell.length; i++){
       var b = cell[i]; if (b.stamp === stampN) continue; b.stamp = stampN; if (b.gone || !b.h) continue; m.yo = b.base || 0;
+      if (b.int && b.int.idoors) for (var iq = 0; iq < b.int.idoors.length; iq++){ var dq2 = b.int.idoors[iq], ln = Math.hypot(dq2[2] - dq2[0], dq2[3] - dq2[1]), uxd = (dq2[2] - dq2[0])/ln, uyd = (dq2[3] - dq2[1])/ln, op = innerState(b, iq), an = op ? 1.6 : 0, wx2 = uxd*Math.cos(an) - uyd*Math.sin(an), wy2 = uyd*Math.cos(an) + uxd*Math.sin(an);
+        m.ybox(dq2[0] + wx2*ln/2, dq2[1] + wy2*ln/2, Math.atan2(wy2, wx2), 0, 0, 1.08, ln/2 - 0.03, 1.02, 0.025, [176,138,96]); m.ybox(dq2[0] + wx2*(ln - 0.12), dq2[1] + wy2*(ln - 0.12), Math.atan2(wy2, wx2), 0, 0, 1.05, 0.03, 0.03, 0.06, [214,190,120]); }
       if (b.dseg){ var s = b.dseg, st = doorState(b), L = Math.hypot(s[2] - s[0], s[3] - s[1]), ux = (s[2] - s[0])/L, uz = (s[3] - s[1])/L, col = b.cat === 'house' ? wood : metal;
         if (st === 2){ m.ybox(s[0] + b.door.nx*1.1 + ux*0.3, s[1] + b.door.ny*1.1 + uz*0.3, 0.9 + b.id, 0, 0, 0.15, L/2, 0.03, 0.42, col); }
         else { var a = st === 1 ? 1.75 : 0, wx = ux*Math.cos(a) + b.door.nx*Math.sin(a), wz = uz*Math.cos(a) + b.door.ny*Math.sin(a), yw = Math.atan2(wz, wx);
@@ -1686,7 +1708,7 @@ function collide(e, r){
         if (b.gone || e.x < b.minx - r || e.x > b.maxx + r || e.y < b.miny - r || e.y > b.maxy + r) continue;
         pushSegs(e, r, b.segs); var br0 = barOf(b); if (br0.length) pushSegs(e, r, br0);
         if (b.int){
-          pushSegs(e, r, b.int.segs); var c = b.int.circs;
+          pushSegs(e, r, b.int.segs); var ib0 = innerBar(b); if (ib0.length) pushSegs(e, r, ib0); var c = b.int.circs;
           for (var q = 0; q < c.length; q += 3){ var dx = e.x - c[q], dy = e.y - c[q+1], d = Math.hypot(dx, dy), rr = r + c[q+2]; if (d < rr && d > 1e-6){ e.x += dx/d*(rr - d); e.y += dy/d*(rr - d); } }
         }
       }
@@ -1711,7 +1733,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.24.1';
+var VERSION = '0.26';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1762,6 +1784,7 @@ function startRun(ws, cs){
   toast(resumed ? 'Welcome back to ' + w.name + '. Your progress was restored.' : w.name + ': ' + w.buildings.length + ' buildings, ' + w.roads.length + ' roads. The green-marked house beside you is a safe house with supplies in its chest. Aliens cannot enter it, or the town square ringed with green lamps (the dashed circle on your map).', 8);
 }
 function die(){
+  if (P.hide){ P.hide = null; el('hideMask').classList.remove('on'); }
   var has = false, k; for (k in inv) if (inv[k] > 0) has = true;
   for (k in P.items) if (P.items[k] > 0) has = true;
   if (has) dropPack(inv, P.items);
@@ -1904,8 +1927,8 @@ function findTarget(){
   for (i = 0; i < loaded.length; i++){
     var b = loaded[i]; if (P.x < b.minx - 2.5 || P.x > b.maxx + 2.5 || P.y < b.miny - 2.5 || P.y > b.maxy + 2.5) continue;
     for (j = 0; j < b.int.conts.length; j++){
-      var c = b.int.conts[j]; if (b.got[c.i] && !stashLeft(c)) continue; dx = c.x - P.x; dy = c.y - P.y; d = Math.hypot(dx, dy);
-      if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = c; }
+      var c = b.int.conts[j], hs = b.got[c.i] && !stashLeft(c); if (hs && !c.hide) continue; dx = c.x - P.x; dy = c.y - P.y; d = Math.hypot(dx, dy);
+      if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = hs ? (c.hs || (c.hs = {hideSpot:true, c:c, x:c.x, y:c.y, name:c.name})) : c; }
     }
   }
   for (i = 0; i < world.crates.length; i++){
@@ -1957,7 +1980,7 @@ function loot(o){
   if (!o.corpse && !o.stash){
     var cat, rolls;
     if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); findPart(o.b); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
-    searched++; addXp('scav', 5);
+    searched++; addXp('scav', 5); sfx(/locker|safe|filing|cabinet/.test(o.name || '') ? 'latch' : /fridge|stove/.test(o.name || '') ? 'pot' : 'search', o.x, o.y, 0.7);
     if (o.poor && Math.random() < 0.6) o.stash = rollStash({none:1}, 1); else { o.stash = rollStash(o.lt && Math.random() < 0.65 ? o.lt : o.b && LOOTK[o.b.kind] || LOOT[cat], rolls); rollCustom(o.stash, 0.06); }
   }
   if (!stashLeft(o)){ feed('Nothing useful', '#c0c6cc'); o.stash = null; updateHud(); return; }
@@ -1970,7 +1993,7 @@ function closeLoot(){
 function renderLoot(){
   var o = curLoot, box = el('loot'); if (!o || box.classList.contains('hidden')) return;
   var nm = o.corpse ? o.name : o.name + (o.b && o.b.name ? ' – ' + o.b.name : ''), h = '<b>' + esc(nm.charAt(0).toUpperCase() + nm.slice(1)) + '</b> <button id="ltClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', k;
-  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
+  for (k in o.stash.inv) if (o.stash.inv[k] > 0) h += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + o.stash.inv[k] + '</span><button data-k="b:' + k + '">Take</button></div>';
   for (k in o.stash.items) if (o.stash.items[k] > 0 && DESIGNS[k]) h += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + o.stash.items[k] + '<br><i>' + stats(DESIGNS[k]).desc + ' &middot; by ' + esc(DESIGNS[k].by) + '</i></span><button data-k="c:' + k + '">Take</button></div>';
   box.innerHTML = h + '<div class="row" style="justify-content:flex-start;margin:10px 0 0"><button data-k="all">Take everything</button></div>';
 }
@@ -1985,14 +2008,14 @@ function takeLoot(key){
 el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id === 'ltClose'){ closeLoot(); return; } var k = t.getAttribute && t.getAttribute('data-k'); if (k) takeLoot(k); });
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
-var CATS = [['Food and drink', ['food', 'water', 'berry']], ['Medical', ['medkit', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat']]];
+var CATS = [['Food and drink', ['food', 'water', 'berry']], ['Medical', ['medkit', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'fuel', 'fiber', 'stone']], ['Power and light', ['flashlight', 'radio', 'lantern', 'battery']], ['Gear', ['coat', 'key']]];
 var USE = {berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
 function pct(v){ return Math.round(Math.max(0, v)*100) + '%'; }
 function renderPack(){
   var box = el('pack'); if (box.classList.contains('hidden')) return;
   var h = '<b>Backpack</b> <button id="pkClose" class="alt" style="float:right">Close</button><div style="clear:both"></div>', any = false, k;
   CATS.forEach(function(c){
-    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'herb' ? '<br><i>3 herbs and 2 plant fibre make a medkit</i>' : k === 'stone' ? '<br><i>2 stones make 1 ammo</i>' : k === 'fiber' ? '<br><i>used with herbs to make medkits</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + USE[k] + '</button>' : '') + '</div>'; });
+    var rows = ''; c[1].forEach(function(k){ if (inv[k] > 0) rows += '<div class="irow"><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i><span class="n">' + ITEMS[k][0] + ' &times;' + inv[k] + (k === 'flashlight' ? '<br><i>charge ' + pct(P.fl) + (lightOn() ? ' &middot; on' : '') + '</i>' : k === 'radio' ? '<br><i>charge ' + pct(P.rd) + ' &middot; a scan finds traders, nests and supplies</i>' : k === 'lantern' ? '<br><i>needs batteries each time it is placed</i>' : k === 'herb' ? '<br><i>3 herbs and 2 plant fibre make a medkit</i>' : k === 'stone' ? '<br><i>2 stones make 1 ammo</i>' : k === 'fiber' ? '<br><i>used with herbs to make medkits</i>' : k === 'battery' ? '<br><i>loaded automatically when a device runs out</i>' : '') + '</span>' + (USE[k] ? '<button data-u="' + k + '">' + USE[k] + '</button>' : '') + '</div>'; });
     if (rows){ h += '<h3>' + c[0] + '</h3>' + rows; any = true; }
   });
   var cu = ''; for (k in P.items) if (P.items[k] > 0 && DESIGNS[k]) cu += '<div class="irow"><span class="sw" style="background:' + DESIGNS[k].color + '"></span><span class="n">' + esc(DESIGNS[k].name) + ' &times;' + P.items[k] + (P.weapon === k ? ' <i>equipped</i>' : '') + '<br><i>' + stats(DESIGNS[k]).desc + '</i></span></div>';
@@ -2006,7 +2029,7 @@ el('pack').addEventListener('click', function(e){
   var k = t.getAttribute && t.getAttribute('data-u'); if (k && running){ useItem(k); renderPack(); }
 });
 function swing(){
-  var ws0 = weaponStats(); P.atkCd = ws0.cd; P.swing = 0.22; var hit = false, i, dx, dy, d, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
+  var ws0 = weaponStats(); P.atkCd = ws0.cd; P.swing = 0.22; sfx('swing', undefined, undefined, 0.35); var hit = false, i, dx, dy, d, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
   for (i = 0; i < zombies.length; i++){
     var z = zombies[i]; dx = z.x - P.x; dy = z.y - P.y; d = Math.hypot(dx, dy);
     if (d < ws0.reach + AK[z.k].r && (d < 0.8 || (dx*fx + dy*fy)/d > 0.5)){
@@ -2015,16 +2038,18 @@ function swing(){
       hitZombie(z, ws0.dmg + 0.25*lvl('melee'), dx/d*8, dy/d*8); hit = true; }
   }
   if (hit){ addXp('melee', 2); return; }
+  var pn = portNear(); if (pn && pn.o.k < 0 && doorState(pn.o.b) === 0 && pn.d < 2.2){ var db0 = pn.o.b; db0.smash = (db0.smash || 0) + 1; makeNoise(P.x, P.y, 16);
+    if (db0.smash >= 4){ db0.smash = 0; setPort(db0, -2, 0); setPort(db0, -1, 2); makeNoise(P.x, P.y, 32); feed('You smashed the door in. That was loud.', '#ff8f7a'); } else feed('The door shudders', '#c0c6cc'); return; }
   var bt = null, bd = 2.6;
   for (i = 0; i < world.trees.length; i++){
     var t = world.trees[i]; if (!t.alive) continue; dx = t.x - P.x; dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) continue;
     d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
   }
-  if (bt){ bt.hp--; bt.shake = 0.2; if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.food++; feed('+1 Food (fruit from the tree)', ITEMS.food[1]); } updateHud(); } }
+  if (bt){ bt.hp--; bt.shake = 0.2; sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.food++; feed('+1 Food (fruit from the tree)', ITEMS.food[1]); } updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
-  inv.ammo--; P.shootCd = 0.3; P.noise = 4; var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
+  inv.ammo--; P.shootCd = 0.3; P.noise = 4; burst(undefined, undefined, 0.9, 3200, 0.45); burst(undefined, undefined, 0.5, 600, 0.9); var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw);
   bullets.push({x:P.x + fx*0.5, y:P.y + fy*0.5, vx:fx*80, vy:fy*80, t:0.9});
   updateHud();
 }
@@ -2068,7 +2093,7 @@ function los(ax, ay, bx, by){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
     for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone) continue; b.stamp = stampN;
       if (b.maxx < Math.min(ax, bx) || b.minx > Math.max(ax, bx) || b.maxy < Math.min(ay, by) || b.miny > Math.max(ay, by)) continue;
-      if (segsX(b.segs, ax, ay, bx, by) || segsX(barOf(b), ax, ay, bx, by) || (b.int && segsX(b.int.segs, ax, ay, bx, by))) return false; }
+      if (segsX(b.segs, ax, ay, bx, by) || segsX(barOf(b), ax, ay, bx, by) || (b.int && (segsX(b.int.segs, ax, ay, bx, by) || segsX(innerBar(b), ax, ay, bx, by)))) return false; }
   }
   return true;
 }
@@ -2087,7 +2112,7 @@ function findPath(sx, sy, gx, gy, r){
   stampN++;
   for (var cy = Math.floor(y0/G); cy <= Math.floor(y1/G); cy++) for (var cx = Math.floor(x0/G); cx <= Math.floor(x1/G); cx++){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
-    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; b.stamp = stampN; mark(b.segs); mark(barOf(b)); if (b.int) mark(b.int.segs); }
+    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; b.stamp = stampN; mark(b.segs); mark(barOf(b)); if (b.int){ mark(b.int.segs); } }
   }
   for (i = 0; i < cades.length; i++){ var cd = cades[i], ci2 = Math.round((cd.x - x0)/cs), cj2 = Math.round((cd.y - y0)/cs), rr = Math.ceil((0.85 + r)/cs); for (j = -rr; j <= rr; j++) for (k = -rr; k <= rr; k++){ var a2 = ci2 + k, b2 = cj2 + j; if (a2 >= 0 && b2 >= 0 && a2 < W && b2 < H && k*k + j*j <= rr*rr) blk[b2*W + a2] = 1; } }
   var si = Math.round((sx - x0)/cs), sj = Math.round((sy - y0)/cs), gi = Math.round((gx - x0)/cs), gj = Math.round((gy - y0)/cs), S = sj*W + si, Gc = gj*W + gi;
@@ -2129,16 +2154,26 @@ function route(z, gx, gy, r, dt){
   return z.path[z.pi];
 }
 /* throw a stone: where it lands makes a noise that aliens come to look at */
+/* ---- hiding: step into an emptied wardrobe or locker. Aliens that did not see you go in walk past; one that did will drag you out ---- */
+function enterHide(c){
+  if (P.veh) return;
+  P.hide = {c:c, ox:P.x, oy:P.y}; P.x = c.x; P.y = c.y; P.yaw = Math.atan2(c.fy || 0, c.fx || 1); P.pitch = 0; P.light = false;
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (z.st === 2 && !z.tp && z.lostT < 0.5 && los(z.x, z.y, P.x, P.y)) z.knowHide = 1; }
+  el('hideMask').classList.add('on'); feed('Hiding. Move or press E to come out.', '#c0c6cc'); keys.KeyE = false;
+}
+function exitHide(){
+  if (!P.hide) return; var c = P.hide.c; P.hide = null; P.x = c.x + (c.fx || 0)*0.95; P.y = c.y + (c.fy || 0)*0.95; collide(P, 0.35); el('hideMask').classList.remove('on');
+}
 function throwStone(){
   if (!running || P.veh) return;
   if (!(inv.stone > 0)){ feed('No stones. Gather them from rocks.', '#c0c6cc'); return; }
-  inv.stone--; P.thrT = time; var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), L = 16 - Math.max(-6, Math.min(6, P.pitch*10)), x = P.x, y = P.y;
+  inv.stone--; P.thrT = time; sfx('swing', undefined, undefined, 0.3, 0.8); var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), L = 16 - Math.max(-6, Math.min(6, P.pitch*10)), x = P.x, y = P.y;
   for (var q = 1; q <= L; q++){ var nx = P.x + fx*q, ny = P.y + fy*q; if (!los(P.x, P.y, nx, ny)) break; x = nx; y = ny; }
   stones.push({x0:P.x, y0:P.y, x:x, y:y, t:0}); feed('Threw a stone', '#c0c6cc'); updateHud();
 }
 function makeNoise(x, y, r){ noises.push({x:x, y:y, r:r, life:0.4}); if (net.role === 'guest') emit({k:'noise', x:x, y:y, r:r}); }
 function stoneTick(dt){
-  for (var i = stones.length - 1; i >= 0; i--){ var s = stones[i]; s.t += dt/0.55; if (s.t >= 1){ makeNoise(s.x, s.y, 22); stones.splice(i, 1); } }
+  for (var i = stones.length - 1; i >= 0; i--){ var s = stones[i]; s.t += dt/0.55; if (s.t >= 1){ makeNoise(s.x, s.y, 22); sfx('stone', s.x, s.y, 1, 1.2, 60); stones.splice(i, 1); } }
   for (i = noises.length - 1; i >= 0; i--){ noises[i].life -= dt; if (noises[i].life <= 0) noises.splice(i, 1); }
 }
 function drawStones(m){ for (var i = 0; i < stones.length; i++){ var s = stones[i], t = s.t, x = s.x0 + (s.x - s.x0)*t, y = s.y0 + (s.y - s.y0)*t; m.yo = groundAt(x, y); m.ybox(x, y, t*9, 0, 0, 1.4 + Math.sin(t*3.1416)*2.2 - t*1.2, 0.07, 0.06, 0.07, [140,140,136]); } m.yo = 0; }
@@ -2150,7 +2185,7 @@ function senses(z, A, tg, dt, night){
   if (z.pt <= 0){
     var st = 0.2 + Math.random()*0.08; z.pt = st; var seenT = null, sd = 1e9, ca = Math.cos(z.ang || 0), sa = Math.sin(z.ang || 0);
     for (i = 0; i < tg.length; i++){
-      t = tg[i]; if (t.safe) continue; var dx = t.x - z.x, dy = t.y - z.y; dd = Math.hypot(dx, dy) || 0.01; if (dd > 90) continue;
+      t = tg[i]; if (t.safe || (t.hidden && !z.knowHide)) continue; var dx = t.x - z.x, dy = t.y - z.y; dd = Math.hypot(dx, dy) || 0.01; if (dd > 90) continue;
       var rs = A.see*t.vis*(night ? (t.lit ? (z.k === 1 ? 2.6 : 1.8) : 0.5) : 1)*(wx.w === 1 || wx.w === 2 || wx.w === 3 ? 0.7 : 1);
       var cone = dd < 2.2 || (dx*ca + dy*sa)/dd > (z.st === 2 ? -0.2 : 0.42);
       if (dd < rs && cone && los(z.x, z.y, t.x, t.y)){
@@ -2171,11 +2206,11 @@ function senses(z, A, tg, dt, night){
     }
   }
   if (z.st === 2){ for (i = 0; i < tg.length; i++) if (tg[i].peer === z.tp){ t = tg[i]; if (t.safe){ z.st = 3; z.stT = 4; return null; } if (z.lostT < 0.05){ z.lx = t.x; z.ly = t.y; } return z.lostT < 1.2 ? t : null; } z.st = 3; z.stT = 6; }
-  if (z.st === 1 || z.st === 3){ z.stT -= dt; if (z.stT <= 0){ z.st = 0; z.aw = 0; } }
+  if (z.st === 1 || z.st === 3){ z.stT -= dt; if (z.stT <= 0){ z.st = 0; z.aw = 0; z.knowHide = 0; } }
   return null;
 }
 function alert(z, t){
-  if (z.st !== 2){ z.st = 2; z.aw = 1; for (var i = 0; i < zombies.length; i++){ var o = zombies[i]; if (o !== z && o.st !== 2 && Math.hypot(o.x - z.x, o.y - z.y) < (z.k === 0 ? 16 : 8)){ o.st = 1; o.stT = 8; o.lx = t.x; o.ly = t.y; o.aw = Math.max(o.aw || 0, 0.5); } } }
+  if (z.st !== 2){ z.st = 2; z.aw = 1; alienCall(z.k, z.x, z.y, true); for (var i = 0; i < zombies.length; i++){ var o = zombies[i]; if (o !== z && o.st !== 2 && Math.hypot(o.x - z.x, o.y - z.y) < (z.k === 0 ? 16 : 8)){ o.st = 1; o.stT = 8; o.lx = t.x; o.ly = t.y; o.aw = Math.max(o.aw || 0, 0.5); } } }
   z.tp = t.peer; z.lostT = 0; z.lx = t.x; z.ly = t.y; z.aw = Math.max(z.aw, 1);
 }
 var flares = [], lures = [];
@@ -2272,6 +2307,71 @@ var wx = {w:0, until:0, tor:null, flash:0};
 function dayNum(){ return Math.floor((8 + time/DAY*24)/24) + 1; }
 function season(){ return Math.floor((dayNum() - 1)/4) % 4; }
 function ambientF(hour){ return SBASE[season()] + 9*Math.cos((hour - 15)/24*6.283) + (wx.w === 3 ? 16 : 0) + (wx.w === 4 ? -14 : 0) + ((wx.w === 1 || wx.w === 2) ? -5 : 0); }
+/* ================= sound: Kenney "Impact Sounds" and "RPG Audio" (CC0) for footsteps, doors, glass and hits; gunfire, alien calls,
+   rain, wind and thunder are made here from noise and tones. Everything is placed left or right and fades with distance ================= */
+var SND = {ctx:null, buf:{}, vol:0.8, amb:null, loading:false};
+try { var v0 = localStorage.getItem('lastblock:vol'); if (v0 !== null) SND.vol = +v0/100; } catch (e){}
+function sndInit(){
+  if (SND.ctx){ if (SND.ctx.state === 'suspended') SND.ctx.resume(); return; }
+  var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  try { SND.ctx = new AC(); } catch (e){ return; }
+  SND.out = SND.ctx.createGain(); SND.out.gain.value = SND.vol; SND.out.connect(SND.ctx.destination);
+  var n = SND.ctx.sampleRate*2, nb = SND.ctx.createBuffer(1, n, SND.ctx.sampleRate), d = nb.getChannelData(0); for (var i = 0; i < n; i++) d[i] = Math.random()*2 - 1; SND.noise = nb;
+  var S = ART.sounds || {};
+  Object.keys(S).forEach(function(k){ SND.buf[k] = []; S[k].forEach(function(b64){ try { var bin = atob(b64), a = new Uint8Array(bin.length); for (var j = 0; j < bin.length; j++) a[j] = bin.charCodeAt(j);
+    var p = SND.ctx.decodeAudioData(a.buffer, function(ab){ SND.buf[k].push(ab); }, function(){}); if (p && p.catch) p.catch(function(){}); } catch (e){} }); });
+  /* the weather bed: two noise loops through filters, faded up and down by sndTick */
+  var mk = function(type, freq, q){ var src = SND.ctx.createBufferSource(); src.buffer = SND.noise; src.loop = true; var fl = SND.ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = freq; fl.Q.value = q; var g = SND.ctx.createGain(); g.gain.value = 0; src.connect(fl); fl.connect(g); g.connect(SND.out); src.start(); return g; };
+  SND.rain = mk('highpass', 1800, 0.4); SND.wind = mk('lowpass', 380, 0.8);
+}
+document.addEventListener('pointerdown', sndInit, true); document.addEventListener('keydown', sndInit, true); document.addEventListener('touchend', sndInit, true);
+/* where a sound is, as loudness and left-right */
+function sndPlace(x, y, range){
+  if (x === undefined) return [1, 0]; var dx = x - P.x, dy = y - P.y, d = Math.hypot(dx, dy); if (d > range) return null;
+  var g = Math.pow(1 - d/range, 1.6), a = Math.atan2(dy, dx) - P.yaw; return [g, d < 0.5 ? 0 : Math.sin(a)*0.8];
+}
+function sndOut(pan){ var g = SND.ctx.createGain(); if (SND.ctx.createStereoPanner){ var p = SND.ctx.createStereoPanner(); p.pan.value = pan; g.connect(p); p.connect(SND.out); } else g.connect(SND.out); return g; }
+function sfx(name, x, y, vol, rate, range){
+  if (!SND.ctx || !running || !SND.vol) return; var L = SND.buf[name]; if (!L || !L.length) return; var pl = sndPlace(x, y, range || 40); if (!pl) return;
+  var src = SND.ctx.createBufferSource(); src.buffer = L[Math.floor(Math.random()*L.length)]; src.playbackRate.value = (rate || 1)*(0.94 + Math.random()*0.12);
+  var g = sndOut(pl[1]); g.gain.value = (vol === undefined ? 1 : vol)*pl[0]; src.connect(g); src.start();
+}
+/* noise through a filter with a quick attack and a decay: gunshots, thunder, splashes */
+function burst(x, y, vol, freq, dur, range, type){
+  if (!SND.ctx || !running || !SND.vol) return; var pl = sndPlace(x, y, range || 120); if (!pl) return; var t = SND.ctx.currentTime;
+  var src = SND.ctx.createBufferSource(); src.buffer = SND.noise; var fl = SND.ctx.createBiquadFilter(); fl.type = type || 'lowpass'; fl.frequency.setValueAtTime(freq, t); fl.frequency.exponentialRampToValueAtTime(Math.max(60, freq*0.15), t + dur);
+  var g = sndOut(pl[1]); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol*pl[0] + 0.0001, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(fl); fl.connect(g); src.start(t, Math.random()); src.stop(t + dur + 0.05);
+}
+/* an alien call: a wavering tone through a growl. Swarmers chitter high, the stalker shrieks, the giant groans low */
+function alienCall(k, x, y, loud){
+  if (!SND.ctx || !running || !SND.vol) return; var pl = sndPlace(x, y, loud ? 70 : 35); if (!pl) return; var t = SND.ctx.currentTime;
+  var base = [520, 300, 70][k], dur = [0.35, 0.9, 1.3][k]*(loud ? 1.3 : 1), o = SND.ctx.createOscillator(), lfo = SND.ctx.createOscillator(), lg = SND.ctx.createGain();
+  o.type = k === 2 ? 'sawtooth' : 'square'; o.frequency.setValueAtTime(base*(0.9 + Math.random()*0.2), t); o.frequency.exponentialRampToValueAtTime(base*(k === 1 ? 2.4 : 0.6), t + dur);
+  lfo.frequency.value = [38, 22, 9][k]; lg.gain.value = base*0.25; lfo.connect(lg); lg.connect(o.frequency);
+  var fl = SND.ctx.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = base*2.2; fl.Q.value = 2.5;
+  var g = sndOut(pl[1]), v = (loud ? 0.32 : 0.16)*pl[0]; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v + 0.0001, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(fl); fl.connect(g); o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+}
+/* what the ground underfoot is made of */
+function surfAt(x, y){
+  var b = buildingAt(x, y); if (b) return b.cat === 'house' ? (hash(Math.floor(x/3), Math.floor(y/3), b.id) < 0.3 ? 'step_carpet' : 'step_wood') : 'step_concrete';
+  if (inWater(x, y, 0)) return 'water';
+  for (var i = 0; i < world.areas.length; i++){ var a = world.areas[i]; if (x < a.minx || x > a.maxx || y < a.miny || y > a.maxy) continue; if ((a.kind === 'park' || a.kind === 'grass' || a.kind === 'forest') && pip(a.pts, x, y)) return season() === 3 ? 'step_snow' : 'step_grass'; }
+  return season() === 3 && !nearRoad(x, y) ? 'step_snow' : 'step_concrete';
+}
+function nearRoad(x, y){ return false; }
+function sndTick(dt, moved){
+  if (!SND.ctx) return;
+  SND.out.gain.value = SND.vol;
+  if (!P.veh && moved > 0){ P.stepD = (P.stepD || 0) + moved; var stride = P.crouch ? 0.6 : P.vis > 1 ? 1.45 : 1.05;
+    if (P.stepD > stride){ P.stepD = 0; P.surfT = (P.surfT || 0) - 1; if (P.surfT <= 0 || !P.surf){ P.surf = surfAt(P.x, P.y); P.surfT = 3; }
+      if (P.surf === 'water') burst(P.x, P.y, 0.25, 900, 0.35, 10, 'bandpass'); else sfx(P.surf, P.x, P.y, P.crouch ? 0.22 : P.vis > 1 ? 0.8 : 0.5); } }
+  var out = !P.inside, rain = (wx.w === 1 || wx.w === 2) ? (out ? 0.22 : 0.06) : wx.w === 4 ? (out ? 0.1 : 0.03) : 0, wind = (out ? 0.025 : 0.006) + (wx.w === 2 ? 0.07 : 0) + (wx.tor ? 0.18 : 0);
+  var k = Math.min(1, dt*1.5); SND.rain.gain.value += (rain - SND.rain.gain.value)*k; SND.wind.gain.value += (wind - SND.wind.gain.value)*k;
+  /* aliens nearby make themselves heard now and then, before you see them */
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - P.x) > 40 || Math.abs(z.y - P.y) > 40) continue; z.callT = (z.callT === undefined ? Math.random()*10 : z.callT) - dt; if (z.callT <= 0){ z.callT = 6 + Math.random()*10; alienCall(z.k, z.x, z.y, false); } }
+}
 /* ---- how you move: crouch (slow, quiet, hard to see), walk, sprint (fast, loud, uses stamina) ---- */
 var SPD = {crouch:2.3, walk:4.6, sprint:7.4, swim:2.4};
 var VIEW = (function(){ try { return +localStorage.getItem('lastblock:view') || 0; } catch (e){ return 0; } })();   /* 0 through your own eyes, 1 from behind your survivor */
@@ -2311,7 +2411,7 @@ function weatherTick(dt, day){
   if (wx.tor){ wx.tor.x += wx.tor.vx*dt; wx.tor.y += wx.tor.vy*dt; wx.tor.life -= dt; if (wx.tor.life <= 0) wx.tor = null; }
 }
 function bodyTick(dt, hour){
-  wx.flash -= dt; if (wx.w === 2 && Math.random() < dt*0.12) wx.flash = 0.18;
+  wx.flash -= dt; if (wx.w === 2 && Math.random() < dt*0.12){ wx.flash = 0.18; var tdl = 0.4 + Math.random()*2; setTimeout(function(){ burst(undefined, undefined, 0.7, 260, 3.2); }, tdl*1000); }
   var f = ambientF(hour), wet = wx.w === 1 || wx.w === 2 || wx.w === 4;
   if (P.inside) f += (66 - f)*0.6; else if (wet) f -= 7;
   if (nearLight(P.x, P.y, 6)) f += 22; if (P.swim) f -= 10; else if (P.wet > 0) f -= Math.min(9, P.wet/8); if (inv.coat > 0 && f < 60) f += 16;
@@ -2337,6 +2437,7 @@ function update(dt){
   if (keys.ArrowLeft) P.yaw -= 2.2*dt; if (keys.ArrowRight) P.yaw += 2.2*dt;
   if (keys.ArrowUp) P.pitch = Math.min(1.45, P.pitch + 1.4*dt); if (keys.ArrowDown) P.pitch = Math.max(-1.45, P.pitch - 1.4*dt);
   var mf = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) - stick.y, ms = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + stick.x;
+  if (P.hide){ if (Math.abs(mf) > 0.3 || Math.abs(ms) > 0.3 || ePress || tapUse){ exitHide(); ePress = false; tapUse = false; keys.KeyE = false; } mf = ms = 0; if (P.hide){ P.x = P.hide.c.x; P.y = P.hide.c.y; } }
   P.swim = inWater(P.x, P.y, 0); P.inside = buildingAt(P.x, P.y);
   var tgy = world.hg ? (P.inside ? P.inside.base : hAt(P.x, P.y)) : 0; P.gy = P.gy === undefined || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
   if (net.role !== 'guest') weatherTick(dt, day);
@@ -2344,9 +2445,9 @@ function update(dt){
   if (mf || ms){
     var l = Math.hypot(mf, ms), V = P.veh, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y, gt = gait(true);
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
-    stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
+    stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
-  stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
+  sndTick(dt, P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
   if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
   if (region && world.core && !zoneBusy && (P.x < world.core.x0 || P.x > world.core.x1 || P.y < world.core.y0 || P.y > world.core.y1)) zoneTravel();
@@ -2374,14 +2475,18 @@ function update(dt){
     else if (target.trader){ openTrade(); keys.KeyE = false; autoUse = null; }
     else if (target.veh){ if (ePress || tapped) mount(target); autoUse = null; }
     else if (target.lamp){ if (ePress || tapped) takeLamp(target); autoUse = null; }
+    else if (target.hideSpot){ if (ePress || tapped) enterHide(target.c); autoUse = null; }
+    else if (target.port && target.k < 0 && doorState(target.b) === 0 && lockedOf(target.b) && !(inv.key > 0)){ prog += dt/6; if (prog >= 1){ prog = 0; setPort(target.b, -2, 0); setPort(target.b, -1, 1); feed('You pried the door open', '#c0c6cc'); makeNoise(P.x, P.y, 6); autoUse = null; keys.KeyE = false; } }
     else if (target.port){ if (ePress || tapped) usePort(target); autoUse = null; }
     else { prog += dt/(target.nest ? 4 : target.plant ? (target.nm === 'Rock_Medium_2' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
   } else prog = 0;
   var pr = el('prompt');
-  if (target){
+  if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Search to come out' : 'move or press E to come out'); }
+  else if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
     el('ptxt').textContent = target === 'water' ? 'Hold E to drink' : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
     if (target.port) el('ptxt').textContent = portText(target);
+    else if (target.hideSpot) el('ptxt').textContent = (document.body.classList.contains('touchmode') ? 'Tap to hide in the ' : 'Press E to hide in the ') + target.name;
     else if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
   } else pr.classList.add('hidden');
 
@@ -2393,8 +2498,8 @@ function update(dt){
   var night = dark > 0.5;
   P.noise = Math.max(0, P.noise - dt);
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv}], cadesChanged = false;
-    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv}); });
+    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide}], cadesChanged = false;
+    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); });
     PF.budget = QS.zmul < 1 ? 2 : 4;
@@ -2434,8 +2539,9 @@ function update(dt){
         if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
         if (T && T.b && z.k !== 2) alienAtPort(z, A, T.b, dt);
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
-        if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
+        if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ exitHide(); feed('It dragged you out of hiding!', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
       }
+      if (z.k !== 2 && (T || z.st >= 1)){ var zb2 = buildingAt(z.x, z.y); if (zb2 && zb2.int && zb2.int.idoors) zb2.int.idoors.forEach(function(dq, qi){ if (innerState(zb2, qi) === 0 && segDist(z.x, z.y, dq[0], dq[1], dq[2], dq[3]) < A.r + 0.45){ z.door = (z.door || 0) + dt; if (z.door > 1.2){ z.door = 0; setPort(zb2, 1000 + qi, 1); } } }); }   /* they shove inside doors open */
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
       for (var c = cades.length - 1; c >= 0; c--){
         var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001, br = 0.85 + A.r;
@@ -2471,7 +2577,7 @@ function update(dt){
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
 }
-var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16};
+var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17};
 /* the eye: how close any alien is to spotting you */
 function awareHud(){
   var e = el('aware'), best = 0, txt = '', col = '#e9dcc0', i;
@@ -2494,11 +2600,11 @@ function updateHud(){
   el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? zoneAt(P.x, P.y, 0).name + ': aliens cannot come in here' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
-  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i>' + txt + '</span>'; };
+  var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i>' + txt + '</span>'; };
   el('power').innerHTML = pw('flashlight', inv.flashlight > 0 ? pct(P.fl) + (lightOn() ? ' on' : '') : 'none', !lightOn()) + pw('radio', inv.radio > 0 ? pct(P.rd) : 'none', !radioOn()) + pw('battery', '\u00d7' + inv.battery, !inv.battery);
   el('goalLine').textContent = goalText().replace(/^Goal: /, '').replace(/^./, function(ch){ return ch.toUpperCase(); });
   var h = '', other = 0, k;
-  ['food', 'water', 'medkit', 'ammo'].forEach(function(k){ h += '<div class="slot' + (inv[k] > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + inv[k] + '</span></div>'; });
+  ['food', 'water', 'medkit', 'ammo'].forEach(function(k){ h += '<div class="slot' + (inv[k] > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/17) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + inv[k] + '</span></div>'; });
   for (k in inv) if (k !== 'food' && k !== 'water' && k !== 'medkit' && k !== 'ammo') other += inv[k]; for (k in P.items) other += P.items[k] | 0;
   h += '<div class="slot" data-pack="1" title="Backpack" style="cursor:pointer"><i class="ic" style="background-position:50% 0"></i><span class="key">I</span><span class="cnt">' + other + '</span></div>';
   renderPack();
@@ -2693,11 +2799,14 @@ function pplCols(o, look){
   for (i = 0; i < o.nt; i++){ var c = o.hair ? hc : pal[o.reg[i]], sh = o.hair ? 0.9 + ((i*7) % 5)*0.04 : o.sh[i]/200; for (k = 0; k < 3; k++){ var q = (i*3 + k)*4; col[q] = Math.min(255, c[0]*sh); col[q+1] = Math.min(255, c[1]*sh); col[q+2] = Math.min(255, c[2]*sh); col[q+3] = 255; } }
   var cb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, cb); gl.bufferData(gl.ARRAY_BUFFER, col, gl.STATIC_DRAW); return (o.cbs[key] = cb);
 }
-function pplClip(o){ return o.dead || o.hp <= 0 ? 'dead' : o.act ? o.act : o.sw ? 'attack' : o.mv ? (o.vis < 1 ? 'crouch' : o.vis > 1 ? 'run' : 'walk') : o.vis < 1 ? 'crouch' : o.talk ? 'talk' : 'idle'; }
+function pplClip(o, B){
+  var c = o.dead || o.hp <= 0 ? 'dead' : o.act ? o.act : o.sw ? 'attack' : o.swim ? (o.mv ? 'swim' : 'swimidle') : o.mv ? (o.vis < 1 ? 'crouchwalk' : o.vis > 1 ? 'run' : 'walk') : o.vis < 1 ? 'crouch' : o.talk ? 'talk' : o.lit ? 'light' : 'idle';
+  return B.clips[c] ? c : c === 'crouchwalk' ? 'crouch' : c === 'swim' || c === 'swimidle' ? 'walk' : 'idle';   /* fall back when an older art file lacks a move */
+}
 /* queue a survivor to be drawn this frame; its hat goes into the world mesh at the head of the chosen frame */
 function queuePerson(m, o, look, now){
   var l = cleanLook(look || me.look), B = PPL[l.body ? 'female' : 'male']; if (!B){ drawPerson(m, o, look, now); return false; }
-  var clip = pplClip(o), cl = B.clips[clip], sp = clip === 'run' ? 1.6 : clip === 'walk' ? 1.1 : clip === 'attack' ? 2.6 : clip === 'crouch' ? 0.9 : 0.35, t = clip === 'attack' && o.swk !== undefined ? o.swk*0.999 : clip === 'throw' ? (time - (P.thrT || 0))/0.5*0.999 : now*sp + (o.id || 0)*0.37;
+  var clip = pplClip(o, B), cl = B.clips[clip], sp = clip === 'run' ? 1.5 : clip === 'walk' ? 1.1 : clip === 'attack' || clip === 'shoot' ? 2.6 : clip === 'crouchwalk' ? 0.9 : clip === 'swim' ? 0.8 : 0.35, t = clip === 'attack' && o.swk !== undefined ? o.swk*0.999 : clip === 'throw' ? (time - (P.thrT || 0))/0.5*0.999 : clip === 'shoot' && o.shk !== undefined ? o.shk*0.999 : now*sp + (o.id || 0)*0.37;
   var f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1], sc = [0.95, 1, 1.06][l.build];
   pplQ.push({B:B, f:f, x:o.x, y:o.y, gy:m.yo, yaw:o.yaw, look:l, sc:sc});
   if (l.hat){ var hd = B.hd[f], cs = Math.cos(o.yaw), sn = Math.sin(o.yaw), hx = o.x + (cs*hd[0] - sn*hd[2])*sc, hy = o.y + (sn*hd[0] + cs*hd[2])*sc, hz = hd[1]*sc + 0.16;
@@ -2760,6 +2869,7 @@ function manageNature(){
 var REGROW = 1500, PNAME = {Bush_Common:'the bush', Flower_3_Single:'the flowers', Fern_1:'the fern', Plant_1:'the plant', Clover_1:'the clover', Grass_Common_Short:'the grass', Grass_Common_Tall:'the tall grass', Rock_Medium_2:'the rock'};
 var DROPS = {Bush_Common:{berry:[1,3], wood:[0,1]}, Flower_3_Single:{herb:[1,2]}, Fern_1:{fiber:[1,2]}, Plant_1:{fiber:[1,1], herb:[0,1]}, Clover_1:{herb:[0,1], fiber:[0,1]}, Grass_Common_Short:{fiber:[0,1]}, Grass_Common_Tall:{fiber:[1,2]}, Rock_Medium_2:{stone:[1,3]}};
 function gather(o){
+  sfx('pick', o.x, o.y, 0.7);
   var d = DROPS[o.nm] || {}, any = false, k; for (k in d){ var n = d[k][0] + Math.floor(Math.random()*(d[k][1] - d[k][0] + 1)); if (n > 0){ inv[k] += n; feed('+' + n + ' ' + ITEMS[k][0], ITEMS[k][1]); any = true; } }
   if (!any) feed('Nothing worth taking', '#c0c6cc');
   world.edits.picked[o.key] = time; var i = clutter.indexOf(o); if (i >= 0) clutter.splice(i, 1); emit({k:'pick', key:o.key}); addXp('scav', 1); updateHud();
@@ -2842,7 +2952,7 @@ function render(){
   var cp = Math.cos(P.pitch), f = [Math.cos(P.yaw)*cp, Math.sin(P.pitch), Math.sin(P.yaw)*cp];
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
   var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65 + (P.eyeD || 0)) + Math.sin(P.bob)*0.03, P.y]; e[1] += P.gy || 0;
-  var tp = VIEW === 1 && !P.cop;
+  var tp = VIEW === 1 && !P.cop && !P.hide;
   if (tp){   /* over the shoulder: back off behind the head, pulled in where a wall is in the way */
     var ib = buildingAt(P.x, P.y), hx = P.x + s[0]*0.45, hy = P.y + s[2]*0.45, dist = ib ? 2.2 : 3.2;
     while (dist > 0.6){ var cx2 = hx - f[0]*dist, cy2 = hy - f[2]*dist; if (los(P.x, P.y, cx2 - f[0]*0.3, cy2 - f[2]*0.3) && (ib ? buildingAt(cx2, cy2) === ib : !buildingAt(cx2, cy2))) break; dist -= 0.4; }
@@ -2900,12 +3010,12 @@ function render(){
   }
   var tc = C('#fff2b0');
   for (i = 0; i < bullets.length; i++){ var b = bullets[i], a = Math.atan2(b.vy, b.vx); m.yo = groundAt(b.x, b.y); m.ybox(b.x, b.y, a, -0.8, 0, 1.35, 0.8, 0.015, 0.015, tc); }
-  if (tp && !P.veh){ m.yo = P.gy || 0; queuePerson(m, {x:P.x, y:P.y, yaw:P.yaw, id:0, mv:P.mv, vis:P.vis, sw:P.swing > 0, swk:P.swing > 0 ? 1 - P.swing/0.22 : undefined, hp:P.hp,
-      act:time - (P.thrT || -9) < 0.5 ? 'throw' : prog > 0 && target && target !== 'water' && !target.port ? (target.plant ? 'eat' : 'search') : null, swim:P.swim}, me.look, now); }
+  if (tp && !P.veh){ m.yo = P.gy || 0; queuePerson(m, {x:P.x, y:P.y, yaw:P.yaw, id:0, mv:P.mv, vis:P.vis, sw:P.swing > 0, swk:P.swing > 0 ? 1 - P.swing/0.22 : undefined, hp:P.hp, shk:P.shootCd > 0 ? 1 - P.shootCd/0.3 : undefined, lit:lightOn(),
+      act:time - (P.thrT || -9) < 0.5 ? 'throw' : P.shootCd > 0 ? 'shoot' : prog > 0 && target && target !== 'water' && !target.port ? (target.plant ? 'eat' : 'search') : null, swim:P.swim}, me.look, now); }
   m.yo = 0; upload(m, dyn); drawMesh(dyn); drawCreatures(); drawPeople(); drawNature();
 
   /* held items */
-  if (tp) return;
+  if (tp || P.hide) return;
   gl.clear(gl.DEPTH_BUFFER_BIT);
   var vm = new Mesh(), k = P.swing > 0 ? 1 - P.swing/0.22 : 0, sw = Math.sin(k*3.1416);
   var at = function(a, b, c){ return [e[0] + f[0]*a + s[0]*b + u[0]*c, e[1] + f[1]*a + s[1]*b + u[1]*c, e[2] + f[2]*a + s[2]*b + u[2]*c]; };
@@ -3526,7 +3636,7 @@ function applyEv(e){
   if (!world || !e) return;
   if (e.k === 'got'){ var b = world.buildings[e.b]; if (b) b.got[e.i] = 1; }
   else if (e.k === 'crate'){ if (world.crates[e.i]) world.crates[e.i].looted = true; }
-  else if (e.k === 'port'){ var pb2 = world.buildings[e.b]; if (pb2 && (e.i | 0) >= -1 && (e.s | 0) >= 0 && (e.s | 0) <= 3) setPort(pb2, e.i | 0, e.s | 0, true); }
+  else if (e.k === 'port'){ var pb2 = world.buildings[e.b]; if (pb2 && (e.i | 0) >= -2 && (e.i | 0) < 1400 && (e.s | 0) >= 0 && (e.s | 0) <= 3) setPort(pb2, e.i | 0, e.s | 0, true); }
   else if (e.k === 'pick'){ if (typeof e.key === 'string'){ world.edits.picked[e.key.slice(0, 24)] = time; for (var pi = 0; pi < clutter.length; pi++) if (clutter[pi].key === e.key){ clutter.splice(pi, 1); break; } } }
   else if (e.k === 'corpse'){ var c0 = e.c; if (c0 && typeof c0.id === 'string' && isFinite(c0.x) && isFinite(c0.y) && ANAME[c0.k] && c0.stash){ var st = {inv:{}, items:{}}, kk; for (kk in c0.stash.inv) if (kk in ITEMS) st.inv[kk] = Math.max(0, Math.min(20, c0.stash.inv[kk] | 0)); for (kk in c0.stash.items || {}) if (DESIGNS[kk]) st.items[kk] = 1; corpses.push({corpse:1, id:c0.id, x:+c0.x, y:+c0.y, k:c0.k, name:'dead ' + ANAME[c0.k], stash:st, t:time}); if (corpses.length > 40) corpses.shift(); } }
   else if (e.k === 'uncorpse'){ for (var ci = 0; ci < corpses.length; ci++) if (corpses[ci].id === e.id){ if (corpses[ci] === curLoot){ curLoot = null; el('loot').classList.add('hidden'); } corpses.splice(ci, 1); break; } }
@@ -3548,6 +3658,7 @@ function applyEv(e){
   else if (e.k === 'unpack'){ for (var i = 0; i < packs.length; i++) if (packs[i].id === e.id){ packs.splice(i, 1); break; } }
 }
 function hitZombie(z, dmg, kx, ky, quiet){
+  sfx('hit', z.x, z.y, quiet ? 0.4 : 0.9);
   if (!quiet) z.hurt = 0.15;
   if (net.role === 'guest') send(net.host.dc, {t:'hit', id:z.id, d:dmg, kx:kx, ky:ky, td:quiet ? 1 : 0}); else { z.hp -= dmg; var kb = z.k === 2 ? 0.08 : 1; z.kx = kx*kb; z.ky = ky*kb; }
 }
@@ -3559,7 +3670,7 @@ function netTick(dt){
   var k = Math.min(1, dt*12), list = otherPlayers();
   list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; var v = o.vh && world.vmap[o.vh]; if (v){ v.x = o.x; v.y = o.y; v.yaw = o.yaw; v.rd = time; } });
   net.t -= dt; if (net.t > 0) return;
-  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, mv:P.mv ? 1 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
+  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, mv:P.mv ? 1 : 0, hd:P.hide ? 1 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
   net.t = 0.1;
   var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0, (P.mv ? 1 : 0) + (P.vis < 1 ? 2 : P.vis > 1 ? 4 : 0)]];
   net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0, (p.mv ? 1 : 0) + (p.vis < 1 ? 2 : p.vis > 1 ? 4 : 0)]); });
@@ -3635,7 +3746,7 @@ function hostMsg(peer, data){
   if (m.t === 'join'){
     peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.look = cleanLook(m.look); peer.cop = !!m.cop; peer.ready = true; sendWho();
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
-  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
+  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.hidden = !!m.hd; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
   else if (m.t === 'chat' || m.t === 'ping'){
     var cm = {t:m.t, n:peer.name, txt:txt(m.txt, 120), x:+m.x || 0, y:+m.y || 0, sx:peer.x, sy:peer.y, r:peer.rd ? 1 : 0, cop:peer.cop ? 1 : 0};
     if (peer.cop && m.t === 'chat'){ var pt = null; net.peers.forEach(function(q){ if (q.id === (m.pt | 0)) pt = q; }); if (!(pt ? pt.rd : radioOn())){ send(peer.dc, {t:'sys', txt:'Your partner has no radio, so only your map markers get through.'}); return; } }
@@ -3720,7 +3831,7 @@ async function guestMsg(g, data){
   else if (m.t === 'edits'){ takeEdits(m, g); }
   else if (m.t === 'chat' || m.t === 'ping'){ showMsg(m); }
   else if (m.t === 'sys'){ toast(txt(m.txt, 160), 5); }
-  else if (m.t === 'hurt'){ P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; P.cause = AK[m.k | 0] ? 'a ' + AK[m.k | 0].n : 'an alien'; }
+  else if (m.t === 'hurt'){ sfx('hurt', undefined, undefined, 0.8); P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; P.cause = AK[m.k | 0] ? 'a ' + AK[m.k | 0].n : 'an alien'; }
 }
 
 /* ================= map maker: one-time download from OpenStreetMap, saved as a compact map file ================= */
@@ -4007,6 +4118,7 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
 })();
 loadPacks(); wForm(); renderPacks(); fillScen();
+el('vol').value = Math.round(SND.vol*100); el('vol').addEventListener('input', function(){ SND.vol = el('vol').value/100; lsSet('lastblock:vol', el('vol').value); sndInit(); });
 el('qual').addEventListener('change', function(){ lsSet('lastblock:quality', el('qual').value); if ((el('qual').value === '0' ? 'lite' : 'full') !== ARTSET) info('Art detail changes the next time you open or refresh the game.'); });
 /* opened from a web address (the iPhone and iPad route): keep a copy so it plays with no internet */
 if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(function(r){ r.update(); }).catch(function(){});
