@@ -34,7 +34,7 @@ atlas.quantize(256, method=Image.FASTOCTREE, dither=Image.Dither.NONE).save(os.p
 fr = json.load(open(os.path.join(T, 'sprites', 'atlases.json')))['items']['frames']
 sheet_src = Image.open(os.path.join(T, 'sprites', 'items_atlas.png')).convert('RGBA')
 ORDER = ['canned_beans', 'water_bottle', 'first_aid_kit', 'batteries', 'planks', 'tin_can', 'rain_jacket', 'fuel_can', 'backpack']
-icons = Image.new('RGBA', (96*26, 96))
+icons = Image.new('RGBA', (96*27, 96))
 for i, n in enumerate(ORDER):
     f = fr[n]; icons.paste(sheet_src.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])).resize((96, 96), Image.LANCZOS), (i*96, 0))
 # four more: nails stand for ammo, the pack's flashlight, and a hand-drawn lantern and radio in the same flat outlined style
@@ -94,6 +94,16 @@ def produce(rot):
         d5.ellipse([100, 250, 150, 290], fill=(90, 120, 70, 255)); d5.ellipse([240, 220, 280, 256], fill=(90, 120, 70, 255))
     return im.resize((96, 96), Image.LANCZOS)
 icons.paste(produce(False), (22*96, 0)); icons.paste(produce(True), (23*96, 0))
+# 0.36: a portable generator, in the same flat outlined style
+gn = Image.new('RGBA', (384, 384)); d6 = ImageDraw.Draw(gn); d6.ellipse([40, 330, 344, 364], fill=(61, 48, 41, 60))
+d6.rounded_rectangle([60, 110, 324, 320], 22, fill=(217, 168, 69, 255), outline=INKC, width=LW)              # the frame
+d6.rounded_rectangle([96, 150, 288, 290], 16, fill=(70, 74, 78, 255), outline=INKC, width=10)               # the engine
+d6.rounded_rectangle([120, 70, 264, 122], 14, fill=(198, 113, 57, 255), outline=INKC, width=LW)              # the fuel tank
+d6.ellipse([170, 78, 214, 112], fill=(235, 221, 197, 255), outline=INKC, width=8)
+for k in range(4): d6.line([124, 178 + k*24, 200, 178 + k*24], fill=(140, 146, 150, 255), width=8)
+d6.ellipse([220, 190, 268, 238], fill=(235, 221, 197, 255), outline=INKC, width=8)
+d6.line([300, 210, 352, 170], fill=INKC, width=10)
+icons.paste(gn.resize((96, 96), Image.LANCZOS), (26*96, 0))
 icons.save(os.path.join(OUT, 'icons.png'), optimize=True)
 # ---- built-in Springfield map
 M = os.path.join(SRC, 'map_data')

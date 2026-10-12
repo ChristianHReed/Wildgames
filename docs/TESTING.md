@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.35.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.37) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -305,6 +305,13 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 
 - [ ] 3x.1 Inside a house, look at a ground-floor window: you see the street outside through it. From the street you can see into the rooms.
 - [ ] 3x.2 Tap a window to open it, then walk at it: you climb through, in or out. Try several windows in a house, a shop and a block of flats.
+
+## Stage 3y: the power and water fail
+
+- [ ] 3y.1 On day 1 or 2 at night, street lights and many windows are lit, and a stove cooks a meal without wood.
+- [ ] 3y.2 At midnight going into day 3 a message says the power is out: the lights go dark, the clock line says "power out", and stoves need wood again.
+- [ ] 3y.3 Going into day 5 the water mains fail: sinks and baths give nothing; toilet cisterns still give a little.
+- [ ] 3y.4 Find a generator (hardware store, workshop or garage) and some fuel. In a building, use it from Items, press B to pour in fuel and E to switch it on. The room lights up, the stove works without wood, and aliens come to the noise. Curtains stop them seeing the light. B on it when it is off picks it up.
 
 ## Stage 4: aliens and weather
 

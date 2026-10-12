@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.35.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.37. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -36,6 +36,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.34.2 | The map pack's gaps filled in by its own rules: about 10,000 homes and shops along the streets of the 20 boxes the map server missed (mostly Ozark and east Nixa), and about 29,000 farmsteads (house, barn, shed, drive, and about 18,000 stock ponds) along county roads. All of it is marked as generated, so real map data can replace it later |
 | 0.35 | Stealth extras: aliens see through shut window glass; curtains and blinds (B at a window) stop their eyes and hide your light at night, and a lit window draws aliens from about 45 m; footsteps carry by ground (quiet on grass and carpet, loud on gravel, loudest on broken glass); the giant feels car engines from about 140 m and sprinting from about 65 m |
 | 0.35.1 | Ground-floor windows are real openings (see out, see in); inside walls stop short of windows so every window can be climbed through; windows of flats line up with their painted pairs |
+| 0.37 | Power and water fail: street lights, lit windows and electric stoves until the power fails going into day 3; the water mains fail going into day 5 (cisterns still hold some); generators (rare loot) power one building with fuel: light, a working stove, but noise and lit windows that draw aliens |
 
 ## Next versions
 
@@ -44,7 +45,8 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | Version | Features | Assets needed |
 | --- | --- | --- |
 | **0.36** | Fresh build, part 2: trees, bushes, grass and rocks from the KayKit Forest Nature Pack, fitted to the planting rules and terrain types (kinds of tree by where they grow: oak-hickory, shortleaf pine, sycamore and willow on creeks, cedar and Osage orange on fence lines, bushes and flowers by yards, wood edges and banks). The Stylized Nature MegaKit is removed. | [KayKit Forest Nature Pack](https://kaylousberg.itch.io/kaykit-forest) |
-| **0.37** | Power and water fail on a set day; generators and fuel to run them. | None |
+| **0.38** | Clothing layers: warmth, wetness and protection from a few kinds of clothes found as loot | None |
+| **0.39** | Rain collectors and a small garden plot at your base: water and food that come back | None |
 
 ## Feature backlog by area
 
@@ -72,7 +74,7 @@ Ticked items are in the game.
 - [x] Furniture uses: sleep, cook, fill water, barricade a door
 - [x] Stairs and upper floors in homes; ladders to flat roofs
 - [x] Upper floors in shops, offices and flats; roof hatches
-- [ ] Power and water fail on a set day; generators
+- [x] Power and water fail on a set day; generators
 
 ### Aliens
 - [x] Sight cone blocked by walls; shorter at night unless you carry a light
