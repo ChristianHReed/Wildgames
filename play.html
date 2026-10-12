@@ -358,7 +358,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.31.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.31.1.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1941,7 +1941,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.31';
+var VERSION = '0.31.1';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1990,7 +1990,7 @@ function startRun(ws, cs){
   manageInteriors(40); makeMini();
   el('title').classList.add('hidden'); el('play').classList.remove('hidden'); el('feed').innerHTML = '';
   running = true; inRun = true; saveT = 20; updateHud();
-  toast(resumed ? 'Welcome back to ' + w.name + '. Your progress was restored.' : w.name + ': ' + w.buildings.length + ' buildings, ' + w.roads.length + ' roads. The green-marked house beside you is a safe house with supplies in its chest. Aliens cannot enter it, or the town square ringed with green lamps (the dashed circle on your map).', 8);
+  toast(resumed ? 'Welcome back to ' + w.name + '. Your progress was restored.' : w.name + ': ' + w.buildings.length + ' buildings, ' + w.roads.length + ' roads. You start at the safe house on the edge of town: a small home with supplies in its chest, on a one-acre lot inside a white picket fence. Aliens cannot come inside the fence (the dotted square on your map); the gates are front and back.', 8);
 }
 function die(){
   if (P.sleep) wakeUp('');
@@ -2633,36 +2633,80 @@ function spawnAliens(day){
   if (!p) return;
   for (i = 2 + Math.floor(Math.random()*3); i > 0; i--){ var x = p[0] + Math.random()*3 - 1.5, y = p[1] + Math.random()*3 - 1.5; if (!circ(x, y, 0.4)) addAlien(0, x, y); }
 }
-/* the safe house: the home nearest to where you arrive. Aliens keep out of it and away from its yard. */
-var SAFE_R = 20;
+/* ---- the safe house: a small home out at the edge of town, on a one-acre lot (72 m by 56 m) inside a white picket fence.
+   Aliens cannot come inside the fence. There are gates front and back ---- */
+var LOT_W = 36, LOT_D = 28;
 function safeB(){ return world.safe >= 0 ? world.buildings[world.safe] : null; }
-/* safe zones are circles aliens cannot enter: the safe house, and the square in the middle of town */
-function zoneAt(x, y, extra){ var zs = world.zones || [], i; for (i = 0; i < zs.length; i++) if (Math.hypot(x - zs[i].x, y - zs[i].y) < zs[i].r + (extra || 0)) return zs[i]; return null; }
+function zoneLocal(z, x, y){ var dx = x - z.x, dy = y - z.y; return [dx*z.ux + dy*z.uy, -dx*z.uy + dy*z.ux]; }
+function zoneAt(x, y, extra){ var zs = world.zones || [], i, e = extra || 0; for (i = 0; i < zs.length; i++){ var z = zs[i];
+  if (z.hw){ var l = zoneLocal(z, x, y); if (Math.abs(l[0]) < z.hw + e && Math.abs(l[1]) < z.hd + e) return z; } else if (Math.hypot(x - z.x, y - z.y) < z.r + e) return z; } return null; }
 function inSafe(x, y, extra){ return !!zoneAt(x, y, extra); }
-function setZones(){
-  var w = world, b = safeB(), best = null, bd = 700; w.zones = [];
-  if (b) w.zones.push({x:b.cx, y:b.cy, r:SAFE_R, name:'Safe house', house:true});
-  if (w.core && !/E0 N0$/.test(w.name)) return;   /* in a region, only the middle square of the map has the town square */
-  (w.squares || []).forEach(function(q){ var d = Math.hypot(q.x - w.start.x, q.y - w.start.y); if (d < 350 && q.r > 8 && (!best || q.r > best.r)) best = q; });   /* the biggest paved square near the middle of town */
-  w.zones.push(best ? {x:best.x, y:best.y, r:Math.max(38, Math.min(70, best.r + 12)), name:best.name || 'Town square'} : {x:w.start.x, y:w.start.y, r:42, name:'Town square'});
+/* put something that is inside a zone back outside its nearest side */
+function zoneOut(z, e, m){
+  if (!z.hw){ var sdx = e.x - z.x, sdy = e.y - z.y, sd = Math.hypot(sdx, sdy) || 1; if (sd < 0.01){ sdx = 1; sdy = 0; sd = 1; } e.x = z.x + sdx/sd*(z.r + m); e.y = z.y + sdy/sd*(z.r + m); return; }
+  var l = zoneLocal(z, e.x, e.y), pa = z.hw - Math.abs(l[0]), pc = z.hd - Math.abs(l[1]);
+  if (pa < pc) l[0] = (l[0] < 0 ? -1 : 1)*(z.hw + m); else l[1] = (l[1] < 0 ? -1 : 1)*(z.hd + m);
+  e.x = z.x + l[0]*z.ux - l[1]*z.uy; e.y = z.y + l[0]*z.uy + l[1]*z.ux;
 }
-function drawZones(m){
-  (world.zones || []).forEach(function(z){
-    if (z.house || Math.hypot(P.x - z.x, P.y - z.y) > z.r + 160) return;
-    var n = Math.round(z.r*6.283/7), i;
-    for (i = 0; i < n; i++){ var a = i/n*6.283, x = z.x + Math.cos(a)*z.r, y = z.y + Math.sin(a)*z.r; if (blocked(x, y)) continue; m.yo = groundAt(x, y);
-      m.ybox(x, y, a, 0, 0, 0.75, 0.06, 0.75, 0.06, [236,228,210]); m.al = 128; m.ybox(x, y, a, 0, 0, 1.62, 0.13, 0.13, 0.13, [150,220,140]); m.al = 255; }
+function zoneCorners(z){ return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(function(k){ var a = k[0]*z.hw, c = k[1]*z.hd; return [z.x + a*z.ux - c*z.uy, z.y + a*z.uy + c*z.ux]; }); }
+function setZones(){
+  var w = world, b = safeB(); w.zones = []; w.fenceSegs = [];
+  if (w.fence){ freeMesh(w.fence.g); w.fence = null; }
+  if (!b || !w.lot) { if (w.edits) rebuildWalls(); return; }
+  var L = w.lot, z = {x:L.x, y:L.y, ux:L.ux, uy:L.uy, hw:LOT_W, hd:LOT_D, r:Math.hypot(LOT_W, LOT_D), name:'Safe house', house:true}; w.zones.push(z);
+  /* the fence, with a 3.5 m gate in the middle of the front and back */
+  var cs = zoneCorners(z), m = (typeof Mesh !== "undefined" && gl) ? new Mesh() : null, wc = [246, 244, 238], sh = [232, 229, 221], seg = 0;
+  for (var k = 0; k < 4; k++){
+    var a = cs[k], c = cs[(k + 1) % 4], len = Math.hypot(c[0] - a[0], c[1] - a[1]), dx = (c[0] - a[0])/len, dy = (c[1] - a[1])/len, gate = k === 0 || k === 2;
+    var runs = gate ? [[0, len/2 - 1.75], [len/2 + 1.75, len]] : [[0, len]];
+    runs.forEach(function(r){
+      w.fenceSegs.push(a[0] + dx*r[0], a[1] + dy*r[0], a[0] + dx*r[1], a[1] + dy*r[1]);
+      if (!m) return;
+      for (var t = r[0]; t <= r[1] + 0.01; t += 0.26){   /* pickets with pointed tops */
+        var x = a[0] + dx*t, y = a[1] + dy*t, g = groundAt(x, y), hx = dx*0.045, hy = dy*0.045;
+        m.quad(x - hx, g, y - hy, x + hx, g, y + hy, x + hx, g + 0.95, y + hy, x - hx, g + 0.95, y - hy, (seg++ & 1) ? wc : sh, 255);
+        m.tri(x - hx, g + 0.95, y - hy, x + hx, g + 0.95, y + hy, x, g + 1.07, y, wc, 255);
+      }
+      for (var t2 = r[0]; t2 < r[1] - 0.05; t2 += 2.4){   /* rails between posts */
+        var t3 = Math.min(r[1], t2 + 2.4), x0 = a[0] + dx*t2, y0 = a[1] + dy*t2, x1 = a[0] + dx*t3, y1 = a[1] + dy*t3, g0 = groundAt(x0, y0), g1 = groundAt(x1, y1), ox = -dy*0.03, oy = dx*0.03;
+        [0.3, 0.75].forEach(function(hh){ m.quad(x0 + ox, g0 + hh, y0 + oy, x1 + ox, g1 + hh, y1 + oy, x1 + ox, g1 + hh + 0.07, y1 + oy, x0 + ox, g0 + hh + 0.07, y0 + oy, sh, 255); });
+        m.box(x0 + ox*2, g0 + 0.55, y0 + oy*2, [0.05, 0, 0], [0, 0.55, 0], [0, 0, 0.05], wc);
+      }
+    });
+  }
+  if (m){ w.fence = {g:upload(m), x:z.x, y:z.y}; }
+  if (w.edits) rebuildWalls();
+}
+function drawZones(m){}
+/* choose the safe house: a small home well out from the middle of town, whose lot is clear of roads and water and fits on the map */
+function pickLot(){
+  var w = world, bx = w.core || {x0:w.minx, x1:w.maxx, y0:w.miny, y1:w.maxy}, cands = [], maxD = 0, i;
+  w.buildings.forEach(function(b){ if (!b.door || b.gone || b.area < 45 || b.area > 320 || b.kind !== 'house') return; var d = Math.hypot(b.cx - w.start.x, b.cy - w.start.y); cands.push([b, d]); if (d > maxD) maxD = d; });
+  var best = null, bs = 1e9;
+  cands.forEach(function(cd){
+    var b = cd[0], d = cd[1], dr = b.door, ox = -dr.nx, oy = -dr.ny, ux = -oy, uy = ox, cx = b.cx + ox*6, cy = b.cy + oy*6, z = {x:cx, y:cy, ux:ux, uy:uy, hw:LOT_W, hd:LOT_D};
+    var cr = zoneCorners(z), ok = cr.every(function(p){ return p[0] > bx.x0 + 8 && p[0] < bx.x1 - 8 && p[1] > bx.y0 + 8 && p[1] < bx.y1 - 8; }); if (!ok) return;
+    var sc = (maxD - d)*0.6 + Math.max(0, b.area - 150)*0.5 + (b.area < 80 ? 40 : 0), inz = function(x, y, e){ var l = zoneLocal(z, x, y); return Math.abs(l[0]) < LOT_W + e && Math.abs(l[1]) < LOT_D + e; };
+    w.roads.forEach(function(r){ if (r.kind === 'path') return; var p = r.pts; for (var q = 0; q + 3 < p.length; q += 2){ var L2 = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), n = Math.max(1, Math.ceil(L2/3)); for (var s2 = 0; s2 <= n; s2++){ var x = p[q] + (p[q+2] - p[q])*s2/n, y = p[q+1] + (p[q+3] - p[q+1])*s2/n; if (inz(x, y, r.w/2)){ sc += r.kind === 'water' ? 400 : 60; return; } } } });
+    w.buildings.forEach(function(o){ if (o !== b && !o.gone && inz(o.cx, o.cy, 6)) sc += o.area > 400 ? 120 : 12; });
+    if (inWater(cx, cy, LOT_W)) sc += 400;
+    if (sc < bs){ bs = sc; best = {b:b, x:cx, y:cy, ux:ux, uy:uy}; }
   });
-  m.yo = 0;
+  return best;
 }
 function pickSafe(fresh, move){
-  var w = world, best = null, bd = 400; w.safe = -1;
-  w.buildings.forEach(function(b){ if (!b.door || b.gone || b.area < 45 || b.area > 320 || b.kind !== 'house') return; var d = Math.hypot(b.cx - w.start.x, b.cy - w.start.y); if (d < bd){ bd = d; best = b; } });
-  if (!best){ setZones(); return; } w.safe = best.id; dirtyChunk(best); setZones();
+  var w = world, lot = pickLot(), best = lot ? lot.b : null; w.safe = -1; w.lot = null;
+  if (!best){ setZones(); return; } w.safe = best.id; w.lot = lot; if (best.h > 6){ best.levels = 1; shell(best, NULLM); } dirtyChunk(best);   /* a one-storey home */
+  /* the lot is cleared: other buildings on it are gone, and no nest is left near it */
+  w.buildings.forEach(function(o){ if (o === best || o.gone) return; var l = zoneLocal({x:lot.x, y:lot.y, ux:lot.ux, uy:lot.uy}, o.cx, o.cy); if (Math.abs(l[0]) < LOT_W + 2 && Math.abs(l[1]) < LOT_D + 2){ o.gone = true; o.lotGone = true; dirtyChunk(o); } });
+  for (var nk in w.nests){ var nb = w.buildings[nk]; if (!nb || nb.gone || Math.hypot(nb.cx - lot.x, nb.cy - lot.y) < 120) delete w.nests[nk]; }
+  setZones();
   var d0 = best.door; w.spawn = {x:d0.x - d0.nx*1.6, y:d0.y - d0.ny*1.6};
   if (move){ P.x = w.spawn.x; P.y = w.spawn.y; P.yaw = Math.atan2(d0.ny, d0.nx); }
+  var cx = best.cx, cy = best.cy; if (!pip(best.pts, cx, cy)){ cx = d0.x + d0.nx*2; cy = d0.y + d0.ny*2; }
+  w.edits.chests.forEach(function(ch){ if (ch.id === 'safe' && Math.hypot(ch.x - cx, ch.y - cy) > 4){ ch.x = cx; ch.y = cy; } });   /* an older save: the supply chest moves with the house */
   if (fresh){
-    if (!w.core || /E0 N0$/.test(w.name)){ var cx = best.cx, cy = best.cy; if (!pip(best.pts, cx, cy)){ cx = d0.x + d0.nx*2; cy = d0.y + d0.ny*2; }
+    if (!w.core || /E0 N0$/.test(w.name)){
       w.edits.chests.push({chest:true, name:'the supply chest', id:'safe', x:cx, y:cy, inv:{food:3, water:3, medkit:1, battery:2, ammo:12, wood:6, scrap:4, lantern:1, coat:1}, items:{}, designs:[]}); }
   }
 }
@@ -2912,7 +2956,7 @@ function update(dt){
       if (z.hp <= 0){ kills++; addCorpse(z); zombies.splice(i, 1); continue; }
       if (dAny > 130){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
-      var zn = zoneAt(z.x, z.y, 0.6); if (zn){ var sdx = z.x - zn.x, sdy = z.y - zn.y, sd = Math.hypot(sdx, sdy) || 1; if (sd < 0.01){ sdx = 1; sdy = 0; sd = 1; } z.x = zn.x + sdx/sd*(zn.r + 0.6); z.y = zn.y + sdy/sd*(zn.r + 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
+      var zn = zoneAt(z.x, z.y, 0.6); if (zn){ zoneOut(zn, z, 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
       setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y) >= 0;
       T = senses(z, A, tg, dt, night); if (T) d = Math.hypot(T.x - z.x, T.y - z.y);
       z.cd -= dt; z.hurt -= dt; z.thru -= dt;
@@ -3037,7 +3081,7 @@ function drawMap(c, w, h, cx, cy, sc, big){
   c.lineWidth = 1; c.strokeStyle = 'rgba(61,48,41,.55)';
   for (i = 0; i < W0.buildings.length; i++){ var b = W0.buildings[i]; if (b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; c.fillStyle = W0.nests[b.id] ? '#7d5a96' : b.id === W0.safe ? '#7a8a5e' : b.col; path2(c, b.pts, sc, ox, oy, true); c.fill(); if (big || sc > 0.8) c.stroke(); }
   c.strokeStyle = '#6b4a32'; c.lineWidth = 2; for (i = 0; i < W0.wallSegs.length; i += 4){ c.beginPath(); c.moveTo(W0.wallSegs[i]*sc + ox, W0.wallSegs[i+1]*sc + oy); c.lineTo(W0.wallSegs[i+2]*sc + ox, W0.wallSegs[i+3]*sc + oy); c.stroke(); }
-  (W0.zones || []).forEach(function(z){ c.strokeStyle = '#5f9a55'; c.lineWidth = 2; c.setLineDash([5, 4]); c.beginPath(); c.arc(z.x*sc + ox, z.y*sc + oy, z.r*sc, 0, 6.283); c.stroke(); c.setLineDash([]); c.fillStyle = 'rgba(122,170,100,.14)'; c.fill(); });
+  (W0.zones || []).forEach(function(z){ c.strokeStyle = '#f3f0e8'; c.lineWidth = 2; c.setLineDash([3, 3]); c.beginPath(); if (z.hw) zoneCorners(z).forEach(function(p, k){ if (k) c.lineTo(p[0]*sc + ox, p[1]*sc + oy); else c.moveTo(p[0]*sc + ox, p[1]*sc + oy); }), c.closePath(); else c.arc(z.x*sc + ox, z.y*sc + oy, z.r*sc, 0, 6.283); c.stroke(); c.setLineDash([]); c.fillStyle = 'rgba(122,170,100,.14)'; c.fill(); });
   var dot = function(x, y, r, col){ c.fillStyle = col; c.beginPath(); c.arc(x*sc + ox, y*sc + oy, r, 0, 6.283); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 1.5; c.stroke(); };
   heat.forEach(function(h){ if (h.v < 8) return; var g = c.createRadialGradient(h.x*sc + ox, h.y*sc + oy, 0, h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc)); g.addColorStop(0, 'rgba(201,74,46,' + Math.min(0.45, h.v/90).toFixed(2) + ')'); g.addColorStop(1, 'rgba(201,74,46,0)'); c.fillStyle = g; c.beginPath(); c.arc(h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc), 0, 6.283); c.fill(); });   /* noise heat */
   if (wx.tor){ c.strokeStyle = '#4a4a55'; c.lineWidth = 2; for (var tr0 = 0; tr0 < 3; tr0++){ c.beginPath(); c.arc(wx.tor.x*sc + ox, wx.tor.y*sc + oy, 3 + tr0*3, tr0, tr0 + 4.2); c.stroke(); } }   /* the tornado */
@@ -3419,6 +3463,7 @@ function render(){
     else if (ch.far && cdx < FRR && cdy < FRR) drawMesh(ch.far);
   }
   if (world.gl.trees) world.gl.trees.forEach(function(o){ if (Math.abs(o.x - P.x) < FRR + 130 && Math.abs(o.y - P.y) < FRR + 130) drawMesh(o.g); });
+  if (world.fence && Math.abs(world.fence.x - P.x) < 400 && Math.abs(world.fence.y - P.y) < 400) drawMesh(world.fence.g);
   for (i = 0; i < loaded.length; i++) drawMesh(loaded[i].int.g);
   for (i = 0; i < facs.length; i++) if (facs[i].fac) drawMesh(facs[i].fac);
   var TR = world.gl.terr, trR = QS.far + (world.hg ? TT*world.hg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - P.x) < trR && Math.abs(o.y - P.y) < trR) drawMesh(o.g); });
@@ -3789,7 +3834,7 @@ el('packFile').addEventListener('change', function(e){
 
 /* ================= building: walls, beds, chests, repainting and demolishing; all stored as world edits ================= */
 var PAINT = ['#b98f6a', '#c9a27c', '#9f8a78', '#7f8fa3', '#8fa37f', '#a37f8f', '#d6cfc0', '#5d6670', '#b5563e', '#3f6f8f'];
-function rebuildWalls(){ var s = world.wallSegs = []; world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw)*1.5, dy = Math.cos(w.yaw)*1.5; s.push(w.x - dx, w.y - dy, w.x + dx, w.y + dy); }); }
+function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(); world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw)*1.5, dy = Math.cos(w.yaw)*1.5; s.push(w.x - dx, w.y - dy, w.x + dx, w.y + dy); }); }
 function setGone(b, on){ b.gone = !!on; if (b.int){ freeMesh(b.int.g); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
 function loadEdits(ed){
   var E = world.edits, k;

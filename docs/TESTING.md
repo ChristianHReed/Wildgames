@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.31) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.31.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -160,9 +160,10 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 ## Stage 3g: safe zones
 
 - [ ] 3g.1 Stand inside the safe house at night with aliens outside. None come through the door or walls, however long you wait.
-- [ ] 3g.2 On the Springfield map, walk to Park Central Square (the dashed green circle on the map, ringed with green-topped posts). The status line says Town square.
-- [ ] 3g.3 Lead aliens to the square and step inside. They stop at the ring of posts and wander off. They cannot hurt you from outside it.
-- [ ] 3g.4 On a map you downloaded yourself, check where the town square was placed. Report it if it is somewhere odd.
+- [ ] 3g.2 A new game starts at the safe house on the edge of town: a small one-storey home on a one-acre lot (about 72 by 56 m) inside a white picket fence, with gates in the middle of the front and back. The map shows the lot as a dotted square.
+- [ ] 3g.3 Lead aliens to the fence and step through a gate. They stop at the fence line and wander off. You cannot walk through the fence itself, only the gates.
+- [ ] 3g.4 On a map you downloaded yourself, check where the safe house was placed. Report it if it is somewhere odd (on a road, in water, or with a building cut in half by the fence).
+- [ ] 3g.5 Resume an older save: the supply chest has moved into the new safe house.
 
 ## Stage 3h: sneaking past aliens
 
