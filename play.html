@@ -92,6 +92,7 @@
   #feed{position:fixed;left:50%;top:66%;transform:translateX(-50%);pointer-events:none;text-align:center;font-size:13px;font-weight:600;line-height:1.5}
   #feed div{display:table;margin:2px auto;text-shadow:var(--sh)}
   #hurt{position:fixed;inset:0;background:var(--clay);opacity:0;pointer-events:none}
+  #hitDir{position:fixed;left:50%;top:50%;width:0;height:0;pointer-events:none;opacity:0;z-index:5} #hitDir i{position:absolute;left:-46px;top:-150px;width:92px;height:22px;border-radius:50% 50% 0 0;border-top:7px solid #e0442a;filter:drop-shadow(0 0 4px rgba(0,0,0,.5))}
   #toast{position:fixed;left:50%;top:104px;transform:translateX(-50%);background:rgba(32,30,29,.72);color:#fff;border-radius:10px;padding:8px 16px;font-size:13px;max-width:min(520px,60vw);text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
   #chatIn{position:fixed;left:22px;bottom:90px;width:min(340px,70vw);border-color:var(--clay);user-select:text}
   /* ---- start page ---- */
@@ -178,7 +179,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hurt"></div>
+<div id="hurt"></div><div id="hitDir"><i></i></div>
 <div id="play" class="hidden">
   <div id="cross"></div>
   <div id="vitals">
@@ -342,7 +343,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.24.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.24.1.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1710,7 +1711,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.24';
+var VERSION = '0.24.1';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1767,7 +1768,8 @@ function die(){
   inv = newInv(false); P.items = {}; P.weapon = null;
   var bed = world.edits.beds[charSlug()]; if (P.veh) dismount();
   P.x = bed ? bed.x : world.spawn.x; P.y = bed ? bed.y : world.spawn.y; P.hp = 100; P.hunger = 60; P.thirst = 60; P.hurt = 0; P.body = 0; deaths++; if (net.role !== 'host') zombies = [];
-  toast('You died. You wake ' + (bed ? 'in your bed' : safeB() ? 'outside the safe house' : 'where you first arrived') + '; your pack lies where you fell.', 6); updateHud(); saveNow();
+  var why = P.cause ? 'Killed by ' + P.cause + '. ' : ''; P.cause = ''; P.hungerWarn = P.thirstWarn = 0;
+  toast(why + 'You wake ' + (bed ? 'in your bed' : safeB() ? 'outside the safe house' : 'where you first arrived') + '; your pack lies where you fell.', 6); updateHud(); saveNow();
 }
 
 /* ================= input ================= */
@@ -2285,7 +2287,7 @@ function slopeMul(dx, dy){
 function windowMul(dt){
   var b = P.inside || nearB(P.x, P.y, 1), q, k; if (!b || !b.wins) return 1;
   for (k = 0; k*6 < b.wins.length; k++){ var st = winState(b, k); if (st !== 1 && st !== 2) continue; q = k*6;
-    if (Math.hypot(P.x - b.wins[q], P.y - b.wins[q+1]) < 0.55){ if (st === 2 && !P.crouch && time - (P.cutT || -9) > 4){ P.cutT = time; P.hp -= 5; P.hurt = 0.25; feed('Cut on the broken glass. Crouch to climb through safely.', '#d9603a'); } P.climb = 0.2; return 0.3; } }
+    if (Math.hypot(P.x - b.wins[q], P.y - b.wins[q+1]) < 0.55){ if (st === 2 && !P.crouch && time - (P.cutT || -9) > 4){ P.cutT = time; P.hp -= 5; P.cause = 'broken glass'; P.hurt = 0.25; feed('Cut on the broken glass. Crouch to climb through safely.', '#d9603a'); } P.climb = 0.2; return 0.3; } }
   return 1;
 }
 function nearB(x, y, r){ var c = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))), i; if (c) for (i = 0; i < c.length; i++){ var b = c[i]; if (!b.gone && x > b.minx - r && x < b.maxx + r && y > b.miny - r && y < b.maxy + r) return b; } return null; }
@@ -2304,7 +2306,7 @@ function weatherTick(dt, day){
     var s = season(), r = Math.random();
     wx.w = r < 0.5 ? 0 : r < 0.72 ? 1 : r < 0.84 ? 2 : s === 1 ? 3 : s === 3 ? 4 : r < 0.92 ? 1 : 0; if (s === 3 && wx.w === 1 && Math.random() < 0.5) wx.w = 4;
     wx.until = time + 200 + Math.random()*400; wx.tor = null;
-    if (wx.w === 2 && s < 2 && Math.random() < 0.25){ var a = Math.random()*6.283, b = a + 3.1416 + (Math.random() - 0.5)*0.5; wx.tor = {x:P.x + Math.cos(a)*170, y:P.y + Math.sin(a)*170, vx:Math.cos(b)*9, vy:Math.sin(b)*9, life:45}; }
+    if (wx.w === 2 && s < 2 && day >= 2 && Math.random() < 0.1){ var a = Math.random()*6.283, b = a + 3.1416 + (Math.random() - 0.5)*0.5; wx.tor = {x:P.x + Math.cos(a)*170, y:P.y + Math.sin(a)*170, vx:Math.cos(b)*9, vy:Math.sin(b)*9, life:45}; }
   }
   if (wx.tor){ wx.tor.x += wx.tor.vx*dt; wx.tor.y += wx.tor.vy*dt; wx.tor.life -= dt; if (wx.tor.life <= 0) wx.tor = null; }
 }
@@ -2313,14 +2315,14 @@ function bodyTick(dt, hour){
   var f = ambientF(hour), wet = wx.w === 1 || wx.w === 2 || wx.w === 4;
   if (P.inside) f += (66 - f)*0.6; else if (wet) f -= 7;
   if (nearLight(P.x, P.y, 6)) f += 22; if (P.swim) f -= 10; else if (P.wet > 0) f -= Math.min(9, P.wet/8); if (inv.coat > 0 && f < 60) f += 16;
-  P.feel = f; var tgt = Math.max(-100, Math.min(100, (f - 66)*3.2)); P.body += Math.max(-6*dt, Math.min(6*dt, tgt - P.body));
+  P.feel = f; var tgt = Math.max(-100, Math.min(100, (f - 66)*(f < 66 ? 2.2 : 3.2)));   /* cold creeps in more slowly than heat: about 34\u00b0F before you freeze */ P.body += Math.max(-6*dt, Math.min(6*dt, tgt - P.body));
   P.warnT -= dt;
-  if (P.body < -70){ P.hp -= 0.9*dt; if (P.warnT <= 0){ P.warnT = 45; toast('You are freezing. Get indoors, light a fire, or find a coat.', 5); } }
-  else if (P.body > 85){ P.hp -= 0.4*dt; if (P.warnT <= 0){ P.warnT = 45; toast('You are overheating. Get indoors or into water, and drink.', 5); } }
+  if (P.body < -70){ P.hp -= 0.35*dt; P.cause = 'the cold'; if (P.warnT <= 0){ P.warnT = 45; toast('You are freezing. Get indoors, light a fire, or find a coat.', 5); } }
+  else if (P.body > 85){ P.hp -= 0.4*dt; P.cause = 'the heat'; if (P.warnT <= 0){ P.warnT = 45; toast('You are overheating. Get indoors or into water, and drink.', 5); } }
   if (wx.tor){
     var dx = wx.tor.x - P.x, dy = wx.tor.y - P.y, d = Math.hypot(dx, dy) || 0.001;
-    if (!wx.torWarned){ wx.torWarned = true; toast('Tornado! Get inside a building.', 7); }
-    if (!P.inside && d < 14){ P.hp -= 18*dt; P.hurt = 0.2; stepMove(P, dx/d*4*dt, dy/d*4*dt, 0.35); }
+    if (!wx.torWarned){ wx.torWarned = true; var tb = Math.round(((Math.atan2(dy, dx) - P.yaw)*180/Math.PI % 360 + 540) % 360 - 180); toast('Tornado ' + (Math.abs(tb) < 45 ? 'ahead of you' : Math.abs(tb) > 135 ? 'behind you' : tb > 0 ? 'to your right' : 'to your left') + '! Get inside a building. It shows on your map.', 8); }
+    if (!P.inside && d < 10){ P.hp -= 6*dt; P.cause = 'the tornado'; P.hurt = 0.2; stepMove(P, dx/d*4*dt, dy/d*4*dt, 0.35); }
   } else wx.torWarned = false;
 }
 
@@ -2345,12 +2347,15 @@ function update(dt){
     stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
   stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
-  if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0) P.hp -= 1.2*dt; } else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
+  if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
   if (region && world.core && !zoneBusy && (P.x < world.core.x0 || P.x > world.core.x1 || P.y < world.core.y0 || P.y > world.core.y1)) zoneTravel();
   var en = 1 - 0.04*lvl('endur'); if (Math.floor(time/10) !== P.xpT){ P.xpT = Math.floor(time/10); addXp('endur', 3); }
-  P.hunger = Math.max(0, P.hunger - dt*100/400*en); P.thirst = Math.max(0, P.thirst - dt*100/300*en*(P.body > 55 ? 2.5 : 1));
-  if (P.hunger <= 0) P.hp -= 1.5*dt; if (P.thirst <= 0) P.hp -= 1.5*dt;
+  /* a full stomach lasts about an hour of play, a full bottle about forty minutes (less when hot, or sprinting) */
+  P.hunger = Math.max(0, P.hunger - dt*100/3600*en*(P.run || keys.ShiftLeft ? 1.5 : 1)); P.thirst = Math.max(0, P.thirst - dt*100/2400*en*(P.body > 55 ? 2.5 : 1)*(P.run || keys.ShiftLeft ? 1.5 : 1));
+  if (P.hunger <= 0){ P.hp -= 0.25*dt; P.cause = 'hunger'; } if (P.thirst <= 0){ P.hp -= 0.35*dt; P.cause = 'thirst'; }
+  [['hunger', 'You are getting hungry. Eat something (1, or tap the food).', 'You are starving and losing health. Eat now.'], ['thirst', 'You are getting thirsty. Drink something (2, or drink from water).', 'You are dehydrated and losing health. Drink now.']].forEach(function(n){
+    var v = P[n[0]], lv = v <= 0 ? 2 : v < 20 ? 1 : 0, kk = n[0] + 'Warn'; if (lv > (P[kk] || 0)) toast(n[lv], 6); P[kk] = v > 30 ? 0 : Math.max(P[kk] || 0, lv); });
   if (P.hunger > 50 && P.thirst > 50 && P.hp < 100) P.hp = Math.min(100, P.hp + 0.6*dt);
   for (i = 0; i < lamps.length; i++) if (lamps[i].life > 0) lamps[i].life -= dt;
   if (P.light){ if (!(inv.flashlight > 0)) P.light = false; else { P.fl -= dt/FL_SECS; if (P.fl <= 0){ P.fl = 0; if (!reload('fl', 'flashlight')){ P.light = false; toast('Your flashlight died. Find batteries.', 3.5); } } } }
@@ -2429,7 +2434,7 @@ function update(dt){
         if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
         if (T && T.b && z.k !== 2) alienAtPort(z, A, T.b, dt);
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
-        if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg}); else { P.hp -= A.dmg; P.hurt = 0.3; } }
+        if (T && !shy && d < A.reach && z.cd <= 0 && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { P.hp -= A.dmg; P.hurt = 0.3; P.cause = 'a ' + A.n; P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
       }
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
       for (var c = cades.length - 1; c >= 0; c--){
@@ -2461,6 +2466,7 @@ function update(dt){
   if (spawnT <= 0 && net.role !== 'guest'){ spawnT = 0.5; spawnAliens(day); }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
   el('hurt').style.opacity = Math.max(0, P.hurt)*1.2;
+  P.hitT = (P.hitT || 0) - dt; var hdv = el('hitDir'); hdv.style.opacity = Math.max(0, Math.min(1, P.hitT)); if (P.hitT > 0) hdv.style.transform = 'rotate(' + ((P.hitFrom - P.yaw)*180/Math.PI) + 'deg)';   /* which way the hit came from */
   hudT -= dt; if (hudT <= 0){ hudT = 0.25; updateHud(); }
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
@@ -2519,6 +2525,7 @@ function drawMap(c, w, h, cx, cy, sc, big){
   c.strokeStyle = '#6b4a32'; c.lineWidth = 2; for (i = 0; i < W0.wallSegs.length; i += 4){ c.beginPath(); c.moveTo(W0.wallSegs[i]*sc + ox, W0.wallSegs[i+1]*sc + oy); c.lineTo(W0.wallSegs[i+2]*sc + ox, W0.wallSegs[i+3]*sc + oy); c.stroke(); }
   (W0.zones || []).forEach(function(z){ c.strokeStyle = '#5f9a55'; c.lineWidth = 2; c.setLineDash([5, 4]); c.beginPath(); c.arc(z.x*sc + ox, z.y*sc + oy, z.r*sc, 0, 6.283); c.stroke(); c.setLineDash([]); c.fillStyle = 'rgba(122,170,100,.14)'; c.fill(); });
   var dot = function(x, y, r, col){ c.fillStyle = col; c.beginPath(); c.arc(x*sc + ox, y*sc + oy, r, 0, 6.283); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 1.5; c.stroke(); };
+  if (wx.tor){ c.strokeStyle = '#4a4a55'; c.lineWidth = 2; for (var tr0 = 0; tr0 < 3; tr0++){ c.beginPath(); c.arc(wx.tor.x*sc + ox, wx.tor.y*sc + oy, 3 + tr0*3, tr0, tr0 + 4.2); c.stroke(); } }   /* the tornado */
   W0.traders.forEach(function(t){ dot(t.x, t.y, big ? 6 : 4, '#7a8a5e'); });
   if (W0.scen.type === 'escape'){ W0.partB.forEach(function(id){ if (!W0.found[id]) dot(W0.buildings[id].cx, W0.buildings[id].cy, big ? 6 : 4, '#d9a845'); }); dot(W0.evac.x, W0.evac.y, big ? 8 : 5, '#ffffff'); }
   pings.forEach(function(q){ c.strokeStyle = '#c67139'; c.lineWidth = 3; c.beginPath(); c.arc(q.x*sc + ox, q.y*sc + oy, big ? 9 : 6, 0, 6.283); c.stroke(); });
@@ -3123,7 +3130,7 @@ function landThrow(t){
   if (d.beh === 'boom'){
     booms.push({x:t.x, y:t.y, t:0.35}); P.noise = 4;
     for (var i = 0; i < zombies.length; i++){ var z = zombies[i], dx = z.x - t.x, dy = z.y - t.y, dd = Math.hypot(dx, dy) || 0.001; if (dd < 5 + AK[z.k].r) hitZombie(z, st.dmg, dx/dd*10, dy/dd*10); }
-    if (Math.hypot(P.x - t.x, P.y - t.y) < 3){ P.hp -= 12; P.hurt = 0.3; }
+    if (Math.hypot(P.x - t.x, P.y - t.y) < 3){ P.hp -= 12; P.hurt = 0.3; P.cause = 'your own blast'; }
   } else if (d.beh === 'flare'){ var f = {x:t.x, y:t.y, life:st.secs}; flares.push(f); emit({k:'flare', f:f}); }
   else { var l = {x:t.x, y:t.y, life:st.secs}; lures.push(l); emit({k:'lure', l:l}); }
 }
@@ -3713,7 +3720,7 @@ async function guestMsg(g, data){
   else if (m.t === 'edits'){ takeEdits(m, g); }
   else if (m.t === 'chat' || m.t === 'ping'){ showMsg(m); }
   else if (m.t === 'sys'){ toast(txt(m.txt, 160), 5); }
-  else if (m.t === 'hurt'){ P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; }
+  else if (m.t === 'hurt'){ P.hp -= Math.min(30, +m.d || 0); P.hurt = 0.3; P.cause = AK[m.k | 0] ? 'a ' + AK[m.k | 0].n : 'an alien'; }
 }
 
 /* ================= map maker: one-time download from OpenStreetMap, saved as a compact map file ================= */

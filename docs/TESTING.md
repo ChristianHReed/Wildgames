@@ -192,6 +192,14 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3j.5 With a friend: each of you sees the other as their chosen character, walking, running, crouching and swinging as they do.
 - [ ] 3j.6 On the phone, check the frame rate with a few players in view.
 
+## Stage 3k: knowing why you died
+
+- [ ] 3k.1 When you die, the message says what killed you (a swarmer, the cold, thirst, the tornado and so on).
+- [ ] 3k.2 When something hits you, a red arc at the middle of the screen points toward it.
+- [ ] 3k.3 Food lasts about an hour of play and water about forty minutes. You get a warning at 20 and again at empty; empty costs health slowly.
+- [ ] 3k.4 A cool, rainy spring day makes you cold but does not freeze you. Freezing starts around 34\u00b0F.
+- [ ] 3k.5 Tornadoes only come from day 2, are rarer, tell you which way they are, show on the map, and hurt much less.
+
 ## Stage 4: aliens and weather
 
 - [ ] 4.1 Daytime: small green swarmers appear in groups and chase you. The bat kills one in a hit or two.
