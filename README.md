@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.19. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.20. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -29,6 +29,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | Action | Computer | Touch screen |
 | --- | --- | --- |
 | Move, look | WASD, mouse (arrow keys also turn) | Left stick, drag the view |
+| Sprint, crouch | Hold Shift, Z | Run, Crouch (tap on, tap off) |
 | Swing, shoot | Click or Space, right-click or F | Swing, Shoot |
 | Search, gather, open or shut a door or window, ride, trade | E | Tap it, or Search |
 | Eat, drink, medkit | 1, 2, 3 | Tap the item |

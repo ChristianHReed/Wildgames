@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.19) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.20) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -146,6 +146,16 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3e.10 Open the backpack. Eat berries; turn 3 herbs and 2 fiber into a medkit; turn 2 stones into ammo.
 - [ ] 3e.11 Chop a pine and a leafy tree. The pine gives more wood; the leafy tree sometimes gives food.
 - [ ] 3e.12 Look at a pond or river. The surface moves and glints. Check the frame rate does not drop on the phone.
+
+## Stage 3f: sprinting, crouching and moving over ground
+
+- [ ] 3f.1 Hold Shift (or tap Run) and move. You go clearly faster and the thin bar under your health drains in about 7 seconds. At empty you see "Out of breath" and cannot sprint until it refills a quarter.
+- [ ] 3f.2 Press Z (or tap Crouch). The view drops, you move at about half speed, and the status line says Crouching.
+- [ ] 3f.3 Find a swarmer that has not noticed you. Crouching, you can get about twice as close before it turns on you as you can walking. Sprinting, it notices from further away.
+- [ ] 3f.4 Climb through an open window. You slow right down for about a second. Through a broken window standing up you take a small cut; crouched you do not.
+- [ ] 3f.5 On a real map with hills, walk up a steep street and back down. Up is slower.
+- [ ] 3f.6 Swim across a pond. Stamina drains; out of stamina you swim slowly and lose health. Afterwards you stay wet and colder for a while, and dry faster indoors or by a fire.
+- [ ] 3f.7 On the phone, the Run and Crouch buttons sit beside the move stick. Are they easy to reach without hitting the stick?
 
 ## Stage 4: aliens and weather
 

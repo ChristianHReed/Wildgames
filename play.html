@@ -41,6 +41,7 @@
   #vHp{font-size:13px;font-weight:700;min-width:26px}
   .bar{height:5px;border-radius:999px;background:rgba(32,30,29,.5);overflow:hidden;box-shadow:0 0 0 1px rgba(245,234,216,.16)}
   .bar div{height:100%;border-radius:999px}
+  #stamBar{height:4px;margin:3px 30px 4px 0} #bStam{background:#e9dcc0}
   #bHp{background:#d9603a} #bFood{background:var(--ochre)} #bWater{background:#7fb4c8} #bTemp{background:#9bb07a}
   .vsub{display:flex;gap:8px;margin-top:6px}
   .vs{flex:1;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.95}
@@ -142,6 +143,8 @@
   #tCade{right:172px;bottom:142px;width:52px;height:52px}
   #tLight{right:186px;bottom:74px;width:52px;height:52px}
   #tPing{right:232px;bottom:142px;width:52px;height:52px}
+  #tRun{left:160px;bottom:150px;width:56px;height:56px} #tDuck{left:160px;bottom:84px;width:56px;height:56px}
+  #touch button.on{background:var(--ochre);color:#fff}
   .touchmode #help,.touchmode #lockhint{display:none !important}
   .touchmode #vitals{left:10px;top:8px;width:170px}
   .touchmode .vs{font-size:8px}
@@ -178,6 +181,7 @@
   <div id="cross"></div>
   <div id="vitals">
     <div class="vmain"><div class="bar"><div id="bHp"></div></div><span id="vHp"></span></div>
+    <div class="bar" id="stamBar" title="Stamina"><div id="bStam"></div></div>
     <div class="vsub">
       <div class="vs">Food<span id="vFood"></span><div class="bar"><div id="bFood"></div></div></div>
       <div class="vs">Water<span id="vWater"></span><div class="bar"><div id="bWater"></div></div></div>
@@ -195,7 +199,7 @@
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Shift: sprint &middot; Z: crouch &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click / Space: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
   <div id="feed"></div>
   <input id="chatIn" class="hidden" maxlength="120" placeholder="Say something, then press Enter">
@@ -221,7 +225,7 @@
   <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><button id="bigClose">Close map</button></div></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
-    <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button><button id="tPing">Mark</button>
+    <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button><button id="tPing">Mark</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)">Esc frees the mouse &middot; H shows the controls</span></div>
 </div>
@@ -332,7 +336,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.19.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.20.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1699,7 +1703,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.19';
+var VERSION = '0.20';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -1712,7 +1716,7 @@ function startRun(ws, cs){
   var w = world, sx = 0, sy = 0, found = false, k;
   for (k = 0; !found && k < 6000; k++){ var a = k*0.5, rr = k*0.2; sx = w.start.x + Math.cos(a)*rr; sy = w.start.y + Math.sin(a)*rr; found = !circ(sx, sy, 1) && !inWater(sx, sy, 0); }
   w.spawn = {x:sx, y:sy};
-  P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:false, fl:1, rd:1, noise:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0};
+  P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:false, fl:1, rd:1, noise:0, stam:100, crouch:false, run:false, tired:false, vis:1, wet:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0};
   inv = newInv(true);
   zombies = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
   loaded.forEach(function(b){ freeMesh(b.int.g); b.int = null; }); loaded = []; facs = [];
@@ -1767,7 +1771,7 @@ window.addEventListener('keydown', function(e){
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit');
   if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
   if (e.code === 'KeyX') pingAhead(); if (e.code === 'KeyH') el('help').classList.toggle('on'); if (e.code === 'KeyI') togglePack(); if (e.code === 'KeyT') place('lamp'); if (e.code === 'KeyR') radioScan(); if (e.code === 'KeyM') toggleBig();
-  if (e.code === 'KeyN') toggleBuild();
+  if (e.code === 'KeyN') toggleBuild(); if (e.code === 'KeyZ') toggleCrouch();
   if (e.code === 'KeyL') toggleLight(); if (e.code === 'KeyK') toggleItems(); if (e.code === 'KeyQ') cycleWeapon(); if (e.code === 'KeyG') quickItem();
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
   if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault();
@@ -1819,6 +1823,8 @@ hold('tFire', function(){ place('fire'); });
 hold('tCade', function(){ place('cade'); });
 hold('tLight', toggleLight);
 hold('tPing', function(){ pingAhead(); });
+hold('tRun', function(){ P.run = !P.run; if (P.run) P.crouch = false; });
+hold('tDuck', toggleCrouch);
 el('inv').addEventListener('click', function(e){ var n = e.target; if (running && n.closest && n.closest('[data-pack]')){ togglePack(); return; } while (n && n !== this && !(n.getAttribute && n.getAttribute('data-u'))) n = n.parentNode; if (running && n && n !== this) useItem(n.getAttribute('data-u')); });
 /* ---- batteries power the flashlight, the radio and lanterns ---- */
 var lamps = [], FL_SECS = 1200, LAMP_SECS = 2400;
@@ -2109,6 +2115,31 @@ var wx = {w:0, until:0, tor:null, flash:0};
 function dayNum(){ return Math.floor((8 + time/DAY*24)/24) + 1; }
 function season(){ return Math.floor((dayNum() - 1)/4) % 4; }
 function ambientF(hour){ return SBASE[season()] + 9*Math.cos((hour - 15)/24*6.283) + (wx.w === 3 ? 16 : 0) + (wx.w === 4 ? -14 : 0) + ((wx.w === 1 || wx.w === 2) ? -5 : 0); }
+/* ---- how you move: crouch (slow, quiet, hard to see), walk, sprint (fast, loud, uses stamina) ---- */
+var SPD = {crouch:2.3, walk:4.6, sprint:7.4, swim:2.4};
+function toggleCrouch(){ if (!running || P.veh) return; P.crouch = !P.crouch; if (P.crouch) P.run = false; }
+function gait(moving){ return P.veh ? 1 : P.crouch ? 0 : (keys.ShiftLeft || keys.ShiftRight || P.run) && moving && !P.tired && !P.swim ? 2 : 1; }   /* 0 crouch, 1 walk, 2 sprint */
+function slopeMul(dx, dy){
+  if (!world.hg || P.inside) return 1;
+  var l = Math.hypot(dx, dy) || 1, g = (hAt(P.x + dx/l*1.2, P.y + dy/l*1.2) - hAt(P.x, P.y))/1.2;   /* rise per metre the way you are heading */
+  return g > 0 ? Math.max(0.4, 1 - g*1.7) : Math.min(1.12, 1 - g*0.3);
+}
+/* climbing through a window takes a moment, and broken glass cuts unless you go through low and slow */
+function windowMul(dt){
+  var b = P.inside || nearB(P.x, P.y, 1), q, k; if (!b || !b.wins) return 1;
+  for (k = 0; k*6 < b.wins.length; k++){ var st = winState(b, k); if (st !== 1 && st !== 2) continue; q = k*6;
+    if (Math.hypot(P.x - b.wins[q], P.y - b.wins[q+1]) < 0.55){ if (st === 2 && !P.crouch && time - (P.cutT || -9) > 4){ P.cutT = time; P.hp -= 5; P.hurt = 0.25; feed('Cut on the broken glass. Crouch to climb through safely.', '#d9603a'); } P.climb = 0.2; return 0.3; } }
+  return 1;
+}
+function nearB(x, y, r){ var c = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))), i; if (c) for (i = 0; i < c.length; i++){ var b = c[i]; if (!b.gone && x > b.minx - r && x < b.maxx + r && y > b.miny - r && y < b.maxy + r) return b; } return null; }
+function stamTick(dt, g, moving){
+  var cap = 100, en = 1 + 0.08*lvl('endur');
+  if (g === 2){ P.stam -= dt*15/en; if (P.stam <= 0){ P.stam = 0; P.tired = true; P.run = false; feed('Out of breath', '#c0c6cc'); } }
+  else if (P.swim && moving) P.stam = Math.max(0, P.stam - dt*5/en);
+  else P.stam = Math.min(cap, P.stam + dt*(moving ? (g === 0 ? 11 : 7) : 16)*(P.hunger < 20 || P.thirst < 20 ? 0.5 : 1));
+  if (P.tired && P.stam > 25) P.tired = false;
+  P.vis = P.veh ? 1 : g === 0 ? 0.5 : g === 2 ? 1.35 : 1; P.eyeD = (P.eyeD || 0) + ((g === 0 ? -0.6 : P.climb > 0 ? -0.35 : 0) - (P.eyeD || 0))*Math.min(1, dt*9); P.climb = (P.climb || 0) - dt;
+}
 function moveMul(){ return (me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
 function weatherTick(dt, day){
   if (world.lastDay !== day){ if (world.lastDay) spreadNests(); world.lastDay = day; }
@@ -2124,7 +2155,7 @@ function bodyTick(dt, hour){
   wx.flash -= dt; if (wx.w === 2 && Math.random() < dt*0.12) wx.flash = 0.18;
   var f = ambientF(hour), wet = wx.w === 1 || wx.w === 2 || wx.w === 4;
   if (P.inside) f += (66 - f)*0.6; else if (wet) f -= 7;
-  if (nearLight(P.x, P.y, 6)) f += 22; if (P.swim) f -= 10; if (inv.coat > 0 && f < 60) f += 16;
+  if (nearLight(P.x, P.y, 6)) f += 22; if (P.swim) f -= 10; else if (P.wet > 0) f -= Math.min(9, P.wet/8); if (inv.coat > 0 && f < 60) f += 16;
   P.feel = f; var tgt = Math.max(-100, Math.min(100, (f - 66)*3.2)); P.body += Math.max(-6*dt, Math.min(6*dt, tgt - P.body));
   P.warnT -= dt;
   if (P.body < -70){ P.hp -= 0.9*dt; if (P.warnT <= 0){ P.warnT = 45; toast('You are freezing. Get indoors, light a fire, or find a coat.', 5); } }
@@ -2152,9 +2183,12 @@ function update(dt){
   if (net.role !== 'guest') weatherTick(dt, day);
   bodyTick(dt, hour);
   if (mf || ms){
-    var l = Math.hypot(mf, ms), V = P.veh, sp = (V ? vehSpeed(dt) : (P.swim ? 2.4 : 5.2)*moveMul())*dt*Math.min(1, l)/l, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y;
-    stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); if (!V) P.bob += dt*10; else vehMoved(V, P.x - vx0, P.y - vy0, dt);
+    var l = Math.hypot(mf, ms), V = P.veh, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y, gt = gait(true);
+    var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
+    stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
+  stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
+  if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0) P.hp -= 1.2*dt; } else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
   if (region && world.core && !zoneBusy && (P.x < world.core.x0 || P.x > world.core.x1 || P.y < world.core.y0 || P.y > world.core.y1)) zoneTravel();
   var en = 1 - 0.04*lvl('endur'); if (Math.floor(time/10) !== P.xpT){ P.xpT = Math.floor(time/10); addXp('endur', 3); }
@@ -2197,15 +2231,15 @@ function update(dt){
   var night = dark > 0.5;
   P.noise = Math.max(0, P.noise - dt);
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3}], cadesChanged = false;
-    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3}); });
+    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1}], cadesChanged = false;
+    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1}); });
     var sfb = safeB(); tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); });
     for (i = zombies.length - 1; i >= 0; i--){
       var z = zombies[i], A = AK[z.k], T = null, d = 1e9, dAny = 1e9;
       for (var q2 = 0; q2 < tg.length; q2++){
         var t2 = tg[q2], dd = Math.hypot(t2.x - z.x, t2.y - z.y); if (dd < dAny) dAny = dd;
-        if (!t2.safe && dd < A.see*(t2.loud ? 2.2 : 1)*(t2.lit ? (z.k === 1 ? 4 : 1.3) : 1) && dd < d){ d = dd; T = t2; }
+        if (!t2.safe && dd < A.see*(t2.loud ? 2.2 : t2.vis)*(t2.lit ? (z.k === 1 ? 4 : 1.3) : 1) && dd < d){ d = dd; T = t2; }
       }
       if (z.hp <= 0){ kills++; addCorpse(z); zombies.splice(i, 1); continue; }
       if (dAny > 130){ zombies.splice(i, 1); continue; }
@@ -2271,12 +2305,13 @@ var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:
 function updateHud(){
   el('bTemp').style.width = (P.body + 100)/2 + '%'; el('bTemp').style.background = P.body < -55 ? '#5f8a9a' : P.body > 55 ? '#c67139' : '#7a8a5e';
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
+  el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
   el('wxStamp').textContent = (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase();
   el('dayLine').textContent = 'Day ' + (Math.floor(hrs/24) + 1) + '  ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min;
-  el('stats').textContent = inSafe(P.x, P.y, 0) ? 'Safe house: aliens keep away' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '';
+  el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? 'Safe house: aliens keep away' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
   var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/16) + '% 0"></i>' + txt + '</span>'; };
@@ -2573,7 +2608,7 @@ function render(){
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   var cp = Math.cos(P.pitch), f = [Math.cos(P.yaw)*cp, Math.sin(P.pitch), Math.sin(P.yaw)*cp];
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
-  var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65) + Math.sin(P.bob)*0.03, P.y]; e[1] += P.gy || 0;
+  var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65 + (P.eyeD || 0)) + Math.sin(P.bob)*0.03, P.y]; e[1] += P.gy || 0;
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
   var t = 1/Math.tan(1.22/2), nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   gl.uniformMatrix4fv(U.vp, false, mul(Pm, V)); gl.uniform3fv(U.cam, e); gl.uniform3fv(U.fwd, f); gl.uniform3fv(U.sky, sky);
@@ -3280,7 +3315,7 @@ function netTick(dt){
   var k = Math.min(1, dt*12), list = otherPlayers();
   list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; var v = o.vh && world.vmap[o.vh]; if (v){ v.x = o.x; v.y = o.y; v.yaw = o.yaw; v.rd = time; } });
   net.t -= dt; if (net.t > 0) return;
-  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
+  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
   net.t = 0.1;
   var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0]];
   net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0]); });
@@ -3356,7 +3391,7 @@ function hostMsg(peer, data){
   if (m.t === 'join'){
     peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.look = cleanLook(m.look); peer.cop = !!m.cop; peer.ready = true; sendWho();
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
-  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
+  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
   else if (m.t === 'chat' || m.t === 'ping'){
     var cm = {t:m.t, n:peer.name, txt:txt(m.txt, 120), x:+m.x || 0, y:+m.y || 0, sx:peer.x, sy:peer.y, r:peer.rd ? 1 : 0, cop:peer.cop ? 1 : 0};
     if (peer.cop && m.t === 'chat'){ var pt = null; net.peers.forEach(function(q){ if (q.id === (m.pt | 0)) pt = q; }); if (!(pt ? pt.rd : radioOn())){ send(peer.dc, {t:'sys', txt:'Your partner has no radio, so only your map markers get through.'}); return; } }
