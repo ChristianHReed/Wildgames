@@ -1,6 +1,6 @@
 # Credits
 
-- **Map data:** © OpenStreetMap contributors, Open Database License.
+- **Map data:** © OpenStreetMap contributors, Open Database License. The built-in Springfield region comes from the Afterstreet map pack (`design/afterstreet_handoff/map_data/springfield_50mi/`), pulled from the Overpass API and OpenFreeMap vector tiles in October 2026, with elevation from AWS Terrain Tiles (SRTM/3DEP); `tools/build_region.py` cuts it into squares.
 - **Furniture, cars and street props:** KayKit Furniture Bits 1.0 and KayKit City Builder Bits 1.0 by Kay Lousberg (www.kaylousberg.com), CC0. Converted and recoloured by `tools/build_models.py`.
 - **Icons and interface design:** the Afterstreet design pack in `design/afterstreet_handoff/`.
 - **Ground and indoor textures:** original, painted in code by `tools/paint_ground.py`; the ground cover and tree planting rules are in `docs/TERRAIN.md`.

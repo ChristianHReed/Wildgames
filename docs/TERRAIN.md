@@ -40,6 +40,30 @@ Every tree keeps a minimum distance from the next (4 m in woods, 8 m along stree
 No tree stands in a road, a building or water. On a very large map each kind is thinned evenly, so the total stays light enough for a
 phone (about 18,000 trees at most).
 
+## The built-in Springfield region
+
+The 50-mile Springfield region (from 0.34) carries the map pack's terrain-type grid, one cell every 79 m, read with soft edges so the cells
+never show as squares. Each type sets how much of the ground is woodland, mown lawn, long grass, built-up, wet or rock, how many trees
+grow per hectare, and how many of them are pines:
+
+| Terrain type | Ground | Trees per hectare | Pines |
+| --- | --- | --- | --- |
+| Oak-hickory forest | Leaf litter | about 160 (in clumps) | few |
+| Shortleaf pine-oak forest | Leaf litter, bluer shade | about 150 | most |
+| Riverbank woods | Mud and long grass | about 120 | none |
+| Scrub and old field | Long grass | about 45 | some |
+| Orchard | Long grass and lawn | about 70 | none |
+| Fescue pasture and hayfield | Long grass | lone trees | some (cedars) |
+| Prairie and dolomite glade | Long grass with bare rock | a few | about half |
+| Park lawn, cemetery, golf, campus | Mown lawn | 10-14 | few |
+| Wetland | Wet long grass | about 12 | none |
+| Quarry | Bare rock | none | none |
+| Paved, industrial, rail yard | Worn ground | very few | none |
+
+Woods are grown only for the 256 m tiles near you and dropped when you leave, so a whole region of woodland costs nothing until you are
+in it; a tree you fell stays felled. Street, yard, park and riverbank trees follow the rules above, and street trees grow only where
+there are buildings along the road.
+
 ## Sources
 
 - Street trees at no more than 40 ft (12 m) apart, alternating rather than opposite, and kept 30 ft (9 m) from junctions:

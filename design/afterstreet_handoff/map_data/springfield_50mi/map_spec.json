@@ -1,0 +1,1461 @@
+{
+ "version": 1,
+ "center": {
+  "name": "Park Central Square, Springfield, MO",
+  "lat": 37.2089,
+  "lon": -93.2923
+ },
+ "radius_mi": 50,
+ "radius_m": 80467,
+ "bbox": [
+  -94.2,
+  36.485,
+  -92.385,
+  37.933
+ ],
+ "units": "metres; floors are above-ground storeys; heights are eave/roof-top height above ground",
+ "world_axes": "x = east (m), y = up, z = -north (m), origin at center; equirectangular: x=(lon-lon0)*88660, z=-(lat-lat0)*110540",
+ "zones": [
+  {
+   "id": "downtown",
+   "radius_m": 1200,
+   "desc": "Park Central Square, Commercial St to Walnut St. 1–12 storey brick masonry, 0 m setbacks, storefront ground floors, flat roofs with parapets.",
+   "build_detail": "full: every OSM footprint, facade per building, interiors enterable"
+  },
+  {
+   "id": "city",
+   "radius_m": 12000,
+   "desc": "Springfield city: grid streets, bungalows and ranch houses, strip commercial on Glenstone / Battlefield / Sunshine / Kearney, MSU and Drury campuses, rail yards, Jordan Valley.",
+   "build_detail": "full footprints; interiors on POI buildings"
+  },
+  {
+   "id": "suburban",
+   "radius_m": 25000,
+   "desc": "Nixa, Ozark, Republic, Battlefield, Strafford, Willard: cul-de-sac subdivisions, big-box retail, churches with large lots.",
+   "build_detail": "footprints where mapped; fill gaps procedurally from landuse=residential"
+  },
+  {
+   "id": "rural",
+   "radius_m": 80467,
+   "desc": "Ozark Plateau farmland, fescue pasture, oak-hickory woods, karst valleys, lake country to the south (Table Rock, Taneycomo, Bull Shoals) and north (Pomme de Terre, Stockton).",
+   "build_detail": "mapped footprints + procedural farmsteads (house, barn, shed, pond) every 400–800 m along county roads"
+  }
+ ],
+ "inference_order": [
+  "1. OSM building=* value when not \"yes\" (see building_types[].osm)",
+  "2. POI inside footprint (amenity/shop/office/tourism/healthcare) → mapped type",
+  "3. landuse polygon containing the footprint centroid (residential/commercial/retail/industrial/farmyard/farmland)",
+  "4. footprint area: <40 m² shed; 40–90 m² garage/outbuilding; 90–320 m² house; 320–1500 m² commercial or apartments; >1500 m² warehouse/big box (industrial landuse) or retail",
+  "5. zone default (downtown → commercial; rural → house/barn by area)"
+ ],
+ "floors_rule": "floors = building:levels if present; else round(height / floor_height); else type default (typ) adjusted by zone (downtown commercial ×1.6, max 12)",
+ "height_rule": "height = height tag; else floors × floor_height_m + roof_height_m",
+ "building_types": {
+  "house": {
+   "label": "Single-family house",
+   "osm": [
+    "house",
+    "detached",
+    "residential",
+    "semidetached_house",
+    "bungalow"
+   ],
+   "floors": [
+    1,
+    1,
+    2
+   ],
+   "floor_height_m": 3,
+   "roof": {
+    "shape": "gabled|hipped",
+    "pitch_deg": 28,
+    "height_m": 2.2,
+    "material": "asphalt shingle",
+    "colors": [
+     "#6e6762",
+     "#8a5a48",
+     "#5a544f"
+    ]
+   },
+   "walls": [
+    "siding_cream",
+    "siding_river",
+    "brick"
+   ],
+   "footprint_m2": [
+    90,
+    180,
+    320
+   ],
+   "setback_m": 8,
+   "yard": "lawn, 1–3 shade trees, driveway, chain-link or wood privacy fence",
+   "interior": "building=house",
+   "loot": "misc"
+  },
+  "apartments": {
+   "label": "Apartment building",
+   "osm": [
+    "apartments",
+    "dormitory"
+   ],
+   "floors": [
+    2,
+    3,
+    8
+   ],
+   "floor_height_m": 3,
+   "roof": {
+    "shape": "flat|hipped",
+    "height_m": 1.2,
+    "material": "membrane / shingle"
+   },
+   "walls": [
+    "brick",
+    "siding_cream",
+    "stucco"
+   ],
+   "footprint_m2": [
+    300,
+    800,
+    3000
+   ],
+   "interior": "building=house",
+   "loot": "misc"
+  },
+  "mobile_home": {
+   "label": "Mobile home",
+   "osm": [
+    "static_caravan",
+    "mobile_home"
+   ],
+   "floors": [
+    1,
+    1,
+    1
+   ],
+   "floor_height_m": 2.8,
+   "roof": {
+    "shape": "flat",
+    "height_m": 0.3,
+    "material": "metal"
+   },
+   "walls": [
+    "siding_cream",
+    "siding_river"
+   ],
+   "footprint_m2": [
+    50,
+    80,
+    120
+   ],
+   "interior": "building=house",
+   "loot": "misc"
+  },
+  "cabin": {
+   "label": "Cabin / lake house",
+   "osm": [
+    "cabin",
+    "hut"
+   ],
+   "floors": [
+    1,
+    1,
+    2
+   ],
+   "floor_height_m": 3,
+   "roof": {
+    "shape": "gabled",
+    "pitch_deg": 35,
+    "height_m": 2.5,
+    "material": "metal"
+   },
+   "walls": [
+    "wood_planks"
+   ],
+   "footprint_m2": [
+    40,
+    90,
+    200
+   ],
+   "interior": "building=house",
+   "loot": "misc"
+  },
+  "commercial": {
+   "label": "Commercial / storefront",
+   "osm": [
+    "commercial",
+    "retail",
+    "office",
+    "kiosk"
+   ],
+   "floors": [
+    1,
+    2,
+    6
+   ],
+   "floor_height_m": 4,
+   "ground_floor_m": 4.5,
+   "roof": {
+    "shape": "flat",
+    "parapet_m": 0.8,
+    "material": "gravel / membrane"
+   },
+   "walls": [
+    "brick",
+    "brick_dark",
+    "stucco"
+   ],
+   "ground_floor": "shopfront_{poi category}",
+   "footprint_m2": [
+    150,
+    600,
+    5000
+   ],
+   "setback_m": 0,
+   "interior": "by POI",
+   "loot": "by POI"
+  },
+  "big_box": {
+   "label": "Big-box store / strip mall",
+   "osm": [
+    "retail",
+    "supermarket"
+   ],
+   "floors": [
+    1,
+    1,
+    2
+   ],
+   "floor_height_m": 7,
+   "roof": {
+    "shape": "flat",
+    "material": "membrane"
+   },
+   "walls": [
+    "stucco"
+   ],
+   "footprint_m2": [
+    2000,
+    8000,
+    20000
+   ],
+   "parking": "surface lot 1.5× footprint in front",
+   "interior": "shop=supermarket",
+   "loot": "food"
+  },
+  "warehouse": {
+   "label": "Warehouse / industrial",
+   "osm": [
+    "industrial",
+    "warehouse",
+    "manufacture",
+    "factory",
+    "hangar",
+    "storage_tank"
+   ],
+   "floors": [
+    1,
+    1,
+    2
+   ],
+   "floor_height_m": 8,
+   "roof": {
+    "shape": "flat|sawtooth",
+    "material": "metal"
+   },
+   "walls": [
+    "metal_painted"
+   ],
+   "footprint_m2": [
+    800,
+    3000,
+    40000
+   ],
+   "interior": "default",
+   "loot": "materials"
+  },
+  "school": {
+   "label": "School",
+   "osm": [
+    "school",
+    "kindergarten"
+   ],
+   "floors": [
+    1,
+    2,
+    3
+   ],
+   "floor_height_m": 4,
+   "roof": {
+    "shape": "flat",
+    "material": "membrane"
+   },
+   "walls": [
+    "brick"
+   ],
+   "extras": "playground, ball fields, bus loop",
+   "interior": "amenity=school",
+   "loot": "shelter"
+  },
+  "university": {
+   "label": "University / college hall",
+   "osm": [
+    "university",
+    "college"
+   ],
+   "floors": [
+    2,
+    3,
+    8
+   ],
+   "floor_height_m": 4,
+   "roof": {
+    "shape": "flat|hipped",
+    "material": "slate / membrane"
+   },
+   "walls": [
+    "brick",
+    "stone"
+   ],
+   "interior": "amenity=school",
+   "loot": "shelter"
+  },
+  "church": {
+   "label": "Church",
+   "osm": [
+    "church",
+    "chapel",
+    "cathedral",
+    "religious"
+   ],
+   "floors": [
+    1,
+    1,
+    2
+   ],
+   "floor_height_m": 6,
+   "roof": {
+    "shape": "gabled",
+    "pitch_deg": 40,
+    "height_m": 5,
+    "material": "shingle / slate"
+   },
+   "steeple": "on 40% of churches: 12–30 m spire",
+   "walls": [
+    "brick",
+    "stone"
+   ],
+   "interior": "amenity=place_of_worship",
+   "loot": "shelter"
+  },
+  "civic": {
+   "label": "Civic / government",
+   "osm": [
+    "civic",
+    "public",
+    "government",
+    "courthouse",
+    "townhall",
+    "fire_station",
+    "police",
+    "post_office"
+   ],
+   "floors": [
+    1,
+    2,
+    5
+   ],
+   "floor_height_m": 4,
+   "roof": {
+    "shape": "flat",
+    "material": "membrane"
+   },
+   "walls": [
+    "stone",
+    "brick"
+   ],
+   "interior": "default",
+   "loot": "shelter"
+  },
+  "hospital": {
+   "label": "Hospital / clinic",
+   "osm": [
+    "hospital",
+    "clinic"
+   ],
+   "floors": [
+    2,
+    5,
+    12
+   ],
+   "floor_height_m": 4.2,
+   "roof": {
+    "shape": "flat",
+    "material": "membrane",
+    "extras": "helipad on largest"
+   },
+   "walls": [
+    "stucco",
+    "brick"
+   ],
+   "interior": "amenity=pharmacy",
+   "loot": "medicine"
+  },
+  "hotel": {
+   "label": "Hotel / motel",
+   "osm": [
+    "hotel",
+    "motel"
+   ],
+   "floors": [
+    2,
+    3,
+    12
+   ],
+   "floor_height_m": 3.2,
+   "roof": {
+    "shape": "flat",
+    "material": "membrane"
+   },
+   "walls": [
+    "stucco",
+    "brick"
+   ],
+   "interior": "building=house",
+   "loot": "misc"
+  },
+  "stadium": {
+   "label": "Stadium / arena",
+   "osm": [
+    "stadium",
+    "sports_hall",
+    "sports_centre",
+    "grandstand"
+   ],
+   "floors": [
+    1,
+    2,
+    4
+   ],
+   "floor_height_m": 6,
+   "roof": {
+    "shape": "flat|open"
+   },
+   "walls": [
+    "metal_painted",
+    "brick"
+   ],
+   "interior": "default",
+   "loot": "misc"
+  },
+  "parking": {
+   "label": "Parking garage",
+   "osm": [
+    "parking"
+   ],
+   "floors": [
+    2,
+    4,
+    7
+   ],
+   "floor_height_m": 3.2,
+   "roof": {
+    "shape": "flat",
+    "material": "concrete deck"
+   },
+   "walls": [
+    "stone"
+   ],
+   "interior": "none",
+   "loot": "misc"
+  },
+  "garage": {
+   "label": "Garage / carport",
+   "osm": [
+    "garage",
+    "garages",
+    "carport"
+   ],
+   "floors": [
+    1,
+    1,
+    1
+   ],
+   "floor_height_m": 3,
+   "roof": {
+    "shape": "gabled|flat",
+    "material": "shingle / metal"
+   },
+   "walls": [
+    "siding_cream"
+   ],
+   "footprint_m2": [
+    20,
+    40,
+    90
+   ],
+   "interior": "none",
+   "loot": "materials"
+  },
+  "shed": {
+   "label": "Shed / outbuilding",
+   "osm": [
+    "shed",
+    "roof",
+    "hut",
+    "service",
+    "doghouse",
+    "greenhouse"
+   ],
+   "floors": [
+    1,
+    1,
+    1
+   ],
+   "floor_height_m": 2.6,
+   "roof": {
+    "shape": "gabled|skillion",
+    "material": "metal"
+   },
+   "walls": [
+    "wood_planks"
+   ],
+   "footprint_m2": [
+    5,
+    15,
+    40
+   ],
+   "interior": "none",
+   "loot": "materials"
+  },
+  "barn": {
+   "label": "Barn / farm building",
+   "osm": [
+    "barn",
+    "farm_auxiliary",
+    "stable",
+    "cowshed",
+    "silo",
+    "farm"
+   ],
+   "floors": [
+    1,
+    2,
+    2
+   ],
+   "floor_height_m": 4,
+   "roof": {
+    "shape": "gambrel|gabled",
+    "height_m": 4,
+    "material": "metal (red #9a5226 or galvanized)"
+   },
+   "walls": [
+    "wood_planks",
+    "metal_painted"
+   ],
+   "footprint_m2": [
+    80,
+    300,
+    1500
+   ],
+   "extras": "silo (r 3 m, h 15 m) beside 25% of barns",
+   "interior": "shop=hardware",
+   "loot": "materials"
+  },
+  "boathouse": {
+   "label": "Boathouse / dock",
+   "osm": [
+    "boathouse"
+   ],
+   "floors": [
+    1,
+    1,
+    2
+   ],
+   "floor_height_m": 3.5,
+   "roof": {
+    "shape": "gabled",
+    "material": "metal"
+   },
+   "walls": [
+    "wood_planks",
+    "metal_painted"
+   ],
+   "placed": "over water edge on lakes",
+   "interior": "none",
+   "loot": "materials"
+  },
+  "ruin": {
+   "label": "Ruin / abandoned",
+   "osm": [
+    "ruins",
+    "abandoned",
+    "construction"
+   ],
+   "floors": [
+    1,
+    1,
+    2
+   ],
+   "floor_height_m": 3,
+   "roof": {
+    "shape": "collapsed"
+   },
+   "walls": [
+    "brick_dark"
+   ],
+   "interior": "default",
+   "loot": "misc"
+  }
+ },
+ "terrain_types": {
+  "urban_paved": {
+   "label": "Urban paved",
+   "osm": [
+    "landuse=commercial",
+    "landuse=retail",
+    "amenity=parking"
+   ],
+   "texture": "ground/asphalt",
+   "plants": {
+    "trees": [
+     "Callery (Bradford) pear",
+     "pin oak",
+     "red maple",
+     "honey locust",
+     "crabapple"
+    ],
+    "shrubs": [
+     "boxwood",
+     "juniper",
+     "burning bush"
+    ],
+    "ground": [
+     "turf in medians"
+    ]
+   },
+   "tree_density_per_ha": 4
+  },
+  "residential_lawn": {
+   "label": "Residential yards",
+   "osm": [
+    "landuse=residential"
+   ],
+   "texture": "ground/grass",
+   "plants": {
+    "trees": [
+     "pin oak",
+     "sweetgum",
+     "silver maple",
+     "red maple",
+     "sugar maple",
+     "Callery pear",
+     "eastern redbud",
+     "flowering dogwood",
+     "river birch",
+     "eastern red cedar"
+    ],
+    "shrubs": [
+     "forsythia",
+     "lilac",
+     "azalea",
+     "hydrangea",
+     "privet hedge"
+    ],
+    "ground": [
+     "tall fescue / bluegrass lawn",
+     "daylilies",
+     "hostas"
+    ]
+   },
+   "tree_density_per_ha": 35
+  },
+  "industrial": {
+   "label": "Industrial / rail yard",
+   "osm": [
+    "landuse=industrial",
+    "landuse=railway"
+   ],
+   "texture": "ground/dirt_lot",
+   "plants": {
+    "trees": [
+     "eastern cottonwood",
+     "tree of heaven",
+     "hackberry"
+    ],
+    "shrubs": [
+     "bush honeysuckle",
+     "sumac"
+    ],
+    "ground": [
+     "gravel",
+     "crabgrass",
+     "Johnson grass"
+    ]
+   },
+   "tree_density_per_ha": 2
+  },
+  "oak_hickory_forest": {
+   "label": "Oak–hickory forest",
+   "osm": [
+    "landuse=forest",
+    "natural=wood"
+   ],
+   "texture": "materials/foliage (canopy), ground/dirt_lot (leaf litter)",
+   "plants": {
+    "trees": [
+     "white oak",
+     "post oak",
+     "black oak",
+     "northern red oak",
+     "shagbark hickory",
+     "black hickory",
+     "mockernut hickory",
+     "sugar maple",
+     "black walnut",
+     "eastern red cedar"
+    ],
+    "understory": [
+     "flowering dogwood",
+     "eastern redbud",
+     "sassafras",
+     "pawpaw",
+     "Ozark witch hazel",
+     "spicebush"
+    ],
+    "ground": [
+     "leaf litter",
+     "Christmas fern",
+     "mayapple",
+     "poison ivy",
+     "Virginia creeper",
+     "chert gravel"
+    ]
+   },
+   "tree_density_per_ha": 450,
+   "canopy_height_m": [
+    15,
+    22,
+    28
+   ]
+  },
+  "pine_oak_forest": {
+   "label": "Shortleaf pine–oak forest",
+   "osm": [
+    "natural=wood + leaf_type=needleleaved|mixed",
+    "landuse=forest in Mark Twain NF (south/east)"
+   ],
+   "texture": "materials/foliage",
+   "plants": {
+    "trees": [
+     "shortleaf pine",
+     "post oak",
+     "blackjack oak",
+     "black oak",
+     "eastern red cedar"
+    ],
+    "understory": [
+     "blueberry",
+     "huckleberry",
+     "farkleberry"
+    ],
+    "ground": [
+     "pine needles",
+     "little bluestem",
+     "bracken fern"
+    ]
+   },
+   "tree_density_per_ha": 380,
+   "canopy_height_m": [
+    14,
+    20,
+    26
+   ]
+  },
+  "pasture_hay": {
+   "label": "Fescue pasture / hayfield",
+   "osm": [
+    "landuse=farmland",
+    "landuse=meadow",
+    "landuse=grass (rural)"
+   ],
+   "texture": "ground/grass",
+   "plants": {
+    "trees": [
+     "Osage orange (hedgerows)",
+     "eastern red cedar (fence lines)",
+     "lone white oak or post oak shade trees"
+    ],
+    "shrubs": [
+     "blackberry",
+     "multiflora rose",
+     "buckbrush (coralberry)"
+    ],
+    "ground": [
+     "tall fescue",
+     "orchardgrass",
+     "red clover",
+     "white clover",
+     "Queen Anne’s lace",
+     "thistle"
+    ]
+   },
+   "tree_density_per_ha": 1.5,
+   "extras": "round hay bales (1.5 m), barbed-wire fence, cattle, stock pond"
+  },
+  "cropland": {
+   "label": "Row crops",
+   "osm": [
+    "landuse=farmland + crop=*"
+   ],
+   "texture": "ground/dirt_lot (rows)",
+   "plants": {
+    "ground": [
+     "soybeans",
+     "corn",
+     "winter wheat"
+    ]
+   },
+   "tree_density_per_ha": 0
+  },
+  "prairie_glade": {
+   "label": "Prairie / dolomite glade",
+   "osm": [
+    "natural=grassland",
+    "natural=heath",
+    "natural=bare_rock",
+    "leisure=nature_reserve (prairie)"
+   ],
+   "texture": "ground/grass + exposed rock",
+   "plants": {
+    "trees": [
+     "eastern red cedar",
+     "chinkapin oak",
+     "smoke tree"
+    ],
+    "ground": [
+     "little bluestem",
+     "big bluestem",
+     "Indian grass",
+     "switchgrass",
+     "purple coneflower",
+     "pale purple coneflower",
+     "Missouri evening primrose",
+     "prickly pear cactus",
+     "butterfly milkweed"
+    ]
+   },
+   "tree_density_per_ha": 8,
+   "extras": "flat dolomite ledges, lichen, south/west-facing slopes"
+  },
+  "scrub_oldfield": {
+   "label": "Scrub / old field",
+   "osm": [
+    "natural=scrub"
+   ],
+   "texture": "ground/grass",
+   "plants": {
+    "trees": [
+     "eastern red cedar",
+     "persimmon",
+     "winged sumac"
+    ],
+    "shrubs": [
+     "smooth sumac",
+     "blackberry",
+     "multiflora rose",
+     "bush honeysuckle"
+    ],
+    "ground": [
+     "broomsedge",
+     "goldenrod",
+     "ragweed"
+    ]
+   },
+   "tree_density_per_ha": 60
+  },
+  "riparian": {
+   "label": "Riparian corridor (river & creek banks)",
+   "osm": [
+    "buffer 30 m around waterway=river|stream"
+   ],
+   "texture": "ground/dirt_lot + grass",
+   "plants": {
+    "trees": [
+     "American sycamore",
+     "eastern cottonwood",
+     "black willow",
+     "silver maple",
+     "river birch",
+     "green ash",
+     "box elder",
+     "American elm"
+    ],
+    "shrubs": [
+     "buttonbush",
+     "spicebush",
+     "cane (river cane)",
+     "elderberry"
+    ],
+    "ground": [
+     "water willow (in shallows)",
+     "sedges",
+     "jewelweed",
+     "gravel bar"
+    ]
+   },
+   "tree_density_per_ha": 300,
+   "extras": "chert gravel bars on inside bends; limestone bluffs 10–60 m on outside bends (James, Finley)"
+  },
+  "wetland": {
+   "label": "Wetland / marsh",
+   "osm": [
+    "natural=wetland"
+   ],
+   "texture": "ground/water + grass",
+   "plants": {
+    "trees": [
+     "black willow",
+     "buttonbush"
+    ],
+    "ground": [
+     "cattail",
+     "bulrush",
+     "sedges",
+     "arrowhead",
+     "duckweed"
+    ]
+   },
+   "tree_density_per_ha": 20
+  },
+  "lakeshore": {
+   "label": "Reservoir shoreline",
+   "osm": [
+    "shore ring 0–20 m around natural=water + water=reservoir|lake"
+   ],
+   "texture": "ground/dirt_lot (rock + red clay), sand at beaches",
+   "plants": {
+    "trees": [
+     "eastern red cedar",
+     "post oak",
+     "sycamore"
+    ],
+    "ground": [
+     "bare rock & chert at waterline (seasonal drawdown band 1–3 m)"
+    ]
+   },
+   "extras": "docks, marinas, boat ramps on Table Rock / Taneycomo / Stockton / Pomme de Terre"
+  },
+  "park_lawn": {
+   "label": "Park lawn",
+   "osm": [
+    "leisure=park",
+    "leisure=recreation_ground",
+    "landuse=recreation_ground"
+   ],
+   "texture": "ground/grass",
+   "plants": {
+    "trees": [
+     "bur oak",
+     "pin oak",
+     "sycamore",
+     "sugar maple",
+     "bald cypress (Phelps Grove, Nathanael Greene)",
+     "eastern redbud"
+    ],
+    "ground": [
+     "mown fescue",
+     "flower beds"
+    ]
+   },
+   "tree_density_per_ha": 40
+  },
+  "golf": {
+   "label": "Golf course",
+   "osm": [
+    "leisure=golf_course"
+   ],
+   "texture": "ground/grass (fairway striping)",
+   "plants": {
+    "trees": [
+     "pin oak",
+     "sweetgum",
+     "pine"
+    ],
+    "ground": [
+     "bermuda / zoysia fairways",
+     "bentgrass greens",
+     "sand bunkers"
+    ]
+   },
+   "tree_density_per_ha": 25
+  },
+  "cemetery": {
+   "label": "Cemetery",
+   "osm": [
+    "landuse=cemetery",
+    "amenity=grave_yard"
+   ],
+   "texture": "ground/grass",
+   "plants": {
+    "trees": [
+     "eastern red cedar",
+     "white oak",
+     "magnolia"
+    ],
+    "ground": [
+     "mown lawn"
+    ]
+   },
+   "tree_density_per_ha": 20,
+   "extras": "headstones every 1.5 m in rows; National Cemetery has uniform white markers"
+  },
+  "quarry": {
+   "label": "Quarry",
+   "osm": [
+    "landuse=quarry"
+   ],
+   "texture": "ground/dirt_lot (pale limestone)",
+   "plants": {
+    "ground": [
+     "bare limestone benches 6 m high"
+    ]
+   },
+   "tree_density_per_ha": 0
+  }
+ },
+ "water_types": {
+  "river": {
+   "label": "River",
+   "osm": [
+    "waterway=river",
+    "water=river"
+   ],
+   "width_m": [
+    20,
+    40,
+    90
+   ],
+   "depth_m": [
+    1,
+    2,
+    5
+   ],
+   "bank": "gravel bars + mud, bluffs on outside bends",
+   "current": "medium; floods after rain",
+   "examples": [
+    "James River",
+    "Finley River",
+    "Sac River",
+    "Pomme de Terre River",
+    "Niangua River",
+    "White River"
+   ],
+   "bridge_rule": "every road crossing; low-water crossings on gravel county roads"
+  },
+  "stream": {
+   "label": "Creek / stream",
+   "osm": [
+    "waterway=stream",
+    "waterway=brook"
+   ],
+   "width_m": [
+    1,
+    3,
+    8
+   ],
+   "depth_m": [
+    0.1,
+    0.4,
+    1
+   ],
+   "bank": "cut banks 0.5–2 m, chert gravel bed",
+   "examples": [
+    "Wilson’s Creek",
+    "Jordan Creek (culverted under downtown)",
+    "Fassnight Creek",
+    "Pearson Creek",
+    "Galloway Creek",
+    "Ward Branch"
+   ],
+   "bridge_rule": "culvert under minor roads (width < 4 m), short bridge otherwise"
+  },
+  "reservoir": {
+   "label": "Reservoir lake",
+   "osm": [
+    "natural=water + water=reservoir|lake (area > 10 ha)"
+   ],
+   "depth_m": [
+    3,
+    15,
+    60
+   ],
+   "shore": "lakeshore terrain",
+   "examples": [
+    "Lake Springfield",
+    "Fellows Lake",
+    "McDaniel Lake",
+    "Table Rock Lake",
+    "Lake Taneycomo",
+    "Bull Shoals Lake",
+    "Stockton Lake",
+    "Pomme de Terre Lake"
+   ],
+   "extras": "dams (man_made=dam / waterway=dam) at outlets"
+  },
+  "pond": {
+   "label": "Pond / stock pond",
+   "osm": [
+    "natural=water + water=pond (or area < 2 ha)"
+   ],
+   "depth_m": [
+    0.5,
+    2,
+    4
+   ],
+   "shore": "mown grass or cattails, earthen dam on one side",
+   "extras": "thousands of farm stock ponds: one per farmstead pasture"
+  },
+  "spring": {
+   "label": "Spring",
+   "osm": [
+    "natural=spring"
+   ],
+   "extras": "karst spring outlet, small pool + run; springhouse ruins"
+  },
+  "fountain": {
+   "label": "Fountain",
+   "osm": [
+    "amenity=fountain",
+    "water=pool in parks"
+   ],
+   "extras": "Park Central Square fountain; decorative jets 1–3 m; basin r 2–8 m"
+  },
+  "sinkhole": {
+   "label": "Sinkhole",
+   "osm": [
+    "natural=sinkhole"
+   ],
+   "extras": "karst depression 5–50 m wide; may hold a pond"
+  },
+  "wetland_water": {
+   "label": "Wetland water",
+   "osm": [
+    "natural=wetland"
+   ],
+   "depth_m": [
+    0,
+    0.3,
+    1
+   ]
+  }
+ },
+ "bridges": {
+  "rule": "any OSM way with bridge=* is elevated; deck height = layer × 6 m (default 6 m) above the lower feature; ramps blend over 30 m at each end",
+  "types": {
+   "highway_overpass": {
+    "for": "motorway/trunk crossings",
+    "deck": "concrete girder",
+    "width": "road width + 2 m",
+    "piers": "concrete every 25 m",
+    "rail": "concrete jersey barrier 0.8 m"
+   },
+   "river_bridge": {
+    "for": "primary–tertiary over river",
+    "deck": "concrete girder or steel truss",
+    "piers": "every 30–40 m in river",
+    "rail": "steel guardrail"
+   },
+   "county_bridge": {
+    "for": "residential/unclassified/track over stream",
+    "deck": "concrete slab or old steel pony truss (one lane)",
+    "rail": "steel"
+   },
+   "low_water_crossing": {
+    "for": "ford=yes or track over stream",
+    "deck": "concrete slab at water level",
+    "rail": "none; floods"
+   },
+   "rail_bridge": {
+    "for": "railway=rail with bridge",
+    "deck": "steel girder / trestle",
+    "rail": "none"
+   },
+   "footbridge": {
+    "for": "footway/cycleway/path with bridge",
+    "deck": "wood or prefab steel truss 2–3 m wide",
+    "rail": "steel or wood 1.1 m"
+   }
+  }
+ },
+ "roads": {
+  "motorway": {
+   "width_m": 22,
+   "lanes": 4,
+   "median": "grass 10 m",
+   "surface": "concrete",
+   "shoulder_m": 3,
+   "example": "I-44, US-65, US-60 east"
+  },
+  "trunk": {
+   "width_m": 16,
+   "lanes": 4,
+   "surface": "asphalt",
+   "shoulder_m": 2.5,
+   "example": "US-60 (James River Fwy), US-160"
+  },
+  "primary": {
+   "width_m": 14,
+   "lanes": 4,
+   "surface": "asphalt",
+   "sidewalk": "both sides in city",
+   "example": "Glenstone Ave, Kearney St, Sunshine St, Battlefield Rd"
+  },
+  "secondary": {
+   "width_m": 10,
+   "lanes": 2,
+   "surface": "asphalt",
+   "sidewalk": "one or both",
+   "example": "Grand St, Division St"
+  },
+  "tertiary": {
+   "width_m": 8,
+   "lanes": 2,
+   "surface": "asphalt",
+   "sidewalk": "one side"
+  },
+  "residential": {
+   "width_m": 7,
+   "lanes": 2,
+   "surface": "asphalt",
+   "sidewalk": "often one side; curb + gutter"
+  },
+  "unclassified": {
+   "width_m": 6,
+   "lanes": 2,
+   "surface": "chip-seal asphalt",
+   "sidewalk": "none; gravel shoulder"
+  },
+  "track": {
+   "width_m": 3.5,
+   "lanes": 1,
+   "surface": "gravel / dirt",
+   "sidewalk": "none"
+  },
+  "service": {
+   "width_m": 4,
+   "lanes": 1,
+   "surface": "asphalt / gravel"
+  },
+  "footway": {
+   "width_m": 2,
+   "surface": "concrete"
+  },
+  "path": {
+   "width_m": 1.5,
+   "surface": "gravel / dirt (Ozark Greenways trails e.g. Frisco Highline, Galloway Creek, Wilson’s Creek greenway)"
+  },
+  "railway": {
+   "width_m": 4,
+   "gauge_m": 1.435,
+   "surface": "ballast + ties",
+   "example": "BNSF through Springfield yards"
+  }
+ },
+ "park_equipment": {
+  "playground": {
+   "osm": "leisure=playground",
+   "items": {
+    "playground=slide": {
+     "size_m": [
+      1,
+      4,
+      2.5
+     ],
+     "asset": "tube or straight slide, primary colors muted to palette"
+    },
+    "playground=swing": {
+     "size_m": [
+      4,
+      2.5,
+      2.5
+     ],
+     "asset": "A-frame steel, 2–4 seats"
+    },
+    "playground=structure": {
+     "size_m": [
+      8,
+      6,
+      4
+     ],
+     "asset": "multi-deck play structure with slides, climbing walls, roofs"
+    },
+    "playground=climbingframe": {
+     "size_m": [
+      3,
+      3,
+      2.5
+     ]
+    },
+    "playground=sandpit": {
+     "size_m": [
+      4,
+      4,
+      0.3
+     ]
+    },
+    "playground=seesaw": {
+     "size_m": [
+      3.5,
+      0.5,
+      1
+     ]
+    },
+    "playground=springy": {
+     "size_m": [
+      1,
+      0.5,
+      1
+     ]
+    },
+    "playground=roundabout": {
+     "size_m": [
+      2.5,
+      2.5,
+      0.8
+     ]
+    },
+    "surface": "wood mulch or rubber safety surfacing, timber border"
+   }
+  },
+  "bench": {
+   "osm": "amenity=bench",
+   "size_m": [
+    1.8,
+    0.6,
+    0.9
+   ],
+   "asset": "props/bench"
+  },
+  "picnic_table": {
+   "osm": "leisure=picnic_table",
+   "size_m": [
+    1.8,
+    1.5,
+    0.75
+   ],
+   "asset": "props/table (+ attached benches)"
+  },
+  "shelter": {
+   "osm": "amenity=shelter",
+   "size_m": [
+    10,
+    8,
+    4
+   ],
+   "asset": "open pavilion, gabled metal roof, picnic tables inside"
+  },
+  "bbq": {
+   "osm": "amenity=bbq",
+   "size_m": [
+    0.6,
+    0.6,
+    1
+   ],
+   "asset": "pedestal charcoal grill"
+  },
+  "drinking_water": {
+   "osm": "amenity=drinking_water",
+   "size_m": [
+    0.5,
+    0.5,
+    1
+   ],
+   "asset": "pedestal fountain; loot source: water"
+  },
+  "toilets": {
+   "osm": "amenity=toilets",
+   "size_m": [
+    5,
+    4,
+    3
+   ],
+   "asset": "block restroom building"
+  },
+  "waste_basket": {
+   "osm": "amenity=waste_basket",
+   "size_m": [
+    0.6,
+    0.6,
+    0.9
+   ]
+  },
+  "pitch": {
+   "osm": "leisure=pitch",
+   "sports": {
+    "baseball": "diamond 27 m bases, backstop, dugouts, lights",
+    "soccer": "105×68 m, goals",
+    "tennis": "23.8×11 m, fence 3 m",
+    "basketball": "28×15 m, 2 hoops",
+    "pickleball": "13.4×6.1 m",
+    "volleyball": "sand court"
+   }
+  },
+  "track": {
+   "osm": "leisure=track",
+   "asset": "400 m oval, red rubber"
+  },
+  "dog_park": {
+   "osm": "leisure=dog_park",
+   "asset": "chain-link fenced lawn, double gate"
+  },
+  "skate_park": {
+   "osm": "sport=skateboard",
+   "asset": "concrete bowls + rails"
+  },
+  "splash_pad": {
+   "osm": "leisure=water_park | playground=splash_pad",
+   "asset": "concrete pad with jets"
+  },
+  "swimming_pool": {
+   "osm": "leisure=swimming_pool",
+   "asset": "25/50 m pool, deck, fence"
+  },
+  "fountain": {
+   "osm": "amenity=fountain",
+   "asset": "basin + jets"
+  },
+  "gazebo": {
+   "osm": "amenity=shelter + shelter_type=gazebo",
+   "asset": "octagonal 5 m pavilion"
+  },
+  "monument": {
+   "osm": "historic=memorial|monument",
+   "asset": "stone plinth / statue"
+  },
+  "fitness_station": {
+   "osm": "leisure=fitness_station",
+   "asset": "outdoor bars & stations"
+  },
+  "trail": {
+   "osm": "highway=path|footway in park",
+   "asset": "gravel or paved 2–3 m"
+  },
+  "boat_ramp": {
+   "osm": "leisure=slipway",
+   "asset": "concrete ramp into water"
+  },
+  "dock": {
+   "osm": "man_made=pier | leisure=marina",
+   "asset": "wood or floating docks"
+  },
+  "flagpole": {
+   "osm": "man_made=flagpole",
+   "asset": "9–12 m pole"
+  },
+  "street_lamp": {
+   "osm": "highway=street_lamp",
+   "asset": "props/streetlamp"
+  }
+ }
+}

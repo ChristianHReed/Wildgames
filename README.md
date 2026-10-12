@@ -2,13 +2,14 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.33. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.34. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
 Download this repository (green **Code** button, then **Download ZIP**), unzip it onto a drive, and double-click **`play.html`**.
 
-- **Play demo town** starts right away with a built-in map.
+- **Play Springfield, MO** plays the built-in Springfield region: 50 miles in every direction from Park Central Square, from the Afterstreet map pack (about 45,000 buildings with their real use and storeys, every road, track, railway, river, creek and lake, the real hills, and the land cover: pasture, oak-hickory and pine-oak woods, scrub, glades, wetlands, lawns). It is cut into squares about 3.5 miles across that load as you travel. On a drive it all works with no internet; on iPhone and iPad each square is saved the first time you go there, and **Save for offline** under Big region saves all of it (about 55 MB).
+- **Play demo town** starts right away with a small made-up town.
 - **Make a map** builds a map of a real place from its name. It needs internet once; after that the map works offline.
 - **Load map file** plays a map file you already have (an OpenStreetMap export, or one made by Make a map).
 - **Connect game folder** (Chrome and Edge on computers) lets the game save into the `world`, `characters`, `maps` and `packs` folders on the drive. Pick the folder that contains `play.html`.
@@ -17,6 +18,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | Folder | Holds |
 | --- | --- |
 | `play.html` | The whole game: start page and game in one file |
+| `assets/springfield/` | The built-in Springfield region, one file per square |
 | `maps/` | Map files |
 | `world/` | One save per map, written by the game |
 | `characters/` | One file per survivor, written by the game |
@@ -110,7 +112,7 @@ The art is in `assets/`, as small script files that `play.html` loads when it st
 - `assets/lite/` is loaded on phones and when View distance is set to Low.
 - `assets/icons.js`, `btex.js`, `people_tex.js`, `models.js`, `nature.js` and `map.js` are shared.
 
-The files are made by the scripts in `tools/` from the packs listed in `CREDITS.md` (the HUD icons and the built-in map come from the Afterstreet design pack in `design/afterstreet_handoff/`). To rebuild: run `paint_ground.py`, `paint_buildings.py` and `paint_people.py`, then `build_art.py`, `build_creatures.py`, `build_nature.py` and `build_people.py` twice each (once plain, once with `full`), then `build_models.py` and `write_assets.py`, and `build_sounds.py` for the sounds.
+The files are made by the scripts in `tools/` from the packs listed in `CREDITS.md` (the HUD icons and the built-in map come from the Afterstreet design pack in `design/afterstreet_handoff/`). The built-in Springfield region is made by `build_region.py` from the map pack in `design/afterstreet_handoff/map_data/springfield_50mi/`. To rebuild the rest: run `paint_ground.py`, `paint_buildings.py` and `paint_people.py`, then `build_art.py`, `build_creatures.py`, `build_nature.py` and `build_people.py` twice each (once plain, once with `full`), then `build_models.py` and `write_assets.py`, and `build_sounds.py` for the sounds.
 
 Map data © OpenStreetMap contributors, available under the Open Database License.
 

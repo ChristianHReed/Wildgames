@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.33) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.34) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -25,7 +25,7 @@ For anything that fails, send:
 Use Chrome or Edge.
 
 - [ ] 1.1 Double-click `play.html`. The start page appears with a Survivor panel and a small preview figure.
-- [ ] 1.2 Press **Play Springfield, MO** (the real downtown map is built in), or **Play demo town**. You are standing on a street in first person.
+- [ ] 1.2 Press **Play Springfield, MO** (the 50-mile Springfield region is built in), or **Play demo town**. You are standing on a street in first person.
 - [ ] 1.3 Click the view. The mouse turns the view; WASD moves. Esc frees the mouse.
 - [ ] 1.4 Motion is smooth. If it stutters, set View distance to Low on the start page and try again. Report which setting was needed.
 - [ ] 1.5 Walk through a doorway into a building. You cannot walk through walls or furniture.
@@ -49,7 +49,7 @@ Fail signs: a blank or black view, a message that the browser cannot run 3D grap
 
 - [ ] 1c.1 Play demo town. The streets rise and fall (the demo's hills are made up). Walking uphill and downhill feels smooth.
 - [ ] 1c.2 Buildings on slopes sit level on a grey foundation, with a step at the door. Stepping in and out does not jolt badly.
-- [ ] 1c.3 With internet on, press Play Springfield, MO. The first time it says it is downloading the hills. Report if it instead says it is playing without hills.
+- [ ] 1c.3 Press Play Springfield, MO. The hills are there straight away (they are built in now; nothing is downloaded).
 - [ ] 1c.4 Springfield's ground matches what you know: which way a street you know slopes.
 - [ ] 1c.5 Look for roads or sidewalks that float above the ground or sink into it, and for gaps in the ground.
 - [ ] 1c.6 Turn the internet off and play Springfield again. The hills are still there.
@@ -279,6 +279,15 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3t.3 Residential streets are lined with trees on both sides (alternating), houses have a tree or two in the yard, and parks have groves with open lawn between.
 - [ ] 3t.4 In autumn the grass turns gold; in winter snow lies on level ground. The Demo Town now has a creek, a wooded bluff and meadows around it.
 - [ ] 3t.5 The frame rate in the country and in town on the iPhone is still smooth, and a big map still loads in reasonable time.
+
+## Stage 3u: the 50-mile Springfield region
+
+- [ ] 3u.1 Press Play Springfield, MO. You start at the safe house on the edge of town; the full map shows real streets you know.
+- [ ] 3u.2 Walk or drive out of the first square. The next square loads in a second or two and a message says which town you are near (Nixa, Ozark, Republic and so on).
+- [ ] 3u.3 Out in the country: pasture with lone trees and hedgerows, oak-hickory woods on the slopes, pines to the south-east, tree-lined creeks, lakes to the south (Table Rock) and north (Stockton).
+- [ ] 3u.4 On the iPhone: on the start page under Big region, press **Save for offline** next to Springfield (built in). It counts up to 711 squares. Then turn on airplane mode and travel: every square still loads.
+- [ ] 3u.5 Save and exit in a far square, then Play Springfield again: you resume in that square. Report any square that takes very long to load.
+- [ ] 3u.6 Known gaps in the map pack: east Nixa, Ozark and a few rural edges have no buildings yet, and many farms are missing in the country.
 
 ## Stage 4: aliens and weather
 

@@ -1,0 +1,40 @@
+{
+ "source": "AWS Terrain Tiles (Mapzen terrarium; SRTM/3DEP/NED blend), public dataset",
+ "decode": "height_m = R*256 + G + B/256 - 32768  (from *_terrarium.png)",
+ "height_8bit": "gray 0..255 maps linearly to min_m..max_m",
+ "projection": "Web Mercator resampled to an equal lon/lat grid; north up",
+ "region": {
+  "bbox": [
+   -94.2,
+   36.485,
+   -92.385,
+   37.933
+  ],
+  "size": [
+   1024,
+   1024
+  ],
+  "zoom": 10,
+  "meters_per_px": 157.1,
+  "min_m": 208,
+  "max_m": 499,
+  "note": "8-bit + hillshade normalized to 0.3–99.7 percentile; raw terrarium has a few spike artifacts (clamp to min/max)."
+ },
+ "core15km": {
+  "bbox": [
+   -93.37689999999999,
+   37.1414,
+   -93.2077,
+   37.2764
+  ],
+  "size": [
+   1024,
+   1024
+  ],
+  "zoom": 13,
+  "meters_per_px": 14.6,
+  "min_m": 341.1,
+  "max_m": 427.1,
+  "note": "8-bit + hillshade normalized to 0.3–99.7 percentile; raw terrarium has a few spike artifacts (clamp to min/max)."
+ }
+}

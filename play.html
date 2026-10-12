@@ -358,7 +358,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.33.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.34.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -494,7 +494,7 @@ function toCompact(raw, name){
 }
 function fromCompact(j){
   return {ways:(j.ways || []).map(function(w){ var c = []; for (var i = 0; i < w[1].length; i += 2) c.push([w[1][i], w[1][i+1]]); return {c:c, tags:w[0]}; }),
-    pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; }), name:j.name ? String(j.name).replace(/[<>&"]/g, '').slice(0, 60) : '', spawn:Array.isArray(j.spawn) ? j.spawn : null, elev:j.elev && typeof j.elev === 'object' ? j.elev : null, zone:j.zone && j.zone.n > j.zone.s && j.zone.e > j.zone.w ? {s:+j.zone.s, n:+j.zone.n, w:+j.zone.w, e:+j.zone.e} : null};
+    pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; }), name:j.name ? String(j.name).replace(/[<>&"]/g, '').slice(0, 60) : '', spawn:Array.isArray(j.spawn) ? j.spawn : null, elev:j.elev && typeof j.elev === 'object' ? j.elev : null, tclass:j.tclass && typeof j.tclass === 'object' ? j.tclass : null, zone:j.zone && j.zone.n > j.zone.s && j.zone.e > j.zone.w ? {s:+j.zone.s, n:+j.zone.n, w:+j.zone.w, e:+j.zone.e} : null};
 }
 function parseText(text){
   var t = text.replace(/^﻿/, '').trim();
@@ -735,11 +735,11 @@ function buildWorld(raw, name){
   if (a > b) throw new Error('No map shapes found in this file.');
   var lon0 = (a+b)/2, lat0 = (c+d)/2, kx = Math.cos(lat0*Math.PI/180)*111320, ky = 110540;
   var proj = function(cs){ var o = []; for (var q = 0; q < cs.length; q++) o.push((cs[q][0]-lon0)*kx, -(cs[q][1]-lat0)*ky); return o; };
-  var w = {name:name, buildings:[], roads:[], areas:[], trees:[], crates:[], grid:new Map(),
+  var w = {name:name, buildings:[], roads:[], areas:[], trees:[], cut:{}, crates:[], grid:new Map(),
     minx:(a-lon0)*kx, maxx:(b-lon0)*kx, miny:-(d-lat0)*ky, maxy:-(c-lat0)*ky,
     start:raw.spawn ? {x:(raw.spawn[0]-lon0)*kx, y:-(raw.spawn[1]-lat0)*ky} : {x:0, y:0}};
   w.geo = {lon0:lon0, lat0:lat0, kx:kx, ky:ky}; w.core = Z ? {x0:(Z.w - lon0)*kx, x1:(Z.e - lon0)*kx, y0:-(Z.n - lat0)*ky, y1:-(Z.s - lat0)*ky} : null;
-  buildHeights(w, raw, lon0, lat0, kx, ky);
+  buildHeights(w, raw, lon0, lat0, kx, ky); w.tcls = decodeCls(raw.tclass, lon0, lat0, kx, ky);
   raw.ways.forEach(function(way){
     var t = way.tags || {}, cs = way.c; if (!cs || cs.length < 2) return;
     var closed = cs.length >= 4 && same(cs[0], cs[cs.length-1]), pts = proj(cs);
@@ -784,6 +784,30 @@ function buildWorld(raw, name){
   plantTrees(w, buildCover(w));
   return w;
 }
+/* ---- terrain types from the built-in region (tools/build_region.py): a coarse grid of what covers the land, read with soft edges ---- */
+var CLS_N = 22;
+function decodeCls(t, lon0, lat0, kx, ky){
+  try {
+    if (!t || !(t.n > t.s) || !(t.e > t.w) || !(t.cols >= 1 && t.cols <= 4000) || !(t.rows >= 1 && t.rows <= 4000) || typeof t.d !== 'string') return null;
+    var bin = atob(t.d); if (bin.length !== t.cols*t.rows) return null; var d = new Uint8Array(bin.length); for (var i = 0; i < d.length; i++) d[i] = bin.charCodeAt(i);
+    var x0 = (t.w - lon0)*kx, y0 = -(t.n - lat0)*ky, cw = (t.e - t.w)*kx/t.cols, chh = (t.n - t.s)*ky/t.rows;
+    /* the four cells round a point, weighted by distance, so the 79 m cells blend instead of showing as squares */
+    return function(x, y, out){
+      var u = (x - x0)/cw - 0.5, v = (y - y0)/chh - 0.5, i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+      for (var q = 0; q < CLS_N; q++) out[q] = 0;
+      var add = function(ii, jj, wgt){ ii = ii < 0 ? 0 : ii >= t.cols ? t.cols - 1 : ii; jj = jj < 0 ? 0 : jj >= t.rows ? t.rows - 1 : jj; var c = d[jj*t.cols + ii]; if (c < CLS_N) out[c] += wgt; };
+      add(i, j, (1 - fu)*(1 - fv)); add(i + 1, j, fu*(1 - fv)); add(i, j + 1, (1 - fu)*fv); add(i + 1, j + 1, fu*fv);
+      return out;
+    };
+  } catch (e){ return null; }
+}
+/* what each terrain type means for the ground and trees: forest, lawn, field, built-up, wet, rock (0-1), trees per hectare, share of pines.
+   1 paved, 2 industrial, 3 yards, 4 oak-hickory, 5 shortleaf pine-oak, 6 fescue pasture, 7 park lawn, 8 golf, 9 cemetery, 10 quarry, 11 wetland,
+   12 scrub and old field, 13 prairie and glade, 14 water, 16 campus lawn, 17 military, 18 rail yard, 19 farmyard, 20 orchard, 21 riverbank woods */
+var CLSF = {1:[0,0,0,1,0,0,0.5,0], 2:[0,0,0,1,0,0,1,0], 3:[0,1,0,0,0,0,0,0.1], 4:[1,0,0,0,0,0,160,0.12], 5:[1,0,0,0,0,0,150,0.6], 6:[0,0,1,0,0,0,1.2,0.3],
+  7:[0,1,0,0,0,0,14,0.1], 8:[0,1,0,0,0,0,10,0.3], 9:[0,1,0,0,0,0,14,0.5], 10:[0,0,0,0.6,0,1,0,0], 11:[0,0,0.7,0,1,0,12,0], 12:[0.25,0,0.85,0,0,0,45,0.35],
+  13:[0,0,1,0,0,0.35,6,0.45], 14:[0,0,0,0,1,0,0,0], 16:[0,1,0,0,0,0,10,0.2], 17:[0,0,0.5,0.6,0,0,2,0.2], 18:[0,0,0,1,0,0,1,0], 19:[0,0.4,0.3,0.5,0,0,4,0.1],
+  20:[0.2,0.3,0.5,0,0,0,70,0], 21:[0.6,0,0.2,0,0.6,0,120,0]};
 /* ---- terrain: real elevation, stored with the map as a grid of heights ---- */
 function decodeElev(e){
   try {
@@ -907,25 +931,32 @@ function buildCover(w){
   });
   chamfer(dev, cols, rows); chamfer(wat, cols, rows);
   var fr = new Float32Array(fm); blur(fr, cols, rows, Math.max(1, Math.round(30/cell)));   /* soft wood edges, about 60 m across */
-  var span = hg ? Math.max(1, hg.max - hg.min) : 1, out = new Uint8Array(n*6);
+  var span = hg ? Math.max(1, hg.max - hg.min) : 1, out = new Uint8Array(n*6), TD = new Uint8Array(n), TP = new Uint8Array(n), WD = new Uint8Array(n), CW = new Float32Array(CLS_N), CL = w.tcls;
   for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){
     var k = j*cols + i, x = x0 + i*cell, y = y0 + j*cell, D = dev[k]*cell, Wd = wat[k]*cell, f = fr[k];
-    var n1 = fbm2(x/170, y/170, 31), n2 = fbm2(x/45, y/45, 47), sl = 0, alt = 0.5;
+    var n1 = fbm2(x/170, y/170, 31), n2 = fbm2(x/45, y/45, 47), sl = 0, alt = 0.5, cf = 0, cl = 0, cfd = 0, cdv = 0, cwt = 0, crk = 0, td = f > 0.5 ? 160*f : 0, tp = 0.3, tw = 0;
+    if (CL){ CL(x, y, CW); td = 0; tp = 0;
+      for (var q = 1; q < CLS_N; q++){ var wq = CW[q], F = CLSF[q]; if (!wq || !F) continue; cf += F[0]*wq; cl += F[1]*wq; cfd += F[2]*wq; cdv += F[3]*wq; cwt += F[4]*wq; crk += F[5]*wq; td += F[6]*wq; tp += F[7]*wq; tw += wq; }
+      if (tw > 0) tp /= tw; f = Math.max(f, cf); if (fm[k] && f > 0.5) td = Math.max(td, 160*fr[k]); }
     if (hg){ sl = Math.hypot(hAt(x + cell, y) - hAt(x - cell, y), hAt(x, y + cell) - hAt(x, y - cell))/(2*cell); alt = (hAt(x, y) - hg.min)/span; }
     var wet = 1 - sstep(8, 70, Wd), bank = 1 - sstep(3, 14, Wd);
     var wild = sstep(25, 95, D + (n1 - 0.5)*60);                                   /* mown near homes and roads, long grass further out */
-    if (fd[k]) wild = Math.max(wild, 0.85); if (pk[k]) wild = Math.min(wild, 0.12);
+    wet = Math.max(wet, cwt*0.9); var lawn = pk[k] || cl > 0.5;
+    if (fd[k]) wild = Math.max(wild, 0.85); if (cfd > 0.01) wild = Math.max(wild, Math.min(0.9, cfd)); wild *= 1 - cdv*0.6; if (lawn) wild = Math.min(wild, 0.12);
     var wm = wild*(0.45 + 0.55*n2) + f*(1 - f)*1.8 + wet*0.6*(1 - bank) + (1 - wild)*sstep(0.74, 0.86, n2)*0.35;
     var we = f*0.95*(0.75 + 0.25*n2) + bank*0.75 + sstep(0.2, 0.42, sl)*0.7 + (1 - wild)*(1 - pk[k])*sstep(0.8, 0.9, n2)*0.4;
     var wr = sstep(0.38, 0.8, sl + (n2 - 0.5)*0.2) + (1 - sstep(25, 90, Wd))*sstep(0.15, 0.45, sl)*0.55*(0.4 + n2);
-    if (pk[k]){ we *= 0.4; wr *= 0.5; }
+    we += cdv*0.3*sstep(0.5, 0.8, n2) + cwt*0.35*(0.5 + n2)*0.6; wr += crk;
+    if (lawn){ we *= 0.4; wr *= 0.5; }
     var tr = 246, tg = 250, tb = 238, fdk = f*0.2;                                   /* colour: shade under trees, lush near water, dry on ridges */
     tr *= 1 - fdk; tg *= 1 - fdk*0.8; tb *= 1 - fdk;
     tr -= wet*18; tb -= wet*6; var dry = sstep(0.55, 0.95, alt)*(1 - wet)*0.6; tr += dry*12; tb -= dry*30;
     var br = 0.93 + 0.1*n1; tr *= br; tg *= br; tb *= br;
+    TD[k] = Math.min(255, td); TP[k] = Math.min(255, tp*255); WD[k] = Math.min(255, Wd);
+    if (CL && cf > 0.4){ var pn = Math.min(1, tp*1.4); tr *= 1 - 0.06*pn; tb *= 1 + 0.02*pn; }                  /* pine woods are a little bluer */
     var o = k*6; out[o] = Math.min(255, wm*255); out[o+1] = Math.min(255, we*255); out[o+2] = Math.min(255, wr*255); out[o+3] = Math.min(255, tr); out[o+4] = Math.min(255, tg); out[o+5] = Math.min(255, tb);
   }
-  w.tg = {x0:x0, y0:y0, cell:cell, cols:cols, rows:rows, sub:sub, c:out, min:hg ? hg.min : 0};
+  w.tg = {x0:x0, y0:y0, cell:cell, cols:cols, rows:rows, sub:sub, c:out, td:TD, tp:TP, wd:WD, min:hg ? hg.min : 0};
   return {dev:dev, wat:wat, fr:fr, fm:fm, pk:pk, fd:fd, node:node, cell:cell};
 }
 /* terrain tiles: 24 cover cells square near you, every second point further away (the same surface either way) */
@@ -956,6 +987,11 @@ function manageTerrain(budget){
    back yards at least 6 m from the house, clusters in parks with open lawn between, thick woods that thin out toward their edges, and
    lines of trees along rivers and ponds. Every tree keeps a minimum distance from the next (Poisson-disk placement), and none stand
    in roads, buildings or water. On very big maps each kind is thinned evenly so the total stays light enough for a phone. */
+function bldNear(x, y, r){
+  for (var cy = Math.floor((y - r)/G); cy <= Math.floor((y + r)/G); cy++) for (var cx = Math.floor((x - r)/G); cx <= Math.floor((x + r)/G); cx++){
+    var l = world.grid.get(gk(cx, cy)); if (l) for (var i = 0; i < l.length; i++){ var b = l[i]; if (Math.max(b.minx - x, x - b.maxx, b.miny - y, y - b.maxy) < r) return true; } }
+  return false;
+}
 function plantTrees(w, cov){
   var RC = 40, RG = new Map(), TC = 8, TG = new Map(), ri;
   var cellOf = function(M, c, x, y, mk){ var k = gk(Math.floor(x/c), Math.floor(y/c)), l = M.get(k); if (!l && mk) M.set(k, l = []); return l; };
@@ -977,17 +1013,17 @@ function plantTrees(w, cov){
   /* how much of each kind there would be, so a huge map can be thinned evenly */
   var streets = w.roads.filter(function(r){ return r.kind === 'road' && r.w >= 6 && r.w <= 9.5; }), slen = 0;
   streets.forEach(function(r){ for (var q = 0; q + 3 < r.pts.length; q += 2) slen += Math.hypot(r.pts[q+2] - r.pts[q], r.pts[q+3] - r.pts[q+1]); });
-  var houses = w.buildings.filter(function(b){ return b.kind === 'house'; }), fa = 0;
-  for (ri = 0; ri < cov.fm.length; ri++) fa += cov.fm[ri]; fa *= cov.cell*cov.cell;
-  var keepS = Math.min(1, 3500/(slen/13*1.2 + 1)), keepY = Math.min(1, 2500/(houses.length*1.1 + 1)), keepF = Math.min(1, 9000/(fa/40 + 1));
+  var houses = w.buildings.filter(function(b){ return b.kind === 'house'; });
+  var keepS = Math.min(1, 3500/(slen/13*1.2 + 1)), keepY = Math.min(1, 2500/(houses.length*1.1 + 1));
   /* street trees, on the verge beyond the pavement, both sides, starting clear of the junctions */
   streets.forEach(function(r, n){
-    if (hash(n, 3, 71) > 0.62) return;                                   /* not every street is planted */
+    if (hash(n, 3, 71) > 0.62) return;                                   /* not every street is planted, and only streets with homes along them */
     var p = r.pts, off = r.w/2 + 3.2, run = 9;
     for (var q = 0; q + 3 < p.length; q += 2){
       var ax = p[q], ay = p[q+1], l = Math.hypot(p[q+2] - ax, p[q+3] - ay); if (l < 0.1) continue; var dx = (p[q+2] - ax)/l, dy = (p[q+3] - ay)/l;
       for (; run < l - 9; run += 13){ for (var sd = -1; sd <= 1; sd += 2){ var rr = run + (sd > 0 ? 6.5 : 0); if (rr > l - 9 || hash(n*7 + q, Math.floor(rr), sd + 5) > keepS) continue;   /* the two sides alternate */
-        put(ax + dx*rr - dy*off*sd, ay + dy*rr + dx*off*sd, 'street', 8, 2.5, 1.5); } }
+        var stx = ax + dx*rr - dy*off*sd, sty = ay + dy*rr + dx*off*sd; if (!bldNear(stx, sty, 35)) continue;
+        put(stx, sty, 'street', 8, 2.5, 1.5); } }
       run = Math.max(9, run - l);
     }
   });
@@ -1017,15 +1053,8 @@ function plantTrees(w, cov){
         if (hash(tx, ty, 79) < pr && pip(ar.pts, tx, ty)) put(tx, ty, ar.kind === 'park' ? 'park' : 'field', 6, 3, 2);
       }
     }
-    if (ar.kind === 'forest'){
-      for (var fy = ar.miny; fy < ar.maxy; fy += 5) for (var fx = ar.minx; fx < ar.maxx; fx += 5){
-        var gx = fx + hash(fx, fy, n + 5)*5, gy = fy + hash(fx, fy, n + 6)*5, nd = cov.node(gx, gy); if (nd < 0) continue;
-        var dens = (0.3 + 0.7*sstep(0.35, 0.95, cov.fr[nd]))*(0.55 + 0.6*fbm2(gx/60, gy/60, 87))*keepF;   /* thinner toward the edge, in clumps */
-        if (hash(gx, gy, 88) < dens && pip(ar.pts, gx, gy)) put(gx, gy, 'forest', 4.2, 2.5, 2);
-      }
-    }
   });
-  w.treeCount = count;
+  w.treeCount = count; w.roadOk = roadOk;
 }
 function addTree(x, y, n, h){ world.trees.push({x:x, y:y, h:h || 'poi', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:Math.floor(hash(n, 4, 9)*4), yw:hash(n, 5, 9)*6.283, sc:0.62 + hash(n, 6, 9)*0.36}); }
 function buildingAt(x, y){
@@ -1279,7 +1308,7 @@ function shell(b, m, lm){
 var NULLM = {box:function(){}, ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  manageTerrain(budget); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
+  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } c.g = upload(m); c.l = upload(lm); n++; } }
@@ -1296,7 +1325,7 @@ function shellFar(b, m){
 var TREE_T = 256;
 function treeTile(key){
   var T = world.gl.trees, o = T.get(key); if (!o) return; var m = new Mesh(), trunk = C('#6b4a32'), g1 = C('#56643f'), g2 = C('#7a8a5e');
-  o.list.forEach(function(tr){
+  var each = function(tr){
     m.yo = hAt(tr.x, tr.y);
     if (tr.hi && tr.alive) return;
     if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); return; }
@@ -1306,13 +1335,48 @@ function treeTile(key){
       return;
     }
     m.ybox(tr.x, tr.y, tr.r, 0, 0, 0.8, 0.16, 0.8, 0.16, trunk); m.pyr(tr.x, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tr.x, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
-  });
+  };
+  o.list.forEach(each); if (o.wild) o.wild.forEach(each); m.yo = 0;
   if (o.g) freeMesh(o.g); o.g = upload(m);
 }
+function treeT(kx, ky, mk){
+  var T = world.gl.trees, key = gk(kx, ky), o = T.get(key);
+  if (!o && mk) T.set(key, o = {key:key, kx:kx, ky:ky, list:[], wild:null, g:null, x:(kx + 0.5)*TREE_T, y:(ky + 0.5)*TREE_T});
+  return o;
+}
 function buildTrees(){
-  var T = world.gl.trees; if (T) T.forEach(function(o){ if (o.g) freeMesh(o.g); }); T = world.gl.trees = new Map();
-  world.trees.forEach(function(tr){ var kx = Math.floor(tr.x/TREE_T), ky = Math.floor(tr.y/TREE_T), key = gk(kx, ky), o = T.get(key); if (!o) T.set(key, o = {list:[], g:null, x:(kx + 0.5)*TREE_T, y:(ky + 0.5)*TREE_T}); o.list.push(tr); tr.tk = key; });
-  T.forEach(function(o, key){ treeTile(key); });
+  var T = world.gl.trees; if (T) T.forEach(function(o){ if (o.g) freeMesh(o.g); }); world.gl.trees = new Map(); world.cut = world.cut || {};
+  world.trees.forEach(function(tr){ var o = treeT(Math.floor(tr.x/TREE_T), Math.floor(tr.y/TREE_T), true); o.list.push(tr); tr.tk = o.key; });
+  manageTrees(9999);
+}
+/* woods, scrub, riverbank trees and lone field trees, from the ground cover's trees-per-hectare; made per 256 m tile when you come near
+   and dropped again when you leave, so a whole region of woodland costs nothing until you are in it. Felled ones are remembered by name. */
+function wildTrees(o){
+  var g = world.tg, list = [], st = 6, x0 = o.kx*TREE_T, y0 = o.ky*TREE_T; if (!g || !g.td) return list;
+  for (var y = y0; y < y0 + TREE_T; y += st) for (var x = x0; x < x0 + TREE_T; x += st){
+    var i = Math.round((x + st/2 - g.x0)/g.cell), j = Math.round((y + st/2 - g.y0)/g.cell); if (i < 0 || j < 0 || i >= g.cols || j >= g.rows) continue;
+    var k = j*g.cols + i, td = g.td[k]; if (!td) continue;
+    var hx = Math.round(x), hy = Math.round(y); if (hash(hx, hy, 301) > td*st*st/10000*(0.55 + 0.9*fbm2(x/60, y/60, 87))) continue;   /* in clumps */
+    var tx = x + hash(hx, hy, 302)*st*0.8, ty = y + hash(hx, hy, 303)*st*0.8;
+    if (g.wd[k] < 6 || tx < world.minx || tx > world.maxx || ty < world.miny || ty > world.maxy || blocked(tx, ty) || (world.roadOk && !world.roadOk(tx, ty, 2.5))) continue;
+    var id = 'w' + hx + '_' + hy, pine = hash(hx, hy, 304) < g.tp[k]/255, n = hx*7 + hy*13;
+    list.push({x:tx, y:ty, id:id, h:'wild', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:!world.cut[id], shake:0, sp:(pine ? 2 : 0) + (hash(hx, hy, 305) < 0.5 ? 1 : 0), yw:hash(n, 5, 9)*6.283, sc:0.62 + hash(n, 6, 9)*0.36, tk:o.key});
+  }
+  return list;
+}
+function manageTrees(budget){
+  var T = world.gl.trees; if (!T) return; var R = QS.far + CH + 130, n = 0, K = TREE_T;
+  for (var ky = Math.floor((P.y - R)/K); ky <= Math.floor((P.y + R)/K); ky++) for (var kx = Math.floor((P.x - R)/K); kx <= Math.floor((P.x + R)/K); kx++){
+    var o = treeT(kx, ky, true); if (o.g || n >= budget) continue;
+    if (!o.wild) o.wild = wildTrees(o); treeTile(o.key); n++;
+  }
+  T.forEach(function(o){ if (o.g && (Math.abs(o.x - P.x) > R + 2*K || Math.abs(o.y - P.y) > R + 2*K)){ freeMesh(o.g); o.g = null; o.wild = null; } });
+}
+function nearTrees(x, y, r, fn){
+  var T = world.gl && world.gl.trees; if (!T) return;
+  for (var ky = Math.floor((y - r)/TREE_T); ky <= Math.floor((y + r)/TREE_T); ky++) for (var kx = Math.floor((x - r)/TREE_T); kx <= Math.floor((x + r)/TREE_T); kx++){
+    var o = T.get(gk(kx, ky)); if (!o) continue; o.list.forEach(fn); if (o.wild) o.wild.forEach(fn);
+  }
 }
 function seat(b, m, lm, s0, l0){
   var q, p = b.pts, n = p.length, base = b.base, low = b.low - 0.5, fc = [172,160,146];
@@ -2064,7 +2128,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.33';
+var VERSION = '0.34';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2098,7 +2162,7 @@ function startRun(ws, cs){
     resumed = true; world.mem = (Array.isArray(ws.mem) ? ws.mem : []).filter(function(m){ return m && isFinite(m.x) && isFinite(m.y); }).slice(-8).map(function(m){ return {x:+m.x, y:+m.y, fx:+m.fx || 0, fy:+m.fy || 0}; }); time = +ws.time || 0; searched = ws.searched | 0; kills = ws.kills | 0;
     for (k in (ws.got || {})){ var bd = w.buildings[k]; if (bd) ws.got[k].forEach(function(i){ bd.got[i] = 1; }); }
     (ws.crates || []).forEach(function(i){ if (w.crates[i]) w.crates[i].looted = true; });
-    (ws.trees || []).forEach(function(i){ if (w.trees[i]) w.trees[i].alive = false; });
+    (ws.trees || []).forEach(function(i){ if (w.trees[i]) w.trees[i].alive = false; }); (Array.isArray(ws.cut) ? ws.cut : []).forEach(function(id){ if (typeof id === 'string') w.cut[id.slice(0, 24)] = 1; });
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
     var mine = worldPlayers[charSlug()]; if (mine){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
   }
@@ -2402,11 +2466,11 @@ function swing(){
   var pn = portNear(); if (pn && pn.o.k < 0 && doorState(pn.o.b) === 0 && pn.d < 2.2){ var db0 = pn.o.b; db0.smash = (db0.smash || 0) + 1; makeNoise(P.x, P.y, 16);
     if (db0.smash >= 4){ db0.smash = 0; setPort(db0, -2, 0); setPort(db0, -1, 2); makeNoise(P.x, P.y, 32); feed('You smashed the door in. That was loud.', '#ff8f7a'); } else feed('The door shudders', '#c0c6cc'); return; }
   var bt = null, bd = 2.6;
-  for (i = 0; i < world.trees.length; i++){
-    var t = world.trees[i]; if (!t.alive) continue; dx = t.x - P.x; dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) continue;
-    d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
-  }
-  if (bt){ bt.hp--; bt.shake = 0.2; wear(0.5); sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.fresh++; feed('+1 Fresh food (fruit from the tree)', ITEMS.fresh[1]); } updateHud(); } }
+  nearTrees(P.x, P.y, 3, function(t){
+    if (!t.alive) return; var dx = t.x - P.x, dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) return;
+    var d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
+  });
+  if (bt){ bt.hp--; bt.shake = 0.2; wear(0.5); sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); if (bt.id){ world.cut[bt.id] = 1; emit({k:'tree', id:bt.id}); } else emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.fresh++; feed('+1 Fresh food (fruit from the tree)', ITEMS.fresh[1]); } updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
@@ -3471,7 +3535,7 @@ function loadNature(){
 function manageNature(){
   if (!NAT.Pine_5 || !world.gl.trees) return;
   var R = QS.treeR, cand = [], dirty = {}, i, k;
-  world.gl.trees.forEach(function(o){ if (Math.abs(o.x - P.x) > R + TREE_T || Math.abs(o.y - P.y) > R + TREE_T) return; o.list.forEach(function(tr){ if (!tr.alive) return; var d = Math.hypot(tr.x - P.x, tr.y - P.y); if (d < R) cand.push([d, tr]); }); });
+  nearTrees(P.x, P.y, R, function(tr){ if (!tr.alive) return; var d = Math.hypot(tr.x - P.x, tr.y - P.y); if (d < R) cand.push([d, tr]); });
   cand.sort(function(a, b){ return a[0] - b[0]; }); var next = cand.slice(0, QS.treeN).map(function(c){ return c[1]; });
   hiTrees.forEach(function(tr){ tr.hi2 = false; }); next.forEach(function(tr){ tr.hi2 = true; });
   hiTrees.concat(next).forEach(function(tr){ if (!!tr.hi !== !!tr.hi2){ tr.hi = tr.hi2; dirty[tr.tk] = 1; } });
@@ -3480,12 +3544,17 @@ function manageNature(){
   var rc = Math.ceil(QS.clutR/cs), A = world.areas, pick = {grass:['Grass_Common_Short', 'Grass_Common_Tall', 'Clover_1', 'Flower_3_Single', 'Grass_Common_Short'], park:['Flower_3_Single', 'Plant_1', 'Grass_Common_Short', 'Bush_Common', 'Clover_1'], forest:['Fern_1', 'Plant_1', 'Rock_Medium_2', 'Grass_Common_Tall', 'Bush_Common']}, SC = {Fern_1:0.26, Rock_Medium_2:0.45, Bush_Common:0.85, Flower_3_Single:0.36, Clover_1:0.3, Plant_1:0.55, Grass_Common_Short:0.7, Grass_Common_Tall:0.6};
   for (var cy = cy0 - rc; cy <= cy0 + rc; cy++) for (var cx = cx0 - rc; cx <= cx0 + rc; cx++) for (i = 0; i < 4; i++){
     var x = (cx + hash(cx, cy, 70 + i))*cs, y = (cy + hash(cx, cy, 80 + i))*cs, d = Math.hypot(x - P.x, y - P.y); if (d > QS.clutR) continue;
-    var kind = null; for (k = A.length - 1; k >= 0 && !kind; k--){ var a = A[k]; if (x < a.minx || x > a.maxx || y < a.miny || y > a.maxy || !pick[a.kind]) continue; if (pip(a.pts, x, y)) kind = a.kind; }
-    if (!kind || blocked(x, y) || inWater(x, y, 0.3)) continue;
+    var kind = coverKind(x, y);
+    if (!kind || blocked(x, y) || inWater(x, y, 0.3) || (world.roadOk && !world.roadOk(x, y, 0.8))) continue;
     var pkk = cx + ':' + cy + ':' + i, pkt = world.edits.picked[pkk]; if (pkt !== undefined && time - pkt < REGROW) continue;
     var nm = pick[kind][Math.floor(hash(cx, cy, 90 + i)*5)]; clutter.push({plant:true, key:pkk, nm:nm, name:PNAME[nm], d:d, m:NAT[nm], x:x, y:y, gy:hAt(x, y), yw:hash(cx, cy, 95 + i)*6.283, sc:(SC[nm] || 1)*(0.75 + hash(cx, cy, 99 + i)*0.5)});
   }
   clutter.sort(function(a, b){ return a.d - b.d; }); clutter.length = Math.min(clutter.length, QS.clutN);
+}
+/* which small plants grow at a spot, from the ground cover: woodland, long grass, or mown lawn (bushes and flowers) */
+function coverKind(x, y){
+  var g = world.tg; if (!g) return null; var i = Math.round((x - g.x0)/g.cell), j = Math.round((y - g.y0)/g.cell); if (i < 0 || j < 0 || i >= g.cols || j >= g.rows) return null;
+  var k = j*g.cols + i, o = k*6; if (g.td[k] >= 90) return 'forest'; if (g.c[o] > 120) return 'grass'; return hash(Math.round(x), Math.round(y), 61) < 0.5 ? 'park' : null;
 }
 /* what each kind of plant gives when gathered: [least, most] of each thing */
 var REGROW = 1500, PNAME = {Bush_Common:'the bush', Flower_3_Single:'the flowers', Fern_1:'the fern', Plant_1:'the plant', Clover_1:'the clover', Grass_Common_Short:'the grass', Grass_Common_Tall:'the tall grass', Rock_Medium_2:'the rock'};
@@ -3601,7 +3670,7 @@ function render(){
     if (ch.g && cdx < NR && cdy < NR){ drawMesh(ch.g); if (cdx < 170 && cdy < 170) drawMesh(ch.l, gl.LINES); }
     else if (ch.far && cdx < FRR && cdy < FRR) drawMesh(ch.far);
   }
-  if (world.gl.trees) world.gl.trees.forEach(function(o){ if (Math.abs(o.x - P.x) < FRR + 130 && Math.abs(o.y - P.y) < FRR + 130) drawMesh(o.g); });
+  if (world.gl.trees) world.gl.trees.forEach(function(o){ if (o.g && Math.abs(o.x - P.x) < FRR + 130 && Math.abs(o.y - P.y) < FRR + 130) drawMesh(o.g); });
   if (world.fence && Math.abs(world.fence.x - P.x) < 400 && Math.abs(world.fence.y - P.y) < 400) drawMesh(world.fence.g);
   for (i = 0; i < loaded.length; i++) drawMesh(loaded[i].int.g);
   for (i = 0; i < facs.length; i++) if (facs[i].fac) drawMesh(facs[i].fac);
@@ -3699,7 +3768,7 @@ function worldSave(){
   var got = {}, cr = [], tr = [];
   world.buildings.forEach(function(b){ var ks = Object.keys(b.got); if (ks.length) got[b.id] = ks.map(Number); });
   world.crates.forEach(function(c, i){ if (c.looted) cr.push(i); }); world.trees.forEach(function(t, i){ if (!t.alive) tr.push(i); });
-  return {v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
+  return {v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, cut:Object.keys(world.cut || {}).slice(-5000), fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
@@ -4278,7 +4347,7 @@ function applyEv(e){
   else if (e.k === 'pick'){ if (typeof e.key === 'string'){ world.edits.picked[e.key.slice(0, 24)] = time; for (var pi = 0; pi < clutter.length; pi++) if (clutter[pi].key === e.key){ clutter.splice(pi, 1); break; } } }
   else if (e.k === 'corpse'){ var c0 = e.c; if (c0 && typeof c0.id === 'string' && isFinite(c0.x) && isFinite(c0.y) && ANAME[c0.k] && c0.stash){ var st = {inv:{}, items:{}}, kk; for (kk in c0.stash.inv) if (kk in ITEMS) st.inv[kk] = Math.max(0, Math.min(20, c0.stash.inv[kk] | 0)); for (kk in c0.stash.items || {}) if (DESIGNS[kk]) st.items[kk] = 1; corpses.push({corpse:1, id:c0.id, x:+c0.x, y:+c0.y, k:c0.k, name:'dead ' + ANAME[c0.k], stash:st, t:time}); if (corpses.length > 40) corpses.shift(); } }
   else if (e.k === 'uncorpse'){ for (var ci = 0; ci < corpses.length; ci++) if (corpses[ci].id === e.id){ if (corpses[ci] === curLoot){ curLoot = null; el('loot').classList.add('hidden'); } corpses.splice(ci, 1); break; } }
-  else if (e.k === 'tree'){ if (world.trees[e.i]){ world.trees[e.i].alive = false; treeTile(world.trees[e.i].tk); } }
+  else if (e.k === 'tree'){ if (typeof e.id === 'string'){ world.cut[e.id.slice(0, 24)] = 1; nearTrees(P.x, P.y, QS.far + 600, function(t){ if (t.id === e.id && t.alive){ t.alive = false; treeTile(t.tk); } }); } else if (world.trees[e.i]){ world.trees[e.i].alive = false; treeTile(world.trees[e.i].tk); } }
   else if (e.k === 'lamp'){ if (e.l && isFinite(e.l.x) && isFinite(e.l.y)) lamps.push({lamp:true, name:'lantern', x:+e.l.x, y:+e.l.y, life:LAMP_SECS}); }
   else if (e.k === 'unlamp'){ for (var li = 0; li < lamps.length; li++) if (Math.abs(lamps[li].x - e.x) < 0.01 && Math.abs(lamps[li].y - e.y) < 0.01){ lamps.splice(li, 1); break; } }
   else if (e.k === 'fire'){ if (e.f) fires.push({x:+e.f.x, y:+e.f.y, life:+e.f.life || 150}); }
@@ -4505,11 +4574,36 @@ async function fetchElev(s, w, n, e){
 var region = null, zoneBusy = false, rgDl = null;
 function loadRegions(){ try { var l = JSON.parse(lsGet('lastblock:regions') || '[]'); return Array.isArray(l) ? l.filter(function(r){ return r && r.id && isFinite(r.lat) && isFinite(r.lon) && r.dLat > 0 && r.dLon > 0; }) : []; } catch (e){ return []; } }
 var REGIONS = loadRegions();
-function saveRegions(){ lsSet('lastblock:regions', JSON.stringify(REGIONS)); }
+function saveRegions(){ lsSet('lastblock:regions', JSON.stringify(REGIONS)); if (SPRING) lsSet('lastblock:spring:last', JSON.stringify(SPRING.last || null)); }
+/* the built-in Springfield region (tools/build_region.py): 50 miles round Park Central Square, every square already on the drive in assets/springfield */
+var SPRING = (function(){
+  try {
+    var m = JSON.parse((ART.map || '').trim()); if (!m || !m.region || !Array.isArray(m.squares)) return null;
+    var R = m.region, last = null; try { last = JSON.parse(lsGet('lastblock:spring:last') || 'null'); } catch (e){}
+    R.builtin = true; R.have = {}; m.squares.forEach(function(q){ R.have[q[0] + ':' + q[1]] = 1; }); R.places = m.places || []; R.squares = m.squares;
+    R.last = last && isFinite(last.lat) && isFinite(last.lon) ? last : null; return R;
+  } catch (e){ return null; }
+})();
+function sqFile(i, j){ return 'assets/springfield/' + i + '_' + j + '.js'; }
+function builtinSquare(i, j){
+  var key = 'sq:' + i + ':' + j;
+  return new Promise(function(res, rej){
+    if (ART[key]){ res(ART[key]); return; }
+    var sc = document.createElement('script'); sc.src = sqFile(i, j);
+    sc.onload = function(){ sc.remove(); var t = ART[key]; if (t){ for (var k in ART) if (k.indexOf('sq:') === 0 && k !== key) delete ART[k]; res(t); } else rej(new Error('that square is missing from the assets folder')); };
+    sc.onerror = function(){ sc.remove(); rej(new Error(location.protocol === 'file:' ? 'that square is missing from the assets folder' : 'offline')); };
+    document.head.appendChild(sc);
+  });
+}
+function nearPlace(R, lat, lon){
+  var best = null, bd = 1e9, k = Math.cos(R.lat*Math.PI/180);
+  (R.places || []).forEach(function(p){ var d = Math.hypot((p[1] - lon)*k, p[2] - lat); if (d < bd){ bd = d; best = p; } });
+  return best && bd < 0.04 ? best[0] : null;
+}
 function toLL(x, y){ var g = world.geo; return [g.lon0 + x/g.kx, g.lat0 - y/g.ky]; }
 function zoneOf(R, lat, lon){ return [Math.floor((lon - R.lon)/R.dLon + 0.5), Math.floor((lat - R.lat)/R.dLat + 0.5)]; }
 function zoneBox(R, i, j){ return {w:R.lon + (i - 0.5)*R.dLon, e:R.lon + (i + 0.5)*R.dLon, s:R.lat + (j - 0.5)*R.dLat, n:R.lat + (j + 0.5)*R.dLat}; }
-function zoneIn(R, i, j){ return Math.hypot(i*R.dLon*Math.cos(R.lat*Math.PI/180)*111.32, j*R.dLat*110.54) <= R.miles*1.609 + 3; }
+function zoneIn(R, i, j){ if (R.builtin) return !!R.have[i + ':' + j]; return Math.hypot(i*R.dLon*Math.cos(R.lat*Math.PI/180)*111.32, j*R.dLat*110.54) <= R.miles*1.609 + 3; }
 function zoneList(R){ var n = Math.ceil(R.miles*1.609/(R.dLat*110.54)) + 1, out = []; for (var j = -n; j <= n; j++) for (var i = -n; i <= n; i++) if (zoneIn(R, i, j)) out.push([i, j]); return out; }
 function idb(){
   return new Promise(function(res, rej){
@@ -4533,14 +4627,16 @@ async function zoneFetch(R, i, j){
   try { raw.elev = await fetchElev(b.s - my*1.3, b.w - mx*1.3, b.n + my*1.3, b.e + mx*1.3); } catch (e){ raw.elev = null; }
   raw.zone = b; var text = JSON.stringify(toCompact(raw, zoneName(R, i, j))); await zonePut(R, i, j, text); return text;
 }
-async function enterZone(R, lat, lon, yaw, carry){
-  var ij = zoneOf(R, lat, lon), text = await zoneGet(R, ij[0], ij[1]);
+async function enterZone(R, lat, lon, yaw, carry, atSafe){
+  var ij = zoneOf(R, lat, lon), text = R.builtin ? await builtinSquare(ij[0], ij[1]) : await zoneGet(R, ij[0], ij[1]);
   if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1]); }
-  var raw = parseText(text); raw.spawn = [lon, lat]; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
+  var raw = parseText(text); if (R.builtin) raw.name = '';   /* each square keeps its own save, named by the square */
+  raw.spawn = [lon, lat]; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
   mapSrc = {text:text}; inRun = false; await enter(raw, zoneName(R, ij[0], ij[1])); if (!inRun) throw new Error('that part of the map could not be loaded');
   region = R;
   var g = world.geo, x = (lon - g.lon0)*g.kx, y = -(lat - g.lat0)*g.ky; if (circ(x, y, 0.5) && !buildingAt(x, y)){ x = world.spawn.x; y = world.spawn.y; }
-  P.x = x; P.y = y; P.yaw = yaw || 0; P.gy = undefined; P.roof = null; P.climbL = null; P.fall = 0;
+  if (!atSafe){ P.x = x; P.y = y; P.yaw = yaw || 0; } P.gy = undefined; P.roof = null; P.climbL = null; P.fall = 0;
+  var pl = R.builtin ? nearPlace(R, lat, lon) : null; if (pl && carry) toast('Near ' + pl, 4);
   if (carry){ time = carry.time; if (carry.veh){ var v = {veh:true, id:'r' + Date.now().toString(36), t:carry.veh.t, name:carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel}; world.vehicles.push(v); world.vmap[v.id] = v; P.veh = v; v.rd = time; } }
   R.last = {lat:lat, lon:lon, yaw:P.yaw}; saveRegions(); manageInteriors(99); updateHud();
 }
@@ -4574,14 +4670,15 @@ async function startRegion(){
 }
 async function playRegion(R){
   var st = el('rgStatus'), L = R.last || {lat:R.lat, lon:R.lon, yaw:0}; rgStop();
-  st.textContent = 'Loading ' + R.name + '. A part of the map you have not visited is downloaded first...';
-  try { await enterZone(R, L.lat, L.lon, L.yaw, null); st.textContent = ''; }
-  catch (e){ region = null; st.textContent = e.message === 'offline' ? 'That part of ' + R.name + ' is not on this device yet. Connect to the internet to download it.' : 'Could not load ' + R.name + ': ' + (/fetch|network/i.test(e.message || '') ? 'no connection to the map servers' : e.message || 'unknown error') + '.'; }
+  st.textContent = R.builtin ? 'Loading ' + R.name + '...' : 'Loading ' + R.name + '. A part of the map you have not visited is downloaded first...'; if (R.builtin) info('Loading ' + R.name + '...');
+  try { await enterZone(R, L.lat, L.lon, L.yaw, null, R.builtin && !R.last); st.textContent = ''; }
+  catch (e){ region = null; if (R.builtin) fail('Could not load Springfield: ' + (e.message === 'offline' ? 'that part of the map is not saved on this device yet. Connect to the internet once, or use Save for offline' : e.message || 'unknown error') + '.'); st.textContent = e.message === 'offline' ? 'That part of ' + R.name + ' is not on this device yet. Connect to the internet to download it.' : 'Could not load ' + R.name + ': ' + (/fetch|network/i.test(e.message || '') ? 'no connection to the map servers' : e.message || 'unknown error') + '.'; }
 }
 function rgStop(){ if (rgDl){ rgDl.stop = true; rgDl = null; } }
 /* download squares ahead of time, nearest first, one at a time so the free map server is not flooded */
 async function rgDownload(R){
   if (rgDl){ rgStop(); renderRegions(); return; }
+  if (R.builtin) return springSave(R);
   var job = rgDl = {stop:false, id:R.id}, st = el('rgStatus'), L = R.last || R, c = zoneOf(R, L.lat, L.lon), have = {}, fails = 0, got = 0;
   (await zoneKeys(R)).forEach(function(k){ have[k] = 1; });
   var todo = zoneList(R).filter(function(z){ return !have[R.id + ':' + z[0] + ':' + z[1]]; }).sort(function(a, b){ return Math.hypot(a[0] - c[0], a[1] - c[1]) - Math.hypot(b[0] - c[0], b[1] - c[1]); });
@@ -4594,15 +4691,29 @@ async function rgDownload(R){
   if (fails < 3) st.textContent = job.stop ? 'Stopped. ' + got + ' new squares saved.' : 'All of ' + R.name + ' is saved on this device.'; if (rgDl === job) rgDl = null;
   renderRegions();
 }
+async function sqCached(R){ var n = 0; if (location.protocol === 'file:') return R.squares.length; if (!window.caches) return 0; for (var q = 0; q < R.squares.length; q++){ if (await caches.match(sqFile(R.squares[q][0], R.squares[q][1]), {ignoreSearch:true})) n++; } return n; }
+async function springSave(R){
+  var job = rgDl = {stop:false, id:R.id}, st = el('rgStatus'), L = R.last || R, c = zoneOf(R, L.lat, L.lon), got = 0;
+  var todo = R.squares.slice().sort(function(a, b){ return Math.hypot(a[0] - c[0], a[1] - c[1]) - Math.hypot(b[0] - c[0], b[1] - c[1]); }); renderRegions();
+  for (var n = 0; n < todo.length && !job.stop; n++){
+    st.textContent = 'Saving Springfield on this device: ' + n + ' of ' + todo.length + ' squares. Keep this page open; press Stop any time.';
+    try { if (!window.caches || !(await caches.match(sqFile(todo[n][0], todo[n][1]), {ignoreSearch:true}))){ var r = await fetch(sqFile(todo[n][0], todo[n][1])); if (!r.ok) throw new Error('missing'); got++; } }   /* the offline copy (sw.js) keeps what is fetched */
+    catch (e){ st.textContent = 'Stopped: no connection.'; break; }
+  }
+  if (!job.stop && n >= todo.length) st.textContent = 'All of Springfield is saved on this device.'; if (rgDl === job) rgDl = null; renderRegions();
+}
 async function renderRegions(){
   var box = el('rgList'), h = '';
+  if (SPRING && location.protocol !== 'file:'){ var sn = await sqCached(SPRING);
+    h += '<div class="irow"><span class="n">' + esc(SPRING.name) + ' (built in)<br><i>' + SPRING.miles + ' miles &middot; ' + sn + ' of ' + SPRING.squares.length + ' squares saved for playing offline</i></span><button data-rg="play" data-i="s">Play</button><button class="alt" data-rg="dl" data-i="s">' + (rgDl && rgDl.id === SPRING.id ? 'Stop' : sn < SPRING.squares.length ? 'Save for offline' : 'Saved') + '</button></div>'; }
   for (var i = 0; i < REGIONS.length; i++){ var R = REGIONS[i], n = (await zoneKeys(R)).length, tot = zoneList(R).length;
     h += '<div class="irow"><span class="n">' + esc(R.name) + '<br><i>' + R.miles + ' miles &middot; ' + n + ' of ' + tot + ' squares on this device</i></span><button data-rg="play" data-i="' + i + '">Play</button><button class="alt" data-rg="dl" data-i="' + i + '">' + (rgDl && rgDl.id === R.id ? 'Stop' : 'Download more') + '</button><button class="alt" data-rg="del" data-i="' + i + '">Delete</button></div>'; }
   box.innerHTML = h;
 }
 el('rgGo').addEventListener('click', startRegion);
 el('rgList').addEventListener('click', function(e){
-  var a = e.target.getAttribute && e.target.getAttribute('data-rg'), R = REGIONS[+e.target.getAttribute('data-i')]; if (!a || !R) return;
+  var a = e.target.getAttribute && e.target.getAttribute('data-rg'), di = e.target.getAttribute && e.target.getAttribute('data-i'), R = di === 's' ? SPRING : REGIONS[+di]; if (!a || !R) return;
+  if (a === 'del' && R.builtin) return;
   if (a === 'play') playRegion(R); else if (a === 'dl') rgDownload(R);
   else if (a === 'del' && confirm('Delete ' + R.name + ' and its downloaded squares from this device? World progress in its squares is kept.')){ rgStop(); zoneWipe(R).then(function(){ REGIONS.splice(REGIONS.indexOf(R), 1); saveRegions(); renderRegions(); }); }
 });
@@ -4679,20 +4790,9 @@ el('menuBtn').addEventListener('click', function(){ exitToMenu(); });
 el('file').addEventListener('change', function(e){ readFile(e.target.files[0]); e.target.value = ''; });
 window.addEventListener('dragover', function(e){ e.preventDefault(); });
 window.addEventListener('drop', function(e){ e.preventDefault(); if (!running && e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
-el('spring').addEventListener('click', async function(){
-  if (!glOK) return; var t = (ART.map || '').replace(/<!--\/?ART:map-->/g, '').trim();
-  if (!t){ fail('The built-in map is missing from this copy of the game.'); return; }
-  info('Loading Springfield...');
-  try {
-    var j = JSON.parse(t), ev = null; try { ev = JSON.parse(lsGet('lastblock:elev:springfield') || 'null'); } catch (e0){}
-    if (!ev && navigator.onLine){
-      info('Loading Springfield and downloading its hills (first time only)...');
-      var a = 1e9, b = -1e9, c = 1e9, d = -1e9; j.ways.forEach(function(w){ for (var q = 0; q < w[1].length; q += 2){ var x = w[1][q], y = w[1][q+1]; if (x < a) a = x; if (x > b) b = x; if (y < c) c = y; if (y > d) d = y; } });
-      try { ev = await fetchElev(c - 0.004, a - 0.005, d + 0.004, b + 0.005); lsSet('lastblock:elev:springfield', JSON.stringify(ev)); } catch (e1){ ev = null; }
-    }
-    if (ev){ j.elev = ev; t = JSON.stringify(j); }
-    mapSrc = {text:t}; await enter(parseText(t), 'Springfield'); if (!ev) toast('Playing Springfield without hills: the terrain is downloaded the first time you start it with internet.', 6);
-  } catch (e) { fail(e.message || 'Could not load the built-in map.'); }
+el('spring').addEventListener('click', function(){
+  if (!glOK) return; if (!SPRING){ fail('The built-in Springfield map is missing from this copy of the game. Copy the whole assets folder.'); return; }
+  playRegion(SPRING);
 });
 el('demo').addEventListener('click', function(){ if (glOK){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); } });
 function savedChars(){

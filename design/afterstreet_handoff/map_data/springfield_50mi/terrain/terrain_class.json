@@ -1,0 +1,141 @@
+{
+ "grid": [
+  2048,
+  2048
+ ],
+ "bbox": [
+  -94.2,
+  36.485,
+  -92.385,
+  37.933
+ ],
+ "meters_per_px": 78.6,
+ "encoding": "RGB color → class (exact palette). Read pixel, look up classes[].color.",
+ "sources": "OSM landcover/landuse/park/water via OpenFreeMap z12 vector tiles; gaps derived from slope (AWS terrain): >6.5° forest, 4.5–6.5° scrub/old field, within 60 m of river / 25 m of stream riparian, protected areas forest, else fescue pasture. Shortleaf pine–oak used south of 36.95°N and east of 93.35°W (Mark Twain NF side).",
+ "pixel_share": {
+  "osm": 0.129,
+  "derived": 0.871
+ },
+ "classes": [
+  {
+   "id": 1,
+   "key": "urban_paved",
+   "color": "#6e6762",
+   "share": 0.0023
+  },
+  {
+   "id": 2,
+   "key": "industrial",
+   "color": "#8a7f75",
+   "share": 0.0011
+  },
+  {
+   "id": 3,
+   "key": "residential_lawn",
+   "color": "#a9b78c",
+   "share": 0.0046
+  },
+  {
+   "id": 4,
+   "key": "oak_hickory_forest",
+   "color": "#3f5a2c",
+   "share": 0.1201
+  },
+  {
+   "id": 5,
+   "key": "pine_oak_forest",
+   "color": "#2f4a2f",
+   "share": 0.0443
+  },
+  {
+   "id": 6,
+   "key": "pasture_hay",
+   "color": "#c9c27a",
+   "share": 0.7358
+  },
+  {
+   "id": 7,
+   "key": "park_lawn",
+   "color": "#7a9a4e",
+   "share": 0.0027
+  },
+  {
+   "id": 8,
+   "key": "golf",
+   "color": "#8fbf5a",
+   "share": 0.0006
+  },
+  {
+   "id": 9,
+   "key": "cemetery",
+   "color": "#9aaa7a",
+   "share": 0.0012
+  },
+  {
+   "id": 10,
+   "key": "quarry",
+   "color": "#d9d0c0",
+   "share": 0.0002
+  },
+  {
+   "id": 11,
+   "key": "wetland",
+   "color": "#5f8a7a",
+   "share": 0.0027
+  },
+  {
+   "id": 12,
+   "key": "scrub_oldfield",
+   "color": "#8a8a4a",
+   "share": 0.0598
+  },
+  {
+   "id": 13,
+   "key": "prairie_glade",
+   "color": "#d9b86a",
+   "share": 0.0003
+  },
+  {
+   "id": 14,
+   "key": "water",
+   "color": "#5f8a9a",
+   "share": 0.0141
+  },
+  {
+   "id": 16,
+   "key": "campus_lawn",
+   "color": "#b8c99a",
+   "share": 0.0004
+  },
+  {
+   "id": 17,
+   "key": "military",
+   "color": "#a08a6a",
+   "share": 0.0004
+  },
+  {
+   "id": 18,
+   "key": "rail_yard",
+   "color": "#7a6a5a",
+   "share": 0.0006
+  },
+  {
+   "id": 19,
+   "key": "farmyard",
+   "color": "#c9a87a",
+   "share": 0.0002
+  },
+  {
+   "id": 20,
+   "key": "orchard",
+   "color": "#9ab05a",
+   "share": 0.0002
+  },
+  {
+   "id": 21,
+   "key": "riparian",
+   "color": "#56743f",
+   "share": 0.0085
+  }
+ ]
+}
