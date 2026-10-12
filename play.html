@@ -42,6 +42,8 @@
   .bar{height:5px;border-radius:999px;background:rgba(32,30,29,.5);overflow:hidden;box-shadow:0 0 0 1px rgba(245,234,216,.16)}
   .bar div{height:100%;border-radius:999px}
   #stamBar{height:4px;margin:3px 30px 4px 0} #bStam{background:#e9dcc0}
+  #aware{display:none;margin:6px auto 0;width:max-content;padding:3px 10px 3px 8px;border-radius:999px;background:rgba(32,30,29,.62);color:#f5ead8;font-size:11px;font-weight:700;letter-spacing:.04em;align-items:center;gap:7px}
+  #aware.on{display:flex} #aware i{display:block;width:34px;height:5px;border-radius:999px;background:rgba(245,234,216,.25);overflow:hidden;position:relative} #aware i:after{content:'';position:absolute;left:0;top:0;bottom:0;width:var(--a,0%);background:var(--c,#e9dcc0)}
   #bHp{background:#d9603a} #bFood{background:var(--ochre)} #bWater{background:#7fb4c8} #bTemp{background:#9bb07a}
   .vsub{display:flex;gap:8px;margin-top:6px}
   .vs{flex:1;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;opacity:.95}
@@ -194,6 +196,7 @@
     <div id="clock"><span id="dayLine"></span> &middot; <span id="wxStamp"></span></div>
     <div id="goalLine"></div>
     <div id="stats"></div>
+    <div id="aware"><i></i><span></span></div>
   </div>
   <div id="miniWrap"><canvas id="mini" width="200" height="200"></canvas><div id="osm">&copy; OpenStreetMap contributors</div></div>
   <button id="hudMenu" title="Menu">&#9776;</button>
@@ -336,7 +339,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.21.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.22.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1704,7 +1707,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.21';
+var VERSION = '0.22';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2037,9 +2040,63 @@ function drawPerson(m, o, look, now){
 function lookOf(o){ return net.role === 'host' ? o.look : (net.who[o.id] || {}).look; }
 
 /* ================= aliens ================= */
-var AK = [{n:'swarmer', hp:2, spd:4.3, nspd:5.0, dmg:3, r:0.3, cd:0.8, see:45, reach:1.3},
-          {n:'stalker', hp:12, spd:5.6, nspd:6.2, dmg:16, r:0.4, cd:1.3, see:22, reach:1.7},
-          {n:'giant', hp:70, spd:2.6, nspd:2.9, dmg:35, r:1.0, cd:1.8, see:75, reach:3.0}];
+/* see: how far it can spot a standing survivor in daylight, straight ahead with nothing in the way. hear: how much better or worse than average its hearing is */
+var AK = [{n:'swarmer', hp:2, spd:4.3, nspd:5.0, dmg:3, r:0.3, cd:0.8, see:24, hear:1.2, reach:1.3},
+          {n:'stalker', hp:12, spd:5.6, nspd:6.2, dmg:16, r:0.4, cd:1.3, see:20, hear:1.0, reach:1.7},
+          {n:'giant', hp:70, spd:2.6, nspd:2.9, dmg:35, r:1.0, cd:1.8, see:18, hear:1.7, reach:3.0}];
+/* ---- what an alien knows. It only goes for you once it has seen you long enough, or you hit it.
+   Sight: a cone ahead of it, blocked by walls and shut doors, shorter at night unless you carry a light, shorter if you crouch.
+   Hearing: how far your movement carries (crouch 2.5 m, walk 7 m, sprint 18 m, gunfire and engines much further). Hearing only makes it come and look.
+   States: 0 wandering, 1 coming to look at a noise, 2 chasing, 3 searching where it lost you ---- */
+function segX(ax, ay, bx, by, cx, cy, dx, dy){ var rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy, den = rx*sy - ry*sx; if (Math.abs(den) < 1e-9) return false; var t = ((cx - ax)*sy - (cy - ay)*sx)/den, u = ((cx - ax)*ry - (cy - ay)*rx)/den; return t > 0.001 && t < 0.999 && u >= 0 && u <= 1; }
+function segsX(L, ax, ay, bx, by){ for (var i = 0; i < L.length; i += 4) if (segX(ax, ay, bx, by, L[i], L[i+1], L[i+2], L[i+3])) return true; return false; }
+function los(ax, ay, bx, by){
+  if (world.wallSegs.length && segsX(world.wallSegs, ax, ay, bx, by)) return false;
+  var x0 = Math.floor(Math.min(ax, bx)/G), x1 = Math.floor(Math.max(ax, bx)/G), y0 = Math.floor(Math.min(ay, by)/G), y1 = Math.floor(Math.max(ay, by)/G), cx, cy, i; stampN++;
+  if ((x1 - x0 + 1)*(y1 - y0 + 1) > 40) return true;
+  for (cy = y0; cy <= y1; cy++) for (cx = x0; cx <= x1; cx++){
+    var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
+    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone) continue; b.stamp = stampN;
+      if (b.maxx < Math.min(ax, bx) || b.minx > Math.max(ax, bx) || b.maxy < Math.min(ay, by) || b.miny > Math.max(ay, by)) continue;
+      if (segsX(b.segs, ax, ay, bx, by) || segsX(barOf(b), ax, ay, bx, by) || (b.int && segsX(b.int.segs, ax, ay, bx, by))) return false; }
+  }
+  return true;
+}
+function hearR(t){ return t.loud ? 45 : !t.mv ? 0 : t.vis < 1 ? 2.5 : t.vis > 1 ? 18 : 7; }
+function senses(z, A, tg, dt, night){
+  var i, t, dd;
+  if (z.hurt > 0 && z.st !== 2){ var nb = null, nd = 60; for (i = 0; i < tg.length; i++){ t = tg[i]; dd = Math.hypot(t.x - z.x, t.y - z.y); if (!t.safe && dd < nd){ nd = dd; nb = t; } } if (nb) alert(z, nb); }
+  z.pt = (z.pt || 0) - dt;
+  if (z.pt <= 0){
+    var st = 0.2 + Math.random()*0.08; z.pt = st; var seenT = null, sd = 1e9, ca = Math.cos(z.ang || 0), sa = Math.sin(z.ang || 0);
+    for (i = 0; i < tg.length; i++){
+      t = tg[i]; if (t.safe) continue; var dx = t.x - z.x, dy = t.y - z.y; dd = Math.hypot(dx, dy) || 0.01; if (dd > 90) continue;
+      var rs = A.see*t.vis*(night ? (t.lit ? (z.k === 1 ? 2.6 : 1.8) : 0.5) : 1)*(wx.w === 1 || wx.w === 2 || wx.w === 3 ? 0.7 : 1);
+      var cone = dd < 2.2 || (dx*ca + dy*sa)/dd > (z.st === 2 ? -0.2 : 0.42);
+      if (dd < rs && cone && los(z.x, z.y, t.x, t.y)){
+        if (dd < sd){ sd = dd; seenT = t; }
+      } else {
+        var hr = hearR(t)*A.hear*(z.k === 2 && t.vis > 1 ? 1.6 : 1);
+        if (dd < hr && z.st !== 2){ var er = dd*0.25; z.lx = t.x + (Math.random() - 0.5)*er; z.ly = t.y + (Math.random() - 0.5)*er; if (z.st !== 1){ z.st = 1; z.stT = 9; } z.aw = Math.max(z.aw || 0, dd < hr*0.35 ? 0.6 : 0.3); }
+      }
+    }
+    if (seenT){
+      var rs2 = A.see*seenT.vis*(night ? (seenT.lit ? 2 : 0.5) : 1);
+      z.aw = Math.min(1.3, (z.aw || 0) + (sd < 3 ? 4 : 0.32 + 1.8*Math.max(0, 1 - sd/Math.max(1, rs2)))*st*(seenT.lit ? 1.5 : 1)*(z.st >= 1 ? 1.6 : 1));
+      if (z.aw >= 1 || z.st === 2) alert(z, seenT); else { z.lx = seenT.x; z.ly = seenT.y; z.face = 1; }
+    } else {
+      z.aw = Math.max(0, (z.aw || 0) - st*(z.st === 2 ? 0.35 : 0.2));
+      if (z.st === 2){ z.lostT = (z.lostT || 0) + st; if (z.lostT > 1.2){ z.st = 3; z.stT = 10; } }
+    }
+  }
+  if (z.st === 2){ for (i = 0; i < tg.length; i++) if (tg[i].peer === z.tp){ t = tg[i]; if (t.safe){ z.st = 3; z.stT = 4; return null; } if (z.lostT < 0.05){ z.lx = t.x; z.ly = t.y; } return z.lostT < 1.2 ? t : null; } z.st = 3; z.stT = 6; }
+  if (z.st === 1 || z.st === 3){ z.stT -= dt; if (z.stT <= 0){ z.st = 0; z.aw = 0; } }
+  return null;
+}
+function alert(z, t){
+  if (z.st !== 2){ z.st = 2; z.aw = 1; for (var i = 0; i < zombies.length; i++){ var o = zombies[i]; if (o !== z && o.st !== 2 && Math.hypot(o.x - z.x, o.y - z.y) < (z.k === 0 ? 16 : 8)){ o.st = 1; o.stT = 8; o.lx = t.x; o.ly = t.y; o.aw = Math.max(o.aw || 0, 0.5); } } }
+  z.tp = t.peer; z.lostT = 0; z.lx = t.x; z.ly = t.y; z.aw = Math.max(z.aw, 1);
+}
 var flares = [], lures = [];
 function nearLight(x, y, r){
   var i; for (i = 0; i < fires.length; i++) if (Math.hypot(fires[i].x - x, fires[i].y - y) < r) return true;
@@ -2206,7 +2263,7 @@ function update(dt){
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
     stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
-  stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
+  P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
   if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0) P.hp -= 1.2*dt; } else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
   if (region && world.core && !zoneBusy && (P.x < world.core.x0 || P.x > world.core.x1 || P.y < world.core.y0 || P.y > world.core.y1)) zoneTravel();
@@ -2250,24 +2307,27 @@ function update(dt){
   var night = dark > 0.5;
   P.noise = Math.max(0, P.noise - dt);
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1}], cadesChanged = false;
-    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1}); });
+    var tg = [{x:P.x, y:P.y, peer:null, loud:P.noise > 0, lit:lightOn() && dark > 0.3, vis:P.vis || 1, mv:!!P.mv}], cadesChanged = false;
+    net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); });
     for (i = zombies.length - 1; i >= 0; i--){
       var z = zombies[i], A = AK[z.k], T = null, d = 1e9, dAny = 1e9;
       for (var q2 = 0; q2 < tg.length; q2++){
         var t2 = tg[q2], dd = Math.hypot(t2.x - z.x, t2.y - z.y); if (dd < dAny) dAny = dd;
-        if (!t2.safe && dd < A.see*(t2.loud ? 2.2 : t2.vis)*(t2.lit ? (z.k === 1 ? 4 : 1.3) : 1) && dd < d){ d = dd; T = t2; }
       }
       if (z.hp <= 0){ kills++; addCorpse(z); zombies.splice(i, 1); continue; }
       if (dAny > 130){ zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
       var zn = zoneAt(z.x, z.y, 0.6); if (zn){ var sdx = z.x - zn.x, sdy = z.y - zn.y, sd = Math.hypot(sdx, sdy) || 1; if (sd < 0.01){ sdx = 1; sdy = 0; sd = 1; } z.x = zn.x + sdx/sd*(zn.r + 0.6); z.y = zn.y + sdy/sd*(zn.r + 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
+      T = senses(z, A, tg, dt, night); if (T) d = Math.hypot(T.x - z.x, T.y - z.y);
       z.cd -= dt; z.hurt -= dt; z.thru -= dt;
       var ox = z.x, oy = z.y, zs = (night ? A.nspd : A.spd)*z.spd, vx = 0, vy = 0, L = lureAt(z.x, z.y);
+      if (!T && !L && (z.st === 1 || z.st === 3)){ L = {x:z.lx, y:z.ly}; if (Math.hypot(z.lx - z.x, z.ly - z.y) < 1.5){ if (z.st === 1){ z.st = 3; z.stT = 7; } z.lx = z.x + (Math.random() - 0.5)*14; z.ly = z.y + (Math.random() - 0.5)*14; } zs *= z.st === 3 ? 0.55 : 0.75; }   /* go and look */
+      if (!T && !L && z.face){ z.face = 0; z.ang = Math.atan2(z.ly - z.y, z.lx - z.x); }
       if (!T && !L){
-        z.wt = (z.wt || 0) - dt; if (z.wt <= 0){ z.wt = 2 + Math.random()*3; z.wa = Math.random()*6.283; }
+        z.wt = (z.wt || 0) - dt; if (z.wt <= 0){ z.wt = 2 + Math.random()*3; z.wa = Math.random()*6.283;
+          if (z.k === 1 && night){ var hp0 = tg[Math.floor(Math.random()*tg.length)]; if (hp0 && !hp0.safe) z.wa = Math.atan2(hp0.y - z.y, hp0.x - z.x) + (Math.random() - 0.5)*1.6; } }   /* at night the stalker drifts your way, but still has to find you */
         vx = Math.cos(z.wa); vy = Math.sin(z.wa); stepMove(z, (vx*zs*0.35 + z.kx)*dt, (vy*zs*0.35 + z.ky)*dt, A.r);
       } else {
         var gx0, gy0, pb = null;
@@ -2322,10 +2382,20 @@ function update(dt){
   if (P.hp <= 0) die();
 }
 var ICON = {food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, coat:6, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16};
+/* the eye: how close any alien is to spotting you */
+function awareHud(){
+  var e = el('aware'), best = 0, txt = '', col = '#e9dcc0', i;
+  if (net.role !== 'guest') for (i = 0; i < zombies.length; i++){ var z = zombies[i], dd = Math.hypot(z.x - P.x, z.y - P.y); if (dd > 70) continue;
+    if (z.st === 2 && !z.tp && z.lostT < 1.2){ best = 2; break; }
+    if ((z.st === 1 || z.st === 3) && Math.hypot((z.lx || 0) - P.x, (z.ly || 0) - P.y) < 18 && best < 1.5){ best = 1.5; txt = z.st === 3 ? 'Searching for you' : 'Heard something'; }
+    else if (z.aw > 0.12 && best < 1.5 && z.aw > best){ best = z.aw; txt = 'Being watched'; } }
+  if (best === 2){ txt = 'Spotted'; col = '#d9603a'; } else if (best === 1.5) col = '#d9a845';
+  e.classList.toggle('on', best > 0); if (best > 0){ e.querySelector('span').textContent = txt; e.style.setProperty('--a', Math.round(Math.min(1, best >= 1.5 ? 1 : best)*100) + '%'); e.style.setProperty('--c', col); }
+}
 function updateHud(){
   el('bTemp').style.width = (P.body + 100)/2 + '%'; el('bTemp').style.background = P.body < -55 ? '#5f8a9a' : P.body > 55 ? '#c67139' : '#7a8a5e';
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
-  el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
+  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
@@ -3336,7 +3406,7 @@ function netTick(dt){
   var k = Math.min(1, dt*12), list = otherPlayers();
   list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; var v = o.vh && world.vmap[o.vh]; if (v){ v.x = o.x; v.y = o.y; v.yaw = o.yaw; v.rd = time; } });
   net.t -= dt; if (net.t > 0) return;
-  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
+  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, mv:P.mv ? 1 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0}); return; }
   net.t = 0.1;
   var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0]];
   net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0]); });
@@ -3412,7 +3482,7 @@ function hostMsg(peer, data){
   if (m.t === 'join'){
     peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.look = cleanLook(m.look); peer.cop = !!m.cop; peer.ready = true; sendWho();
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
-  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
+  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; }
   else if (m.t === 'chat' || m.t === 'ping'){
     var cm = {t:m.t, n:peer.name, txt:txt(m.txt, 120), x:+m.x || 0, y:+m.y || 0, sx:peer.x, sy:peer.y, r:peer.rd ? 1 : 0, cop:peer.cop ? 1 : 0};
     if (peer.cop && m.t === 'chat'){ var pt = null; net.peers.forEach(function(q){ if (q.id === (m.pt | 0)) pt = q; }); if (!(pt ? pt.rd : radioOn())){ send(peer.dc, {t:'sys', txt:'Your partner has no radio, so only your map markers get through.'}); return; } }

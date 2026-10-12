@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.21) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.22) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -163,6 +163,16 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3g.2 On the Springfield map, walk to Park Central Square (the dashed green circle on the map, ringed with green-topped posts). The status line says Town square.
 - [ ] 3g.3 Lead aliens to the square and step inside. They stop at the ring of posts and wander off. They cannot hurt you from outside it.
 - [ ] 3g.4 On a map you downloaded yourself, check where the town square was placed. Report it if it is somewhere odd.
+
+## Stage 3h: sneaking past aliens
+
+- [ ] 3h.1 Start a new game and stand still for a minute. Aliens wander; none come straight for you unless one walks into view.
+- [ ] 3h.2 In daylight, stand in front of a swarmer about 15 m away. The pill under the clock says "Being watched" and fills; after about a second it says "Spotted" and the alien charges.
+- [ ] 3h.3 Walk up behind a swarmer: it hears you at about 7 m, says "Heard something", turns and looks. Crouched, you can get within 2-3 m.
+- [ ] 3h.4 At night without a light, you can stand about 12 m in front of one unseen. Turn your flashlight on and it spots you from much further.
+- [ ] 3h.5 Get chased, then duck behind a building. After about a second the pill says "Searching for you"; the alien goes to where it last saw you and poke around, then gives up.
+- [ ] 3h.6 Aliens behind a wall or a shut door cannot see you. An open door or window lets them.
+- [ ] 3h.7 Fire a gun: everything within about 45 m comes to look. Hit a swarmer: it and its group come for you.
 
 ## Stage 4: aliens and weather
 
