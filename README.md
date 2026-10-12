@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.34.2. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.35. Every step of the build order in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -38,6 +38,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | Hide in an emptied wardrobe or locker | E | Tap it; move or Search to come out |
 | Pry a locked door, smash it | Hold E, swing at it | Hold Search, Swing |
 | Shove emptied heavy furniture against the nearest door | B | Wall |
+| Draw a window's curtains, then board it up (2 wood) | B at the window (once, then again) | Wall |
 | Sleep, cook, fill a bottle | E at a bed, stove, sink, bath or toilet | Tap it |
 | Swing, shoot | Click or Space, right-click or F | Swing, Shoot |
 | Search, gather, open or shut a door or window, ride, trade | E | Tap it, or Search |
@@ -61,6 +62,7 @@ The visitor plays in the host's world, and what they carry when they leave is sa
 ## What is in the game
 
 - **World:** real streets and building outlines; every building can be entered. Rooms are laid out by what the building is (a home gets a living room, kitchen, bedrooms and bathroom; a church gets pews facing an altar), and what you find depends on the container. Doors and windows open, shut, break and can be boarded up; aliens batter their way in.
+- **Stealth:** aliens see through shut window glass (less well by day, not at all in the dark unless you carry a light). Draw the curtains (B at a window; in shops and offices it is a blind) to stop their eyes, and at night to hide your light: a flashlight indoors shows at every uncurtained window, and aliens outside within about 45 m come to look. Footsteps carry by what is underfoot: grass and carpet are quiet, leaf litter and snow a little louder, gravel tracks and railway ballast loud, and broken glass by a smashed window loudest. The giant feels the ground: it comes to look at a car engine from about 140 m and at someone sprinting from about 65 m.
 - **Doors and hiding:** inside doors open and shut and block an alien's view; about a third of outside doors are locked (keys, pry quietly, or smash loudly); empty wardrobes and lockers are hiding places.
 - **Hunted:** noise leaves "heat" where it was made (gunfire, engines, smashed doors, thrown stones, running). Enough heat in one spot brings a scout to look around: a pack of swarmers by day, a stalker by night. The full map shows hot areas in red. A stalker does not know where you are until it sees or hears you. From then on it hunts you for about four game hours, day or night, even if you travel far: it searches outward from where it last noticed you and checks hiding places where anyone was caught or seen going in. It lurks rather than charging: it creeps closer while you look elsewhere, slips out of sight when you turn towards it, and only rushes from about 6 m. The rush is very fast but lasts two or three seconds, and then it must get its breath back, so a sprint away can save you. Stalkers climb ladders to reach you on a roof, and drop off after you when you leave.
 - **Survival depth:** alien hits can make you bleed (a bandage or medkit stops it; stalkers smell blood). A wound left open may turn infected: fever and slow health loss until you take antibiotics. Giants and long falls can break a leg: you limp and cannot run or climb until a splint lets it heal (about ten minutes). Fresh food goes off about half an hour after you pick it up, and rotten food can give you food poisoning. Rivers, toilets and, after the first day, taps give unboiled water: boil it at a stove (1 wood) or beside a campfire. A Rest bar runs down over about an hour; tired, you recover stamina slowly, and exhausted, your eyes start closing. Made weapons wear out with use: repair them at a tool bench (1 scrap) or patch them with duct tape. Fibre makes bandages, and wood with fibre makes a splint.

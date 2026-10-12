@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.34.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.35. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -34,6 +34,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.34 | Springfield, MO becomes the whole 50-mile region from the Afterstreet map pack, built in and loading square by square as you travel (no internet needed on a drive; Save for offline on iPhone): about 45,000 typed buildings, all roads and water, real hills, and the pack's terrain types (pasture, oak-hickory and pine-oak woods, scrub, glades, wetlands, lawns) driving the ground and the trees, with woods grown as you approach |
 | 0.34.1 | Back to safe house button on the start page for when you are stuck; walking off a roof never drops you inside a building next door (you step onto its roof if it is about as high, otherwise you stop at the edge) |
 | 0.34.2 | The map pack's gaps filled in by its own rules: about 10,000 homes and shops along the streets of the 20 boxes the map server missed (mostly Ozark and east Nixa), and about 29,000 farmsteads (house, barn, shed, drive, and about 18,000 stock ponds) along county roads. All of it is marked as generated, so real map data can replace it later |
+| 0.35 | Stealth extras: aliens see through shut window glass; curtains and blinds (B at a window) stop their eyes and hide your light at night, and a lit window draws aliens from about 45 m; footsteps carry by ground (quiet on grass and carpet, loud on gravel, loudest on broken glass); the giant feels car engines from about 140 m and sprinting from about 65 m |
 
 ## Next versions
 
@@ -41,8 +42,7 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.35** | Fresh build, part 2: trees, bushes, grass and rocks from the KayKit Forest Nature Pack, fitted to the planting rules and terrain types (kinds of tree by where they grow: oak-hickory, shortleaf pine, sycamore and willow on creeks, cedar and Osage orange on fence lines, bushes and flowers by yards, wood edges and banks). The Stylized Nature MegaKit is removed. | [KayKit Forest Nature Pack](https://kaylousberg.itch.io/kaykit-forest) |
-| **0.36** | Stealth extras: curtains and covered windows so aliens do not see your light; louder footsteps on gravel and glass, quieter on grass; the giant feels sprinting and engines from far away. | None |
+| **0.36** | Fresh build, part 2: trees, bushes, grass and rocks from the KayKit Forest Nature Pack, fitted to the planting rules and terrain types (kinds of tree by where they grow: oak-hickory, shortleaf pine, sycamore and willow on creeks, cedar and Osage orange on fence lines, bushes and flowers by yards, wood edges and banks). The Stylized Nature MegaKit is removed. | [KayKit Forest Nature Pack](https://kaylousberg.itch.io/kaykit-forest) |
 | **0.37** | Power and water fail on a set day; generators and fuel to run them. | None |
 
 ## Feature backlog by area
@@ -56,7 +56,7 @@ Ticked items are in the game.
 - [x] Hills slow you going up
 - [x] Swimming drains stamina; wet clothes lower warmth
 - [ ] Vault low fences and props (needs props to be solid first)
-- [ ] Surface noise: louder on gravel and glass, quieter on grass
+- [x] Surface noise: louder on gravel and glass, quieter on grass
 - [ ] Carry weight slows you
 - [x] Fall damage
 
@@ -67,7 +67,7 @@ Ticked items are in the game.
 - [x] Interior doors that shut and break line of sight
 - [x] Hiding spots: wardrobes and lockers (under beds still to do)
 - [x] Locked doors with key, pry or smash
-- [ ] Curtains or covered windows so aliens do not see your light
+- [x] Curtains or covered windows so aliens do not see your light
 - [x] Furniture uses: sleep, cook, fill water, barricade a door
 - [x] Stairs and upper floors in homes; ladders to flat roofs
 - [x] Upper floors in shops, offices and flats; roof hatches
@@ -84,7 +84,7 @@ Ticked items are in the game.
 - [x] Stealth takedowns
 - [x] Noise draws aliens across a block; area "heat"
 - [x] Stalker that hunts and learns your hiding spots
-- [ ] Giant that feels sprinting and vehicles from far away
+- [x] Giant that feels sprinting and vehicles from far away
 
 ### Survival
 - [x] Injuries with different treatments (bleeding, infection, broken leg)
@@ -123,7 +123,7 @@ All of these are free. Quaternius and Kenney packs are CC0 (no credit required, 
 
 ### To download, in the order they are needed
 
-1. **KayKit Forest Nature Pack** (free, CC0) for 0.35: [kaylousberg.itch.io/kaykit-forest](https://kaylousberg.itch.io/kaykit-forest). Download the free version and attach the zip.
+1. **KayKit Forest Nature Pack** (free, CC0) for 0.36: [kaylousberg.itch.io/kaykit-forest](https://kaylousberg.itch.io/kaykit-forest). Download the free version and attach the zip.
 
 ### Still missing, no source chosen yet
 

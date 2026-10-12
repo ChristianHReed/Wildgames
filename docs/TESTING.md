@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.34.2) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.35) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -293,6 +293,13 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 
 - [ ] 3v.1 Downtown, climb a ladder to a roof and walk off the edge where the next building touches it. If the next roof is about as high you walk onto it; if not you stop at the edge. You never land inside a building.
 - [ ] 3v.2 Go somewhere far, press the menu button, then **Back to safe house** on the start page. The map you were on starts again with you at the safe house, carrying what you had.
+
+## Stage 3w: stealth extras
+
+- [ ] 3w.1 Stand inside a house by a shut window by day: an alien walking past outside can spot you through the glass. Press B at the window: the curtains close (a blind in shops and offices) and it can no longer see in. Press B again to board it up (2 wood); press E to open the curtains.
+- [ ] 3w.2 At night, turn your flashlight on indoors: aliens outside come towards the lit windows. Draw every curtain and they stop coming.
+- [ ] 3w.3 Walk on grass, a gravel track or a railway, and over the glass from a broken window: the steps sound different, and aliens notice you much further away on gravel and glass than on grass.
+- [ ] 3w.4 Drive a car near a giant (or sprint): it turns and comes to look from much further than other aliens.
 
 ## Stage 4: aliens and weather
 
