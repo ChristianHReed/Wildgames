@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.23) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.24) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield map is real OpenStreetMap data; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -182,6 +182,15 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3i.4 Gather stones from rocks, then press V (or tap Throw) to throw one past an alien. It walks to where the stone landed and looks around.
 - [ ] 3i.5 Crouch and creep up behind a stalker that has not noticed you, then swing. It drops in one blow ("Quiet takedown"). Standing, or from the front, it does not.
 - [ ] 3i.6 Watch the frame rate with many aliens chasing you around buildings on the phone.
+
+## Stage 3j: survivors as people
+
+- [ ] 3j.1 On the start page, change Body, Hair, Hair colour, shirt and trousers. The small figure updates to match.
+- [ ] 3j.2 Start a game and press P (or Menu, First or third person). You see your survivor from behind, in your colours. Walk, sprint, crouch, swing, throw a stone and search a shelf; each has its own movement.
+- [ ] 3j.3 Indoors the camera comes in closer and stays inside the room. Report walls or furniture that block the view badly.
+- [ ] 3j.4 Traders look like people now, each a little different.
+- [ ] 3j.5 With a friend: each of you sees the other as their chosen character, walking, running, crouching and swinging as they do.
+- [ ] 3j.6 On the phone, check the frame rate with a few players in view.
 
 ## Stage 4: aliens and weather
 

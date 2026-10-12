@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 11 October 2026, at version 0.23. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 11 October 2026, at version 0.24. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -16,6 +16,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.21 | Safe zones with a hard edge; Park Central Square is a safe zone |
 | 0.22 | Aliens see in a cone blocked by walls, hear by how you move, investigate, chase and search; the awareness pill on screen |
 | 0.23 | Aliens find their way around walls and through doorways; thrown stones draw them; quiet takedowns from behind |
+| 0.24 | Survivors are animated 3D people (your own character, other players, traders) coloured by each look; body, hair and hair colour choices; third-person view (P) |
 
 ## Next versions
 
@@ -23,13 +24,13 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.24** | Interior doors that open and shut. Hide in wardrobes and lockers. Locked outside doors: find a key, pry quietly and slowly, or smash loudly. | Kenney Furniture Kit (A3) |
-| **0.25** | Sound: footsteps by surface, doors, glass, gunfire, alien calls, ambient wind and rain. Aliens are heard before seen. | Kenney Impact Sounds, RPG Audio (A5, A6) |
-| **0.26** | Real animations for survivors and aliens: walk, run, crouch, attack, die. Other players drawn as people instead of markers. | Universal Animation Library, Ultimate Modular Men and Women (A1, A2) |
-| **0.27** | Furniture does something: sleep in beds, cook on stoves, wash at sinks, shove a dresser against a door. Real models replace the box furniture. | Kenney Furniture Kit (A3) |
-| **0.28** | Stairs and a second floor for homes, then flat roofs you can reach by ladder. Fall damage. | None at first |
-| **0.29** | Survival depth: injuries (bleeding, infection, broken leg), food that spoils, boiling water, sleep and tiredness, tool wear and repair. | None |
-| **0.30** | The stalker hunts: it roughly knows your area, checks hiding spots it has caught you in before. Noise builds "heat" in an area that brings a scout. | None |
+| **0.25** | Interior doors that open and shut. Hide in wardrobes and lockers. Locked outside doors: find a key, pry quietly and slowly, or smash loudly. | Kenney Furniture Kit (A3) |
+| **0.26** | Sound: footsteps by surface, doors, glass, gunfire, alien calls, ambient wind and rain. Aliens are heard before seen. | Kenney Impact Sounds, RPG Audio (A5, A6) |
+| **0.27** | Proper walk, run, crouch-walk and death for survivors (today's walk borrows legs from a carrying clip). | Universal Animation Library (A1) |
+| **0.28** | Furniture does something: sleep in beds, cook on stoves, wash at sinks, shove a dresser against a door. Real models replace the box furniture. | Kenney Furniture Kit (A3) |
+| **0.29** | Stairs and a second floor for homes, then flat roofs you can reach by ladder. Fall damage. | None at first |
+| **0.30** | Survival depth: injuries (bleeding, infection, broken leg), food that spoils, boiling water, sleep and tiredness, tool wear and repair. | None |
+| **0.31** | The stalker hunts: it roughly knows your area, checks hiding spots it has caught you in before. Noise builds "heat" in an area that brings a scout. | None |
 
 ## Feature backlog by area
 
@@ -100,6 +101,8 @@ All of these are free. Quaternius and Kenney packs are CC0 (no credit required, 
 | Downtown City MegaKit (Standard) | Building fronts | [quaternius.com](https://quaternius.com) |
 | Stylized Nature MegaKit (Standard) | Trees, bushes, flowers, rocks | [quaternius.com](https://quaternius.com) |
 | KayKit Furniture Bits | Beds, sofas, chairs, tables, cabinets, lamps | [GitHub](https://github.com/KayKit-Game-Assets/kaykit-furniture-bits-1.0) |
+| Universal Base Characters (Standard) | Survivor bodies and hairstyles | [quaternius.com](https://quaternius.com) |
+| Universal Animation Library 2 (Standard) | Survivor idle, attack, throw, search, chop, eat, hit, crouch | [itch.io](https://quaternius.itch.io/universal-animation-library-2) |
 | KayKit City Builder Bits | Cars, street lights, benches, hydrants, dumpsters | [GitHub](https://github.com/KayKit-Game-Assets/kaykit-city-builder-bits-1.0) |
 | OpenStreetMap and Terrarium elevation tiles | Streets, buildings, hills | Downloaded by the game |
 
@@ -107,12 +110,10 @@ All of these are free. Quaternius and Kenney packs are CC0 (no credit required, 
 
 | # | Pack | For version | Link | What to pick |
 | --- | --- | --- | --- | --- |
-| A1 | Universal Animation Library | 0.26 | [quaternius.com](https://quaternius.com/packs/universalanimationlibrary.html) · [itch.io](https://quaternius.itch.io/universal-animation-library) | The free Standard download. If asked for a format, choose **glTF / GLB**. |
-| A2 | Ultimate Modular Women, and the matching Ultimate Modular Men | 0.26 | [Women on quaternius.com](https://quaternius.com/packs/ultimatemodularwomen.html); Men is on the same site | "Just give me the download" (free). glTF if offered, otherwise FBX. |
-| A3 | Kenney Furniture Kit | 0.24, 0.27 | [kenney.nl](https://kenney.nl/assets/furniture-kit) | The one zip (140 files). |
-| A4 | Universal Animation Library 2 (optional) | 0.26 | [itch.io](https://quaternius.itch.io/universal-animation-library-2) | Standard, glTF. More animations on the same rig. |
-| A5 | Kenney Impact Sounds | 0.25 | [kenney.nl](https://kenney.nl/assets/impact-sounds) | The one zip (130 files): footsteps, hits, glass, wood. |
-| A6 | Kenney RPG Audio | 0.25 | [kenney.nl](https://kenney.nl/assets/rpg-audio) | The one zip (50 files): doors, cloth, metal, item sounds. |
+| A1 | Universal Animation Library (the first one) | 0.27 | [quaternius.com](https://quaternius.com/packs/universalanimationlibrary.html) · [itch.io](https://quaternius.itch.io/universal-animation-library) | The free Standard download. It has the walk, run, crouch and death clips the second library lacks; `tools/build_people.py` uses them automatically. |
+| A3 | Kenney Furniture Kit | 0.25, 0.28 | [kenney.nl](https://kenney.nl/assets/furniture-kit) | The one zip (140 files). |
+| A5 | Kenney Impact Sounds | 0.26 | [kenney.nl](https://kenney.nl/assets/impact-sounds) | The one zip (130 files): footsteps, hits, glass, wood. |
+| A6 | Kenney RPG Audio | 0.26 | [kenney.nl](https://kenney.nl/assets/rpg-audio) | The one zip (50 files): doors, cloth, metal, item sounds. |
 
 ### Still missing, no source chosen yet
 

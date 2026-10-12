@@ -4,7 +4,7 @@
   assets/icons.js, models.js, kit.js, nature.js, map.js      shared by every device
   assets/full/atlas.js, atlas2.js, creatures.js   for computers: 4096 px textures, more detailed creatures
   assets/lite/...                                 for phones and "Low" view distance
-Run after: build_art.py (twice: plain and "full"), build_models.py, build_kit.py (twice), build_creatures.py (twice), build_nature.py (twice)."""
+Run after: build_art.py (twice: plain and "full"), build_models.py, build_kit.py (twice), build_creatures.py (twice), build_nature.py (twice), build_people.py (twice)."""
 import base64, json, os
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); O = os.path.join(R, 'tools', 'out'); A = os.path.join(R, 'assets')
 def b64(p): return base64.b64encode(open(p, 'rb').read()).decode()
@@ -21,3 +21,4 @@ for s in ('full', 'lite'):
     put(s + '/atlas2.js', 'atlas2', b64(os.path.join(O, s, 'atlas2.jpg')))
     put(s + '/atlas3.js', 'atlas3', b64(os.path.join(O, s, 'atlas3.png')))
     put(s + '/creatures.js', 'creatures', open(os.path.join(O, s, 'creatures.txt')).read())
+    if os.path.exists(os.path.join(O, s, 'people.txt')): put(s + '/people.js', 'people', open(os.path.join(O, s, 'people.txt')).read())
