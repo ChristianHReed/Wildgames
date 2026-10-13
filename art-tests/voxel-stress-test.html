@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voxel Stress Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Same field-notebook panel as the other art tests: floats top-left on desktop, docks as a bottom sheet on phones. */
+:root{
+  --bg:#12161b; --panel:#1b2128; --panel-2:#232b33; --line:#33404b; --fg:#e8e3d8; --muted:#9aa6b0;
+  --accent:#f2a93b; --accent-ink:#1c1406; --good:#8fd18a; --bad:#ff8f8f;
+  --font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#panel{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:16px;width:360px;max-height:calc(100% - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#panel header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 14px 10px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.02em;text-transform:uppercase;line-height:1}
+h1 small{display:block;font-family:var(--font-mono);font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted);margin-top:4px}
+#fold{font:600 12px var(--font-body);color:var(--muted);background:none;border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer}
+#pbody{display:grid;gap:14px;padding:12px 14px 14px}
+h2{margin:0 0 6px;font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:500 12.5px var(--font-body);color:var(--fg);background:none;border:0;border-radius:5px;padding:7px 4px;cursor:pointer;white-space:nowrap}
+.seg button:hover{background:var(--panel-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg button:disabled{opacity:.45;cursor:default}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{margin:7px 0 0;color:var(--muted);font-size:12.5px;line-height:1.45}
+.note b{color:var(--fg);font-weight:600}
+.range{display:flex;align-items:center;gap:10px}
+.range input{flex:1;min-width:0;accent-color:var(--accent)}
+.range output{font:500 13px var(--font-mono);min-width:52px;text-align:right}
+.btn{font:600 13px var(--font-body);color:var(--fg);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.live{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0}
+.live div{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 7px;min-width:0}
+.live dt{font:600 10.5px var(--font-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.live dd{margin:2px 0 0;font:500 13px var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#bar{height:6px;border-radius:3px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin-top:8px}
+#bar i{display:block;height:100%;width:0;background:var(--accent)}
+table{width:100%;border-collapse:collapse;font:500 12px var(--font-mono);font-variant-numeric:tabular-nums}
+th,td{padding:4px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;font-family:var(--font-body);color:var(--muted);font-weight:500;white-space:normal}
+thead th{font:600 11px var(--font-display);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.good{color:var(--good)} td.bad{color:var(--bad)}
+#verdict{margin:8px 0 0;font-size:13px;line-height:1.5}
+#device{font:400 11px var(--font-mono);color:var(--muted);line-height:1.5;word-break:break-word}
+a{color:var(--accent)}
+.round{display:inline-block;margin-top:6px;font:600 12px var(--font-body);color:var(--accent);text-decoration:none}
+#move{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px}
+#move button{width:56px;height:56px;border-radius:50%;font:700 20px var(--font-body);color:var(--fg);background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--line);touch-action:none;cursor:pointer}
+#status{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font:600 18px var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 16px}
+#status.err{font:500 13px var(--font-body);letter-spacing:0;text-transform:none;max-width:min(420px,calc(100% - 32px));line-height:1.5}
+#toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:500 13px var(--font-body);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;opacity:0;transition:opacity .3s;pointer-events:none}
+@media (max-width:640px){
+  #panel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:52%;border-radius:12px 12px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+  #move{bottom:auto;top:calc(56px + env(safe-area-inset-top,0px));flex-direction:row}
+}
+#panel.folded #pbody{display:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="A real Springfield square in 3D. Drag to look around, tap a block building to knock a hole in it."></canvas>
+
+<aside id="panel">
+  <header>
+    <h1>Voxel stress test<small>Round 3 · a real Springfield square · 2,849 buildings</small><a class="round" href="voxel-test-street-2.html">← Round 2</a> · <a class="round" href="voxel-test-street.html">Round 1</a></h1>
+    <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
+  </header>
+  <div id="pbody">
+    <section>
+      <h2>1 · Where</h2>
+      <div class="seg" id="route" role="group" aria-label="Route">
+        <button type="button" data-v="downtown" aria-pressed="true">Downtown</button>
+        <button type="button" data-v="home" aria-pressed="false">By the safe house</button>
+      </div>
+      <p class="note">Downtown is the worst case: Park Central Square, tall and big buildings. The safe-house street is ordinary homes, where you spend most of the game.</p>
+    </section>
+    <section>
+      <h2>2 · How buildings are made</h2>
+      <div class="seg" id="mode" role="group" aria-label="Building style">
+        <button type="button" data-v="game" aria-pressed="true">Today's game</button>
+        <button type="button" data-v="near" aria-pressed="false">Blocks near you</button>
+        <button type="button" data-v="all" aria-pressed="false">All blocks</button>
+      </div>
+      <p class="note" id="modeNote"></p>
+      <div class="range" style="margin-top:8px"><label for="r1" class="note" style="margin:0">12.5 cm blocks within</label><input type="range" id="r1" min="8" max="60" step="1" value="20"><output id="r1Out" for="r1">20 m</output></div>
+      <p class="note" id="tierNote"></p>
+    </section>
+    <section>
+      <h2>3 · View distance (same as the game)</h2>
+      <div class="seg" id="qual" role="group" aria-label="View distance">
+        <button type="button" data-v="0" aria-pressed="true">Low (phones)</button>
+        <button type="button" data-v="1" aria-pressed="false">Medium</button>
+      </div>
+    </section>
+    <section>
+      <h2>4 · Run it</h2>
+      <div class="btns">
+        <button class="btn primary" id="bench" type="button">Run the benchmark</button>
+        <button class="btn" id="drive" type="button">Drive this route</button>
+        <button class="btn" id="stop" type="button" hidden>Stop</button>
+      </div>
+      <div id="bar"><i></i></div>
+      <p class="note" id="benchNote">The benchmark drives the route three times, once per building style, at 10 m/s (a slow car), then shows the results below. It takes about two minutes. Keep the screen on and the page in front.</p>
+    </section>
+    <dl class="live">
+      <div><dt>FPS</dt><dd id="sFps">–</dd></div>
+      <div><dt>Worst ms</dt><dd id="sWorst">–</dd></div>
+      <div><dt>Triangles</dt><dd id="sTris">–</dd></div>
+      <div><dt>Draws</dt><dd id="sCalls">–</dd></div>
+      <div><dt>Block MB</dt><dd id="sMem">–</dd></div>
+      <div><dt>GPU MB</dt><dd id="sGpu">–</dd></div>
+      <div><dt>Waiting</dt><dd id="sWait">–</dd></div>
+      <div><dt>Build ms</dt><dd id="sBuild">–</dd></div>
+    </dl>
+    <section id="results" hidden>
+      <h2>Results</h2>
+      <table id="resTable"></table>
+      <p id="verdict"></p>
+      <div class="btns" style="margin-top:8px"><button class="btn" id="copy" type="button">Copy results</button></div>
+    </section>
+    <section>
+      <h2>Compare with the real game</h2>
+      <p class="note">Open <a href="../play.html?fps=1" target="_blank" rel="noopener">the game with an FPS counter</a>, choose the same view distance, and walk the same street. The "Today's game" style here is a copy of the game's buildings, so it should land close to the real thing.</p>
+      <p class="note">Tap a block building to knock a hole in it and see how long rebuilding that piece takes. If the page reloads by itself on a phone, it ran out of memory. That is a result too: note which style and route it was.</p>
+      <p id="device"></p>
+    </section>
+  </div>
+</aside>
+
+<div id="move" aria-label="Move"><button id="fwd" type="button" aria-label="Move forward">▲</button><button id="back" type="button" aria-label="Move back">▼</button></div>
+<div id="status">Loading the Springfield square…</div>
+<div id="toast" role="status"></div>
+
+<script src="data/springfield-square.js"></script>
+<script>
+"use strict";
+function showErr(msg){ var s = document.getElementById('status'); if (!s) return; s.hidden = false; s.className = 'err'; s.textContent = 'The test stopped: ' + (msg || 'unknown error') + '. Reload the page to try again, and send Claude a screenshot of this message.'; }
+window.addEventListener('error', function(e){ showErr(e.message); });
+window.addEventListener('unhandledrejection', function(e){ showErr(e.reason && e.reason.message || String(e.reason)); });
+
+var $ = function(id){ return document.getElementById(id); };
+var SQ = window.SQUARE;
+/* the game's own view-distance settings (play.html QUAL): full buildings within "chunk" metres, plain boxes out to "far", fog density */
+var QUALS = [{chunk:150, far:400, fog:0.016}, {chunk:220, far:800, fog:0.011}];
+var S = {route:'downtown', mode:'game', r1:20, q:0, budgetMB:500};
+var U16 = 16;   /* positions are stored in 1/16 m units, so 12.5 cm blocks are 2 units */
+
+/* ================= WebGL: one shader, colours baked into the vertices, fog like the game ================= */
+var cv = $('c'), gl = cv.getContext('webgl', {antialias:false, powerPreference:'high-performance'});
+if (!gl) throw new Error('WebGL is not available on this device');
+var VS = 'attribute vec4 aP; attribute vec4 aC; uniform mat4 uM; uniform vec3 uO; uniform vec3 uEye; uniform float uFd; varying vec3 vC; varying float vF;' +
+  'void main(){ vec3 w = uO + aP.xyz*' + (1/U16).toFixed(6) + '; gl_Position = uM*vec4(w, 1.0); float d = length(w - uEye); vF = 1.0 - exp(-d*uFd); vC = aC.rgb; }';
+var FS = 'precision mediump float; uniform vec3 uFog; varying vec3 vC; varying float vF; void main(){ gl_FragColor = vec4(mix(vC, uFog, clamp(vF, 0.0, 1.0)), 1.0); }';
+function sh(t, s){ var o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; }
+var prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
+var aP = gl.getAttribLocation(prog, 'aP'), aC = gl.getAttribLocation(prog, 'aC'), uM = gl.getUniformLocation(prog, 'uM'), uO = gl.getUniformLocation(prog, 'uO'), uEye = gl.getUniformLocation(prog, 'uEye'), uFd = gl.getUniformLocation(prog, 'uFd'), uFog = gl.getUniformLocation(prog, 'uFog');
+gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enable(gl.DEPTH_TEST);
+var FOG = [0.83, 0.86, 0.88]; gl.clearColor(FOG[0], FOG[1], FOG[2], 1); gl.uniform3fv(uFog, FOG);
+var gpuBytes = 0, gpuPeak = 0;
+
+/* a mesh builder: Int16 positions (x, y, z, pad), RGBA colours, Uint16 indices; parts are cut at 65,000 vertices (WebGL1 limit) */
+var MB = {p:new Int16Array(65536*4), c:new Uint8Array(65536*4), i:new Uint16Array(65536*2), nv:0, ni:0, parts:null, o:null};
+function mbStart(o){ MB.nv = 0; MB.ni = 0; MB.parts = []; MB.o = o; }
+function mbFlush(){
+  if (!MB.ni) return; var vb = gl.createBuffer(), cb = gl.createBuffer(), ib = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, MB.p.subarray(0, MB.nv*4), gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, cb); gl.bufferData(gl.ARRAY_BUFFER, MB.c.subarray(0, MB.nv*4), gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, MB.i.subarray(0, MB.ni), gl.STATIC_DRAW);
+  var bytes = MB.nv*12 + MB.ni*2; gpuBytes += bytes; if (gpuBytes > gpuPeak) gpuPeak = gpuBytes;
+  MB.parts.push({vb:vb, cb:cb, ib:ib, n:MB.ni, bytes:bytes}); MB.nv = 0; MB.ni = 0;
+}
+function mbEnd(){ mbFlush(); var m = {parts:MB.parts, o:MB.o, tris:0}; m.parts.forEach(function(p){ m.tris += p.n/3; }); return m; }
+function freeMesh(m){ if (!m) return; m.parts.forEach(function(p){ gl.deleteBuffer(p.vb); gl.deleteBuffer(p.cb); gl.deleteBuffer(p.ib); gpuBytes -= p.bytes; }); m.parts = []; }
+/* one vertex, in metres relative to the mesh origin */
+function mv(x, y, z, r, g, b){ if (MB.nv >= 65532) mbFlush(); var k = MB.nv*4; MB.p[k] = Math.round(x*U16); MB.p[k+1] = Math.round(y*U16); MB.p[k+2] = Math.round(z*U16); MB.c[k] = r; MB.c[k+1] = g; MB.c[k+2] = b; MB.c[k+3] = 255; return MB.nv++; }
+/* a flat-lit quad or triangle in metres; light from the upper left like the game */
+var LX = -0.44, LY = 0.8, LZ = 0.4, LL = Math.hypot(LX, LY, LZ); LX /= LL; LY /= LL; LZ /= LL;
+function lit(ax, ay, az, bx, by, bz, cx, cy, cz, col){
+  var ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az, nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx, nl = Math.hypot(nx, ny, nz) || 1;
+  var d = Math.abs((nx*LX + ny*LY + nz*LZ)/nl), s = 0.62 + 0.38*d; if (ny/nl > 0.7) s = 1; return [col[0]*s | 0, col[1]*s | 0, col[2]*s | 0];
+}
+function quad(a, b, c, d, col){ if (MB.nv >= 65528) mbFlush(); var k = lit(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], col), i0 = mv(a[0], a[1], a[2], k[0], k[1], k[2]); mv(b[0], b[1], b[2], k[0], k[1], k[2]); mv(c[0], c[1], c[2], k[0], k[1], k[2]); mv(d[0], d[1], d[2], k[0], k[1], k[2]); MB.i.set([i0, i0+1, i0+2, i0, i0+2, i0+3], MB.ni); MB.ni += 6; }
+function tri(a, b, c, col){ if (MB.nv >= 65530) mbFlush(); var k = lit(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2], col), i0 = mv(a[0], a[1], a[2], k[0], k[1], k[2]); mv(b[0], b[1], b[2], k[0], k[1], k[2]); mv(c[0], c[1], c[2], k[0], k[1], k[2]); MB.i.set([i0, i0+1, i0+2], MB.ni); MB.ni += 3; }
+function hex(h){ h = (h || '#b9ad98').replace('#', ''); if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2]; var v = parseInt(h, 16); return [v >> 16 & 255, v >> 8 & 255, v & 255]; }
+
+/* ================= the square: buildings, roads, a grid of 100 m cells ================= */
+var B = [], CELL = 100, cells = {};
+function pip(p, x, y){ var ins = false; for (var i = 0, j = p.length - 2; i < p.length; j = i, i += 2){ var yi = p[i+1], yj = p[j+1]; if ((yi > y) !== (yj > y) && x < (p[j] - p[i])*(y - yi)/(yj - yi) + p[i]) ins = !ins; } return ins; }
+function prepBuildings(){
+  SQ.b.forEach(function(r, id){
+    var p = r.p.slice(); if (p.length > 4 && p[0] === p[p.length-2] && p[1] === p[p.length-1]) p.length -= 2; if (p.length < 6) return;
+    var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, A = 0; for (var i = 0; i < p.length; i += 2){ x0 = Math.min(x0, p[i]); x1 = Math.max(x1, p[i]); y0 = Math.min(y0, p[i+1]); y1 = Math.max(y1, p[i+1]); var j = (i + 2) % p.length; A += p[i]*p[j+1] - p[j]*p[i+1]; }
+    var h = Math.max(2.6, r.h || 3), L = Math.max(1, r.l || 1);
+    var b = {id:B.length, p:p, x0:x0, y0:y0, x1:x1, y1:y1, cx:(x0 + x1)/2, cy:(y0 + y1)/2, h:h, L:L, k:r.k || 'house', col:hex(r.c), ccw:A > 0, area:Math.abs(A)/2, pitched:(r.k === 'house' || r.k === 'garage') && h < 12, rep:null, lp:null, job:null, want:null};
+    b.rad = Math.hypot(x1 - x0, y1 - y0, h)/2; B.push(b);
+    var k = Math.floor(b.cx/CELL) + ',' + Math.floor(b.cy/CELL); (cells[k] = cells[k] || {k:k, x:(Math.floor(b.cx/CELL) + 0.5)*CELL, y:(Math.floor(b.cy/CELL) + 0.5)*CELL, b:[], far:null}).b.push(b);
+  });
+}
+/* ---- today's game: walls by storey with windows set into the wall, sills, a plinth, corner trims, a hip or flat roof (about 1,150 triangles a building in the game) ---- */
+var GLASS = [47, 69, 88], TRIM = [236, 232, 222], PLINTH = [138, 133, 126], ROOF = [86, 80, 77], FLAT = [118, 115, 108];
+function earcut(p){
+  var n = p.length/2, idx = [], out = [], i, guard = 0; for (i = 0; i < n; i++) idx.push(i);
+  var area = 0; for (i = 0; i < n; i++){ var j = (i + 1) % n; area += p[i*2]*p[j*2+1] - p[j*2]*p[i*2+1]; } var sg = area > 0 ? 1 : -1;
+  while (idx.length > 3 && guard++ < 5000){
+    var cut = false;
+    for (i = 0; i < idx.length; i++){
+      var a = idx[(i + idx.length - 1) % idx.length], b = idx[i], c = idx[(i + 1) % idx.length], ax = p[a*2], ay = p[a*2+1], bx = p[b*2], by = p[b*2+1], cx = p[c*2], cy = p[c*2+1];
+      if (((bx - ax)*(cy - ay) - (by - ay)*(cx - ax))*sg <= 0) continue;
+      var ok = true; for (var q = 0; q < idx.length && ok; q++){ var t = idx[q]; if (t === a || t === b || t === c) continue; var px = p[t*2], py = p[t*2+1];
+        var d1 = (px - bx)*(ay - by) - (ax - bx)*(py - by), d2 = (px - cx)*(by - cy) - (bx - cx)*(py - cy), d3 = (px - ax)*(cy - ay) - (cx - ax)*(py - ay); if ((d1*sg <= 0) && (d2*sg <= 0) && (d3*sg <= 0)) ok = false; }
+      if (!ok) continue; out.push(a, b, c); idx.splice(i, 1); cut = true; break;
+    }
+    if (!cut) break;
+  }
+  if (idx.length === 3) out.push(idx[0], idx[1], idx[2]); else for (i = 1; i + 1 < idx.length; i++) out.push(idx[0], idx[i], idx[i+1]);
+  return out;
+}
+function buildLP(b){
+  var o = [b.x0, 0, b.y0], p = b.p, n = p.length/2, lh = b.h/b.L, col = b.col, i;
+  mbStart(o);
+  var P = function(x, y, z){ return [x - o[0], y, z - o[2]]; };
+  for (i = 0; i < n; i++){
+    var ax = p[i*2], ay = p[i*2+1], bx = p[((i+1)%n)*2], by = p[((i+1)%n)*2+1], len = Math.hypot(bx - ax, by - ay); if (len < 0.05) continue;
+    var ux = (bx - ax)/len, uy = (by - ay)/len, nx = b.ccw ? uy : -uy, ny = b.ccw ? -ux : ux;   /* outward */
+    var at = function(t, y, off){ return P(ax + ux*t + nx*off, y, ay + uy*t + ny*off); };
+    quad(at(0, 0, 0.04), at(len, 0, 0.04), at(len, 0.42, 0.04), at(0, 0.42, 0.04), PLINTH); quad(at(0, 0.42, 0.04), at(len, 0.42, 0.04), at(len, 0.42, 0), at(0, 0.42, 0), PLINTH);
+    var nb = len >= 2.4 ? Math.floor(len/3) || 1 : 0, bw = nb ? len/nb : len;
+    for (var l = 0; l < b.L; l++){
+      var y0 = l*lh, y1 = (l + 1)*lh, wy0 = y0 + 0.9, wy1 = Math.min(y1 - 0.3, y0 + 2.2);
+      if (!nb || wy1 - wy0 < 0.6){ quad(at(0, y0, 0), at(len, y0, 0), at(len, y1, 0), at(0, y1, 0), col); continue; }
+      for (var k = 0; k < nb; k++){
+        var t0 = k*bw, t1 = t0 + bw, w0 = t0 + bw/2 - 0.55, w1 = t0 + bw/2 + 0.55, d = -0.16;
+        quad(at(t0, y0, 0), at(w0, y0, 0), at(w0, y1, 0), at(t0, y1, 0), col); quad(at(w1, y0, 0), at(t1, y0, 0), at(t1, y1, 0), at(w1, y1, 0), col);
+        quad(at(w0, y0, 0), at(w1, y0, 0), at(w1, wy0, 0), at(w0, wy0, 0), col); quad(at(w0, wy1, 0), at(w1, wy1, 0), at(w1, y1, 0), at(w0, y1, 0), col);
+        quad(at(w0, wy0, 0), at(w0, wy0, d), at(w0, wy1, d), at(w0, wy1, 0), col); quad(at(w1, wy0, d), at(w1, wy0, 0), at(w1, wy1, 0), at(w1, wy1, d), col);
+        quad(at(w0, wy1, 0), at(w1, wy1, 0), at(w1, wy1, d), at(w0, wy1, d), col); quad(at(w0, wy0, d), at(w1, wy0, d), at(w1, wy0, 0), at(w0, wy0, 0), col);
+        quad(at(w0, wy0, d), at(w1, wy0, d), at(w1, wy1, d), at(w0, wy1, d), GLASS);
+        quad(at(w0 - 0.08, wy0, 0.07), at(w1 + 0.08, wy0, 0.07), at(w1 + 0.08, wy0 - 0.06, 0.07), at(w0 - 0.08, wy0 - 0.06, 0.07), TRIM);
+        quad(at(w0 - 0.08, wy0, 0), at(w1 + 0.08, wy0, 0), at(w1 + 0.08, wy0, 0.07), at(w0 - 0.08, wy0, 0.07), TRIM);
+      }
+    }
+    quad(at(-0.06, 0, 0.06), at(0.1, 0, 0.06), at(0.1, b.h, 0.06), at(-0.06, b.h, 0.06), TRIM); quad(at(0.1, 0, 0.06), at(0.1, 0, 0), at(0.1, b.h, 0), at(0.1, b.h, 0.06), TRIM);
+    if (!b.pitched){ quad(at(0, b.h, 0), at(len, b.h, 0), at(len, b.h + 0.5, 0), at(0, b.h + 0.5, 0), col); quad(at(0, b.h + 0.5, 0.05), at(len, b.h + 0.5, 0.05), at(len, b.h + 0.5, -0.25), at(0, b.h + 0.5, -0.25), TRIM); }
+  }
+  var tr = earcut(p);
+  if (b.pitched){   /* a hip roof: every edge slopes up to a ridge point over the middle, with an eave ring */
+    var rx = 0, ry = 0; for (i = 0; i < n; i++){ rx += p[i*2]; ry += p[i*2+1]; } rx /= n; ry /= n; if (!pip(p, rx, ry)){ rx = p[tr[0]*2]*0.34 + p[tr[1]*2]*0.33 + p[tr[2]*2]*0.33; ry = p[tr[0]*2+1]*0.34 + p[tr[1]*2+1]*0.33 + p[tr[2]*2+1]*0.33; }
+    var rh = b.h + Math.min(b.x1 - b.x0, b.y1 - b.y0)*0.28;
+    for (i = 0; i < n; i++){ var j2 = (i + 1) % n; tri(P(p[i*2], b.h, p[i*2+1]), P(p[j2*2], b.h, p[j2*2+1]), P(rx, rh, ry), ROOF);
+      var ex = p[j2*2] - p[i*2], ey = p[j2*2+1] - p[i*2+1], el = Math.hypot(ex, ey) || 1, ox = (b.ccw ? ey : -ey)/el*0.45, oy = (b.ccw ? -ex : ex)/el*0.45;
+      quad(P(p[i*2], b.h, p[i*2+1]), P(p[j2*2], b.h, p[j2*2+1]), P(p[j2*2] + ox, b.h - 0.15, p[j2*2+1] + oy), P(p[i*2] + ox, b.h - 0.15, p[i*2+1] + oy), ROOF);
+      quad(P(p[i*2] + ox, b.h - 0.15, p[i*2+1] + oy), P(p[j2*2] + ox, b.h - 0.15, p[j2*2+1] + oy), P(p[j2*2] + ox, b.h - 0.35, p[j2*2+1] + oy), P(p[i*2] + ox, b.h - 0.35, p[i*2+1] + oy), TRIM); }
+  } else for (i = 0; i < tr.length; i += 3) tri(P(p[tr[i]*2], b.h + 0.02, p[tr[i]*2+1]), P(p[tr[i+1]*2], b.h + 0.02, p[tr[i+1]*2+1]), P(p[tr[i+2]*2], b.h + 0.02, p[tr[i+2]*2+1]), FLAT);
+  return mbEnd();
+}
+/* far buildings: plain boxes merged per 100 m cell, as the game does beyond full detail */
+function buildFar(c){
+  mbStart([c.x - CELL/2, 0, c.y - CELL/2]); var o = MB.o;
+  c.b.forEach(function(b){ var p = b.p, n = p.length/2; for (var i = 0; i < n; i++){ var j = (i + 1) % n; quad([p[i*2] - o[0], 0, p[i*2+1] - o[2]], [p[j*2] - o[0], 0, p[j*2+1] - o[2]], [p[j*2] - o[0], b.h, p[j*2+1] - o[2]], [p[i*2] - o[0], b.h, p[i*2+1] - o[2]], b.col); }
+    var tr = earcut(p); for (i = 0; i < tr.length; i += 3) tri([p[tr[i]*2] - o[0], b.h, p[tr[i]*2+1] - o[2]], [p[tr[i+1]*2] - o[0], b.h, p[tr[i+1]*2+1] - o[2]], [p[tr[i+2]*2] - o[0], b.h, p[tr[i+2]*2+1] - o[2]], b.pitched ? ROOF : FLAT); });
+  return mbEnd();
+}
+/* the ground and the roads, one mesh per 500 m */
+var ground = [];
+function buildGround(){
+  var bx = SQ.box, G0 = [127, 150, 98], RD = [92, 95, 100];
+  for (var gx = bx[0]; gx < bx[2]; gx += 500) for (var gy = bx[1]; gy < bx[3]; gy += 500){
+    mbStart([gx, 0, gy]); quad([0, 0, 0], [500, 0, 0], [500, 0, 500], [0, 0, 500], G0);
+    SQ.r.forEach(function(r){ var p = r.p, w = (r.w || 6)/2; for (var i = 0; i + 3 < p.length; i += 2){ var mx = (p[i] + p[i+2])/2, my = (p[i+1] + p[i+3])/2; if (mx < gx || mx >= gx + 500 || my < gy || my >= gy + 500) continue;
+      var dx = p[i+2] - p[i], dy = p[i+3] - p[i+1], l = Math.hypot(dx, dy) || 1, nx = -dy/l*w, ny = dx/l*w, ex = dx/l*w*0.5, ey = dy/l*w*0.5;
+      quad([p[i] - ex + nx - gx, 0.03, p[i+1] - ey + ny - gy], [p[i+2] + ex + nx - gx, 0.03, p[i+3] + ey + ny - gy], [p[i+2] + ex - nx - gx, 0.03, p[i+3] + ey - ny - gy], [p[i] - ex - nx - gx, 0.03, p[i+1] - ey - ny - gy], r.k === 'rail' ? [110, 96, 84] : RD); } });
+    var m = mbEnd(); m.c = [gx + 250, gy + 250]; m.rad = 360; ground.push(m);
+  }
+}
+
+/* ================= blocks: storage in 32-cube chunks, filled from the outline, meshed with hidden faces removed and corner shading ================= */
+var CH = 32, CH3 = CH*CH*CH, SEC = 2;   /* a mesh section is 2 x 2 x 2 chunks: 8 m at 12.5 cm blocks */
+var blockBytes = 0, blockPeak = 0, forced = 0;
+var PAL = [[0, 0, 0]], palIx = {};
+function pal(rgb, v){ var k = rgb.join(',') + ':' + v; var i = palIx[k]; if (i !== undefined) return i; if (PAL.length >= 256) return 1; var f = [1, 0.95, 1.05, 0.9][v]; PAL.push([Math.min(255, rgb[0]*f) | 0, Math.min(255, rgb[1]*f) | 0, Math.min(255, rgb[2]*f) | 0]); return palIx[k] = PAL.length - 1; }
+function newGrid(b, s){
+  var cm = s/U16, ox = b.x0 - cm*2, oz = b.y0 - cm*2, top = b.pitched ? b.h + Math.min(b.x1 - b.x0, b.y1 - b.y0)*0.3 + cm : b.h + 0.6;
+  var nx = Math.ceil((b.x1 - b.x0)/cm) + 4, nz = Math.ceil((b.y1 - b.y0)/cm) + 4, ny = Math.ceil(top/cm) + 2;
+  var g = {b:b, s:s, cm:cm, ox:ox, oz:oz, nx:nx, ny:ny, nz:nz, cx:Math.ceil(nx/CH), cy:Math.ceil(ny/CH), cz:Math.ceil(nz/CH), ch:null, meshes:[], col:0, sec:0, solid:0};
+  g.ch = new Array(g.cx*g.cy*g.cz); return g;
+}
+function gget(g, x, y, z){ if (x < 0 || y < 0 || z < 0 || x >= g.nx || y >= g.ny || z >= g.nz) return 0; var c = g.ch[((x >> 5)*g.cy + (y >> 5))*g.cz + (z >> 5)]; return c ? c.a[(x & 31) | ((y & 31) << 5) | ((z & 31) << 10)] : 0; }
+function gset(g, x, y, z, v){
+  var ci = ((x >> 5)*g.cy + (y >> 5))*g.cz + (z >> 5), c = g.ch[ci];
+  if (!c){ if (!v) return; c = g.ch[ci] = {a:new Uint8Array(CH3), rows:new Uint32Array(CH), n:0}; blockBytes += CH3 + 128; if (blockBytes > blockPeak) blockPeak = blockBytes; }
+  var i = (x & 31) | ((y & 31) << 5) | ((z & 31) << 10), was = c.a[i]; c.a[i] = v; if (v){ c.rows[y & 31] |= (1 << (z & 31)) >>> 0; if (!was){ c.n++; g.solid++; } } else if (was){ c.n--; g.solid--; }
+}
+function freeGrid(g){ if (!g) return; g.ch.forEach(function(c){ if (c) blockBytes -= CH3 + 128; }); g.ch = []; g.meshes.forEach(freeMesh); g.meshes = []; }
+/* the outline as edges, for the distance to the wall and the place along it */
+function edgesOf(b){ var p = b.p, n = p.length/2, E = []; for (var i = 0; i < n; i++){ var j = (i + 1) % n, dx = p[j*2] - p[i*2], dy = p[j*2+1] - p[i*2+1], l = Math.hypot(dx, dy); if (l > 0.01) E.push([p[i*2], p[i*2+1], dx/l, dy/l, l]); } return E; }
+/* fill some columns of the grid; returns true when the building is filled */
+function fillStep(g, until){
+  var b = g.b, cm = g.cm, E = b.E || (b.E = edgesOf(b)), lh = b.h/b.L, wallT = Math.max(0.25, cm*0.99), H = Math.round(b.h/cm), ROOFC = b.pitched ? ROOF : FLAT, FLOOR = [165, 130, 88];
+  if (!g.dmax){ g.dmax = Math.min(b.x1 - b.x0, b.y1 - b.y0)/2; }
+  var nxz = g.nx*g.nz;
+  while (g.col < nxz){
+    var i = g.col % g.nx, k = (g.col / g.nx) | 0; g.col++;
+    var x = g.ox + (i + 0.5)*cm, z = g.oz + (k + 0.5)*cm; if (x < b.x0 - 0.01 || x > b.x1 + 0.01 || z < b.y0 - 0.01 || z > b.y1 + 0.01 || !pip(b.p, x, z)) { if ((g.col & 255) === 0 && performance.now() > until) return false; continue; }
+    var d = 1e9, ei = 0, et = 0; for (var e = 0; e < E.length; e++){ var q = E[e], t = (x - q[0])*q[2] + (z - q[1])*q[3]; t = t < 0 ? 0 : t > q[4] ? q[4] : t; var dd = Math.hypot(q[0] + q[2]*t - x, q[1] + q[3]*t - z); if (dd < d){ d = dd; ei = e; et = t; } }
+    var y, v, h3 = ((i*73856093) ^ (k*83492791)) >>> 0;
+    if (d < wallT){
+      var el = E[ei][4], nb = el >= 2.4 ? Math.floor(el/3) || 1 : 0, bw = nb ? el/nb : el, inWin = false; if (nb){ var bt = et % bw; inWin = Math.abs(bt - bw/2) < 0.55; }
+      var top = b.pitched ? H : H + Math.round(0.5/cm);
+      for (y = 0; y < top; y++){
+        var yc = (y + 0.5)*cm, l = Math.min(b.L - 1, Math.floor(yc/lh)), ry = yc - l*lh;
+        if (inWin && ry > 0.9 && ry < Math.min(lh - 0.3, 2.2)) continue;   /* a window opening */
+        v = (h3 ^ (y*19349663)) & 3; gset(g, i, y, k, yc < 0.42 ? pal(PLINTH, v) : pal(b.col, v));
+      }
+    } else {
+      for (var l2 = 0; l2 < b.L; l2++) gset(g, i, Math.floor(l2*lh/cm), k, pal(FLOOR, (h3 ^ l2) & 3));
+      gset(g, i, H - 1, k, pal(b.pitched ? FLOOR : ROOFC, h3 & 3));
+    }
+    if (b.pitched){ var rs = b.h + Math.min(d, g.dmax)*0.55, y1 = Math.floor(rs/cm), y0 = Math.max(H, Math.floor((rs - cm*1.6)/cm)); for (y = y0; y <= y1; y++) gset(g, i, y, k, pal(ROOFC, (h3 ^ y) & 3)); }
+    if ((g.col & 255) === 0 && performance.now() > until) return false;
+  }
+  return true;
+}
+/* faces: normal, base offset, the two edge directions of the quad, and a shade like light from above */
+var FACES = [[1,0,0, 1,0,0, 0,1,0, 0,0,1, 0.8], [-1,0,0, 0,0,0, 0,0,1, 0,1,0, 0.72], [0,1,0, 0,1,0, 0,0,1, 1,0,0, 1.0], [0,-1,0, 0,0,0, 1,0,0, 0,0,1, 0.5], [0,0,1, 0,0,1, 1,0,0, 0,1,0, 0.88], [0,0,-1, 0,0,0, 0,1,0, 1,0,0, 0.66]];
+var AOF = [1, 0.84, 0.7, 0.56];
+function meshSection(g, sx, sy, sz){
+  var s = g.s; mbStart([g.ox, 0, g.oz]);
+  var x0 = sx*SEC*CH, y0 = sy*SEC*CH, z0 = sz*SEC*CH, any = false;
+  for (var cx = sx*SEC; cx < Math.min(g.cx, sx*SEC + SEC); cx++) for (var cy = sy*SEC; cy < Math.min(g.cy, sy*SEC + SEC); cy++) for (var cz = sz*SEC; cz < Math.min(g.cz, sz*SEC + SEC); cz++){
+    var c = g.ch[(cx*g.cy + cy)*g.cz + cz]; if (!c || !c.n) continue; any = true;
+    for (var ly = 0; ly < CH; ly++){ var rows = c.rows[ly]; if (!rows) continue;
+      for (var lz = 0; lz < CH; lz++){ if (!(rows & (1 << lz))) continue;
+        for (var lx = 0; lx < CH; lx++){
+          var v = c.a[lx | (ly << 5) | (lz << 10)]; if (!v) continue;
+          var X = cx*CH + lx, Y = cy*CH + ly, Z = cz*CH + lz, rgb = PAL[v];
+          for (var f = 0; f < 6; f++){
+            var F = FACES[f], nx = X + F[0], ny = Y + F[1], nz = Z + F[2];
+            if (gget(g, nx, ny, nz)) continue;
+            if (MB.nv >= 65530) mbFlush();
+            var bx = X + F[3], by = Y + F[4], bz = Z + F[5], i0 = MB.nv, ao = [0, 0, 0, 0];
+            for (var q = 0; q < 4; q++){
+              var u = q === 1 || q === 2 ? 1 : 0, w = q >= 2 ? 1 : 0, su = u ? 1 : -1, sw = w ? 1 : -1;
+              var s1 = gget(g, nx + F[6]*su, ny + F[7]*su, nz + F[8]*su) ? 1 : 0, s2 = gget(g, nx + F[9]*sw, ny + F[10]*sw, nz + F[11]*sw) ? 1 : 0;
+              var cc = gget(g, nx + F[6]*su + F[9]*sw, ny + F[7]*su + F[10]*sw, nz + F[8]*su + F[11]*sw) ? 1 : 0, a = s1 && s2 ? 3 : s1 + s2 + cc, m = F[12]*AOF[a]; ao[q] = a;
+              var k = MB.nv*4; MB.p[k] = (bx + F[6]*u + F[9]*w)*s; MB.p[k+1] = (by + F[7]*u + F[10]*w)*s; MB.p[k+2] = (bz + F[8]*u + F[11]*w)*s;
+              MB.c[k] = rgb[0]*m; MB.c[k+1] = rgb[1]*m; MB.c[k+2] = rgb[2]*m; MB.c[k+3] = 255; MB.nv++;
+            }
+            if (ao[0] + ao[2] > ao[1] + ao[3]) MB.i.set([i0 + 1, i0 + 2, i0 + 3, i0 + 1, i0 + 3, i0], MB.ni); else MB.i.set([i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3], MB.ni);
+            MB.ni += 6;
+          }
+        }
+      }
+    }
+  }
+  var m = mbEnd(); if (!any || !m.tris){ freeMesh(m); return null; }
+  var cm = g.cm, half = SEC*CH*cm/2; m.c = [g.ox + (x0 + SEC*CH/2)*cm, (y0 + SEC*CH/2)*cm, g.oz + (z0 + SEC*CH/2)*cm]; m.rad = half*1.75; m.key = sx + ',' + sy + ',' + sz; return m;
+}
+
+/* ================= what each building should be, and the work queue ================= */
+var queue = [], buildMsFrame = 0, buildMsTotal = 0, cam = {x:0, y:0, yaw:0, pitch:-0.04, h:1.7};
+function tierFor(b, d){
+  var r1 = S.r1;
+  if (S.mode === 'game') return 0;
+  if (S.mode === 'near'){ if (d < r1) return 2; if (d < r1*2) return 4; if (d < r1*4) return 8; return 0; }
+  if (d < r1) return 2; if (d < r1*2) return 4; return 8;
+}
+function distTo(b){ var dx = Math.max(b.x0 - cam.x, 0, cam.x - b.x1), dy = Math.max(b.y0 - cam.y, 0, cam.y - b.y1); return Math.hypot(dx, dy); }
+var nearCells = [], farCells = [];
+function updateWanted(){
+  var Q = QUALS[S.q]; nearCells = []; farCells = [];
+  for (var k in cells){ var c = cells[k], d = Math.hypot(c.x - cam.x, c.y - cam.y); if (d < Q.chunk + CELL*0.7) nearCells.push(c); else if (d < Q.far + CELL) farCells.push(c); else c.b.forEach(dropBuilding); }
+  farCells.forEach(function(c){ c.b.forEach(dropBuilding); });
+  nearCells.forEach(function(c){ c.b.forEach(function(b){
+    var d = distTo(b), t = tierFor(b, d), cur = b.rep ? b.rep.s : 0;
+    if (b.want !== undefined && b.want !== null && b.want !== 0 && (t || 16) > b.want && d < (b.want === 2 ? S.r1 : b.want === 4 ? S.r1*2 : S.mode === 'all' ? 1e9 : S.r1*4) + 3) t = b.want;   /* coarser only a few metres past the line */
+    b.want = t; b.d = d;
+    if (t === cur && !b.job) return;
+    if (b.job && b.job.s === t) return;
+    if (b.job){ freeGrid(b.job); b.job = null; }
+    if (t === cur) return;
+    if (t === 0){ freeGrid(b.rep); b.rep = null; return; }
+    var est = Math.ceil((b.x1 - b.x0)/(t/U16)/CH + 1)*Math.ceil((b.h*1.4)/(t/U16)/CH + 1)*Math.ceil((b.y1 - b.y0)/(t/U16)/CH + 1)*(CH3 + 128)*0.6;
+    while (t && blockBytes + est > S.budgetMB*1048576){ t = t >= 8 ? 0 : t*2; est /= 8; forced++; }
+    if (t === cur) return; if (t === 0){ freeGrid(b.rep); b.rep = null; return; }
+    b.job = newGrid(b, t); b.job.stage = 0; queue.push(b);
+  }); });
+  queue = queue.filter(function(b){ return b.job; }); queue.sort(function(a, c){ return a.d - c.d; });
+}
+function dropBuilding(b){ if (b.rep){ freeGrid(b.rep); b.rep = null; } if (b.job){ freeGrid(b.job); b.job = null; } b.want = null; }
+function work(budgetMs){
+  var t0 = performance.now(), until = t0 + budgetMs;
+  while (queue.length && performance.now() < until){
+    var b = queue[0], g = b.job; if (!g){ queue.shift(); continue; }
+    if (g.stage === 0){ if (fillStep(g, until)){ g.stage = 1; g.secs = []; for (var sx = 0; sx < Math.ceil(g.cx/SEC); sx++) for (var sy = 0; sy < Math.ceil(g.cy/SEC); sy++) for (var sz = 0; sz < Math.ceil(g.cz/SEC); sz++) g.secs.push([sx, sy, sz]); } continue; }
+    if (g.sec < g.secs.length){ var q = g.secs[g.sec++], m = meshSection(g, q[0], q[1], q[2]); if (m) g.meshes.push(m); continue; }
+    if (b.rep) freeGrid(b.rep); b.rep = g; b.job = null; queue.shift();
+  }
+  buildMsFrame = performance.now() - t0; buildMsTotal += buildMsFrame;
+}
+/* knock a hole: a sphere of blocks removed, then only the touched sections are meshed again */
+function breakAt(px, py){
+  var r = ray(px, py), best = null, bt = 60;
+  nearCells.forEach(function(c){ c.b.forEach(function(b){ if (!b.rep) return; var g = b.rep; for (var t = 0.5; t < bt; t += g.cm*0.7){ var x = cam.x + r[0]*t, y = cam.h + r[1]*t, z = cam.y + r[2]*t; if (y < 0) break; var i = Math.floor((x - g.ox)/g.cm), j = Math.floor(y/g.cm), k = Math.floor((z - g.oz)/g.cm); if (gget(g, i, j, k)){ bt = t; best = [b, i, j, k]; break; } } }); });
+  if (!best){ toast('Tap a block building (in the block styles) to knock a hole in it'); return; }
+  var g = best[0].rep, R = Math.max(1, Math.round(0.7/g.cm)), touched = {}, t0 = performance.now(), n = 0;
+  for (var x = best[1] - R; x <= best[1] + R; x++) for (var y = best[2] - R; y <= best[2] + R; y++) for (var z = best[3] - R; z <= best[3] + R; z++){
+    if ((x - best[1])*(x - best[1]) + (y - best[2])*(y - best[2]) + (z - best[3])*(z - best[3]) > R*R || !gget(g, x, y, z)) continue; gset(g, x, y, z, 0); n++;
+    for (var dx = -1; dx <= 1; dx += 2) touched[Math.floor((x + dx)/(SEC*CH)) + ',' + Math.floor(y/(SEC*CH)) + ',' + Math.floor(z/(SEC*CH))] = 1;
+    touched[Math.floor(x/(SEC*CH)) + ',' + Math.floor((y + 1)/(SEC*CH)) + ',' + Math.floor(z/(SEC*CH))] = 1; touched[Math.floor(x/(SEC*CH)) + ',' + Math.floor(y/(SEC*CH)) + ',' + Math.floor((z + 1)/(SEC*CH))] = 1;
+    touched[Math.floor(x/(SEC*CH)) + ',' + Math.floor(Math.max(0, y - 1)/(SEC*CH)) + ',' + Math.floor(Math.max(0, z - 1)/(SEC*CH))] = 1;
+  }
+  var keys = Object.keys(touched).filter(function(k){ var q = k.split(',').map(Number); return q[0] >= 0 && q[1] >= 0 && q[2] >= 0 && q[0]*SEC < g.cx && q[1]*SEC < g.cy && q[2]*SEC < g.cz; });
+  keys.forEach(function(k){ var q = k.split(',').map(Number); g.meshes = g.meshes.filter(function(m){ if (m.key === k){ freeMesh(m); return false; } return true; }); var m = meshSection(g, q[0], q[1], q[2]); if (m) g.meshes.push(m); });
+  toast(n + ' blocks knocked out · ' + keys.length + ' section' + (keys.length > 1 ? 's' : '') + ' rebuilt in ' + (performance.now() - t0).toFixed(0) + ' ms');
+}
+
+/* ================= camera and drawing ================= */
+var W = 1, H = 1, VP = new Float32Array(16), planes = [];
+function resize(){ W = cv.width = Math.max(1, Math.round(innerWidth)); H = cv.height = Math.max(1, Math.round(innerHeight)); gl.viewport(0, 0, W, H); }   /* 1 pixel per CSS pixel, like the game */
+addEventListener('resize', resize);
+function mat(){
+  var f = 1/Math.tan(70*Math.PI/360), a = W/H, n = 0.1, fr = 2000, P = [f/a,0,0,0, 0,f,0,0, 0,0,(fr+n)/(n-fr),-1, 0,0,2*fr*n/(n-fr),0];
+  var cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), fx = cy*cp, fy = sp, fz = sy*cp;
+  var rx = -fz, rz = fx, rl = Math.hypot(rx, rz); rx /= rl; rz /= rl; var ux = -rz*fy, uy = rz*fx - rx*fz, uz = rx*fy;
+  var ex = cam.x, ey = cam.h, ez = cam.y, V = [rx, ux, -fx, 0, 0, uy, -fy, 0, rz, uz, -fz, 0, -(rx*ex + rz*ez), -(ux*ex + uy*ey + uz*ez), fx*ex + fy*ey + fz*ez, 1];
+  for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++){ var s = 0; for (var k = 0; k < 4; k++) s += P[k*4 + j]*V[i*4 + k]; VP[i*4 + j] = s; }
+  var m = VP; planes = [[m[3]+m[0], m[7]+m[4], m[11]+m[8], m[15]+m[12]], [m[3]-m[0], m[7]-m[4], m[11]-m[8], m[15]-m[12]], [m[3]+m[1], m[7]+m[5], m[11]+m[9], m[15]+m[13]], [m[3]-m[1], m[7]-m[5], m[11]-m[9], m[15]-m[13]], [m[3]+m[2], m[7]+m[6], m[11]+m[10], m[15]+m[14]]];
+  planes.forEach(function(p){ var l = Math.hypot(p[0], p[1], p[2]); p[0] /= l; p[1] /= l; p[2] /= l; p[3] /= l; });
+}
+function vis(x, y, z, r){ for (var i = 0; i < planes.length; i++){ var p = planes[i]; if (p[0]*x + p[1]*y + p[2]*z + p[3] < -r) return false; } return true; }
+function ray(px, py){
+  var nx = px/W*2 - 1, ny = 1 - py/H*2, f = Math.tan(70*Math.PI/360), a = W/H, cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  var fx = cy*cp, fy = sp, fz = sy*cp, rx = -sy, rz = cy, ux = -rz*fy, uy = rz*fx - rx*fz, uz = rx*fy;
+  var dx = fx + rx*nx*f*a + ux*ny*f, dy = fy + uy*ny*f, dz = fz + rz*nx*f*a + uz*ny*f, l = Math.hypot(dx, dy, dz); return [dx/l, dy/l, dz/l];
+}
+var drawn = {tris:0, calls:0};
+function drawMesh(m){ gl.uniform3f(uO, m.o[0], m.o[1], m.o[2]); m.parts.forEach(function(p){ gl.bindBuffer(gl.ARRAY_BUFFER, p.vb); gl.vertexAttribPointer(aP, 4, gl.SHORT, false, 8, 0); gl.bindBuffer(gl.ARRAY_BUFFER, p.cb); gl.vertexAttribPointer(aC, 4, gl.UNSIGNED_BYTE, true, 4, 0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, p.ib); gl.drawElements(gl.TRIANGLES, p.n, gl.UNSIGNED_SHORT, 0); drawn.tris += p.n/3; drawn.calls++; }); }
+function render(){
+  mat(); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); gl.uniformMatrix4fv(uM, false, VP); gl.uniform3f(uEye, cam.x, cam.h, cam.y); gl.uniform1f(uFd, QUALS[S.q].fog);
+  drawn.tris = 0; drawn.calls = 0;
+  ground.forEach(function(m){ if (Math.hypot(m.c[0] - cam.x, m.c[1] - cam.y) < QUALS[S.q].far + 400 && vis(m.c[0], 0, m.c[1], m.rad)) drawMesh(m); });
+  farCells.forEach(function(c){ if (!vis(c.x, 10, c.y, CELL)) return; if (!c.far) c.far = buildFar(c); drawMesh(c.far); });
+  nearCells.forEach(function(c){ c.b.forEach(function(b){
+    if (!vis(b.cx, b.h/2, b.cy, b.rad)) return;
+    if (b.rep && b.rep.meshes.length){ b.rep.meshes.forEach(function(m){ if (vis(m.c[0], m.c[1], m.c[2], m.rad)) drawMesh(m); }); return; }
+    if (!b.lp) b.lp = buildLP(b); drawMesh(b.lp);
+  }); });
+}
+
+/* ================= driving the route, free look, input ================= */
+var route = null, routeLen = 0, driveT = -1, SPEED = 10;
+function setRoute(){
+  var p = SQ.routes[S.route]; route = []; routeLen = 0;
+  for (var i = 0; i < p.length; i += 2){ if (i) routeLen += Math.hypot(p[i] - p[i-2], p[i+1] - p[i-1]); route.push([p[i], p[i+1], routeLen]); }
+}
+function routeAt(s){ s = Math.max(0, Math.min(routeLen, s)); for (var i = 1; i < route.length; i++) if (route[i][2] >= s || i === route.length - 1){ var a = route[i-1], b = route[i], t = (s - a[2])/Math.max(0.001, b[2] - a[2]); return [a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t]; } return [route[0][0], route[0][1]]; }
+function placeAtStart(){ var a = routeAt(0), b = routeAt(15); cam.x = a[0]; cam.y = a[1]; cam.yaw = Math.atan2(b[1] - a[1], b[0] - a[0]); cam.pitch = -0.04; }
+function driveStep(dt){
+  var s = driveT*SPEED, a = routeAt(s), b = routeAt(s + 18); cam.x = a[0]; cam.y = a[1];
+  var ty = Math.atan2(b[1] - a[1], b[0] - a[0]), dy = Math.atan2(Math.sin(ty - cam.yaw), Math.cos(ty - cam.yaw)); cam.yaw += dy*Math.min(1, dt*3); cam.pitch = -0.04;
+  return s >= routeLen;
+}
+var keys = {}, moveDir = 0, drag = null;
+addEventListener('keydown', function(e){ keys[e.code] = true; }); addEventListener('keyup', function(e){ keys[e.code] = false; });
+cv.addEventListener('pointerdown', function(e){ cv.setPointerCapture(e.pointerId); drag = {x:e.clientX, y:e.clientY, sx:e.clientX, sy:e.clientY, t:performance.now()}; });
+cv.addEventListener('pointermove', function(e){ if (!drag) return; if (driveT < 0){ cam.yaw += (e.clientX - drag.x)*0.005; cam.pitch = Math.max(-1.2, Math.min(1.2, cam.pitch - (e.clientY - drag.y)*0.005)); } drag.x = e.clientX; drag.y = e.clientY; });
+cv.addEventListener('pointerup', function(e){ if (drag && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6 && performance.now() - drag.t < 400) breakAt(e.clientX, e.clientY); drag = null; });
+[['fwd', 1], ['back', -1]].forEach(function(q){ var bt = $(q[0]); bt.addEventListener('pointerdown', function(e){ e.preventDefault(); moveDir = q[1]; }); ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(n){ bt.addEventListener(n, function(){ moveDir = 0; }); }); });
+function freeMove(dt){
+  var f = moveDir + (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), st = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0);
+  if (keys.ArrowLeft) cam.yaw -= dt*1.6; if (keys.ArrowRight) cam.yaw += dt*1.6;
+  var sp = (keys.ShiftLeft ? 20 : 8)*dt; cam.x += (Math.cos(cam.yaw)*f - Math.sin(cam.yaw)*st)*sp; cam.y += (Math.sin(cam.yaw)*f + Math.cos(cam.yaw)*st)*sp;
+}
+
+/* ================= measuring ================= */
+var frames = [], live = {t:0, n:0, worst:0}, lastT = 0, wantT = 0, rec = null;
+function startRec(){ rec = {ft:[], tris:0, trisMax:0, calls:0, callsMax:0, n:0, waitMax:0, ready:-1, t0:performance.now(), build0:buildMsTotal}; blockPeak = blockBytes; gpuPeak = gpuBytes; forced = 0; }
+function stopRec(){
+  var r = rec; rec = null; if (!r || !r.ft.length) return null;
+  var ft = r.ft.slice().sort(function(a, b){ return a - b; }), sum = r.ft.reduce(function(a, b){ return a + b; }, 0);
+  var p99 = ft[Math.min(ft.length - 1, Math.floor(ft.length*0.99))];
+  return {fps:r.ft.length/(sum/1000), low:1000/p99, worst:ft[ft.length - 1], hitch:r.ft.filter(function(x){ return x > 50; }).length, tris:r.tris/r.n, trisMax:r.trisMax, calls:r.calls/r.n, callsMax:r.callsMax,
+    mem:blockPeak/1048576, gpu:gpuPeak/1048576, build:(buildMsTotal - r.build0)/1000, wait:r.waitMax, ready:r.ready, forced:forced, secs:sum/1000};
+}
+
+/* ================= the benchmark: the same drive in each style ================= */
+var bench = null, results = {};
+var MODES = [['game', "Today's game"], ['near', 'Blocks near you'], ['all', 'All blocks']];
+function resetWorld(){ queue = []; B.forEach(function(b){ dropBuilding(b); b.want = null; }); }
+function startDrive(isBench){ resetWorld(); setRoute(); placeAtStart(); driveT = 0; updateWanted(); startRec(); wantT = 0; $('stop').hidden = false; $('drive').disabled = true; $('bench').disabled = true; setButtons(true); }
+function endDrive(){ var r = stopRec(); driveT = -1; $('stop').hidden = true; $('drive').disabled = false; $('bench').disabled = false; setButtons(false); $('bar').firstChild.style.width = '0%'; return r; }
+function runBench(){ bench = {i:0, route:S.route, q:S.q, r1:S.r1}; results = {}; S.mode = MODES[0][0]; syncSeg('mode', S.mode); modeNote(); startDrive(true); }
+function benchNext(r){
+  results[MODES[bench.i][0]] = r; bench.i++;
+  if (bench.i < MODES.length){ S.mode = MODES[bench.i][0]; syncSeg('mode', S.mode); modeNote(); startDrive(true); return; }
+  var b = bench; bench = null; showResults(b);
+}
+function f0(v){ return v >= 100 ? Math.round(v).toLocaleString() : v >= 10 ? v.toFixed(0) : v.toFixed(1); }
+function showResults(b){
+  var g = results.game, rows = [
+    ['Average FPS', 'fps', 1], ['Worst 1% FPS', 'low', 1], ['Longest frame (ms)', 'worst', -1], ['Pauses over 50 ms', 'hitch', -1], ['Triangles (average)', 'tris', -1], ['Draw calls (average)', 'calls', -1],
+    ['Block memory peak (MB)', 'mem', -1], ['Graphics memory peak (MB)', 'gpu', -1], ['Building work (s)', 'build', -1], ['Buildings waiting (most)', 'wait', -1], ['Forced to coarser blocks', 'forced', -1]];
+  var h = '<thead><tr><th>' + (b.route === 'downtown' ? 'Downtown' : 'Safe house') + ', ' + (b.q ? 'Medium' : 'Low') + '</th><th>Today</th><th>Near</th><th>All</th></tr></thead><tbody>';
+  rows.forEach(function(r){ h += '<tr><td>' + r[0] + '</td>'; MODES.forEach(function(m){ var v = results[m[0]] ? results[m[0]][r[1]] : null, cls = '';
+    if (v !== null && m[0] !== 'game' && g){ var gv = g[r[1]]; if (r[2] > 0) cls = v < gv*0.8 ? 'bad' : v >= gv*0.95 ? 'good' : ''; else cls = v > Math.max(gv*1.5, gv + 1) ? 'bad' : ''; }
+    h += '<td class="' + cls + '">' + (v === null ? '–' : f0(v)) + '</td>'; }); h += '</tr>'; });
+  $('resTable').innerHTML = h + '</tbody>'; $('results').hidden = false;
+  var n = results.near, a = results.all, pct = function(x){ return Math.round(x.fps/g.fps*100) + '%'; };
+  var v = 'On this device, blocks near you ran at <b>' + pct(n) + '</b> of today\'s frame rate and all blocks at <b>' + pct(a) + '</b>. ';
+  v += n.low < 30 ? 'The worst moments with blocks near you dropped to ' + f0(n.low) + ' FPS, which you would feel. ' : 'With blocks near you the worst moments stayed at ' + f0(n.low) + ' FPS. ';
+  v += n.hitch > 3 ? 'There were ' + n.hitch + ' pauses over 50 ms while blocks were being built. ' : '';
+  v += 'Block memory peaked at ' + f0(n.mem) + ' MB near you and ' + f0(a.mem) + ' MB for all blocks.';
+  $('verdict').innerHTML = v;
+  b.text = 'Afterstreet voxel stress test, ' + (b.route === 'downtown' ? 'downtown' : 'by the safe house') + ', view ' + (b.q ? 'Medium' : 'Low') + ', 12.5 cm blocks within ' + b.r1 + ' m\n' + deviceText() + '\n' +
+    rows.map(function(r){ return r[0] + ': ' + MODES.map(function(m){ return m[1] + ' ' + (results[m[0]] ? f0(results[m[0]][r[1]]) : '-'); }).join(' | '); }).join('\n');
+  lastText = b.text; toast('Benchmark finished. Results are in the panel.');
+}
+var lastText = '';
+$('copy').addEventListener('click', function(){ var t = lastText; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function(){ toast('Copied. Paste it into the chat.'); }, fallback); else fallback(); function fallback(){ var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('Copied. Paste it into the chat.'); } catch (e){} ta.remove(); } });
+
+/* ================= the main loop ================= */
+function frame(now){
+  requestAnimationFrame(frame);
+  var dtMs = lastT ? now - lastT : 16.7; lastT = now; var dt = Math.min(0.1, dtMs/1000);
+  if (driveT >= 0){ driveT += dt; var done = driveStep(dt); $('bar').firstChild.style.width = Math.min(100, driveT*SPEED/routeLen*100) + '%';
+    if (done){ var r = endDrive(); if (bench) benchNext(r); else if (r) { results = {}; results[S.mode] = r; toast('Drive: ' + f0(r.fps) + ' FPS average, worst 1% ' + f0(r.low) + ' FPS, ' + r.hitch + ' pauses'); } } }
+  else freeMove(dt);
+  wantT -= dt; if (wantT <= 0){ wantT = 0.25; updateWanted(); }
+  work(6);
+  render();
+  if (rec){ rec.ft.push(dtMs); rec.tris += drawn.tris; rec.calls += drawn.calls; rec.n++; rec.trisMax = Math.max(rec.trisMax, drawn.tris); rec.callsMax = Math.max(rec.callsMax, drawn.calls); rec.waitMax = Math.max(rec.waitMax, queue.length); if (rec.ready < 0 && !queue.length) rec.ready = (now - rec.t0)/1000; }
+  live.n++; live.t += dtMs; live.worst = Math.max(live.worst, dtMs);
+  if (live.t > 600){ $('sFps').textContent = (live.n/(live.t/1000)).toFixed(0); $('sWorst').textContent = live.worst.toFixed(0); $('sTris').textContent = Math.round(drawn.tris).toLocaleString(); $('sCalls').textContent = drawn.calls;
+    $('sMem').textContent = (blockBytes/1048576).toFixed(0); $('sGpu').textContent = (gpuBytes/1048576).toFixed(0); $('sWait').textContent = queue.length; $('sBuild').textContent = buildMsFrame.toFixed(1); live = {t:0, n:0, worst:0}; }
+}
+
+/* ================= panel ================= */
+function syncSeg(id, v){ Array.prototype.forEach.call($(id).querySelectorAll('button'), function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === String(v))); }); }
+function setButtons(busy){ ['route', 'mode', 'qual'].forEach(function(id){ Array.prototype.forEach.call($(id).querySelectorAll('button'), function(b){ b.disabled = busy && !!bench; }); }); $('r1').disabled = busy && !!bench; }
+function modeNote(){
+  var r = S.r1;
+  $('modeNote').innerHTML = S.mode === 'game' ? 'Every building is a light model like the game\'s today: walls by storey, windows set into the wall, sills, a plinth, corner trims and a roof.'
+    : S.mode === 'near' ? 'Real breakable blocks only close to you: <b>12.5 cm</b> within ' + r + ' m, <b>25 cm</b> to ' + r*2 + ' m, <b>50 cm</b> to ' + r*4 + ' m, and today\'s light model beyond.'
+    : 'Every building in full view is blocks: <b>12.5 cm</b> within ' + r + ' m, <b>25 cm</b> to ' + r*2 + ' m, and <b>50 cm</b> beyond. Plain boxes further out, as in the game.';
+  $('tierNote').textContent = S.mode === 'game' ? 'The block distance only matters in the two block styles.' : 'Blocks are built a little at a time (6 ms a frame), nearest first; until a building is ready you see its light model.';
+}
+function seg(id, key, conv, after){ $(id).addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b || b.disabled) return; S[key] = conv(b.dataset.v); syncSeg(id, S[key]); if (after) after(); }); }
+seg('route', 'route', String, function(){ if (driveT >= 0) endDrive(); resetWorld(); setRoute(); placeAtStart(); });
+seg('mode', 'mode', String, function(){ B.forEach(function(b){ b.want = null; }); modeNote(); wantT = 0; });
+seg('qual', 'q', Number, function(){ wantT = 0; });
+$('r1').addEventListener('input', function(){ S.r1 = +this.value; $('r1Out').textContent = S.r1 + ' m'; modeNote(); wantT = 0; });
+$('bench').addEventListener('click', runBench);
+$('drive').addEventListener('click', function(){ bench = null; startDrive(false); });
+$('stop').addEventListener('click', function(){ bench = null; endDrive(); toast('Stopped'); });
+$('fold').addEventListener('click', function(){ var p = $('panel'), f = p.classList.toggle('folded'); this.textContent = f ? 'Show' : 'Hide'; this.setAttribute('aria-expanded', String(!f)); });
+var toastT = 0; function toast(t){ var el = $('toast'); el.textContent = t; el.style.opacity = 1; clearTimeout(toastT); toastT = setTimeout(function(){ el.style.opacity = 0; }, 3500); }
+function deviceText(){
+  var ext = gl.getExtension('WEBGL_debug_renderer_info'), gpu = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+  return 'Device: ' + gpu + ' · screen ' + W + '×' + H + ' · ' + (navigator.userAgent.match(/(iPhone|iPad|Android|Macintosh|Windows|CrOS|Linux)/) || ['?'])[0] + (navigator.hardwareConcurrency ? ' · ' + navigator.hardwareConcurrency + ' cores' : '') + (navigator.deviceMemory ? ' · ' + navigator.deviceMemory + ' GB' : '');
+}
+
+/* ================= start ================= */
+(function start(){
+  if (!SQ) throw new Error('the map data (data/springfield-square.js) did not load');
+  if (/Mobi|iPhone|iPad|Android/.test(navigator.userAgent)) S.budgetMB = 400;
+  resize(); prepBuildings(); buildGround(); setRoute(); placeAtStart(); modeNote(); updateWanted();
+  $('device').textContent = deviceText();
+  $('status').hidden = true; requestAnimationFrame(frame);
+  window.STRESS = {S:S, B:B, cam:cam, results:function(){ return results; }, runBench:runBench, text:function(){ return lastText; }, queue:function(){ return queue.length; }, mem:function(){ return blockBytes; }, breakAt:breakAt, toFrame:function(n){ for (var i = 0; i < n; i++) frame(performance.now()); }};
+})();
+</script>
+</body>
+</html>

@@ -3996,7 +3996,15 @@ var lastTs = 0;
 function frame(ts){
   var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
   if (running){ if (P.sleep && !P.cop){ for (var sk = 0; sk < 40 && P.sleep && running; sk++) update(0.75); if (running) update(dt*0.01); } else update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
+  if (FPSM) fpsTick(ts);
   requestAnimationFrame(frame);
+}
+/* ?fps=1 on the link shows a frame-rate counter (to compare with art-tests/voxel-stress-test.html) */
+var FPSM = /[?&]fps=1/.test(location.search) ? {n:0, t:0, worst:0, last:0, el:null} : null;
+function fpsTick(ts){
+  var F = FPSM, d = F.last ? ts - F.last : 0; F.last = ts; if (!d) return; F.n++; F.t += d; F.worst = Math.max(F.worst, d);
+  if (!F.el){ F.el = document.createElement('div'); F.el.style.cssText = 'position:fixed;right:8px;bottom:8px;z-index:50;font:600 12px ui-monospace,Menlo,monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 8px;border-radius:6px;pointer-events:none'; document.body.appendChild(F.el); }
+  if (F.t > 600){ F.el.textContent = (F.n/(F.t/1000)).toFixed(0) + ' FPS · worst ' + F.worst.toFixed(0) + ' ms'; F.n = 0; F.t = 0; F.worst = 0; }
 }
 (function(){ var h = '', N = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']; for (var r = 0; r < 3; r++) for (var i = 0; i < 8; i++) h += '<b' + (i % 2 ? ' class="m"' : '') + '>' + N[i] + '</b>'; el('compTape').innerHTML = h; })();
 function compassTick(){ var deg = ((P.yaw*180/Math.PI + 90) % 360 + 360) % 360; el('compTape').style.transform = 'translateX(' + (-(480 + deg/45*60 + 30)).toFixed(1) + 'px)'; }
