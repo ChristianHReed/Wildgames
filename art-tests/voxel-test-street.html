@@ -120,11 +120,13 @@ tr:last-child td{border-bottom:0}
 <div id="status">Building street…</div>
 
 <script>
-window.addEventListener('error', function(e){
+function showErr(msg){
   var s=document.getElementById('status'); if(!s) return;
   s.hidden=false; s.className='err';
-  s.textContent='The 3D scene could not start: '+(e.message||'unknown error')+'. Reload the page to try again.';
-});
+  s.textContent='The 3D scene stopped: '+(msg||'unknown error')+'. Reload the page to try again, and send Claude a screenshot of this message.';
+}
+window.addEventListener('error', function(e){ showErr(e.message); });
+window.addEventListener('unhandledrejection', function(e){ showErr(e.reason && e.reason.message || String(e.reason)); });
 </script>
 <script type="importmap">
 {"imports":{
@@ -359,7 +361,7 @@ function voxelModel(pieces, vs){
   for (const pc of pieces) {
     const inv=pieceMatrix(pc).invert(), b=pieceBox(pc).expandByScalar(vs/2);
     const de=pc.d.map(x=>Math.max(x,vs*1.001));
-    const id=I[pc.c];
+    const id=I[pc.c]; let wrote=0;
     for (let y=Math.floor(b.min.y/vs); y<Math.ceil(b.max.y/vs); y++)
     for (let z=Math.floor(b.min.z/vs); z<Math.ceil(b.max.z/vs); z++)
     for (let x=Math.floor(b.min.x/vs); x<Math.ceil(b.max.x/vs); x++) {
@@ -368,13 +370,19 @@ function voxelModel(pieces, vs){
       if (!inside(pc,u)) continue;
       const gx=x-lo[0], gy=y-lo[1], gz=z-lo[2];
       if (gx<0||gy<0||gz<0||gx>=nx||gy>=ny||gz>=nz) continue;
-      grid[(gy*nz+gz)*nx+gx]=id;
+      grid[(gy*nz+gz)*nx+gx]=id; wrote++;
+    }
+    if (!wrote) { // part thinner than one voxel: keep it as a single voxel at its centre
+      const gx=Math.floor(pc.p[0]/vs)-lo[0], gy=Math.floor(pc.p[1]/vs)-lo[1], gz=Math.floor(pc.p[2]/vs)-lo[2];
+      if (gx>=0&&gy>=0&&gz>=0&&gx<nx&&gy<ny&&gz<nz) grid[(gy*nz+gz)*nx+gx]=id;
     }
   }
   const get=(x,y,z)=> (x<0||y<0||z<0||x>=nx||y>=ny||z>=nz)?0:grid[(y*nz+z)*nx+x];
   const g=meshVoxels(get,[0,0,0],[nx,ny,nz],vs,[lo[0]*vs,lo[1]*vs,lo[2]*vs]);
+  const grp=new THREE.Group();
+  if (!g) return {obj:grp, tris:0};
   const m=new THREE.Mesh(g,modelMat); m.castShadow=true; m.receiveShadow=true;
-  const grp=new THREE.Group(); grp.add(m);
+  grp.add(m);
   return {obj:grp, tris:g.index.count/3};
 }
 const STYLES=['shaped','cubes','voxels'];
@@ -650,7 +658,7 @@ function rebuild(v){
   if (v) VS=v;
   setPressed('vs',String(VS)); document.getElementById('vsNote').textContent=VS_NOTE(VS);
   statusEl.hidden=false; statusEl.className=''; statusEl.textContent='Building street…';
-  setTimeout(()=>{ debris=[]; debrisMesh.count=0; generateWorld(); statusEl.hidden=true; },30);
+  setTimeout(()=>{ debris=[]; debrisMesh.count=0; generateWorld(); if (statusEl.className!=='err') statusEl.hidden=true; },30);
 }
 document.getElementById('style').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) setStyle(b.dataset.v);});
 document.getElementById('vs').addEventListener('click',e=>{const b=e.target.closest('button'); if(b) rebuild(parseFloat(b.dataset.v));});
@@ -677,8 +685,9 @@ canvas.addEventListener('pointerup',e=>{
 });
 
 /* ---------- Loop ---------- */
-function resize(){ const w=innerWidth,h=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
-addEventListener('resize',resize); resize();
+function resize(){ const w=canvas.clientWidth||innerWidth, h=canvas.clientHeight||innerHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+addEventListener('resize',resize); if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas); resize();
+if (camera.aspect<0.9) camera.position.set(7.5,7.5,20.5);
 const sFps=document.getElementById('sFps'), sCalls=document.getElementById('sCalls'), sTris=document.getElementById('sTris'), sBlocks=document.getElementById('sBlocks');
 let last=performance.now(), acc=0, frames=0;
 function tick(now){
