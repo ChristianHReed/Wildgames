@@ -29,6 +29,8 @@ Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.gi
 - Rubble: broken blocks fly out, land on the ground or on floors and sills, and stay. The test keeps up to 6,000 rubble pieces as one instanced mesh.
 - Test numbers on the user's iPhone: 60 FPS with about 362,000 blocks, 145,000 triangles and 42 draw calls, shadows on.
 
+- Stress test: `art-tests/voxel-stress-test.html` (https://christianhreed.github.io/Wildgames/art-tests/voxel-stress-test.html) builds these blocks for a real Springfield square (2,849 buildings) in the game's own kind of WebGL, at the game's view distances, and drives the same street three times: today's buildings, blocks near you (this plan) and all blocks. It reports frame rate, the worst moments, pauses, triangles, draw calls, block and graphics memory, and how long building took. Run it on the weakest device the game should support before Art 5. In the test browser (software graphics, so only the comparison counts) blocks near you drew about 4–9 times the triangles of today's buildings and held about 160 MB of graphics memory on the safe-house street.
+
 ## Ground
 
 - Every area (road, sidewalk, lawn, verge, creek bed, hill) has its own height rule. Inside an area the ground is smooth triangles every 50 cm. Where two areas meet at different heights, a vertical face fills the gap.

@@ -96,7 +96,7 @@ a{color:var(--accent)}
         <button type="button" data-v="all" aria-pressed="false">All blocks</button>
       </div>
       <p class="note" id="modeNote"></p>
-      <div class="range" style="margin-top:8px"><label for="r1" class="note" style="margin:0">12.5 cm blocks within</label><input type="range" id="r1" min="8" max="60" step="1" value="20"><output id="r1Out" for="r1">20 m</output></div>
+      <div class="range" style="margin-top:8px"><label for="r1" class="note" style="margin:0">12.5 cm blocks within</label><input type="range" id="r1" min="8" max="60" step="1" value="14"><output id="r1Out" for="r1">14 m</output></div>
       <p class="note" id="tierNote"></p>
     </section>
     <section>
@@ -156,15 +156,15 @@ var $ = function(id){ return document.getElementById(id); };
 var SQ = window.SQUARE;
 /* the game's own view-distance settings (play.html QUAL): full buildings within "chunk" metres, plain boxes out to "far", fog density */
 var QUALS = [{chunk:150, far:400, fog:0.016}, {chunk:220, far:800, fog:0.011}];
-var S = {route:'downtown', mode:'game', r1:20, q:0, budgetMB:500};
+var S = {route:'downtown', mode:'game', r1:14, q:0, budgetMB:500};
 var U16 = 16;   /* positions are stored in 1/16 m units, so 12.5 cm blocks are 2 units */
 
 /* ================= WebGL: one shader, colours baked into the vertices, fog like the game ================= */
 var cv = $('c'), gl = cv.getContext('webgl', {antialias:false, powerPreference:'high-performance'});
 if (!gl) throw new Error('WebGL is not available on this device');
-var VS = 'attribute vec4 aP; attribute vec4 aC; uniform mat4 uM; uniform vec3 uO; uniform vec3 uEye; uniform float uFd; varying vec3 vC; varying float vF;' +
-  'void main(){ vec3 w = uO + aP.xyz*' + (1/U16).toFixed(6) + '; gl_Position = uM*vec4(w, 1.0); float d = length(w - uEye); vF = 1.0 - exp(-d*uFd); vC = aC.rgb; }';
-var FS = 'precision mediump float; uniform vec3 uFog; varying vec3 vC; varying float vF; void main(){ gl_FragColor = vec4(mix(vC, uFog, clamp(vF, 0.0, 1.0)), 1.0); }';
+var VS = 'attribute vec4 aP; attribute vec4 aC; uniform mat4 uM; uniform vec3 uO; uniform vec3 uEye; uniform float uFd; varying vec3 vC; varying vec3 vR;' +
+  'void main(){ vec3 w = uO + aP.xyz*' + (1/U16).toFixed(6) + '; gl_Position = uM*vec4(w, 1.0); vR = w - uEye; vC = aC.rgb; }';
+var FS = 'precision mediump float; uniform vec3 uFog; uniform float uFd; varying vec3 vC; varying vec3 vR; void main(){ float f = 1.0 - exp(-length(vR)*uFd); gl_FragColor = vec4(mix(vC, uFog, clamp(f, 0.0, 1.0)), 1.0); }';
 function sh(t, s){ var o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; }
 var prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog); gl.useProgram(prog);
 var aP = gl.getAttribLocation(prog, 'aP'), aC = gl.getAttribLocation(prog, 'aC'), uM = gl.getUniformLocation(prog, 'uM'), uO = gl.getUniformLocation(prog, 'uO'), uEye = gl.getUniformLocation(prog, 'uEye'), uFd = gl.getUniformLocation(prog, 'uFd'), uFog = gl.getUniformLocation(prog, 'uFog');
@@ -288,13 +288,13 @@ function buildGround(){
 }
 
 /* ================= blocks: storage in 32-cube chunks, filled from the outline, meshed with hidden faces removed and corner shading ================= */
-var CH = 32, CH3 = CH*CH*CH, SEC = 2;   /* a mesh section is 2 x 2 x 2 chunks: 8 m at 12.5 cm blocks */
+var CH = 32, CH3 = CH*CH*CH, SEC = 1;   /* one mesh per 32-block chunk: 4 m at 12.5 cm blocks, as docs/ART.md plans */
 var blockBytes = 0, blockPeak = 0, forced = 0;
-var PAL = [[0, 0, 0]], palIx = {};
+var PAL = [[0, 0, 0], [70, 96, 120]], palIx = {}, GLASSI = 1;   /* slot 1 is glass, meshed on its own */
 function pal(rgb, v){ var k = rgb.join(',') + ':' + v; var i = palIx[k]; if (i !== undefined) return i; if (PAL.length >= 256) return 1; var f = [1, 0.95, 1.05, 0.9][v]; PAL.push([Math.min(255, rgb[0]*f) | 0, Math.min(255, rgb[1]*f) | 0, Math.min(255, rgb[2]*f) | 0]); return palIx[k] = PAL.length - 1; }
 function newGrid(b, s){
-  var cm = s/U16, ox = b.x0 - cm*2, oz = b.y0 - cm*2, top = b.pitched ? b.h + Math.min(b.x1 - b.x0, b.y1 - b.y0)*0.3 + cm : b.h + 0.6;
-  var nx = Math.ceil((b.x1 - b.x0)/cm) + 4, nz = Math.ceil((b.y1 - b.y0)/cm) + 4, ny = Math.ceil(top/cm) + 2;
+  var cm = s/U16, ox = b.x0 - 1, oz = b.y0 - 1, top = b.pitched ? b.h + Math.min(b.x1 - b.x0, b.y1 - b.y0)*0.3 + 0.5 : b.h + 1;
+  var nx = Math.ceil((b.x1 - b.x0 + 2)/cm), nz = Math.ceil((b.y1 - b.y0 + 2)/cm), ny = Math.ceil(top/cm);
   var g = {b:b, s:s, cm:cm, ox:ox, oz:oz, nx:nx, ny:ny, nz:nz, cx:Math.ceil(nx/CH), cy:Math.ceil(ny/CH), cz:Math.ceil(nz/CH), ch:null, meshes:[], col:0, sec:0, solid:0};
   g.ch = new Array(g.cx*g.cy*g.cz); return g;
 }
@@ -304,7 +304,7 @@ function gset(g, x, y, z, v){
   if (!c){ if (!v) return; c = g.ch[ci] = {a:new Uint8Array(CH3), rows:new Uint32Array(CH), n:0}; blockBytes += CH3 + 128; if (blockBytes > blockPeak) blockPeak = blockBytes; }
   var i = (x & 31) | ((y & 31) << 5) | ((z & 31) << 10), was = c.a[i]; c.a[i] = v; if (v){ c.rows[y & 31] |= (1 << (z & 31)) >>> 0; if (!was){ c.n++; g.solid++; } } else if (was){ c.n--; g.solid--; }
 }
-function freeGrid(g){ if (!g) return; g.ch.forEach(function(c){ if (c) blockBytes -= CH3 + 128; }); g.ch = []; g.meshes.forEach(freeMesh); g.meshes = []; }
+function freeGrid(g){ if (!g) return; if (g.fine){ freeGrid(g.fine); g.fine = null; } g.ch.forEach(function(c){ if (c) blockBytes -= CH3 + 128; }); g.ch = []; g.meshes.forEach(freeMesh); g.meshes = []; }
 /* the outline as edges, for the distance to the wall and the place along it */
 function edgesOf(b){ var p = b.p, n = p.length/2, E = []; for (var i = 0; i < n; i++){ var j = (i + 1) % n, dx = p[j*2] - p[i*2], dy = p[j*2+1] - p[i*2+1], l = Math.hypot(dx, dy); if (l > 0.01) E.push([p[i*2], p[i*2+1], dx/l, dy/l, l]); } return E; }
 /* fill some columns of the grid; returns true when the building is filled */
@@ -322,7 +322,7 @@ function fillStep(g, until){
       var top = b.pitched ? H : H + Math.round(0.5/cm);
       for (y = 0; y < top; y++){
         var yc = (y + 0.5)*cm, l = Math.min(b.L - 1, Math.floor(yc/lh)), ry = yc - l*lh;
-        if (inWin && ry > 0.9 && ry < Math.min(lh - 0.3, 2.2)) continue;   /* a window opening */
+        if (inWin && ry > 0.9 && ry < Math.min(lh - 0.3, 2.2)){ if (d >= wallT*0.5) gset(g, i, y, k, GLASSI); continue; }   /* a window: glass set in the inner half of the wall */
         v = (h3 ^ (y*19349663)) & 3; gset(g, i, y, k, yc < 0.42 ? pal(PLINTH, v) : pal(b.col, v));
       }
     } else {
@@ -338,36 +338,61 @@ function fillStep(g, until){
 var FACES = [[1,0,0, 1,0,0, 0,1,0, 0,0,1, 0.8], [-1,0,0, 0,0,0, 0,0,1, 0,1,0, 0.72], [0,1,0, 0,1,0, 0,0,1, 1,0,0, 1.0], [0,-1,0, 0,0,0, 1,0,0, 0,0,1, 0.5], [0,0,1, 0,0,1, 1,0,0, 0,1,0, 0.88], [0,0,-1, 0,0,0, 0,1,0, 1,0,0, 0.66]];
 var AOF = [1, 0.84, 0.7, 0.56];
 function meshSection(g, sx, sy, sz){
-  var s = g.s; mbStart([g.ox, 0, g.oz]);
-  var x0 = sx*SEC*CH, y0 = sy*SEC*CH, z0 = sz*SEC*CH, any = false;
-  for (var cx = sx*SEC; cx < Math.min(g.cx, sx*SEC + SEC); cx++) for (var cy = sy*SEC; cy < Math.min(g.cy, sy*SEC + SEC); cy++) for (var cz = sz*SEC; cz < Math.min(g.cz, sz*SEC + SEC); cz++){
-    var c = g.ch[(cx*g.cy + cy)*g.cz + cz]; if (!c || !c.n) continue; any = true;
-    for (var ly = 0; ly < CH; ly++){ var rows = c.rows[ly]; if (!rows) continue;
-      for (var lz = 0; lz < CH; lz++){ if (!(rows & (1 << lz))) continue;
-        for (var lx = 0; lx < CH; lx++){
-          var v = c.a[lx | (ly << 5) | (lz << 10)]; if (!v) continue;
-          var X = cx*CH + lx, Y = cy*CH + ly, Z = cz*CH + lz, rgb = PAL[v];
-          for (var f = 0; f < 6; f++){
-            var F = FACES[f], nx = X + F[0], ny = Y + F[1], nz = Z + F[2];
-            if (gget(g, nx, ny, nz)) continue;
-            if (MB.nv >= 65530) mbFlush();
-            var bx = X + F[3], by = Y + F[4], bz = Z + F[5], i0 = MB.nv, ao = [0, 0, 0, 0];
-            for (var q = 0; q < 4; q++){
-              var u = q === 1 || q === 2 ? 1 : 0, w = q >= 2 ? 1 : 0, su = u ? 1 : -1, sw = w ? 1 : -1;
-              var s1 = gget(g, nx + F[6]*su, ny + F[7]*su, nz + F[8]*su) ? 1 : 0, s2 = gget(g, nx + F[9]*sw, ny + F[10]*sw, nz + F[11]*sw) ? 1 : 0;
-              var cc = gget(g, nx + F[6]*su + F[9]*sw, ny + F[7]*su + F[10]*sw, nz + F[8]*su + F[11]*sw) ? 1 : 0, a = s1 && s2 ? 3 : s1 + s2 + cc, m = F[12]*AOF[a]; ao[q] = a;
-              var k = MB.nv*4; MB.p[k] = (bx + F[6]*u + F[9]*w)*s; MB.p[k+1] = (by + F[7]*u + F[10]*w)*s; MB.p[k+2] = (bz + F[8]*u + F[11]*w)*s;
-              MB.c[k] = rgb[0]*m; MB.c[k+1] = rgb[1]*m; MB.c[k+2] = rgb[2]*m; MB.c[k+3] = 255; MB.nv++;
-            }
-            if (ao[0] + ao[2] > ao[1] + ao[3]) MB.i.set([i0 + 1, i0 + 2, i0 + 3, i0 + 1, i0 + 3, i0], MB.ni); else MB.i.set([i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3], MB.ni);
-            MB.ni += 6;
+  var out = [], c0 = [], cm = g.cm, x0 = sx*SEC*CH, y0 = sy*SEC*CH, z0 = sz*SEC*CH;
+  for (var cx = sx*SEC; cx < Math.min(g.cx, sx*SEC + SEC); cx++) for (var cy = sy*SEC; cy < Math.min(g.cy, sy*SEC + SEC); cy++) for (var cz = sz*SEC; cz < Math.min(g.cz, sz*SEC + SEC); cz++){ var c = g.ch[(cx*g.cy + cy)*g.cz + cz]; if (c && c.n) c0.push([c, cx, cy, cz]); }
+  if (!c0.length) return out;
+  for (var pass = 0; pass < 2; pass++){   /* pass 0: walls, floors and roofs; pass 1: glass, its own mesh so windows can glow at night */
+    mbStart([g.ox, 0, g.oz]);
+    c0.forEach(function(q){ meshChunk(g, q[0], q[1], q[2], q[3], pass === 1); });
+    var m = mbEnd(); if (!m.tris){ freeMesh(m); continue; }
+    m.c = [g.ox + (x0 + SEC*CH/2)*cm, (y0 + SEC*CH/2)*cm, g.oz + (z0 + SEC*CH/2)*cm]; m.rad = SEC*CH*cm*0.87; m.key = sx + ',' + sy + ',' + sz; m.glass = pass === 1; out.push(m);
+  }
+  return out;
+}
+function meshChunk(g, c, cx, cy, cz, glass){
+  var s = g.s;
+  for (var ly = 0; ly < CH; ly++){ var rows = c.rows[ly]; if (!rows) continue;
+    for (var lz = 0; lz < CH; lz++){ if (!(rows & (1 << lz))) continue;
+      for (var lx = 0; lx < CH; lx++){
+        var v = c.a[lx | (ly << 5) | (lz << 10)]; if (!v || (v === GLASSI) !== glass) continue;
+        var X = cx*CH + lx, Y = cy*CH + ly, Z = cz*CH + lz, rgb = PAL[v];
+        for (var f = 0; f < 6; f++){
+          var F = FACES[f], nx = X + F[0], ny = Y + F[1], nz = Z + F[2], nv = gget(g, nx, ny, nz);
+          if (nv && (glass || nv !== GLASSI)) continue;   /* a wall face behind glass still shows */
+          if (MB.nv >= 65530) mbFlush();
+          var bx = X + F[3], by = Y + F[4], bz = Z + F[5], i0 = MB.nv, ao = [0, 0, 0, 0];
+          for (var q = 0; q < 4; q++){
+            var u = q === 1 || q === 2 ? 1 : 0, w = q >= 2 ? 1 : 0, su = u ? 1 : -1, sw = w ? 1 : -1;
+            var s1 = gget(g, nx + F[6]*su, ny + F[7]*su, nz + F[8]*su) ? 1 : 0, s2 = gget(g, nx + F[9]*sw, ny + F[10]*sw, nz + F[11]*sw) ? 1 : 0;
+            var cc = gget(g, nx + F[6]*su + F[9]*sw, ny + F[7]*su + F[10]*sw, nz + F[8]*su + F[11]*sw) ? 1 : 0, a = s1 && s2 ? 3 : s1 + s2 + cc, m = F[12]*AOF[a]; ao[q] = a;
+            var k = MB.nv*4; MB.p[k] = (bx + F[6]*u + F[9]*w)*s; MB.p[k+1] = (by + F[7]*u + F[10]*w)*s; MB.p[k+2] = (bz + F[8]*u + F[11]*w)*s;
+            MB.c[k] = rgb[0]*m; MB.c[k+1] = rgb[1]*m; MB.c[k+2] = rgb[2]*m; MB.c[k+3] = 255; MB.nv++;
           }
+          if (ao[0] + ao[2] > ao[1] + ao[3]) MB.i.set([i0 + 1, i0 + 2, i0 + 3, i0 + 1, i0 + 3, i0], MB.ni); else MB.i.set([i0, i0 + 1, i0 + 2, i0, i0 + 2, i0 + 3], MB.ni);
+          MB.ni += 6;
         }
       }
     }
   }
-  var m = mbEnd(); if (!any || !m.tris){ freeMesh(m); return null; }
-  var cm = g.cm, half = SEC*CH*cm/2; m.c = [g.ox + (x0 + SEC*CH/2)*cm, (y0 + SEC*CH/2)*cm, g.oz + (z0 + SEC*CH/2)*cm]; m.rad = half*1.75; m.key = sx + ',' + sy + ',' + sz; return m;
+}
+/* 25 cm and 50 cm versions are made from the 12.5 cm one (docs/ART.md): each coarse block takes the most common colour of the small
+   blocks inside it, and is solid when at least 30% of them are. Runs a chunk at a time so it can stop when the frame's time is up */
+function downStep(g, until){
+  var F = g.fine, f = g.s/2, n = g.nx*g.ny*g.nz, need = Math.ceil(0.3*f*f*f);
+  if (!g.tot){ g.tot = new Uint8Array(n); g.cand = new Uint8Array(n); g.vote = new Uint8Array(n); g.dci = 0; g.dwi = 0; }
+  while (g.dci < F.ch.length){
+    var c = F.ch[g.dci], ci = g.dci++; if (!c) continue;
+    var cz = ci % F.cz, cy = ((ci/F.cz) | 0) % F.cy, cx = (ci/(F.cz*F.cy)) | 0;
+    for (var ly = 0; ly < CH; ly++){ var rows = c.rows[ly]; if (!rows) continue;
+      for (var lz = 0; lz < CH; lz++){ if (!(rows & (1 << lz))) continue;
+        for (var lx = 0; lx < CH; lx++){ var v = c.a[lx | (ly << 5) | (lz << 10)]; if (!v) continue;
+          var X = ((cx*CH + lx)/f) | 0, Y = ((cy*CH + ly)/f) | 0, Z = ((cz*CH + lz)/f) | 0; if (X >= g.nx || Y >= g.ny || Z >= g.nz) continue;
+          var i = (X*g.ny + Y)*g.nz + Z; g.tot[i]++; if (!g.vote[i]){ g.cand[i] = v; g.vote[i] = 1; } else if (g.cand[i] === v) g.vote[i]++; else g.vote[i]--;   /* majority vote */
+        } } }
+    if (performance.now() > until) return false;
+  }
+  while (g.dwi < n){ var j = g.dwi++; if (g.tot[j] >= need){ var Z2 = j % g.nz, Y2 = ((j/g.nz) | 0) % g.ny, X2 = (j/(g.nz*g.ny)) | 0; gset(g, X2, Y2, Z2, g.cand[j]); } if ((g.dwi & 4095) === 0 && performance.now() > until) return false; }
+  g.tot = g.cand = g.vote = null; freeGrid(F); g.fine = null; return true;
 }
 
 /* ================= what each building should be, and the work queue ================= */
@@ -393,10 +418,10 @@ function updateWanted(){
     if (b.job){ freeGrid(b.job); b.job = null; }
     if (t === cur) return;
     if (t === 0){ freeGrid(b.rep); b.rep = null; return; }
-    var est = Math.ceil((b.x1 - b.x0)/(t/U16)/CH + 1)*Math.ceil((b.h*1.4)/(t/U16)/CH + 1)*Math.ceil((b.y1 - b.y0)/(t/U16)/CH + 1)*(CH3 + 128)*0.6;
-    while (t && blockBytes + est > S.budgetMB*1048576){ t = t >= 8 ? 0 : t*2; est /= 8; forced++; }
+    var est = Math.ceil((b.x1 - b.x0 + 2)/0.125/CH)*Math.ceil((b.h*1.4)/0.125/CH)*Math.ceil((b.y1 - b.y0 + 2)/0.125/CH)*(CH3 + 128)*0.6;   /* every size starts from the 12.5 cm grid */
+    if (blockBytes + est > S.budgetMB*1048576){ t = 0; forced++; }
     if (t === cur) return; if (t === 0){ freeGrid(b.rep); b.rep = null; return; }
-    b.job = newGrid(b, t); b.job.stage = 0; queue.push(b);
+    b.job = newGrid(b, t); b.job.stage = 0; if (t > 2) b.job.fine = newGrid(b, 2); queue.push(b);
   }); });
   queue = queue.filter(function(b){ return b.job; }); queue.sort(function(a, c){ return a.d - c.d; });
 }
@@ -405,8 +430,10 @@ function work(budgetMs){
   var t0 = performance.now(), until = t0 + budgetMs;
   while (queue.length && performance.now() < until){
     var b = queue[0], g = b.job; if (!g){ queue.shift(); continue; }
-    if (g.stage === 0){ if (fillStep(g, until)){ g.stage = 1; g.secs = []; for (var sx = 0; sx < Math.ceil(g.cx/SEC); sx++) for (var sy = 0; sy < Math.ceil(g.cy/SEC); sy++) for (var sz = 0; sz < Math.ceil(g.cz/SEC); sz++) g.secs.push([sx, sy, sz]); } continue; }
-    if (g.sec < g.secs.length){ var q = g.secs[g.sec++], m = meshSection(g, q[0], q[1], q[2]); if (m) g.meshes.push(m); continue; }
+    if (g.stage === 0){ if (fillStep(g.fine || g, until)){ g.stage = g.fine ? 2 : 1; } continue; }
+    if (g.stage === 2){ if (downStep(g, until)) g.stage = 1; continue; }
+    if (g.stage === 1 && !g.secs){ g.secs = []; for (var sx = 0; sx < Math.ceil(g.cx/SEC); sx++) for (var sy = 0; sy < Math.ceil(g.cy/SEC); sy++) for (var sz = 0; sz < Math.ceil(g.cz/SEC); sz++) g.secs.push([sx, sy, sz]); continue; }
+    if (g.sec < g.secs.length){ var q = g.secs[g.sec++]; meshSection(g, q[0], q[1], q[2]).forEach(function(m){ g.meshes.push(m); }); continue; }
     if (b.rep) freeGrid(b.rep); b.rep = g; b.job = null; queue.shift();
   }
   buildMsFrame = performance.now() - t0; buildMsTotal += buildMsFrame;
@@ -416,7 +443,7 @@ function breakAt(px, py){
   var r = ray(px, py), best = null, bt = 60;
   nearCells.forEach(function(c){ c.b.forEach(function(b){ if (!b.rep) return; var g = b.rep; for (var t = 0.5; t < bt; t += g.cm*0.7){ var x = cam.x + r[0]*t, y = cam.h + r[1]*t, z = cam.y + r[2]*t; if (y < 0) break; var i = Math.floor((x - g.ox)/g.cm), j = Math.floor(y/g.cm), k = Math.floor((z - g.oz)/g.cm); if (gget(g, i, j, k)){ bt = t; best = [b, i, j, k]; break; } } }); });
   if (!best){ toast('Tap a block building (in the block styles) to knock a hole in it'); return; }
-  var g = best[0].rep, R = Math.max(1, Math.round(0.7/g.cm)), touched = {}, t0 = performance.now(), n = 0;
+  var g = best[0].rep, R = Math.max(1, Math.round(0.45/g.cm)), touched = {}, t0 = performance.now(), n = 0;
   for (var x = best[1] - R; x <= best[1] + R; x++) for (var y = best[2] - R; y <= best[2] + R; y++) for (var z = best[3] - R; z <= best[3] + R; z++){
     if ((x - best[1])*(x - best[1]) + (y - best[2])*(y - best[2]) + (z - best[3])*(z - best[3]) > R*R || !gget(g, x, y, z)) continue; gset(g, x, y, z, 0); n++;
     for (var dx = -1; dx <= 1; dx += 2) touched[Math.floor((x + dx)/(SEC*CH)) + ',' + Math.floor(y/(SEC*CH)) + ',' + Math.floor(z/(SEC*CH))] = 1;
@@ -424,7 +451,7 @@ function breakAt(px, py){
     touched[Math.floor(x/(SEC*CH)) + ',' + Math.floor(Math.max(0, y - 1)/(SEC*CH)) + ',' + Math.floor(Math.max(0, z - 1)/(SEC*CH))] = 1;
   }
   var keys = Object.keys(touched).filter(function(k){ var q = k.split(',').map(Number); return q[0] >= 0 && q[1] >= 0 && q[2] >= 0 && q[0]*SEC < g.cx && q[1]*SEC < g.cy && q[2]*SEC < g.cz; });
-  keys.forEach(function(k){ var q = k.split(',').map(Number); g.meshes = g.meshes.filter(function(m){ if (m.key === k){ freeMesh(m); return false; } return true; }); var m = meshSection(g, q[0], q[1], q[2]); if (m) g.meshes.push(m); });
+  keys.forEach(function(k){ var q = k.split(',').map(Number); g.meshes = g.meshes.filter(function(m){ if (m.key === k){ freeMesh(m); return false; } return true; }); meshSection(g, q[0], q[1], q[2]).forEach(function(m){ g.meshes.push(m); }); });
   toast(n + ' blocks knocked out · ' + keys.length + ' section' + (keys.length > 1 ? 's' : '') + ' rebuilt in ' + (performance.now() - t0).toFixed(0) + ' ms');
 }
 
@@ -509,7 +536,7 @@ function benchNext(r){
   if (bench.i < MODES.length){ S.mode = MODES[bench.i][0]; syncSeg('mode', S.mode); modeNote(); startDrive(true); return; }
   var b = bench; bench = null; showResults(b);
 }
-function f0(v){ return v >= 100 ? Math.round(v).toLocaleString() : v >= 10 ? v.toFixed(0) : v.toFixed(1); }
+function f0(v){ if (Number.isInteger(v)) return v.toLocaleString(); return v >= 100 ? Math.round(v).toLocaleString() : v >= 10 ? v.toFixed(0) : v.toFixed(1); }
 function showResults(b){
   var g = results.game, rows = [
     ['Average FPS', 'fps', 1], ['Worst 1% FPS', 'low', 1], ['Longest frame (ms)', 'worst', -1], ['Pauses over 50 ms', 'hitch', -1], ['Triangles (average)', 'tris', -1], ['Draw calls (average)', 'calls', -1],
@@ -540,7 +567,7 @@ function frame(now){
     if (done){ var r = endDrive(); if (bench) benchNext(r); else if (r) { results = {}; results[S.mode] = r; toast('Drive: ' + f0(r.fps) + ' FPS average, worst 1% ' + f0(r.low) + ' FPS, ' + r.hitch + ' pauses'); } } }
   else freeMove(dt);
   wantT -= dt; if (wantT <= 0){ wantT = 0.25; updateWanted(); }
-  work(6);
+  work(S.workMs || 6);
   render();
   if (rec){ rec.ft.push(dtMs); rec.tris += drawn.tris; rec.calls += drawn.calls; rec.n++; rec.trisMax = Math.max(rec.trisMax, drawn.tris); rec.callsMax = Math.max(rec.callsMax, drawn.calls); rec.waitMax = Math.max(rec.waitMax, queue.length); if (rec.ready < 0 && !queue.length) rec.ready = (now - rec.t0)/1000; }
   live.n++; live.t += dtMs; live.worst = Math.max(live.worst, dtMs);
@@ -554,9 +581,9 @@ function setButtons(busy){ ['route', 'mode', 'qual'].forEach(function(id){ Array
 function modeNote(){
   var r = S.r1;
   $('modeNote').innerHTML = S.mode === 'game' ? 'Every building is a light model like the game\'s today: walls by storey, windows set into the wall, sills, a plinth, corner trims and a roof.'
-    : S.mode === 'near' ? 'Real breakable blocks only close to you: <b>12.5 cm</b> within ' + r + ' m, <b>25 cm</b> to ' + r*2 + ' m, <b>50 cm</b> to ' + r*4 + ' m, and today\'s light model beyond.'
+    : S.mode === 'near' ? 'The plan in docs/ART.md, with blocks only close to you: <b>12.5 cm</b> within ' + r + ' m, <b>25 cm</b> to ' + r*2 + ' m, <b>50 cm</b> to ' + r*4 + ' m, and today\'s light model beyond.'
     : 'Every building in full view is blocks: <b>12.5 cm</b> within ' + r + ' m, <b>25 cm</b> to ' + r*2 + ' m, and <b>50 cm</b> beyond. Plain boxes further out, as in the game.';
-  $('tierNote').textContent = S.mode === 'game' ? 'The block distance only matters in the two block styles.' : 'Blocks are built a little at a time (6 ms a frame), nearest first; until a building is ready you see its light model.';
+  $('tierNote').textContent = S.mode === 'game' ? 'The block distance only matters in the two block styles. The plan uses 14 m, or 18 m on phones.' : 'As planned: one mesh per 4 m chunk, corner shading, glass as its own mesh, and the 25 and 50 cm versions made from the 12.5 cm one. Blocks are built a little at a time (6 ms a frame), nearest first; until a building is ready you see its light model.';
 }
 function seg(id, key, conv, after){ $(id).addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b || b.disabled) return; S[key] = conv(b.dataset.v); syncSeg(id, S[key]); if (after) after(); }); }
 seg('route', 'route', String, function(){ if (driveT >= 0) endDrive(); resetWorld(); setRoute(); placeAtStart(); });
@@ -576,7 +603,7 @@ function deviceText(){
 /* ================= start ================= */
 (function start(){
   if (!SQ) throw new Error('the map data (data/springfield-square.js) did not load');
-  if (/Mobi|iPhone|iPad|Android/.test(navigator.userAgent)) S.budgetMB = 400;
+  if (/Mobi|iPhone|iPad|Android/.test(navigator.userAgent)){ S.budgetMB = 400; S.r1 = 18; $('r1').value = 18; $('r1Out').textContent = '18 m'; }   /* docs/ART.md: 14 m, 18 m on phones */
   resize(); prepBuildings(); buildGround(); setRoute(); placeAtStart(); modeNote(); updateWanted();
   $('device').textContent = deviceText();
   $('status').hidden = true; requestAnimationFrame(frame);

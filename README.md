@@ -26,7 +26,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | `packs/` | Item and scenario packs |
 | `prototypes/` | Earlier versions, kept for reference |
 | `assets/shaped/` | Shaped-piece content packs and their builder (see `docs/SHAPED.md`) |
-| `art-tests/` | Art-style test scenes, not part of the game. Round 1: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street.html · Round 2: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street-2.html |
+| `art-tests/` | Art-style test scenes, not part of the game. Round 1: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street.html · Round 2: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street-2.html · Round 3, the stress test (today's buildings against blocks on a real Springfield square, with a benchmark): https://christianhreed.github.io/Wildgames/art-tests/voxel-stress-test.html. Add `?fps=1` to the game's link for a frame-rate counter to compare |
 | `docs/` | The design document, the roadmap, the testing roadmap and the art direction (`docs/ART.md`) |
 
 ## Controls
