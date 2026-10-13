@@ -81,8 +81,7 @@ SLOTS = {
 
 # ---------------- head ----------------
 HEAD_ANG = [0, 35, 58, 122, 145, 180, 235, 305]   # a wide flat face between 58 and 122 degrees
-HEAD = [(1.505, 0.042, 0.038, 0.058), (1.54, 0.083, 0.082, 0.028), (1.585, 0.098, 0.098, 0.012), (1.64, 0.104, 0.106, 0.0),
-        (1.69, 0.102, 0.106, -0.006), (1.745, 0.085, 0.094, -0.012), (1.778, 0.04, 0.05, -0.016)]
+HEAD = [(1.505, 0.042, 0.038, 0.058), (1.56, 0.092, 0.09, 0.02), (1.645, 0.104, 0.106, 0.0), (1.735, 0.09, 0.1, -0.01), (1.778, 0.04, 0.05, -0.016)]
 SIN58 = math.sin(math.radians(58))
 def faceZ(y):
     a, b, oz = interp(HEAD, y); return oz + b*SIN58
@@ -122,27 +121,25 @@ def lips(y=1.566, w=0.022):
 # ---------------- body proportions ----------------
 def torso_tables(fem):
     if fem:
-        return [(0.97, 0.155, 0.102, 0), (1.07, 0.122, 0.088, 0), (1.14, 0.128, 0.092, 0), (1.24, 0.142, 0.104, 0.012),
-                (1.33, 0.15, 0.1, 0.005), (1.405, 0.15, 0.088, -0.008), (1.44, 0.065, 0.06, -0.005)]
-    return [(0.97, 0.15, 0.1, 0), (1.08, 0.135, 0.094, 0), (1.14, 0.142, 0.098, 0), (1.25, 0.162, 0.106, 0.005),
-            (1.35, 0.172, 0.104, 0), (1.415, 0.165, 0.092, -0.01), (1.45, 0.075, 0.065, -0.005)]
+        return [(0.95, 0.16, 0.112, 0), (1.14, 0.13, 0.098, 0), (1.36, 0.165, 0.112, 0.006), (1.44, 0.07, 0.064, -0.005)]
+    return [(0.95, 0.16, 0.11, 0), (1.14, 0.152, 0.106, 0), (1.38, 0.19, 0.114, 0), (1.45, 0.078, 0.068, -0.005)]
 def torso_rings(fem, y0, y1, g):
     T = torso_tables(fem); rows = [r for r in T if y0 <= r[0] <= y1]
     if not rows or rows[0][0] > y0 + 1e-6: rows = [(y0, *interp(T, y0))] + rows
     if rows[-1][0] < y1 - 1e-6: rows = rows + [(y1, *interp(T, y1))]
     return [[0, y, oz, a + g, b + g] for (y, a, b, oz) in rows]
 def torso(fem, col, g=0.0, belly=None, top=1.45):
-    return {'spine_01': [loft(torso_rings(fem, 0.95, 1.14, g), belly or col, caps=[True, False])],
-            'spine_03': [loft(torso_rings(fem, 1.14, top, g), col, caps=[False, True])]}
+    return {'spine_01': [loft(torso_rings(fem, 0.95, 1.14, g), belly or col, n=6, rot=0, caps=[True, False])],
+            'spine_03': [loft(torso_rings(fem, 1.14, top, g), col, n=6, rot=0, caps=[False, True])]}
 def band(fem, y, h, g, col, bone=None):
     bone = bone or ('spine_01' if y < 1.14 else 'spine_03')
-    return {bone: [loft(torso_rings(fem, y, y + h, g + 0.004), col, caps=[False, False])]}
+    return {bone: [loft(torso_rings(fem, y, y + h, g + 0.004), col, n=6, rot=0, caps=[False, False])]}
 def front(fem, y):
-    a, b, oz = interp(torso_tables(fem), y); return oz + b*0.924, a*0.383
+    a, b, oz = interp(torso_tables(fem), y); return oz + b*0.866, a*0.5
 def back(fem, y):
-    a, b, oz = interp(torso_tables(fem), y); return oz - b*0.924
-ARM_UP = [(0.178, 1.402, 0, 0.046, 0.05), (0.2, 1.29, -0.005, 0.046, 0.048), (0.208, 1.135, -0.01, 0.04, 0.042)]
-ARM_LO = [(0.208, 1.135, -0.01, 0.04, 0.042), (0.213, 1.0, 0.005, 0.037, 0.04), (0.218, 0.875, 0.02, 0.028, 0.03)]
+    a, b, oz = interp(torso_tables(fem), y); return oz - b*0.866
+ARM_UP = [(0.182, 1.402, 0, 0.05, 0.054), (0.208, 1.135, -0.01, 0.04, 0.042)]
+ARM_LO = [(0.208, 1.135, -0.01, 0.04, 0.042), (0.218, 0.875, 0.02, 0.028, 0.03)]
 def arm_rings(rings, sg, fem, g):
     k = 0.88 if fem else 1.0
     return [[sg*x, y, z, a*k + g, b*k + g] for x, y, z, a, b in rings]
@@ -155,20 +152,19 @@ def arms(fem, upper, lower, short=False, cuff=None, g=0.01):
             up = [loft(arm_rings(ARM_UP, sg, fem, g), upper, n=6)]
         lo = [loft(arm_rings(ARM_LO, sg, fem, 0 if lower == 'SKIN' else g), lower, n=6)]
         if cuff:
-            w = arm_rings(ARM_LO[1:], sg, fem, g + 0.008); w[0][1] = 0.905
+            w = arm_rings(ARM_LO, sg, fem, g + 0.008); f = 0.885
+            w[0] = [w[0][j] + (w[1][j] - w[0][j])*f for j in range(5)]
             lo.append(loft(w, cuff, n=6, caps=[False, False]))
         return {'upperarm_' + sd: up, 'lowerarm_' + sd: lo}
     return sided(f)
 def hands():
     def f(sg, sd):
-        palm = loft([[sg*0.219, 0.875, 0.022, 0.026, 0.032], [sg*0.222, 0.81, 0.03, 0.022, 0.044], [sg*0.224, 0.745, 0.032, 0.017, 0.038],
-                     [sg*0.222, 0.705, 0.03, 0.01, 0.02]], 'SKIN', n=6)
-        thumb = loft([[sg*0.207, 0.84, 0.055, 0.011, 0.011], [sg*0.2, 0.79, 0.07, 0.009, 0.009]], 'SKIN', n=5)
-        return {'hand_' + sd: [palm, thumb]}
+        palm = loft([[sg*0.219, 0.875, 0.022, 0.032, 0.04], [sg*0.222, 0.79, 0.03, 0.03, 0.056], [sg*0.222, 0.71, 0.03, 0.016, 0.03]], 'SKIN', n=4)
+        return {'hand_' + sd: [palm]}
     return sided(f)
 
-THIGH = [(0.092, 0.96, 0, 0.078, 0.08), (0.098, 0.74, 0.005, 0.066, 0.07), (0.1, 0.52, 0, 0.05, 0.054)]
-CALF = [(0.1, 0.52, 0, 0.05, 0.054), (0.1, 0.36, -0.012, 0.05, 0.056), (0.1, 0.2, -0.012, 0.036, 0.04), (0.1, 0.09, -0.015, 0.03, 0.034)]
+THIGH = [(0.092, 0.96, 0, 0.082, 0.086), (0.1, 0.52, 0, 0.055, 0.06)]
+CALF = [(0.1, 0.52, 0, 0.055, 0.06), (0.1, 0.09, -0.015, 0.032, 0.036)]
 def leg_rings(rings, sg, fem, g, y0=None, y1=None):
     k = (1.04, 0.95) if fem else (1.0, 1.0)
     out = []
@@ -193,7 +189,7 @@ def tops(fem):
     neckline = {'spine_03': [decal([(-0.04, 1.452, nz - 0.03), (0.04, 1.452, nz - 0.03), (0.0, 1.415, nz + 0.004)], 'SKIN', (0, 0.3, 1))]}
     tee = merge(torso(fem, 'SHIRT', 0.006), arms(fem, 'SHIRT', 'SKIN', short=True), band(fem, 0.95, 0.025, 0.012, 'SHIRT_D'), neckline)
     T['tshirt'] = tee
-    T['striped_tee'] = merge(tee, *[band(fem, y, 0.028, 0.006, 'ACC') for y in (1.0, 1.08, 1.18, 1.26, 1.34)])
+    T['striped_tee'] = merge(tee, *[band(fem, y, 0.034, 0.006, 'ACC') for y in (1.04, 1.2, 1.32)])
     def vstripe(x, col):
         out = {}
         for bone, y0, y1 in (('spine_01', 0.96, 1.14), ('spine_03', 1.14, 1.38)):
@@ -203,7 +199,7 @@ def tops(fem):
     collar = {'spine_03': [decal([(sg*0.012, 1.45, nz - 0.01), (sg*0.07, 1.44, nz - 0.03), (sg*0.03, 1.395, nz + 0.012)], 'SHIRT_D', (0, 0.3, 1)) for sg in (1, -1)]}
     placket = vstripe(0.0, 'SHIRT_D')
     T['flannel_shirt'] = merge(torso(fem, 'SHIRT', 0.008), arms(fem, 'SHIRT', 'SHIRT', cuff='SHIRT_D'),
-                               *[band(fem, y, 0.03, 0.008, 'ACC') for y in (1.02, 1.17, 1.32)], vstripe(0.045, 'ACC'), vstripe(-0.045, 'ACC'), placket, collar)
+                               *[band(fem, y, 0.034, 0.008, 'ACC') for y in (1.06, 1.28)], vstripe(0.05, 'ACC'), vstripe(-0.05, 'ACC'), collar)
     dots = []
     for x, y in ((-0.05, 1.33), (0.04, 1.36), (0.02, 1.27), (-0.03, 1.2), (0.05, 1.18), (-0.04, 1.06), (0.03, 1.02)):
         z, _ = front(fem, y); dots.append((('spine_01' if y < 1.14 else 'spine_03'), decal([(x - 0.012, y - 0.012, z + 0.012), (x + 0.012, y - 0.012, z + 0.012), (x + 0.012, y + 0.012, z + 0.012), (x - 0.012, y + 0.012, z + 0.012)], 'ACC', FN)))
@@ -226,7 +222,7 @@ def tops(fem):
         inner[bone] = [decal([(-w0, y0, z0 + 0.019), (w0, y0, z0 + 0.019), (w1, y1, z1 + 0.019), (-w1, y1, z1 + 0.019)], 'ACC', FN)]
     lz, _ = front(fem, 1.32)
     lapels = {'spine_03': [decal([(sg*0.05, 1.44, lz + 0.006), (sg*0.1, 1.4, lz + 0.016), (sg*0.06, 1.25, lz + 0.022), (sg*0.04, 1.3, lz + 0.022)], 'SHIRT_D', FN) for sg in (1, -1)]}
-    hem = {'spine_01': [loft([[0, 0.93, 0.004, 0.168, 0.118], [0, 0.99, 0.002, 0.162, 0.112]], 'SHIRT', caps=[False, False])]}
+    hem = {'spine_01': [loft([[0, 0.93, 0.004, 0.18, 0.13], [0, 0.99, 0.002, 0.176, 0.126]], 'SHIRT', n=6, rot=0, caps=[False, False])]}
     T['open_jacket'] = merge(torso(fem, 'SHIRT', 0.016), arms(fem, 'SHIRT', 'SHIRT', cuff='SHIRT_D', g=0.016), inner, lapels, hem)
     T['jumper'] = merge(torso(fem, 'SHIRT', 0.014), arms(fem, 'SHIRT', 'SHIRT', cuff='SHIRT_D', g=0.014), band(fem, 0.95, 0.04, 0.02, 'SHIRT_D'),
                         band(fem, 1.43, 0.025, 0.004, 'SHIRT_D', 'spine_03'), band(fem, 1.27, 0.05, 0.016, 'ACC'))
@@ -239,39 +235,39 @@ def tops(fem):
 
 # ---------------- bottoms ----------------
 def bottoms(fem):
-    hipT = [(0.86, 0.118, 0.088, 0), (0.93, 0.15, 0.1, 0), (0.98, 0.152, 0.101, 0)]
-    if fem: hipT = [(0.86, 0.125, 0.09, 0), (0.93, 0.158, 0.104, 0), (0.98, 0.156, 0.102, 0)]
+    hipT = [(0.86, 0.13, 0.095, 0), (0.98, 0.162, 0.112, 0)]
+    if fem: hipT = [(0.86, 0.138, 0.098, 0), (0.98, 0.166, 0.114, 0)]
     def pelvis(col):
         rings = [[0, y, oz, a + 0.006, b + 0.006] for y, a, b, oz in hipT]
         bz = hipT[-1][2] + 0.006
-        return {'pelvis': [loft(rings, col), loft([[0, 0.955, 0, hipT[-1][1] + 0.012, hipT[-1][2] + 0.012], [0, 0.985, 0, hipT[-1][1] + 0.012, hipT[-1][2] + 0.012]], 'belt', caps=[False, False]),
-                           decal([(-0.02, 0.957, bz*0.924 + 0.01), (0.02, 0.957, bz*0.924 + 0.01), (0.02, 0.983, bz*0.924 + 0.01), (-0.02, 0.983, bz*0.924 + 0.01)], 'buckle', FN)]}
+        return {'pelvis': [loft(rings, col, n=6, rot=0), loft([[0, 0.955, 0, hipT[-1][1] + 0.012, hipT[-1][2] + 0.012], [0, 0.985, 0, hipT[-1][1] + 0.012, hipT[-1][2] + 0.012]], 'belt', n=6, rot=0, caps=[False, False]),
+                           decal([(-0.02, 0.957, bz*0.866 + 0.013), (0.02, 0.957, bz*0.866 + 0.013), (0.02, 0.983, bz*0.866 + 0.013), (-0.02, 0.983, bz*0.866 + 0.013)], 'buckle', FN)]}
     def legs(col, g=0.012, calf_to=None, thigh_to=None, cuff=None, flare=0.0):
         def f(sg, sd):
             o = {}
             if thigh_to:
                 t = leg_rings(THIGH, sg, fem, g + 0.008, y1=thigh_to); t[-1][3] += 0.012; t[-1][4] += 0.012
-                o['thigh_' + sd] = [loft(t, col, caps=[True, False]), loft(leg_rings(THIGH, sg, fem, 0), 'SKIN')]
-                o['calf_' + sd] = [loft(leg_rings(CALF, sg, fem, 0), 'SKIN')]
+                o['thigh_' + sd] = [loft(t, col, n=6, caps=[True, False]), loft(leg_rings(THIGH, sg, fem, 0), 'SKIN', n=6)]
+                o['calf_' + sd] = [loft(leg_rings(CALF, sg, fem, 0), 'SKIN', n=6)]
                 return o
-            o['thigh_' + sd] = [loft(leg_rings(THIGH, sg, fem, g), col)]
+            o['thigh_' + sd] = [loft(leg_rings(THIGH, sg, fem, g), col, n=6)]
             if calf_to:
                 c = leg_rings(CALF, sg, fem, g, y1=calf_to)
-                o['calf_' + sd] = [loft(c, col, caps=[True, False]), loft(leg_rings(CALF, sg, fem, 0), 'SKIN')]
+                o['calf_' + sd] = [loft(c, col, n=6, caps=[True, False]), loft(leg_rings(CALF, sg, fem, 0), 'SKIN', n=6)]
             else:
                 c = leg_rings(CALF, sg, fem, g); c[-1][3] += flare; c[-1][4] += flare
-                o['calf_' + sd] = [loft(c, col)]
+                o['calf_' + sd] = [loft(c, col, n=6)]
             if cuff:
                 y0, y1, cc = cuff; r = leg_rings(CALF, sg, fem, g + 0.01, y0=y0, y1=y1)
-                o['calf_' + sd].append(loft(r, cc, caps=[False, False]))
+                o['calf_' + sd].append(loft(r, cc, n=6, caps=[False, False]))
             return o
         return sided(f)
-    pk = {'pelvis': [decal([(x - 0.035, 0.89, -(hipT[1][2] + 0.006)*0.924 - 0.004), (x + 0.035, 0.89, -(hipT[1][2] + 0.006)*0.924 - 0.004),
-                            (x + 0.03, 0.95, -(hipT[2][2] + 0.006)*0.924 - 0.004), (x - 0.03, 0.95, -(hipT[2][2] + 0.006)*0.924 - 0.004)], 'PANTS_D', (0, 0, -1)) for x in (-0.07, 0.07)]}
+    bk = lambda y: -(hipT[0][2] + (hipT[1][2] - hipT[0][2])*(y - 0.86)/0.12 + 0.006)*0.866 - 0.004
+    pk = {'pelvis': [decal([(x - 0.035, 0.89, bk(0.89)), (x + 0.035, 0.89, bk(0.89)), (x + 0.03, 0.95, bk(0.95)), (x - 0.03, 0.95, bk(0.95))], 'PANTS_D', (0, 0, -1)) for x in (-0.07, 0.07)]}
     def side_stripe(rings, sg, col, w=0.012):
         out = []
         for r0, r1 in zip(rings, rings[1:]):
-            x0 = r0[0] + sg*r0[3]*0.924 + sg*0.002; x1 = r1[0] + sg*r1[3]*0.924 + sg*0.002
+            x0 = r0[0] + sg*r0[3]*0.866 + sg*0.002; x1 = r1[0] + sg*r1[3]*0.866 + sg*0.002
             out.append(decal([(x0, r0[1], r0[2] - w), (x0, r0[1], r0[2] + w), (x1, r1[1], r1[2] + w), (x1, r1[1], r1[2] - w)], col, (sg, 0, 0)))
         return out
     B = {}
@@ -279,9 +275,9 @@ def bottoms(fem):
     B['shorts'] = merge(pelvis('PANTS'), legs('PANTS', thigh_to=0.7), pk)
     B['cargo_trousers'] = merge(pelvis('PANTS'), legs('PANTS', g=0.016), sided(lambda sg, sd: {'thigh_' + sd: [box([sg*0.18, 0.66, 0.0], [0.03, 0.1, 0.08], 'PANTS_D')]}))
     B['capri_trousers'] = merge(pelvis('PANTS'), legs('PANTS', calf_to=0.3), pk)
-    B['track_pants'] = merge(pelvis('PANTS'), legs('PANTS', g=0.016, cuff=(0.15, 0.1, 'PANTS_D')),
+    B['track_pants'] = merge(pelvis('PANTS'), legs('PANTS', g=0.016, cuff=(0.16, 0.1, 'PANTS_D')),
                              sided(lambda sg, sd: {'thigh_' + sd: side_stripe(leg_rings(THIGH, sg, fem, 0.016), sg, 'ACC'),
-                                                   'calf_' + sd: side_stripe(leg_rings(CALF, sg, fem, 0.016)[:3], sg, 'ACC')}))
+                                                   'calf_' + sd: side_stripe(leg_rings(CALF, sg, fem, 0.016, y0=0.52, y1=0.17), sg, 'ACC')}))
     B['rolled_jeans'] = merge(pelvis('PANTS'), legs('PANTS', cuff=(0.16, 0.11, 'denimRoll')), pk)
     return B
 
@@ -289,22 +285,22 @@ def bottoms(fem):
 def shoes():
     def base(col, sole, sg, sd):
         x = sg*0.1
-        return {'foot_' + sd: [loft([[x, 0.055, -0.065, 0.04, 0.048], [x, 0.052, 0.04, 0.047, 0.05]], col, ax='z'),
-                               loft([[x, 0.012, -0.072, 0.044, 0.013], [x, 0.012, 0.165, 0.043, 0.013]], sole, ax='z')],
-                'ball_' + sd: [loft([[x, 0.052, 0.04, 0.047, 0.05], [x, 0.04, 0.12, 0.045, 0.04], [x, 0.03, 0.16, 0.036, 0.026]], col, ax='z', caps=[False, True])]}
+        return {'foot_' + sd: [loft([[x, 0.058, -0.065, 0.06, 0.068], [x, 0.054, 0.04, 0.068, 0.07]], col, ax='z', n=4),
+                               box([x, 0.012, 0.045], [0.1, 0.024, 0.235], sole)],
+                'ball_' + sd: [loft([[x, 0.054, 0.04, 0.068, 0.07], [x, 0.036, 0.16, 0.058, 0.04]], col, ax='z', n=4, caps=[False, True])]}
     S = {}
     def trainer(sg, sd):
-        xo = sg*0.1 + sg*(0.047*0.924 + 0.003)
+        xo = sg*0.1 + sg*(0.068*0.707 + 0.003)
         return merge(base('trainer', 'gum', sg, sd), {
             'foot_' + sd: [decal([(xo, 0.03, -0.04), (xo, 0.03, 0.04), (xo, 0.065, 0.025), (xo, 0.065, -0.03)], 'ACC', (sg, 0, 0))],
-            'ball_' + sd: [decal([(sg*0.1 - 0.018, 0.095, 0.03), (sg*0.1 + 0.018, 0.095, 0.03), (sg*0.1 + 0.016, 0.085, 0.09), (sg*0.1 - 0.016, 0.085, 0.09)], 'lace', (0, 1, 0.2))]})
+            'ball_' + sd: [decal([(sg*0.1 - 0.018, 0.106, 0.04), (sg*0.1 + 0.018, 0.106, 0.04), (sg*0.1 + 0.015, 0.09, 0.1), (sg*0.1 - 0.015, 0.09, 0.1)], 'lace', (0, 1, 0.3))]})
     S['trainers'] = sided(trainer)
     S['boots'] = sided(lambda sg, sd: merge(base('boot', 'sole', sg, sd), {
-        'calf_' + sd: [loft([[sg*0.1, 0.07, -0.014, 0.046, 0.05], [sg*0.1, 0.2, -0.013, 0.044, 0.048]], 'boot'),
-                       loft([[sg*0.1, 0.19, -0.013, 0.048, 0.052], [sg*0.1, 0.215, -0.013, 0.048, 0.052]], 'bootD', caps=[False, True])]}))
+        'calf_' + sd: [loft([[sg*0.1, 0.07, -0.014, 0.05, 0.054], [sg*0.1, 0.2, -0.013, 0.046, 0.05]], 'boot', n=6),
+                       loft([[sg*0.1, 0.19, -0.013, 0.052, 0.056], [sg*0.1, 0.215, -0.013, 0.052, 0.056]], 'bootD', n=6, caps=[False, True])]}))
     S['rain_boots'] = sided(lambda sg, sd: merge(base('rainboot', 'sole', sg, sd), {
-        'calf_' + sd: [loft([[sg*0.1, 0.07, -0.014, 0.05, 0.054], [sg*0.1, 0.34, -0.012, 0.056, 0.06]], 'rainboot'),
-                       loft([[sg*0.1, 0.33, -0.012, 0.059, 0.063], [sg*0.1, 0.355, -0.012, 0.059, 0.063]], 'rainbootD', caps=[False, True])]}))
+        'calf_' + sd: [loft([[sg*0.1, 0.07, -0.014, 0.054, 0.058], [sg*0.1, 0.34, -0.012, 0.06, 0.064]], 'rainboot', n=6),
+                       loft([[sg*0.1, 0.33, -0.012, 0.064, 0.068], [sg*0.1, 0.355, -0.012, 0.064, 0.068]], 'rainbootD', n=6, caps=[False, True])]}))
     return S
 
 # ---------------- faces ----------------

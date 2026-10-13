@@ -15,7 +15,7 @@ Every shaped-piece pack made for Afterstreet, what is in it and how the game use
 
 ### survivor (`assets/shaped/survivor.js`, version 2)
 
-Every choice in the game's character creator in the faceted low-poly style: natural slender proportions with a slightly large head, flat planes, simple faces (dark eyes with no whites, a wedge nose, brows, small lips), chunky hair with blunt cuts, and muted colours. Pieces are grouped by skeleton bone. Preview: `art-tests/survivor-creator.html`.
+Every choice in the game's character creator in the faceted low-poly style: natural slender proportions with a slightly large head, big simple flat planes (hexagonal torso and limbs, square hands and shoes), simple faces (dark eyes with no whites, a wedge nose, brows, small lips), chunky hair with blunt cuts, and muted colours. Pieces are grouped by skeleton bone. Preview: `art-tests/survivor-creator.html`.
 
 **Fitting to the game's skeleton.** Bone names match the survivor skeleton (`pelvis`, `spine_01` to `spine_03`, `neck_01`, `Head`, `upperarm_l`, `lowerarm_l`, `hand_l`, `thigh_l`, `calf_l`, `foot_l`, `ball_l` and the `_r` side). Each bone in `bones` gives its pivot (joint) and tip (next joint) in the pack's reference pose: standing, arms down, 1.78 m tall. To fit:
 
@@ -31,39 +31,39 @@ Every choice in the game's character creator in the faceted low-poly style: natu
 3. Apply the build: for every bone except `Head` and `neck_01`, stretch each piece with `SHAPED.scaleXZ(piece, x, z)` using the two numbers in `builds[build]`. Slim is 0.9 and 0.93, average 1 and 1, broad 1.12 and 1.06.
 4. Fill the colour slots. Skin and hair colours come from `slots.SKIN` and `slots.HAIR`, in the same order as the creator's lists. Shirt, pants and second colour are the player's picks.
 
-**Triangles.** Body (head, neck, hands) 292. A typical survivor is about 1,300 to 1,600; the heaviest mix of every largest option is about 1,800.
+**Triangles.** Body (head, neck, hands) 180. A typical survivor is about 850 to 1,000; the heaviest mix of every largest option is about 1,100.
 
 | Top | Key | Triangles (masculine / feminine) |
 | --- | --- | --- |
-| T-shirt | `tshirt` | 317 / 333 |
-| Striped tee | `striped_tee` | 413 / 413 |
-| Flannel shirt | `flannel_shirt` | 338 / 370 |
-| Spotted top | `spotted_top` | 337 / 353 |
-| Hoodie | `hoodie` | 354 / 370 |
-| Open jacket | `open_jacket` | 300 / 316 |
-| Jumper | `jumper` | 356 / 372 |
-| Dungarees | `dungarees` | 295 / 311 |
+| T-shirt | `tshirt` | 169 / 181 |
+| Striped tee | `striped_tee` | 205 / 217 |
+| Flannel shirt | `flannel_shirt` | 182 / 194 |
+| Spotted top | `spotted_top` | 189 / 201 |
+| Hoodie | `hoodie` | 206 / 218 |
+| Open jacket | `open_jacket` | 168 / 180 |
+| Jumper | `jumper` | 196 / 208 |
+| Dungarees | `dungarees` | 167 / 179 |
 
 | Bottoms | Key | Triangles (masculine / feminine) |
 | --- | --- | --- |
-| Jeans | `jeans` | 274 / 274 |
-| Shorts | `shorts` | 350 / 350 |
-| Cargo trousers | `cargo_trousers` | 294 / 294 |
-| Capri trousers | `capri_trousers` | 350 / 350 |
-| Track pants | `track_pants` | 318 / 318 |
-| Rolled jeans | `rolled_jeans` | 306 / 306 |
+| Jeans | `jeans` | 118 / 118 |
+| Shorts | `shorts` | 150 / 150 |
+| Cargo trousers | `cargo_trousers` | 138 / 138 |
+| Capri trousers | `capri_trousers` | 150 / 150 |
+| Track pants | `track_pants` | 146 / 146 |
+| Rolled jeans | `rolled_jeans` | 142 / 142 |
 
 | Shoes | Key | Triangles |
 | --- | --- | --- |
-| Trainers | `trainers` | 196 |
-| Boots | `boots` | 288 |
-| Rain boots | `rain_boots` | 288 |
+| Trainers | `trainers` | 76 |
+| Boots | `boots` | 140 |
+| Rain boots | `rain_boots` | 140 |
 
 | Face | Key | Triangles |
 | --- | --- | --- |
 | Calm | `calm` | 16 |
 | Glasses | `glasses` | 54 |
-| Stubble | `stubble` | 52 |
+| Stubble | `stubble` | 40 |
 | Freckles | `freckles` | 34 |
 | Tired | `tired` | 20 |
 | Moustache | `moustache` | 28 |
@@ -73,11 +73,11 @@ Every choice in the game's character creator in the faceted low-poly style: natu
 | Hair | Key | Triangles |
 | --- | --- | --- |
 | None | `none` | 0 |
-| Buzzed | `buzzed` | 150 |
-| Short | `short` | 182 |
+| Buzzed | `buzzed` | 94 |
+| Short | `short` | 162 |
 | Bob | `bob` | 162 |
-| Buns | `buns` | 238 |
-| Beard | `beard` | 258 |
+| Buns | `buns` | 182 |
+| Beard | `beard` | 178 |
 
 | Hat | Key | Triangles |
 | --- | --- | --- |
