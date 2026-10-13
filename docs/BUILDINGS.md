@@ -16,6 +16,21 @@ so the look can be kept consistent as more is added.
 - **Trims.** Town fronts get a cornice along the top and, over shops, a belt course between the shop and the floor above. Homes get a
   front porch (roof, two posts and a step). Shops keep their awnings.
 
+## What game artists do, and how Afterstreet now does it (0.38)
+
+Studied before rebuilding: Joel Burgess's GDC talks on Skyrim's and Fallout 4's modular kits, the Level Design Book's pages on modular kits
+and massing, and articles on facade design and stylised environment art (sources below). The lessons, and what changed:
+
+| Lesson | Afterstreet |
+| --- | --- |
+| **Lock the kit's measurements first.** One grid, one door size, one storey height, so every piece fits every other (Burgess). | Kept: 4 m bays, 3.2 m storeys, a 1.3 m door. The window you can open is always the painted one (flats now open the left of the pair). |
+| **Walls have thickness.** Paper-thin walls read as cardboard and cause clipping (Level Design Book, massing). | Every ground-floor window is a real opening with a reveal: the wall returns 16 cm into the building round the glass, and has a sill under it. |
+| **Base, middle, top.** A facade reads well when it has a distinct bottom, body and crown (Whitsitt). | Base: a plinth of foundation along every wall, broken at the door. Middle: the painted storeys. Top: eaves, fascia and soffit on pitched roofs, a coping on every parapet, a fascia band on small flat roofs, cornices on town fronts. |
+| **Break up flat planes and turn the corners.** Large unbroken masses lose human scale (Level Design Book, scale). | Corners get trim: white boards on sided houses, pilasters in the wall colour on brick and stone, flashing on sheds. |
+| **Keep the big moves simple, put the effort where people stand.** Entrances, canopies and ground-floor windows are seen close up (Whitsitt). | Door casings on every non-house entrance, canopies on posts over glass lobbies, the porch on homes and awnings on shops kept. |
+| **Vary the silhouette and avoid copy-paste.** Repeated architecture tires the eye less than repeated detail, but rooflines are what you see from afar (Burgess; 80.lv). | About half the plain rectangular houses get a gable roof (ridge, barge boards, gable ends in the house's siding) instead of a hip; hip roofs reach 45 cm past the walls; small one-storey shops get a false front with a raised centre step, the classic small-town Main Street shape. |
+| **Spend triangles where they show.** | Trims are drawn as only their visible faces; outer buildings use the simple far shapes. A building near you averages about 1,150 triangles (about 690 before). |
+
 ## Types
 
 | Game type | Based on | Ground floor (front) | Other walls and upper floors | Roof |
@@ -36,6 +51,12 @@ so the look can be kept consistent as more is added.
 | Parking garage | Open concrete decks | Deck openings | Same | Flat |
 
 ## Sources
+
+- Joel Burgess, "Skyrim's Modular Approach to Level Design" (GDC 2013): [Game Developer write-up](https://gamedeveloper.com/design/skyrim-s-modular-approach-to-level-design) and [slides](https://www.slideshare.net/slideshow/gdc2013-kit-buildingfinal/17728576).
+- [80.lv, Building huge open worlds: modularity, kits and art fatigue](https://80.lv/articles/building-huge-open-worlds-modularity-kits-art-fatigue).
+- The Level Design Book: [modular kits](https://book.leveldesignbook.com/process/blockout/metrics/modular) and [massing](https://book.leveldesignbook.com/process/blockout/massing).
+- Brendan Whitsitt, [Three rules for great facade design](https://brendanwhitsitt.substack.com/p/17-three-rules-for-great-facade-design).
+- [80.lv, Stylized production tips and tricks](https://80.lv/articles/stylized-production-tips-and-tricks).
 
 - Commercial building types (one-part and two-part commercial blocks, enframed window wall, temple front, vertical blocks):
   Richard Longstreth, *The Buildings of Main Street*, as summarised by the Texas Historical Commission,

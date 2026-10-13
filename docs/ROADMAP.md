@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.37. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.38. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -44,9 +44,8 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.36** | Fresh build, part 2: trees, bushes, grass and rocks from the KayKit Forest Nature Pack, fitted to the planting rules and terrain types (kinds of tree by where they grow: oak-hickory, shortleaf pine, sycamore and willow on creeks, cedar and Osage orange on fence lines, bushes and flowers by yards, wood edges and banks). The Stylized Nature MegaKit is removed. | [KayKit Forest Nature Pack](https://kaylousberg.itch.io/kaykit-forest) |
-| **0.38** | Clothing layers: warmth, wetness and protection from a few kinds of clothes found as loot | None |
-| **0.39** | Rain collectors and a small garden plot at your base: water and food that come back | None |
+| **0.39** | Clothing layers: warmth, wetness and protection from a few kinds of clothes found as loot | None |
+| **0.40** | Rain collectors and a small garden plot at your base: water and food that come back | None |
 
 ## Feature backlog by area
 
@@ -115,7 +114,7 @@ All of these are free. Quaternius and Kenney packs are CC0 (no credit required, 
 | Pack | Used for | Source |
 | --- | --- | --- |
 | Bestiary – Dungeon Monsters Kit (Standard) | Alien models | [quaternius.com](https://quaternius.com) |
-| Stylized Nature MegaKit (Standard) | Trees, bushes, flowers, rocks | [quaternius.com](https://quaternius.com) |
+| Kenney Nature Kit | Trees, bushes, flowers, grass, rocks, logs | [kenney.nl](https://kenney.nl/assets/nature-kit) |
 | KayKit Furniture Bits | Beds, sofas, chairs, tables, cabinets, lamps | [GitHub](https://github.com/KayKit-Game-Assets/kaykit-furniture-bits-1.0) |
 | Universal Base Characters (Standard) | Survivor bodies and hairstyles | [quaternius.com](https://quaternius.com) |
 | Universal Animation Library and Library 2 (Standard) | Survivor moves | [itch.io](https://quaternius.itch.io/universal-animation-library-2) |
@@ -126,7 +125,7 @@ All of these are free. Quaternius and Kenney packs are CC0 (no credit required, 
 
 ### To download, in the order they are needed
 
-1. **KayKit Forest Nature Pack** (free, CC0) for 0.36: [kaylousberg.itch.io/kaykit-forest](https://kaylousberg.itch.io/kaykit-forest). Download the free version and attach the zip.
+Nothing at the moment.
 
 ### Still missing, no source chosen yet
 

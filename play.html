@@ -359,7 +359,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.37.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.38.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1060,7 +1060,11 @@ function plantTrees(w, cov){
   w.treeCount = count; w.roadOk = roadOk;
   w.roadAt = function(x, y){ var l = RG.get(gk(Math.floor(x/RC), Math.floor(y/RC))), best = null; if (l) for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + (s[5] === 'paved' && s[4] >= 3 ? 2 : 0)){ best = s[5]; if (best === 'gravel') return best; } } return best; };
 }
-function addTree(x, y, n, h){ world.trees.push({x:x, y:y, h:h || 'poi', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:Math.floor(hash(n, 4, 9)*4), yw:hash(n, 5, 9)*6.283, sc:0.62 + hash(n, 6, 9)*0.36}); }
+/* 0.38: which kind of tree, by where it grows (Kenney Nature Kit models): 0 oak, 1 maple, 2 sycamore, 3 poplar, 4 pine, 5 cedar */
+var SPECIES = {street:[0, 1, 1, 0], yard:[1, 0, 5, 3, 1], park:[0, 2, 1, 0], river:[2, 2, 3], field:[0, 5, 5], poi:[0, 1, 2]};
+function addTree(x, y, n, h){ var L = SPECIES[h || 'poi'] || SPECIES.poi; world.trees.push({x:x, y:y, h:h || 'poi', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:L[Math.floor(hash(n, 4, 9)*L.length)], yw:hash(n, 5, 9)*6.283, sc:0.75 + hash(n, 6, 9)*0.4}); }
+/* the model and picture for a tree: deciduous trees turn in autumn */
+function treeKey(tr){ var nm = TREES[tr.sp] || 'oak'; return season() === 2 && tr.sp < 4 ? nm + '_fall' : nm; }
 function buildingAt(x, y){
   var cell = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))); if (!cell) return null;
   for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (!b.gone && x >= b.minx && x <= b.maxx && y >= b.miny && y <= b.maxy && pip(b.pts, x, y)) return b; }
@@ -1230,14 +1234,20 @@ function shell(b, m, lm){
     for (var ci = 0; ci + 1 < cut.length; ci++){
       var s0 = cut[ci], s1 = cut[ci + 1], f0 = (s0 - sL)/lenS, f1 = (s1 - sL)/lenS, x0 = xL + (xR - xL)*f0, z0 = zL + (zR - zL)*f0, x1 = xL + (xR - xL)*f1, z1 = zL + (zR - zL)*f1;
       var bc = l/2 + 4*Math.floor(((s0 + s1)/2 - l/2)/4) + 2, win = l > 3.2 && bc > 0.8 && bc < l - 0.8, u0 = (s0 - l/2)/4, u1 = (s1 - l/2)/4;
-      if (y0 < lhg){ var tg = win ? (front && Math.abs(bc - l/2) < ST.fr ? ST.g : ST.gs) : ST.gp, hl = win && y0 < 0.3 && s0 <= bc - 2 + 0.01 && s1 >= bc + 2 - 0.01 ? HOLES[tg] : null;
+      if (y0 < lhg){ var tg = win ? (front && Math.abs(bc - l/2) < ST.fr ? ST.g : ST.gs) : ST.gp, hl = win && y0 < 0.3 && HOLES[tg] ? HOLES[tg].filter(function(H0){ return bc - 2 + H0[0] - H0[1] > s0 + 0.02 && bc - 2 + H0[0] + H0[1] < s1 - 0.02; }) : null; if (hl && !hl.length) hl = null;
         if (!hl) m.wallT(x0,z0,x1,z1, y0, lhg, u0, u1, 1 - y0/lhg, 0, 200 + tg, tint, 0);
         else {   /* the wall round each window, leaving the glass open */
+          /* 0.38: the wall has thickness at its openings (a reveal round the glass) and the window a sill: depth instead of a flat picture */
+          var reveal = function(sa, sb, ya, yb, sill){ var fa = (sa - sL)/lenS, fb = (sb - sL)/lenS, ax0 = xL + (xR - xL)*fa, az0 = zL + (zR - zL)*fa, bx0 = xL + (xR - xL)*fb, bz0 = zL + (zR - zL)*fb, ux0 = (xR - xL)/Math.hypot(xR - xL, zR - zL), uz0 = (zR - zL)/Math.hypot(xR - xL, zR - zL), inx = uz0*0.16, inz = -ux0*0.16, rc = tint.map(function(v){ return Math.round(v*0.78); });
+            m.quad(ax0, ya, az0, ax0 + inx, ya, az0 + inz, ax0 + inx, yb, az0 + inz, ax0, yb, az0, rc, 255); m.quad(bx0, ya, bz0, bx0, yb, bz0, bx0 + inx, yb, bz0 + inz, bx0 + inx, ya, bz0 + inz, rc, 255);
+            m.quad(ax0, yb, az0, ax0 + inx, yb, az0 + inz, bx0 + inx, yb, bz0 + inz, bx0, yb, bz0, rc, 255); m.quad(ax0, ya, az0, bx0, ya, bz0, bx0 + inx, ya, bz0 + inz, ax0 + inx, ya, az0 + inz, rc, 255);
+            if (sill){ var ex0 = ux0*0.09, ez0 = uz0*0.09, sx0 = ax0 - ex0 - inx*0.6, sz0 = az0 - ez0 - inz*0.6, sx1 = bx0 + ex0 - inx*0.6, sz1 = bz0 + ez0 - inz*0.6, sc0 = [232,228,218];
+              m.quad(sx0, ya, sz0, sx1, ya, sz1, sx1 + inx*0.6, ya, sz1 + inz*0.6, sx0 + inx*0.6, ya, sz0 + inz*0.6, sc0, 255); m.quad(sx0, ya - 0.09, sz0, sx1, ya - 0.09, sz1, sx1, ya, sz1, sx0, ya, sz0, sc0, 255); } };
           var hk = lhg/3.2, piece = function(sa, sb, ya, yb){ if (sb - sa < 0.005 || yb - ya < 0.005) return; var fa = (sa - sL)/lenS, fb = (sb - sL)/lenS;
             m.wallT(xL + (xR - xL)*fa, zL + (zR - zL)*fa, xL + (xR - xL)*fb, zL + (zR - zL)*fb, ya, yb, (sa - l/2)/4, (sb - l/2)/4, 1 - ya/lhg, 1 - yb/lhg, 200 + tg, tint, 0); };
           var sc = s0;
           for (var hi = 0; hi < hl.length; hi++){ var H0 = hl[hi], ha = bc - 2 + H0[0] - H0[1], hb = bc - 2 + H0[0] + H0[1], ya = Math.max(y0, H0[2]*hk), yb = H0[3]*hk;
-            piece(sc, ha, y0, lhg); piece(ha, hb, y0, ya); piece(ha, hb, yb, lhg); sc = hb; }
+            piece(sc, ha, y0, lhg); piece(ha, hb, y0, ya); piece(ha, hb, yb, lhg); sc = hb; reveal(ha, hb, ya, yb, H0[2] > 0.45); }
           piece(sc, s1, y0, lhg);
         } }
       if (Ht > lhg + 0.01){ var yb = Math.max(y0, lhg); m.wallT(x0,z0,x1,z1, yb, Ht, u0, u1, 1 - (yb - lhg)/3.2, 1 - (Ht - lhg)/3.2, 200 + (win ? ST.u : ST.gp), tint, 0); }
@@ -1265,6 +1275,22 @@ function shell(b, m, lm){
     lm.line(ax,Ht,az, bx,Ht,bz, INK); lm.line(ax,0.02,az, bx,0.02,bz, INK);
     var h2 = (i + n - 2) % n, pl = Math.hypot(ax - p[h2], az - p[h2+1]) || 1, turn = ((ax - p[h2])/pl)*dz - ((az - p[h2+1])/pl)*dx;
     if (Math.abs(turn) > 0.47) lm.line(ax,0,az, ax,Ht,az, INK);
+    /* 0.38: base, middle, top. The base: a plinth of foundation a little proud of the wall, broken at the door */
+    var ox2 = -nx, oz2 = -nz, PL = ST.mat === 'metal' ? 0.25 : 0.42, pcol = [150,146,138], plink = function(s0p, s1p){ if (s1p - s0p < 0.2) return; var x0p = ax + dx*s0p, z0p = az + dz*s0p, x1p = ax + dx*s1p, z1p = az + dz*s1p, f0 = 0.07;   /* only the faces that can be seen: front and top */
+      m.quad(x0p + ox2*f0, -0.1, z0p + oz2*f0, x1p + ox2*f0, -0.1, z1p + oz2*f0, x1p + ox2*f0, PL, z1p + oz2*f0, x0p + ox2*f0, PL, z0p + oz2*f0, pcol, 255); m.quad(x0p + ox2*f0, PL, z0p + oz2*f0, x1p + ox2*f0, PL, z1p + oz2*f0, x1p, PL, z1p, x0p, PL, z0p, pcol, 255); };
+    if (i === best){ plink(0, l/2 - 0.75); plink(l/2 + 0.75, l); } else plink(0, l);
+    /* corners turned in trim: boards on sided houses, pilasters on brick and stone fronts, flashing on sheds */
+    if (Math.abs(turn) > 0.47){ var cc0 = ST.mat === 'siding' ? [238,234,226] : ST.mat === 'metal' ? [96,100,104] : tint.map(function(v){ return Math.round(v*0.86); }), cw0 = ST.mat === 'metal' ? 0.06 : ST.mat === 'siding' ? 0.09 : 0.16;
+      var pdx = (ax - p[h2])/pl, pdz = (az - p[h2+1])/pl, pox = pdz, poz = -pdx, co = 0.035;   /* a board on each face meeting at the corner */
+      m.quad(ax + ox2*co, 0, az + oz2*co, ax + dx*cw0*2 + ox2*co, 0, az + dz*cw0*2 + oz2*co, ax + dx*cw0*2 + ox2*co, Ht, az + dz*cw0*2 + oz2*co, ax + ox2*co, Ht, az + oz2*co, cc0, 255);
+      m.quad(ax + pox*co, 0, az + poz*co, ax - pdx*cw0*2 + pox*co, 0, az - pdz*cw0*2 + poz*co, ax - pdx*cw0*2 + pox*co, Ht, az - pdz*cw0*2 + poz*co, ax + pox*co, Ht, az + poz*co, cc0, 255); }
+  }
+  /* the door: a casing round it, and over the entrance of glass-fronted buildings a canopy */
+  if (b.door && !ST.porch && !K.awn){ var dr0 = b.door, dox = -dr0.nx, doz = -dr0.ny, tx0 = -doz, tz0 = dox, dc0 = ST.mat === 'metal' ? [96,100,104] : [234,230,220];
+    for (var sd0 = -1; sd0 <= 1; sd0 += 2) m.box(dr0.x + tx0*0.72*sd0 + dox*0.03, 1.15, dr0.y + tz0*0.72*sd0 + doz*0.03, [tx0*0.07, 0, tz0*0.07], [0, 1.15, 0], [dox*0.05, 0, doz*0.05], dc0);
+    m.box(dr0.x + dox*0.03, 2.32, dr0.y + doz*0.03, [tx0*0.79, 0, tz0*0.79], [0, 0.1, 0], [dox*0.05, 0, doz*0.05], dc0);
+    if (ST.g === BT.glass_lobby && Ht > 3.3){ m.box(dr0.x + dox*1.2, 3.05, dr0.y + doz*1.2, [tx0*2.2, 0, tz0*2.2], [0, 0.09, 0], [dox*1.2, 0, doz*1.2], [200,204,206]);
+      for (sd0 = -1; sd0 <= 1; sd0 += 2) m.box(dr0.x + dox*2.25 + tx0*2.0*sd0, 1.5, dr0.y + doz*2.25 + tz0*2.0*sd0, [tx0*0.06, 0, tz0*0.06], [0, 1.5, 0], [dox*0.06, 0, doz*0.06], [150,154,158]); }
   }
   /* trims: a cornice along the top of town fronts, a belt course over the shops, a porch over a home's front door */
   var TRIM = ST.mat === 'brick' || ST.mat === 'buff' ? [226,218,202] : ST.mat === 'stone' ? [214,206,188] : [236,232,224];
@@ -1280,25 +1306,59 @@ function shell(b, m, lm){
     m.ybox(pd.x, pd.y, pya, 0.75, 0, 0.07, 0.75, 0.07, 1.2, [176,168,156]);
   }
   var tr = b.tri = earclip(p), cxr = b.cx, czr = b.cy, hip = K.roof === 'hip' && n <= 24 && b.area < 900 && pip(p, cxr, czr), q, r;
+  /* the top: a roof that reaches past the walls. A plain box of a house (four square corners) gets a gable roof about half the time */
+  var gab = null;
+  if (hip && n === 8 && b.kind !== 'church' && hash(b.id, 21, 4) < 0.55){ var sq = true; for (i = 0; i < 8; i += 2){ var i1 = (i + 2) % 8, i2 = (i + 4) % 8, e1x = p[i1] - p[i], e1z = p[i1+1] - p[i+1], e2x = p[i2] - p[i1], e2z = p[i2+1] - p[i1+1]; if (Math.abs(e1x*e2x + e1z*e2z)/(Math.hypot(e1x, e1z)*Math.hypot(e2x, e2z) || 1) > 0.12) sq = false; }
+    if (sq){ var L0 = Math.hypot(p[2] - p[0], p[3] - p[1]), L1 = Math.hypot(p[4] - p[2], p[5] - p[3]), s0g = L0 >= L1 ? 0 : 2; gab = [0, 1, 2, 3].map(function(k){ var ii = ((s0g/2 + k) % 4)*2; return [p[ii], p[ii+1]]; }); } }
+  var EV = 0.45, eaveRing = function(y){ var out = []; for (var k = 0; k < n; k += 2){ var kp = (k - 2 + n) % n, kn = (k + 2) % n, ax1 = p[k] - p[kp], az1 = p[k+1] - p[kp+1], ax2 = p[kn] - p[k], az2 = p[kn+1] - p[k+1], l1 = Math.hypot(ax1, az1) || 1, l2 = Math.hypot(ax2, az2) || 1;
+      var o1x = az1/l1, o1z = -ax1/l1, o2x = az2/l2, o2z = -ax2/l2, mx = o1x + o2x, mz = o1z + o2z, dd = 1 + o1x*o2x + o1z*o2z, f = dd > 0.3 ? EV/dd : EV/0.3; out.push(p[k] + mx*f, p[k+1] + mz*f); } return out; };
+  if (gab){
+    /* ridge along the long side, eaves past the long walls, rakes past the gable ends, the gable ends walled in the house's own siding */
+    var A = gab[0], B = gab[1], Cc = gab[2], D = gab[3], ex = (B[0] - A[0])/Math.hypot(B[0] - A[0], B[1] - A[1]), ez = (B[1] - A[1])/Math.hypot(B[0] - A[0], B[1] - A[1]), wid = Math.hypot(Cc[0] - B[0], Cc[1] - B[1]);
+    var rise = Math.min(3.4, 0.9 + wid*0.32), top = Ht + rise, R1 = [(A[0] + D[0])/2, (A[1] + D[1])/2], R2 = [(B[0] + Cc[0])/2, (B[1] + Cc[1])/2], gx = -ez, gz = ex;   /* g points from AB toward DC */
+    var ext = function(P0, along, out){ return [P0[0] + ex*along - gx*out, P0[1] + ez*along - gz*out]; }, dy = rise/(wid/2), lowY = Ht - EV*dy;
+    var a1 = ext(A, -EV, EV), b1 = ext(B, EV, EV), d1 = ext(D, -EV, -EV), c1 = ext(Cc, EV, -EV), r1 = ext(R1, -EV, 0), r2 = ext(R2, EV, 0);
+    m.pl = [200 + BT.roof_shingle, 1/4];
+    m.quad(a1[0], lowY, a1[1], b1[0], lowY, b1[1], r2[0], top, r2[1], r1[0], top, r1[1], rcol, 255); m.quad(c1[0], lowY, c1[1], d1[0], lowY, d1[1], r1[0], top, r1[1], r2[0], top, r2[1], rcol, 255);
+    m.pl = null;
+    [[B, Cc, R2], [D, A, R1]].forEach(function(G2){ var gl0 = Math.hypot(G2[1][0] - G2[0][0], G2[1][1] - G2[0][1]); m.quadUV([G2[0][0], Ht, G2[0][1], G2[1][0], Ht, G2[1][1], G2[2][0], top, G2[2][1], G2[2][0], top, G2[2][1]], [0, 1, gl0/4, 1, gl0/8, 1 - rise/3.2, gl0/8, 1 - rise/3.2], 200 + ST.gp, tint, 255); lm.line(G2[0][0], Ht, G2[0][1], G2[2][0], top, G2[2][1], INK); lm.line(G2[1][0], Ht, G2[1][1], G2[2][0], top, G2[2][1], INK); });
+    var FC = [238,234,226]; [[a1, b1, lowY, lowY], [c1, d1, lowY, lowY], [b1, r2, lowY, top], [r2, c1, top, lowY], [d1, r1, lowY, top], [r1, a1, top, lowY]].forEach(function(E2){ var mx = (E2[0][0] + E2[1][0])/2, mz = (E2[0][1] + E2[1][1])/2, hx = (E2[1][0] - E2[0][0])/2, hz = (E2[1][1] - E2[0][1])/2, hy = (E2[3] - E2[2])/2; m.box(mx, (E2[2] + E2[3])/2 - 0.1, mz, [hx, hy, hz], [0, 0.1, 0], [-hz/Math.hypot(hx, hz)*0.05, 0, hx/Math.hypot(hx, hz)*0.05], FC); });   /* fascia and barge boards */
+    lm.line(r1[0], top, r1[1], r2[0], top, r2[1], INK); lm.line(a1[0], lowY, a1[1], b1[0], lowY, b1[1], INK); lm.line(c1[0], lowY, c1[1], d1[0], lowY, d1[1], INK);
+    if (b.kind === 'house' && hash(b.id, 9, 2) < 0.6){ var cxh = R1[0] + (R2[0] - R1[0])*0.28, czh = R1[1] + (R2[1] - R1[1])*0.28; m.ybox(cxh, czh, Math.atan2(ez, ex), 0, 0, top - 0.1, 0.36, 0.95, 0.32, [150,92,72]); }
+    hip = false; b.gable = true;
+  }
   if (hip){
     /* a pitched roof: every wall leans in to a smaller copy of the outline held above the middle */
-    var rise = b.kind === 'church' ? Math.min(6, Math.sqrt(b.area)*0.45) : Math.min(3.2, 0.8 + Math.sqrt(b.area)*0.2), f = 0.3, top = Ht + rise, ip = [];
+    var rise = b.kind === 'church' ? Math.min(6, Math.sqrt(b.area)*0.45) : Math.min(3.2, 0.8 + Math.sqrt(b.area)*0.2), f = 0.3, top = Ht + rise, ip = [], er = eaveRing(), eY = Ht - 0.22;
     for (i = 0; i < n; i += 2) ip.push(cxr + (p[i] - cxr)*f, czr + (p[i+1] - czr)*f);
     m.pl = [200 + BT['roof_' + (ST.roof === 'flat' ? 'shingle' : ST.roof)], 1/4];
-    for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(p[i], Ht, p[i+1], p[j], Ht, p[j+1], ip[j], top, ip[j+1], ip[i], top, ip[i+1], rcol, 255); lm.line(p[i], Ht, p[i+1], ip[i], top, ip[i+1], INK); lm.line(ip[i], top, ip[i+1], ip[j], top, ip[j+1], INK); }
+    for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(er[i], eY, er[i+1], er[j], eY, er[j+1], ip[j], top, ip[j+1], ip[i], top, ip[i+1], rcol, 255); lm.line(er[i], eY, er[i+1], ip[i], top, ip[i+1], INK); lm.line(ip[i], top, ip[i+1], ip[j], top, ip[j+1], INK); lm.line(er[i], eY, er[i+1], er[j], eY, er[j+1], INK); }
+    m.pl = null;
+    for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(er[i], eY - 0.2, er[i+1], er[j], eY - 0.2, er[j+1], er[j], eY, er[j+1], er[i], eY, er[i+1], [238,234,226], 255);   /* fascia */
+      m.quad(p[i], Ht - 0.02, p[i+1], p[j], Ht - 0.02, p[j+1], er[j], eY - 0.2, er[j+1], er[i], eY - 0.2, er[i+1], tint.map(function(v){ return Math.round(v*0.7); }), 255); }   /* soffit, in shadow */
+    m.pl = [200 + BT['roof_' + (ST.roof === 'flat' ? 'shingle' : ST.roof)], 1/4];
     for (i = 0; i < tr.length; i += 3) m.tri(ip[tr[i]*2], top, ip[tr[i]*2+1], ip[tr[i+2]*2], top, ip[tr[i+2]*2+1], ip[tr[i+1]*2], top, ip[tr[i+1]*2+1], rcol, 255);
     m.pl = null;
     if (b.kind === 'house' && hash(b.id, 9, 2) < 0.6) m.ybox(cxr + (p[0] - cxr)*0.45, czr + (p[1] - czr)*0.45, 0, 0, 0, Ht + rise*0.55 + 0.5, 0.32, rise*0.45 + 0.5, 0.32, [150,92,72]);
     if (b.kind === 'church'){ m.ybox(cxr, czr, 0.4, 0, 0, top + 1.2, 1.3, 1.6, 1.3, [176,168,156]); m.pyr(cxr, czr, top + 2.8, 1.9, 7, [96,88,92], 0.4); }
-  } else {
+  } else if (!gab) {
     if (b.kind === 'church' && pip(p, cxr, czr)){ m.ybox(cxr, czr, 0.4, 0, 0, Ht + 2, 1.6, 2, 1.6, [176,168,156]); m.pyr(cxr, czr, Ht + 4, 2.3, 8, [96,88,92], 0.4); }
     m.pl = [b.rt, 1/4];
     for (i = 0; i < tr.length; i += 3) m.tri(p[tr[i]*2], Ht, p[tr[i]*2+1], p[tr[i+2]*2], Ht, p[tr[i+2]*2+1], p[tr[i+1]*2], Ht, p[tr[i+1]*2+1], rcol, 255);
     m.pl = null;
+    if (b.area <= 70){ for (i = 0; i < n; i += 2){ j = (i+2) % n; var fl0 = Math.hypot(p[j] - p[i], p[j+1] - p[i+1]) || 1, fdx = (p[j] - p[i])/fl0, fdz = (p[j+1] - p[i+1])/fl0; m.box((p[i] + p[j])/2 + fdz*0.06, Ht - 0.1, (p[i+1] + p[j+1])/2 - fdx*0.06, [fdx*(fl0/2 + 0.1), 0, fdz*(fl0/2 + 0.1)], [0, 0.13, 0], [fdz*0.07, 0, -fdx*0.07], [226,222,212]); } }
     if (b.area > 70){
       /* a low wall around the flat roof, and machinery on top of the bigger ones */
       var pc = tint.map(function(v){ return Math.round(v*0.92); });
-      for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(p[i], Ht, p[i+1], p[j], Ht, p[j+1], p[j], Ht + 0.55, p[j+1], p[i], Ht + 0.55, p[i+1], pc, 255); lm.line(p[i], Ht + 0.55, p[i+1], p[j], Ht + 0.55, p[j+1], INK); }
+      /* small-town shops: the front wall rises above the roof as a false front, so the street sees a taller, squarer building */
+      var ff = (K.awn || ST.belt) && Ht <= 4.6 && b.area < 900 && hash(b.id, 23, 5) < 0.7 ? 1.1 : 0, cop = [228,224,214];
+      for (i = 0; i < n; i += 2){ j = (i+2) % n; var ph = Ht + 0.55 + (i === best ? ff : 0), el0 = Math.hypot(p[j] - p[i], p[j+1] - p[i+1]) || 1, edx = (p[j] - p[i])/el0, edz = (p[j+1] - p[i+1])/el0;
+        if (i === best && ff){ m.wallT(p[j], p[j+1], p[i], p[i+1], Ht, ph, -el0/8, el0/8, 0.9, 0.9 - ff/3.2, 200 + ST.gp, tint, 0); } else m.quad(p[i], Ht, p[i+1], p[j], Ht, p[j+1], p[j], ph, p[j+1], p[i], ph, p[i+1], pc, 255);
+        lm.line(p[i], ph, p[i+1], p[j], ph, p[j+1], INK);
+        var cx0 = p[i] - edx*0.1, cz0 = p[i+1] - edz*0.1, cx1 = p[j] + edx*0.1, cz1 = p[j+1] + edz*0.1, cpx = edz*0.12, cpz = -edx*0.12;
+        m.quad(cx0 + cpx, ph + 0.1, cz0 + cpz, cx1 + cpx, ph + 0.1, cz1 + cpz, cx1 - cpx, ph + 0.1, cz1 - cpz, cx0 - cpx, ph + 0.1, cz0 - cpz, cop, 255); m.quad(cx0 + cpx, ph - 0.04, cz0 + cpz, cx1 + cpx, ph - 0.04, cz1 + cpz, cx1 + cpx, ph + 0.1, cz1 + cpz, cx0 + cpx, ph + 0.1, cz0 + cpz, cop, 255); }   /* a coping along the top */
+      if (ff && best >= 0){ var bj = (best + 2) % n, bmx = (p[best] + p[bj])/2, bmz = (p[best+1] + p[bj+1])/2, bl0 = Math.hypot(p[bj] - p[best], p[bj+1] - p[best+1]), bdx = (p[bj] - p[best])/bl0, bdz = (p[bj+1] - p[best+1])/bl0;
+        m.box(bmx, Ht + 0.6 + ff + 0.25, bmz, [bdx*Math.min(2.2, bl0*0.2), 0, bdz*Math.min(2.2, bl0*0.2)], [0, 0.25, 0], [bdz*0.12, 0, -bdx*0.12], tint); }   /* a raised centre step on the false front */
       if (b.area > 220) for (q = 0, r = Math.min(4, Math.floor(b.area/350) + 1); q < r; q++){ var ux = cxr + (hash(b.id, q, 61) - 0.5)*(b.maxx - b.minx)*0.5, uz = czr + (hash(b.id, q, 62) - 0.5)*(b.maxy - b.miny)*0.5; if (pip(p, ux, uz) && polyDist(p, ux, uz, true) > 1.6) m.ybox(ux, uz, hash(b.id, q, 63) < 0.5 ? 0 : 1.5708, 0, 0, Ht + 0.5, 0.9, 0.5, 0.65, [158,158,152]); }
     }
     /* a fixed ladder up one side wall of most low flat-roofed buildings: the roof is somewhere to look out from, or to wait it out */
@@ -1350,7 +1410,7 @@ function treeTile(key){
     if (tr.hi && tr.alive) return;
     if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); return; }
     if (IMPR && natTex){
-      var r = IMPR[TREES[tr.sp]]*tr.sc, y0 = m.yo - 0.1, y1 = y0 + 2*r, tile = 68 + tr.sp, UVQ = [0.003,0.997, 0.997,0.997, 0.997,0.003, 0.003,0.003];
+      var tk2 = treeKey(tr), r = (IMPR[tk2] || 5)*tr.sc, y0 = m.yo - 0.1, y1 = y0 + 2*r, tile = 60 + (IMPT[tk2] || 1), UVQ = [0.003,0.997, 0.997,0.997, 0.997,0.003, 0.003,0.003];
       for (var q = 0; q < 2; q++){ var a = tr.yw + q*1.5708, cx = Math.cos(a)*r, cz = Math.sin(a)*r; m.quadUV([tr.x - cx, y0, tr.y - cz, tr.x + cx, y0, tr.y + cz, tr.x + cx, y1, tr.y + cz, tr.x - cx, y1, tr.y - cz], UVQ, tile, WHITE, 255); }
       return;
     }
@@ -1380,15 +1440,15 @@ function wildTrees(o){
     var tx = x + hash(hx, hy, 302)*st*0.8, ty = y + hash(hx, hy, 303)*st*0.8;
     if (g.wd[k] < 6 || tx < world.minx || tx > world.maxx || ty < world.miny || ty > world.maxy || blocked(tx, ty) || (world.roadOk && !world.roadOk(tx, ty, 2.5))) continue;
     var id = 'w' + hx + '_' + hy, pine = hash(hx, hy, 304) < g.tp[k]/255, n = hx*7 + hy*13;
-    list.push({x:tx, y:ty, id:id, h:'wild', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:!world.cut[id], shake:0, sp:(pine ? 2 : 0) + (hash(hx, hy, 305) < 0.5 ? 1 : 0), yw:hash(n, 5, 9)*6.283, sc:0.62 + hash(n, 6, 9)*0.36, tk:o.key});
+    list.push({x:tx, y:ty, id:id, h:'wild', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:!world.cut[id], shake:0, sp:pine ? (hash(hx, hy, 305) < 0.75 ? 4 : 5) : [0, 0, 1, 3, 2][Math.floor(hash(hx, hy, 305)*5)], yw:hash(n, 5, 9)*6.283, sc:0.75 + hash(n, 6, 9)*0.4, tk:o.key});
   }
   return list;
 }
 function manageTrees(budget){
   var T = world.gl.trees; if (!T) return; var R = QS.far + CH + 130, n = 0, K = TREE_T;
   for (var ky = Math.floor((P.y - R)/K); ky <= Math.floor((P.y + R)/K); ky++) for (var kx = Math.floor((P.x - R)/K); kx <= Math.floor((P.x + R)/K); kx++){
-    var o = treeT(kx, ky, true); if (o.g || n >= budget) continue;
-    if (!o.wild) o.wild = wildTrees(o); treeTile(o.key); n++;
+    var o = treeT(kx, ky, true); if ((o.g && o.sea === season()) || n >= budget) continue;   /* autumn colours come and go with the season */
+    if (!o.wild) o.wild = wildTrees(o); o.sea = season(); treeTile(o.key); n++;
   }
   T.forEach(function(o){ if (o.g && (Math.abs(o.x - P.x) > R + 2*K || Math.abs(o.y - P.y) > R + 2*K)){ freeMesh(o.g); o.g = null; o.wild = null; } });
 }
@@ -2201,7 +2261,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.37';
+var VERSION = '0.38';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2591,7 +2651,7 @@ function swing(){
     if (!t.alive) return; var dx = t.x - P.x, dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) return;
     var d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
   });
-  if (bt){ bt.hp--; bt.shake = 0.2; wear(0.5); sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); if (bt.id){ world.cut[bt.id] = 1; emit({k:'tree', id:bt.id}); } else emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 2 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.fresh++; feed('+1 Fresh food (fruit from the tree)', ITEMS.fresh[1]); } updateHud(); } }
+  if (bt){ bt.hp--; bt.shake = 0.2; wear(0.5); sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); if (bt.id){ world.cut[bt.id] = 1; emit({k:'tree', id:bt.id}); } else emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 4 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.fresh++; feed('+1 Fresh food (fruit from the tree)', ITEMS.fresh[1]); } updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
@@ -3267,7 +3327,7 @@ function update(dt){
     else if (target.fix){ if (ePress || tapped) useFix(target); autoUse = null; }
     else if (target.port && target.k < 0 && doorState(target.b) === 0 && lockedOf(target.b) && !(inv.key > 0)){ prog += dt/6; if (prog >= 1){ prog = 0; setPort(target.b, -2, 0); setPort(target.b, -1, 1); feed('You pried the door open', '#c0c6cc'); makeNoise(P.x, P.y, 6); autoUse = null; keys.KeyE = false; } }
     else if (target.port){ if (ePress || tapped) usePort(target); autoUse = null; }
-    else { prog += dt/(target.nest ? 4 : target.plant ? (target.nm === 'Rock_Medium_2' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
+    else { prog += dt/(target.nest ? 4 : target.plant ? (target.nm === 'rock' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
   } else prog = 0;
   var pr = el('prompt');
   if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Search to come out' : 'move or press E to come out'); }
@@ -3671,13 +3731,13 @@ function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
   gl.uniform4f(U.inst, x, gy, y, yaw); gl.uniform1f(U.hurtU, hurt ? 0.85 : 0); drawMesh(c.poses[f]);
 }
 /* ---- nature models: Quaternius "Stylized Nature MegaKit" (CC0), converted by tools/build_nature.py. Each is one ready mesh, drawn wherever needed. ---- */
-var IMPR = null, NAT = {}, TREES = ['CommonTree_3', 'CommonTree_5', 'Pine_4', 'Pine_5'], hiTrees = [], clutter = [], clutKey = '', natT = 0;
+var IMPR = null, IMPT = {}, NAT = {}, TREES = ['oak', 'maple', 'sycamore', 'poplar', 'pine', 'cedar'], hiTrees = [], clutter = [], clutKey = '', natT = 0;
 function loadNature(){
   var t = (ART.nature || '').trim(), nl = t.indexOf('\n'); if (nl < 0) return;
   try {
     var idx = JSON.parse(t.slice(0, nl)), bin = atob(t.slice(nl + 1)), buf = new Uint8Array(bin.length), i; for (i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
     var dv = new DataView(buf.buffer);
-    IMPR = idx._imp || null; delete idx._imp;
+    IMPR = idx._imp || null; IMPT = idx._imptile || {}; if (idx._trees) TREES = idx._trees; delete idx._imp; delete idx._imptile; delete idx._trees;
     for (var n in idx){
       var e = idx[n], nv = e.n*3, pos = new Float32Array(nv*3), tc = new Float32Array(nv*3), col = new Uint8Array(nv*4);
       for (i = 0; i < nv; i++){ var o = e.o + i*10, q = e.o + nv*10 + Math.floor(i/3)*4; pos[i*3] = dv.getInt16(o, true)/1000; pos[i*3+1] = dv.getInt16(o + 2, true)/1000; pos[i*3+2] = dv.getInt16(o + 4, true)/1000; tc[i*3] = dv.getInt16(o + 6, true)/2048; tc[i*3+1] = dv.getInt16(o + 8, true)/2048; tc[i*3+2] = 60 + buf[q]; col[i*4] = buf[q+1]; col[i*4+1] = buf[q+2]; col[i*4+2] = buf[q+3]; col[i*4+3] = 255; }
@@ -3689,7 +3749,7 @@ function loadNature(){
 }
 /* choose which trees are close enough to draw in full, and scatter small plants on the mapped green areas around you */
 function manageNature(){
-  if (!NAT.Pine_5 || !world.gl.trees) return;
+  if (!NAT.pine || !world.gl.trees) return;
   var R = QS.treeR, cand = [], dirty = {}, i, k;
   nearTrees(P.x, P.y, R, function(tr){ if (!tr.alive) return; var d = Math.hypot(tr.x - P.x, tr.y - P.y); if (d < R) cand.push([d, tr]); });
   cand.sort(function(a, b){ return a[0] - b[0]; }); var next = cand.slice(0, QS.treeN).map(function(c){ return c[1]; });
@@ -3697,7 +3757,7 @@ function manageNature(){
   hiTrees.concat(next).forEach(function(tr){ if (!!tr.hi !== !!tr.hi2){ tr.hi = tr.hi2; dirty[tr.tk] = 1; } });
   hiTrees = next; for (k in dirty) treeTile(+k);
   var cs = 12, cx0 = Math.floor(P.x/cs), cy0 = Math.floor(P.y/cs), key = cx0 + ',' + cy0 + ',' + world.name; if (key === clutKey) return; clutKey = key; clutter = [];
-  var rc = Math.ceil(QS.clutR/cs), A = world.areas, pick = {grass:['Grass_Common_Short', 'Grass_Common_Tall', 'Clover_1', 'Flower_3_Single', 'Grass_Common_Short'], park:['Flower_3_Single', 'Plant_1', 'Grass_Common_Short', 'Bush_Common', 'Clover_1'], forest:['Fern_1', 'Plant_1', 'Rock_Medium_2', 'Grass_Common_Tall', 'Bush_Common']}, SC = {Fern_1:0.26, Rock_Medium_2:0.45, Bush_Common:0.85, Flower_3_Single:0.36, Clover_1:0.3, Plant_1:0.55, Grass_Common_Short:0.7, Grass_Common_Tall:0.6};
+  var rc = Math.ceil(QS.clutR/cs), A = world.areas, pick = {grass:['grass', 'grass_tall', 'flowers_y', 'flowers_p', 'grass'], park:['flowers_r', 'bush_small', 'grass', 'bush', 'flowers_y'], forest:['fern', 'shrub', 'rock', 'mushrooms', 'log']}, SC = {};
   for (var cy = cy0 - rc; cy <= cy0 + rc; cy++) for (var cx = cx0 - rc; cx <= cx0 + rc; cx++) for (i = 0; i < 4; i++){
     var x = (cx + hash(cx, cy, 70 + i))*cs, y = (cy + hash(cx, cy, 80 + i))*cs, d = Math.hypot(x - P.x, y - P.y); if (d > QS.clutR) continue;
     var kind = coverKind(x, y);
@@ -3713,8 +3773,8 @@ function coverKind(x, y){
   var k = j*g.cols + i, o = k*6; if (g.td[k] >= 90) return 'forest'; if (g.c[o] > 120) return 'grass'; return hash(Math.round(x), Math.round(y), 61) < 0.5 ? 'park' : null;
 }
 /* what each kind of plant gives when gathered: [least, most] of each thing */
-var REGROW = 1500, PNAME = {Bush_Common:'the bush', Flower_3_Single:'the flowers', Fern_1:'the fern', Plant_1:'the plant', Clover_1:'the clover', Grass_Common_Short:'the grass', Grass_Common_Tall:'the tall grass', Rock_Medium_2:'the rock'};
-var DROPS = {Bush_Common:{berry:[1,3], wood:[0,1]}, Flower_3_Single:{herb:[1,2]}, Fern_1:{fiber:[1,2]}, Plant_1:{fiber:[1,1], herb:[0,1]}, Clover_1:{herb:[0,1], fiber:[0,1]}, Grass_Common_Short:{fiber:[0,1]}, Grass_Common_Tall:{fiber:[1,2]}, Rock_Medium_2:{stone:[1,3]}};
+var REGROW = 1500, PNAME = {bush:'the bush', bush_small:'the bush', shrub:'the shrub', flowers_y:'the flowers', flowers_p:'the flowers', flowers_r:'the flowers', grass:'the grass', grass_tall:'the tall grass', fern:'the fern', rock:'the rock', mushrooms:'the mushrooms', log:'the fallen log', stump:'the stump'};
+var DROPS = {bush:{berry:[1,3], wood:[0,1]}, bush_small:{berry:[0,2]}, shrub:{berry:[0,1], fiber:[1,1]}, flowers_y:{herb:[1,2]}, flowers_p:{herb:[1,2]}, flowers_r:{herb:[0,1]}, grass:{fiber:[0,1]}, grass_tall:{fiber:[1,2]}, fern:{fiber:[1,2]}, rock:{stone:[1,3]}, mushrooms:{herb:[0,1], berry:[0,1]}, log:{wood:[1,2]}, stump:{wood:[0,1]}};
 function gather(o){
   sfx('pick', o.x, o.y, 0.7);
   var d = DROPS[o.nm] || {}, any = false, k; for (k in d){ var n = d[k][0] + Math.floor(Math.random()*(d[k][1] - d[k][0] + 1)); if (n > 0){ inv[k] += n; feed('+' + n + ' ' + ITEMS[k][0], ITEMS[k][1]); any = true; } }
@@ -3722,8 +3782,8 @@ function gather(o){
   world.edits.picked[o.key] = time; var i = clutter.indexOf(o); if (i >= 0) clutter.splice(i, 1); emit({k:'pick', key:o.key}); addXp('scav', 1); updateHud();
 }
 function drawNature(){
-  if (!NAT.Pine_5 || !natTex) return; var i;
-  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[TREES[tr.sp]]); }
+  if (!NAT.pine || !natTex) return; var i;
+  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[treeKey(tr)]); }
   for (i = 0; i < clutter.length; i++){ var c = clutter[i]; gl.uniform4f(U.inst, c.x, c.gy, c.y, c.yw); gl.uniform1f(U.iscl, c.sc); drawMesh(c.m); }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1);
 }

@@ -36,6 +36,8 @@ level ground while steep slopes and rock stay bare.
 | Parks | Groves with open lawn between them, and a few trees standing alone |
 | Fields and meadows | The odd lone tree |
 
+From 0.38 the trees are Kenney's Nature Kit models, by habitat: oaks and maples on streets, maples, oaks, cedars and poplars in yards, oaks, sycamores and maples in parks, sycamores and poplars on riverbanks, oaks and cedars in fields, and pines and cedars where the woods are pine-oak. Oaks, maples, sycamores and poplars turn in autumn.
+
 Every tree keeps a minimum distance from the next (4 m in woods, 8 m along streets), which is the idea behind Poisson-disk placement.
 No tree stands in a road, a building or water. On a very large map each kind is thinned evenly, so the total stays light enough for a
 phone (about 18,000 trees at most).

@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.37) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.38) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -312,6 +312,13 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3y.2 At midnight going into day 3 a message says the power is out: the lights go dark, the clock line says "power out", and stoves need wood again.
 - [ ] 3y.3 Going into day 5 the water mains fail: sinks and baths give nothing; toilet cisterns still give a little.
 - [ ] 3y.4 Find a generator (hardware store, workshop or garage) and some fuel. In a building, use it from Items, press B to pour in fuel and E to switch it on. The room lights up, the stove works without wood, and aliens come to the noise. Curtains stop them seeing the light. B on it when it is off picks it up.
+
+## Stage 3z: new trees and the building rework
+
+- [ ] 3z.1 Trees are the new flat low-poly kind: oaks and maples along streets and in yards, tall poplars and spreading sycamores by creeks, pines and cedars in the woods. In autumn the broadleaves turn orange and gold.
+- [ ] 3z.2 Bushes, flowers, grass, ferns, rocks, mushrooms and fallen logs can be gathered (logs give wood).
+- [ ] 3z.3 Homes: windows sit in the wall with a sill, a grey plinth runs along the bottom, corners have white boards, roofs overhang with a white fascia; some homes have gable roofs.
+- [ ] 3z.4 Small shops have a false front rising above the roof; clinics and offices have a canopy over the door. The frame rate in town is still smooth on the iPhone.
 
 ## Stage 4: aliens and weather
 
