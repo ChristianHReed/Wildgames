@@ -149,7 +149,9 @@ a{color:var(--accent)}
 <script>
 "use strict";
 function showErr(msg){ var s = document.getElementById('status'); if (!s) return; s.hidden = false; s.className = 'err'; s.textContent = 'The test stopped: ' + (msg || 'unknown error') + '. Reload the page to try again, and send Claude a screenshot of this message.'; }
-window.addEventListener('error', function(e){ showErr(e.message); });
+/* only this page's own errors stop the test. "Script error." with no file is from another site's script (a browser extension or
+   Brave's own add-ons on iPhone) and says nothing useful, so it is ignored */
+window.addEventListener('error', function(e){ if (!e.filename || /^Script error\.?$/.test(e.message || '')) return; showErr(e.message + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
 window.addEventListener('unhandledrejection', function(e){ showErr(e.reason && e.reason.message || String(e.reason)); });
 
 var $ = function(id){ return document.getElementById(id); };
