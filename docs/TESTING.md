@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.38) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.39) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -371,7 +371,12 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 
 - [ ] 8.1 Find a bicycle near a house. E to ride, E to get off. It stays where you left it.
 - [ ] 8.1b Streets have lights and hydrants, parks have benches, shops have dumpsters, houses have bushes. Report any standing in a road or inside a wall.
-- [ ] 8.2 Find a car (they now look like cars; police stations have police cars). Drive it; fuel runs down; aliens are drawn to it.
+- [ ] 8.2 Find a car (Kenney Car Kit models; police stations have police cars). Drive it; the wheels roll and the front ones turn as you steer; you hear a low engine note; fuel runs down; aliens are drawn to it.
+- [ ] 8.2a At the start of a new world, an old red pickup is parked in the safe-house drive with its front left wheel off (on concrete blocks), its bonnet up and its driver's door leaning on the bed. At its front left corner the prompt lists what it still needs.
+- [ ] 8.2b Search garages, auto shops and gas stations (or a trader) for a toolkit, a spare tire, a car battery and engine parts. At the truck, holding E fits one part at a time and you see it go in: the wheel rolls onto the hub, the battery drops into the engine bay, the door swings onto its hinges. When the battery and engine parts are in, the bonnet closes.
+- [ ] 8.2c With fuel cans in your pack, E at the driver's door drives the truck. Leave some gear in the truck bed (E at the back), drive off and come back: it is still there. The big map shows "Truck" where you left it.
+- [ ] 8.2d At night, E at the passenger door sleeps in the cab until morning. On the Springfield region, drive the truck over the edge of a square: it arrives with you, bed and all; drive it back home and it parks as the safe-house truck again.
+- [ ] 8.2e Frame rate near the truck and on a street of parked cars is still smooth on the iPhone.
 - [ ] 8.3 Find a trader (green dot on the minimap, green cube overhead). Buy and sell with scrap.
 - [ ] 8.4 Start a new world with the goal **Reclaim** and another with **Escape**. The Goal line in the top-left tracks progress.
 

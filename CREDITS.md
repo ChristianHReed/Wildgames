@@ -1,7 +1,7 @@
 # Credits
 
 - **Map data:** © OpenStreetMap contributors, Open Database License. The built-in Springfield region comes from the Afterstreet map pack (`design/afterstreet_handoff/map_data/springfield_50mi/`), pulled from the Overpass API and OpenFreeMap vector tiles in October 2026, with elevation from AWS Terrain Tiles (SRTM/3DEP); `tools/build_region.py` cuts it into squares.
-- **Furniture, cars and street props:** KayKit Furniture Bits 1.0 and KayKit City Builder Bits 1.0 by Kay Lousberg (www.kaylousberg.com), CC0. Converted and recoloured by `tools/build_models.py`.
+- **Furniture and street props:** KayKit Furniture Bits 1.0 and KayKit City Builder Bits 1.0 by Kay Lousberg (www.kaylousberg.com), CC0. Converted and recoloured by `tools/build_models.py`.
 - **Icons and interface design:** the Afterstreet design pack in `design/afterstreet_handoff/`.
 - **Ground and indoor textures:** original, painted in code by `tools/paint_ground.py`; the ground cover and tree planting rules are in `docs/TERRAIN.md`.
 - **Elevation:** Terrain Tiles hosted on AWS Open Data (Terrarium format, assembled by Mapzen from sources including USGS 3DEP and SRTM), downloaded by the game when a map is made.
@@ -10,4 +10,5 @@
 - **Survivors:** the skeleton of "Universal Base Characters" (free standard version), moved by clips from "Universal Animation Library" and "Universal Animation Library 2" (free standard versions), both by Quaternius (quaternius.com), CC0. The low-poly bodies, hair and hats are original, built on that skeleton by `tools/build_people.py` (the pack's own bodies can still be used with its `pack` option), and baked into poses; the packs themselves are not copied here. Faces, clothes and hair textures are original, painted in code by `tools/paint_people.py`.
 - **Furniture:** kitchen, bathroom, bedroom, office and storage pieces from Kenney's "Furniture Kit" (kenney.nl), CC0, added to `tools/build_models.py`.
 - **Sound:** footsteps, impacts, glass, doors, cloth and metal from Kenney's "Impact Sounds" and "RPG Audio" (kenney.nl), CC0, packed by `tools/build_sounds.py`. Gunfire, alien calls, rain, wind and thunder are made by the game.
+- **Cars and the truck:** saloon, hatchback, SUV, van, taxi, police car and pickup truck models, a loose door and a tire from Kenney's "Car Kit" (kenney.nl), CC0, split into body, wheels and bonnet and recoloured by `tools/build_vehicles.py` (the town cars get simpler wheels); the pack itself is not in this repo. The toolkit, tire, car battery and engine parts icons are drawn by the same script.
 - **Trees and plants:** tree, bush, grass, flower, fern, rock, mushroom and log models from Kenney's "Nature Kit" (kenney.nl), CC0, recoloured to Ozark greens and scaled to real sizes by `tools/build_nature.py`, which also draws the far-away tree pictures; the pack itself is not in this repo.

@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.38. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 12 October 2026, at version 0.39. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -37,6 +37,8 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.35 | Stealth extras: aliens see through shut window glass; curtains and blinds (B at a window) stop their eyes and hide your light at night, and a lit window draws aliens from about 45 m; footsteps carry by ground (quiet on grass and carpet, loud on gravel, loudest on broken glass); the giant feels car engines from about 140 m and sprinting from about 65 m |
 | 0.35.1 | Ground-floor windows are real openings (see out, see in); inside walls stop short of windows so every window can be climbed through; windows of flats line up with their painted pairs |
 | 0.37 | Power and water fail: street lights, lit windows and electric stoves until the power fails going into day 3; the water mains fail going into day 5 (cisterns still hold some); generators (rare loot) power one building with fuel: light, a working stove, but noise and lit windows that draw aliens |
+| 0.38 | Trees from Kenney's Nature Kit chosen by habitat, with autumn colours; buildings reworked with what game artists do for modular kits: windows set into the wall with sills, a plinth, corner trim, roof overhangs with fascia, gable roofs on many homes, false fronts on small shops, canopies over glass doors (docs/BUILDINGS.md) |
+| 0.39 | Cars from Kenney's Car Kit, with wheels that roll and steer and an engine sound. A broken pickup truck in the safe house drive: fix it with a toolkit, a spare tire, a car battery, engine parts and 2 scrap (garages, auto shops, gas stations, traders), each fitted by holding E while the part goes into place; then drive it, keep gear in its bed and sleep in its cab. It can drive between parts of the Springfield region |
 
 ## Next versions
 
@@ -44,8 +46,9 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.39** | Clothing layers: warmth, wetness and protection from a few kinds of clothes found as loot | None |
-| **0.40** | Rain collectors and a small garden plot at your base: water and food that come back | None |
+| **0.40** | Clothing layers: warmth, wetness and protection from a few kinds of clothes found as loot | None |
+| **0.41** | Rain collectors and a small garden plot at your base: water and food that come back | None |
+| **0.42** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
 
 ## Feature backlog by area
 
@@ -101,7 +104,8 @@ Ticked items are in the game.
 - [ ] Other survivors to recruit, with needs and jobs
 - [ ] Horde nights against your base
 - [ ] Loot that does not come back
-- [ ] Vehicle repair, siphoning fuel, trunks
+- [x] Vehicle repair (the safe-house truck), a truck bed to store gear, sleeping in the cab
+- [ ] Siphoning fuel, car trunks, headlights
 - [ ] Skill books and more skills
 - [ ] Map item with notes, instead of always knowing where you are
 
@@ -120,7 +124,8 @@ All of these are free. Quaternius and Kenney packs are CC0 (no credit required, 
 | Universal Animation Library and Library 2 (Standard) | Survivor moves | [itch.io](https://quaternius.itch.io/universal-animation-library-2) |
 | Kenney Furniture Kit | Kitchen, bathroom, bedroom, office pieces | [kenney.nl](https://kenney.nl/assets/furniture-kit) |
 | Kenney Impact Sounds and RPG Audio | Footsteps, doors, glass, hits | [kenney.nl](https://kenney.nl/assets/impact-sounds) · [kenney.nl](https://kenney.nl/assets/rpg-audio) |
-| KayKit City Builder Bits | Cars, street lights, benches, hydrants, dumpsters | [GitHub](https://github.com/KayKit-Game-Assets/kaykit-city-builder-bits-1.0) |
+| Kenney Car Kit | Town cars and the safe-house pickup truck (separate wheels and bonnet so they move), the loose door and tire beside it | [kenney.nl](https://kenney.nl/assets/car-kit) |
+| KayKit City Builder Bits | Street lights, benches, hydrants, dumpsters | [GitHub](https://github.com/KayKit-Game-Assets/kaykit-city-builder-bits-1.0) |
 | OpenStreetMap and Terrarium elevation tiles | Streets, buildings, hills | Downloaded by the game |
 
 ### To download, in the order they are needed
