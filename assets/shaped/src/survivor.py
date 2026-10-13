@@ -205,7 +205,7 @@ TORSO_ANG = [0, 35, 65, 90, 115, 145, 180, 215, 270, 325]
 CHEST = sym({90: 0.97, 65: 1.05, 215: 1.05, 270: 0.96})
 TORSO = {
   False: Table(TORSO_ANG, [(0.9, 0.15, 0.1, 0.004, {}), (1.04, 0.138, 0.094, 0.006, {}), (1.18, 0.15, 0.1, 0.014, {}),
-                           (1.3, 0.17, 0.11, 0.022, CHEST), (1.38, 0.176, 0.104, 0.018, CHEST), (1.435, 0.148, 0.086, 0.006, sym({90: 0.96})),
+                           (1.3, 0.162, 0.108, 0.022, CHEST), (1.38, 0.168, 0.102, 0.018, CHEST), (1.435, 0.148, 0.086, 0.006, sym({90: 0.96})),
                            (1.5, 0.064, 0.058, 0.004, {})]),
   True:  Table(TORSO_ANG, [(0.9, 0.152, 0.102, 0.004, {}), (1.04, 0.124, 0.088, 0.006, {}), (1.18, 0.13, 0.094, 0.014, {}),
                            (1.29, 0.15, 0.11, 0.022, sym({65: 1.1, 90: 1.03, 215: 1.03})), (1.37, 0.158, 0.098, 0.016, sym({65: 1.03})),
@@ -263,7 +263,12 @@ def limb(bone_a, bone_b, prof, g=0.0, t0=None, t1=None):
         rings = [at(lo)] + [r for (t, *_), r in zip(prof, rings) if lo < t < hi] + [at(hi)]
     return rings
 def tube(rings, col, **k): return loft(rings, col, ang=LIMB_ANG, **k)
-def sleeves(col, style='long', g=0.018, cuff=None):
+def joint(P, a, b, col, h=0.03):
+    """a joint cap (Jumpship: costume accents at the joints). It sits on the child bone, centred on the pivot, and is a
+    little wider than both segments, so the bend reads at any distance and the seam between two rigid parts never shows."""
+    x, y, z = P
+    return tube([[x, y + h, z, a*0.9, b*0.9], [x, y, z, a, b], [x, y - h, z, a*0.92, b*0.92]], col)
+def sleeves(col, style='long', g=0.018, cuff=None, elbow=None, yoke=None):
     """style: 'long' (flared cuff over the wrist), 'short' (to above the elbow) or 'rolled' (rolled to mid-forearm)"""
     def f(sg, sd):
         S, E, W = J['sh' + sd], J['el' + sd], J['wr' + sd]
@@ -271,8 +276,10 @@ def sleeves(col, style='long', g=0.018, cuff=None):
         if style == 'short':
             s = limb(S, E, UPPER, g, t1=0.5); s[-1][3] += 0.012; s[-1][4] += 0.012
             return {'upperarm_' + sd: [tube(limb(S, E, UPPER), 'SKIN'), tube(s, col, caps=[True, False])],
-                    'lowerarm_' + sd: [tube(limb(E, W, LOWER), 'SKIN')]}
+                    'lowerarm_' + sd: [tube(limb(E, W, LOWER), 'SKIN'), joint(E, 0.038, 0.039, 'SKIN', 0.024)]}
         o = {'upperarm_' + sd: [tube(up, col)]}
+        if yoke:   # a shoulder panel in a second shade: the arm swing reads against the body
+            y = limb(S, E, UPPER, g + 0.003, t1=0.16); o['upperarm_' + sd].append(tube(y, yoke, caps=[True, False]))
         if style == 'rolled':
             cutr = limb(E, W, LOWER, g, t1=0.42)
             roll = limb(E, W, LOWER, g + 0.016, t0=0.3, t1=0.46)
@@ -281,12 +288,13 @@ def sleeves(col, style='long', g=0.018, cuff=None):
             lo = limb(E, W, LOWER, g, t1=0.9)
             end = limb(E, W, LOWER, g + 0.012, t0=0.82, t1=1.0)
             o['lowerarm_' + sd] = [tube(lo, col, caps=[False, False]), tube(end, cuff or col)]
+        o['lowerarm_' + sd].append(joint(E, 0.037 + g + 0.007, 0.039 + g + 0.007, elbow or col))
         return o
     return both_sides(f)
 def hand_rings(sg, sd, g=0.0):
     W, F = J['wr' + sd], J['ft' + sd]
-    m = [lerp(W[i], F[i], 0.45) for i in range(3)]
-    return [[W[0], W[1] + 0.012, W[2], 0.021 + g, 0.027 + g], [m[0] + sg*0.002, m[1], m[2] + 0.004, 0.019 + g, 0.042 + g], [F[0] - sg*0.004, F[1], F[2], 0.013 + g, 0.028 + g]]
+    m = [lerp(W[i], F[i], 0.45) for i in range(3)]; e = [lerp(W[i], F[i], 0.85) for i in range(3)]
+    return [[W[0], W[1] + 0.012, W[2], 0.023 + g, 0.028 + g], [m[0] + sg*0.002, m[1], m[2] + 0.004, 0.024 + g, 0.042 + g], [e[0] - sg*0.008, e[1], e[2] - 0.006, 0.021 + g, 0.032 + g]]
 def thumb(sg, sd, col):
     W = J['wr' + sd]
     return solid([(W[0] - sg*0.008, W[1] - 0.03, W[2] + 0.028), (W[0] - sg*0.016, W[1] - 0.034, W[2] + 0.03),
@@ -320,19 +328,19 @@ def tops(fem):
     hood = {'spine_03': [loft([[0, 1.4, -0.03, 0.15, 0.12, None, [0, 0, 0.0, 0.02, 0.03, 0.02, 0, -0.01, -0.03, -0.01]],
                                [0, 1.49, -0.055, 0.135, 0.12], [0, 1.56, -0.095, 0.085, 0.075]], 'SHIRT_D',
                               ang=[150, 180, 215, 270, 325, 360, 390], closed=False, both=True, cin='SHIRT')]}
-    pocket = patch(fem, 0.03, -0.085, 0.085, 0.96, 1.08, 'SHIRT_D', lift=0.006, bulge=0.012)
-    strings = join(*[on_chest(fem, [(x - 0.004, 1.45), (x + 0.004, 1.45), (x + 0.004, 1.35), (x - 0.004, 1.35)], 'ACC', 0.03, lift=0.008, bulge=0.012) for x in (-0.03, 0.03)])
-    T['hoodie'] = join(chest(fem, 'SHIRT', 0.03, bulge=0.012), sleeves('SHIRT', 'long', 0.028, cuff='SHIRT_D'), band(fem, HEM - 0.005, 0.045, 0.03, 'SHIRT_D'), hood, pocket, strings)
+    pocket = patch(fem, 0.024, -0.085, 0.085, 0.96, 1.08, 'SHIRT_D', lift=0.006, bulge=0.004)
+    strings = join(*[on_chest(fem, [(x - 0.004, 1.45), (x + 0.004, 1.45), (x + 0.004, 1.35), (x - 0.004, 1.35)], 'ACC', 0.024, lift=0.008, bulge=0.004) for x in (-0.03, 0.03)])
+    T['hoodie'] = join(chest(fem, 'SHIRT', 0.024, bulge=0.004), sleeves('SHIRT', 'long', 0.022, cuff='SHIRT_D', yoke='SHIRT_D'), band(fem, HEM - 0.005, 0.045, 0.024, 'SHIRT_D'), hood, pocket, strings)
     # open jacket over a sweater in the second colour: flared hem dipping at the back, collar up, lapels
     inner = join(patch(fem, 0.022, -0.05, 0.05, HEM - 0.03, SPLIT, 'ACC', lift=0.002), patch(fem, 0.022, -0.05, 0.05, SPLIT, 1.45, 'ACC', lift=0.002))
     up_collar = {'spine_03': [loft([[0, 1.43, -0.006, 0.105, 0.09], [0, 1.53, -0.018, 0.088, 0.078]], 'SHIRT_D', ang=[110, 150, 190, 230, 270, 310, 350, 390, 430],
                                    closed=False, both=True, cin='SHIRT')]}
     lapels = join(*[on_chest(fem, [(sg*0.048, 1.44), (sg*0.105, 1.41), (sg*0.06, 1.2), (sg*0.05, 1.24)], 'SHIRT_D', 0.024, lift=0.008) for sg in (1, -1)])
     pockets = join(*[patch(fem, 0.026, sg*0.06 if sg > 0 else -0.13, 0.13 if sg > 0 else -0.06, 0.95, 1.02, 'SHIRT_D', lift=0.006) for sg in (1, -1)])
-    T['open_jacket'] = join(chest(fem, 'SHIRT', 0.024, hem=HEM - 0.07, flare=0.03, dip=0.03), sleeves('SHIRT', 'long', 0.026, cuff='SHIRT_D'), inner, up_collar, lapels, pockets)
+    T['open_jacket'] = join(chest(fem, 'SHIRT', 0.02, hem=HEM - 0.07, flare=0.02, dip=0.03), sleeves('SHIRT', 'long', 0.02, cuff='SHIRT_D', elbow='SHIRT_D', yoke='SHIRT_D'), inner, up_collar, lapels, pockets)
     # bulky sweater: full in the middle, chunky roll collar, tight ribbed hem and cuffs, a chest band
     roll = {'spine_03': [loft([[0, ty - 0.035, 0.0, 0.085, 0.075], [0, ty + 0.01, 0.004, 0.08, 0.072], [0, ty + 0.035, 0.01, 0.062, 0.058]], 'SHIRT_D', n=8, caps=[False, False])]}
-    T['jumper'] = join(chest(fem, 'SHIRT', 0.016, bulge=0.028), sleeves('SHIRT', 'long', 0.03, cuff='SHIRT_D'), band(fem, HEM - 0.005, 0.05, 0.016, 'SHIRT_D'), roll,
+    T['jumper'] = join(chest(fem, 'SHIRT', 0.014, bulge=0.018), sleeves('SHIRT', 'long', 0.022, cuff='SHIRT_D', elbow='SHIRT_D'), band(fem, HEM - 0.005, 0.05, 0.016, 'SHIRT_D'), roll,
                        band(fem, 1.21, 0.055, 0.046, 'SHIRT_D'))
     bib = join(patch(fem, 0.02, -0.07, 0.07, 1.12, 1.3, 'PANTS'),
                *[on_chest(fem, [(sg*0.045, 1.3), (sg*0.068, 1.3), (sg*0.105, 1.42), (sg*0.082, 1.43)], 'PANTS', 0.02, lift=0.006) for sg in (1, -1)],
@@ -350,19 +358,19 @@ def bottoms(fem):
     belt = {'pelvis': [loft([[0, 0.965, 0.002, hipw + 0.012, 0.106], [0, 0.995, 0.004, hipw + 0.01, 0.106]], 'belt', ang=TORSO_ANG, caps=[False, False]),
                        block([0, 0.98, 0.112], [0.036, 0.026, 0.008], 'buckle')]}
     pockets = {'pelvis': [flat([(x - 0.03, 0.88, -0.1), (x + 0.03, 0.88, -0.1), (x + 0.028, 0.93, -0.106), (x - 0.028, 0.93, -0.106)], 'PANTS_D', BACKN) for x in (-0.06, 0.06)]}
-    def legs(col, g=0.01, knee=None, calf_to=None, cuff=None, hem=0.11, flare=0.016):
+    def legs(col, g=0.01, knee=None, calf_to=None, cuff=None, hem=0.11, flare=0.016, kneecol=None):
         def f(sg, sd):
             H, K, A = J['hp' + sd], J['kn' + sd], J['an' + sd]
             thigh = limb(H, K, THIGH, g)
             if knee:   # shorts to above the knee, a little wide at the hem
                 t = limb(H, K, THIGH, g, t1=knee); t[-1][3] += 0.012; t[-1][4] += 0.012
                 return {'thigh_' + sd: [tube(t, col, caps=[True, False]), tube(limb(H, K, THIGH, -0.006), 'SKIN')],
-                        'calf_' + sd: [tube(limb(K, A, CALF, -0.004), 'SKIN')]}
+                        'calf_' + sd: [tube(limb(K, A, CALF, -0.004), 'SKIN'), joint(K, 0.05, 0.054, 'SKIN', 0.026)]}
             o = {'thigh_' + sd: [tube(thigh, col)]}
             tcut = (K[1] - (calf_to or hem))/(K[1] - A[1])
             c = limb(K, A, CALF, g, t1=tcut)
             c[-1][3] += flare; c[-1][4] += flare
-            o['calf_' + sd] = [tube(c, col, caps=[True, False])]
+            o['calf_' + sd] = [tube(c, col, caps=[True, False]), joint(K, 0.051 + g + 0.008, 0.056 + g + 0.008, kneecol or col, 0.034)]
             if calf_to: o['calf_' + sd].append(tube(limb(K, A, CALF, -0.004), 'SKIN'))
             if cuff:
                 y0, y1, cc = cuff; t0 = (K[1] - y0)/(K[1] - A[1]); t1 = (K[1] - y1)/(K[1] - A[1])
@@ -380,10 +388,10 @@ def bottoms(fem):
     B = {}
     B['jeans'] = join(pelvis('PANTS'), legs('PANTS'), pockets, belt)
     B['shorts'] = join(pelvis('PANTS'), legs('PANTS', knee=0.82), pockets, belt)
-    B['cargo_trousers'] = join(pelvis('PANTS'), legs('PANTS', g=0.016, flare=0.02), belt,
+    B['cargo_trousers'] = join(pelvis('PANTS'), legs('PANTS', g=0.014, flare=0.018, kneecol='PANTS_D'), belt,
                                both_sides(lambda sg, sd: {'thigh_' + sd: [loft([[sg*0.163, 0.7, 0.012, 0.016, 0.044], [sg*0.163, 0.6, 0.016, 0.018, 0.046]], 'PANTS_D', n=4, rot=45)]}))
     B['capri_trousers'] = join(pelvis('PANTS'), legs('PANTS', calf_to=0.28, flare=0.01), pockets)
-    B['track_pants'] = join(pelvis('PANTS'), legs('PANTS', g=0.016, flare=-0.004, cuff=(0.15, 0.11, 'PANTS_D')), both_sides(stripe))
+    B['track_pants'] = join(pelvis('PANTS'), legs('PANTS', g=0.014, flare=-0.004, cuff=(0.15, 0.11, 'PANTS_D'), kneecol='PANTS_D'), both_sides(stripe))
     B['rolled_jeans'] = join(pelvis('PANTS'), legs('PANTS', hem=0.15, flare=0.006, cuff=(0.18, 0.145, 'denimRoll')), pockets, belt)
     return B
 
@@ -450,8 +458,10 @@ def scalp(g_lo, g_hi, d, top=(1.818, 0.05, 0.068, HZ - 0.032), clump=CLUMP, y_lo
     lo = HEADT.at(y_lo); lo[3] += g_lo; lo[4] += g_lo; lo = lo[:6] + [d]
     mid = HEADT.at(y_mid); mid[3] += g_hi; mid[4] += g_hi; mid[5] = [k*c for k, c in zip(mid[5], clump)]
     ty, ta, tb, tz = top
-    tp = [0, ty, tz, ta, tb, top_k or [1.0]*len(HEAD_ANG)]
-    return loft([lo, mid, tp], 'HAIR', ang=HEAD_ANG, caps=[False, True])
+    crown = [0, (y_mid + ty)/2 + 0.006, (mid[2] + tz)/2, (mid[3] + ta)/2 + 0.012, (mid[4] + tb)/2 + 0.01, [k*c for k, c in zip(HEADT.at(y_mid)[5], clump)]]
+    slope = [{90: 0.012, 76: 0.01, 104: 0.01, 58: 0.006, 122: 0.006, 225: -0.012, 270: -0.016, 315: -0.012}.get(t, 0.0) for t in HEAD_ANG]
+    tp = [0, ty, tz, ta, tb, top_k or [1.0]*len(HEAD_ANG), slope]
+    return loft([lo, mid, crown, tp], 'HAIR', ang=HEAD_ANG, caps=[False, True])
 def nape(g, y0=1.636, y1=1.712):
     rows, A = sub(HEADT.span(y0, y1, g), HEAD_ANG, [8, 9, 10, 11, 0])
     rows[0] = rows[0][:6] + [[0.0, -0.008, -0.012, -0.008, 0.0]]
@@ -566,13 +576,15 @@ def grow(d, s=HEAD_SCALE):
 def body(fem): return join(grow(head(fem)), hands())
 FACES = faces(); del FACES['_moustache']
 pack = {
-  'name': 'survivor', 'version': 5, 'style': 'lean faceted wanderers in a relaxed stance, built on the low-poly character craft rules (13 October 2026)',
+  'name': 'survivor', 'version': 6, 'style': 'lean faceted wanderers in a relaxed stance, built on the low-poly character craft rules (13 October 2026)',
   'about': 'Every character creator choice as faceted pieces, grouped by skeleton bone. See docs/SHAPED.md.',
   'units': 'metres', 'facing': '+Z', 'left': '+X', 'height': 1.80,
   'bones': BONES, 'palette': PALETTE, 'slots': SLOTS,
   'darker': 0.78, 'mix': 0.55, 'tone': TONE,
   'colourRule': 'A slot ending in _D is that colour times darker. HAIR_MIX is SKIN blended towards HAIR by mix (stubble).',
   'toneRule': 'Build with SHAPED.build(pieces, colourOf, out, {tone: pack.tone, oy: bone pivot height}) for the soft gradient and facet variation.',
+  'smear': {'bones': ['upperarm', 'lowerarm', 'thigh', 'calf'], 'max': 0.14},
+  'smearRule': 'Smear frames (Jumpship): while a limb swings fast, stretch that bone up to max (14%) along its length, scaled by its swing speed; snap back at the end of the swing. Joint caps hide the stretch at the joints.',
   'hatRule': 'When a hat is worn, leave out pieces marked hat:"hide" (the hat covers them).',
   'builds': {'slim': [0.9, 0.93], 'average': [1, 1], 'broad': [1.14, 1.08]},
   'buildRule': 'For every bone except Head and neck_01, stretch each piece with SHAPED.scaleXZ(piece, first, second).',

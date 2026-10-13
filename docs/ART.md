@@ -33,9 +33,20 @@ Learned 13 October 2026 after the user asked for characters that match the refer
 5. **Costume at the joints.** Contrast at cuffs, collars, belts and boot tops. One dark, one mid, one light, one accent.
 6. **Colour and light.** Strict muted palette, flat shading only, a soft painted tone (darker towards the feet, small facet variation; `SHAPED.build` `tone` option), and diorama lighting: warm key, coloured fill, cool rim from behind.
 
+### Characters in motion (Jumpship)
+
+From "Developing Character @ Jumpship" (Somerville): characters must read at any camera distance through negative space and costume accents at the joints. For our rigid-part survivors this means:
+
+- Keep clothes close to the body so limbs never merge with it.
+- Put a contrasting cap on every elbow and knee. It shows the bend, and it hides the seam between rigid parts.
+- Stretch fast-swinging limbs a little (smears, pack `smear` values).
+- Let head and chest look around on their own layer.
+
+Check every character in run and walk frames, not only standing.
+
 ## Shaped pieces
 
-- A model is a short list of pieces (see the top of `assets/shaped/shapes.js`). Characters use faceted shapes: `loft` tubes and shells, flat `decal` details and small `poly` solids. A survivor is about 1,300 to 1,600 triangles (2,030 at most).
+- A model is a short list of pieces (see the top of `assets/shaped/shapes.js`). Characters use faceted shapes: `loft` tubes and shells, flat `decal` details and small `poly` solids. A survivor is about 1,300 to 1,600 triangles (2,190 at most).
 - Pieces are merged into one mesh per model with flat normals and vertex colours. Glowing pieces (lamps, lit screens, alien eyes) go in a second mesh that ignores lighting.
 - Characters keep rigid parts on the existing animation skeleton: each bone gets its own small group of pieces.
 

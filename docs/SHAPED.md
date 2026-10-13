@@ -14,9 +14,9 @@ Every shaped-piece pack made for Afterstreet, what is in it and how the game use
 
 ## Packs
 
-### survivor (`assets/shaped/survivor.js`, version 5)
+### survivor (`assets/shaped/survivor.js`, version 6)
 
-Every choice in the game's character creator, rebuilt on the low-poly character craft rules (see `docs/ART.md`): tall lean adults in a relaxed stance (head forward, soft knees, bent elbows, arms held away from the body); a carved head with a brow shelf, eyes set back, a nose grown from the brow and an angled jaw; chunky hair clumps with ragged edges; tops that flare at the hem and dip at the back; tapered limbs with cuffs, rolled sleeves and trouser hems stacked over chunky boots; a tall pack with a bedroll and bottle; muted teal, navy, rust, mustard and plum. Pieces are grouped by skeleton bone. Preview: `art-tests/survivor-creator.html`.
+Every choice in the game's character creator, rebuilt on the low-poly character craft rules (see `docs/ART.md`): tall lean adults in a relaxed stance (head forward, soft knees, bent elbows, arms held away from the body); a carved head with a brow shelf, eyes set back, a nose grown from the brow and an angled jaw; chunky hair clumps with ragged edges; tops that flare at the hem and dip at the back; slim clothes that keep negative space around the limbs, with a contrasting cap on every elbow and knee (Jumpship's costume accents at the joints; the caps also hide the seams between rigid parts); tapered limbs with cuffs, rolled sleeves and trouser hems stacked over chunky boots; a tall pack with a bedroll and bottle; muted teal, navy, rust, mustard and plum. Pieces are grouped by skeleton bone. Preview: `art-tests/survivor-creator.html`.
 
 **Fitting to the game's skeleton.** Bone names match the survivor skeleton (`pelvis`, `spine_01` to `spine_03`, `neck_01`, `Head`, `upperarm_l`, `lowerarm_l`, `hand_l`, `thigh_l`, `calf_l`, `foot_l`, `ball_l` and the `_r` side). Each bone in `bones` gives its pivot (joint) and tip (next joint) in the pack's reference pose: standing relaxed with arms a little away from the body and elbows and knees slightly bent, 1.80 m tall. To fit:
 
@@ -30,29 +30,30 @@ Every choice in the game's character creator, rebuilt on the low-poly character 
 1. Take `parts.body[body]`, `parts.top[body][top]`, `parts.bottoms[body][bottoms]`, `parts.shoes[shoes]`, `parts.face[face]`, `parts.hair[hair]` and `parts.hat[hat]`. Add `parts.gear.backpack` when the survivor carries a pack, and `parts.gear.scarf` for a scarf. For gloves, replace the hand pieces with `parts.gear.gloves`. Scarf and gloves are new extras the creator does not offer yet.
 2. When a hat is worn, leave out pieces marked `hat: "hide"` (the hair the hat covers).
 3. Apply the build: for every bone except `Head` and `neck_01`, stretch each piece with `SHAPED.scaleXZ(piece, x, z)` using the two numbers in `builds[build]`. Slim is 0.9 and 0.93, average 1 and 1, broad 1.14 and 1.08.
-4. Fill the colour slots. Skin and hair colours come from `slots.SKIN` and `slots.HAIR`, in the same order as the creator's lists. Shirt, pants and second colour are the player's picks.
+4. Smears: while a limb swings fast, stretch its bone along its length by up to `smear.max` (14%) for the bones in `smear.bones`, scaled by swing speed (`smearRule`).
+5. Fill the colour slots. Skin and hair colours come from `slots.SKIN` and `slots.HAIR`, in the same order as the creator's lists. Shirt, pants and second colour are the player's picks.
 
-**Triangles.** Body (head, neck, hands) 304. A typical survivor is about 1,300 to 1,600; the heaviest mix of every largest option with pack, scarf and gloves is about 2,030, inside the 2,200 phone budget.
+**Triangles.** Body (head, neck, hands) 304. A typical survivor is about 1,300 to 1,600; the heaviest mix of every largest option with pack, scarf and gloves is about 2,190, inside the 2,200 phone budget.
 
 | Top | Key | Triangles (masculine / feminine) |
 | --- | --- | --- |
-| T-shirt | `tshirt` | 365 / 365 |
-| Striped tee | `striped_tee` | 445 / 445 |
-| Flannel shirt | `flannel_shirt` | 430 / 430 |
-| Spotted top | `spotted_top` | 385 / 385 |
-| Hoodie | `hoodie` | 392 / 392 |
-| Open jacket | `open_jacket` | 364 / 364 |
-| Jumper | `jumper` | 384 / 384 |
-| Dungarees | `dungarees` | 361 / 365 |
+| T-shirt | `tshirt` | 429 / 429 |
+| Striped tee | `striped_tee` | 509 / 509 |
+| Flannel shirt | `flannel_shirt` | 494 / 494 |
+| Spotted top | `spotted_top` | 449 / 449 |
+| Hoodie | `hoodie` | 488 / 488 |
+| Open jacket | `open_jacket` | 460 / 460 |
+| Jumper | `jumper` | 448 / 448 |
+| Dungarees | `dungarees` | 425 / 429 |
 
 | Bottoms | Key | Triangles (masculine / feminine) |
 | --- | --- | --- |
-| Jeans | `jeans` | 228 / 228 |
-| Shorts | `shorts` | 292 / 292 |
-| Cargo trousers | `cargo_trousers` | 248 / 248 |
-| Capri trousers | `capri_trousers` | 260 / 260 |
-| Track pants | `track_pants` | 240 / 240 |
-| Rolled jeans | `rolled_jeans` | 292 / 292 |
+| Jeans | `jeans` | 292 / 292 |
+| Shorts | `shorts` | 356 / 356 |
+| Cargo trousers | `cargo_trousers` | 312 / 312 |
+| Capri trousers | `capri_trousers` | 324 / 324 |
+| Track pants | `track_pants` | 304 / 304 |
+| Rolled jeans | `rolled_jeans` | 356 / 356 |
 
 | Shoes | Key | Triangles |
 | --- | --- | --- |
@@ -74,11 +75,11 @@ Every choice in the game's character creator, rebuilt on the low-poly character 
 | Hair | Key | Triangles |
 | --- | --- | --- |
 | None | `none` | 0 |
-| Buzzed | `buzzed` | 122 |
-| Short | `short` | 122 |
-| Bob | `bob` | 170 |
-| Buns | `buns` | 154 |
-| Beard | `beard` | 230 |
+| Buzzed | `buzzed` | 146 |
+| Short | `short` | 146 |
+| Bob | `bob` | 194 |
+| Buns | `buns` | 178 |
+| Beard | `beard` | 254 |
 
 | Hat | Key | Triangles |
 | --- | --- | --- |
