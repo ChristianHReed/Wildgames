@@ -13,11 +13,11 @@ Every shaped-piece pack made for Afterstreet, what is in it and how the game use
 
 ## Packs
 
-### survivor (`assets/shaped/survivor.js`, version 2)
+### survivor (`assets/shaped/survivor.js`, version 3)
 
-Every choice in the game's character creator in the faceted low-poly style: natural slender proportions with a slightly large head, big simple flat planes (hexagonal torso and limbs, square hands and shoes), simple faces (dark eyes with no whites, a wedge nose, brows, small lips), chunky hair with blunt cuts, and muted colours. Pieces are grouped by skeleton bone. Preview: `art-tests/survivor-creator.html`.
+Every choice in the game's character creator in the cute, chunky faceted style of the user's reference lineup: a big round head (about a fifth of the height) with small oval eyes, a tiny nose, a small mouth and a hint of blush; clothes as simple boxy volumes (A-line tops, wide cap sleeves, boxy shorts); thin arms and legs with small hands and feet; hair as big rounded masses; muted warm colours. Pieces are grouped by skeleton bone. Preview: `art-tests/survivor-creator.html`.
 
-**Fitting to the game's skeleton.** Bone names match the survivor skeleton (`pelvis`, `spine_01` to `spine_03`, `neck_01`, `Head`, `upperarm_l`, `lowerarm_l`, `hand_l`, `thigh_l`, `calf_l`, `foot_l`, `ball_l` and the `_r` side). Each bone in `bones` gives its pivot (joint) and tip (next joint) in the pack's reference pose: standing, arms down, 1.78 m tall. To fit:
+**Fitting to the game's skeleton.** Bone names match the survivor skeleton (`pelvis`, `spine_01` to `spine_03`, `neck_01`, `Head`, `upperarm_l`, `lowerarm_l`, `hand_l`, `thigh_l`, `calf_l`, `foot_l`, `ball_l` and the `_r` side). Each bone in `bones` gives its pivot (joint) and tip (next joint) in the pack's reference pose: standing, arms down, 1.65 m tall. To fit:
 
 1. Turn each bone's pieces so pivot to tip lines up with the game skeleton's bone.
 2. Stretch them along that line to the same length.
@@ -28,30 +28,30 @@ Every choice in the game's character creator in the faceted low-poly style: natu
 
 1. Take `parts.body[body]`, `parts.top[body][top]`, `parts.bottoms[body][bottoms]`, `parts.shoes[shoes]`, `parts.face[face]`, `parts.hair[hair]` and `parts.hat[hat]`; add `parts.gear.backpack` when the survivor carries a pack.
 2. When a hat is worn, leave out pieces marked `hat: "hide"` (the hair the hat covers).
-3. Apply the build: for every bone except `Head` and `neck_01`, stretch each piece with `SHAPED.scaleXZ(piece, x, z)` using the two numbers in `builds[build]`. Slim is 0.9 and 0.93, average 1 and 1, broad 1.12 and 1.06.
+3. Apply the build: for every bone except `Head` and `neck_01`, stretch each piece with `SHAPED.scaleXZ(piece, x, z)` using the two numbers in `builds[build]`. Slim is 0.9 and 0.93, average 1 and 1, broad 1.14 and 1.08.
 4. Fill the colour slots. Skin and hair colours come from `slots.SKIN` and `slots.HAIR`, in the same order as the creator's lists. Shirt, pants and second colour are the player's picks.
 
-**Triangles.** Body (head, neck, hands) 180. A typical survivor is about 850 to 1,000; the heaviest mix of every largest option is about 1,100.
+**Triangles.** Body (head, neck, hands) 240. A typical survivor is about 900 to 1,000; the heaviest mix of every largest option is about 1,200.
 
 | Top | Key | Triangles (masculine / feminine) |
 | --- | --- | --- |
-| T-shirt | `tshirt` | 169 / 181 |
-| Striped tee | `striped_tee` | 205 / 217 |
-| Flannel shirt | `flannel_shirt` | 182 / 194 |
-| Spotted top | `spotted_top` | 189 / 201 |
-| Hoodie | `hoodie` | 206 / 218 |
-| Open jacket | `open_jacket` | 168 / 180 |
-| Jumper | `jumper` | 196 / 208 |
-| Dungarees | `dungarees` | 167 / 179 |
+| T-shirt | `tshirt` | 170 / 170 |
+| Striped tee | `striped_tee` | 230 / 218 |
+| Flannel shirt | `flannel_shirt` | 206 / 218 |
+| Spotted top | `spotted_top` | 210 / 210 |
+| Hoodie | `hoodie` | 218 / 218 |
+| Open jacket | `open_jacket` | 168 / 168 |
+| Jumper | `jumper` | 176 / 176 |
+| Dungarees | `dungarees` | 180 / 180 |
 
 | Bottoms | Key | Triangles (masculine / feminine) |
 | --- | --- | --- |
-| Jeans | `jeans` | 118 / 118 |
-| Shorts | `shorts` | 150 / 150 |
-| Cargo trousers | `cargo_trousers` | 138 / 138 |
-| Capri trousers | `capri_trousers` | 150 / 150 |
-| Track pants | `track_pants` | 146 / 146 |
-| Rolled jeans | `rolled_jeans` | 142 / 142 |
+| Jeans | `jeans` | 104 / 104 |
+| Shorts | `shorts` | 136 / 136 |
+| Cargo trousers | `cargo_trousers` | 124 / 124 |
+| Capri trousers | `capri_trousers` | 136 / 136 |
+| Track pants | `track_pants` | 132 / 132 |
+| Rolled jeans | `rolled_jeans` | 128 / 128 |
 
 | Shoes | Key | Triangles |
 | --- | --- | --- |
@@ -61,29 +61,29 @@ Every choice in the game's character creator in the faceted low-poly style: natu
 
 | Face | Key | Triangles |
 | --- | --- | --- |
-| Calm | `calm` | 16 |
-| Glasses | `glasses` | 54 |
-| Stubble | `stubble` | 40 |
-| Freckles | `freckles` | 34 |
-| Tired | `tired` | 20 |
-| Moustache | `moustache` | 28 |
-| Dark glasses | `dark_glasses` | 58 |
-| Scar | `scar` | 18 |
+| Calm | `calm` | 30 |
+| Glasses | `glasses` | 68 |
+| Stubble | `stubble` | 42 |
+| Freckles | `freckles` | 54 |
+| Tired | `tired` | 22 |
+| Moustache | `moustache` | 30 |
+| Dark glasses | `dark_glasses` | 56 |
+| Scar | `scar` | 20 |
 
 | Hair | Key | Triangles |
 | --- | --- | --- |
 | None | `none` | 0 |
-| Buzzed | `buzzed` | 94 |
-| Short | `short` | 162 |
-| Bob | `bob` | 162 |
-| Buns | `buns` | 182 |
-| Beard | `beard` | 178 |
+| Buzzed | `buzzed` | 124 |
+| Short | `short` | 120 |
+| Bob | `bob` | 172 |
+| Buns | `buns` | 184 |
+| Beard | `beard` | 208 |
 
 | Hat | Key | Triangles |
 | --- | --- | --- |
 | None | `none` | 0 |
-| Cap | `cap` | 50 |
-| Beanie | `beanie` | 70 |
+| Cap | `cap` | 60 |
+| Beanie | `beanie` | 88 |
 | Helmet | `helmet` | 82 |
 
 | Gear | Key | Triangles |
@@ -95,4 +95,4 @@ Every choice in the game's character creator in the faceted low-poly style: natu
 - Faces are flat pieces on the front of a faceted head instead of painted textures. The survivor needs no texture at all.
 - Tall boots and rain boots put pieces on the calf bone, so they move with the leg.
 - Patterns (stripes, checks, spots) are thin bands and flat pieces just outside the clothing, coloured with the second colour.
-- Version 2 replaced the blocky version 1 on 13 October 2026, after the user chose the faceted reference style.
+- Version 1 was blocky shaped pieces. Version 2 (13 October 2026) moved to faceted low-poly with natural proportions. Version 3 (same day) follows the user's second set of references: cuter and chunkier, with the big round head. Bone names, keys and rules did not change, but the reference pose did (pivots and tips are in the pack).

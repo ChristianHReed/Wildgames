@@ -59,7 +59,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 <canvas id="c" tabindex="0" aria-label="3D preview of a survivor built from shaped parts"></canvas>
 <aside id="panel">
   <header>
-    <h1>Survivor creator parts<small>Faceted pack v2 · every choice in the game's creator</small></h1>
+    <h1>Survivor creator parts<small>Faceted pack v3 · every choice in the game's creator</small></h1>
     <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
   </header>
   <div id="pbody">
@@ -140,9 +140,9 @@ const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(40,1,0.05,120);
 const controls=new OrbitControls(camera,canvas); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.495; controls.minDistance=0.6; controls.maxDistance=20;
 function frameView(close){
-  if (close){ camera.position.set(0.55,1.68,1.05); controls.target.set(0,1.62,0); }
+  if (close){ camera.position.set(0.5,1.52,0.95); controls.target.set(0,1.46,0); }
   else if (crowdOn){ camera.position.set(4.5,4.2,8.5); controls.target.set(0,0.9,0); }
-  else { camera.position.set(isPhone?1.6:1.8,1.45,isPhone?3.6:3.0); controls.target.set(isPhone?0:-0.3,0.95,0); }
+  else { camera.position.set(isPhone?1.4:1.6,1.3,isPhone?3.3:2.7); controls.target.set(isPhone?0:-0.28,0.85,0); }
 }
 const hemi=new THREE.HemisphereLight(0xe6dccb,0x6b5a48,1.35); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffe9cf,2.0); sun.position.set(4,7,5); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);

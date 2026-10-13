@@ -16,7 +16,7 @@ Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.gi
 ## Model style (from the user's references, 13 October 2026)
 
 - **Forms:** faceted low-poly with clearly visible flat planes and flat shading. Few colours per object; no outlines; no busy textures.
-- **People:** natural, slender proportions with a slightly large head, built from few big planes (hexagonal torso and limbs, square hands and shoes). Faces are simple: dark almond eyes with no whites, defined brows, a wedge nose, small coloured lips. Hair is a chunky faceted mass with blunt cuts (bobs, fringes). Clothes read as big shapes: collars, lapels, hems, a knit beanie, round wire glasses.
+- **People:** cute and chunky: a big round head (about a fifth of the height) with small oval eyes, a tiny nose, a small mouth and a hint of blush; clothes as simple boxy volumes (A-line tops, wide cap sleeves, boxy shorts); thin limbs with small hands and feet; hair as big rounded masses. Built from few big planes. Faces are simple: dark almond eyes with no whites, defined brows, a wedge nose, small coloured lips. Hair is a chunky faceted mass with blunt cuts (bobs, fringes). Clothes read as big shapes: collars, lapels, hems, a knit beanie, round wire glasses.
 - **Colour:** muted and slightly desaturated: charcoal, teal, rust, olive, sand, faded denim. One accent colour at most.
 - **Vehicles:** boxy 1970s to 1990s cars, vans, buses, RVs and trucks, worn and rusty, with cracked glass and doors, bonnet and boot that open. Simple interiors.
 - **Places:** cluttered streets (tyres, crates, barriers, fences, dumpsters), hazy fog, warm light from lamps, windows and car interiors at night.
@@ -24,7 +24,7 @@ Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.gi
 
 ## Shaped pieces
 
-- A model is a short list of pieces (see the top of `assets/shaped/shapes.js`). Characters use faceted shapes: `loft` tubes and shells, flat `decal` details and small `poly` solids. A survivor is about 850 to 1,000 triangles.
+- A model is a short list of pieces (see the top of `assets/shaped/shapes.js`). Characters use faceted shapes: `loft` tubes and shells, flat `decal` details and small `poly` solids. A survivor is about 900 to 1,000 triangles.
 - Pieces are merged into one mesh per model with flat normals and vertex colours. Glowing pieces (lamps, lit screens, alien eyes) go in a second mesh that ignores lighting.
 - Characters keep rigid parts on the existing animation skeleton: each bone gets its own small group of pieces.
 
