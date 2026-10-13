@@ -144,9 +144,10 @@ function frameView(close){
   else if (crowdOn){ camera.position.set(4.5,4.2,8.5); controls.target.set(0,0.9,0); }
   else { camera.position.set(isPhone?1.6:1.8,1.45,isPhone?3.8:3.1); controls.target.set(isPhone?0:-0.3,0.95,0); }
 }
-const hemi=new THREE.HemisphereLight(0xe6dccb,0x6b5a48,1.35); scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xffe9cf,2.0); sun.position.set(4,7,5); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
+const hemi=new THREE.HemisphereLight(0xdfe3ea,0x5e4c3c,0.95); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffe4c4,2.6); sun.position.set(4,7,5); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
 Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6}); scene.add(sun);
+const rim=new THREE.DirectionalLight(0xa9c2e0,1.1); rim.position.set(-3,4,-6); scene.add(rim);   // cool rim from behind separates the silhouette
 const lamp=new THREE.PointLight(0xffc477,0,12,2); lamp.position.set(-1.6,3.2,1.2); scene.add(lamp);
 scene.fog=new THREE.Fog(0xc9bfb0,12,38);
 // plaza: shaped paving slabs
@@ -200,7 +201,7 @@ function makeSurvivor(look){
     g.position.set(B.pivot[0]-par[0],B.pivot[1]-par[1],B.pivot[2]-par[2]);
     if (parts[name]){
       const local=parts[name].map(q=>({...q,p:[q.p[0]-B.pivot[0],q.p[1]-B.pivot[1],q.p[2]-B.pivot[2]]}));  // rings and corners are relative to p, so moving p moves the whole piece
-      tris+=S.count(local); g.add(meshFrom(S.build(local,colourOf)));
+      tris+=S.count(local); g.add(meshFrom(S.build(local,colourOf,null,{tone:PK.tone,oy:B.pivot[1]})));
     }
   }
   for (const name in PK.bones){ const B=PK.bones[name]; (B.parent?groups[B.parent]:root).add(groups[name]); }
@@ -264,8 +265,8 @@ $('anim').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!
 $('tod').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
   const night=b.dataset.v==='night';
   scene.background=new THREE.Color(night?0x0d1420:0xc9bfb0); scene.fog.color.set(night?0x0d1420:0xc9bfb0); scene.fog.near=night?6:12; scene.fog.far=night?24:38;
-  hemi.color.set(night?0x222c44:0xe6dccb); hemi.groundColor.set(night?0x08080a:0x6b5a48); hemi.intensity=night?0.3:1.35;
-  sun.color.set(night?0x7f9ccc:0xffe9cf); sun.intensity=night?0.25:2.0; lamp.intensity=night?40:0; });
+  hemi.color.set(night?0x222c44:0xdfe3ea); hemi.groundColor.set(night?0x08080a:0x5e4c3c); hemi.intensity=night?0.3:0.95;
+  sun.color.set(night?0x7f9ccc:0xffe9cf); sun.intensity=night?0.25:2.6; rim.color.set(night?0x5a78b0:0xa9c2e0); rim.intensity=night?0.5:1.1; lamp.intensity=night?40:0; });
 scene.background=new THREE.Color(0xc9bfb0);
 const panel=$('panel'), fold=$('fold');
 fold.addEventListener('click',()=>{ const f=panel.classList.toggle('folded'); fold.textContent=f?'Show':'Hide'; fold.setAttribute('aria-expanded',String(!f)); });
@@ -274,6 +275,7 @@ if (isPhone){ panel.classList.add('folded'); fold.textContent='Show'; fold.setAt
 function resize(){ const w=canvas.clientWidth||innerWidth,h=canvas.clientHeight||innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener('resize',resize); new ResizeObserver(resize).observe(canvas); resize();
 rebuild(); frameView(false); $('status').hidden=true;
+window.__cam=(x,y,z,ty)=>{ camera.position.set(x,y,z); controls.target.set(0,ty==null?0.95:ty,0); controls.update(); };   // for automated turnaround shots
 const clock=new THREE.Clock();
 renderer.setAnimationLoop(()=>{
   const t=clock.getElapsedTime(); controls.update();

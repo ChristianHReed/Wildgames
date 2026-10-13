@@ -14,6 +14,9 @@
      'cyl'    8-sided tube along ax ('x','y','z')          28
    Faceted shapes (the character style):
      'loft'   a faceted tube through rings.  r: [[x,y,z,a,b], ...] ring centres relative to p, with radii a and b.
+              A ring may add two optional lists, one value per corner: [x,y,z,a,b, k, d].
+              k scales each corner's distance from the centre (shaped cross-sections: a flat chest front, a jutting brow,
+              a jaw corner); d moves each corner along the ring axis (sloping hems, jagged fringes). Use null to skip k.
               ax: ring axis 'y' (rings lie flat: a along X, b along Z), 'z' (a along X, b along Y), 'x' (a along Z, b along Y).
               n: sides (default 8), rot: degrees to turn the ring (default 180/n so a flat side faces front),
               ang: explicit list of corner angles in degrees (0 = +X or the first radius, 90 = the second), overrides n and rot.
@@ -23,8 +26,11 @@
      'decal'  one flat polygon, v: [[x,y,z], ...] relative to p, facing n: [nx,ny,nz]. Eyes, brows, lips, stripes.   corners-2
      'poly'   small solid from corners v and faces f: [[i,j,k,...], ...]; faces are turned to face away from its middle.
 
-   SHAPED.build(pieces, colourOf, out?) appends to out = {pos:[], nor:[], col:[]} and returns it.
+   SHAPED.build(pieces, colourOf, out?, opt?) appends to out = {pos:[], nor:[], col:[]} and returns it.
    colourOf(name) returns [r, g, b] in 0-1 (sRGB).
+   opt.tone = {y0, y1, lo, hi, jitter} paints the soft character gradient into the colours: brightness goes from lo at
+   height y0 to hi at y1, and each facet gets a fixed brightness change of up to +-jitter (so big planes don't look like
+   plastic). opt.oy is added to heights first, for pieces that were moved next to their bone. A pack gives its values as 'tone'.
    SHAPED.count(pieces) gives the triangle count. SHAPED.scaleXZ(piece, bx, bz) returns a copy stretched across and front to back. */
 (function(){
   var S = (typeof window !== 'undefined' ? (window.SHAPED = window.SHAPED || {}) : (module.exports = {}));
@@ -84,15 +90,16 @@
     for (var k=0;k<n;k++) out.push(rot+k*360/n);
     return out;
   }
-  function ringPoint(ax, ctr, a, b, deg){
-    var t=deg*Math.PI/180, c=Math.cos(t)*a, s=Math.sin(t)*b;
-    if (ax==='z') return [ctr[0]+c, ctr[1]+s, ctr[2]];
-    if (ax==='x') return [ctr[0], ctr[1]+s, ctr[2]+c];
-    return [ctr[0]+c, ctr[1], ctr[2]+s];
+  function ringPoint(ax, ctr, a, b, deg, k, d){
+    var t=deg*Math.PI/180, c=Math.cos(t)*a*k, s=Math.sin(t)*b*k;
+    if (ax==='z') return [ctr[0]+c, ctr[1]+s, ctr[2]+d];
+    if (ax==='x') return [ctr[0]+d, ctr[1]+s, ctr[2]+c];
+    return [ctr[0]+c, ctr[1]+d, ctr[2]+s];
   }
+  function per(v, k, dflt){ if (v==null) return dflt; return typeof v==='number' ? v : (v[k]!=null ? v[k] : dflt); }
   function shapeLoft(o, pc, inner){
     var A=angles(pc), ax=pc.ax||'y', closed=pc.closed!==false, R=pc.r, rings=[];
-    for (var i=0;i<R.length;i++){ var row=[]; for (var k=0;k<A.length;k++) row.push(ringPoint(ax,[R[i][0],R[i][1],R[i][2]],R[i][3],R[i][4],A[k])); rings.push(row); }
+    for (var i=0;i<R.length;i++){ var row=[]; for (var k=0;k<A.length;k++) row.push(ringPoint(ax,[R[i][0],R[i][1],R[i][2]],R[i][3],R[i][4],A[k],per(R[i][5],k,1),per(R[i][6],k,0))); rings.push(row); }
     var K=closed?A.length:A.length-1;
     for (var i2=0;i2<rings.length-1;i2++){
       var c0=[R[i2][0],R[i2][1],R[i2][2]], c1=[R[i2+1][0],R[i2+1][1],R[i2+1][2]], ctr=[(c0[0]+c1[0])/2,(c0[1]+c1[1])/2,(c0[2]+c1[2])/2];
@@ -120,8 +127,10 @@
     for (var f=0; f<pc.f.length; f++){ var pts=pc.f[f].map(function(k){ return v[k]; }); poly(o,pts,c); }
   }
 
-  S.build = function(pieces, colourOf, out){
+  function hash3(x,y,z){ var h=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453; return (h-Math.floor(h))*2-1; }
+  S.build = function(pieces, colourOf, out, opt){
     out = out || {pos:[], nor:[], col:[]};
+    var tn = opt && opt.tone, oy = (opt && opt.oy) || 0;
     for (var i=0;i<pieces.length;i++){
       var pc=pieces[i], o={p:[],n:[],c:[]};
       if (pc.s==='loft') shapeLoft(o,pc,pc.cin||null);
@@ -134,7 +143,16 @@
         var q=o.p[v], n=o.n[v], X=q[0], Z=q[2], NX=n[0], NZ=n[2];
         for (var r=0;r<k;r++){ var tx=X; X=Z; Z=-tx; var tn=NX; NX=NZ; NZ=-tn; }
         var cv=cl; if (o.c[v]){ cv=cache[o.c[v]]||(cache[o.c[v]]=colourOf(o.c[v])); }
-        out.pos.push(X+pc.p[0], q[1]+pc.p[1], Z+pc.p[2]); out.nor.push(NX, n[1], NZ); out.col.push(cv[0], cv[1], cv[2]);
+        var px=X+pc.p[0], py=q[1]+pc.p[1], pz=Z+pc.p[2];
+        out.pos.push(px, py, pz); out.nor.push(NX, n[1], NZ);
+        if (tn){
+          if (v%3===0){   // one random brightness per facet, from its middle in model space
+            var t0=o.p[v], t1=o.p[v+1], t2=o.p[v+2];
+            var fj=1+(tn.jitter||0)*hash3((t0[0]+t1[0]+t2[0])/3+pc.p[0], (t0[1]+t1[1]+t2[1])/3+pc.p[1]+oy, (t0[2]+t1[2]+t2[2])/3+pc.p[2]);
+          }
+          var f=Math.min(1,Math.max(0,(py+oy-tn.y0)/(tn.y1-tn.y0))), m=(tn.lo+(tn.hi-tn.lo)*f)*fj;
+          out.col.push(Math.min(1,cv[0]*m), Math.min(1,cv[1]*m), Math.min(1,cv[2]*m));
+        } else out.col.push(cv[0], cv[1], cv[2]);
       }
     }
     return out;
@@ -157,7 +175,7 @@
     if (pc.d) q.d=[pc.d[0]*bx, pc.d[1], pc.d[2]*bz];
     if (pc.v) q.v=pc.v.map(function(v){ return [v[0]*bx, v[1], v[2]*bz]; });
     if (pc.r){ var ax=pc.ax||'y';
-      q.r=pc.r.map(function(r){ return [r[0]*bx, r[1], r[2]*bz, r[3]*(ax==='x'?bz:bx), r[4]*(ax==='y'?bz:1)]; }); }
+      q.r=pc.r.map(function(r){ var o=[r[0]*bx, r[1], r[2]*bz, r[3]*(ax==='x'?bz:bx), r[4]*(ax==='y'?bz:1)]; if (r.length>5) o.push(r[5]); if (r.length>6) o.push(r[6]); return o; }); }
     return q;
   };
   S.hex = function(h){ h=parseInt(String(h).replace('#',''),16); return [((h>>16)&255)/255, ((h>>8)&255)/255, (h&255)/255]; };

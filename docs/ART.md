@@ -16,15 +16,26 @@ Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.gi
 ## Model style (from the user's references, 13 October 2026)
 
 - **Forms:** faceted low-poly with clearly visible flat planes and flat shading. Few colours per object; no outlines; no busy textures.
-- **People:** tall and lean (1.80 m) with a small angular head (about an eighth of the height); minimal faces (short eye slits, strong brows, a small wedge nose); sweaters and jackets as big angular volumes, rolled sleeves; long thin arms with paddle hands or gloves; slim trousers tapering to the ankle; chunky ankle boots; chunky swept or straight hair; tall packs with a bedroll, caps, rectangular glasses, scarves. References: lean wanderer art, a capped girl in a bulky sweater, Somerville (Jumpship).
+- **People:** tall and lean (1.80 m) in a relaxed stance (head forward, soft knees, bent elbows, arms away from the body); a carved head slightly larger than life, with a brow shelf, eyes set back, a nose grown from the brow and an angled jaw; sweaters and jackets as big angular volumes, rolled sleeves; long thin arms with paddle hands or gloves; slim trousers tapering to the ankle; chunky ankle boots; chunky swept or straight hair; tall packs with a bedroll, caps, rectangular glasses, scarves. References: lean wanderer art, a capped girl in a bulky sweater, Somerville (Jumpship).
 - **Colour:** muted and slightly desaturated: charcoal, teal, rust, olive, sand, faded denim. One accent colour at most.
 - **Vehicles:** boxy 1970s to 1990s cars, vans, buses, RVs and trucks, worn and rusty, with cracked glass and doors, bonnet and boot that open. Simple interiors.
 - **Places:** cluttered streets (tyres, crates, barriers, fences, dumpsters), hazy fog, warm light from lamps, windows and car interiors at night.
 - **Destruction:** rubble as irregular slabs, bricks, planks and broken concrete, not cubes.
 
+## Low-poly character craft
+
+Learned 13 October 2026 after the user asked for characters that match the references. The full rules and sources are in the Voxel art guide; the short version:
+
+1. **Silhouette and gesture first.** Judge the black shape front and side before any detail. Carve negative space (arm to body, between the legs). Never bolt upright: a gentle S-curve, head forward, soft knees, bent elbows, sloping shoulders.
+2. **Big, medium, small.** One big mass (coat, sweater, pack), a few medium (head and hair, boots, hands), small accents. Exaggerate: chunky hair, big boots, wide cuffs, trouser hems stacked over boots. Taper every limb.
+3. **Planes, not tubes.** Shaped cross-sections (flat chest front, shoulder blades, jaw corners), few large facets of even size, ragged hems and hair edges.
+4. **Carved faces.** Brow shelf, eyes set back as small dark shapes, nose grown from the brow, jaw angled to a narrow chin. Hair in two or three big clumps that break the skull's outline.
+5. **Costume at the joints.** Contrast at cuffs, collars, belts and boot tops. One dark, one mid, one light, one accent.
+6. **Colour and light.** Strict muted palette, flat shading only, a soft painted tone (darker towards the feet, small facet variation; `SHAPED.build` `tone` option), and diorama lighting: warm key, coloured fill, cool rim from behind.
+
 ## Shaped pieces
 
-- A model is a short list of pieces (see the top of `assets/shaped/shapes.js`). Characters use faceted shapes: `loft` tubes and shells, flat `decal` details and small `poly` solids. A survivor is about 850 to 1,000 triangles.
+- A model is a short list of pieces (see the top of `assets/shaped/shapes.js`). Characters use faceted shapes: `loft` tubes and shells, flat `decal` details and small `poly` solids. A survivor is about 1,300 to 1,600 triangles (2,030 at most).
 - Pieces are merged into one mesh per model with flat normals and vertex colours. Glowing pieces (lamps, lit screens, alien eyes) go in a second mesh that ignores lighting.
 - Characters keep rigid parts on the existing animation skeleton: each bone gets its own small group of pieces.
 
