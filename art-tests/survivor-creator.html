@@ -59,7 +59,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 <canvas id="c" tabindex="0" aria-label="3D preview of a survivor built from shaped parts"></canvas>
 <aside id="panel">
   <header>
-    <h1>Survivor creator parts<small>Shaped pack · every choice in the game's creator</small></h1>
+    <h1>Survivor creator parts<small>Faceted pack v2 · every choice in the game's creator</small></h1>
     <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
   </header>
   <div id="pbody">
@@ -76,9 +76,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
         <label>Shoes<select id="cShoe"><option value="trainers">Trainers</option><option value="boots" selected>Boots</option><option value="rain_boots">Rain boots</option></select></label>
         <label>Top<select id="cTop"><option value="tshirt">T-shirt</option><option value="striped_tee">Striped tee</option><option value="flannel_shirt" selected>Flannel shirt</option><option value="spotted_top">Spotted top</option><option value="hoodie">Hoodie</option><option value="open_jacket">Open jacket</option><option value="jumper">Jumper</option><option value="dungarees">Dungarees</option></select></label>
         <label>Bottoms<select id="cBot"><option value="jeans" selected>Jeans</option><option value="shorts">Shorts</option><option value="cargo_trousers">Cargo trousers</option><option value="capri_trousers">Capri trousers</option><option value="track_pants">Track pants</option><option value="rolled_jeans">Rolled jeans</option></select></label>
-        <label>Shirt<input type="color" id="cShirt" value="#a8432e"></label>
-        <label>Pants<input type="color" id="cPants" value="#34405a"></label>
-        <label>Second colour<input type="color" id="cAcc" value="#e9dab0"></label>
+        <label>Shirt<input type="color" id="cShirt" value="#2f4249"></label>
+        <label>Pants<input type="color" id="cPants" value="#1f2430"></label>
+        <label>Second colour<input type="color" id="cAcc" value="#c9b48a"></label>
         <label style="align-self:end;flex-direction:row;display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px"><input type="checkbox" id="cPack" checked style="accent-color:var(--accent);width:16px;height:16px"> Backpack</label>
       </div>
     </section>
@@ -104,7 +104,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
       </div>
     </section>
     <div class="stat"><span>This survivor</span><b id="tris">–</b></div>
-    <p class="note">Each part is a list of shaped pieces tied to one bone of the game's skeleton, so the game's own walk, run and crouch animations move it. The pack file is <code>assets/shaped/survivor.js</code>.</p>
+    <p class="note">Each part is a list of faceted pieces tied to one bone of the game's skeleton, so the game's own walk, run and crouch animations move it. The pack file is <code>assets/shaped/survivor.js</code>.</p>
   </div>
 </aside>
 <p id="hint"><b>Drag</b> to turn the view, pinch or scroll to zoom. Change any choice to see it right away.</p>
@@ -140,22 +140,22 @@ const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(40,1,0.05,120);
 const controls=new OrbitControls(camera,canvas); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.495; controls.minDistance=0.6; controls.maxDistance=20;
 function frameView(close){
-  if (close){ camera.position.set(0.9,1.65,1.9); controls.target.set(0,1.5,0); }
+  if (close){ camera.position.set(0.55,1.68,1.05); controls.target.set(0,1.62,0); }
   else if (crowdOn){ camera.position.set(4.5,4.2,8.5); controls.target.set(0,0.9,0); }
-  else { camera.position.set(isPhone?2.2:2.6,1.7,isPhone?4.6:4.2); controls.target.set(isPhone?0:-0.45,0.95,0); }
+  else { camera.position.set(isPhone?1.6:1.8,1.45,isPhone?3.6:3.0); controls.target.set(isPhone?0:-0.3,0.95,0); }
 }
-const hemi=new THREE.HemisphereLight(0xd8e7f3,0x7d6a4c,1.3); scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff2da,2.3); sun.position.set(4,7,5); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
+const hemi=new THREE.HemisphereLight(0xe6dccb,0x6b5a48,1.35); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffe9cf,2.0); sun.position.set(4,7,5); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
 Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6}); scene.add(sun);
 const lamp=new THREE.PointLight(0xffc477,0,12,2); lamp.position.set(-1.6,3.2,1.2); scene.add(lamp);
-scene.fog=new THREE.Fog(0xd3e4ec,18,45);
+scene.fog=new THREE.Fog(0xc9bfb0,12,38);
 // plaza: shaped paving slabs
 {
   const parts={pos:[],nor:[],col:[]}, pieces=[];
   for (let i=-7;i<=7;i++) for (let j=-7;j<=7;j++){ const r=Math.hypot(i,j); if (r>7.3) continue;
     const g=(Math.sin(i*12.9898+j*78.233)*43758.5453)%1; pieces.push({s:'bev',p:[i,-0.06,j],d:[0.96,0.12,0.96],c: r<2.5?(g>0?'c1':'c2'):(g>0?'g1':'g2')}); }
   pieces.push({s:'cyl',p:[-1.6,1.6,1.2],d:[0.12,3.2,0.12],c:'pole'},{s:'bev',p:[-1.6,3.25,1.2],d:[0.3,0.14,0.3],c:'pole'});
-  const pal={c1:'#9d9a92',c2:'#8f8c85',g1:'#6f9a48',g2:'#79a452',pole:'#55595f'};
+  const pal={c1:'#8f877b',c2:'#857d72',g1:'#6d7a4f',g2:'#76835a',pole:'#4a4d52'};
   S.build(pieces,n=>S.hex(pal[n]),parts);
   scene.add(meshFrom(parts,true));
 }
@@ -174,6 +174,7 @@ const NAMES={hairC:['black','brown','auburn','blond','grey']};
 function colourer(look){
   const slot={SKIN:PK.slots.SKIN[look.skin], HAIR:PK.slots.HAIR[look.hairC], SHIRT:look.shirt, PANTS:look.pants, ACC:look.acc};
   return name=>{
+    if (name==='HAIR_MIX'){ const a=S.hex(slot.SKIN), b=S.hex(slot.HAIR); return a.map((v,i)=>v+(b[i]-v)*PK.mix); }
     let dark=false, n=name; if (n.endsWith('_D')){ dark=true; n=n.slice(0,-2); }
     const hex = slot[n] || PK.palette[n] || '#ff00ff';
     const c=S.hex(hex); return dark? c.map(v=>v*PK.darker) : c;
@@ -184,10 +185,10 @@ function partsFor(look){
   const out={};
   add(out,P.body[look.body]); add(out,P.top[look.body][look.top]); add(out,P.bottoms[look.body][look.bot]); add(out,P.shoes[look.shoe]);
   add(out,P.face[look.face]); add(out,P.hair[look.hair]); add(out,P.hat[look.hat]); if (look.pack) add(out,P.gear.backpack);
-  // a hat covers the top of the hair: hair pieces centred above the pack's hat line are left out
-  if (look.hat!=='none' && out.Head){ const hatTop=new Set(P.hat[look.hat].Head); out.Head=out.Head.filter(q=>hatTop.has(q) || !P.hair[look.hair].Head.includes(q) || q.p[1]<PK.hatLine); }
+  // a hat covers some hair: those pieces are marked hat:'hide'
+  if (look.hat!=='none' && out.Head) out.Head=out.Head.filter(q=>q.hat!=='hide');
   const [bx,bz]=PK.builds[look.build];
-  if (bx!==1||bz!==1) for (const b in out){ if (b==='Head'||b==='neck_01') continue; out[b]=out[b].map(q=>({...q,p:[q.p[0]*bx,q.p[1],q.p[2]*bz],d:[q.d[0]*bx,q.d[1],q.d[2]*bz]})); }
+  if (bx!==1||bz!==1) for (const b in out){ if (b==='Head'||b==='neck_01') continue; out[b]=out[b].map(q=>S.scaleXZ(q,bx,bz)); }
   return out;
 }
 function makeSurvivor(look){
@@ -197,7 +198,7 @@ function makeSurvivor(look){
     const par=B.parent?PK.bones[B.parent].pivot:[0,0,0];
     g.position.set(B.pivot[0]-par[0],B.pivot[1]-par[1],B.pivot[2]-par[2]);
     if (parts[name]){
-      const local=parts[name].map(q=>({...q,p:[q.p[0]-B.pivot[0],q.p[1]-B.pivot[1],q.p[2]-B.pivot[2]]}));
+      const local=parts[name].map(q=>({...q,p:[q.p[0]-B.pivot[0],q.p[1]-B.pivot[1],q.p[2]-B.pivot[2]]}));  // rings and corners are relative to p, so moving p moves the whole piece
       tris+=S.count(local); g.add(meshFrom(S.build(local,colourOf)));
     }
   }
@@ -231,13 +232,13 @@ const ids={build:'cBuild',body:'cBody',skin:'cSkin',face:'cFace',hair:'cHair',ha
 function readLook(){ const o={}; for (const k in ids) o[k]=$(ids[k]).value; o.skin=+o.skin; o.hairC=+o.hairC; o.pack=$('cPack').checked; return o; }
 function writeLook(o){ for (const k in ids) $(ids[k]).value=o[k]; $('cPack').checked=o.pack; }
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const SHIRTS=['#a8432e','#3566c4','#4f6b4a','#d9b13b','#6d4a7a','#2f6178','#c9b48a','#8c2f39','#e8e3d8','#3a3c40'];
-const PANTSC=['#34405a','#2b2f38','#5b4a36','#4a5a3a','#6e6a5e','#23324a','#7a5a3c'];
+const SHIRTS=['#2f4249','#1f2226','#7a3b2e','#4c5a3c','#a87a3e','#3d3a4a','#8a8172','#6b2f2f','#d6cdbd','#2b3a52'];
+const PANTSC=['#1f2430','#2a2b2e','#4a3d2e','#3d4632','#5d594f','#22304a','#5b4433'];
 function randomLook(){
   const C=PK.choices;
   return {build:pick(C.build),body:pick(C.body),skin:Math.floor(Math.random()*5),face:pick(C.face),hair:pick(C.hair),hairC:Math.floor(Math.random()*5),
           hat:Math.random()<0.45?pick(['cap','beanie','helmet']):'none',shoe:pick(C.shoes),top:pick(C.top),bot:pick(C.bottoms),
-          shirt:pick(SHIRTS),pants:pick(PANTSC),acc:pick(['#e9dab0','#d9b13b','#e8e3d8','#b23a2e','#2f6178','#4b7031']),pack:Math.random()<0.6};
+          shirt:pick(SHIRTS),pants:pick(PANTSC),acc:pick(['#c9b48a','#b08a3e','#d6cdbd','#8c3a2e','#3d5a66','#56653f','#55595f']),pack:Math.random()<0.6};
 }
 const stage=new THREE.Group(); scene.add(stage);
 let hero=null, crowd=[], crowdOn=false, mode='walk';
@@ -261,10 +262,10 @@ let close=false; $('face').addEventListener('click',()=>{ close=!close; $('face'
 $('anim').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; mode=b.dataset.v; document.querySelectorAll('#anim button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); });
 $('tod').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
   const night=b.dataset.v==='night';
-  scene.background=new THREE.Color(night?0x0d1420:0xbcd3e3); scene.fog.color.set(night?0x0d1420:0xd3e4ec); scene.fog.near=night?6:18; scene.fog.far=night?24:45;
-  hemi.color.set(night?0x222c44:0xd8e7f3); hemi.groundColor.set(night?0x08080a:0x7d6a4c); hemi.intensity=night?0.3:1.3;
-  sun.color.set(night?0x7f9ccc:0xfff2da); sun.intensity=night?0.25:2.3; lamp.intensity=night?40:0; });
-scene.background=new THREE.Color(0xbcd3e3);
+  scene.background=new THREE.Color(night?0x0d1420:0xc9bfb0); scene.fog.color.set(night?0x0d1420:0xc9bfb0); scene.fog.near=night?6:12; scene.fog.far=night?24:38;
+  hemi.color.set(night?0x222c44:0xe6dccb); hemi.groundColor.set(night?0x08080a:0x6b5a48); hemi.intensity=night?0.3:1.35;
+  sun.color.set(night?0x7f9ccc:0xffe9cf); sun.intensity=night?0.25:2.0; lamp.intensity=night?40:0; });
+scene.background=new THREE.Color(0xc9bfb0);
 const panel=$('panel'), fold=$('fold');
 fold.addEventListener('click',()=>{ const f=panel.classList.toggle('folded'); fold.textContent=f?'Show':'Hide'; fold.setAttribute('aria-expanded',String(!f)); });
 if (isPhone){ panel.classList.add('folded'); fold.textContent='Show'; fold.setAttribute('aria-expanded','false'); }

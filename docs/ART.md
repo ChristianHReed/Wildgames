@@ -1,6 +1,6 @@
-# Afterstreet's look: shaped voxels, cozy days, scary nights
+# Afterstreet's look: faceted models, cozy days, scary nights
 
-Chosen on 13 October 2026 after two rounds of test scenes. This page tells the main build what the look is and how the test scenes make it, so it can be brought into the game step by step. The full art guide (palette rows, budgets, model conventions) lives in the claude.ai Project as "Voxel art guide".
+Chosen on 13 October 2026 after two rounds of test scenes; the model style was updated the same day to faceted low-poly from the user's reference images. This page tells the main build what the look is and how the test scenes make it, so it can be brought into the game step by step. The full art guide (palette rows, budgets, model conventions) lives in the claude.ai Project as "Voxel art guide".
 
 Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street-2.html). It uses three.js from a CDN. The game draws with its own WebGL code and runs offline, so the methods below have to be ported, not copied.
 
@@ -8,14 +8,23 @@ Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.gi
 
 | Part | What it is | Breakable |
 | --- | --- | --- |
-| Survivors, aliens, items, furniture, vehicles, street props, trees | **Shaped pieces**: each part is one whole shape (bevelled block, slope, 8-sided tube), roughly 10 to 50 cm, flat-shaded, colour carries the detail | No |
+| Survivors, aliens, items, furniture, vehicles, street props, trees | **Faceted low-poly**: flat planes, flat shading, few colours, natural proportions (see Model style below) | No |
 | Buildings | **12.5 cm blocks** near the player; 25 cm further out; 50 cm past twice that | Yes |
 | Ground | **Smooth hills with sharp drops**: smooth slopes inside each area, hard edges where areas meet (kerbs, creek and river banks, ravines) | No |
 | Light and mood | **Cozy days, scary nights** | — |
 
+## Model style (from the user's references, 13 October 2026)
+
+- **Forms:** faceted low-poly with clearly visible flat planes and flat shading. Few colours per object; no outlines; no busy textures.
+- **People:** natural, slender proportions with a slightly large head. Faces are simple: dark almond eyes with no whites, defined brows, a wedge nose, small coloured lips. Hair is a chunky faceted mass with blunt cuts (bobs, fringes). Clothes read as big shapes: collars, lapels, hems, a knit beanie, round wire glasses.
+- **Colour:** muted and slightly desaturated: charcoal, teal, rust, olive, sand, faded denim. One accent colour at most.
+- **Vehicles:** boxy 1970s to 1990s cars, vans, buses, RVs and trucks, worn and rusty, with cracked glass and doors, bonnet and boot that open. Simple interiors.
+- **Places:** cluttered streets (tyres, crates, barriers, fences, dumpsters), hazy fog, warm light from lamps, windows and car interiors at night.
+- **Destruction:** rubble as irregular slabs, bricks, planks and broken concrete, not cubes.
+
 ## Shaped pieces
 
-- A model is a short list of pieces: shape, size in metres, position, quarter-turn, palette colour. A survivor is about 30 pieces and 850 triangles; an alien about 630; a car about 480.
+- A model is a short list of pieces (see the top of `assets/shaped/shapes.js`). Characters use faceted shapes: `loft` tubes and shells, flat `decal` details and small `poly` solids. A survivor is about 1,300 to 1,600 triangles.
 - Pieces are merged into one mesh per model with flat normals and vertex colours. Glowing pieces (lamps, lit screens, alien eyes) go in a second mesh that ignores lighting.
 - Characters keep rigid parts on the existing animation skeleton: each bone gets its own small group of pieces.
 
