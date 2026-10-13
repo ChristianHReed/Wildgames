@@ -25,6 +25,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | `characters/` | One file per survivor, written by the game |
 | `packs/` | Item and scenario packs |
 | `prototypes/` | Earlier versions, kept for reference |
+| `art-tests/` | Art-style test scenes, not part of the game (open in a browser, e.g. https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street.html) |
 | `docs/` | The design document and the testing roadmap |
 
 ## Controls
