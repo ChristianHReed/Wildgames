@@ -76,7 +76,7 @@ a{color:var(--accent)}
 
 <aside id="panel">
   <header>
-    <h1>Voxel stress test<small>Round 3 · a real Springfield square · 2,849 buildings</small><a class="round" href="voxel-test-street-2.html">← Round 2</a> · <a class="round" href="voxel-test-street.html">Round 1</a></h1>
+    <h1>Voxel stress test<small>Round 3 · a real Springfield square · 2,849 buildings · build 3</small><a class="round" href="voxel-test-street-2.html">← Round 2</a> · <a class="round" href="voxel-test-street.html">Round 1</a></h1>
     <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
   </header>
   <div id="pbody">
@@ -148,7 +148,7 @@ a{color:var(--accent)}
 <script src="data/springfield-square.js"></script>
 <script>
 "use strict";
-function showErr(msg){ var s = document.getElementById('status'); if (!s) return; s.hidden = false; s.className = 'err'; s.textContent = 'The test stopped: ' + (msg || 'unknown error') + '. Reload the page to try again, and send Claude a screenshot of this message.'; }
+function showErr(msg){ var s = document.getElementById('status'); if (!s) return; s.hidden = false; s.className = 'err'; s.textContent = 'Something went wrong: ' + (msg || 'unknown error') + '. Send Claude a screenshot of this message. Tap it to close and carry on.'; s.onclick = function(){ s.hidden = true; }; }
 /* only this page's own errors stop the test. "Script error." with no file is from another site's script (a browser extension or
    Brave's own add-ons on iPhone) and says nothing useful, so it is ignored */
 window.addEventListener('error', function(e){ if (!e.filename || /^Script error\.?$/.test(e.message || '')) return; showErr(e.message + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
@@ -564,6 +564,9 @@ $('copy').addEventListener('click', function(){ var t = lastText; if (navigator.
 /* ================= the main loop ================= */
 function frame(now){
   requestAnimationFrame(frame);
+  try { frameBody(now); } catch (er){ if (!frame.said){ frame.said = true; showErr((er && er.message || String(er)) + (er && er.stack ? ' · ' + String(er.stack).split('\n')[0].slice(0, 120) : '')); } }
+}
+function frameBody(now){
   var dtMs = lastT ? now - lastT : 16.7; lastT = now; var dt = Math.min(0.1, dtMs/1000);
   if (driveT >= 0){ driveT += dt; var done = driveStep(dt); $('bar').firstChild.style.width = Math.min(100, driveT*SPEED/routeLen*100) + '%';
     if (done){ var r = endDrive(); if (bench) benchNext(r); else if (r) { results = {}; results[S.mode] = r; toast('Drive: ' + f0(r.fps) + ' FPS average, worst 1% ' + f0(r.low) + ' FPS, ' + r.hitch + ' pauses'); } } }
