@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Survivor Creator Parts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: the survivor stands centre stage on a small plaza; the creator card sits left on desktop and docks as a bottom sheet on phones. Single dark look to match the other art tests. */
+:root{
+  --bg:#12161b; --panel:#1b2128; --panel-2:#232b33; --line:#33404b; --fg:#e8e3d8; --muted:#9aa6b0; --accent:#f2a93b; --accent-ink:#1c1406;
+  --font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;overflow:hidden}
+[hidden]{display:none!important}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#panel{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));left:16px;width:340px;max-height:calc(100% - 32px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto;background:color-mix(in srgb,var(--panel) 95%,transparent);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+#panel header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px 10px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.02em;text-transform:uppercase;line-height:1}
+h1 small{display:block;font-family:var(--font-mono);font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted);margin-top:4px}
+#fold{font:600 12px var(--font-body);color:var(--muted);background:none;border:1px solid var(--line);border-radius:6px;padding:5px 9px;cursor:pointer}
+#pbody{display:grid;gap:14px;padding:12px 14px 14px}
+#panel.folded #pbody{display:none}
+h2{margin:0 0 6px;font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.grid label{display:grid;gap:3px;font-size:12px;color:var(--muted);min-width:0}
+select,input[type=color]{width:100%;min-width:0;font:500 13px var(--font-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 7px}
+input[type=color]{height:34px;padding:2px 4px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px}
+.seg button{font:500 12.5px var(--font-body);color:var(--fg);background:none;border:0;border-radius:5px;padding:7px 4px;cursor:pointer;white-space:nowrap}
+.seg button:hover{background:var(--panel-2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.row label{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
+.row input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.btn{font:600 12.5px var(--font-body);color:var(--fg);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:7px 11px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stat{display:flex;justify-content:space-between;gap:10px;font:500 12.5px var(--font-mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+.stat b{color:var(--accent);font-weight:500}
+.note{margin:0;color:var(--muted);font-size:12.5px;line-height:1.45}
+#hint{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));margin:0;max-width:320px;font-size:12.5px;line-height:1.45;background:color-mix(in srgb,var(--panel) 90%,transparent);border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+#hint b{color:var(--accent);font-weight:600}
+#status{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);font:600 18px var(--font-display);letter-spacing:.08em;text-transform:uppercase;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 16px}
+#status.err{font:500 13px var(--font-body);letter-spacing:0;text-transform:none;max-width:min(420px,calc(100% - 32px));line-height:1.5}
+@media (max-width:640px){
+  #panel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:58%;border-radius:12px 12px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+  #hint{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto;left:16px;right:16px;max-width:none}
+}
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="3D preview of a survivor built from shaped parts"></canvas>
+<aside id="panel">
+  <header>
+    <h1>Survivor creator parts<small>Shaped pack · every choice in the game's creator</small></h1>
+    <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
+  </header>
+  <div id="pbody">
+    <section>
+      <h2>Look</h2>
+      <div class="grid">
+        <label>Build<select id="cBuild"><option value="slim">Slim</option><option value="average" selected>Average</option><option value="broad">Broad</option></select></label>
+        <label>Body<select id="cBody"><option value="masculine">Masculine</option><option value="feminine">Feminine</option></select></label>
+        <label>Skin<select id="cSkin"><option value="0">Tone 1</option><option value="1" selected>Tone 2</option><option value="2">Tone 3</option><option value="3">Tone 4</option><option value="4">Tone 5</option></select></label>
+        <label>Face<select id="cFace"><option value="calm">Calm</option><option value="glasses">Glasses</option><option value="stubble">Stubble</option><option value="freckles">Freckles</option><option value="tired">Tired</option><option value="moustache">Moustache</option><option value="dark_glasses">Dark glasses</option><option value="scar">Scar</option></select></label>
+        <label>Hair<select id="cHair"><option value="none">None</option><option value="buzzed">Buzzed</option><option value="short" selected>Short</option><option value="bob">Bob</option><option value="buns">Buns</option><option value="beard">Beard</option></select></label>
+        <label>Hair colour<select id="cHairC"><option value="0">Black</option><option value="1" selected>Brown</option><option value="2">Auburn</option><option value="3">Blond</option><option value="4">Grey</option></select></label>
+        <label>Hat<select id="cHat"><option value="none">None</option><option value="cap">Cap</option><option value="beanie">Beanie</option><option value="helmet">Helmet</option></select></label>
+        <label>Shoes<select id="cShoe"><option value="trainers">Trainers</option><option value="boots" selected>Boots</option><option value="rain_boots">Rain boots</option></select></label>
+        <label>Top<select id="cTop"><option value="tshirt">T-shirt</option><option value="striped_tee">Striped tee</option><option value="flannel_shirt" selected>Flannel shirt</option><option value="spotted_top">Spotted top</option><option value="hoodie">Hoodie</option><option value="open_jacket">Open jacket</option><option value="jumper">Jumper</option><option value="dungarees">Dungarees</option></select></label>
+        <label>Bottoms<select id="cBot"><option value="jeans" selected>Jeans</option><option value="shorts">Shorts</option><option value="cargo_trousers">Cargo trousers</option><option value="capri_trousers">Capri trousers</option><option value="track_pants">Track pants</option><option value="rolled_jeans">Rolled jeans</option></select></label>
+        <label>Shirt<input type="color" id="cShirt" value="#a8432e"></label>
+        <label>Pants<input type="color" id="cPants" value="#34405a"></label>
+        <label>Second colour<input type="color" id="cAcc" value="#e9dab0"></label>
+        <label style="align-self:end;flex-direction:row;display:flex;gap:6px;align-items:center;color:var(--fg);font-size:13px"><input type="checkbox" id="cPack" checked style="accent-color:var(--accent);width:16px;height:16px"> Backpack</label>
+      </div>
+    </section>
+    <section class="row">
+      <button class="btn" id="rand" type="button">Random survivor</button>
+      <button class="btn" id="crowd" type="button" aria-pressed="false">Show a crowd</button>
+      <button class="btn" id="face" type="button" aria-pressed="false">Close-up</button>
+    </section>
+    <section>
+      <h2>Move</h2>
+      <div class="seg" id="anim" role="group" aria-label="Animation">
+        <button type="button" data-v="idle" aria-pressed="false">Idle</button>
+        <button type="button" data-v="walk" aria-pressed="true">Walk</button>
+        <button type="button" data-v="run" aria-pressed="false">Run</button>
+        <button type="button" data-v="still" aria-pressed="false">Still</button>
+      </div>
+    </section>
+    <section>
+      <h2>Light</h2>
+      <div class="seg" id="tod" role="group" aria-label="Light">
+        <button type="button" data-v="day" aria-pressed="true">Day</button>
+        <button type="button" data-v="night" aria-pressed="false">Night</button>
+      </div>
+    </section>
+    <div class="stat"><span>This survivor</span><b id="tris">–</b></div>
+    <p class="note">Each part is a list of shaped pieces tied to one bone of the game's skeleton, so the game's own walk, run and crouch animations move it. The pack file is <code>assets/shaped/survivor.js</code>.</p>
+  </div>
+</aside>
+<p id="hint"><b>Drag</b> to turn the view, pinch or scroll to zoom. Change any choice to see it right away.</p>
+<div id="status">Loading parts…</div>
+
+<script>
+function showErr(m){ var s=document.getElementById('status'); s.hidden=false; s.className='err'; s.textContent='The preview stopped: '+(m||'unknown error')+'. Reload the page to try again, and send Claude a screenshot of this message.'; }
+addEventListener('error',function(e){ showErr(e.message); });
+addEventListener('unhandledrejection',function(e){ showErr(e.reason&&e.reason.message||String(e.reason)); });
+// load a pack file from the repo layout, or from beside the page when published on its own
+function loadPack(name){ return new Promise(function(ok,bad){
+  var tries=['../assets/shaped/'+name, name];
+  (function next(){ if(!tries.length) return bad(new Error('could not load '+name));
+    var s=document.createElement('script'); s.src=tries.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })();
+}); }
+window.packsReady=Promise.all([loadPack('shapes.js'),loadPack('survivor.js')]);
+</script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+await window.packsReady;
+const S=window.SHAPED, PK=S.survivor;
+
+/* ---------- scene ---------- */
+const canvas=document.getElementById('c');
+const isPhone=matchMedia('(max-width:640px)').matches;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(40,1,0.05,120);
+const controls=new OrbitControls(camera,canvas); controls.enableDamping=true; controls.maxPolarAngle=Math.PI*0.495; controls.minDistance=0.6; controls.maxDistance=20;
+function frameView(close){
+  if (close){ camera.position.set(0.9,1.65,1.9); controls.target.set(0,1.5,0); }
+  else if (crowdOn){ camera.position.set(4.5,4.2,8.5); controls.target.set(0,0.9,0); }
+  else { camera.position.set(isPhone?2.2:2.6,1.7,isPhone?4.6:4.2); controls.target.set(isPhone?0:-0.45,0.95,0); }
+}
+const hemi=new THREE.HemisphereLight(0xd8e7f3,0x7d6a4c,1.3); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff2da,2.3); sun.position.set(4,7,5); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
+Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6}); scene.add(sun);
+const lamp=new THREE.PointLight(0xffc477,0,12,2); lamp.position.set(-1.6,3.2,1.2); scene.add(lamp);
+scene.fog=new THREE.Fog(0xd3e4ec,18,45);
+// plaza: shaped paving slabs
+{
+  const parts={pos:[],nor:[],col:[]}, pieces=[];
+  for (let i=-7;i<=7;i++) for (let j=-7;j<=7;j++){ const r=Math.hypot(i,j); if (r>7.3) continue;
+    const g=(Math.sin(i*12.9898+j*78.233)*43758.5453)%1; pieces.push({s:'bev',p:[i,-0.06,j],d:[0.96,0.12,0.96],c: r<2.5?(g>0?'c1':'c2'):(g>0?'g1':'g2')}); }
+  pieces.push({s:'cyl',p:[-1.6,1.6,1.2],d:[0.12,3.2,0.12],c:'pole'},{s:'bev',p:[-1.6,3.25,1.2],d:[0.3,0.14,0.3],c:'pole'});
+  const pal={c1:'#9d9a92',c2:'#8f8c85',g1:'#6f9a48',g2:'#79a452',pole:'#55595f'};
+  S.build(pieces,n=>S.hex(pal[n]),parts);
+  scene.add(meshFrom(parts,true));
+}
+function meshFrom(o,receive){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(o.pos,3));
+  g.setAttribute('normal',new THREE.Float32BufferAttribute(o.nor,3));
+  const c=new Float32Array(o.col.length); const tmp=new THREE.Color();
+  for (let i=0;i<o.col.length;i+=3){ tmp.setRGB(o.col[i],o.col[i+1],o.col[i+2],THREE.SRGBColorSpace); c[i]=tmp.r; c[i+1]=tmp.g; c[i+2]=tmp.b; }
+  g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));
+  const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true})); m.castShadow=true; m.receiveShadow=!!receive; return m;
+}
+
+/* ---------- survivor from the pack ---------- */
+const NAMES={hairC:['black','brown','auburn','blond','grey']};
+function colourer(look){
+  const slot={SKIN:PK.slots.SKIN[look.skin], HAIR:PK.slots.HAIR[look.hairC], SHIRT:look.shirt, PANTS:look.pants, ACC:look.acc};
+  return name=>{
+    let dark=false, n=name; if (n.endsWith('_D')){ dark=true; n=n.slice(0,-2); }
+    const hex = slot[n] || PK.palette[n] || '#ff00ff';
+    const c=S.hex(hex); return dark? c.map(v=>v*PK.darker) : c;
+  };
+}
+function partsFor(look){
+  const P=PK.parts, add=(dst,src)=>{ if(!src) return; for (const b in src){ (dst[b]=dst[b]||[]).push(...src[b]); } };
+  const out={};
+  add(out,P.body[look.body]); add(out,P.top[look.body][look.top]); add(out,P.bottoms[look.body][look.bot]); add(out,P.shoes[look.shoe]);
+  add(out,P.face[look.face]); add(out,P.hair[look.hair]); add(out,P.hat[look.hat]); if (look.pack) add(out,P.gear.backpack);
+  // a hat covers the top of the hair: hair pieces centred above the pack's hat line are left out
+  if (look.hat!=='none' && out.Head){ const hatTop=new Set(P.hat[look.hat].Head); out.Head=out.Head.filter(q=>hatTop.has(q) || !P.hair[look.hair].Head.includes(q) || q.p[1]<PK.hatLine); }
+  const [bx,bz]=PK.builds[look.build];
+  if (bx!==1||bz!==1) for (const b in out){ if (b==='Head'||b==='neck_01') continue; out[b]=out[b].map(q=>({...q,p:[q.p[0]*bx,q.p[1],q.p[2]*bz],d:[q.d[0]*bx,q.d[1],q.d[2]*bz]})); }
+  return out;
+}
+function makeSurvivor(look){
+  const parts=partsFor(look), colourOf=colourer(look), groups={}, root=new THREE.Group(); let tris=0;
+  for (const name in PK.bones){
+    const B=PK.bones[name], g=new THREE.Group(); groups[name]=g;
+    const par=B.parent?PK.bones[B.parent].pivot:[0,0,0];
+    g.position.set(B.pivot[0]-par[0],B.pivot[1]-par[1],B.pivot[2]-par[2]);
+    if (parts[name]){
+      const local=parts[name].map(q=>({...q,p:[q.p[0]-B.pivot[0],q.p[1]-B.pivot[1],q.p[2]-B.pivot[2]]}));
+      tris+=S.count(local); g.add(meshFrom(S.build(local,colourOf)));
+    }
+  }
+  for (const name in PK.bones){ const B=PK.bones[name]; (B.parent?groups[B.parent]:root).add(groups[name]); }
+  root.userData={groups,phase:Math.random()*6,tris};
+  return root;
+}
+function pose(sv,mode,t){
+  const g=sv.userData.groups, w=t*(mode==='run'?9:5.2)+sv.userData.phase, a=mode==='run'?0.85:mode==='walk'?0.5:0, s=Math.sin(w);
+  const set=(n,x,y,z)=>{ if(g[n]) g[n].rotation.set(x||0,y||0,z||0); };
+  if (mode==='still'){ for (const n in g) g[n].rotation.set(0,0,0); g.pelvis.position.y=PK.bones.pelvis.pivot[1]; return; }
+  if (mode==='idle'){
+    const b=Math.sin(t*1.6+sv.userData.phase);
+    set('pelvis'); set('spine_01',0.01*b); set('spine_03',-0.02*b); set('Head',0.04*Math.sin(t*0.7),0.35*Math.sin(t*0.45+sv.userData.phase),0);
+    set('upperarm_l',0,0,-0.05-0.02*b); set('upperarm_r',0,0,0.05+0.02*b); set('lowerarm_l',-0.12); set('lowerarm_r',-0.12);
+    for (const sd of ['l','r']){ set('thigh_'+sd); set('calf_'+sd); set('foot_'+sd); }
+    g.pelvis.position.y=PK.bones.pelvis.pivot[1]+0.004*b; return;
+  }
+  set('pelvis',0,0.08*s,0); set('spine_01',mode==='run'?0.18:0.04); set('spine_03',0,-0.12*s,0); set('Head',mode==='run'?-0.12:-0.03,0.06*s,0);
+  set('thigh_l',-s*a); set('thigh_r',s*a);
+  set('calf_l',Math.max(0,Math.sin(w-1.4))*a*1.4); set('calf_r',Math.max(0,Math.sin(w+Math.PI-1.4))*a*1.4);
+  set('foot_l',-Math.max(0,-s)*0.25); set('foot_r',-Math.max(0,s)*0.25);
+  set('upperarm_l',s*a*0.8,0,-0.06); set('upperarm_r',-s*a*0.8,0,0.06);
+  set('lowerarm_l',-(mode==='run'?1.3:0.3)-Math.max(0,-s)*0.3); set('lowerarm_r',-(mode==='run'?1.3:0.3)-Math.max(0,s)*0.3);
+  g.pelvis.position.y=PK.bones.pelvis.pivot[1]-(mode==='run'?0.06:0.01)+Math.abs(Math.cos(w))*(mode==='run'?0.05:0.02);
+}
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+const ids={build:'cBuild',body:'cBody',skin:'cSkin',face:'cFace',hair:'cHair',hairC:'cHairC',hat:'cHat',shoe:'cShoe',top:'cTop',bot:'cBot',shirt:'cShirt',pants:'cPants',acc:'cAcc'};
+function readLook(){ const o={}; for (const k in ids) o[k]=$(ids[k]).value; o.skin=+o.skin; o.hairC=+o.hairC; o.pack=$('cPack').checked; return o; }
+function writeLook(o){ for (const k in ids) $(ids[k]).value=o[k]; $('cPack').checked=o.pack; }
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const SHIRTS=['#a8432e','#3566c4','#4f6b4a','#d9b13b','#6d4a7a','#2f6178','#c9b48a','#8c2f39','#e8e3d8','#3a3c40'];
+const PANTSC=['#34405a','#2b2f38','#5b4a36','#4a5a3a','#6e6a5e','#23324a','#7a5a3c'];
+function randomLook(){
+  const C=PK.choices;
+  return {build:pick(C.build),body:pick(C.body),skin:Math.floor(Math.random()*5),face:pick(C.face),hair:pick(C.hair),hairC:Math.floor(Math.random()*5),
+          hat:Math.random()<0.45?pick(['cap','beanie','helmet']):'none',shoe:pick(C.shoes),top:pick(C.top),bot:pick(C.bottoms),
+          shirt:pick(SHIRTS),pants:pick(PANTSC),acc:pick(['#e9dab0','#d9b13b','#e8e3d8','#b23a2e','#2f6178','#4b7031']),pack:Math.random()<0.6};
+}
+const stage=new THREE.Group(); scene.add(stage);
+let hero=null, crowd=[], crowdOn=false, mode='walk';
+function rebuild(){
+  if (hero){ stage.remove(hero); hero.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); }
+  hero=makeSurvivor(readLook()); if (!crowdOn) stage.add(hero);
+  $('tris').textContent=hero.userData.tris.toLocaleString('en-US')+' triangles';
+}
+function setCrowd(on){
+  crowdOn=on; $('crowd').setAttribute('aria-pressed',String(on)); $('crowd').textContent=on?'Back to one survivor':'Show a crowd';
+  crowd.forEach(c=>stage.remove(c)); crowd=[];
+  if (on){ stage.remove(hero); for (let i=0;i<10;i++){ const sv=makeSurvivor(randomLook()); sv.userData.ang=i/10*Math.PI*2; sv.userData.mode=pick(['walk','walk','run','idle']); crowd.push(sv); stage.add(sv); } }
+  else stage.add(hero);
+  frameView(false);
+}
+for (const k in ids) $(ids[k]).addEventListener(ids[k].startsWith('c')&&$(ids[k]).type==='color'?'input':'change',rebuild);
+$('cPack').addEventListener('change',rebuild);
+$('rand').addEventListener('click',()=>{ writeLook(randomLook()); rebuild(); });
+$('crowd').addEventListener('click',()=>setCrowd(!crowdOn));
+let close=false; $('face').addEventListener('click',()=>{ close=!close; $('face').setAttribute('aria-pressed',String(close)); $('face').textContent=close?'Whole body':'Close-up'; if(close&&crowdOn) setCrowd(false); frameView(close); });
+$('anim').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; mode=b.dataset.v; document.querySelectorAll('#anim button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); });
+$('tod').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; document.querySelectorAll('#tod button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  const night=b.dataset.v==='night';
+  scene.background=new THREE.Color(night?0x0d1420:0xbcd3e3); scene.fog.color.set(night?0x0d1420:0xd3e4ec); scene.fog.near=night?6:18; scene.fog.far=night?24:45;
+  hemi.color.set(night?0x222c44:0xd8e7f3); hemi.groundColor.set(night?0x08080a:0x7d6a4c); hemi.intensity=night?0.3:1.3;
+  sun.color.set(night?0x7f9ccc:0xfff2da); sun.intensity=night?0.25:2.3; lamp.intensity=night?40:0; });
+scene.background=new THREE.Color(0xbcd3e3);
+const panel=$('panel'), fold=$('fold');
+fold.addEventListener('click',()=>{ const f=panel.classList.toggle('folded'); fold.textContent=f?'Show':'Hide'; fold.setAttribute('aria-expanded',String(!f)); });
+if (isPhone){ panel.classList.add('folded'); fold.textContent='Show'; fold.setAttribute('aria-expanded','false'); }
+
+function resize(){ const w=canvas.clientWidth||innerWidth,h=canvas.clientHeight||innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+addEventListener('resize',resize); new ResizeObserver(resize).observe(canvas); resize();
+rebuild(); frameView(false); $('status').hidden=true;
+const clock=new THREE.Clock();
+renderer.setAnimationLoop(()=>{
+  const t=clock.getElapsedTime(); controls.update();
+  if (crowdOn) for (const sv of crowd){
+    const m=sv.userData.mode, sp=m==='run'?0.32:m==='walk'?0.16:0;
+    const r=3.2+Math.sin(sv.userData.phase)*0.8, a=sv.userData.ang+t*sp;
+    sv.position.set(Math.cos(a)*r,0,Math.sin(a)*r); sv.rotation.y= sp ? -a : Math.atan2(-Math.cos(a),-Math.sin(a)); pose(sv,m,t);
+  } else if (hero) pose(hero,mode,t);
+  renderer.render(scene,camera);
+});
+</script>
+</body>
+</html>
