@@ -7,6 +7,8 @@ self.addEventListener('install', function(e){ e.waitUntil(caches.open(CACHE).the
 self.addEventListener('activate', function(e){ e.waitUntil(caches.keys().then(function(ks){ return Promise.all(ks.filter(function(k){ return k !== CACHE && k !== SQ; }).map(function(k){ return caches.delete(k); })); }).then(function(){ return self.clients.claim(); })); });
 self.addEventListener('fetch', function(e){
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
+  /* test pages and old prototypes are separate from the game: load them straight from the web, never swap in the game */
+  if (/\/(art-tests|prototypes)\//.test(new URL(e.request.url).pathname)) return;
   var sq = /\/assets\/springfield\//.test(new URL(e.request.url).pathname);
   e.respondWith(caches.open(sq ? SQ : CACHE).then(function(c){
     var saved = function(){ return c.match(e.request, {ignoreSearch:true}).then(function(hit){ return hit || (sq || /\.js$/.test(new URL(e.request.url).pathname) ? hit : c.match('play.html')); }); };
