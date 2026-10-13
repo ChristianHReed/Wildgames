@@ -69,13 +69,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 }
 #panel.folded #pbody{display:none}
 [hidden]{display:none!important}
+
+.round{display:inline-block;margin-top:6px;font:600 12px var(--font-body);color:var(--accent);text-decoration:none;letter-spacing:0;text-transform:none}
+.round:hover{text-decoration:underline}
 </style>
 
 <canvas id="c" tabindex="0" aria-label="3D test street. Drag to look around, tap a building to break it."></canvas>
 
 <aside id="panel">
   <header>
-    <h1>Voxel test street 2<small>Shaped ground · breakable buildings · 12.5 cm blocks</small></h1>
+    <h1>Voxel test street 2<small>Shaped ground · breakable buildings · 12.5 cm blocks</small><a class="round" id="roundLink" href="voxel-test-street.html">← Back to round 1</a></h1>
     <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
   </header>
   <div id="pbody">

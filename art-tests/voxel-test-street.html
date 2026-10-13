@@ -69,13 +69,16 @@ tr:last-child td{border-bottom:0}
 }
 @media (min-width:641px){#panel.folded #pbody{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.round{display:inline-block;margin-top:6px;font:600 12px var(--font-body);color:var(--accent);text-decoration:none;letter-spacing:0;text-transform:none}
+.round:hover{text-decoration:underline}
 </style>
 
 <canvas id="c" tabindex="0" aria-label="3D test street. Drag to look around, tap to break blocks."></canvas>
 
 <aside id="panel">
   <header>
-    <h1>Voxel test street<small>Afterstreet art test · 1 grid square = 0.5 m</small></h1>
+    <h1>Voxel test street<small>Afterstreet art test · 1 grid square = 0.5 m</small><a class="round" id="roundLink" href="voxel-test-street-2.html">Open round 2 →</a></h1>
     <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
   </header>
   <div id="pbody">
@@ -712,5 +715,6 @@ function tick(now){
   requestAnimationFrame(tick);
 })();
 </script>
+
 
 </html>
