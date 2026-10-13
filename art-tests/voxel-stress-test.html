@@ -76,7 +76,7 @@ a{color:var(--accent)}
 
 <aside id="panel">
   <header>
-    <h1>Voxel stress test<small>Round 3 · a real Springfield square · 2,849 buildings · build 3</small><a class="round" href="voxel-test-street-2.html">← Round 2</a> · <a class="round" href="voxel-test-street.html">Round 1</a></h1>
+    <h1>Voxel stress test<small>Round 3 · a real Springfield square · 2,849 buildings · build 4</small><a class="round" href="voxel-test-street-2.html">← Round 2</a> · <a class="round" href="voxel-test-street.html">Round 1</a></h1>
     <button id="fold" type="button" aria-expanded="true" aria-controls="pbody">Hide</button>
   </header>
   <div id="pbody">
@@ -151,7 +151,7 @@ a{color:var(--accent)}
 function showErr(msg){ var s = document.getElementById('status'); if (!s) return; s.hidden = false; s.className = 'err'; s.textContent = 'Something went wrong: ' + (msg || 'unknown error') + '. Send Claude a screenshot of this message. Tap it to close and carry on.'; s.onclick = function(){ s.hidden = true; }; }
 /* only this page's own errors stop the test. "Script error." with no file is from another site's script (a browser extension or
    Brave's own add-ons on iPhone) and says nothing useful, so it is ignored */
-window.addEventListener('error', function(e){ if (!e.filename || /^Script error\.?$/.test(e.message || '')) return; showErr(e.message + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
+window.addEventListener('error', function(e){ if (!e.filename || /^Script error\.?$/.test(e.message || '') || /ethereum|solana|web3|__firefox__|webkit\.messageHandlers/i.test(e.message || '') || (e.lineno === 1 && /\.html/.test(e.filename))) return;   /* Brave's wallet and other browser add-ons put their own code into every page */ showErr(e.message + (e.lineno ? ' (line ' + e.lineno + ')' : '')); });
 window.addEventListener('unhandledrejection', function(e){ showErr(e.reason && e.reason.message || String(e.reason)); });
 
 var $ = function(id){ return document.getElementById(id); };
