@@ -26,7 +26,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | `packs/` | Item and scenario packs |
 | `prototypes/` | Earlier versions, kept for reference |
 | `art-tests/` | Art-style test scenes, not part of the game. Round 1: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street.html · Round 2: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street-2.html |
-| `docs/` | The design document and the testing roadmap |
+| `docs/` | The design document, the roadmap, the testing roadmap and the art direction (`docs/ART.md`) |
 
 ## Controls
 

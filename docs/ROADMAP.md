@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 12 October 2026, at version 0.39. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 13 October 2026, at version 0.39 (art track added). This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -49,6 +49,19 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | **0.40** | Clothing layers: warmth, wetness and protection from a few kinds of clothes found as loot | None |
 | **0.41** | Rain collectors and a small garden plot at your base: water and food that come back | None |
 | **0.42** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
+
+## The new look (art track)
+
+Chosen 13 October 2026: shaped-voxel characters and props, breakable 12.5 cm block buildings, smooth ground with sharp edges, cozy days and scary nights. How it works is in `docs/ART.md`; the reference scene is `art-tests/voxel-test-street-2.html`. These steps replace the Quaternius, Kenney and KayKit art over time. They can go before or between the feature versions above; each is small enough to try on the iPhone first.
+
+| Step | What changes | Assets needed |
+| --- | --- | --- |
+| **Art 1** | Mood: day and night retuned to the cozy-day, scary-night keys (sky, fog distance, sun and moon colour, lamp pools, only some windows lit, a flickering lamp, alien eyes that glow, darker screen edges at night) | None |
+| **Art 2** | Shaped survivors and aliens on the existing skeletons and animations; character creator parts as pieces | None (made in code) |
+| **Art 3** | Shaped items, furniture, street props, trees and cars | None (made in code) |
+| **Art 4** | Ground: smooth hills with sharp kerbs, creek and river banks and ravines, in every region square | None |
+| **Art 5** | Buildings as 12.5 cm blocks near you, 25 cm and 50 cm further out, from the same type rules as today | None |
+| **Art 6** | Breaking: walls and windows break into blocks, loose parts fall, rubble stays; what can break them, the noise it makes, aliens seeing through holes, and saving the damage per square | None |
 
 ## Feature backlog by area
 
@@ -148,4 +161,6 @@ These pieces are still plain coloured boxes. The Furniture Kit now covers the ki
 - Pathfinding and sight checks cost processing time; on the iPhone the number of aliens thinking each moment may need a cap.
 - A two-storey home takes about twice as long to lay out as before. A few very large buildings already took one to three seconds in the test browser, which may show as a pause on the iPhone when you walk up to one.
 - In multiplayer the host decides what aliens know. Guests do not yet see the awareness pill.
+- Breakable buildings (Art 5 and 6) are the heaviest change: every block grid takes memory, broken walls change pathfinding and sight, and in multiplayer the host has to share the damage with guests. Keep block detail to the buildings near you.
+- The new look's night uses a few real lights; on phones keep it to about six lamps near you plus alien eyes.
 - Animation files are large. The 64 GB drive has room, but phones load the "lite" set, so animations may need a trimmed phone version.
