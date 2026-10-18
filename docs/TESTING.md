@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.45) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.45.1) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -369,6 +369,7 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 
 - [ ] 5b.1 Wear a sweater, then a coat, raincoat or leather jacket, then trousers or thermals, and look in third person (P): each shows on your survivor. Other players see them too.
 - [ ] 5b.2 By day and at night, meet a swarmer (low, four spider legs), a stalker (tall, legs bending backwards, bone blades) and a giant (huge, walks on its knuckles). They walk smoothly, strike when they attack and lie on the ground when killed. Their eyes glow green in the dark.
+- [ ] 5b.2b Fight a swarmer: it stops about two and a half steps away and lunges, so it stays in view at the bottom of the screen instead of vanishing under you. Your swings still hit it. Walk into it: it backs off.
 - [ ] 5b.3 Go into a nest building: the nest is a cluster of dark pods with glowing seams. Destroying it still works.
 - [ ] 5b.4 Inside homes, shops and churches: beds, sofas, tables, chairs, lamps, TVs, kitchens, bathrooms, wardrobes, bookshelves, lockers, pews and shop shelves are the new shaped models and sit against walls, not through them. Shoving a wardrobe against a door still works.
 - [ ] 5b.5 On the street: lamps with their arm over the road, hydrants, benches, dumpsters and town cars (pickups, hatchbacks, saloons, vans, yellow taxis, police cars). Drive one: the wheels roll and the front ones steer. The safe-house truck is still the old model.

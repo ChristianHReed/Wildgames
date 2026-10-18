@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.45. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.45.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -46,6 +46,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.43 | Rain collectors (clean water when it rains, up to 10 bottles) and garden plots (seed packets found as loot or bought; grow over about a day and a half while watered by rain or a bottle; slower in autumn, none in winter; harvest fresh food and sometimes seeds back) |
 | 0.44 | **Resource pack 2 from the art chat:** survivors version 7 (silhouette first) wearing the 0.40 clothes as layers; our own aliens and rigs (swarmer, stalker, giant) in place of the Bestiary stand-ins, with glowing eyes and in-between frames for a smooth walk, and the nest model at every nest core; shaped furniture, street lamps, hydrants, benches, dumpsters, bushes and town cars (body and bonnet, rolling and steering wheels; taxis and police cars repainted), and the rain barrel and the garden bed with its three stages. About a sixth of the triangles the old models used. `?oldart` in the address brings the old props and aliens back, `?oldaliens` only the old aliens |
 | 0.45 | **Art 5, framed buildings:** every outside wall within about 100 m of you is a row of bays from the art chat's building kit, each a frame (posts and beams standing 6 cm proud) with a panel set back in it: wall (sided, brick or plain by the building's material), window, door, shopfront or roll-up door. Homes and shops alternate windows and wall; windows and doors keep their real size in stretched bays, and the windows you can open, board up or climb through are the ones in the frames. Upstairs glass lights up at night, warm or cold and flickering. Corner posts, a plinth, and wider bays and lighter upper storeys on very big buildings. Further off the painted walls stay. `?oldbld` brings the painted walls back everywhere |
+| 0.45.1 | Aliens keep their distance: each stops at a striking distance that keeps it in view (swarmer about 2.4 m, stalker 1.6 m, giant 2.8 m) and lunges from there, and steps back if you walk into it; your swings reach a swarmer from there |
 
 ## Next versions
 
