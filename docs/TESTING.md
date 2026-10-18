@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.42) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.43) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -379,6 +379,14 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 - [ ] 7.2 Indoors, place a bed. Die on purpose; you wake at the bed and your pack is where you fell.
 - [ ] 7.3 Place a chest, store items, exit, come back. They are still there.
 - [ ] 7.4 Repaint a building and demolish another. Both survive **Save & exit**.
+
+## Stage 7b: rain collectors and gardens (0.43)
+
+- [ ] 7b.1 Open Build (N): Food and water lists a rain collector and a garden plot. Indoors, or on a road, they are refused with a reason.
+- [ ] 7b.2 Build a rain collector outside. When it rains it fills (the water level rises in the barrel); E takes clean water; B picks it up and gives back its materials and any water.
+- [ ] 7b.3 Build a garden plot. Without seed packets E says where to find them. Plant one; when the plot is dry it says so and stops growing; water it with a bottle (unboiled is fine) or wait for rain.
+- [ ] 7b.4 After about a day and a half of game time the plants are full grown with coloured vegetables; E harvests fresh food and sometimes a seed packet. In winter the plot says it is too cold.
+- [ ] 7b.5 Leave and come back (or play as a guest): the collector's water and the plot's growth are kept.
 
 ## Stage 8: vehicles, traders and goals
 

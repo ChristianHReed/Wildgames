@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draws the clothing icons (0.40) into slots 31-40 of the HUD icon strip, in the same flat outlined style as the lantern,
+"""Draws the clothing icons (0.40) into slots 31-40, and the seed packet (0.43) into slot 41, of the HUD icon strip, in the same flat outlined style as the lantern,
 radio, generator and truck parts. Run after build_art.py and build_vehicles.py (each of them rewrites the strip up to its own slots).
 Slot 6 (the design pack's rain jacket) is used for the rain jacket; the winter coat gets its own icon here.
 Usage: python3 tools/draw_clothes.py"""
@@ -65,13 +65,21 @@ def boots():
         d.polygon(pts, fill=col('5a4028'), outline=INK); d.line(pts + [pts[0]], fill=INK, width=LW, joint='curve')
         d.rectangle([46 + ox, 296, 200 + ox, 320], fill=col('2e2420')); d.line([(56 + ox, 130), (124 + ox, 130)], fill=col('c9a24a'), width=8)
     return im
+def seeds():
+    im, d = canvas()
+    d.rounded_rectangle([86, 40, 298, 330], 14, fill=col('e9dab0'), outline=INK, width=LW)
+    d.rectangle([86, 40, 298, 92], fill=col('7a9a4a')); d.line([(86, 92), (298, 92)], fill=INK, width=8)
+    d.ellipse([140, 150, 244, 254], fill=col('d9603a'), outline=INK, width=10)          # a tomato on the front
+    d.polygon([(192, 140), (172, 160), (212, 160)], fill=col('5f9a3e'))
+    for x, y in [(120, 290), (150, 300), (230, 296), (262, 286)]: d.ellipse([x - 9, y - 6, x + 9, y + 6], fill=col('a8743e'))
+    return im
 ICONS = [lambda: jacket(col('8a6f5a'), col('6e5646'), fur=True), beanie, cap, helmet, sweater,
          lambda: jacket(col('4a3a32'), col('2e2420'), collar=col('3a2c26')), gloves,
-         lambda: trousers(col('5d6670'), col('454c54')), lambda: trousers(col('c9b8a0'), col('a8987e')), boots]
+         lambda: trousers(col('5d6670'), col('454c54')), lambda: trousers(col('c9b8a0'), col('a8987e')), boots, seeds]
 for s in ('lite', 'full'):
     p = os.path.join(OUT, s, 'icons.png')
     if not os.path.exists(p): continue
-    old = Image.open(p).convert('RGBA'); new = Image.new('RGBA', (96*41, 96)); new.paste(old.crop((0, 0, min(old.width, 96*31), 96)), (0, 0))
+    old = Image.open(p).convert('RGBA'); new = Image.new('RGBA', (96*42, 96)); new.paste(old.crop((0, 0, min(old.width, 96*31), 96)), (0, 0))
     for k, f in enumerate(ICONS): new.paste(f().resize((96, 96), Image.LANCZOS), ((31 + k)*96, 0))
     new.save(p, optimize=True)
-print('icons: winter coat, beanie, cap, helmet, sweater, leather jacket, gloves, work trousers, thermals, boots in slots 31-40')
+print('icons: clothes in slots 31-40, seed packet in 41')

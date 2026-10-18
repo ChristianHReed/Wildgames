@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.42. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.43. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -43,6 +43,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.41 | **Art 1, the mood:** cozy days and scary nights. A sky with a gradient, sun, moon and stars; colours, fog and light by time of day from docs/ART.md; at night a dark fog to about 30 m that lamps, flashlights and lit windows cut through, and darker screen edges; a third of windows lit while the power lasts (warm, a few cold and flickering), a few cold ones after; flickering street lamps; aliens' eyes glow green and light the ground |
 | 0.41.1 | Building corners shaded: walls darken toward every corner and the ground, inside and out, and light falls at an uneven angle so each side of a house has its own tone |
 | 0.42 | **Art 2, the shaped survivors:** every creator choice from the survivor pack (version 6) fitted onto the animation skeleton and moved with the same clips (tools/build_rig.py exports the bone movement); the creator preview, other players and traders use them; worn helmets, beanies, caps, boots and gloves show; packs on survivors |
+| 0.43 | Rain collectors (clean water when it rains, up to 10 bottles) and garden plots (seed packets found as loot or bought; grow over about a day and a half while watered by rain or a bottle; slower in autumn, none in winter; harvest fresh food and sometimes seeds back) |
 
 ## Next versions
 
@@ -50,8 +51,10 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.43** | Rain collectors and a small garden plot at your base: water and food that come back | None |
 | **0.44** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
+| **0.45** | Horde nights: every few nights a wave of aliens comes for your base; walls, barricades, boarded windows and light matter | None |
+| **0.46** | A paper map and notes: you only see where you have been, and can mark places | None |
+| **0.47** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger) | Shaped survivors (in the game) |
 
 ## The new look (art track)
 
@@ -113,7 +116,7 @@ Ticked items are in the game.
 - [x] Sleep and tiredness
 - [x] Weapon wear, repair at a tool bench or with duct tape
 - [x] Clothing layers: warmth, wetness, protection
-- [ ] Farming and rain collectors
+- [x] Farming and rain collectors
 
 ### World and long game
 - [x] Sound (music still to do)
