@@ -116,3 +116,13 @@ Townscaper (windows lighting up, warm sunsets), Minecraft Vibrant Visuals (golde
 - **Not used yet:** the framed building kit (Art 5), loose items, trees and small plants, the street props the game does not place, moving doors and lids, and the truck.
 - **Switches:** `?oldart` in the address uses the old props and aliens; `?oldaliens` only the old aliens; `?oldppl` the old survivors.
 
+## Framed buildings in the game (0.45)
+
+- `frWall()` in `play.html` lays each footprint edge as bays: 2.4 m (3.6 or 4.8 m on very big buildings), the door edge with a door bay in its middle. The ground storey is the building's own ground height, the rest 3.2 m.
+- Infill by material: siding uses `*_siding` and timber frames, brick, buff and stone use `*_brick` and concrete frames, metal uses `*_plain` and steel frames, everything else `*_plain` and concrete frames. Shops and glass lobbies have `shopfront` along the front, garages, warehouses and fire stations `garage`.
+- A window in every other bay (counted out from the door, or from the middle of the wall), and above the door. Ground-floor windows lose their glass (the game draws its own sashes, curtains and boards there and you can see in); upstairs glass glows at night by its own number.
+- Each module is bent to its bay with a piecewise stretch that keeps window (1.0 by 1.2 m) and door (1.3 by 2.2 m) openings their real size and the posts their width.
+- Only faces that can be seen are drawn; storeys above the second are "lite" (outward faces only). Posts, beams and plinths stop at the wall line, so rooms show wallpaper.
+- Cost: about 3,000 to 6,000 triangles per building against about 1,200 for painted walls, so only map pieces within 100 m of you are framed (`FRD`); the densest Springfield square went from about 62,000 to 124,000 building triangles.
+- Breaking (Art 6) will replace an infill with `broken` and drop the panel as rubble.
+

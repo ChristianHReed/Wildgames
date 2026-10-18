@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.44) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.45) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -374,6 +374,16 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 - [ ] 5b.5 On the street: lamps with their arm over the road, hydrants, benches, dumpsters and town cars (pickups, hatchbacks, saloons, vans, yellow taxis, police cars). Drive one: the wheels roll and the front ones steer. The safe-house truck is still the old model.
 - [ ] 5b.6 On a phone, compare the frame rate with 0.43 (`?fps=1`). It should be the same or better: the new models have about a sixth of the triangles.
 - [ ] 5b.7 Add `?oldart` to the address: the old furniture, cars and aliens come back.
+
+## Stage 5c: framed buildings (0.45)
+
+- [ ] 5c.1 Walk down a street of homes: walls show posts and beams with panels between them, windows set back with sills, the front door in its own bay, and a post at each corner. Shops have shopfront glass, garages and the fire station roll-up doors.
+- [ ] 5c.2 Look at a window you can open: the sash, curtains and boards sit exactly in the window's opening. Climb through a broken one. Board one up from inside.
+- [ ] 5c.3 Inside, the outside walls still show wallpaper; no posts or beams stick into the rooms.
+- [ ] 5c.4 At night some upstairs windows glow, warm or cold and flickering; with the power off (day 4 by default) almost none do.
+- [ ] 5c.5 Walk about 100 m in one direction. Buildings change from painted to framed walls as you near them; report any pause when that happens, and how long it is, on the phone.
+- [ ] 5c.6 Compare the frame rate downtown with 0.44 (`?fps=1`; `?oldbld` for the painted walls).
+- [ ] 5c.7 A game saved before 0.45 with boarded windows: the boards may now be on different windows of the same building (windows moved to the frames).
 
 ## Stage 6: items and packs
 

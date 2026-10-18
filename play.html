@@ -360,7 +360,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.44.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -370,7 +370,7 @@
 var ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
+  ['icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
   return set;
 })();
 </script>
@@ -1245,6 +1245,85 @@ function bstyle(b){
   if (k === 'office') return h < 0.35 ? S('storefront', 'brick_win', 'brick_win', 'plain_brick', 'brick', {cornice:true, belt:true}) : S('glass_lobby', 'office_ribbon', 'office_ribbon', 'plain_concrete', 'concrete', {cornice:true});
   return S('stucco_win', 'stucco_win', 'stucco_win', 'plain_stucco', 'stucco');
 }
+/* ---- Art 5 (0.45): framed buildings from the art chat's building kit (assets/shaped/buildings.js). Every outside wall is a row of bays, each a frame (a post on
+   its left and a beam on top) with an infill panel set back in it: plain, sided or brick wall, window, door, shopfront or garage door. The kit's modules are 2.4 m by 3 m;
+   each is bent to its bay with a stretch that keeps windows and doors their real size (the game's own sashes and doors sit in the openings), and to the storey's height.
+   Faces that look into the building are left out, so from inside you see the room's wallpaper as before. Add ?oldbld to the address for the painted walls ---- */
+var FRON = !!(window.SHAPED && SHAPED.build && SHAPED.buildings) && !/[?&]oldbld/.test(location.search), FRM = {}, FRNOW = false, FRD = 100;   /* framed walls on the map pieces within FRD metres; painted ones further off */
+/* one module as triangles in bay space, each with its colour slot; ground windows and doors lose the glass, door leaf and knob the game draws itself */
+function frMod(name, cut){
+  var key = name + (cut ? ':' + cut : ''); if (FRM[key]) return FRM[key]; var BK = SHAPED.buildings, pcs = BK.models.modules[name]; if (!pcs) return null;
+  var out = []; pcs.forEach(function(q){
+    if (cut === 'win' && (q.c === 'glass' || q.c === 'glassLit' || q.c === 'glassCold' || (q.c === 'TRIM' && q.p[2] < 0 && q.s === 'decal'))) return;
+    if (cut === 'door' && (q.c === 'knob' || (q.c === 'TRIM' && q.s === 'box' && q.p[2] < -0.03))) return;
+    var o = SHAPED.build([q], function(){ return [0, 0, 0]; }, null, {}), P0 = o.pos, glass = /^glass/.test(q.c), fr = name.slice(0, 5) === 'frame' || name.slice(0, 6) === 'corner', pl = name === 'plinth';
+    for (var t = 0; t < P0.length; t += 9){ var ux = P0[t+3] - P0[t], uy = P0[t+4] - P0[t+1], uz = P0[t+5] - P0[t+2], vx = P0[t+6] - P0[t], vy = P0[t+7] - P0[t+1], vz = P0[t+8] - P0[t+2];
+      var nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx, nl = Math.hypot(nx, ny, nz) || 1, cx = (P0[t] + P0[t+3] + P0[t+6])/3, cy = (P0[t+1] + P0[t+4] + P0[t+7])/3; nx /= nl; ny /= nl; nz /= nl;
+      /* only faces that can be seen: none into the building, none hidden under a neighbour (bay edges, the ground, the beam above), glass only its outside */
+      if (nz < -0.5 || (glass && nz < 0.5) || (cut === 'lite' && nz < 0.5 && !(fr && Math.abs(nx) > 0.5 && Math.abs(cx) > 1.05))) continue;   /* lite (high storeys): only the faces looking out, and the posts' sides */
+      if (ny < -0.5 && cy < 0.05) continue;
+      if (ny > 0.5 && cy > (fr ? 2.99 : 2.74)) continue;
+      if (fr && (Math.abs(ny) > 0.5 || (Math.abs(nx) > 0.5 && Math.abs(cx) < 1.05))) continue;
+      if (!fr && Math.abs(nx) > 0.5 && Math.abs(cx) > (pl ? 1.15 : 1.04)) continue;
+      out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, f:fr || pl}); } });
+  return FRM[key] = out;
+}
+/* a piecewise-straight stretch through knots [[from, to], ...] (from 0 up), mirrored for negative values, carried on at slope 1 past the last knot */
+function frMap(K){ return function(v){ var a = Math.abs(v), sg = v < 0 ? -1 : 1, x0 = 0, y0 = 0; for (var i = 0; i < K.length; i++){ var k = K[i]; if (a <= k[0]) return sg*(y0 + (a - x0)*(k[1] - y0)/((k[0] - x0) || 1)); x0 = k[0]; y0 = k[1]; } return sg*(y0 + a - x0); }; }
+function frYMap(K){ return function(v){ var x0 = 0, y0 = 0; for (var i = 0; i < K.length; i++){ var k = K[i]; if (v <= k[0]) return y0 + (v - x0)*(k[1] - y0)/((k[0] - x0) || 1); x0 = k[0]; y0 = k[1]; } return y0 + v - x0; }; }
+/* the building's look as kit pieces: which wall infill, which frame, and its four colours (the wall colour keeps the nest and safe-house tints) */
+function frStyle(ST, tint, rcol){
+  var mt = ST.mat, inf = mt === 'siding' ? 'siding' : mt === 'brick' || mt === 'buff' || mt === 'stone' ? 'brick' : 'plain', fk = mt === 'siding' ? 'timber' : mt === 'metal' ? 'steel' : 'concrete';
+  var trim = mt === 'brick' || mt === 'buff' ? [226,218,202] : mt === 'stone' ? [214,206,188] : mt === 'metal' ? [96,100,104] : [236,232,224];
+  var frame = mt === 'siding' ? [236,232,224] : mt === 'metal' ? [80,84,90] : mt === 'brick' ? tint.map(function(v){ return Math.round(v*0.74); }) : mt === 'stone' || mt === 'buff' ? trim.map(function(v){ return Math.round(v*0.9); }) : [188,182,170];
+  var pal = SHAPED.buildings.palette, dk = SHAPED.buildings.darker, cols = {WALL:tint, TRIM:trim, FRAME:frame, ROOF:rcol};
+  return {inf:inf, fk:fk, col:function(n){ if (cols[n]) return cols[n]; if (n.slice(-2) === '_D'){ var c0 = cols[n.slice(0, -2)] || SHAPED.hex(pal[n.slice(0, -2)] || '#ff00ff').map(function(v){ return v*255; }); return c0.map(function(v){ return Math.round(v*dk); }); } return SHAPED.hex(pal[n] || '#ff00ff').map(function(v){ return Math.round(v*255); }); }};
+}
+/* put one module into the mesh: bay centre (cx, cz) on the wall line, e along the wall (bay x), o out of the wall, storey from y0; fx, fy bend it to the bay.
+   Colours darken toward the building's corners and the ground (as the painted walls did), and that shading goes in alpha for the inside face */
+function frPut(m, M, FS, cx, cz, ex, ez, ox, oz, y0, fx, fy, ao, gid){
+  if (!M || !M.length) return; var P = m.p, Cc = m.c, T = m.t, CC = FS.cc || (FS.cc = {}), np = P.length, nc = Cc.length, nt = T.length, n3 = M.length*9;
+  P.length = np + n3; Cc.length = nc + M.length*12; T.length = nt + n3;
+  for (var i = 0; i < M.length; i++){ var tr = M[i], col = CC[tr.c] || (CC[tr.c] = FS.col(tr.c)), q = tr.p, g = tr.g, ff = tr.f;
+    for (var v = 0; v < 3; v++){ var lx = fx(q[v*3]), ly = y0 + fy(q[v*3+1]), lz = q[v*3+2] - 0.04, wx = cx + ex*lx + ox*lz, wz = cz + ez*lx + oz*lz;
+      if (ff && lz < 0){ wx -= ox*lz; wz -= oz*lz; }   /* posts, beams and the plinth stop at the wall, so they do not stick into the rooms */
+      P[np++] = wx; P[np++] = ly; P[np++] = wz;
+      if (g){ Cc[nc++] = col[0]; Cc[nc++] = col[1]; Cc[nc++] = col[2]; Cc[nc++] = 255; T[nt++] = gid; T[nt++] = 0; T[nt++] = 190; }   /* glass: lit at night by its own number */
+      else { var k = ao(wx, wz)*(ly < 0.3 ? 0.88 : 1); Cc[nc++] = (col[0]*k) | 0; Cc[nc++] = (col[1]*k) | 0; Cc[nc++] = (col[2]*k) | 0; Cc[nc++] = ((1 - k)*153) | 0; T[nt++] = 0; T[nt++] = 0; T[nt++] = -1; } } }
+}
+/* one footprint edge as framed bays, storey by storey. Returns where the ground-floor windows are (metres from the edge's start), for the windows you can open.
+   The door edge gets a door bay in the middle; shops get shopfronts and garages roll-up doors along the front; homes alternate windows and wall, other buildings
+   have a window in every bay. The edge runs from a along d; the bays are laid looking at the wall from outside */
+/* how wide the bays are: 2.4 m, the kit's own, on ordinary buildings; wider on very big ones (a hospital, a mall), so a whole block is not thousands of bays */
+function frBayW(b, Ht){ var p = b.pts, per = 0; for (var i = 0; i < p.length; i += 2){ var j = (i + 2) % p.length; per += Math.hypot(p[j] - p[i], p[j+1] - p[i+1]); } var a = per*Math.max(1, Math.round(Ht/3.2)); return a > 1500 ? 4.8 : a > 600 ? 3.6 : 2.4; }
+function frWall(m, b, FS, ST, K, ax, az, dx, dz, l, ei, isDoor, lhg, Ht, corner, CAO){
+  var draw = m !== NULLM, ex = -dx, ez = -dz, ox = dz, oz = -dx, bays = [], wl = [], k, BW = b.frBW || (b.frBW = frBayW(b, Ht));
+  if (isDoor){ var wd = Math.min(l, 2.4), L1 = (l - wd)/2; if (L1 < 0.8){ wd = l; L1 = 0; }
+    var ns = L1 > 0 ? Math.max(1, Math.round(L1/BW)) : 0, w1 = ns ? L1/ns : 0;
+    for (k = 0; k < ns; k++) bays.push({s:w1*(k + 0.5), w:w1, dd:ns - k}); bays.push({s:l/2, w:wd, door:true, dd:0}); for (k = 0; k < ns; k++) bays.push({s:l - L1 + w1*(k + 0.5), w:w1, dd:k + 1});
+  } else { var nb = Math.max(1, Math.round(l/BW)), w0 = l/nb, c = (nb - 1)/2; for (k = 0; k < nb; k++) bays.push({s:w0*(k + 0.5), w:w0, dd:Math.floor(Math.abs(k - c)) + 1}); }
+  var home = b.kind === 'house' || K.cat === 'house', inf = FS.inf, shop = isDoor && (ST.g === BT.storefront || ST.g === BT.glass_lobby), gar = isDoor && (ST.g === BT.rollup || ST.g === BT.firebay);
+  var ao = function(wx, wz){ return CAO((wx - ax)*dx + (wz - az)*dz, l); }, hk = lhg/3.2, st = [[0, lhg]], y = lhg; while (y < Ht - 0.01){ var hs = Math.min(3.2, Ht - y); st.push([y, hs]); y += hs; }
+  bays.forEach(function(B, bi){
+    var w = B.w, cx = ax + dx*B.s, cz = az + dz*B.s, near = Math.abs(B.s - l/2), winOK = w >= 1.5 && l > 2.2, isWin = winOK && B.dd % 2 === 1;   /* a window in every other bay, about as many as the painted walls had */
+    var fF = w < 0.5 ? frMap([[1.2, w/2]]) : frMap([[1.1, w/2 - 0.1]]);
+    st.forEach(function(S, si){
+      var y0 = S[0], Hs = S[1], ground = si === 0, fyF = frYMap([[2.75, Hs - 0.25]]), M, fx = fF, fy = fyF;
+      if (ground && B.door){ M = frMod('door_' + inf, 'door'); fx = frMap([[0.5, 0.65], [1.1, w/2 - 0.1]]); fy = frYMap([[2.2, 2.2], [2.75, Hs - 0.25]]); }
+      else if (ground && shop && near < ST.fr) M = frMod('shopfront');
+      else if (ground && gar && near < ST.fr && w >= 1.8) M = frMod('garage');
+      else if (isWin || (!ground && winOK && B.door)){ M = frMod('window_' + inf, ground ? 'win' : si > 1 ? 'lite' : null); fx = frMap([[0.6, 0.47], [1.1, w/2 - 0.1]]); fy = ground ? frYMap([[0.9, hk], [2.2, 2.2*hk], [2.75, Hs - 0.25]]) : frYMap([[0.9, 1.0], [2.2, 2.25], [2.75, Hs - 0.25]]);
+        if (ground) wl.push(B.s); }
+      else M = frMod('wall_' + inf);
+      if (!draw) return;
+      frPut(m, M, FS, cx, cz, ex, ez, ox, oz, y0, fx, fy, ao, hash(b.id, ei*97 + bi, si));
+      if (w >= 0.5) frPut(m, frMod('frame_' + FS.fk, si > 1 ? 'lite' : null), FS, cx, cz, ex, ez, ox, oz, y0, fF, fyF, ao, 0);
+      if (ground && !B.door) frPut(m, frMod('plinth'), FS, cx, cz, ex, ez, ox, oz, 0, frMap([[1.2, w/2]]), function(v){ return v; }, ao, 0);
+    });
+  });
+  if (draw && corner) frPut(m, frMod('corner_' + FS.fk), FS, ax, az, ex, ez, ox, oz, 0, function(v){ return v; }, frYMap([[3, Ht]]), function(){ return 0.9; }, 0);
+  return wl;
+}
 function shell(b, m, lm){
   if (b.gone && m !== NULLM) return;
   var p = b.pts, n = p.length, i, j, ar = 0; lm = lm || NULLM;
@@ -1267,6 +1346,7 @@ function shell(b, m, lm){
   /* each wall is laid in 4 m bays centred on its windows: a bay with a window gets the window tile, the stretches at the ends a plain one */
   /* corner shadowing: a wall darkens softly over the last 2.5 m toward each corner, and a little toward the ground, so corners always read */
   var CAO = function(s, l){ var e = Math.min(s, l - s); return 1 - 0.24*Math.max(0, 1 - e/2.5); }, GAO = function(y){ return y < 0.3 ? 0.88 : 1; };
+  var FS = FRON ? frStyle(ST, tint, rcol) : null, FD = !!FS && m !== NULLM && FRNOW;   /* FS also on the plain pass (NULLM), so the windows you can open are where the framed walls put them; FD: draw framed (near you) */
   var W = function(xL, zL, xR, zR, sL, sR, l, y0, front){
     var lenS = sR - sL; if (lenS < 0.005) return;
     var cut = [sL], q0 = Math.ceil((sL - l/2)/4 - 1e-6); for (var qb = q0; l/2 + qb*4 < sR - 1e-6; qb++) if (l/2 + qb*4 > sL + 1e-6) cut.push(l/2 + qb*4); cut.push(sR);
@@ -1295,15 +1375,16 @@ function shell(b, m, lm){
   for (i = 0; i < n; i += 2){
     j = (i+2) % n; var ax = p[i], az = p[i+1], bx = p[j], bz = p[j+1], l = Math.hypot(bx-ax, bz-az); if (l < 0.01) continue;
     var dx = (bx-ax)/l, dz = (bz-az)/l, nx = -dz, nz = dx;
+    var wl = [], ops = [], k, ps = 0, h2 = (i + n - 2) % n, pl = Math.hypot(ax - p[h2], az - p[h2+1]) || 1, turn = ((ax - p[h2])/pl)*dz - ((az - p[h2+1])/pl)*dx;
     if (i === best){
       var mx = (ax+bx)/2, mz = (az+bz)/2, x1 = mx - dx*0.65, z1 = mz - dz*0.65, x2 = mx + dx*0.65, z2 = mz + dz*0.65;
-      W(x1,z1,ax,az, l/2 + 0.65, l, l, 0, true); W(bx,bz,x2,z2, 0, l/2 - 0.65, l, 0, true); W(x2,z2,x1,z1, l/2 - 0.65, l/2 + 0.65, l, 2.2, true);
+      if (!FD) { W(x1,z1,ax,az, l/2 + 0.65, l, l, 0, true); W(bx,bz,x2,z2, 0, l/2 - 0.65, l, 0, true); W(x2,z2,x1,z1, l/2 - 0.65, l/2 + 0.65, l, 2.2, true); }
       b.door = {x:mx, y:mz, nx:nx, ny:nz}; b.dseg = [x1, z1, x2, z2];
-      lm.line(x1,0,z1, x1,2.2,z1, INK); lm.line(x2,0,z2, x2,2.2,z2, INK); lm.line(x1,2.2,z1, x2,2.2,z2, INK);
-    } else W(bx,bz,ax,az, 0, l, l, 0, false);
+      if (!FD){ lm.line(x1,0,z1, x1,2.2,z1, INK); lm.line(x2,0,z2, x2,2.2,z2, INK); lm.line(x1,2.2,z1, x2,2.2,z2, INK); }
+    } else if (!FD) W(bx,bz,ax,az, 0, l, l, 0, false);
+    if (FS) wl = frWall(FD ? m : NULLM, b, FS, ST, K, ax, az, dx, dz, l, i, i === best, lhg, Ht, Math.abs(turn) > 0.47, CAO);
     /* the solid wall is stored in pieces, with a separate short piece for each window so a window can be opened */
-    var wl = [], ops = [], k, ps = 0;
-    if (l > 3.2){ for (k = -Math.ceil(l/8) - 1; k <= Math.ceil(l/8); k++){ var tp = l/2 + (k + 0.5)*4; if (tp > 0.8 && tp < l - 0.8) wl.push(tp + winOff(i === best && Math.abs(tp - l/2) < ST.fr ? ST.g : ST.gs)); } }   /* the painted fronts have a window every 4 m, counted from the middle of the wall */
+    else if (l > 3.2){ for (k = -Math.ceil(l/8) - 1; k <= Math.ceil(l/8); k++){ var tp = l/2 + (k + 0.5)*4; if (tp > 0.8 && tp < l - 0.8) wl.push(tp + winOff(i === best && Math.abs(tp - l/2) < ST.fr ? ST.g : ST.gs)); } }   /* the painted fronts have a window every 4 m, counted from the middle of the wall */
     wl.forEach(function(t){ ops.push([t - 0.45, t + 0.45, t]); }); if (i === best) ops.push([l/2 - 0.65, l/2 + 0.65, -1]); ops.sort(function(x, y){ return x[0] - y[0]; });
     ops.forEach(function(o){
       if (o[0] - ps > 0.01) b.segs.push(ax + dx*ps, az + dz*ps, ax + dx*o[0], az + dz*o[0]);
@@ -1311,8 +1392,8 @@ function shell(b, m, lm){
       ps = o[1];
     });
     if (l - ps > 0.01) b.segs.push(ax + dx*ps, az + dz*ps, bx, bz);
+    if (FD) continue;   /* framed walls bring their own plinth, posts and corners */
     lm.line(ax,Ht,az, bx,Ht,bz, INK); lm.line(ax,0.02,az, bx,0.02,bz, INK);
-    var h2 = (i + n - 2) % n, pl = Math.hypot(ax - p[h2], az - p[h2+1]) || 1, turn = ((ax - p[h2])/pl)*dz - ((az - p[h2+1])/pl)*dx;
     if (Math.abs(turn) > 0.47) lm.line(ax,0,az, ax,Ht,az, INK);
     /* 0.38: base, middle, top. The base: a plinth of foundation a little proud of the wall, broken at the door */
     var ox2 = -nx, oz2 = -nz, PL = ST.mat === 'metal' ? 0.25 : 0.42, pcol = [150,146,138], plink = function(s0p, s1p){ if (s1p - s0p < 0.2) return; var x0p = ax + dx*s0p, z0p = az + dz*s0p, x1p = ax + dx*s1p, z1p = az + dz*s1p, f0 = 0.07;   /* only the faces that can be seen: front and top */
@@ -1430,7 +1511,9 @@ function manageChunks(budget){
   manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
-    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } c.g = upload(m); c.l = upload(lm); n++; } }
+    var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
+    if (c.g && FRON && c.frm !== wantF && (wantF || d > FRD + 40) && n < budget){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; }
+    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); FRNOW = wantF; for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } FRNOW = false; c.frm = wantF; c.g = upload(m); c.l = upload(lm); n++; } }
     else if (d > R + 150){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; }
     if (!c.far){ if (d < QS.far + CH && nf < Math.min(budget*3, 90)){ var fm = new Mesh(); for (var q = 0; q < c.list.length; q++) shellFar(c.list[q], fm); c.far = upload(fm); nf++; } }
     else if (d > QS.far + CH + 300){ freeMesh(c.far); c.far = null; }
@@ -1961,7 +2044,7 @@ function genLevel(b, lvl, ST, CB){
   var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id + lvl*7919, k++, 31); }, i, j;
   var segs = [], circs = [], doors = [], conts = [], idoors = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
   var ceilY = lvl ? Math.min(2.95, b.h - FH - 0.06) : Math.min(3, b.h - 0.06);
-  for (i = 0; i < b.wins.length && lvl; i += 6){   /* upstairs windows are painted only: a pale pane stands in for the view */
+  for (i = 0; i < b.wins.length && lvl && !FRON; i += 6){   /* upstairs windows are painted only: a pale pane stands in for the view */
     var wx = b.wins[i] + b.wins[i+4]*0.04, wz = b.wins[i+1] + b.wins[i+5]*0.04, dx = b.wins[i+2]*0.6, dz = b.wins[i+3]*0.6;
     m.wall(wx - dx, wz - dz, wx + dx, wz + dz, 1, 2.1, sky, 255);
   }
@@ -2402,7 +2485,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.44';
+var VERSION = '0.45';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -3796,6 +3879,8 @@ function initGL(){
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
     'vec3 col=vc.rgb;float glow=0.0;vec3 winc=vec3(1.0,0.8,0.48);float k=floor(vt.z+0.5);' +
     'if(back){if(texOn>0.5)col=samp(21.0,vec2((wp.x+wp.z)*0.5,-wp.y*0.5)).rgb;else col=vec3(0.92,0.86,0.76);col*=1.0-vc.a/0.6;}' +
+    /* Art 5: the glass of a framed building's window; vt.x is the window's own number, so some windows are lit at night (warm, or cold and flickering) */
+    'else if(k>189.5&&k<190.5){float wh=vt.x;float wc=fract(wh*71.37);float cold=winF>0.2?step(0.8,wc):1.0;float fk=cold>0.5?0.45+0.55*step(0.25,fract(sin(floor(tm*7.0+wh*60.0)*12.9898)*43758.5453)):1.0;glow=step(1.0-winF,wh)*1.7*fk;winc=mix(winc,vec3(0.55,0.75,1.0),cold);col=mix(col,col*0.5,dark);}' +
     'else if(k>199.5){if(texOn>0.5&&bldOn>0.5){vec4 tb=samp(k,vt.xy);if(tb.a>0.75)col=tb.rgb*vc.rgb;else{col=tb.rgb;if(tb.a>0.25){float wh=fract(sin(dot(floor(vec2(wp.x+wp.z,wp.y)*vec2(0.25,0.3125)),vec2(12.9898,78.233)))*43758.5453);float wc=fract(wh*71.37);float cold=winF>0.2?step(0.8,wc):1.0;float fk=cold>0.5?0.45+0.55*step(0.25,fract(sin(floor(tm*7.0+wh*60.0)*12.9898)*43758.5453)):1.0;glow=step(1.0-winF,wh)*1.7*fk;winc=mix(winc,vec3(0.55,0.75,1.0),cold);col=mix(col,col*0.5,dark);}}}}' +
     'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
     'else if(k>44.5&&k<46.5){vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
