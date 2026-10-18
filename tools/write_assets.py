@@ -4,7 +4,7 @@
   assets/icons.js, btex.js, people_tex.js, models.js, nature.js, vehicles.js   shared by every device
   assets/full/atlas.js, atlas3.js, creatures.js   for computers: 4096 px textures, more detailed creatures
   assets/lite/...                                 for phones and "Low" view distance
-Run after: build_art.py (twice: plain and "full"), build_models.py, paint_buildings.py, build_creatures.py (twice), build_nature.py (twice), build_people.py (twice), paint_people.py, build_vehicles.py (after build_art.py: it adds icons)."""
+Run after: build_art.py (twice: plain and "full"), build_models.py, paint_buildings.py, build_creatures.py (twice), build_nature.py (twice), build_people.py (twice), paint_people.py, build_vehicles.py then draw_clothes.py (both after build_art.py: they add icons)."""
 import base64, json, os
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); O = os.path.join(R, 'tools', 'out'); A = os.path.join(R, 'assets')
 def b64(p): return base64.b64encode(open(p, 'rb').read()).decode()

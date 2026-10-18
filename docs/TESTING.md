@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.39) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.40) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -351,6 +351,10 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 - [ ] 5.2 Play, then exit. The survivor is listed under "Your survivors" with skill levels, and the background is locked.
 - [ ] 5.3 Make a second survivor. Each keeps separate items and skills.
 - [ ] 5.4 Check one background effect, for example Scout moving visibly faster.
+- [ ] 5.5 Open the backpack: a Wearing list shows six slots. A save from before 0.40 is wearing its winter coat. Search wardrobes, dressers and a clothes shop; tap Wear on what you find. Wearing something new in a filled slot puts the old one in your pack.
+- [ ] 5.6 On a cold night outside, the Warmth meter climbs as you put layers on. On a hot afternoon, the same layers make you overheat until you take them off.
+- [ ] 5.7 Stand in the rain without a rain jacket: Damp, then Soaked, appear and you get colder. With the rain jacket on you stay dry. Indoors or by a fire you dry off.
+- [ ] 5.8 Take a few alien hits in a leather jacket and helmet: you lose less health and their condition drops; patch them with duct tape. Climb through a broken window in work gloves without crouching: no cut. Die: you wake still wearing your clothes.
 
 ## Stage 6: items and packs
 

@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 13 October 2026, at version 0.39 (art track added). This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.40. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -39,6 +39,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.37 | Power and water fail: street lights, lit windows and electric stoves until the power fails going into day 3; the water mains fail going into day 5 (cisterns still hold some); generators (rare loot) power one building with fuel: light, a working stove, but noise and lit windows that draw aliens |
 | 0.38 | Trees from Kenney's Nature Kit chosen by habitat, with autumn colours; buildings reworked with what game artists do for modular kits: windows set into the wall with sills, a plinth, corner trim, roof overhangs with fascia, gable roofs on many homes, false fronts on small shops, canopies over glass doors (docs/BUILDINGS.md) |
 | 0.39 | Cars from Kenney's Car Kit, with wheels that roll and steer and an engine sound. A broken pickup truck in the safe house drive: fix it with a toolkit, a spare tire, a car battery, engine parts and 2 scrap (garages, auto shops, gas stations, traders), each fitted by holding E while the part goes into place; then drive it, keep gear in its bed and sleep in its cab. It can drive between parts of the Springfield region |
+| 0.40 | Clothes in six slots (head, top, outer, hands, legs, feet), eleven kinds found as loot or bought: warmth that brings you up to comfortable when cold and overheats you when hot, rain that soaks you unless your jacket keeps it off (wet clothes are less warm), protection that takes part of an alien's hit and tears with use (duct tape patches it), gloves against broken glass, a cap for shade. Worn clothes stay on when you die |
 
 ## Next versions
 
@@ -46,7 +47,6 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.40** | Clothing layers: warmth, wetness and protection from a few kinds of clothes found as loot | None |
 | **0.41** | Rain collectors and a small garden plot at your base: water and food that come back | None |
 | **0.42** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
 
@@ -109,7 +109,7 @@ Ticked items are in the game.
 - [x] Food spoilage, cooking, boiling water
 - [x] Sleep and tiredness
 - [x] Weapon wear, repair at a tool bench or with duct tape
-- [ ] Clothing layers: warmth, wetness, protection
+- [x] Clothing layers: warmth, wetness, protection
 - [ ] Farming and rain collectors
 
 ### World and long game
