@@ -380,7 +380,7 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 - [ ] 5c.1 Walk down a street of homes: walls show posts and beams with panels between them, windows set back with sills, the front door in its own bay, and a post at each corner. Shops have shopfront glass, garages and the fire station roll-up doors.
 - [ ] 5c.2 Look at a window you can open: the sash, curtains and boards sit exactly in the window's opening. Climb through a broken one. Board one up from inside.
 - [ ] 5c.3 Inside, the outside walls still show wallpaper; no posts or beams stick into the rooms.
-- [ ] 5c.4 At night some upstairs windows glow, warm or cold and flickering; with the power off (day 4 by default) almost none do.
+- [ ] 5c.4 At night some upstairs windows glow, warm or cold and flickering; once the power fails (from day 3) almost none do.
 - [ ] 5c.5 Walk about 100 m in one direction. Buildings change from painted to framed walls as you near them; report any pause when that happens, and how long it is, on the phone.
 - [ ] 5c.6 Compare the frame rate downtown with 0.44 (`?fps=1`; `?oldbld` for the painted walls).
 - [ ] 5c.7 A game saved before 0.45 with boarded windows: the boards may now be on different windows of the same building (windows moved to the frames).
