@@ -94,6 +94,8 @@ Every choice in the game's character creator, rebuilt on the low-poly character 
 | Scarf | `scarf` | 64 |
 | Gloves (replace the hands) | `gloves` | 88 |
 
+**In the game (0.42):** `svBuild` in `play.html` fits each bone's pieces from the pack's standing pose onto the game skeleton's rest pose (the shortest turn from the pack's pivot-to-tip direction onto the game's, a stretch along the bone to the same length, the pivot moved onto the joint; Head and ball, which have no tip, are scaled by the head height). `tools/build_rig.py` writes `assets/rig.js`: each bone's rest pivot and tip and its skinning matrix in every animation frame, with the same clips and frames as the baked people. Each frame the pieces are moved rigidly on the CPU and all survivors are drawn as one mesh (about 1,500 to 1,800 triangles each; six survivors take about 1 ms). Smears are not used yet. Worn clothes from 0.40 pick parts: a helmet, beanie or cap is the hat, boots the shoes, work gloves the gloves. Players carry the pack; traders do not.
+
 **Notes for the game:**
 
 - Faces are flat pieces on the front of a faceted head instead of painted textures. The survivor needs no texture at all.

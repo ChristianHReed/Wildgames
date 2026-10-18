@@ -17,6 +17,7 @@ put('btex.js', 'btex', b64(os.path.join(O, 'btex.png')))   # tools/paint_buildin
 put('models.js', 'models', open(os.path.join(O, 'models.txt')).read())
 put('nature.js', 'nature', open(os.path.join(O, 'nature.txt')).read())
 put('vehicles.js', 'vehicles', open(os.path.join(O, 'vehicles.txt')).read())   # tools/build_vehicles.py
+put('rig.js', 'rig', open(os.path.join(O, 'rig.txt')).read())   # tools/build_rig.py: the survivor skeleton's moves, for the shaped survivors
 # assets/map.js (the built-in Springfield region index) and assets/springfield/ are written by tools/build_region.py
 for s in ('full', 'lite'):
     put(s + '/atlas.js', 'atlas', b64(os.path.join(O, s, 'atlas.png')))
