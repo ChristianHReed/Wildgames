@@ -64,3 +64,11 @@ and massing, and articles on facade design and stylised environment art (sources
   [City of Brunswick, commercial buildings preservation guide](https://www.brunswickga.org/sites/default/files/fileattachments/planning_development_and_codes/page/12409/commercial_buildings_-_preservation_and_maintenance.pdf).
 - The parts of a historic shopfront (kickplate, display window, transom, sign band, cornice): the same Brunswick guide.
 - Homes, schools, civic and industrial buildings: general knowledge of American small-city building types.
+
+## Shading corners (0.41.1)
+
+A single light can light two walls of a corner the same, so corners vanished on pale houses. Now:
+
+- The light comes from an uneven angle and shades smoothly, so the four sides of a house usually each get their own tone.
+- Every wall darkens softly over the last 2.5 m toward each corner (to about 76%), and a little toward the ground; room walls darken toward their ends and the floor. The shading is baked into the wall colours when a building is built, so it costs nothing per frame. Inside, the back faces of outside walls carry it in the colour's alpha.
+- The plinth is darker where it meets the ground, a contact shadow.

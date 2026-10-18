@@ -360,7 +360,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.41.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.41.1.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1129,16 +1129,22 @@ Mesh.prototype.tri = function(ax,ay,az,bx,by,bz,cx,cy,cz,col,a){
   this.p.push(ax,ay,az,bx,by,bz,cx,cy,cz); var r = col[0], g = col[1], b = col[2]; this.c.push(r,g,b,a,r,g,b,a,r,g,b,a);
   var pl = this.pl; if (pl){ var k = pl[1]; this.t.push(ax*k,az*k,pl[0], bx*k,bz*k,pl[0], cx*k,cz*k,pl[0]); } else this.t.push(0,0,-1, 0,0,-1, 0,0,-1);
 };
+/* a quad shaded from its first edge (a, b: bottom) to its second (c, d: top), for contact shadows */
+Mesh.prototype.quadV = function(ax,ay,az,bx,by,bz,cx,cy,cz,dx,dy,dz,c0,c1){
+  this.p.push(ax,ay,az,bx,by,bz,cx,cy,cz, ax,ay,az,cx,cy,cz,dx,dy,dz);
+  [c0,c0,c1, c0,c1,c1].forEach(function(c){ this.c.push(c[0],c[1],c[2],255); }, this);
+  for (var i = 0; i < 6; i++) this.t.push(0,0,-1);
+};
 Mesh.prototype.quad = function(ax,ay,az,bx,by,bz,cx,cy,cz,dx,dy,dz,col,a){ this.tri(ax,ay,az,bx,by,bz,cx,cy,cz,col,a); this.tri(ax,ay,az,cx,cy,cz,dx,dy,dz,col,a); };
 /* a quad with its own texture coordinates: P = 4 corners (12 numbers), UV = 4 corners (8 numbers) */
-Mesh.prototype.quadUV = function(P, UV, tile, col, a){
+Mesh.prototype.quadUV = function(P, UV, tile, col, a, K){
   var r = col[0], g = col[1], b = col[2], o = [0,1,2, 0,2,3];
-  for (var q = 0; q < 6; q++){ var i = o[q]; this.p.push(P[i*3], P[i*3+1], P[i*3+2]); this.c.push(r,g,b,a); this.t.push(UV[i*2], UV[i*2+1], tile); }
+  for (var q = 0; q < 6; q++){ var i = o[q], k = K ? K[i] : 1; this.p.push(P[i*3], P[i*3+1], P[i*3+2]); this.c.push(r*k, g*k, b*k, a === 0 && K ? Math.round((1 - k)*0.6*255) : a); this.t.push(UV[i*2], UV[i*2+1], tile); }   /* an outside wall keeps its shading in alpha too, for its inside face */
 };
 /* textured wall: (x0,z0) is the left end seen from the front; u runs left to right, v0 at the bottom and v1 at the top */
-Mesh.prototype.wallT = function(x0,z0,x1,z1,y0,y1,u0,u1,v0,v1,tile,col,a){ this.quadUV([x0,y0,z0, x1,y0,z1, x1,y1,z1, x0,y1,z0], [u0,v0, u1,v0, u1,v1, u0,v1], tile, col, a); };
+Mesh.prototype.wallT = function(x0,z0,x1,z1,y0,y1,u0,u1,v0,v1,tile,col,a,kL,kR,kB){ var K = kL === undefined ? null : [kL*kB, kR*kB, kR, kL]; this.quadUV([x0,y0,z0, x1,y0,z1, x1,y1,z1, x0,y1,z0], [u0,v0, u1,v0, u1,v1, u0,v1], tile, col, a, K); };
 Mesh.prototype.wall = function(x0,z0,x1,z1,y0,y1,col,a){
-  var w = this.wt; if (w){ var l = Math.hypot(x1 - x0, z1 - z0); this.wallT(x0,z0,x1,z1,y0,y1, 0, l/w[1], 1 - y0/w[2], 1 - y1/w[2], w[0], col, a); }
+  var w = this.wt; if (w){ var l = Math.hypot(x1 - x0, z1 - z0), ke = l < 0.3 ? 1 : 0.84; this.wallT(x0,z0,x1,z1,y0,y1, 0, l/w[1], 1 - y0/w[2], 1 - y1/w[2], w[0], col, a, ke, ke, y0 < 0.3 ? 0.9 : 1); }   /* room walls darken toward their ends and the floor */
   else this.quad(x0,y0,z0,x1,y0,z1,x1,y1,z1,x0,y1,z0,col,a);
 };
 Mesh.prototype.line = function(ax,ay,az,bx,by,bz,col){ this.p.push(ax,ay,az,bx,by,bz); this.c.push(col[0],col[1],col[2],191, col[0],col[1],col[2],191); this.t.push(0,0,-1, 0,0,-1); };
@@ -1256,6 +1262,8 @@ function shell(b, m, lm){
   b.segs = []; b.door = null; b.wins = []; b.wsegs = []; b.dseg = null; b.bar = null; b.sbar = null; b.gbar = null; b.php = null; 
   /* one stretch of wall from s = sL to sR (metres from the left end of an edge of length l), from height y0 up to the roof */
   /* each wall is laid in 4 m bays centred on its windows: a bay with a window gets the window tile, the stretches at the ends a plain one */
+  /* corner shadowing: a wall darkens softly over the last 2.5 m toward each corner, and a little toward the ground, so corners always read */
+  var CAO = function(s, l){ var e = Math.min(s, l - s); return 1 - 0.24*Math.max(0, 1 - e/2.5); }, GAO = function(y){ return y < 0.3 ? 0.88 : 1; };
   var W = function(xL, zL, xR, zR, sL, sR, l, y0, front){
     var lenS = sR - sL; if (lenS < 0.005) return;
     var cut = [sL], q0 = Math.ceil((sL - l/2)/4 - 1e-6); for (var qb = q0; l/2 + qb*4 < sR - 1e-6; qb++) if (l/2 + qb*4 > sL + 1e-6) cut.push(l/2 + qb*4); cut.push(sR);
@@ -1263,7 +1271,7 @@ function shell(b, m, lm){
       var s0 = cut[ci], s1 = cut[ci + 1], f0 = (s0 - sL)/lenS, f1 = (s1 - sL)/lenS, x0 = xL + (xR - xL)*f0, z0 = zL + (zR - zL)*f0, x1 = xL + (xR - xL)*f1, z1 = zL + (zR - zL)*f1;
       var bc = l/2 + 4*Math.floor(((s0 + s1)/2 - l/2)/4) + 2, win = l > 3.2 && bc > 0.8 && bc < l - 0.8, u0 = (s0 - l/2)/4, u1 = (s1 - l/2)/4;
       if (y0 < lhg){ var tg = win ? (front && Math.abs(bc - l/2) < ST.fr ? ST.g : ST.gs) : ST.gp, hl = win && y0 < 0.3 && HOLES[tg] ? HOLES[tg].filter(function(H0){ return bc - 2 + H0[0] - H0[1] > s0 + 0.02 && bc - 2 + H0[0] + H0[1] < s1 - 0.02; }) : null; if (hl && !hl.length) hl = null;
-        if (!hl) m.wallT(x0,z0,x1,z1, y0, lhg, u0, u1, 1 - y0/lhg, 0, 200 + tg, tint, 0);
+        if (!hl) m.wallT(x0,z0,x1,z1, y0, lhg, u0, u1, 1 - y0/lhg, 0, 200 + tg, tint, 0, CAO(s0, l), CAO(s1, l), GAO(y0));
         else {   /* the wall round each window, leaving the glass open */
           /* 0.38: the wall has thickness at its openings (a reveal round the glass) and the window a sill: depth instead of a flat picture */
           var reveal = function(sa, sb, ya, yb, sill){ var fa = (sa - sL)/lenS, fb = (sb - sL)/lenS, ax0 = xL + (xR - xL)*fa, az0 = zL + (zR - zL)*fa, bx0 = xL + (xR - xL)*fb, bz0 = zL + (zR - zL)*fb, ux0 = (xR - xL)/Math.hypot(xR - xL, zR - zL), uz0 = (zR - zL)/Math.hypot(xR - xL, zR - zL), inx = uz0*0.16, inz = -ux0*0.16, rc = tint.map(function(v){ return Math.round(v*0.78); });
@@ -1272,13 +1280,13 @@ function shell(b, m, lm){
             if (sill){ var ex0 = ux0*0.09, ez0 = uz0*0.09, sx0 = ax0 - ex0 - inx*0.6, sz0 = az0 - ez0 - inz*0.6, sx1 = bx0 + ex0 - inx*0.6, sz1 = bz0 + ez0 - inz*0.6, sc0 = [232,228,218];
               m.quad(sx0, ya, sz0, sx1, ya, sz1, sx1 + inx*0.6, ya, sz1 + inz*0.6, sx0 + inx*0.6, ya, sz0 + inz*0.6, sc0, 255); m.quad(sx0, ya - 0.09, sz0, sx1, ya - 0.09, sz1, sx1, ya, sz1, sx0, ya, sz0, sc0, 255); } };
           var hk = lhg/3.2, piece = function(sa, sb, ya, yb){ if (sb - sa < 0.005 || yb - ya < 0.005) return; var fa = (sa - sL)/lenS, fb = (sb - sL)/lenS;
-            m.wallT(xL + (xR - xL)*fa, zL + (zR - zL)*fa, xL + (xR - xL)*fb, zL + (zR - zL)*fb, ya, yb, (sa - l/2)/4, (sb - l/2)/4, 1 - ya/lhg, 1 - yb/lhg, 200 + tg, tint, 0); };
+            m.wallT(xL + (xR - xL)*fa, zL + (zR - zL)*fa, xL + (xR - xL)*fb, zL + (zR - zL)*fb, ya, yb, (sa - l/2)/4, (sb - l/2)/4, 1 - ya/lhg, 1 - yb/lhg, 200 + tg, tint, 0, CAO(sa, l), CAO(sb, l), GAO(ya)); };
           var sc = s0;
           for (var hi = 0; hi < hl.length; hi++){ var H0 = hl[hi], ha = bc - 2 + H0[0] - H0[1], hb = bc - 2 + H0[0] + H0[1], ya = Math.max(y0, H0[2]*hk), yb = H0[3]*hk;
             piece(sc, ha, y0, lhg); piece(ha, hb, y0, ya); piece(ha, hb, yb, lhg); sc = hb; reveal(ha, hb, ya, yb, H0[2] > 0.45); }
           piece(sc, s1, y0, lhg);
         } }
-      if (Ht > lhg + 0.01){ var yb = Math.max(y0, lhg); m.wallT(x0,z0,x1,z1, yb, Ht, u0, u1, 1 - (yb - lhg)/3.2, 1 - (Ht - lhg)/3.2, 200 + (win ? ST.u : ST.gp), tint, 0); }
+      if (Ht > lhg + 0.01){ var yb = Math.max(y0, lhg); m.wallT(x0,z0,x1,z1, yb, Ht, u0, u1, 1 - (yb - lhg)/3.2, 1 - (Ht - lhg)/3.2, 200 + (win ? ST.u : ST.gp), tint, 0, CAO(s0, l), CAO(s1, l), 1); }
     }
   };
   for (i = 0; i < n; i += 2){
@@ -1305,7 +1313,7 @@ function shell(b, m, lm){
     if (Math.abs(turn) > 0.47) lm.line(ax,0,az, ax,Ht,az, INK);
     /* 0.38: base, middle, top. The base: a plinth of foundation a little proud of the wall, broken at the door */
     var ox2 = -nx, oz2 = -nz, PL = ST.mat === 'metal' ? 0.25 : 0.42, pcol = [150,146,138], plink = function(s0p, s1p){ if (s1p - s0p < 0.2) return; var x0p = ax + dx*s0p, z0p = az + dz*s0p, x1p = ax + dx*s1p, z1p = az + dz*s1p, f0 = 0.07;   /* only the faces that can be seen: front and top */
-      m.quad(x0p + ox2*f0, -0.1, z0p + oz2*f0, x1p + ox2*f0, -0.1, z1p + oz2*f0, x1p + ox2*f0, PL, z1p + oz2*f0, x0p + ox2*f0, PL, z0p + oz2*f0, pcol, 255); m.quad(x0p + ox2*f0, PL, z0p + oz2*f0, x1p + ox2*f0, PL, z1p + oz2*f0, x1p, PL, z1p, x0p, PL, z0p, pcol, 255); };
+      m.quadV(x0p + ox2*f0, -0.1, z0p + oz2*f0, x1p + ox2*f0, -0.1, z1p + oz2*f0, x1p + ox2*f0, PL, z1p + oz2*f0, x0p + ox2*f0, PL, z0p + oz2*f0, [86,84,80], pcol); m.quad(x0p + ox2*f0, PL, z0p + oz2*f0, x1p + ox2*f0, PL, z1p + oz2*f0, x1p, PL, z1p, x0p, PL, z0p, pcol, 255); };
     if (i === best){ plink(0, l/2 - 0.75); plink(l/2 + 0.75, l); } else plink(0, l);
     /* corners turned in trim: boards on sided houses, pilasters on brick and stone fronts, flashing on sheds */
     if (Math.abs(turn) > 0.47){ var cc0 = ST.mat === 'siding' ? [238,234,226] : ST.mat === 'metal' ? [96,100,104] : tint.map(function(v){ return Math.round(v*0.86); }), cw0 = ST.mat === 'metal' ? 0.06 : ST.mat === 'siding' ? 0.09 : 0.16;
@@ -1413,7 +1421,7 @@ function shell(b, m, lm){
   /* an awning and a sign board over the door of anything with a shopfront */
   if (K.awn && b.door && Ht > 3.3){ var dd = b.door, ox = -dd.nx, oz = -dd.ny, ya = Math.atan2(oz, ox), ac = C(K.awn); m.ybox(dd.x + ox*0.65, dd.y + oz*0.65, ya, 0, 0, 2.62, 0.65, 0.06, 1.7, ac); m.ybox(dd.x + ox*0.08, dd.y + oz*0.08, ya, 0, 0, 3.2, 0.05, 0.3, 1.5, [Math.round(ac[0]*0.7), Math.round(ac[1]*0.7), Math.round(ac[2]*0.7)]); }
 }
-var NULLM = {box:function(){}, ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
+var NULLM = {box:function(){}, ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, quadV:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
   manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
@@ -2345,7 +2353,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.41';
+var VERSION = '0.41.1';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -3666,14 +3674,15 @@ function initGL(){
     'bool unlit=vc.a>0.6&&vc.a<0.9;bool emis=vc.a>0.25&&vc.a<0.6;bool back=vc.a<0.25&&!gl_FrontFacing;' +
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
     'vec3 col=vc.rgb;float glow=0.0;vec3 winc=vec3(1.0,0.8,0.48);float k=floor(vt.z+0.5);' +
-    'if(back){if(texOn>0.5)col=samp(21.0,vec2((wp.x+wp.z)*0.5,-wp.y*0.5)).rgb;else col=vec3(0.92,0.86,0.76);}' +
+    'if(back){if(texOn>0.5)col=samp(21.0,vec2((wp.x+wp.z)*0.5,-wp.y*0.5)).rgb;else col=vec3(0.92,0.86,0.76);col*=1.0-vc.a/0.6;}' +
     'else if(k>199.5){if(texOn>0.5&&bldOn>0.5){vec4 tb=samp(k,vt.xy);if(tb.a>0.75)col=tb.rgb*vc.rgb;else{col=tb.rgb;if(tb.a>0.25){float wh=fract(sin(dot(floor(vec2(wp.x+wp.z,wp.y)*vec2(0.25,0.3125)),vec2(12.9898,78.233)))*43758.5453);float wc=fract(wh*71.37);float cold=winF>0.2?step(0.8,wc):1.0;float fk=cold>0.5?0.45+0.55*step(0.25,fract(sin(floor(tm*7.0+wh*60.0)*12.9898)*43758.5453)):1.0;glow=step(1.0-winF,wh)*1.7*fk;winc=mix(winc,vec3(0.55,0.75,1.0),cold);col=mix(col,col*0.5,dark);}}}}' +
     'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
     'else if(k>44.5&&k<46.5){vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
     'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){vec2 u1=vt.xy+vec2(tm*0.035,tm*0.02);vec2 u2=vt.xy*1.9+vec2(-tm*0.03,tm*0.045);vec3 ww=(samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5;float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
-    'float band=step(0.18,dot(n,vec3(-0.44,0.8,0.4)));if(k>79.5)band=smoothstep(-0.45,0.6,dot(n,vec3(-0.44,0.8,0.4)));if(unlit||emis)band=1.0;' +
-    'col=mix(col*shd,col*sunc,band);' +
+    /* light from the upper left and a little behind, at an uneven angle so the four sides of a house each get their own tone and a corner always shows */
+    'vec3 LD=normalize(vec3(-0.62,0.72,0.3));float ld=dot(n,LD);float band=smoothstep(-0.55,0.7,ld);if(k>79.5)band=smoothstep(-0.45,0.6,ld);if(unlit||emis)band=1.0;' +
+    'col=mix(col*shd*0.86,col*sunc,band);' +
     'float spot=smoothstep(0.78,0.95,dot(V/d,fwd))*0.95/(1.0+d*d*0.004)+0.22/(1.0+d*d*0.12);' +
     'vec3 lit=vec3(amb+dark*spot*flash);' +
     'vec3 lamp=vec3(0.0);for(int i=0;i<8;i++){float fd=distance(wp,fires[i].xyz);lamp+=fcol[i]*fires[i].w*dark/(1.0+fd*fd*0.05);}lit+=lamp;' +

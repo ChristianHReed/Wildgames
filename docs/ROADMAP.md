@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.41. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.41.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -41,6 +41,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.39 | Cars from Kenney's Car Kit, with wheels that roll and steer and an engine sound. A broken pickup truck in the safe house drive: fix it with a toolkit, a spare tire, a car battery, engine parts and 2 scrap (garages, auto shops, gas stations, traders), each fitted by holding E while the part goes into place; then drive it, keep gear in its bed and sleep in its cab. It can drive between parts of the Springfield region |
 | 0.40 | Clothes in six slots (head, top, outer, hands, legs, feet), eleven kinds found as loot or bought: warmth that brings you up to comfortable when cold and overheats you when hot, rain that soaks you unless your jacket keeps it off (wet clothes are less warm), protection that takes part of an alien's hit and tears with use (duct tape patches it), gloves against broken glass, a cap for shade. Worn clothes stay on when you die |
 | 0.41 | **Art 1, the mood:** cozy days and scary nights. A sky with a gradient, sun, moon and stars; colours, fog and light by time of day from docs/ART.md; at night a dark fog to about 30 m that lamps, flashlights and lit windows cut through, and darker screen edges; a third of windows lit while the power lasts (warm, a few cold and flickering), a few cold ones after; flickering street lamps; aliens' eyes glow green and light the ground |
+| 0.41.1 | Building corners shaded: walls darken toward every corner and the ground, inside and out, and light falls at an uneven angle so each side of a house has its own tone |
 
 ## Next versions
 
