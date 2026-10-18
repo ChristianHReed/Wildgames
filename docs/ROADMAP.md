@@ -66,8 +66,8 @@ Chosen 13 October 2026: shaped-voxel characters and props, breakable 12.5 cm blo
 | ~~Art 2~~ | **Survivors done in 0.42; shaped aliens still to do.** Shaped survivors and aliens on the existing skeletons and animations; character creator parts as pieces | None (made in code) |
 | **Art 3** | Shaped items, furniture, street props, trees and cars | None (made in code) |
 | **Art 4** | Ground: smooth hills with sharp kerbs, creek and river banks and ravines, in every region square | None |
-| **Art 5** | Buildings as 12.5 cm blocks near you, 25 cm and 50 cm further out, from the same type rules as today | None |
-| **Art 6** | Breaking: walls and windows break into blocks, loose parts fall, rubble stays; what can break them, the noise it makes, aliens seeing through holes, and saving the damage per square | None |
+| **Art 5** | Framed buildings: every footprint edge as 2.4 m bays of frame and infill (wall, window, door, shopfront, garage) from the same type rules as today, corner posts and roofs, from `assets/shaped/buildings.js` (replaces the 12.5 cm block plan, 18 October 2026) | None |
+| **Art 6** | Breaking: infill panels fall out as rubble and leave the frame, frames break last and the bays above them fall; what can break them, the noise it makes, aliens seeing through holes, and saving the damage per bay | None |
 
 ## Feature backlog by area
 
@@ -167,6 +167,6 @@ These pieces are still plain coloured boxes. The Furniture Kit now covers the ki
 - Pathfinding and sight checks cost processing time; on the iPhone the number of aliens thinking each moment may need a cap.
 - A two-storey home takes about twice as long to lay out as before. A few very large buildings already took one to three seconds in the test browser, which may show as a pause on the iPhone when you walk up to one.
 - In multiplayer the host decides what aliens know. Guests do not yet see the awareness pill.
-- Breakable buildings (Art 5 and 6) are the heaviest change: every block grid takes memory, broken walls change pathfinding and sight, and in multiplayer the host has to share the damage with guests. Keep block detail to the buildings near you.
+- Breakable buildings (Art 5 and 6): broken bays change pathfinding and sight, and in multiplayer the host has to share the damage with guests. Framed bays are far cheaper than the block plan, so whole streets can keep their detail.
 - The new look's night uses a few real lights; on phones keep it to about six lamps near you plus alien eyes.
 - Animation files are large. The 64 GB drive has room, but phones load the "lite" set, so animations may need a trimmed phone version.

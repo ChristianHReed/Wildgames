@@ -9,14 +9,15 @@ Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.gi
 | Part | What it is | Breakable |
 | --- | --- | --- |
 | Survivors, aliens, items, furniture, vehicles, street props, trees | **Faceted low-poly**: flat planes, flat shading, few colours, natural proportions (see Model style below) | No |
-| Buildings | **12.5 cm blocks** near the player; 25 cm further out; 50 cm past twice that | Yes |
+| Buildings | **Framed**: a visible frame of posts and beams with infill panels set back (18 October 2026; replaces the 12.5 cm block plan) | Yes, bay by bay |
 | Ground | **Smooth hills with sharp drops**: smooth slopes inside each area, hard edges where areas meet (kerbs, creek and river banks, ravines) | No |
 | Light and mood | **Cozy days, scary nights** | — |
 
 ## Model style (from the user's references, 13 October 2026)
 
 - **Forms:** faceted low-poly with clearly visible flat planes and flat shading. Few colours per object; no outlines; no busy textures.
-- **People:** tall and lean (1.80 m) in a relaxed stance (head forward, soft knees, bent elbows, arms away from the body); a carved head slightly larger than life, with a brow shelf, eyes set back, a nose grown from the brow and an angled jaw; sweaters and jackets as big angular volumes, rolled sleeves; long thin arms with paddle hands or gloves; slim trousers tapering to the ankle; chunky ankle boots; chunky swept or straight hair; tall packs with a bedroll, caps, rectangular glasses, scarves. References: lean wanderer art, a capped girl in a bulky sweater, Somerville (Jumpship).
+- **People (version 7, 18 October 2026, from the user's Kentucky Route Zero-style lineup):** silhouette first. Square shoulders and a torso that is one wedge narrowing to the waist; arms that taper from the shoulder to a pointed hand; long straight legs like columns; small dark block feet; a small head with a sharp profile and no eyes; hair as one or two flat angular masses; every colour one big flat plane. Costume accents at the joints (collars, cuffs, belts, rolled hems).
+- **Aliens:** the survivors' language turned wrong: flat planes and points, joints that bend the wrong way, knees above the body, heads too small, spikes and blades; drab bodies with glowing eyes and vents.
 - **Colour:** muted and slightly desaturated: charcoal, teal, rust, olive, sand, faded denim. One accent colour at most.
 - **Vehicles:** boxy 1970s to 1990s cars, vans, buses, RVs and trucks, worn and rusty, with cracked glass and doors, bonnet and boot that open. Simple interiors.
 - **Places:** cluttered streets (tyres, crates, barriers, fences, dumpsters), hazy fog, warm light from lamps, windows and car interiors at night.
@@ -50,17 +51,28 @@ Check every character in run and walk frames, not only standing.
 - Pieces are merged into one mesh per model with flat normals and vertex colours. Glowing pieces (lamps, lit screens, alien eyes) go in a second mesh that ignores lighting.
 - Characters keep rigid parts on the existing animation skeleton: each bone gets its own small group of pieces.
 
-## Breakable buildings
+## Fewest vertices (18 October 2026)
 
-- Each building is a grid of 12.5 cm blocks (8 per metre) filled from its type rules, the same way `docs/BUILDINGS.md` lays out walls, floors, windows and trim. A two-storey brick house is about 56 × 56 × 48 blocks.
-- Meshing: one mesh per 4 m chunk. Faces between two solid blocks are skipped. Each corner gets ambient occlusion from its three neighbours, stored in the vertex colour. Only changed chunks are rebuilt.
-- Glass is its own mesh so windows can glow at night.
-- Detail by distance: within the switch distance (14 m in the test, 18 m on phones) the building shows 12.5 cm blocks. Beyond that, a 25 cm version is used, and past twice the distance a 50 cm one. Each coarse block takes the most common colour of the small blocks inside it, and is solid when at least 30% of them are.
-- Breaking removes blocks in a 45 cm sphere. A flood fill from the bottom layer finds blocks that are no longer held up, and those fall.
-- Rubble: broken blocks fly out, land on the ground or on floors and sills, and stay. The test keeps up to 6,000 rubble pieces as one instanced mesh.
-- Test numbers on the user's iPhone: 60 FPS with about 362,000 blocks, 145,000 triangles and 42 draw calls, shadows on.
+How every model is kept cheap, from the research in the art guide:
 
-- Stress test: `art-tests/voxel-stress-test.html` (https://christianhreed.github.io/Wildgames/art-tests/voxel-stress-test.html) builds these blocks for a real Springfield square (2,849 buildings) in the game's own kind of WebGL, at the game's view distances, and drives the same street three times: today's buildings, blocks near you (this plan) and all blocks. It reports frame rate, the worst moments, pauses, triangles, draw calls, block and graphics memory, and how long building took. Run it on the weakest device the game should support before Art 5. In the test browser (software graphics, so only the comparison counts) blocks near you drew about 4–9 times the triangles of today's buildings and held about 160 MB of graphics memory on the safe-house street.
+- **Rectangular cross-sections.** A tube with four corners whose rings are lined up keeps every side flat, so each side is one face: 4 vertices, not 6.
+- **Points, not caps.** Limbs, claws, spikes and plants end in a point.
+- **No hidden faces.** No cap where a piece ends inside another; no ears, no eye shapes on survivors.
+- **Detail as colour.** Stripes, seams, rust and window bars are flat colour on an existing face.
+- **Share corners.** Draw with `SHAPED.buildIndexed` (each flat face shares its corners) or, with a shader that works out face normals, `SHAPED.weld` (corners shared by position and colour).
+- **Result:** the heaviest survivor fell from 2,185 triangles and 6,555 vertices (version 6) to 817 triangles and 566 welded vertices. Aliens are 190 to 330 triangles, against 2,000 to 4,800 for the Bestiary stand-ins.
+
+## Framed buildings (18 October 2026, replacing the 12.5 cm block plan)
+
+The user asked for a framed design. Each building is a grid of bays, 2.4 m wide and 3 m tall (one storey):
+
+- **Frame and infill.** Each bay is a frame (a post on its left edge and a beam on top) and an infill panel between them: plain, siding or brick wall, window, door, shopfront, garage, boarded window or nothing.
+- **Depth.** The frame stands 6 cm proud of the infill, so walls show the structure as a grid of shadow lines, and windows and doors sit back in the wall.
+- **Breaking.** Infill panels break first: the panel falls as rubble chunks and leaves the empty frame, showing the floors inside. Frames break last, and when a post goes, the bays above it fall. Damage is saved per bay.
+- **Cost.** A two-storey house is about 1,900 triangles, a four-storey block of flats about 5,300.
+- **Placing.** Footprints come from map data. Each edge is split into 2.4 m bays, stretched slightly when an edge does not divide evenly. Infill is chosen by the building's type rules (`docs/BUILDINGS.md`), then corner posts and a flat or gable roof go on.
+- **Colours.** Each building has four colours: wall, trim, frame and roof.
+- **Kit and rules:** `assets/shaped/buildings.js` and `docs/SHAPED.md`.
 
 ## Ground
 
