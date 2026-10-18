@@ -70,6 +70,8 @@ Check every character in run and walk frames, not only standing.
 
 ## Cozy days, scary nights
 
+**In the game from 0.41 (Art 1).** `MOODK` in `play.html` holds the keys below; `drawSky` draws the sky gradient, sun, moon and stars. Two changes from the test street, for a whole town: by day the fog is a light haze (it reaches about 28% at the far distance in the table) so the town still shows to the draw distance, and at night lamp light, the flashlight beam and lit windows thin the dark fog so they read from afar. Alien eyes are found automatically in every animation frame of each creature model (the front of the top fifth, near the middle). Still to do: ground-floor windows are real openings, so a lit one shows only a glowing frame until the block buildings (Art 5) give them a lit room or glass.
+
 Time-of-day keys used in the test (colours in hex):
 
 | Time | Sky top / horizon and fog | Fog distance | Sun or moon | Lamps, windows | Screen edges |

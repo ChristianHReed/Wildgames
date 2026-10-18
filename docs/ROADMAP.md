@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.40. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.41. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -40,6 +40,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.38 | Trees from Kenney's Nature Kit chosen by habitat, with autumn colours; buildings reworked with what game artists do for modular kits: windows set into the wall with sills, a plinth, corner trim, roof overhangs with fascia, gable roofs on many homes, false fronts on small shops, canopies over glass doors (docs/BUILDINGS.md) |
 | 0.39 | Cars from Kenney's Car Kit, with wheels that roll and steer and an engine sound. A broken pickup truck in the safe house drive: fix it with a toolkit, a spare tire, a car battery, engine parts and 2 scrap (garages, auto shops, gas stations, traders), each fitted by holding E while the part goes into place; then drive it, keep gear in its bed and sleep in its cab. It can drive between parts of the Springfield region |
 | 0.40 | Clothes in six slots (head, top, outer, hands, legs, feet), eleven kinds found as loot or bought: warmth that brings you up to comfortable when cold and overheats you when hot, rain that soaks you unless your jacket keeps it off (wet clothes are less warm), protection that takes part of an alien's hit and tears with use (duct tape patches it), gloves against broken glass, a cap for shade. Worn clothes stay on when you die |
+| 0.41 | **Art 1, the mood:** cozy days and scary nights. A sky with a gradient, sun, moon and stars; colours, fog and light by time of day from docs/ART.md; at night a dark fog to about 30 m that lamps, flashlights and lit windows cut through, and darker screen edges; a third of windows lit while the power lasts (warm, a few cold and flickering), a few cold ones after; flickering street lamps; aliens' eyes glow green and light the ground |
 
 ## Next versions
 
@@ -47,8 +48,8 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.41** | Rain collectors and a small garden plot at your base: water and food that come back | None |
-| **0.42** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
+| **0.42** | Rain collectors and a small garden plot at your base: water and food that come back | None |
+| **0.43** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
 
 ## The new look (art track)
 
@@ -56,7 +57,7 @@ Chosen 13 October 2026: shaped-voxel characters and props, breakable 12.5 cm blo
 
 | Step | What changes | Assets needed |
 | --- | --- | --- |
-| **Art 1** | Mood: day and night retuned to the cozy-day, scary-night keys (sky, fog distance, sun and moon colour, lamp pools, only some windows lit, a flickering lamp, alien eyes that glow, darker screen edges at night) | None |
+| ~~Art 1~~ | **Done in 0.41.** Mood: day and night retuned to the cozy-day, scary-night keys (sky, fog distance, sun and moon colour, lamp pools, only some windows lit, a flickering lamp, alien eyes that glow, darker screen edges at night) | None |
 | **Art 2** | Shaped survivors and aliens on the existing skeletons and animations; character creator parts as pieces | None (made in code) |
 | **Art 3** | Shaped items, furniture, street props, trees and cars | None (made in code) |
 | **Art 4** | Ground: smooth hills with sharp kerbs, creek and river banks and ravines, in every region square | None |

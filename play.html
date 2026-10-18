@@ -19,6 +19,7 @@
     --shadow:2px 3px 0 rgba(61,48,41,.16),0 10px 22px rgba(70,40,15,.14)}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--cream);font-family:var(--ui);color:var(--ink);user-select:none;touch-action:none}
   #game{display:block;width:100%;height:100%}
+  #vig{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 55%,rgba(0,0,0,0) 40%,rgba(2,4,10,.92) 100%)}
   .hidden{display:none !important}
   .card,.panel,.modal,#invite,#prompt,#lockhint,#copBar{position:relative;background:var(--paper);border:1px solid var(--edge);border-radius:6px;box-shadow:var(--shadow)}
   .tape::before,.panel::before,.modal::before,#invite::before,#prompt::before{content:"";position:absolute;top:-9px;left:50%;width:64px;height:18px;margin-left:-32px;background:rgba(217,168,69,.5);transform:rotate(-3deg);pointer-events:none}
@@ -186,7 +187,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="hurt"></div><div id="tiredMask"></div><div id="sleepMask"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
+<div id="vig"></div><div id="hurt"></div><div id="tiredMask"></div><div id="sleepMask"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
 <div id="play" class="hidden">
   <div id="cross"></div>
   <div id="vitals">
@@ -359,7 +360,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.40.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.41.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2344,7 +2345,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.40';
+var VERSION = '0.41';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -3642,7 +3643,7 @@ function initGL(){
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c;vt=t;vec3 q=p*iscl;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;' +
     'vec3 ppl(vec2 uv,float j){vec2 a4=(vec2(mod(j,8.0)*256.0,floor(j/8.0+0.01)*256.0)+1.0+fract(uv)*254.0)/2048.0;vec4 tp=texture2D(atlas4,a4);float idx=floor(tp.g*8.0);vec3 pc=pp[0];for(int i=1;i<8;i++){if(float(i)==idx)pc=pp[i];}return pc*tp.r*1.99;}' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>199.5){float j5=k-200.0;vec2 s5=vec2(252.0/2048.0);vec2 a5=(vec2(mod(j5,8.0)*256.0,floor(j5/8.0+0.01)*256.0)+2.0)/2048.0+fract(uv)*s5;' + (lod ? 'return texture2DGradEXT(atlas5,a5,dFdx(uv)*s5,dFdy(uv)*s5);}' : 'return texture2D(atlas5,a5);}') +
@@ -3664,26 +3665,28 @@ function initGL(){
     'void main(){vec3 V=wp-cam;float d=length(V);' +
     'bool unlit=vc.a>0.6&&vc.a<0.9;bool emis=vc.a>0.25&&vc.a<0.6;bool back=vc.a<0.25&&!gl_FrontFacing;' +
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
-    'vec3 col=vc.rgb;float glow=0.0;float k=floor(vt.z+0.5);' +
+    'vec3 col=vc.rgb;float glow=0.0;vec3 winc=vec3(1.0,0.8,0.48);float k=floor(vt.z+0.5);' +
     'if(back){if(texOn>0.5)col=samp(21.0,vec2((wp.x+wp.z)*0.5,-wp.y*0.5)).rgb;else col=vec3(0.92,0.86,0.76);}' +
-    'else if(k>199.5){if(texOn>0.5&&bldOn>0.5){vec4 tb=samp(k,vt.xy);if(tb.a>0.75)col=tb.rgb*vc.rgb;else{col=tb.rgb;if(tb.a>0.25){float wh=fract(sin(dot(floor(vec2(wp.x+wp.z,wp.y)*vec2(0.25,0.3125)),vec2(12.9898,78.233)))*43758.5453);glow=step(0.5,wh)*1.7*gridU;col=mix(col,col*0.5,dark);}}}}' +
+    'else if(k>199.5){if(texOn>0.5&&bldOn>0.5){vec4 tb=samp(k,vt.xy);if(tb.a>0.75)col=tb.rgb*vc.rgb;else{col=tb.rgb;if(tb.a>0.25){float wh=fract(sin(dot(floor(vec2(wp.x+wp.z,wp.y)*vec2(0.25,0.3125)),vec2(12.9898,78.233)))*43758.5453);float wc=fract(wh*71.37);float cold=winF>0.2?step(0.8,wc):1.0;float fk=cold>0.5?0.45+0.55*step(0.25,fract(sin(floor(tm*7.0+wh*60.0)*12.9898)*43758.5453)):1.0;glow=step(1.0-winF,wh)*1.7*fk;winc=mix(winc,vec3(0.55,0.75,1.0),cold);col=mix(col,col*0.5,dark);}}}}' +
     'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
     'else if(k>44.5&&k<46.5){vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
     'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){vec2 u1=vt.xy+vec2(tm*0.035,tm*0.02);vec2 u2=vt.xy*1.9+vec2(-tm*0.03,tm*0.045);vec3 ww=(samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5;float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
     'float band=step(0.18,dot(n,vec3(-0.44,0.8,0.4)));if(k>79.5)band=smoothstep(-0.45,0.6,dot(n,vec3(-0.44,0.8,0.4)));if(unlit||emis)band=1.0;' +
-    'col=mix(col*vec3(0.74,0.66,0.68),col,band);' +
+    'col=mix(col*shd,col*sunc,band);' +
     'float spot=smoothstep(0.78,0.95,dot(V/d,fwd))*0.95/(1.0+d*d*0.004)+0.22/(1.0+d*d*0.12);' +
     'vec3 lit=vec3(amb+dark*spot*flash);' +
-    'for(int i=0;i<8;i++){float fd=distance(wp,fires[i].xyz);lit+=fcol[i]*fires[i].w*dark/(1.0+fd*fd*0.05);}' +
+    'vec3 lamp=vec3(0.0);for(int i=0;i<8;i++){float fd=distance(wp,fires[i].xyz);lamp+=fcol[i]*fires[i].w*dark/(1.0+fd*fd*0.05);}lit+=lamp;' +
     'if(emis)lit=vec3(1.0);' +
-    'col=mix(col,vec3(1.0),hurtU);vec3 outc=col*min(lit,vec3(1.15))+vec3(1.0,0.8,0.48)*glow*dark*0.85;' +
-    'float fog=max(smoothstep(fade.x,fade.y,d),1.0-exp(-pow(d*fogK,2.0)));gl_FragColor=vec4(mix(outc,sky,fog),1.0);}';
+    'col=mix(col,vec3(1.0),hurtU);vec3 outc=col*min(lit,vec3(1.15));vec3 gl2=winc*glow*dark*0.85;' +
+    /* the mood fog is darkness at night: lamp pools, a flashlight beam and lit windows show through it */
+    'float mf=fogN.z*smoothstep(fogN.x,fogN.y,d)*(1.0-clamp(dot(lamp,vec3(0.33))*0.9+dark*spot*flash*0.8+(emis?0.6:0.0),0.0,0.85));' +
+    'float fog=max(max(smoothstep(fade.x,fade.y,d),1.0-exp(-pow(d*fogK,2.0))),mf);gl_FragColor=vec4(mix(outc,sky,fog)+gl2*(1.0-0.55*fog),1.0);}';
   var mk = function(type, src){ var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea','gridU'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea','gridU','fogN','sunc','shd','winF'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0);
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); loadCreatures(); loadPeople();
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
@@ -3735,6 +3738,12 @@ function initGL(){
 /* creature models: Quaternius "Bestiary" monsters, simplified and posed by tools/build_creatures.py. Every pose is its own ready-made mesh;
    a creature is drawn by picking the pose for the moment and telling the shader where to put it. */
 var CRE = {};
+/* Art 1: the eyes of an alien model in one animation frame: among the top fifth of the body and close to its middle line, the point furthest forward */
+function eyeOf(pos){
+  var ymax = -1e9, zmax = 0, i; for (i = 1; i < pos.length; i += 3){ if (pos[i] > ymax) ymax = pos[i]; zmax = Math.max(zmax, Math.abs(pos[i+1])); }
+  var best = null, bx = -1e9; for (i = 0; i < pos.length; i += 3){ if (pos[i+1] < ymax*0.8 || Math.abs(pos[i+2]) > zmax*0.3 + 0.03) continue; if (pos[i] > bx){ bx = pos[i]; best = [pos[i], pos[i+1], pos[i+2]]; } }
+  return best ? [best[0] - 0.015, best[1] - Math.min(0.06, ymax*0.03), best[2], ymax] : null;
+}
 function loadCreatures(){
   var t = (ART.creatures || '').replace(/<!--.*?-->/g, '').trim(), nl = t.indexOf('\n'); if (nl < 0) return;
   try {
@@ -3749,7 +3758,7 @@ function loadCreatures(){
       for (var ps = 0; ps < np; ps++){
         var pos = new Float32Array(nv3*3), base = p0 + ps*e.nv*6;
         for (i = 0; i < nv3; i++){ var vi = dv.getUint16(e.o + i*2, true); pos[i*3] = dv.getInt16(base + vi*6, true)/1000; pos[i*3+1] = dv.getInt16(base + vi*6 + 2, true)/1000; pos[i*3+2] = dv.getInt16(base + vi*6 + 4, true)/1000; }
-        var vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW); o.poses.push({vb:vb, cb:o.cb, tb:o.tb, n:nv3});
+        var vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW); o.poses.push({vb:vb, cb:o.cb, tb:o.tb, n:nv3, eye:eyeOf(pos)});
       }
       CRE[n] = o;
     }
@@ -3831,6 +3840,20 @@ var CNAME = ['swarmer', 'stalker', 'giant'];
 function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
   var cl = c.clips[clip], f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1];
   gl.uniform4f(U.inst, x, gy, y, yaw); gl.uniform1f(U.hurtU, hurt ? 0.85 : 0); drawMesh(c.poses[f]);
+  return c.poses[f].eye;
+}
+/* glowing green eyes, so aliens read in the dark (Art 1), and the nearest two light the air around them a little */
+function eyeWorld(z, e, gy){ if (!e) return null; var cs = Math.cos(z.ang), sn = Math.sin(z.ang); return {x:z.x + cs*e[0] - sn*e[2], y:z.y + sn*e[0] + cs*e[2], h:gy + e[1], s:Math.max(0.025, e[3]*0.024)}; }
+function drawEyes(m){
+  var GE = [120, 255, 150], al = m.al; m.al = 100;
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i], q = z.eyeW; if (!q || Math.abs(z.x - P.x) > 90 || Math.abs(z.y - P.y) > 90) continue;
+    var sx = -Math.sin(z.ang)*q.s*1.8, sy = Math.cos(z.ang)*q.s*1.8, yo = m.yo; m.yo = 0;
+    m.ybox(q.x + sx, q.y + sy, z.ang, 0, 0, q.h, q.s*0.5, q.s*0.55, q.s*0.8, GE); m.ybox(q.x - sx, q.y - sy, z.ang, 0, 0, q.h, q.s*0.5, q.s*0.55, q.s*0.8, GE); m.yo = yo; }
+  m.al = al;
+}
+function eyeLights(){
+  return zombies.filter(function(z){ return z.eyeW && Math.abs(z.x - P.x) < 35 && Math.abs(z.y - P.y) < 35; }).sort(function(a, b){ return Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y); }).slice(0, 2)
+    .map(function(z){ var q = z.eyeW; return {x:q.x + Math.cos(z.ang)*0.3, y:q.y + Math.sin(z.ang)*0.3, eye:true, ey:q.h}; });
 }
 /* ---- nature models: Quaternius "Stylized Nature MegaKit" (CC0), converted by tools/build_nature.py. Each is one ready mesh, drawn wherever needed. ---- */
 var IMPR = null, IMPT = {}, NAT = {}, TREES = ['oak', 'maple', 'sycamore', 'poplar', 'pine', 'cedar'], hiTrees = [], clutter = [], clutKey = '', natT = 0;
@@ -3895,8 +3918,8 @@ function drawCreatures(){
     var z = zombies[i], c = CRE[CNAME[z.k]]; if (!c || Math.abs(z.x - P.x) > 150 || Math.abs(z.y - P.y) > 150) continue; any = true;
     var A = AK[z.k], atk = z.cd > A.cd - 0.45;
     var zrb = z.rf ? buildingAt(z.x, z.y) : null, zy0 = z.climb ? groundAt(z.climb.L.fx, z.climb.L.fy) + (roofY(z.climb.L.b) - groundAt(z.climb.L.fx, z.climb.L.fy))*Math.min(1, z.climb.t) : z.roof ? roofY(z.roof) : zrb ? roofY(zrb) : net.role === 'guest' ? groundAt(z.x, z.y) + (z.lvl ? FH : 0) : entY(z);
-    if (atk) drawCreature(c, 'attack', (A.cd - z.cd)/0.45*0.999, z.x, zy0, z.y, z.ang, z.hurt > 0);
-    else drawCreature(c, 'walk', (z.walk || 0)/(z.k === 2 ? 5 : 6.283), z.x, zy0, z.y, z.ang, z.hurt > 0);
+    var ev = atk ? drawCreature(c, 'attack', (A.cd - z.cd)/0.45*0.999, z.x, zy0, z.y, z.ang, z.hurt > 0) : drawCreature(c, 'walk', (z.walk || 0)/(z.k === 2 ? 5 : 6.283), z.x, zy0, z.y, z.ang, z.hurt > 0);
+    z.eyeW = eyeWorld(z, ev, zy0);
   }
   for (i = 0; i < corpses.length; i++){ var cp = corpses[i], cc = CRE[CNAME[cp.k]]; if (!cc || Math.abs(cp.x - P.x) > 90 || Math.abs(cp.y - P.y) > 90) continue; any = true; drawCreature(cc, 'dead', 0, cp.x, cp.ry || groundAt(cp.x, cp.y) + (cp.lvl ? FH : 0), cp.y, (cp.x*7 + cp.y*3) % 6.283, false); }
   if (any){ gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.hurtU, 0); }
@@ -3908,9 +3931,50 @@ function drawMesh(o, mode){
   gl.bindBuffer(gl.ARRAY_BUFFER, o.tb); gl.vertexAttribPointer(aT, 3, gl.FLOAT, false, 0, 0);
   gl.drawArrays(mode || gl.TRIANGLES, 0, o.n);
 }
-/* sky and fog color through the day, from the design pack: cream at noon, clay at dusk, plum at night */
-var SKYK = [[0, 44,38,56], [5.5, 74,60,82], [7, 243,201,168], [12, 243,220,188], [17.5, 240,195,154], [19.5, 183,122,106], [21, 58,48,70], [24, 44,38,56]];
-function skyAt(hour){ var i = 0; while (SKYK[i+1][0] < hour) i++; var a = SKYK[i], b = SKYK[i+1], t = (hour - a[0])/(b[0] - a[0]); return [(a[1] + (b[1]-a[1])*t)/255, (a[2] + (b[2]-a[2])*t)/255, (a[3] + (b[3]-a[3])*t)/255]; }
+/* Art 1 (docs/ART.md): cozy days, scary nights. For each time of day: sky top and horizon (the horizon is also the fog colour),
+   where the fog starts and ends and how thick it gets, the sun or moon colour, the colour of shade, and how dark the screen edges are.
+   By day the fog is a light haze so the town still shows far off; at night it closes in to about 30 m of near-black */
+var MOODK = [
+  [0,    '03050a', '0d1420', 5, 30, 1, '7f9ccc', [0.58, 0.64, 0.84], 0.6],
+  [5,    '0b1222', '2b2c40', 10, 45, 1, '8ea2c8', [0.6, 0.64, 0.82], 0.45],
+  [6.5,  '5f7aa0', 'f2bb8e', 30, 85, 0.7, 'ffb27a', [0.72, 0.64, 0.72], 0.1],
+  [9,    '5f97d0', 'd3e4ec', 45, 115, 0.28, 'fff2da', [0.74, 0.7, 0.76], 0],
+  [16,   '6a9bd0', 'e2e2d8', 45, 110, 0.28, 'ffe8c4', [0.74, 0.69, 0.74], 0],
+  [18.5, '6f80aa', 'ffbe80', 35, 90, 0.5, 'ffa45a', [0.7, 0.6, 0.72], 0.12],
+  [20,   '18213a', '4e4566', 16, 58, 1, '9db0de', [0.6, 0.62, 0.82], 0.4],
+  [24,   '03050a', '0d1420', 5, 30, 1, '7f9ccc', [0.58, 0.64, 0.84], 0.6]
+].map(function(k){ var h = function(x){ var v = parseInt(x, 16); return [(v >> 16 & 255)/255, (v >> 8 & 255)/255, (v & 255)/255]; }; return {h:k[0], top:h(k[1]), hor:h(k[2]), fn:k[3], ff:k[4], fm:k[5], sun:h(k[6]), shd:k[7], vig:k[8]}; });
+function moodAt(hour){
+  var i = 0; while (MOODK[i+1].h < hour) i++; var a = MOODK[i], b = MOODK[i+1], t = (hour - a.h)/(b.h - a.h), L = function(x, y){ return x + (y - x)*t; }, V = function(x, y){ return [L(x[0], y[0]), L(x[1], y[1]), L(x[2], y[2])]; };
+  var sun = V(a.sun, b.sun), mx = Math.max(sun[0], sun[1], sun[2]) || 1;
+  return {top:V(a.top, b.top), hor:V(a.hor, b.hor), fn:L(a.fn, b.fn), ff:L(a.ff, b.ff), fm:L(a.fm, b.fm), sun:sun.map(function(v){ return 1 + (v/mx - 1)*0.55; }), shd:V(a.shd, b.shd), vig:L(a.vig, b.vig)};
+}
+function skyAt(hour){ return moodAt(hour).hor; }
+/* the sky is drawn first, behind everything: a gradient from the horizon up, the sun by day, the moon and stars at night */
+var skyProg = null, skyU = {}, skyBuf = null;
+function initSky(){
+  var vs = 'attribute vec2 q;varying vec2 vq;void main(){vq=q;gl_Position=vec4(q,0.9999,1.0);}';
+  var fs = 'precision mediump float;varying vec2 vq;uniform vec3 f;uniform vec3 s;uniform vec3 u;uniform vec2 tz;uniform vec3 top;uniform vec3 hor;uniform vec3 sund;uniform vec3 sunc;uniform float night;uniform float tm;' +
+    'float hs(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453);}' +
+    'void main(){vec3 r=normalize(f+s*vq.x*tz.x+u*vq.y*tz.y);float e=r.y;vec3 c=mix(hor,top,smoothstep(0.0,0.55,e));' +
+    'float sd=dot(r,sund);c+=sunc*(smoothstep(0.9993,0.9997,sd)*1.2+pow(max(sd,0.0),180.0)*0.35)*(1.0-night);' +
+    'vec3 md=normalize(vec3(0.35,0.55,-0.76));float m=dot(r,md);c+=vec3(0.75,0.82,0.95)*(smoothstep(0.99955,0.9998,m)*0.9+pow(max(m,0.0),400.0)*0.25)*night;' +
+    'vec3 g=floor(r*190.0);float st=step(0.9972,hs(g))*smoothstep(0.04,0.3,e)*night;c+=vec3(0.85,0.88,1.0)*st*(0.55+0.45*sin(tm*2.3+hs(g+1.0)*40.0));' +
+    'gl_FragColor=vec4(c,1.0);}';
+  var mk = function(type, src){ var o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+  skyProg = gl.createProgram(); gl.attachShader(skyProg, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(skyProg, mk(gl.FRAGMENT_SHADER, fs)); gl.bindAttribLocation(skyProg, 0, 'q'); gl.linkProgram(skyProg);
+  ['f', 's', 'u', 'tz', 'top', 'hor', 'sund', 'sunc', 'night', 'tm'].forEach(function(n){ skyU[n] = gl.getUniformLocation(skyProg, n); });
+  skyBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, skyBuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+}
+function drawSky(md, f, sv, u, hour){
+  if (!skyProg){ try { initSky(); } catch (er){ skyProg = false; } } if (!skyProg) return;
+  var tz = Math.tan(1.22/2), se = Math.sin((hour - 6)/12*Math.PI), sa = (hour - 12)/12*Math.PI, sd = [Math.sin(sa)*0.9, Math.max(-0.2, se)*0.85 + 0.03, -0.42], sl = Math.hypot(sd[0], sd[1], sd[2]);
+  gl.useProgram(skyProg); gl.disable(gl.DEPTH_TEST); gl.depthMask(false); gl.disableVertexAttribArray(aC); gl.disableVertexAttribArray(aT);
+  gl.uniform3fv(skyU.f, f); gl.uniform3fv(skyU.s, sv); gl.uniform3fv(skyU.u, u); gl.uniform2f(skyU.tz, tz*W/H, tz);
+  gl.uniform3fv(skyU.top, md.top); gl.uniform3fv(skyU.hor, md.hor); gl.uniform3f(skyU.sund, sd[0]/sl, sd[1]/sl, sd[2]/sl); gl.uniform3fv(skyU.sunc, md.sun); gl.uniform1f(skyU.night, dark); gl.uniform1f(skyU.tm, (performance.now()/1000) % 1000);
+  gl.bindBuffer(gl.ARRAY_BUFFER, skyBuf); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.depthMask(true); gl.enable(gl.DEPTH_TEST); gl.useProgram(prog3);
+}
 function mul(a, b){ var o = new Float32Array(16); for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++){ var s = 0; for (var k = 0; k < 4; k++) s += a[k*4+r]*b[c*4+k]; o[c*4+r] = s; } return o; }
 var ZC = ['#6f5a4a','#4f5d6b','#5d4a5f','#56624a'];
 function drawAlien(m, z){
@@ -3955,7 +4019,8 @@ function drawWorldFx(m, e, now){
 }
 function render(){
   gl.viewport(0, 0, W, H);
-  var wd = [1, 0.8, 0.6, 1, 0.86][wx.w], fl = wx.flash > 0 ? 0.5 : 0, sk0 = skyAt((8 + time/DAY*24) % 24), sky = [sk0[0]*wd + fl, sk0[1]*wd + fl, sk0[2]*wd + fl], i, now = time;
+  var wd = [1, 0.8, 0.6, 1, 0.86][wx.w], fl = wx.flash > 0 ? 0.5 : 0, hour0 = (8 + time/DAY*24) % 24, md = moodAt(hour0), grey = function(c){ var g = (c[0] + c[1] + c[2])/3; return [g + (c[0] - g)*wd, g + (c[1] - g)*wd, g + (c[2] - g)*wd]; }, i, now = time;
+  md.hor = grey(md.hor); md.top = grey(md.top).map(function(v, j){ return v*(0.75 + 0.25*wd) + (md.hor[j] - v)*(1 - wd); }); var sky = [md.hor[0]*wd + fl, md.hor[1]*wd + fl, md.hor[2]*wd + fl];
   if (wx.w === 4){ sky[0] = sky[0]*0.6 + 0.36*(1 - dark); sky[1] = sky[1]*0.6 + 0.36*(1 - dark); sky[2] = sky[2]*0.6 + 0.37*(1 - dark); }
   gl.uniform1i(U.atlas, 0); gl.uniform1i(U.atlas3, 2); gl.uniform1i(U.atlas4, 3); gl.uniform1i(U.atlas5, 4); gl.uniform1f(U.bldOn, bldTex ? 1 : 0); gl.uniform1f(U.tm, (performance.now()/1000) % 10000); gl.uniform1f(U.texOn, texReady ? 1 : 0);
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -3971,10 +4036,14 @@ function render(){
   }
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
   var t = 1/Math.tan(1.22/2), nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
+  if (!fl) drawSky({top:md.top, hor:sky, sun:md.sun}, f, s, u, hour0);
+  gl.uniform3fv(U.fogN, [md.fn, md.ff, md.fm]); gl.uniform3fv(U.sunc, md.sun); gl.uniform3fv(U.shd, md.shd); gl.uniform1f(U.winF, gridOn() ? 0.35 : 0.04);
+  var vg = el('vig'); if (vg){ var vo = (md.vig*(P.inside ? 0.7 : 1)).toFixed(2); if (vg.style.opacity !== vo) vg.style.opacity = vo; }
   gl.uniformMatrix4fv(U.vp, false, mul(Pm, V)); gl.uniform3fv(U.cam, e); gl.uniform3fv(U.fwd, f); gl.uniform3fv(U.sky, sky);
   var gs = GSEA[season()]; gl.uniform4f(U.gsea, gs[0], gs[1], gs[2], gs[3]); gl.uniform1f(U.gridU, gridOn() ? 1 : 0); gl.uniform1f(U.amb, (1 - 0.88*dark)*(0.55 + 0.45*wd) + fl); gl.uniform1f(U.dark, dark); gl.uniform1f(U.fogK, [0, 0.004, 0.007, 0.0008, 0.01][wx.w]); gl.uniform2f(U.fade, QS.far*0.8, QS.far*1.02); gl.uniform1f(U.flash, lightOn() ? 1 : 0);
-  var fu = new Float32Array(32), fcl = new Float32Array(24), near = fires.concat(flares, lamps.filter(function(l){ return l.life > 0; }), (world.edits.gens || []).filter(function(g){ return g.on && g.fuel > 0; }).map(function(g){ return {lamp:true, x:g.x, y:g.y, gen:true}; }), gridOn() && dark > 0.3 && world.slights ? world.slights.filter(function(l){ return Math.abs(l.x - P.x) < 70 && Math.abs(l.y - P.y) < 70; }) : []).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
-  for (i = 0; i < 8 && i < near.length; i++){ var lp = near[i].lamp; fu[i*4] = near[i].x; fu[i*4+1] = 0.6 + groundAt(near[i].x, near[i].y); fu[i*4+2] = near[i].y; fu[i*4+3] = near[i].gen ? 2.4 : lp ? 1.5 : 1.6 + 0.3*Math.sin(now*13 + i); if (near[i].gen){ var gb2 = buildingAt(near[i].x, near[i].y); fu[i*4+1] = (gb2 ? gb2.base || 0 : groundAt(near[i].x, near[i].y)) + 2.2; } fcl[i*3] = 1; fcl[i*3+1] = lp ? 0.9 : 0.6; fcl[i*3+2] = lp ? 0.68 : 0.25; if (near[i].sl){ fu[i*4+1] = groundAt(near[i].x, near[i].y) + 5; fu[i*4+3] = 2.2; fcl[i*3+1] = 0.78; fcl[i*3+2] = 0.45; } }   /* street lights burn while the grid is up */
+  var fu = new Float32Array(32), fcl = new Float32Array(24), near = fires.concat(flares, lamps.filter(function(l){ return l.life > 0; }), (world.edits.gens || []).filter(function(g){ return g.on && g.fuel > 0; }).map(function(g){ return {lamp:true, x:g.x, y:g.y, gen:true}; }), gridOn() && dark > 0.3 && world.slights ? world.slights.filter(function(l){ return Math.abs(l.x - P.x) < 70 && Math.abs(l.y - P.y) < 70; }) : [], dark > 0.3 ? eyeLights() : []).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
+  for (i = 0; i < 8 && i < near.length; i++){ var lp = near[i].lamp; fu[i*4] = near[i].x; fu[i*4+1] = 0.6 + groundAt(near[i].x, near[i].y); fu[i*4+2] = near[i].y; fu[i*4+3] = near[i].gen ? 2.4 : lp ? 1.5 : 1.6 + 0.3*Math.sin(now*13 + i); if (near[i].gen){ var gb2 = buildingAt(near[i].x, near[i].y); fu[i*4+1] = (gb2 ? gb2.base || 0 : groundAt(near[i].x, near[i].y)) + 2.2; } fcl[i*3] = 1; fcl[i*3+1] = lp ? 0.9 : 0.6; fcl[i*3+2] = lp ? 0.68 : 0.25; if (near[i].sl){ fu[i*4+1] = groundAt(near[i].x, near[i].y) + 5; fu[i*4+3] = 2.2; fcl[i*3+1] = 0.77; fcl[i*3+2] = 0.47; if (hash(Math.round(near[i].x), Math.round(near[i].y), 23) < 0.12) fu[i*4+3] *= Math.sin(now*31) > 0.6 || Math.sin(now*3.7 + near[i].x) > 0.85 ? 0.12 : 1; }
+    if (near[i].eye){ fu[i*4+1] = near[i].ey; fu[i*4+3] = 0.4; fcl[i*3] = 0.35; fcl[i*3+1] = 1; fcl[i*3+2] = 0.45; } }   /* street lights burn while the grid is up */
   gl.uniform3fv(U.fcol, fcl);
   gl.uniform4fv(U.fires, fu);
   /* ground paint (parks, sidewalks, roads) is drawn in painting order and nudged toward the eye, so far-off layers do not flicker */
@@ -3997,6 +4066,7 @@ function render(){
   var m = new Mesh(), x, y, far = world.tg ? world.tg.min - 3 : 0;
   m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
+  drawEyes(m);
   drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();

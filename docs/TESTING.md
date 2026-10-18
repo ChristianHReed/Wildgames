@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.40) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.41) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -319,6 +319,14 @@ Needs internet. This is the 50-mile map: it downloads one square (about 3.4 mile
 - [ ] 3z.2 Bushes, flowers, grass, ferns, rocks, mushrooms and fallen logs can be gathered (logs give wood).
 - [ ] 3z.3 Homes: windows sit in the wall with a sill, a grey plinth runs along the bottom, corners have white boards, roofs overhang with a white fascia; some homes have gable roofs.
 - [ ] 3z.4 Small shops have a false front rising above the roof; clinics and offices have a canopy over the door. The frame rate in town is still smooth on the iPhone.
+
+## Stage 3m: day and night (Art 1)
+
+- [ ] 3m.1 By day the sky is blue with a light haze; the town is visible far off. At about 06:30 the horizon is warm orange, at 18:30 golden.
+- [ ] 3m.2 At night the sky is near-black with stars and a moon, a dark fog closes in to about 30 m, and the screen edges darken (less so indoors). Lamp pools and the flashlight beam show through the dark.
+- [ ] 3m.3 While the power is on (days 1 and 2), about a third of upper windows glow at night, a few of them cold and flickering; some street lamps flicker. After the power fails, only a few cold windows flicker.
+- [ ] 3m.4 An alien in the dark shows two green glowing eyes on its head, and lights the ground green near it. Check the swarmer, stalker and giant.
+- [ ] 3m.5 The frame rate at night on the iPhone is no worse than by day.
 
 ## Stage 4: aliens and weather
 
