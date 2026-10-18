@@ -106,3 +106,13 @@ Night rules:
 ## References
 
 Townscaper (windows lighting up, warm sunsets), Minecraft Vibrant Visuals (golden sunsets, long shadows), Shadows of Doubt (a tense voxel city with small palettes), Teardown (mood from lighting; glowing blocks need placed lights), Vintage Story temporal storms (fog and colour that make a familiar place feel wrong), and 7 Days to Die, Valheim, The Long Dark and Darkwood for nights that are shorter-sighted and more dangerous. Sources are listed in the Voxel art guide.
+
+## In the game from 0.44 (resource pack 2)
+
+- **Survivors (version 7):** fitted onto the animation skeleton from each bone's `pivot` and `tip`, exactly as version 6 was. Clothes worn in the game come from `parts.worn`: a sweater and a coat go over the creator top, trousers and thermals replace the bottoms.
+- **Aliens:** `shapedCreature()` builds each bone's pieces once, turns them for every key frame the way three.js does (angles X, Y, Z, children carried along, as in `art-tests/album.html`) and bakes every frame into its own mesh, like the old poses. Walk gets three in-between frames per key, attack two. Glowing pieces are drawn bright (vertex alpha 128), and the eye position for the eye lights is the middle of the `eye` pieces. A dead alien is lifted so it lies on the ground. Swarmer 576, stalker 756 and giant 1,002 vertices per frame, against 5,964 to 14,424 for the Bestiary models.
+- **Nest:** the `nest` model stands at each nest core, 0.8 times its size.
+- **Props:** each shaped prop replaces an old model of the same use (`SP_OLD` in `play.html`) and is stretched to the old model's size, keeping its proportions within a quarter, so rooms lay out as before. Furniture that was plain boxes (lockers, pews, crates, bookshelves, shop shelves) is fitted to its floor space (`SP_NEW`). Cars are body plus bonnet, with the wheel model at each `vehicleRig` wheel. Glowing pieces (lamp heads) are drawn bright. Furniture, street props and cars went from about 16,700 to 2,600 triangles for one of each.
+- **Not used yet:** the framed building kit (Art 5), loose items, trees and small plants, the street props the game does not place, moving doors and lids, and the truck.
+- **Switches:** `?oldart` in the address uses the old props and aliens; `?oldaliens` only the old aliens; `?oldppl` the old survivors.
+

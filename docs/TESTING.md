@@ -1,6 +1,6 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.43) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+Everything in `play.html` (version 0.44) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
@@ -365,6 +365,16 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 - [ ] 5.7 Stand in the rain without a rain jacket: Damp, then Soaked, appear and you get colder. With the rain jacket on you stay dry. Indoors or by a fire you dry off.
 - [ ] 5.8 Take a few alien hits in a leather jacket and helmet: you lose less health and their condition drops; patch them with duct tape. Climb through a broken window in work gloves without crouching: no cut. Die: you wake still wearing your clothes.
 
+## Stage 5b: resource pack 2 (0.44)
+
+- [ ] 5b.1 Wear a sweater, then a coat, raincoat or leather jacket, then trousers or thermals, and look in third person (P): each shows on your survivor. Other players see them too.
+- [ ] 5b.2 By day and at night, meet a swarmer (low, four spider legs), a stalker (tall, legs bending backwards, bone blades) and a giant (huge, walks on its knuckles). They walk smoothly, strike when they attack and lie on the ground when killed. Their eyes glow green in the dark.
+- [ ] 5b.3 Go into a nest building: the nest is a cluster of dark pods with glowing seams. Destroying it still works.
+- [ ] 5b.4 Inside homes, shops and churches: beds, sofas, tables, chairs, lamps, TVs, kitchens, bathrooms, wardrobes, bookshelves, lockers, pews and shop shelves are the new shaped models and sit against walls, not through them. Shoving a wardrobe against a door still works.
+- [ ] 5b.5 On the street: lamps with their arm over the road, hydrants, benches, dumpsters and town cars (pickups, hatchbacks, saloons, vans, yellow taxis, police cars). Drive one: the wheels roll and the front ones steer. The safe-house truck is still the old model.
+- [ ] 5b.6 On a phone, compare the frame rate with 0.43 (`?fps=1`). It should be the same or better: the new models have about a sixth of the triangles.
+- [ ] 5b.7 Add `?oldart` to the address: the old furniture, cars and aliens come back.
+
 ## Stage 6: items and packs
 
 - [ ] 6.1 In **Workshop**, make a melee weapon, a use item and a throwable. Each shows a cost.
@@ -383,9 +393,9 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 ## Stage 7b: rain collectors and gardens (0.43)
 
 - [ ] 7b.1 Open Build (N): Food and water lists a rain collector and a garden plot. Indoors, or on a road, they are refused with a reason.
-- [ ] 7b.2 Build a rain collector outside. When it rains it fills (the water level rises in the barrel); E takes clean water; B picks it up and gives back its materials and any water.
+- [ ] 7b.2 Build a rain collector outside (a blue barrel under a funnel). When it rains it fills (look at it to see how many bottles it holds); E takes clean water; B picks it up and gives back its materials and any water.
 - [ ] 7b.3 Build a garden plot. Without seed packets E says where to find them. Plant one; when the plot is dry it says so and stops growing; water it with a bottle (unboiled is fine) or wait for rain.
-- [ ] 7b.4 After about a day and a half of game time the plants are full grown with coloured vegetables; E harvests fresh food and sometimes a seed packet. In winter the plot says it is too cold.
+- [ ] 7b.4 The bed shows sprouts, then leafy plants, then plants with tomatoes. After about a day and a half of game time the plants are full grown; E harvests fresh food and sometimes a seed packet. In winter the plot says it is too cold.
 - [ ] 7b.5 Leave and come back (or play as a guest): the collector's water and the plot's growth are kept.
 
 ## Stage 8: vehicles, traders and goals

@@ -360,7 +360,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.43.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.44.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -370,7 +370,7 @@
 var ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
+  ['icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
   return set;
 })();
 </script>
@@ -1616,7 +1616,7 @@ Mesh.prototype.model = function(M, x, z, yaw, y0){
   var cs = Math.cos(yaw), sn = Math.sin(yaw), p = M.p, c = M.c, q = [0,0,0,0,0,0,0,0,0];
   for (var i = 0; i < M.n; i++){
     for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3], lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + this.yo + p[i*9 + j*3 + 1]; q[j*3 + 2] = z + sn*lx + cs*lz; }
-    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255);
+    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
   }
 };
 /* cars: Kenney Car Kit (CC0), converted by tools/build_vehicles.py. Body, wheels and the truck's bonnet are separate parts so they can move.
@@ -1631,6 +1631,51 @@ var VMOD = {};
       var o = {n:e.n, p:P0, c:buf.subarray(e.o + e.n*18, e.o + e.n*21)}; for (var k in e) if (k !== 'o' && k !== 'n') o[k] = e[k]; VMOD[n] = o; }
   } catch (er){ VMOD = {}; }
 })();
+/* ---- Art 3 (0.44): the art chat's shaped props (assets/shaped/props.js) take the place of the KayKit and Kenney furniture, street props and cars.
+   Each becomes the same triangle list the old models used, fitted to the old model's size so rooms lay out as before. Add ?oldart to the address for the old ones ---- */
+var SPON = !!(window.SHAPED && SHAPED.build && SHAPED.props) && !/[?&]oldart/.test(location.search);
+function spColour(pal, over, dk){ return function(name){ var d = name.slice(-2) === '_D', n = d ? name.slice(0, -2) : name, c = SHAPED.hex((over && over[n]) || pal[n] || '#ff00ff'); return d ? c.map(function(v){ return v*(dk || 0.78); }) : c; }; }
+/* pieces to a triangle model {n, p, c, a, hx, hz, h}. opt.q: quarter turns; opt.car: turn a +z-facing model to face +x (the cars' frame);
+   opt.fit {hx, hz, h}: stretch to that size, keeping the shape's proportions within a quarter. Glowing pieces (lamps) get alpha 128 so they stay bright */
+function spModel(pieces, colourOf, opt){
+  opt = opt || {}; var all = [], glo = [], i, k;
+  pieces.forEach(function(q){ (q.glow ? glo : all).push(q); });
+  var A = SHAPED.build(all, colourOf, null, {}), G = glo.length ? SHAPED.build(glo, colourOf, null, {}) : {pos:[], col:[]}, ng = A.pos.length/9;
+  var pos = A.pos.concat(G.pos), col = A.col.concat(G.col), nv = pos.length/3, n = nv/3, P0 = new Float32Array(nv*3), C0 = new Uint8Array(n*3), A0 = new Uint8Array(n), mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+  for (i = 0; i < nv; i++){ var x = pos[i*3], y = pos[i*3+1], z = pos[i*3+2], t;
+    for (k = 0; k < (opt.q || 0) + (opt.car ? 1 : 0); k++){ t = x; x = z; z = -t; }
+    P0[i*3] = x; P0[i*3+1] = y; P0[i*3+2] = z; for (k = 0; k < 3; k++){ mn[k] = Math.min(mn[k], P0[i*3+k]); mx[k] = Math.max(mx[k], P0[i*3+k]); } }
+  var M = {n:n, p:P0, c:C0, a:A0, sp:1, hx:Math.max(-mn[0], mx[0]), hz:Math.max(-mn[2], mx[2]), h:mx[1]};
+  if (opt.fit){ var f = opt.fit, sx = f.hx/(M.hx || 1), sz = f.hz/(M.hz || 1), sy = f.h ? f.h/(M.h || 1) : (sx + sz)/2, kk = Math.max(0.3, Math.min(2, (sx + sz)/2)), cl = function(v){ return Math.max(kk*0.8, Math.min(kk*1.25, v)); };
+    sx = cl(sx); sz = cl(sz); sy = cl(sy); for (i = 0; i < nv; i++){ P0[i*3] *= sx; P0[i*3+1] *= sy; P0[i*3+2] *= sz; } M.hx *= sx; M.hz *= sz; M.h *= sy; }
+  if (opt.s){ for (i = 0; i < nv; i++){ P0[i*3] *= opt.s[0]; P0[i*3+1] *= opt.s[1]; P0[i*3+2] *= opt.s[2]; } M.hx *= opt.s[0]; M.hz *= opt.s[2]; M.h *= opt.s[1]; }
+  for (i = 0; i < n; i++){ for (k = 0; k < 3; k++) C0[i*3+k] = Math.round(Math.max(0, Math.min(1, col[i*9+k]))*255); A0[i] = i < ng ? 255 : 128; }
+  return M;
+}
+/* which old model each shaped prop replaces (old name: [category, model]); quarter turn when the long side runs the other way */
+var SP_OLD = {bed_single_A:'furniture.bed', bed_double_A:'furniture.bed', bed_double_B:'furniture.bed', couch:'furniture.sofa', couch_pillows:'furniture.sofa', armchair:'furniture.sofa',
+  table_medium:'furniture.table', table_small:'furniture.table', table_low:'furniture.table', table_medium_long:'furniture.desk', k_desk:'furniture.desk', chair_A:'furniture.chair', chair_B_wood:'furniture.chair', chair_C:'furniture.chair',
+  lamp_standing:'furniture.floor_lamp', k_lamp:'furniture.floor_lamp', k_stove:'furniture.stove', k_sink:'furniture.kitchen_counter', k_cab:'furniture.kitchen_counter', k_fridge:'furniture.fridge', k_toilet:'furniture.toilet',
+  k_tub:'furniture.bathtub', k_tv:'furniture.tv', k_closet:'furniture.wardrobe', k_books:'furniture.bookshelf', k_trash:'street.trash_bin', k_box:'items.cardboard_box',
+  streetlight:'street.street_lamp', firehydrant:'street.hydrant', bench:'street.bench', dumpster:'street.dumpster', bush:'plants.bush'};
+/* furniture that was plain boxes before and now has a model; its size comes from its floor space and its tallest box */
+var SP_NEW = {locker:'furniture.locker', pew:'furniture.pew', crate:'furniture.crate', wardrobe:'furniture.bookshelf', shelf:'furniture.shop_shelf'};
+function spPieces(path){ var a = path.split('.'), m = SHAPED.props.models[a[0]]; return m && m[a[1]]; }
+function spFitQ(pcs, hx, hz){ var M = spModel(pcs, function(){ return [0, 0, 0]; }); return (hx > hz*1.4 && M.hz > M.hx*1.4) || (hz > hx*1.4 && M.hx > M.hz*1.4) ? 1 : 0; }
+var SPCAR = {};
+function spInstall(){ if (SPON) (function(){
+  try {
+    var PR = SHAPED.props, col = spColour(PR.palette), nm, pcs;
+    for (nm in SP_OLD){ var O = MODELS[nm]; pcs = spPieces(SP_OLD[nm]); if (!O || !pcs) continue; MODELS[nm] = spModel(pcs, col, {q:nm === 'streetlight' ? 3 : spFitQ(pcs, O.hx, O.hz), fit:{hx:O.hx, hz:O.hz, h:O.h}}); }   /* the lamp's arm reaches over the road */
+    for (nm in SP_NEW){ var F = FURN[nm]; pcs = spPieces(SP_NEW[nm]); if (!F || !pcs) continue; var s0 = F.s || [F.boxes[0][3], F.boxes[0][5]], hh = 0; F.boxes.forEach(function(b){ hh = Math.max(hh, b[1] + b[4]); });
+      MODELS['sp_' + nm] = spModel(pcs, col, {q:spFitQ(pcs, s0[0], s0[1]), fit:{hx:s0[0]*0.96, hz:s0[1]*0.96, h:hh}}); F.models = ['sp_' + nm]; }
+    /* cars: the body and bonnet as one model, and a wheel placed at each of the rig's wheel positions; taxis and police cars repaint the sedan */
+    var CK = {sedan:['sedan'], hatch:['hatchback'], suv:['pickup'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]};
+    for (nm in CK){ var V = PR.models.vehicles[CK[nm][0]], R = PR.vehicleRig[CK[nm][0]]; if (!V || !R || !VMOD[nm]) continue;
+      var vc = spColour(PR.palette, CK[nm][1]), B = spModel(V.body.concat(V.bonnet || []), vc, {car:true}), Wm = spModel(V.wheel, vc, {car:true});
+      VMOD['sp_' + nm + '_w'] = Wm; B.w = R.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + nm + '_w']; }); B.h = VMOD[nm].h; SPCAR[nm] = VMOD[nm]; VMOD[nm] = B; }
+  } catch (er){ console.log('shaped props', er); }
+})(); }
 /* a model part turned about its own sideways axis by rz (a wheel rolling, a bonnet lifting) and about the upright by ry (a wheel steering),
    placed at (ox, oy, oz) in the car's frame, then the car is turned by yaw and set at (x, z) */
 Mesh.prototype.part = function(M, x, z, yaw, y0, ox, oy, oz, rz, ry){
@@ -1638,7 +1683,7 @@ Mesh.prototype.part = function(M, x, z, yaw, y0, ox, oy, oz, rz, ry){
   for (var i = 0; i < M.n; i++){
     for (var j = 0; j < 3; j++){ var o = i*9 + j*3, lx = p[o], ly = p[o + 1], lz = p[o + 2], ax = lx*cz + ly*sz, ay = -lx*sz + ly*cz, bx = ax*cy - lz*sy + ox, bz = ax*sy + lz*cy + oz;
       q[j*3] = x + cs*bx - sn*bz; q[j*3 + 1] = yb + ay + oy; q[j*3 + 2] = z + sn*bx + cs*bz; }
-    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255);
+    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
   }
 };
 /* a flat quad given by four corners in a car's frame */
@@ -1698,6 +1743,7 @@ FURN.stage = {s:[2.5,1.2], boxes:[[0,.3,0,2.5,.3,1.2,'#5a4028'],[0,.61,0,2.5,.01
    where: wall (back to a wall), door (wall nearest the way in), far (wall farthest from it), corner, end (middle of the far end wall), mid (centre of the room), rows (lines with aisles)
    how many: a negative number means one per that many square metres. extras: ring = chairs around it, seat = a chair in front, side = something beside it, face 'far' = rows all facing the far end ---- */
 ['dresser', 'fridge', 'closet', 'locker', 'wardrobe', 'shelf', 'filing', 'gunlocker', 'vending'].forEach(function(n){ FURN[n].heavy = 1; });   /* things you can shove against a door */
+spInstall();
 var ROOMS = {
   living:[['rug','mid',1],['sofa','wall',1],['tv','wall',1],['ctable','mid',1],['armchair','corner',1],['wardrobe','wall',1],['lamp','corner',1],['plant','corner',1]],
   living_k:[['fridge','wall',1],['stove','wall',1],['kcab','wall',1],['sink','wall',1],['sofa','wall',1],['tv','wall',1],['table','mid',1,{ring:4}],['lamp','corner',1]],
@@ -2129,7 +2175,7 @@ function genLevel(b, lvl, ST, CB){
     var f = it.f, x = it.x, y = it.y, yaw = it.yaw, M = f.models && QS.models ? MODELS[f.models[it.mi]] : null, top = f.boxes[0][1] + f.boxes[0][4];
     if (M){ m.model(M, x, y, yaw, 0.1); top = M.h; }
     else f.boxes.forEach(function(bx){ m.ybox(x, y, yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
-    if (f.tex !== undefined){ var b0 = f.boxes[0]; m.panel(x, y, yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
+    if (f.tex !== undefined && !(M && M.sp)){ var b0 = f.boxes[0]; m.panel(x, y, yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
     for (q = 0; q < it.cl.length; q++) circs.push(it.cl[q]);
     if (f.name) conts.push({lvl:lvl, x:x, y:y, h:top + lvl*FH + 0.35, name:f.name, i:ci0, b:b, lt:f.lt, hide:!!f.hide, heavy:!!f.heavy, ii:ii, mdl:M ? f.models[it.mi] : (f.models ? f.models[0] : null), fx:it.fx, fy:it.fy});
   });
@@ -2356,7 +2402,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.43';
+var VERSION = '0.44';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2612,8 +2658,21 @@ function plotE(q){
     inv[k]--; q.wet = time; plotSet(q); sfx('pot', q.x, q.y, 0.5, 1.5); feed('Watered the garden', ITEMS.water[1]); updateHud(); return; }
 }
 function plotB(q){ doEdit({a:'unplot', id:q.id}); feed('Dug up the garden plot', '#c0c6cc'); }
+/* Art 3: the rain barrel and the bed and its three stages from the props pack, the bed turned so its long side runs along the plot; dry or wintry beds fade */
+var SPG = {};
+function spGarden(k, tint){
+  var key = k + (tint || ''); if (SPG[key] !== undefined) return SPG[key]; var pcs = SPON && spPieces('garden.' + k);
+  var over = tint === 'dry' ? {leaf:'#9a8a4a', leafD:'#7a6c3a', leafL:'#a8985a'} : tint === 'cold' ? {leaf:'#6f7f62', leafD:'#5a6850', leafL:'#7f8c70'} : null;
+  return SPG[key] = pcs ? spModel(pcs, spColour(SHAPED.props.palette, over), k === 'rain_barrel' ? {} : {q:1, s:[0.78, 0.8, 0.95]}) : null;
+}
 function drawGarden(m){
   var E = world.edits, i; if (!E) return;
+  if (spGarden('rain_barrel')){
+    (E.colls || []).forEach(function(c){ if (Math.abs(c.x - P.x) > 90 || Math.abs(c.y - P.y) > 90) return; m.yo = 0; m.model(spGarden('rain_barrel'), c.x, c.y, 0.3, groundAt(c.x, c.y)); });
+    (E.plots || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 90 || Math.abs(q.y - P.y) > 90) return; m.yo = 0; var g0 = groundAt(q.x, q.y), tn = plotDry(q) ? 'dry' : season() === 3 ? 'cold' : '';
+      m.model(spGarden('garden_plot'), q.x, q.y, q.yaw, g0); if (q.s) m.model(spGarden(q.s === 2 ? 'garden_ripe' : q.g < 0.4 ? 'garden_sprouting' : 'garden_growing', tn), q.x, q.y, q.yaw, g0); });
+    return;
+  }
   (E.colls || []).forEach(function(c){ if (Math.abs(c.x - P.x) > 90 || Math.abs(c.y - P.y) > 90) return; m.yo = groundAt(c.x, c.y);
     m.ybox(c.x, c.y, 0.3, 0, 0, 0.45, 0.3, 0.45, 0.3, C('#3f6f9a')); m.ybox(c.x, c.y, 0.3, 0, 0, 0.92, 0.36, 0.03, 0.36, C('#2f5577'));   /* barrel and rim */
     m.ybox(c.x, c.y, 0.3, 0, 0, 1.02, 0.44, 0.03, 0.44, C('#8a6a48')); m.ybox(c.x, c.y, 0.3, 0, 0, 0.98, 0.12, 0.05, 0.12, C('#55595f'));   /* a wooden frame with a funnel */
@@ -3834,6 +3893,46 @@ function loadCreatures(){
       CRE[n] = o;
     }
   } catch (er){ CRE = {}; }
+  if (SPON && SHAPED.aliens && !/[?&]oldaliens/.test(location.search)) CNAME.forEach(function(n){ try { var o = shapedCreature(n); if (o) CRE[n] = o; } catch (er){ console.log('shaped alien', n, er); } });
+}
+/* Art 2 (0.44): the art chat's own aliens and rigs (assets/shaped/aliens.js) in place of the Bestiary stand-ins. Each bone's pieces are built once in the rest pose;
+   every key frame turns each bone about its pivot (as three.js does: angles X, Y, Z, children carried along), in-between frames are blended so walking is smooth,
+   and every frame is baked into its own mesh like the old poses. Eyes, vents and seams are glowing pieces (alpha 128), so no extra eye boxes are drawn */
+function shapedCreature(name){
+  var AL = SHAPED.aliens, C0 = AL.creatures[name], parts = AL.parts[name]; if (!C0 || !parts) return null;
+  var bones = Object.keys(C0.bones), colourOf = spColour(AL.palette), V = [], CL = [], BI = [], EY = [];
+  bones.forEach(function(bn, bi){ var pcs = parts[bn]; if (!pcs) return;
+    [false, true].forEach(function(gl2){ var sub = pcs.filter(function(q){ return !!q.glow === gl2; }); if (!sub.length) return;
+      sub.forEach(function(q){ var o = SHAPED.build([q], colourOf, null, {}), nv = o.pos.length/3;
+        for (var i = 0; i < nv; i++){ V.push(o.pos[i*3], o.pos[i*3+1], o.pos[i*3+2]); CL.push(Math.round(Math.min(1, o.col[i*3])*255), Math.round(Math.min(1, o.col[i*3+1])*255), Math.round(Math.min(1, o.col[i*3+2])*255), gl2 ? 128 : 255); BI.push(bi); EY.push(gl2 && q.c === 'eye' ? 1 : 0); } }); }); });
+  var nv = BI.length; if (!nv) return null;
+  var rot = function(a){ var x = (a[0] || 0)*Math.PI/180, y = (a[1] || 0)*Math.PI/180, z = (a[2] || 0)*Math.PI/180, cx = Math.cos(x), sx = Math.sin(x), cy = Math.cos(y), sy = Math.sin(y), cz = Math.cos(z), sz = Math.sin(z);
+    return [cy*cz, -cy*sz, sy,  cx*sz + sx*sy*cz, cx*cz - sx*sy*sz, -sx*cy,  sx*sz - cx*sy*cz, sx*cz + cx*sy*sz, cx*cy]; };   /* Rx*Ry*Rz */
+  var mul = function(A, B){ var R = []; for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) R.push(A[r*3]*B[c] + A[r*3+1]*B[3+c] + A[r*3+2]*B[6+c]); return R; };
+  var app = function(A, v){ return [A[0]*v[0] + A[1]*v[1] + A[2]*v[2], A[3]*v[0] + A[4]*v[1] + A[5]*v[2], A[6]*v[0] + A[7]*v[1] + A[8]*v[2]]; };
+  /* one pose (a map of bone to angles) as each bone's matrix M and offset t: a rest point v of bone b goes to M (v - pivot) + t */
+  var pose = function(key){ var F = {}, left = bones.slice(), guard = 0;
+    while (left.length && guard++ < 50) left = left.filter(function(bn){ var B = C0.bones[bn], par = B.parent, R = rot(key[bn] || [0, 0, 0]);
+      if (par && !F[par]) return true; var pp = par ? C0.bones[par].pivot : [0, 0, 0], d = [B.pivot[0] - pp[0], B.pivot[1] - pp[1], B.pivot[2] - pp[2]];
+      if (!par) F[bn] = {M:R, t:d}; else { var Q = F[par], u = app(Q.M, d); F[bn] = {M:mul(Q.M, R), t:[u[0] + Q.t[0], u[1] + Q.t[1], u[2] + Q.t[2]]}; } return false; });
+    return F; };
+  var blend = function(a, b, t){ var o = {}, k; for (k in a) o[k] = 1; for (k in b) o[k] = 1; for (k in o){ var x = a[k] || [0, 0, 0], y = b[k] || [0, 0, 0]; o[k] = [x[0] + (y[0] - x[0])*t, x[1] + (y[1] - x[1])*t, x[2] + (y[2] - x[2])*t]; } return o; };
+  /* walk loops (three in-betweens per key), attack plays once through its keys, idle and dead are single frames */
+  var keys = [], clips = {}, add = function(cn, list, loop, per){ var st = keys.length; if (!list || !list.length) list = [{}];
+    var n = loop ? list.length : Math.max(1, list.length - 1); for (var i = 0; i < n; i++) for (var j = 0; j < (list.length > 1 ? per : 1); j++) keys.push({k:blend(list[i], list[(i + 1) % list.length], j/per), cn:cn});
+    if (!loop && list.length > 1) keys.push({k:list[list.length - 1], cn:cn}); clips[cn] = [st, keys.length - st]; };
+  add('walk', C0.clips.walk, true, 3); add('attack', C0.clips.attack, false, 3); add('idle', C0.clips.idle, true, 1); add('dead', C0.clips.dead, true, 1);
+  var cb = gl.createBuffer(), tb = gl.createBuffer(), tc = new Float32Array(nv*3); for (var i = 0; i < nv; i++) tc[i*3 + 2] = -1;
+  gl.bindBuffer(gl.ARRAY_BUFFER, cb); gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(CL), gl.STATIC_DRAW); gl.bindBuffer(gl.ARRAY_BUFFER, tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW);
+  var o = {n:nv, clips:clips, h:C0.height || 1, poses:[], shaped:true};
+  keys.forEach(function(K){ var F = pose(K.k), pos = new Float32Array(nv*3), ymin = 1e9, ex = 0, ey = 0, ez = 0, en = 0, ymax = 0;
+    for (var i = 0; i < nv; i++){ var bn = bones[BI[i]], f = F[bn], pv = C0.bones[bn].pivot, w = app(f.M, [V[i*3] - pv[0], V[i*3+1] - pv[1], V[i*3+2] - pv[2]]), X = w[0] + f.t[0], Y = w[1] + f.t[1], Z = w[2] + f.t[2];
+      pos[i*3] = Z; pos[i*3+1] = Y; pos[i*3+2] = -X; ymin = Math.min(ymin, Y); ymax = Math.max(ymax, Y);   /* the pack faces +z; the game's forward is +x */
+      if (EY[i]){ ex += Z; ey += Y; ez += -X; en++; } }
+    if (K.cn === 'dead' && ymin < 0.02) for (i = 0; i < nv; i++) pos[i*3+1] += 0.02 - ymin;   /* lying on the ground, not through it */
+    var vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW);
+    var eye = en ? [ex/en, ey/en, ez/en, ymax] : null; if (eye) eye.nb = true; o.poses.push({vb:vb, cb:cb, tb:tb, n:nv, eye:eye}); });
+  return o;
 }
 /* ---- survivors: Quaternius "Universal Base Characters" moved by the "Universal Animation Library" (both CC0), baked by tools/build_people.py.
    Every triangle knows its body part, so each survivor's colours come from their chosen look ---- */
@@ -3904,7 +4003,8 @@ function svLook(l, o){
   var K = SHAPED.survivor.choices, w = o.worn || {}, hat = ['none', 'cap', 'beanie', 'helmet'][l.hat], shoe = K.shoes[l.shoe];
   if (w.head) hat = {beanie:'beanie', cap:'cap', helmet:'helmet'}[w.head.k] || hat; if (w.feet && w.feet.k === 'boots') shoe = 'boots';
   return {build:K.build[l.build], body:l.body ? 'feminine' : 'masculine', skin:l.skin, hairC:l.hc, hair:K.hair[l.hair], hat:hat, face:K.face[l.face], top:K.top[l.top], bot:K.bottoms[l.bot], shoe:shoe,
-    shirt:l.shirt, pants:l.pants, acc:l.acc, pack:o.pack !== undefined ? !!o.pack : !o.talk, gloves:!!(w.hands && w.hands.k === 'gloves'), scarf:false};
+    shirt:l.shirt, pants:l.pants, acc:l.acc, pack:o.pack !== undefined ? !!o.pack : !o.talk, gloves:!!(w.hands && w.hands.k === 'gloves'), scarf:false,
+    worn:['top', 'outer', 'legs'].map(function(sl){ return w[sl] && w[sl].k; }).filter(function(k){ return k && (K.worn || []).indexOf(k) >= 0; })};
 }
 function svColourer(PK, look){
   var slot = {SKIN:PK.slots.SKIN[look.skin], HAIR:PK.slots.HAIR[look.hairC], SHIRT:look.shirt, PANTS:look.pants, ACC:look.acc};
@@ -3916,7 +4016,10 @@ function svColourer(PK, look){
 }
 function svParts(PK, look){
   var P0 = PK.parts, out = {}, add = function(src){ if (!src) return; for (var b in src) (out[b] = out[b] || []).push.apply(out[b], src[b]); };
-  add(P0.body[look.body]); add(P0.top[look.body][look.top]); add(P0.bottoms[look.body][look.bot]); add(P0.shoes[look.shoe]); add(P0.face[look.face]); add(P0.hair[look.hair]); add(P0.hat[look.hat]);
+  /* clothes worn in the game (pack version 7): a sweater and a coat are layers over the creator top; trousers and thermals replace the bottoms */
+  var WN = (P0.worn || {})[look.body] || {}, wl = (look.worn || []).filter(function(k){ return WN[k]; }), legs = wl.filter(function(k){ return k === 'trousers' || k === 'thermals'; })[0];
+  add(P0.body[look.body]); add(P0.top[look.body][look.top]); if (legs) add(WN[legs]); else add(P0.bottoms[look.body][look.bot]);
+  wl.forEach(function(k){ if (k !== legs) add(WN[k]); }); add(P0.shoes[look.shoe]); add(P0.face[look.face]); add(P0.hair[look.hair]); add(P0.hat[look.hat]);
   if (look.pack) add(P0.gear.backpack); if (look.scarf) add(P0.gear.scarf);
   if (look.gloves){ delete out.hand_l; delete out.hand_r; add(P0.gear.gloves); }
   if (look.hat !== 'none' && out.Head) out.Head = out.Head.filter(function(q){ return q.hat !== 'hide'; });
@@ -4004,10 +4107,10 @@ function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
   return c.poses[f].eye;
 }
 /* glowing green eyes, so aliens read in the dark (Art 1), and the nearest two light the air around them a little */
-function eyeWorld(z, e, gy){ if (!e) return null; var cs = Math.cos(z.ang), sn = Math.sin(z.ang); return {x:z.x + cs*e[0] - sn*e[2], y:z.y + sn*e[0] + cs*e[2], h:gy + e[1], s:Math.max(0.025, e[3]*0.024)}; }
+function eyeWorld(z, e, gy){ if (!e) return null; var cs = Math.cos(z.ang), sn = Math.sin(z.ang); return {x:z.x + cs*e[0] - sn*e[2], y:z.y + sn*e[0] + cs*e[2], h:gy + e[1], s:Math.max(0.025, e[3]*0.024), nb:!!e.nb}; }
 function drawEyes(m){
   var GE = [120, 255, 150], al = m.al; m.al = 100;
-  for (var i = 0; i < zombies.length; i++){ var z = zombies[i], q = z.eyeW; if (!q || Math.abs(z.x - P.x) > 90 || Math.abs(z.y - P.y) > 90) continue;
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i], q = z.eyeW; if (!q || q.nb || Math.abs(z.x - P.x) > 90 || Math.abs(z.y - P.y) > 90) continue;
     var sx = -Math.sin(z.ang)*q.s*1.8, sy = Math.cos(z.ang)*q.s*1.8, yo = m.yo; m.yo = 0;
     m.ybox(q.x + sx, q.y + sy, z.ang, 0, 0, q.h, q.s*0.5, q.s*0.55, q.s*0.8, GE); m.ybox(q.x - sx, q.y - sy, z.ang, 0, 0, q.h, q.s*0.5, q.s*0.55, q.s*0.8, GE); m.yo = yo; }
   m.al = al;
@@ -4159,6 +4262,8 @@ function drawAlien(m, z){
     m.al = 128; m.ybox(x, y, a, 0.63, 0.16, 4.08, 0.02, 0.06, 0.07, C('#ff5a4a')); m.ybox(x, y, a, 0.63, -0.16, 4.08, 0.02, 0.06, 0.07, C('#ff5a4a')); m.al = 255;
   }
 }
+var NESTM;
+function nestModel(){ if (NESTM === undefined){ NESTM = null; try { if (SPON && SHAPED.aliens) NESTM = spModel(SHAPED.aliens.parts.nest.root, spColour(SHAPED.aliens.palette), {s:[0.8, 0.8, 0.8]}); } catch (er){} } return NESTM; }
 /* nests, weather, and other effects drawn each frame */
 function drawWorldFx(m, e, now){
   var i, k, sb = safeB();
@@ -4166,6 +4271,7 @@ function drawWorldFx(m, e, now){
   for (k in world.nests){
     var b = world.buildings[k]; if (!b || Math.abs(b.cx - P.x) > 170 || Math.abs(b.cy - P.y) > 170) continue; m.yo = b.base || 0;
     m.al = 128; m.ybox(b.cx, b.cy, now, 0, 0, b.h + 2 + Math.sin(now*2 + b.id)*0.3, 0.45, 0.45, 0.45, C('#b05cff'));
+    var NM = nestModel(); if (NM && b.int && b.core){ m.al = 255; m.model(NM, b.core.x, b.core.y, 0.4 + b.id, 0); continue; }   /* Art 2: the pack's nest, its seams glowing */
     if (b.int && b.core) m.pyr(b.core.x, b.core.y, 0.1, 0.55, 1.1 + Math.sin(now*4)*0.2, C('#b05cff'), now);
     m.al = 255; if (b.int && b.core) m.ybox(b.core.x, b.core.y, 0.4, 0, 0, 0.12, 0.7, 0.06, 0.7, C('#3c2852'));
   }

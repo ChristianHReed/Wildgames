@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.43. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.44. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -44,6 +44,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.41.1 | Building corners shaded: walls darken toward every corner and the ground, inside and out, and light falls at an uneven angle so each side of a house has its own tone |
 | 0.42 | **Art 2, the shaped survivors:** every creator choice from the survivor pack (version 6) fitted onto the animation skeleton and moved with the same clips (tools/build_rig.py exports the bone movement); the creator preview, other players and traders use them; worn helmets, beanies, caps, boots and gloves show; packs on survivors |
 | 0.43 | Rain collectors (clean water when it rains, up to 10 bottles) and garden plots (seed packets found as loot or bought; grow over about a day and a half while watered by rain or a bottle; slower in autumn, none in winter; harvest fresh food and sometimes seeds back) |
+| 0.44 | **Resource pack 2 from the art chat:** survivors version 7 (silhouette first) wearing the 0.40 clothes as layers; our own aliens and rigs (swarmer, stalker, giant) in place of the Bestiary stand-ins, with glowing eyes and in-between frames for a smooth walk, and the nest model at every nest core; shaped furniture, street lamps, hydrants, benches, dumpsters, bushes and town cars (body and bonnet, rolling and steering wheels; taxis and police cars repainted), and the rain barrel and the garden bed with its three stages. About a sixth of the triangles the old models used. `?oldart` in the address brings the old props and aliens back, `?oldaliens` only the old aliens |
 
 ## Next versions
 
@@ -51,10 +52,10 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.44** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
-| **0.45** | Horde nights: every few nights a wave of aliens comes for your base; walls, barricades, boarded windows and light matter | None |
-| **0.46** | A paper map and notes: you only see where you have been, and can mark places | None |
-| **0.47** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger) | Shaped survivors (in the game) |
+| **0.45** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
+| **0.46** | Horde nights: every few nights a wave of aliens comes for your base; walls, barricades, boarded windows and light matter | None |
+| **0.47** | A paper map and notes: you only see where you have been, and can mark places | None |
+| **0.48** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger) | Shaped survivors (in the game) |
 
 ## The new look (art track)
 
@@ -63,8 +64,8 @@ Chosen 13 October 2026: shaped-voxel characters and props, breakable 12.5 cm blo
 | Step | What changes | Assets needed |
 | --- | --- | --- |
 | ~~Art 1~~ | **Done in 0.41.** Mood: day and night retuned to the cozy-day, scary-night keys (sky, fog distance, sun and moon colour, lamp pools, only some windows lit, a flickering lamp, alien eyes that glow, darker screen edges at night) | None |
-| ~~Art 2~~ | **Survivors done in 0.42; shaped aliens still to do.** Shaped survivors and aliens on the existing skeletons and animations; character creator parts as pieces | None (made in code) |
-| **Art 3** | Shaped items, furniture, street props, trees and cars | None (made in code) |
+| ~~Art 2~~ | **Done: survivors in 0.42, aliens and nests in 0.44.** Shaped survivors on the existing skeleton and animations, creator parts and worn clothes as pieces; the art chat's own aliens with their own rigs | None (made in code) |
+| **Art 3** | **Mostly done in 0.44:** furniture, street props, town cars, rain barrel and garden from `assets/shaped/props.js`. Still to do: loose items on the ground, trees and small plants (the pack has oak, pine, bush, dead tree, grass and rock), the extra street props the game does not place yet (traffic lights, cones, barriers, bus stops, power poles, fences, sandbags), opening doors and lids, and the truck (its repair jobs are fitted to the old model) | None (made in code) |
 | **Art 4** | Ground: smooth hills with sharp kerbs, creek and river banks and ravines, in every region square | None |
 | **Art 5** | Framed buildings: every footprint edge as 2.4 m bays of frame and infill (wall, window, door, shopfront, garage) from the same type rules as today, corner posts and roofs, from `assets/shaped/buildings.js` (replaces the 12.5 cm block plan, 18 October 2026) | None |
 | **Art 6** | Breaking: infill panels fall out as rubble and leave the frame, frames break last and the bays above them fall; what can break them, the noise it makes, aliens seeing through holes, and saving the damage per bay | None |
