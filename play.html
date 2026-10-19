@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.57.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.57.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -395,7 +395,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.57.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.57.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -721,9 +721,9 @@ var POWER_DAY = 3, WATER_DAY = 5;   /* 0.36: the power fails at midnight going i
 var LOOT = {
   house:{food:3, water:2, medkit:0.5, ammo:0.4, wood:1, scrap:1.5, coat:0.4, battery:0.9, none:1.5},
   food:{food:6, water:4}, medical:{medkit:6, water:1}, police:{ammo:8, medkit:1, radio:1, battery:2},
-  industrial:{scrap:5, wood:4, fuel:2, battery:1}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1, coat:0.6, radio:0.3, battery:1.6}
+  industrial:{scrap:5, wood:4, fuel:2, battery:1, chunk:2.5}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
-var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba',''], nails:['Nails','#8c8f94',''], sheet:['Sheet metal','#9fb0bd','']};
+var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba',''], nails:['Nails','#8c8f94',''], sheet:['Sheet metal','#9fb0bd',''], chunk:['Concrete chunk','#9a9890','']};
 ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096','']; ITEMS.bandage = ['Bandages','#e9e2d0','4']; ITEMS.antibio = ['Antibiotics','#9ad0a0','']; ITEMS.splint = ['Splint','#b08a5a','']; ITEMS.fresh = ['Fresh food','#e07a4a','']; ITEMS.rotten = ['Rotten food','#9a9a62','']; ITEMS.dirty = ['Unboiled water','#7aa0b0','']; ITEMS.tape = ['Duct tape','#9aa3aa',''];
 ITEMS.generator = ['Generator','#d9a845',''];
 /* 0.40: clothes, worn in six slots. warm = degrees F of warmth when cold; rain = how much rain it keeps off (outer and head);
@@ -4098,7 +4098,7 @@ function update(dt){
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
 }
-var ICON = {seeds:41, coat:31, beanie:32, cap:33, helmet:34, sweater:35, leather:36, gloves:37, trousers:38, thermals:39, boots:40, raincoat:6, toolkit:27, tire:28, carbat:29, parts:30, generator:26, food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18, bandage:19, antibio:20, splint:21, fresh:22, rotten:23, dirty:24, tape:25};
+var ICON = {nails:5, sheet:5, chunk:5, seeds:41, coat:31, beanie:32, cap:33, helmet:34, sweater:35, leather:36, gloves:37, trousers:38, thermals:39, boots:40, raincoat:6, toolkit:27, tire:28, carbat:29, parts:30, generator:26, food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18, bandage:19, antibio:20, splint:21, fresh:22, rotten:23, dirty:24, tape:25};
 /* the eye: how close any alien is to spotting you */
 function awareHud(){
   var e = el('aware'), best = 0, txt = '', col = '#e9dcc0', i;
@@ -5382,7 +5382,7 @@ el('packFile').addEventListener('change', function(e){
 var PAINT = ['#b98f6a', '#c9a27c', '#9f8a78', '#7f8fa3', '#8fa37f', '#a37f8f', '#d6cfc0', '#5d6670', '#b5563e', '#3f6f8f'];
 /* ---- 0.56: player walls are built the way real walls are: six half-metre bays (the walls pack's sections) that each take damage on their own. A bay is whole (6 to 4), cracked (3 to 2), holed with the studs showing (1) and then open rubble (0). Only an open bay lets anything through ---- */
 var WALLS_ON = false, WMAT = 'wood'; (function(){ var v = document.getElementById('verTxt'); if (v) v.textContent = BUILD + ' (map data ' + (window.DATAV || '?') + ')'; })();
-var WMATS = {wood:{kind:'wood_siding', h:'3.0', hp:6, res:1, col:{WALL:'#a9825a', INNER:'#e6e0d2', TRIM:'#6b4a30'}, name:'timber'}, steel:{kind:'lightsteel_sheet', h:'3.5', hp:12, res:0.5, col:{WALL:'#8b97a3', INNER:'#e6e0d2', TRIM:'#4f5a64'}, name:'sheet steel'}};
+var WMATS = {wood:{kind:'wood_siding', h:'3.0', hp:6, res:1, col:{WALL:'#a9825a', INNER:'#e6e0d2', TRIM:'#6b4a30'}, name:'timber'}, steel:{kind:'lightsteel_sheet', h:'3.5', hp:12, res:0.5, col:{WALL:'#8b97a3', INNER:'#e6e0d2', TRIM:'#4f5a64'}, name:'sheet steel'}, concrete:{kind:'concrete_poured', h:'3.0', hp:36, res:0.15, col:{WALL:'#aaa69e', INNER:'#e6e0d2', TRIM:'#8a867e'}, name:'poured concrete'}};
 function wallMat(w){ return WMATS[w.m] || WMATS.wood; }
 function loadWallsPack(){ if (window.SHAPED && SHAPED.walls){ WALLS_ON = true; return; } if (document.getElementById('wallsJs')) return; var sc = document.createElement('script'); sc.id = 'wallsJs'; sc.src = 'assets/shaped/walls.js?v=' + BUILD; sc.onload = function(){ WALLS_ON = !!(window.SHAPED && SHAPED.walls); }; sc.onerror = function(){}; document.head.appendChild(sc); }
 var WLM = {};
@@ -5451,22 +5451,24 @@ function nearBuilding(){
   for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){ var cell = world.grid.get(gk(cx, cy)); if (!cell) continue; for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (b.gone) continue; var d = polyDist(b.pts, P.x, P.y, true); if (d < bd){ bd = d; best = b; } } }
   return best;
 }
+var WMORDER = ['wood', 'steel', 'concrete'];
 function buildAct(a, pos){
   var x = pos ? pos.x : P.x + Math.cos(P.yaw)*1.8, y = pos ? pos.y : P.y + Math.sin(P.yaw)*1.8, yaw = pos ? pos.yaw : P.yaw, id = Date.now() + '-' + Math.floor(Math.random()*1e6), b = nearBuilding(), cheap = me.bg === 'builder' || me.bg === 'mechanic';
   if (a === 'cade'){ place('cade'); } else if (a === 'fire'){ place('fire'); }
   else if (a === 'wall'){
-    var wc = cheap ? 2 : 3, ws0 = WMAT === 'steel' ? (cheap ? 3 : 4) : 0, wc2 = WMAT === 'steel' ? 2 : wc;
+    var wcc = WMAT === 'concrete' ? (cheap ? 5 : 6) : 0; if (wcc && inv.chunk < wcc){ toast('A concrete wall needs ' + wcc + ' concrete chunks. Industrial buildings have them, and so do broken concrete walls.', 3.5); return; }
+    var wc = cheap ? 2 : 3, ws0 = WMAT === 'steel' ? (cheap ? 3 : 4) : 0, wc2 = WMAT === 'steel' ? 2 : WMAT === 'concrete' ? 0 : wc;
     /* salvaged nails stand in for wood (2 nails = 1 wood) and sheet metal for scrap (1 sheet = 2 scrap) */
     var nl = 0, sh = 0; if (inv.wood < wc2){ nl = (wc2 - inv.wood)*2; } if (inv.scrap < ws0){ sh = Math.ceil((ws0 - inv.scrap)/2); }
     if (inv.nails < nl || inv.sheet < sh){ toast('A ' + WMATS[WMAT].name + ' wall needs ' + wc2 + ' wood' + (ws0 ? ' and ' + ws0 + ' scrap' : '') + ' (2 nails count as a wood, a sheet of metal as 2 scrap).', 3.5); return; }
     if (hitWall(x, y) || buildingAt(x, y) !== P.inside){ toast('There is no room for a wall there.', 2.5); return; }
-    inv.nails -= nl; inv.sheet -= sh; inv.wood = Math.max(0, inv.wood - wc2); inv.scrap = Math.max(0, inv.scrap - ws0); if (sh && inv.scrap < 0) inv.scrap = 0; doEdit({a:'wall', w:{id:id, x:x, y:y, yaw:yaw, m:WMAT}});
-  } else if (a === 'wallmat'){ WMAT = WMAT === 'wood' ? 'steel' : 'wood'; toast('Walls are now ' + WMATS[WMAT].name + '.', 2); renderBuild();
+    inv.chunk -= wcc; inv.nails -= nl; inv.sheet -= sh; inv.wood = Math.max(0, inv.wood - wc2); inv.scrap = Math.max(0, inv.scrap - ws0); if (sh && inv.scrap < 0) inv.scrap = 0; doEdit({a:'wall', w:{id:id, x:x, y:y, yaw:yaw, m:WMAT}});
+  } else if (a === 'wallmat'){ WMAT = WMORDER[(WMORDER.indexOf(WMAT) + 1) % 3]; toast('Walls are now ' + WMATS[WMAT].name + '.', 2); renderBuild();
   } else if (a === 'wrep'){
     var rw0 = null, rd0 = 3.5; world.edits.walls.forEach(function(w){ var d = Math.hypot(w.x - P.x, w.y - P.y); if (d < rd0){ rd0 = d; rw0 = w; } });
-    if (!rw0){ toast('No wall section within reach.', 2.5); return; } var rm0 = wallMat(rw0), rby = wallBays(rw0), done = 0, need = rm0 === WMATS.steel ? 'scrap' : 'wood';
+    if (!rw0){ toast('No wall section within reach.', 2.5); return; } var rm0 = wallMat(rw0), rby = wallBays(rw0), done = 0, need = rm0 === WMATS.steel ? 'scrap' : rm0 === WMATS.concrete ? 'chunk' : 'wood';
     for (var rk = 0; rk < 6; rk++){ if (rby[rk] >= rm0.hp) continue; var rc0 = rby[rk] <= 0 ? 2 : 1; if (inv[need] < rc0) break; inv[need] -= rc0; rby[rk] = rm0.hp; done++; emit({k:'edit', e:{a:'wbay', id:rw0.id, i:rk, v:rm0.hp}}); }
-    if (done){ rebuildWalls(); sfx('plank', rw0.x, rw0.y, 0.7, 0.9); toast('Repaired ' + done + ' bay' + (done > 1 ? 's' : '') + '.', 2); updateHud(); } else toast(need === 'scrap' ? 'Nothing to repair, or you are out of scrap.' : 'Nothing to repair, or you are out of wood.', 2.5);
+    if (done){ rebuildWalls(); sfx('plank', rw0.x, rw0.y, 0.7, 0.9); toast('Repaired ' + done + ' bay' + (done > 1 ? 's' : '') + '.', 2); updateHud(); } else toast('Nothing to repair, or you are out of ' + (need === 'chunk' ? 'concrete chunks' : need) + '.', 2.5);
   } else if (a === 'unwall'){
     var bw = null, bd = 3.5; world.edits.walls.forEach(function(w){ var d = Math.hypot(w.x - P.x, w.y - P.y); if (d < bd){ bd = d; bw = w; } });
     if (!bw){ toast('No wall section within reach.', 2.5); return; } inv.wood += 1; doEdit({a:'unwall', id:bw.id});
@@ -5512,8 +5514,9 @@ function salvInfo(o){
     if (S[0] === 'wood'){ r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 2.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 4; } }
     else if (S[0] === 'metal'){ r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3.5; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5.5; } }
     else { r.need = 'an axe, a crowbar or a wrench'; id = T.axe || T.crowbar || T.wrench; if (id){ r.tool = id; r.secs = 2.5; } } }
-  else if (o.sv === 'bay'){ var wm = wallMat(o.w), stt = bayState(wallBays(o.w)[o.k], wm.hp), steel = wm === WMATS.steel; r.label = steel ? 'steel wall bay' : 'timber wall bay'; r.mat = steel ? 'metal' : 'wood'; r.state = stt;
-    if (steel){ r.y.scrap = 1; if (stt === 'whole') r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5; } }
+  else if (o.sv === 'bay'){ var wm = wallMat(o.w), stt = bayState(wallBays(o.w)[o.k], wm.hp), steel = wm === WMATS.steel, conc = wm === WMATS.concrete; r.label = conc ? 'concrete wall bay' : steel ? 'steel wall bay' : 'timber wall bay'; r.mat = steel ? 'metal' : conc ? 'stone' : 'wood'; r.state = stt;
+    if (conc){ r.y.chunk = stt === 'whole' ? 2 : 1; r.need = 'a crowbar'; if (T.crowbar){ r.tool = T.crowbar; r.secs = 9; } }
+    else if (steel){ r.y.scrap = 1; if (stt === 'whole') r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5; } }
     else { r.y.wood = 1; r.y.nails = stt === 'whole' ? 2 : 1; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 1.8; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 3; } } }
   else if (o.sv === 'bench'){ r.label = 'tool bench'; r.mat = 'wood'; r.y.wood = 4; r.y.scrap = 2; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 2.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 4; } }
   else { var car = !!o.t; r.label = car ? 'car' : 'bicycle'; r.mat = 'car'; r.y.scrap = car ? (o.dead === 'burnt' ? 3 : o.dead ? 5 : 6) : 2; r.need = 'a wrench or a toolkit' + (car ? '' : ', or a crowbar');
@@ -5539,7 +5542,7 @@ function salvTick(dt){
   if (!s){ box.classList.add('hidden'); el('tTake').classList.add('nx'); return; }
   var inf = SV.info = salvInfo(s), hold = keys.KeyJ || keys.Take, tch = document.body.classList.contains('touchmode'); el('tTake').classList.remove('nx');
   if (hold){ if (!inf.tool){ if (time - SV.said > 3){ SV.said = time; toast('Taking apart a ' + inf.label + ' needs ' + inf.need + '.', 3.5); } SV.p = 0; }
-    else { SV.p += dt/inf.secs; SV.nt -= dt; if (SV.nt <= 0){ SV.nt = 0.55; sfx(inf.mat === 'metal' || inf.mat === 'car' ? 'plank' : 'chop', s.x, s.y, 0.7); makeNoise(s.x, s.y, inf.mat === 'cloth' ? 4 : s.sv === 'bay' ? (inf.mat === 'metal' ? 22 : 14) : 10); fxAdd('effects.wood_chips', s.x, s.y, groundAt(s.x, s.y), {life:0.8, s0:0.6, s1:0.9, rise:0.2, up:0.5}); }
+    else { SV.p += dt/inf.secs; SV.nt -= dt; if (SV.nt <= 0){ SV.nt = 0.55; sfx(inf.mat === 'metal' || inf.mat === 'car' ? 'plank' : 'chop', s.x, s.y, 0.7); makeNoise(s.x, s.y, inf.mat === 'cloth' ? 4 : s.sv === 'bay' ? (inf.mat === 'metal' ? 22 : inf.mat === 'stone' ? 26 : 14) : 10); fxAdd('effects.wood_chips', s.x, s.y, groundAt(s.x, s.y), {life:0.8, s0:0.6, s1:0.9, rise:0.2, up:0.5}); }
       if (SV.p >= 1){ SV.p = 0; doSalvage(s, inf); return; } } } else SV.p = 0;
   var gives = Object.keys(inf.y).map(function(k2){ return '+' + inf.y[k2] + ' ' + (k2 === 'fiber' ? 'fibre' : k2); }).join(' ');
   box.classList.remove('hidden'); el('sbar').style.width = (SV.p*100) + '%';
@@ -5676,7 +5679,7 @@ function renderBuild(){
   var b = nearBuilding(), wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3;
   var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
-    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber and sheet steel') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
+    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +

@@ -544,3 +544,4 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 
 29. (0.56.2) Open the game on the web address twice. The start page says the version and a map code. Open the browser's site data: only one afterstreet-<version> store (plus afterstreet-squares). After the next release, reload twice: the old store is gone and the map code changes only when map data changed.
 30. (0.57.0) Build a timber wall, carry an axe or crowbar, stand facing it and hold J (Hold Take apart on a phone): a bay comes out with wood or nails, and it is loud. Do the same to a steel wall with a wrench or crowbar: scrap and sheet metal. Build a wall with no wood but 6 nails: it works. Take the last bay: the section disappears.
+31. (0.57.1) Search an industrial building: concrete chunks turn up. Build menu: switch Wall material to poured concrete, build with 6 chunks; it is pale grey and takes far longer to break. Take a bay apart with a crowbar: 2 chunks back.
