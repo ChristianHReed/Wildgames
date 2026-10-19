@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.4.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.5.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -838,6 +838,9 @@ function buildWorld(raw, name){
     });
     votes.forEach(function(m, r){ var bn = '', bc = 0; for (var k in m) if (m[k] > bc){ bc = m[k]; bn = k; } if (bn && !r.name) r.name = bn; });
     /* street signs: a post at the roadside every 150 m or so along each named road, and one at its start */
+    var GENLAB = {motorway:'Motorway', trunk:'Highway', primary:'Main road', secondary:'Through road'};
+    w.roads.forEach(function(r){ if (r.kind === 'road' && !r.name && GENLAB[r.hw]) r.lab = GENLAB[r.hw]; });   /* no name known: the HUD still says what kind of road you are on, but no sign is put up */
+    w.labeled = w.roads.filter(function(r){ return r.kind === 'road' && (r.name || r.lab); });
     w.signs = []; w.named = rs.filter(function(r){ return r.name; });
     w.named.forEach(function(r, ri){
       var p = r.pts, acc = 0, nxt = 6 + hash(ri, 31, 4)*40;
@@ -2674,7 +2677,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.49.4';
+var VERSION = '0.49.5';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -4744,9 +4747,9 @@ function nestModel(st){ st = st || 'nest'; if (NESTM[st] === undefined){ NESTM[s
 var stCache = {t:-9, name:''};
 function curStreet(){
   if (time - stCache.t < 0.5) return stCache.name; stCache.t = time; var best = '', bd = 1e9;
-  (world.named || []).forEach(function(r){
+  (world.labeled || world.named || []).forEach(function(r){
     if (P.x < r.minx - 12 || P.x > r.maxx + 12 || P.y < r.miny - 12 || P.y > r.maxy + 12) return; var p = r.pts;
-    for (var q = 0; q + 3 < p.length; q += 2){ var ax = p[q], ay = p[q+1], bx = p[q+2] - ax, by = p[q+3] - ay, l2 = bx*bx + by*by || 1, u = Math.max(0, Math.min(1, ((P.x - ax)*bx + (P.y - ay)*by)/l2)), d = Math.hypot(P.x - ax - bx*u, P.y - ay - by*u) - r.w/2; if (d < bd){ bd = d; best = r.name; } }
+    for (var q = 0; q + 3 < p.length; q += 2){ var ax = p[q], ay = p[q+1], bx = p[q+2] - ax, by = p[q+3] - ay, l2 = bx*bx + by*by || 1, u = Math.max(0, Math.min(1, ((P.x - ax)*bx + (P.y - ay)*by)/l2)), d = Math.hypot(P.x - ax - bx*u, P.y - ay - by*u) - r.w/2; if (d < bd){ bd = d; best = r.name || r.lab; } }
   });
   return stCache.name = bd < 9 ? best : '';
 }

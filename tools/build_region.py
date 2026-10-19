@@ -76,6 +76,33 @@ print('buildings', nb)
 HWY = {'motorway': 'motorway', 'trunk': 'trunk', 'primary': 'primary', 'secondary': 'secondary', 'tertiary': 'tertiary', 'service': 'service',
        'track': 'track', 'busway': 'service'}
 PATH = {'footway': 'footway', 'cycleway': 'cycleway', 'path': 'path', 'steps': 'steps', 'pedestrian': 'pedestrian', 'bridleway': 'bridleway', 'platform': None}
+# street names: the pack has none. tools/fetch_road_names.py (run once, needs internet) saves OpenStreetMap names and refs to tools/road_names.json;
+# each road line takes the name most of its points lie on.
+NAMEIDX = {}
+_rn = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'road_names.json')
+if os.path.exists(_rn):
+    for rec in json.load(open(_rn)):
+        lab = rec.get('n') or rec.get('r')
+        if not lab: continue
+        cs = rec['c']
+        for i in range(len(cs) - 1):
+            (x0, y0), (x1, y1) = cs[i], cs[i + 1]
+            k = max(1, int(math.hypot((x1 - x0)*111320*math.cos(math.radians(LAT0)), (y1 - y0)*110574)/8))
+            for j in range(k + 1):
+                key = (round((x0 + (x1 - x0)*j/k)*3000), round((y0 + (y1 - y0)*j/k)*3000)); NAMEIDX.setdefault(key, {})[lab] = 1
+    print('road names loaded', len(NAMEIDX), 'cells')
+def road_name(l):
+    votes = {}
+    for x, y in l:
+        seen = {}
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for lab in NAMEIDX.get((round(x*3000) + dx, round(y*3000) + dy), {}): seen[lab] = 1
+        for lab in seen: votes[lab] = votes.get(lab, 0) + 1
+    if not votes: return None
+    lab = max(votes, key=votes.get)
+    return lab if votes[lab] >= max(2, len(l)*0.3) else None
+named = 0
 nr = 0
 for part in ('roads_major', 'roads_minor_north', 'roads_minor_south', 'city_paths_trails'):
     for f in load(part):
@@ -89,8 +116,13 @@ for part in ('roads_major', 'roads_minor_north', 'roads_minor_south', 'city_path
         elif c == 'rail': t = {'railway': 'rail'}
         if not t: continue
         g = f['geometry']; lines = [g['coordinates']] if g['type'] == 'LineString' else g['coordinates'] if g['type'] == 'MultiLineString' else []
-        for l in lines: add_line(t, l); nr += 1; ROADS.append((c, t.get('highway') or t.get('railway'), l))
-print('roads', nr)
+        for l in lines:
+            tt = t
+            if NAMEIDX and 'highway' in t and t['highway'] not in ('footway', 'cycleway', 'path', 'steps', 'pedestrian', 'bridleway'):
+                nm = road_name(l)
+                if nm: tt = dict(t, name=nm); named += 1
+            add_line(tt, l); nr += 1; ROADS.append((c, t.get('highway') or t.get('railway'), l))
+print('roads', nr, 'named', named)
 # ---------------- water ----------------
 for f in load('waterways'):
     p = f['properties']; ww = p['waterway'] if p['waterway'] in ('river', 'stream', 'canal', 'ditch', 'drain') else 'stream'
