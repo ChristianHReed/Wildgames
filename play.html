@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.50.5.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.56.0.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2677,7 +2677,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.50.5';
+var VERSION = '0.56.0';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2727,7 +2727,7 @@ function startRun(ws, cs){
   hiTrees = []; clutter = []; clutKey = ''; world.trees.forEach(function(t){ t.hi = false; }); buildTrees(); makeVehicles(resumed ? ws.veh : null); makeTraders(); makeSurvivors(resumed ? ws.surv : null); setupScenario(resumed ? ws : null); pings = []; P.gridWas = undefined;
   manageInteriors(40); makeMini();
   el('title').classList.add('hidden'); el('play').classList.remove('hidden'); el('feed').innerHTML = '';
-  running = true; inRun = true; saveT = 20; updateHud();
+  loadWallsPack(); running = true; inRun = true; saveT = 20; updateHud();
   toast(resumed ? 'Welcome back to ' + w.name + '. Your progress was restored.' : w.name + ': ' + w.buildings.length + ' buildings, ' + w.roads.length + ' roads. You start at the safe house on the edge of town: a small home with supplies in its chest, on a one-acre lot inside a white picket fence. Aliens cannot come inside the fence (the dotted square on your map); the gates are front and back.' + (w.vmap && w.vmap.truck && !truckFixed(w.vmap.truck) ? ' The old pickup in the drive is broken, but the parts to fix it (toolkit, spare tire, car battery, engine parts) are in the supply chest.' : ''), 10);
 }
 function die(){
@@ -4062,7 +4062,7 @@ function update(dt){
         var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001, br = 0.85 + A.r;
         if (bl < br && !z.cl){ z.x = cd.x + bx/bl*br; z.y = cd.y + by/bl*br; cd.hp -= dt*(z.k === 2 ? 200 : z.k === 1 ? 12 : 3); if (cd.hp <= 0){ cades.splice(c, 1); cadesChanged = true; } }
       }
-      if (z.k === 2) for (var wq = world.edits.walls.length - 1; wq >= 0; wq--){ var wl2 = world.edits.walls[wq]; if (Math.hypot(wl2.x - z.x, wl2.y - z.y) < 2.4){ var ee = {a:'unwall', id:wl2.id}; applyEdit(ee); emit({k:'edit', e:ee}); } }
+      if (!z.cl && world.edits.walls.length && (T || z.st >= 1 || z.hunt || z.k === 2)) wallsAttack(z, A, dt);   /* 0.56: they tear a way through, one bay at a time */
       if (z.cl){   /* over a fence, wall or barricade it rides up on top of it */
         var on = false, ws9 = world.wallSegs; for (var w9 = 0; w9 < ws9.length && !on; w9 += 4) if (segDist(z.x, z.y, ws9[w9], ws9[w9+1], ws9[w9+2], ws9[w9+3]) < 0.55) on = true;
         for (var c9 = 0; c9 < cades.length && !on; c9++) if (Math.hypot(cades[c9].x - z.x, cades[c9].y - z.y) < 1.2) on = true;
@@ -5379,7 +5379,18 @@ el('packFile').addEventListener('change', function(e){
 
 /* ================= building: walls, beds, chests, repainting and demolishing; all stored as world edits ================= */
 var PAINT = ['#b98f6a', '#c9a27c', '#9f8a78', '#7f8fa3', '#8fa37f', '#a37f8f', '#d6cfc0', '#5d6670', '#b5563e', '#3f6f8f'];
-function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(); world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw)*1.5, dy = Math.cos(w.yaw)*1.5; s.push(w.x - dx, w.y - dy, w.x + dx, w.y + dy); }); }
+/* ---- 0.56: player walls are built the way real walls are: six half-metre bays (the walls pack's sections) that each take damage on their own. A bay is whole (6 to 4), cracked (3 to 2), holed with the studs showing (1) and then open rubble (0). Only an open bay lets anything through ---- */
+var WALLS_ON = false;
+function loadWallsPack(){ if (window.SHAPED && SHAPED.walls){ WALLS_ON = true; return; } if (document.getElementById('wallsJs')) return; var sc = document.createElement('script'); sc.id = 'wallsJs'; sc.src = 'assets/shaped/walls.js'; sc.onload = function(){ WALLS_ON = !!(window.SHAPED && SHAPED.walls); }; sc.onerror = function(){}; document.head.appendChild(sc); }
+var WLM = {};
+function wallModel(st){ if (!WALLS_ON) return null; if (WLM[st] !== undefined) return WLM[st]; WLM[st] = null; try { var pcs = SHAPED.walls.models.sections.wood_siding['3.0'][st]; if (pcs) WLM[st] = spModel(pcs, spColour(SHAPED.walls.palette, {WALL:'#a9825a', INNER:'#e6e0d2', TRIM:'#6b4a30'})); } catch (er){} return WLM[st]; }
+function bayState(v){ return v >= 4 ? 'whole' : v >= 2 ? 'cracked' : v > 0 ? 'gone' : 'rubble'; }
+function wallBays(w){ if (!w.bays || w.bays.length !== 6) w.bays = [6, 6, 6, 6, 6, 6]; return w.bays; }
+function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(); world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), by = wallBays(w), k = 0;
+    while (k < 6){ if (by[k] <= 0){ k++; continue; } var k0 = k; while (k < 6 && by[k] > 0) k++; var a = -1.5 + k0*0.5, b = -1.5 + k*0.5; s.push(w.x + dx*a, w.y + dy*a, w.x + dx*b, w.y + dy*b); } }); }
+/* damage to one bay; the host works out the damage and sends a bay's new health to everyone whenever its look changes */
+function wallHurt(w, k, d){ var by = wallBays(w), old = by[k]; if (old <= 0) return; by[k] = Math.max(0, old - d); if (bayState(by[k]) !== bayState(old)){ if (by[k] <= 0) rebuildWalls(); emit({k:'edit', e:{a:'wbay', id:w.id, i:k, v:Math.round(by[k])}}); sfx(by[k] <= 0 ? 'plank' : 'wood_hit', w.x, w.y, 0.7, 0.9); } }
+function wallsAttack(z, A, dt){ var W = world.edits.walls; for (var i = 0; i < W.length; i++){ var w = W[i]; if (Math.abs(w.x - z.x) > 3.2 || Math.abs(w.y - z.y) > 3.2) continue; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (z.x - w.x)*dx + (z.y - w.y)*dy, n = Math.abs(-(z.x - w.x)*dy + (z.y - w.y)*dx); if (Math.abs(u) > 1.6 || n > A.r + 0.5) continue; var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0 && k > 0 && by[k-1] > 0 && u < -1.5 + k*0.5 + 0.25) k--; else if (by[k] <= 0 && k < 5 && by[k+1] > 0) k++; if (by[k] <= 0) continue; wallHurt(w, k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09)); return; } }
 function setGone(b, on){ b.gone = !!on; if (b.int){ freeInt(b); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
 function loadEdits(ed){
   var E = world.edits, k; if (!E.truck) E.truck = {p:{}, away:0}; E.colls = E.colls || []; E.plots = E.plots || [];
@@ -5388,7 +5399,7 @@ function loadEdits(ed){
   (Array.isArray(ed.gens) ? ed.gens : []).slice(0, 30).forEach(function(g){ if (g && isFinite(g.x) && isFinite(g.y)) E.gens.push({gen:true, name:'generator', id:String(g.id).slice(0, 24), x:+g.x, y:+g.y, b:g.b | 0, fuel:Math.max(0, Math.min(36000, +g.fuel || 0)), on:g.on ? 1 : 0}); });
   for (k in (ed.col || {})){ var b = world.buildings[k]; if (b && okCol(ed.col[k], '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[k] = ed.col[k]; } }
   for (k in (ed.gone || {})) if (world.buildings[k]){ E.gone[k] = 1; world.buildings[k].gone = true; }
-  (ed.walls || []).slice(0, 400).forEach(function(w){ E.walls.push({id:String(w.id), x:+w.x, y:+w.y, yaw:+w.yaw || 0}); });
+  (ed.walls || []).slice(0, 400).forEach(function(w){ var nw = {id:String(w.id), x:+w.x, y:+w.y, yaw:+w.yaw || 0}; if (Array.isArray(w.bays) && w.bays.length === 6) nw.bays = w.bays.map(function(v){ return Math.max(0, Math.min(6, +v || 0)); }); E.walls.push(nw); });
   for (k in (ed.beds || {})) E.beds[slug(k)] = {b:ed.beds[k].b | 0, x:+ed.beds[k].x, y:+ed.beds[k].y};
   (ed.chests || []).slice(0, 100).forEach(function(c){ E.chests.push({chest:true, name:'the chest', id:String(c.id), x:+c.x, y:+c.y, inv:c.inv || {}, items:c.items || {}, designs:c.designs || []}); });
   for (k in (ed.ports || {})){ var pb = world.buildings[k], ps = ed.ports[k]; if (!pb || !ps) continue; var np = {w:{}}; if (ps.d === 0 || ps.d === 1 || ps.d === 2) np.d = ps.d; for (var wk in (ps.w || {})) if (ps.w[wk] >= 1 && ps.w[wk] <= 3) np.w[wk | 0] = ps.w[wk] | 0; if (ps.c){ np.c = {}; for (var ck in ps.c) if (ps.c[ck]) np.c[ck | 0] = 1; } E.ports[k] = np; pb.bar = null; pb.sbar = null; pb.gbar = null; }
@@ -5407,6 +5418,7 @@ function applyEdit(e){
   if (e.a === 'col' && b && okCol(e.c, '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[b.id] = e.c; dirtyChunk(b); }
   else if (e.a === 'gone' && b){ E.gone[b.id] = 1; setGone(b, true); }
   else if (e.a === 'wall' && e.w && E.walls.length < 400){ E.walls.push({id:String(e.w.id), x:+e.w.x, y:+e.w.y, yaw:+e.w.yaw || 0}); rebuildWalls(); }
+  else if (e.a === 'wbay'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ var wb = wallBays(E.walls[i]); if ((e.i | 0) >= 0 && (e.i | 0) < 6) wb[e.i | 0] = Math.max(0, Math.min(6, +e.v || 0)); rebuildWalls(); break; } }
   else if (e.a === 'unwall'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ E.walls.splice(i, 1); break; } rebuildWalls(); }
   else if (e.a === 'bed' && e.s){ E.beds[slug(e.s)] = {b:e.b | 0, x:+e.x, y:+e.y}; }
   else if (e.a === 'tap' && typeof e.key === 'string'){ E.taps[e.key.slice(0, 24)] = Math.min(9, (E.taps[e.key] || 0) + 1); }
@@ -5640,7 +5652,7 @@ function renderBuild(){
   var b = nearBuilding(), wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3;
   var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'unwall' ? 'Remove' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
-    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section', wc + ' wood. Permanent, 3 m wide, placed in front of you. Only a giant can smash it') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
+    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section', wc + ' wood. 3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time; you take it apart to get the wood back') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
@@ -5652,7 +5664,10 @@ el('buildBtn').addEventListener('click', toggleBuild);
 el('build').addEventListener('click', function(e){ if (e.target.id === 'bdClose'){ toggleBuild(); return; } var a = e.target.getAttribute && e.target.getAttribute('data-a'); if (a && running){ if (PLS[a]) startPlace(a); else buildAct(a); } });
 function drawBuilt(m){
   var E = world.edits, i, k; if (PL) drawGhost(m);
-  for (i = 0; i < E.walls.length; i++){ var w = E.walls[i]; if (Math.abs(w.x - P.x) > 140 || Math.abs(w.y - P.y) > 140) continue; var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
+  for (i = 0; i < E.walls.length; i++){ var w = E.walls[i]; if (Math.abs(w.x - P.x) > 140 || Math.abs(w.y - P.y) > 140) continue;
+    if (WALLS_ON && wallModel('whole')){ var wsx = -Math.sin(w.yaw), wsy = Math.cos(w.yaw), wby = wallBays(w), wg = Math.min(groundAt(w.x - wsx*1.5, w.y - wsy*1.5), groundAt(w.x, w.y), groundAt(w.x + wsx*1.5, w.y + wsy*1.5)) - 0.3; m.yo = 0;
+      for (var wk = 0; wk < 6; wk++){ var wmm = wallModel(bayState(wby[wk])); if (wmm){ var wof = -1.25 + wk*0.5; m.modelS(wmm, w.x + wsx*wof, w.y + wsy*wof, w.yaw + 1.5708, wg, 1); } }
+      continue; } var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
   (E.benches || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80) return; m.yo = groundAt(q.x, q.y); var bm = spB('build.tool_bench'); if (bm) m.model(bm, q.x, q.y, q.yaw, 0); else { m.ybox(q.x, q.y, q.yaw, 0, 0, 0.8, 0.8, 0.04, 0.4, C('#a8743e')); m.ybox(q.x, q.y, q.yaw, 0, 0, 0.4, 0.7, 0.4, 0.3, C('#6b4526')); } });
   for (k in E.beds){ var bd = E.beds[k]; if (Math.abs(bd.x - P.x) > 60 || Math.abs(bd.y - P.y) > 60) continue; m.yo = groundAt(bd.x, bd.y); m.ybox(bd.x, bd.y, 0, 0, 0, 0.32, 1, 0.14, 0.5, C('#7a5a3c')); m.ybox(bd.x, bd.y, 0, 0, 0, 0.5, 0.95, 0.06, 0.46, C(k === charSlug() ? '#4f83e6' : '#c9d3e0')); m.ybox(bd.x, bd.y, 0, -0.72, 0, 0.6, 0.2, 0.06, 0.36, C('#f2f2f2')); }
