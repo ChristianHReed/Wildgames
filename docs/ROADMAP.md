@@ -95,7 +95,7 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | --- | --- | --- |
 | **0.49** (done in 0.49.0 and 0.49.2) | Other survivors: still to do are seeing them in multiplayer, the carry-crate clip, a survivors panel, more jobs, and a panel to see all your survivors | Shaped survivors (in the game) |
 | **0.50** | Hordes and bases: tune fences, boarded windows and light against packs; aliens that break barricades in turn; guards defend. Then the clinger (wall and roof climbing) from the aliens pack | Aliens pack (in the game) |
-| **0.49.6** | Street names, second part: run the road-name fetch and rebuild the squares, house numbers drawn as real digits on the design chat's building fronts, and an address search on the big map | Building front pieces with a number plate slot (design chat) |
+| **0.49.6** | Street names, second part: take the road names from the map chat's new pack (list of needs in [MAP_REQUESTS.md](MAP_REQUESTS.md)) or run the fetch tool, rebuild the squares, house numbers drawn as real digits on the design chat's building fronts, and an address search on the big map | Building front pieces with a number plate slot (design chat) |
 | **0.51** | More for the truck: siphon fuel from town cars, search their trunks and boots (boot part is in the car art), headlights at night, the truck wears and needs upkeep | Car boot parts (in the game) |
 | **0.52** | Carry furniture: take a wardrobe or table whole instead of taking it apart, and place it with the grid to block a door; carry weight slows you | None |
 | **0.53** | The paper map as a found item and a held model (first person, using the pack's folded and open map); notes on flags; the map only works while you hold it | Map model (in the game) |
