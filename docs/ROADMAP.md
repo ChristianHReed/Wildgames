@@ -2,9 +2,24 @@
 
 Last updated: 19 October 2026, at version 0.48.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
-How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
+The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
 Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark, State of Decay 2, Valheim and Unturned, and for stealth with Alien: Isolation, The Last of Us and Thief. Those comparisons come from general knowledge of the games.
+
+## Design areas and where they stand
+
+One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what each area is; this table says how far it is and which version is next. Art for each area is tracked in "Design chat art not yet in the game" below.
+
+| Design area | In the game now | Next |
+| --- | --- | --- |
+| World and map | OpenStreetMap city, loaded in pieces, hills, weather and seasons, journal map with memory and flags | Found, held paper map (0.53); ground tiles (Art 4) |
+| Aliens | Swarmer, stalker, giant, spitter, nests, roaming packs, horde nights | Base defence tuning, clinger, hives (0.50); alien memory (0.54) |
+| Survival | Injuries, food, sleep, clothing, farming, weapons with wear, tool bench | Carry weight (0.52) |
+| Bases and building | Grid placement with snapping, walls, fences, beds, chests, benches, salvage | Carry furniture whole (0.52); broken building states (Art 6) |
+| Vehicles | Town cars, the safe-house truck, repair, sleeping in the cab | Siphon, boots, headlights, wrecks and burnt cars (0.51) |
+| People | Your survivor with creator, skills, other players over direct connection, traders | Recruitable survivors (0.49) |
+| Look and sound | Faceted pieces, framed buildings, effects, UI icons, held weapons | Weather and sky (0.55); remaining props and ground (Art 3, 4); music |
+| Hosting and saves | Direct play, passports, saves on the drive | Real-device testing of everything |
 
 ## Done so far
 
