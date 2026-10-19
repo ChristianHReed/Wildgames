@@ -189,3 +189,6 @@ Every script is requested as `?v=BUILD`, every Springfield square as `?d=DATAV` 
 
 ## Harvest (0.57.0)
 Wall bays are salvage targets in the same system as furniture and cars (findSalvage, salvInfo, doSalvage): tool decides time, material decides yield, noise draws aliens. Taking apart a bay yields about half what building it cost, so a loop of building and dismantling always loses. Nails and sheet metal are substitutes when building walls.
+
+## Guns (0.61.0)
+GUNS in play.html holds each gun's ammo type, damage, pellets, spread, rate, magazine, reload time and noise. Guns are inventory items (the pistol is free); ammo kinds are items. The loaded rounds live in P.mag. Noise follows the gun (bows near zero). Held art uses the held pack's gun models.
