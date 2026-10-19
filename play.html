@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.5.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.50.0.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2644,7 +2644,7 @@ function drawPorts(m){
 function collide(e, r){
   var cx0 = Math.floor(e.x/G), cy0 = Math.floor(e.y/G);
   for (var pass = 0; pass < 2; pass++){
-    stampN++; if (world.wallSegs.length) pushSegs(e, r, world.wallSegs);
+    stampN++; if (world.wallSegs.length && !e.cl) pushSegs(e, r, world.wallSegs);   /* a clinger goes over fences and walls */
     for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){
       var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
       for (var i = 0; i < cell.length; i++){
@@ -2677,7 +2677,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.49.5';
+var VERSION = '0.50.0';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -3058,7 +3058,7 @@ function findTarget(){
 }
 /* ---- looting: searching something opens a window with what it holds ---- */
 var corpses = [], corpseN = 1, curLoot = null;
-var ANAME = ['swarmer', 'stalker', 'giant', 'spitter'], AROLL = [1, 2, 5, 2];
+var ANAME = ['swarmer', 'stalker', 'giant', 'spitter', 'clinger'], AROLL = [1, 2, 5, 2, 2];
 var ALOOT = [{scrap:2, water:1, none:4}, {ammo:3, medkit:2, bandage:1, scrap:2, fuel:1, battery:2, none:1}, {scrap:3, fuel:2, medkit:2, ammo:2, radio:1, battery:2}, {scrap:3, water:1, battery:1, fuel:1, none:2}];
 function rollStash(tab, rolls){
   var tot = 0, got = {}, k; for (k in tab) tot += tab[k];
@@ -3201,7 +3201,8 @@ function lookOf(o){ return net.role === 'host' ? o.look : (net.who[o.id] || {}).
 var AK = [{n:'swarmer', hp:2, spd:4.3, nspd:5.0, dmg:3, r:0.3, cd:0.8, see:24, hear:1.2, reach:2.75, stand:2.4, pad:0.5},
           {n:'stalker', hp:12, spd:5.6, nspd:6.2, dmg:16, r:0.4, cd:1.3, see:20, hear:1.0, reach:1.95, stand:1.55},
           {n:'giant', hp:70, spd:2.6, nspd:2.9, dmg:35, r:1.0, cd:1.8, see:18, hear:1.7, reach:3.3, stand:2.8},
-          {n:'spitter', hp:6, spd:3.8, nspd:4.4, dmg:9, r:0.4, cd:2.4, see:24, hear:1.1, reach:0, stand:7, pad:0.4, spit:15}];
+          {n:'spitter', hp:6, spd:3.8, nspd:4.4, dmg:9, r:0.4, cd:2.4, see:24, hear:1.1, reach:0, stand:7, pad:0.4, spit:15},
+          {n:'clinger', hp:8, spd:4.4, nspd:5.0, dmg:11, r:0.42, cd:1.2, see:22, hear:1.0, reach:1.9, stand:1.5, climb:1}];   /* 0.50: scales fences and player walls instead of breaking them */
 /* stand: how close an alien comes before it strikes (centre to centre). Far enough that it stays in view in first person: a swarmer is low and long, so it stops about 2.4 m off and lunges. pad: extra reach your swings have against it, so you can still hit it from there */
 /* ---- what an alien knows. It only goes for you once it has seen you long enough, or you hit it.
    Sight: a cone ahead of it, blocked by walls and shut doors, shorter at night unless you carry a light, shorter if you crouch.
@@ -3530,7 +3531,7 @@ function spitTick(dt){
     if (dead){ fxAdd('effects.goo_splat', s.x, s.y, groundAt(s.x, s.y), {life:45, s0:0.9, up:0.02}); spits.splice(i, 1); } }
 }
 function drawSpits(m){ var M = fxModel('decal.spit_glob'); for (var i = 0; i < spits.length; i++){ var s = spits[i]; if (M) m.modelS(M, s.x, s.y, Math.atan2(s.vy, s.vx) - 1.5708, s.gy + 1.15 + ((s.lvl | 0)*FH), 1); else { m.al = 128; m.ybox(s.x, s.y, 0, 0, 0, s.gy + 1.15, 0.12, 0.12, 0.12, C('#9dff7a')); m.al = 255; } } }
-function addAlien(k, x, y){ var z0 = {id:++net.zid, k:k, x:x, y:y, hp:AK[k].hp, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.9 + Math.random()*0.25, v:Math.random()}; zombies.push(z0); return z0; }
+function addAlien(k, x, y){ var z0 = {id:++net.zid, k:k, x:x, y:y, hp:AK[k].hp, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.9 + Math.random()*0.25, v:Math.random()}; if (AK[k].climb) z0.cl = true; zombies.push(z0); return z0; }
 /* ---- 0.48.1: roaming packs. Aliens that come out of a nest travel as a pack: a leader picks the next place to search, the rest follow, and none of them know where you are.
    They sweep the town building by building (favouring places the pack has not been, and places that have been noisy), turn to a noise as one, and at dawn a horde walks home ---- */
 var packsA = [], packId = 0;
@@ -3569,12 +3570,12 @@ function spawnPack(n, horde, cs, day, cnt){
   var nb = pick.length ? pick[Math.floor(Math.random()*pick.length)] : null, px, py;
   if (nb){ px = nb.door.x + nb.door.nx*2.5; py = nb.door.y + nb.door.ny*2.5; } else if (horde){ var c1 = cs[Math.floor(Math.random()*cs.length)], a = Math.random()*6.283; px = c1.x + Math.cos(a)*85; py = c1.y + Math.sin(a)*85; if (inSafe(px, py, 14)) return null; } else return null;
   var G = {id:++packId, home:nb ? nb.id : -1, horde:!!horde, vis:{}, t:0, wait:0}; packsA.push(G); var made = 0;
-  for (i = 0; i < n; i++){ var x = px + Math.random()*5 - 2.5, y = py + Math.random()*5 - 2.5; if (circ(x, y, 0.4)) continue; var k = (horde && day >= 6 && cnt[3] < 3 && Math.random() < 0.18) ? 3 : 0; if (k === 3) cnt[3]++; var z = addAlien(k, x, y); z.grp = G.id; made++; }
+  for (i = 0; i < n; i++){ var x = px + Math.random()*5 - 2.5, y = py + Math.random()*5 - 2.5; if (circ(x, y, 0.4)) continue; var k = (horde && day >= 6 && cnt[3] < 3 && Math.random() < 0.18) ? 3 : (horde && day >= 9 && cnt[4] < 3 && Math.random() < 0.14) ? 4 : 0; if (k === 3 || k === 4) cnt[k]++; var z = addAlien(k, x, y); z.grp = G.id; made++; }
   if (!made){ packsA.pop(); return null; }
   packPick(G, px, py); return G;
 }
 function spawnAliens(day){
-  var cs = [P], cnt = [0, 0, 0, 0], i; net.peers.forEach(function(p){ if (p.ready && !p.cop) cs.push(p); });
+  var cs = [P], cnt = [0, 0, 0, 0, 0], i; net.peers.forEach(function(p){ if (p.ready && !p.cop) cs.push(p); });
   for (i = 0; i < zombies.length; i++) cnt[zombies[i].k]++;
   var c0 = cs[Math.floor(Math.random()*cs.length)];
   var near = function(x, y, r){ for (var q = 0; q < cs.length; q++) if (Math.hypot(cs[q].x - x, cs[q].y - y) < r) return true; return false; };
@@ -4046,9 +4047,13 @@ function update(dt){
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
       for (var c = cades.length - 1; c >= 0; c--){
         var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001, br = 0.85 + A.r;
-        if (bl < br){ z.x = cd.x + bx/bl*br; z.y = cd.y + by/bl*br; cd.hp -= dt*(z.k === 2 ? 200 : z.k === 1 ? 12 : 3); if (cd.hp <= 0){ cades.splice(c, 1); cadesChanged = true; } }
+        if (bl < br && !z.cl){ z.x = cd.x + bx/bl*br; z.y = cd.y + by/bl*br; cd.hp -= dt*(z.k === 2 ? 200 : z.k === 1 ? 12 : 3); if (cd.hp <= 0){ cades.splice(c, 1); cadesChanged = true; } }
       }
       if (z.k === 2) for (var wq = world.edits.walls.length - 1; wq >= 0; wq--){ var wl2 = world.edits.walls[wq]; if (Math.hypot(wl2.x - z.x, wl2.y - z.y) < 2.4){ var ee = {a:'unwall', id:wl2.id}; applyEdit(ee); emit({k:'edit', e:ee}); } }
+      if (z.cl){   /* over a fence, wall or barricade it rides up on top of it */
+        var on = false, ws9 = world.wallSegs; for (var w9 = 0; w9 < ws9.length && !on; w9 += 4) if (segDist(z.x, z.y, ws9[w9], ws9[w9+1], ws9[w9+2], ws9[w9+3]) < 0.55) on = true;
+        for (var c9 = 0; c9 < cades.length && !on; c9++) if (Math.hypot(cades[c9].x - z.x, cades[c9].y - z.y) < 1.2) on = true;
+        z.cy = (z.cy || 0) + ((on ? 1.15 : 0) - (z.cy || 0))*Math.min(1, dt*9); }
       if (wx.tor && Math.hypot(z.x - wx.tor.x, z.y - wx.tor.y) < 9) z.hp = 0;
       if (vx || vy) z.ang = Math.atan2(vy, vx); z.walk = (z.walk || 0) + Math.hypot(z.x - ox, z.y - oy)*(z.k === 2 ? 1.2 : 4);
     }
@@ -4575,7 +4580,7 @@ function drawPeople(){
   }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.pplOn, 0); pplQ.length = 0;
 }
-var CNAME = ['swarmer', 'stalker', 'giant', 'spitter'];
+var CNAME = ['swarmer', 'stalker', 'giant', 'spitter', 'clinger'];
 function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
   var cl = c.clips[clip], f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1];
   gl.uniform4f(U.inst, x, gy, y, yaw); gl.uniform1f(U.hurtU, hurt ? 0.85 : 0); drawMesh(c.poses[f]);
@@ -4657,7 +4662,8 @@ function drawCreatures(){
     var z = zombies[i], c = CRE[CNAME[z.k]]; if (!c || Math.abs(z.x - P.x) > 150 || Math.abs(z.y - P.y) > 150) continue; any = true;
     var A = AK[z.k], atk = z.cd > A.cd - 0.45;
     var zrb = z.rf ? buildingAt(z.x, z.y) : null, zy0 = z.climb ? groundAt(z.climb.L.fx, z.climb.L.fy) + (roofY(z.climb.L.b) - groundAt(z.climb.L.fx, z.climb.L.fy))*Math.min(1, z.climb.t) : z.roof ? roofY(z.roof) : zrb ? roofY(zrb) : net.role === 'guest' ? groundAt(z.x, z.y) + ((z.lvl | 0)*FH) : entY(z);
-    var ev = atk ? drawCreature(c, 'attack', (A.cd - z.cd)/0.45*0.999, z.x, zy0, z.y, z.ang, z.hurt > 0) : drawCreature(c, 'walk', (z.walk || 0)/(z.k === 2 ? 5 : 6.283), z.x, zy0, z.y, z.ang, z.hurt > 0);
+    if (z.cy > 0.02) zy0 += z.cy;
+    var ev = atk ? drawCreature(c, 'attack', (A.cd - z.cd)/0.45*0.999, z.x, zy0, z.y, z.ang, z.hurt > 0) : drawCreature(c, z.cy > 0.4 && c.clips && c.clips.cling ? 'cling' : 'walk', (z.walk || 0)/(z.k === 2 ? 5 : 6.283), z.x, zy0, z.y, z.ang, z.hurt > 0);
     z.eyeW = eyeWorld(z, ev, zy0);
   }
   for (i = 0; i < corpses.length; i++){ var cp = corpses[i], cc = CRE[CNAME[cp.k]]; if (!cc || Math.abs(cp.x - P.x) > 90 || Math.abs(cp.y - P.y) > 90) continue; any = true; var cage = time - cp.t, fz = cage > 226 && cc.clips.fade;   /* the last 14 s: the fade pose, sinking into the ground */ drawCreature(cc, fz ? 'fade' : 'dead', fz ? Math.min(0.999, (cage - 226)/4) : 0, cp.x, (cp.ry || groundAt(cp.x, cp.y) + (cp.lvl ? FH : 0)) - (fz ? Math.min(0.3, Math.max(0, cage - 230)/10*0.3) : 0), cp.y, (cp.x*7 + cp.y*3) % 6.283, false); }
@@ -4732,6 +4738,9 @@ function drawAlien(m, z){
   } else if (z.k === 3){
     var p0 = hc ? W1 : C('#4f6a3c'), p1 = hc ? W1 : C('#7aa05a');
     m.ybox(x, y, a, 0, 0, 0.55, 0.3, 0.5, 0.26, p0); m.ybox(x, y, a, 0.3, 0, 0.95, 0.14, 0.14, 0.14, p1); m.al = 128; m.ybox(x, y, a, 0.42, 0, 0.95, 0.03, 0.06, 0.06, C('#d6ff7a')); m.al = 255;
+  } else if (z.k === 4){
+    var k0 = hc ? W1 : C('#3c3a2c'), k1 = hc ? W1 : C('#6a6648'), cyb = z.cy || 0;
+    m.ybox(x, y, a, 0, 0, 0.45 + cyb, 0.7, 0.4, 0.2, k1); for (var kl = -1; kl <= 1; kl += 2){ m.ybox(x, y, a, ph*0.2*kl, 0.34*kl, 0.3 + cyb, 0.5, 0.06, 0.06, k0); m.ybox(x, y, a, -ph*0.2*kl, 0.34*kl, 0.5 + cyb, 0.3, 0.06, 0.06, k0); }
   } else {
     var g0 = hc ? W1 : C('#5f5a70'), g1 = hc ? W1 : C('#77718c');
     m.ybox(x, y, a, ph*0.35, 0.5, 0.9, 0.34, 0.9, 0.34, g0); m.ybox(x, y, a, -ph*0.35, -0.5, 0.9, 0.34, 0.9, 0.34, g0);
