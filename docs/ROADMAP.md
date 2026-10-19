@@ -73,9 +73,32 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | **0.52** | Carry furniture: take a wardrobe or table whole instead of taking it apart, and place it with the grid to block a door; carry weight slows you | None |
 | **0.53** | The paper map as a found item and a held model (first person, using the pack's folded and open map); notes on flags; the map only works while you hold it | Map model (in the game) |
 | **0.54** | Alien memory: single aliens remember where they last saw you, return to nests at dawn, and lose interest by degrees; lone stalkers hunt along your trail | None |
-| Art 4 and 6 | Ground tiles and broken building states from the art pack (see the art track below) | In the game |
+| **0.55** | Weather and sky from the art pack: clouds, rain, snow, lightning, moon phases, aurora; explosions and flames | Effects pack (in the game) |
+| Art 3, 4 and 6 | Loose items, ground tiles and broken building states; see the table of unused art above and the art track below | In the game |
 
 Finished from the old list: 0.47 horde nights (0.47.0, roaming packs 0.48.1), 0.48 map memory and flags (0.48.0). Moved: the held paper map to 0.53, fence and window tuning to 0.50, truck extras to 0.51.
+
+## Design chat art not yet in the game
+
+The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/SHAPED.md`) are wired in piece by piece. This table is the checklist, so nothing the design chat delivers is forgotten. Checked 19 October 2026.
+
+| Art | State | Planned in |
+| --- | --- | --- |
+| Cars: sedan, hatchback, pickup, van, taxi and police paint | In the game | 0.45 |
+| Cars: wrecks and burnt-out versions of every car (`*_wreck`, `*_burnt`, rule in `wreckRule`) | Not used; street cars are all intact | 0.51 (wrecks and burnt cars on roads, and salvage gives less from them) |
+| Cars: boot lid on sedan and hatchback, pickup battery, fuel cap and hub | Not used | 0.51 (search boots, siphon fuel, truck repair) |
+| Weapons in hand, arms, new survivor clips | In the game | 0.45.8 |
+| Effects (dust, splashes, goo) and UI icons | In the game | 0.45.9 |
+| Effects still unused: explosions, flames, hit sparks, tracer, moon phases, clouds, rain, snow, lightning, aurora | Not used | 0.55 (weather and sky) |
+| Aliens: swarmer, stalker, giant, spitter | In the game | 0.45, 0.47 |
+| Aliens: clinger, hive stages, fade clip, blood and trail decals | Not used | 0.50 |
+| Survivors: six NPC looks, NPC pieces, clips (sit, lean on wall, wave, carry crate) | Not used | 0.49 |
+| Paper map models (folded, open) | Not used | 0.53 |
+| Props: loose items on the ground, searched container variants, hinged doors, plants, street props | Partly used | Art 3 (0.56) |
+| Ground tiles and kerb strips (`ground.js`) | Not loaded | Art 4 (0.57) |
+| Broken building states: damaged infill, holes, snapped frames, rubble, boarded door | Not used | Art 6 (0.58, with base defence work in 0.50) |
+
+How a new art delivery gets in: the design chat pushes the pack to main and lists it in `docs/SHAPED.md` and `docs/ART_REQUESTS.md`; this chat reads those, adds each new piece to the table above in the same version it is wired, and ticks it off here when it ships.
 
 ## The new look (art track)
 
