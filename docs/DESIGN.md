@@ -193,5 +193,5 @@ Wall bays are salvage targets in the same system as furniture and cars (findSalv
 ## Guns (0.61.0)
 GUNS in play.html holds each gun's ammo type, damage, pellets, spread, rate, magazine, reload time and noise. Guns are inventory items (the pistol is free); ammo kinds are items. The loaded rounds live in P.mag. Noise follows the gun (bows near zero). Held art uses the held pack's gun models.
 
-## Power plant (0.59.0)
+## Power plant (0.61.1)
 plantObj() picks the site; world.edits.plant.s is the stage (0 burnt, 1 needs fuel, 2 ready, 3 running). gridOn() is true before day 3 or once stage 3 is reached. The plant pack (power.js) loads with the walls pack; only the control panel is drawn so far.
