@@ -404,6 +404,14 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 5. Drop from a roof: a short dip on landing, bigger from higher. Get hit: a brief flinch to one side. Swing and fire: a small kick.
 6. Set Head bob and Camera effects to Off: the view must be completely steady while walking. Report anything that still makes you queasy.
 
+## Stage 5e: jumping and street weapons (0.45.5)
+
+1. Press Space (or tap Jump, above Swing): the view rises about 0.7 m and comes back down with a small dip. Jump under a roof or indoors: lower. Jump while sprinting: you cover more ground. You cannot jump in water, in a vehicle, while hiding, climbing or out of breath.
+2. Space no longer swings: click, F or the Swing button do.
+3. Open Items (K): nine street weapons are listed under Craft with icons. Craft one (wood and scrap), Equip it, and swing. Damage, reach and speed differ between them (the hockey stick, rake and broom spear reach further; the pan and crowbar are slower).
+4. Equip each one and look at it in your hand. The crowbar, bat and axe use the art chat's models; the others are simple stand-ins. Tell me any that look wrong or float oddly.
+5. Searching places now sometimes turns up one of these weapons, as other custom items do.
+
 ## Stage 7: building and bases
 
 - [ ] 7.1 Press N. Build a wall section; you cannot walk through it.

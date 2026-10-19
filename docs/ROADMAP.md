@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.45.4. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.45.5. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -50,6 +50,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.45.2 | Buildings built against each other no longer show through: where a neighbour stands against a wall, that stretch is a flat wall with wallpaper on both sides (no posts, sills, plinth or windows poking into the next building), up to the neighbour's height; above a lower neighbour it is plain wall |
 | 0.45.3 | First-person feel, from what games and comfort research agree on: field of view is set across the screen (default 100°, slider 70–110°) so an upright phone no longer looks down a tube; head bob follows the distance walked, eases in and out and sways little sideways; breathing that quickens when tired or hurt; a dip when you land, a short flinch when hit, a small kick on swings and shots, a slight zoom when sprinting; the held item lags behind turns, lowers when sprinting and bobs out of step with the head. Start-screen settings for field of view, head bob and camera effects (each can be turned off) |
 | 0.45.4 | Calmer camera and a tidier touch screen: bob is slower (steps no longer buzz) and about a third the size; the Search button is gone (tap the screen or the prompt instead); two touch HUD modes, everyday (Swing, Shoot only with ammo, Throw, Light only with a flashlight, Run, Crouch) and Build (Wall, Fire, Mark, Build menu), switched by one button above Swing; the top-left tools row lists only what you own; goal and place text fade after a few seconds; smaller minimap on phones held upright |
+| 0.45.5 | **Jumping and street weapons.** Space (keyboard) or the Jump button (touch) hops about 0.7 m outdoors, half that under a ceiling; costs a little stamina, makes a little noise, landing gives a small dip; not while swimming, driving, hiding, climbing or out of breath. Space no longer swings (click, F or the Swing button do). Nine weapons from the design chat's handoff join the Items panel (K) as a built-in 'Street weapons' pack, found when searching or crafted from wood and scrap: cricket bat, frying pan, crowbar, hockey stick, wrench, garden rake, broom spear, axe, umbrella, each with its own damage, reach and speed and its icon; the crowbar, bat and axe are held as the art chat's shaped models, the rest as box stand-ins. The list of art still needed is in docs/ART_REQUESTS.md |
 
 ## Next versions
 
