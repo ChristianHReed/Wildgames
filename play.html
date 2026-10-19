@@ -257,7 +257,7 @@
   <div id="travel" class="hidden" style="position:fixed;inset:0;z-index:7;background:rgba(245,234,216,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:26px;text-align:center;padding:20px">Travelling to the next part of the map&hellip;</div>
   <div id="loot" class="modal hidden"></div>
   <div id="pack" class="modal hidden"></div>
-  <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><button id="bigClose">Close map</button></div></div>
+  <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map. You only see where you have been. Put a flag at the cross with Mark centre.</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><button id="bigMark" class="alt">Mark centre</button><button id="bigUnmark" class="alt">Remove mark</button><button id="bigClose">Close map</button></div></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
     <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.47.0.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.48.0.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2547,7 +2547,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.47.0';
+var VERSION = '0.48.0';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2572,6 +2572,7 @@ function startRun(ws, cs){
     if (cs.fl === undefined){ inv.radio = Math.max(1, inv.radio); inv.flashlight = Math.max(1, inv.flashlight); inv.battery += 2; } else { P.fl = Math.max(0, Math.min(1, +cs.fl || 0)); P.rd = Math.max(0, Math.min(1, +cs.rd || 0)); }
     P.hp = cs.hp > 0 ? Math.min(100, +cs.hp) : 100; P.hunger = Math.max(0, Math.min(100, +cs.hunger || 0)); P.thirst = Math.max(0, Math.min(100, +cs.thirst || 0)); deaths = cs.deaths | 0; loadConds(cs); loadWorn(cs);
   }
+  seen = {}; marks = []; if (cs && cs.sn) for (k = 0; k + 1 < cs.sn.length; k += 2) seen[(cs.sn[k] | 0) + ',' + (cs.sn[k+1] | 0)] = 1; if (cs && cs.mk) cs.mk.slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) marks.push({x:+q.x, y:+q.y, n:String(q.n || '').slice(0, 12)}); }); seenT = 0; seeMap(true);
   me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0};
   if (cs){ if (cs.bg && SKN && /^(scout|medic|mechanic|builder)$/.test(cs.bg)) me.bg = cs.bg; if (cs.skills) for (k in me.skills) me.skills[k] = Math.max(0, +cs.skills[k] || 0); }
   throws = []; booms = [];
@@ -3882,7 +3883,7 @@ function update(dt){
     }
     if (dead || b.t <= 0) bullets.splice(i, 1);
   }
-  spitTick(dt);
+  spitTick(dt); seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
   spawnT -= dt;
   if (spawnT <= 0 && net.role !== 'guest'){ spawnT = 0.5; spawnAliens(day); }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
@@ -3939,6 +3940,18 @@ function path2(c, p, s, ox, oy, close){
 }
 function makeMini(){}
 var MAPC = {grass:'#d5dbbd', park:'#c3cfa6', forest:'#a9b78c', sand:'#eadcbf', parking:'#d6cab5', water:'#9cc0c9'}, MAPR = {road:'#fbf3e4', path:'#efe3cc', water:'#9cc0c9', rail:'#b8a892'};
+/* ---- 0.48: the paper map only shows where you have walked or driven (30 m squares, kept with your survivor), and you can mark places on it ---- */
+var seen = {}, marks = [], seenT = 0, SQ = 30, fogCv = document.createElement('canvas');
+function seeMap(first){ var R = 3, cx = Math.floor(P.x/SQ), cy = Math.floor(P.y/SQ), a, b; for (a = -R; a <= R; a++) for (b = -R; b <= R; b++) if (a*a + b*b <= R*R + 1) seen[(cx + a) + ',' + (cy + b)] = 1;
+  if (first && world){ var sf = world.buildings[world.safe]; if (sf) for (a = -2; a <= 2; a++) for (b = -2; b <= 2; b++) seen[(Math.floor(sf.cx/SQ) + a) + ',' + (Math.floor(sf.cy/SQ) + b)] = 1; } }
+function mapFog(c, w, h, ox, oy, sc){
+  if (fogCv.width !== w || fogCv.height !== h){ fogCv.width = w; fogCv.height = h; }
+  var f = fogCv.getContext('2d'); f.globalCompositeOperation = 'source-over'; f.fillStyle = '#cdbb98'; f.fillRect(0, 0, w, h);
+  f.fillStyle = 'rgba(120,100,70,.10)'; var st = Math.max(8, 24*sc); for (var yy = -((oy % st) + st) % st; yy < h; yy += st) f.fillRect(0, yy, w, 1);
+  f.globalCompositeOperation = 'destination-out'; var sz = SQ*sc + 0.8;
+  for (var k in seen){ var sp = k.split(','), x = sp[0]*SQ*sc + ox, y = sp[1]*SQ*sc + oy; if (x + sz < 0 || y + sz < 0 || x > w || y > h) continue; f.fillRect(x, y, sz, sz); }
+  c.drawImage(fogCv, 0, 0);
+}
 /* top-down journal map centred on (cx, cy): sc pixels per metre */
 function drawMap(c, w, h, cx, cy, sc, big){
   var ox = w/2 - cx*sc, oy = h/2 - cy*sc, x0 = -ox/sc, y0 = -oy/sc, x1 = (w - ox)/sc, y1 = (h - oy)/sc, i, W0 = world;
@@ -3950,6 +3963,7 @@ function drawMap(c, w, h, cx, cy, sc, big){
   for (i = 0; i < W0.buildings.length; i++){ var b = W0.buildings[i]; if (b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; c.fillStyle = W0.nests[b.id] ? '#7d5a96' : b.id === W0.safe ? '#7a8a5e' : b.col; path2(c, b.pts, sc, ox, oy, true); c.fill(); if (big || sc > 0.8) c.stroke(); }
   c.strokeStyle = '#6b4a32'; c.lineWidth = 2; for (i = 0; i < W0.wallSegs.length; i += 4){ c.beginPath(); c.moveTo(W0.wallSegs[i]*sc + ox, W0.wallSegs[i+1]*sc + oy); c.lineTo(W0.wallSegs[i+2]*sc + ox, W0.wallSegs[i+3]*sc + oy); c.stroke(); }
   (W0.zones || []).forEach(function(z){ c.strokeStyle = '#f3f0e8'; c.lineWidth = 2; c.setLineDash([3, 3]); c.beginPath(); if (z.hw) zoneCorners(z).forEach(function(p, k){ if (k) c.lineTo(p[0]*sc + ox, p[1]*sc + oy); else c.moveTo(p[0]*sc + ox, p[1]*sc + oy); }), c.closePath(); else c.arc(z.x*sc + ox, z.y*sc + oy, z.r*sc, 0, 6.283); c.stroke(); c.setLineDash([]); c.fillStyle = 'rgba(122,170,100,.14)'; c.fill(); });
+  mapFog(c, w, h, ox, oy, sc);
   var dot = function(x, y, r, col){ c.fillStyle = col; c.beginPath(); c.arc(x*sc + ox, y*sc + oy, r, 0, 6.283); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 1.5; c.stroke(); };
   heat.forEach(function(h){ if (h.v < 8) return; var g = c.createRadialGradient(h.x*sc + ox, h.y*sc + oy, 0, h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc)); g.addColorStop(0, 'rgba(201,74,46,' + Math.min(0.45, h.v/90).toFixed(2) + ')'); g.addColorStop(1, 'rgba(201,74,46,0)'); c.fillStyle = g; c.beginPath(); c.arc(h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc), 0, 6.283); c.fill(); });   /* noise heat */
   if (wx.tor){ c.strokeStyle = '#4a4a55'; c.lineWidth = 2; for (var tr0 = 0; tr0 < 3; tr0++){ c.beginPath(); c.arc(wx.tor.x*sc + ox, wx.tor.y*sc + oy, 3 + tr0*3, tr0, tr0 + 4.2); c.stroke(); } }   /* the tornado */
@@ -3957,6 +3971,8 @@ function drawMap(c, w, h, cx, cy, sc, big){
   if (W0.scen.type === 'escape'){ W0.partB.forEach(function(id){ if (!W0.found[id]) dot(W0.buildings[id].cx, W0.buildings[id].cy, big ? 6 : 4, '#d9a845'); }); dot(W0.evac.x, W0.evac.y, big ? 8 : 5, '#ffffff'); }
   pings.forEach(function(q){ c.strokeStyle = '#c67139'; c.lineWidth = 3; c.beginPath(); c.arc(q.x*sc + ox, q.y*sc + oy, big ? 9 : 6, 0, 6.283); c.stroke(); });
   for (i = 0; i < zombies.length; i++){ var z = zombies[i]; c.fillStyle = z.k === 1 ? '#201e1d' : '#b23a2a'; c.beginPath(); c.arc(z.x*sc + ox, z.y*sc + oy, (z.k === 2 ? 5 : z.k === 1 ? 3 : 2)*(big ? 1.6 : 1), 0, 6.283); c.fill(); }
+  marks.forEach(function(q, qi){ var x = q.x*sc + ox, y = q.y*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return; c.strokeStyle = '#7a2e22'; c.fillStyle = '#c94a2e'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - (big ? 18 : 12)); c.stroke(); c.beginPath(); c.moveTo(x, y - (big ? 18 : 12)); c.lineTo(x + (big ? 12 : 8), y - (big ? 14 : 9)); c.lineTo(x, y - (big ? 10 : 6)); c.closePath(); c.fill();
+    if (big && q.n){ c.font = '700 12px sans-serif'; c.textAlign = 'left'; c.fillStyle = '#201e1d'; c.fillText(q.n, x + 14, y - 20); } });
   return [ox, oy];
 }
 var big = {on:false, sc:0.6, cx:0, cy:0, drag:null}, bigCv = el('bigCv');
@@ -3969,6 +3985,7 @@ function drawBig(){
   var sfm = safeB(); if (sfm){ c.fillStyle = '#201e1d'; c.fillText('Safe house', sfm.cx*big.sc + o[0], sfm.cy*big.sc + o[1] - 8); }
   var tkm = truckOf(); if (tkm){ var tx2 = tkm.x*big.sc + o[0], ty2 = tkm.y*big.sc + o[1]; c.fillStyle = '#963e30'; c.fillRect(tx2 - 3, ty2 - 3, 6, 6); c.fillStyle = '#201e1d'; c.fillText('Truck', tx2, ty2 + 14); }
   var bd = world.edits.beds[charSlug()]; if (bd && world.buildings[bd.b]){ var bb = world.buildings[bd.b]; c.fillStyle = '#201e1d'; c.fillText('Base', bb.cx*big.sc + o[0], bb.cy*big.sc + o[1] - 8); }
+  c.strokeStyle = 'rgba(32,30,29,.55)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(W/2 - 10, H/2); c.lineTo(W/2 + 10, H/2); c.moveTo(W/2, H/2 - 10); c.lineTo(W/2, H/2 + 10); c.stroke();
   c.save(); c.translate(P.x*big.sc + o[0], P.y*big.sc + o[1]); c.rotate(P.yaw); c.fillStyle = '#c67139'; c.strokeStyle = '#f5ead8'; c.lineWidth = 3;
   c.beginPath(); c.moveTo(14, 0); c.lineTo(-9, -10); c.lineTo(-4, 0); c.lineTo(-9, 10); c.closePath(); c.fill(); c.stroke(); c.restore();
 }
@@ -3979,6 +3996,8 @@ function toggleBig(){
 function bigZoom(f){ big.sc = Math.max(0.08, Math.min(6, big.sc*f)); drawBig(); }
 el('miniWrap').addEventListener('click', toggleBig); el('bigClose').addEventListener('click', toggleBig);
 el('bigIn').addEventListener('click', function(){ bigZoom(1.5); }); el('bigOut').addEventListener('click', function(){ bigZoom(1/1.5); });
+el('bigMark').addEventListener('click', function(){ if (marks.length >= 40){ toast('The map is full of marks. Remove one first.', 3); return; } marks.push({x:big.cx, y:big.cy, n:'Mark ' + (marks.length + 1)}); drawBig(); sfx('plank', undefined, undefined, 0.3); });
+el('bigUnmark').addEventListener('click', function(){ var bi = -1, bd = 40/big.sc; marks.forEach(function(q, i){ var d = Math.hypot(q.x - big.cx, q.y - big.cy); if (d < bd){ bd = d; bi = i; } }); if (bi >= 0){ marks.splice(bi, 1); drawBig(); } else toast('Move the map so a flag is under the cross, then remove it.', 3); });
 el('bigMe').addEventListener('click', function(){ big.cx = P.x; big.cy = P.y; drawBig(); });
 bigCv.addEventListener('pointerdown', function(e){ big.drag = {x:e.clientX, y:e.clientY, id:e.pointerId}; try { bigCv.setPointerCapture(e.pointerId); } catch (er){} });
 bigCv.addEventListener('pointermove', function(e){ var d = big.drag; if (!d || d.id !== e.pointerId) return; big.cx -= (e.clientX - d.x)/big.sc; big.cy -= (e.clientY - d.y)/big.sc; d.x = e.clientX; d.y = e.clientY; drawBig(); });
@@ -4823,7 +4842,8 @@ function worldSave(){
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
-  return {v:2, name:el('pname').value || 'Survivor', hp:P.hp, hunger:P.hunger, thirst:P.thirst, inv:all, deaths:deaths, look:me.look, bg:me.bg, skills:me.skills, fl:P.fl, rd:P.rd, rest:P.rest, worn:P.worn, bleed:P.bleed, wound:P.wound, inf:P.inf, leg:P.leg, legT:P.legT, sick:P.sick, freshT:P.freshT, mealT:P.mealT, dur:P.dur, items:allItems(), designs:Object.keys(allItems()).map(function(id){ return DESIGNS[id]; }).filter(Boolean), weapon:P.weapon};
+  var sn = []; for (var sk in seen){ var sp = sk.split(','); sn.push(+sp[0], +sp[1]); }
+  return {sn:sn, mk:marks, v:2, name:el('pname').value || 'Survivor', hp:P.hp, hunger:P.hunger, thirst:P.thirst, inv:all, deaths:deaths, look:me.look, bg:me.bg, skills:me.skills, fl:P.fl, rd:P.rd, rest:P.rest, worn:P.worn, bleed:P.bleed, wound:P.wound, inf:P.inf, leg:P.leg, legT:P.legT, sick:P.sick, freshT:P.freshT, mealT:P.mealT, dur:P.dur, items:allItems(), designs:Object.keys(allItems()).map(function(id){ return DESIGNS[id]; }).filter(Boolean), weapon:P.weapon};
 }
 function saveNow(){
   if (!inRun || !world || !P) return;
