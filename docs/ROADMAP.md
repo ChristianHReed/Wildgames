@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.45.7. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.45.8. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -53,6 +53,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.45.5 | **Jumping and street weapons.** Space (keyboard) or the Jump button (touch) hops about 0.7 m outdoors, half that under a ceiling; costs a little stamina, makes a little noise, landing gives a small dip; not while swimming, driving, hiding, climbing or out of breath. Space no longer swings (click, F or the Swing button do). Nine weapons from the design chat's handoff join the Items panel (K) as a built-in 'Street weapons' pack, found when searching or crafted from wood and scrap: cricket bat, frying pan, crowbar, hockey stick, wrench, garden rake, broom spear, axe, umbrella, each with its own damage, reach and speed and its icon; the crowbar, bat and axe are held as the art chat's shaped models, the rest as box stand-ins. The list of art still needed is in docs/ART_REQUESTS.md |
 | 0.45.6 | Fix: jumping while moving froze the game in mid-air (a mistake in how I paused the walking bob while airborne sent the move to the vehicle code). Jumping while walking, sprinting or standing now lands normally |
 | 0.45.7 | Walls from the inside: every framed bay gets a flat wallpapered room-side panel 12 cm in from the wall line, with a hole for the window, door, shopfront or garage, so from indoors a wall is one clean surface (no posts, beams, sills or lintels showing through or floating in the room, no notched top edge). Protruding trims (sills, lintels, door heads) stop at the wall line like the posts |
+| 0.45.8 | Art batch 1 wired in (design chat's `held.js`, new survivor clips, new props): weapons in the hand use the pack's models (new and worn when under a quarter condition), with your own forearms and hands in your skin tone and sleeve colour, the pistol with muzzle flash and ejected shell, both hands on two-handed weapons, and reaching arms when you search. The third-person survivor carries the weapon in the right hand and plays the new jump, airborne, land, hurt, drink, bandage, pickup and three weapon attacks (chop, thrust, swing). Barricades (three stages), campfire (lit/out), generator (off/running), dropped pack and outdoor crates use the pack's models. Not yet wired: loose items on the ground, building containers' searched variants, hinged doors, plants, street props, car wrecks. |
 
 ## Next versions
 

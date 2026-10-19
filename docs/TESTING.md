@@ -493,3 +493,14 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 - [ ] 13.2 A whole-city map with two players at opposite ends.
 - [ ] 13.3 A one-hour solo session. Watch for slowdown over time.
 - [ ] 13.4 Pull the host's network mid-session. The friend should land on the start page with their survivor saved.
+
+## Stage 5f: art batch 1 (0.45.8)
+
+1. Equip each street weapon (Items, then pick one). In first person you should see your forearms (skin tone, sleeve colour of your top) and the weapon in the right hand; the hockey stick, rake and broom spear show the left hand on the shaft too. Swing: the weapon sweeps across and the arms follow.
+2. Use a weapon until its condition is under a quarter: it should switch to the taped or chipped version. Repair at a bench: it switches back.
+3. Fire the pistol: flash at the muzzle for a moment, a shell flies out to the side, the left hand and pistol kick back.
+4. Hold E on a chest or crate: both arms reach out and the weapon is put away while you search.
+5. Press V for third person. The weapon is in the right hand; jump (arms up in the air, bent knees on landing), get hurt (flinch), bandage, drink and pick things up all play their own movement; an axe swings overhead, a rake or umbrella thrusts, a bat swings flat.
+6. Build a barricade, a fire and a generator, and drop a pack (die with items): each has a real model. Let a zombie chew a barricade: it goes through three stages. A fire shows as burnt out near the end.
+7. Add ?oldart to the address: all of the above go back to the old stand-ins.
+
