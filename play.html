@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.58.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.60.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -395,7 +395,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.58.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.60.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3932,6 +3932,7 @@ function update(dt){
   if (mf || ms){
     var l = Math.hypot(mf, ms), V = P.veh, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y, gt = gait(true);
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
+    if (V && V.t && !P.roof) vehBash(V, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, dt);
     if (P.roof) roofMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp); else stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V){ if (!(P.jy > 0)) P.bob += (P.mvD || 0)*(gt === 2 ? 1.4 : gt === 0 ? 2.9 : 2.0); } else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
   surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.jy > 0 ? 0 : P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms)); camTick(dt);
@@ -5477,6 +5478,10 @@ function buildAct(a, pos){
   } else if (a === 'unwall'){
     var bw = null, bd = 3.5; world.edits.walls.forEach(function(w){ var d = Math.hypot(w.x - P.x, w.y - P.y); if (d < bd){ bd = d; bw = w; } });
     if (!bw){ toast('No wall section within reach.', 2.5); return; } inv.wood += 1; doEdit({a:'unwall', id:bw.id});
+  } else if (a === 'vrep'){
+    var rv = P.veh, rd = 6; if (!rv) world.vehicles.forEach(function(o){ if (!o.t) return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < rd){ rd = d; rv = o; } });
+    if (!rv){ toast('No car or truck within reach.', 2.5); return; } if (vhp(rv) >= 100){ toast('It is already sound.', 2.5); return; }
+    if (!(inv.parts > 0)){ toast('Repairs need a car part. Take them off wrecks with a wrench.', 3); return; } inv.parts--; rv.hp = Math.min(100, vhp(rv) + 55); rv.warnHp = false; sfx('metal', rv.x, rv.y, 0.8); makeNoise(rv.x, rv.y, 10); toast('Repaired. The vehicle is at ' + Math.round(vhp(rv)) + '%.', 3); updateHud();
   } else if (a === 'bed'){
     if (!P.inside){ toast('A bed has to be inside a building.', 2.5); return; } if (world.nests[P.inside.id]){ toast('Not in a nest.', 2.5); return; }
     if (inv.wood < 5){ toast('A bed needs 5 wood.', 2.5); return; }
@@ -5682,9 +5687,9 @@ function drawGhost(m){
 function renderBuild(){
   var box = el('build'); if (box.classList.contains('hidden')) return;
   var b = nearBuilding(), wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3;
-  var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
+  var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
-    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
+    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
@@ -5852,10 +5857,28 @@ function dismount(){
   var sx = -Math.sin(v.yaw), sy = Math.cos(v.yaw), r0 = v.t ? 1.7 : 0.9; if (!circ(P.x + sx*r0, P.y + sy*r0, 0.35)){ P.x += sx*r0; P.y += sy*r0; } else if (!circ(P.x - sx*r0, P.y - sy*r0, 0.35)){ P.x -= sx*r0; P.y -= sy*r0; }
   emit({k:'veh', id:v.id, x:r2(v.x), y:r2(v.y), yaw:r2(v.yaw), fuel:Math.round(v.fuel)});
 }
+/* 0.60: a car or truck driven into a wall you built bashes the bay it hits. Impact = mass x speed squared; a bay gives way when the impact beats its health, and either way
+   the vehicle pays for it (timber scratches it, steel dents it, concrete wrecks the engine). Vehicle health: V.hp, 100 = sound. */
+var VMASS = {car:1.3, truck:3};
+function vhp(v){ return v.hp === undefined ? 100 : v.hp; }
+function vehBash(V, mx, my, dt){
+  if (!world.edits.walls.length || (V.bashT || 0) > time) return; var d = Math.hypot(mx, my), spd = d/dt; if (spd < 4) return;
+  var ux = mx/d, uy = my/d, fx = P.x + ux*1.7, fy = P.y + uy*1.7, best = null, bk = -1, bd = 9;
+  world.edits.walls.forEach(function(w){ if (Math.abs(w.x - fx) > 3 || Math.abs(w.y - fy) > 3) return; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (fx - w.x)*dx + (fy - w.y)*dy, n = Math.abs(-(fx - w.x)*dy + (fy - w.y)*dx); if (Math.abs(u) > 1.6 || n > 0.9) return;
+    var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0) return; if (n < bd){ bd = n; best = w; bk = k; } });
+  if (!best) return;
+  var M = wallMat(best), by2 = wallBays(best), mass = V.kind === 'truck' ? VMASS.truck : VMASS.car, E = mass*spd*spd/12, f = M === WMATS.concrete ? 1.2 : M === WMATS.steel ? 1.2 : 0.8, hp0 = by2[bk];
+  V.bashT = time + 0.35; var pay = Math.min(60, Math.min(E, hp0)*f*(M === WMATS.concrete ? 1.2 : 1));
+  V.hp = Math.max(0, vhp(V) - pay);
+  if (E >= hp0){ by2[bk] = 0; emit({k:'edit', e:{a:'wbay', id:best.id, i:bk, v:0}}); rebuildWalls(); sfx('plank', best.x, best.y, 1, 0.7); feed('Smashed through the wall', '#e8b27a'); }
+  else { wallHurt(best, bk, E); sfx('metal', best.x, best.y, 0.9, 0.5); }
+  makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. A part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
+  P.cause = P.cause || ''; if (spd > 12 && pay > 20){ P.hp -= 4; P.cause = 'a car crash'; } updateHud();
+}
 function vehSpeed(dt){
-  var v = P.veh; if (P.swim) return 1.2; if (!v.t) return 10.5;
+  var v = P.veh; if (P.swim) return 1.2; if (!v.t) return 10.5; if (vhp(v) <= 0) return 0;
   if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = 60; feed('Poured a can of fuel into the ' + (v.kind === 'truck' ? 'truck' : 'car'), ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. Find fuel in workshops or buy it from a trader.', 4); } return 0; } }
-  v.dry = false; return v.kind === 'truck' ? 15 : 16;
+  v.dry = false; return (v.kind === 'truck' ? 15 : 16)*(vhp(v) < 35 ? 0.4 : 1);
 }
 function vehMoved(v, dx, dy, dt){
   var d = Math.hypot(dx, dy); v.x = P.x; v.y = P.y; v.rd = time; if (d < 0.002) return; v.yaw = Math.atan2(dy, dx);
