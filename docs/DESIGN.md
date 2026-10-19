@@ -166,3 +166,10 @@ The ten foundation steps below were all built in the first versions of `play.htm
 - **Leaving with a host's unique item** after a disconnect needs a rule.
 - **Phone limits.** Touch controls, and fitting a whole-city world in a phone's storage and memory.
 - **Still to design:** crafting recipes, farming, the list of item behaviors, trader goods, noise and stealth rules.
+
+## Multi-storey buildings (0.49.4)
+
+- Storey height 3.0 m; a building has floors = (height - 2.6) / 3 + 1, up to 14 (large ones, over 14 m tall, may be up to 1800 m² and still have upper floors).
+- Supporting walls: the first two levels of room splitting are bearing walls, seeded from the footprint and the ground door, so they are identical on every floor; inner walls differ per floor. Columns stand on a 6 m grid fixed to the building in big open floors.
+- Stairs: two shafts, A serving flights 0, 2, 4 and B serving flights 1, 3, 5; each floor is generated when first needed. If a floor's way up cannot be reached from its way in, the building stops at that floor (roof hatch there).
+- The floor an entity is on is its level number; world height is level x 3 m + local height.

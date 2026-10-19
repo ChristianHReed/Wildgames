@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.3.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.4.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1398,12 +1398,20 @@ function frWall(m, b, FS, ST, K, ax, az, dx, dz, l, ei, isDoor, lhg, Ht, corner,
   if (draw && corner && !frParty(b, ax, az, ox - dx, oz - dz, ex, ez, 0.2)) frPut(m, frMod('corner_' + FS.fk), FS, ax, az, ex, ez, ox, oz, 0, function(v){ return v; }, frYMap([[3, Ht]]), function(){ return 0.9; }, 0);
   return wl;
 }
+/* towers (0.49.4): in the dense middle of a city, about one in five offices, hotels, banks, apartment blocks and big shops is a tower of 6 to 14 storeys. Returns the number of storeys, or 0 */
+var TOWK = {office:1, bank:1, hotel:1, apartments:1, shop:1, clothes:1, electronics:1};
+function towerOf(b){
+  if (!TOWK[b.kind] || b.area < 250 || b.area > 1400 || b.id === world.safe || hash(b.id, 9, 3) > 0.22) return 0;
+  var cx = Math.floor(b.cx/G), cy = Math.floor(b.cy/G), n = 0; for (var yy = cy - 2; yy <= cy + 2; yy++) for (var xx = cx - 2; xx <= cx + 2; xx++){ var cell = world.grid.get(gk(xx, yy)); if (cell) n += cell.length; }
+  return n >= 30 ? 6 + Math.floor(hash(b.id, 9, 4)*9) : 0;
+}
 function shell(b, m, lm){
   if (b.gone && m !== NULLM) return;
   var p = b.pts, n = p.length, i, j, ar = 0; lm = lm || NULLM;
   for (i = 0; i < n; i += 2){ j = (i+2) % n; ar += p[i]*p[j+1] - p[j]*p[i+1]; }
   if (ar < 0){ var q = []; for (i = n - 2; i >= 0; i -= 2) q.push(p[i], p[i+1]); p = b.pts = q; }
   var K = KIND[b.kind] || KIND.house, lv = b.levels || (b.kind === 'house' ? 1 + (hash(b.id, 5, 1) < 0.35 ? 1 : 0) : Math.min(b.area < 350 ? 2 : 9, K.lv[0] + Math.floor(hash(b.id, 5, 1)*(K.lv[1] - K.lv[0] + 1))));
+  if (b.tw === undefined) b.tw = towerOf(b); if (b.tw && lv < b.tw) lv = b.tw;   /* some downtown buildings are towers, six to fourteen storeys */
   var Ht = b.h = Math.min(48, (K.lh || 3.2) + (Math.max(1, lv) - 1)*3.2), hf = hash(b.id, 4, 6);
   var ST = bstyle(b), lhg = Math.min(Ht, K.lh || 3.2), mark = world.nests && world.nests[b.id] ? [196,160,226] : b.id === world.safe ? [214,238,200] : WHITE;
   var wcol = (b.col0 ? C(b.col).map(function(v){ return Math.round(255 - (255 - v)*0.8); }) : C(ST.wc)).map(function(v, q){ return Math.round(v*mark[q]/255); }), rcol = C(ST.rc), tint = wcol;
@@ -1992,14 +2000,33 @@ var UPP = {flat:{one:'studio', two:['living_k', 'bedroom'], rooms:['living_k', '
   school:{one:'classroom', rooms:['classroom', 'office'], more:['classroom']}, library:{one:'libhall', rooms:['libhall', 'office'], more:['office']}, hotel:{one:'hroom', rooms:['hroom', 'hroom', 'bath'], more:['hroom'], small:'bath'}};
 var UPK = {house:PLAN_UP, apartments:PLAN_UP, office:UPP.office, bank:UPP.office, clinic:UPP.clinic, hospital:UPP.clinic, police:UPP.police, fire:UPP.fire, school:UPP.school, library:UPP.library, hotel:UPP.hotel}, NOUP = {garage:1, parking:1, church:1, warehouse:1, venue:1, gym:1, fuel:1};
 function upPlan(b){ return UPK[b.kind] || (b.cat === 'house' ? PLAN_UP : b.cat === 'civic' ? UPP.office : b.cat === 'medical' ? UPP.clinic : UPP.flat); }
-function hasUp(b){ return !NOUP[b.kind] && b.h > 6 && !!b.door && b.area >= 60 && b.area < 900; }
+function hasUp(b){ return !NOUP[b.kind] && b.h > 6 && !!b.door && b.area >= 60 && b.area < (b.h > 14 ? 1800 : 900); }
+/* how many floors a building has indoors: one for each 3 m of height, up to 14 */
+function nFl(b){ return hasUp(b) ? Math.max(2, Math.min(14, Math.floor((b.h - 2.6)/FH) + 1)) : 1; }
+function nLv(b){ return b && b.int && b.int.nl || 1; }
+function lvSegs(b, l){ var I = b.int; return l && I.lv && I.lv[l] ? I.lv[l].segs : I.segs; }
+function lvCircs(b, l){ var I = b.int; return l && I.lv && I.lv[l] ? I.lv[l].circs : I.circs; }
 /* where along the stairs a point is: 0 at the bottom step, 1 at the top, -1 when not on them */
-function stairT(b, x, y){
-  var S = b && b.int && b.int.stair; if (!S) return -1; var u = x*S.ux + y*S.uy, v = x*S.vx + y*S.vy, a = S.A ? v : u, c = S.A ? u : v;
+/* where along a flight a point is: 0 at the foot, 1 at the top, -1 when not on it */
+function stairTS(S, x, y){
+  var u = x*S.ux + y*S.uy, v = x*S.vx + y*S.vy, a = S.A ? v : u, c = S.A ? u : v;
   if (c < S.c0 - 0.05 || c > S.c1 + 0.05) return -1; var t = (a - S.s0)/(S.s1 - S.s0); return t < -0.02 || t > 1.02 ? -1 : Math.max(0, Math.min(1, t));
 }
-/* how high above the building's ground floor something is standing: on the stairs, or on its floor */
-function lvlY(b, e){ if (!b || !b.int || !b.int.stair) return 0; var t = stairT(b, e.x, e.y); return t >= 0 ? t*FH : (e.lvl || 0)*FH; }
+/* the flight someone on floor lvl is standing on at (x, y): shaft A carries flights 0, 2, 4..., shaft B flights 1, 3, 5... A flight f runs from floor f up to floor f+1; from floor f+1 the same flight is the way down */
+function stairOn(b, x, y, lvl){
+  var I = b && b.int, SS = I && I.stairs; if (!SS) return null; lvl = lvl | 0;
+  for (var i = 0; i < SS.length; i++){ var S = SS[i], f = lvl%2 === S.par ? lvl : lvl - 1; if (f < S.min || f > I.nl - 2) continue; var t = stairTS(S, x, y); if (t >= 0) return {S:S, t:t, f:f}; }
+  return null;
+}
+function stairT(b, x, y, lvl){ var o = stairOn(b, x, y, lvl); return o ? o.t : -1; }
+/* the flight to use to go up (or down) from floor lvl */
+function stairFor(b, lvl, up){
+  var I = b && b.int, SS = I && I.stairs; if (!SS) return null; var f = up ? lvl : lvl - 1;
+  for (var i = 0; i < SS.length; i++) if (SS[i].par === f%2 && f >= SS[i].min && f <= I.nl - 2) return SS[i];
+  return null;
+}
+/* how high above the building's ground floor something is standing: on a flight of stairs, or on its floor */
+function lvlY(b, e){ if (!b || !b.int || !b.int.stairs) return 0; var o = stairOn(b, e.x, e.y, e.lvl); return o ? (o.f + o.t)*FH : (e.lvl || 0)*FH; }
 /* ---- survival depth: wounds, infection, broken legs, food poisoning, tiredness and food going off ---- */
 var FRESH_S = 1800, MEAL_S = 1500, LEG_S = 600, REST_S = 3600, drops = [];
 function loadConds(cs){
@@ -2084,10 +2111,10 @@ function startClimb(L, up){
 }
 function climbTick(dt){
   var c = P.climbL; c.t += dt/c.dur; P.x = c.L.fx; P.y = c.L.fy; if (Math.floor(c.t*8) !== c.s){ c.s = Math.floor(c.t*8); sfx('metal', c.L.x, c.L.y, 0.25, 0.9 + Math.random()*0.3); }
-  if (c.t < 1) return; P.climbL = null; if (!c.up && c.L.hatch){ P.lvl = 1; return; }
+  if (c.t < 1) return; P.climbL = null; if (!c.up && c.L.hatch){ P.lvl = nLv(c.L.b) - 1; return; }
   if (c.up){ P.roof = c.L.b; P.x = c.L.tx; P.y = c.L.ty; if (!P.roofSaid){ P.roofSaid = true; toast('On the roof. Most aliens cannot climb up, though stalkers use ladders, and they can see you from the street. Walk off the edge and you fall.', 6); } }
 }
-function climbBase(L){ return L.hatch ? (L.b.base || 0) + FH : groundAt(L.fx, L.fy); }
+function climbBase(L){ return L.hatch ? (L.b.base || 0) + (nLv(L.b) - 1)*FH : groundAt(L.fx, L.fy); }
 function climbH(){ var c = P.climbL, g = climbBase(c.L), r = roofY(c.L.b), f = c.up ? c.t : 1 - c.t; return g + (r - g)*Math.max(0, Math.min(1, f)); }
 function roofOk(b, x, y){ return pip(b.pts, x, y) && polyDist(b.pts, x, y, true) > 0.3; }
 function roofMove(e, dx, dy){
@@ -2118,20 +2145,35 @@ function fallOff(e, nx, ny, dx, dy){
   if (drop > 4.5 && !P.leg && Math.random() < (drop - 4.5)*0.18) breakLeg();
   if (dmg > 0){ P.hp -= dmg; P.hurt = 0.4; P.cause = 'a fall'; feed('You fell ' + Math.round(drop) + ' m: -' + dmg + ' health', '#ff8f7a'); } else feed('You dropped down from the roof', '#c0c6cc');
 }
-function setLvl(e){ var b = buildingAt(e.x, e.y); if (!b || !b.int || !b.int.stair){ if (!b) e.lvl = 0; return; } var t = stairT(b, e.x, e.y); if (t >= 0) e.lvl = t > 0.5 ? 1 : 0; }
+function setLvl(e){ var b = buildingAt(e.x, e.y); if (!b || !b.int || !b.int.stairs){ if (!b) e.lvl = 0; return; } var o = stairOn(b, e.x, e.y, e.lvl); if (o) e.lvl = o.t > 0.5 ? o.f + 1 : o.f; }
 function clipHalf(poly, ax, val, less){
   var out = [], n = poly.length; for (var i = 0; i < n; i++){ var a = poly[i], b = poly[(i + 1) % n], ia = less ? a[ax] <= val : a[ax] >= val, ib = less ? b[ax] <= val : b[ax] >= val;
     if (ia) out.push(a); if (ia !== ib){ var t = (val - a[ax])/(b[ax] - a[ax]); out.push([a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t]); } } return out;
 }
 function genInterior(b){
-  var A = genLevel(b, 0, null, 0), I = {segs:A.segs, circs:A.circs, conts:A.conts, furn:A.furn, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stair:A.stair}, m = A.m;
-  if (A.stair){ var B = genLevel(b, 1, A.stair, A.cn); m.p = m.p.concat(B.m.p); m.c = m.c.concat(B.m.c); m.t = m.t.concat(B.m.t); I.up = {segs:B.segs, circs:B.circs}; I.conts = I.conts.concat(B.conts); I.furn = I.furn.concat(B.furn); I.fixes = I.fixes.concat(B.fixes); I.hatch = B.hatch; I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up:' + r; })); I.n += B.n; }
-  I.g = upload(m); return I;
+  var A = genLevel(b, 0, null, 0, nFl(b)); if (A.unreach) A = genLevel(b, 0, null, 0, 1);
+  var I = {segs:A.segs, circs:A.circs, conts:A.conts, furn:A.furn, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stairs:A.stairs, nl:A.nl, cn:A.cn, lv:[{segs:A.segs, circs:A.circs}]};
+  if (!(A.stairs && A.stairs.length && A.nl >= 2)) I.nl = 1;
+  I.gs = [upload(A.m)]; I.g = I.gs[0];
+  if (I.nl >= 2) growInterior(b, I);   /* the first floor up at once; the rest are built as you climb (a tall tower would stall the game if all fourteen were built together) */
+  return I;
 }
-function genLevel(b, lvl, ST, CB){
+/* build the next floor of a building's interior */
+function growInterior(b, I){
+  var L = I.lv.length; if (L >= I.nl) return false;
+  var B = genLevel(b, L, I.stairs, I.cn, I.nl); if (B.unreach && L < I.nl - 1){ I.nl = L + 1; B = genLevel(b, L, I.stairs, I.cn, I.nl); } I.cn = B.cn; I.gs.push(upload(B.m));
+  I.lv.push({segs:B.segs, circs:B.circs}); I.conts = I.conts.concat(B.conts); I.furn = I.furn.concat(B.furn); I.fixes = I.fixes.concat(B.fixes);
+  if (L === I.nl - 1) I.hatch = B.hatch; I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up' + L + ':' + r; })); I.n += B.n; return true;
+}
+function freeInt(b){ var I = b.int; if (I && I.gs) I.gs.forEach(freeMesh); }
+function genLevel(b, lvl, SS, CB, NL){
+  /* shafts (0.49.4): two staircases, A for flights 0, 2, 4... and B for 1, 3, 5..., so flights never sit on top of each other. At this floor a shaft may have a flight going up from it (DEP) or the top of a flight arriving (ARR) */
+  var ARR = null, DEP = null, SSl = SS || [];
+  SSl.forEach(function(S3){ if (lvl >= 1 && (lvl - 1)%2 === S3.par && lvl - 1 >= S3.min && lvl - 1 <= NL - 2) ARR = S3; if (lvl%2 === S3.par && lvl >= S3.min && lvl <= NL - 2) DEP = S3; });
+  var ST = ARR;
   var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id + lvl*7919, k++, 31); }, i, j;
   var segs = [], circs = [], doors = [], conts = [], furn = [], idoors = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
-  var ceilY = lvl ? Math.min(2.95, b.h - FH - 0.06) : Math.min(3, b.h - 0.06);
+  var ceilY = Math.min(lvl ? 2.95 : 3, b.h - lvl*FH - 0.06);
   for (i = 0; i < b.wins.length && lvl && !FRON; i += 6){   /* upstairs windows are painted only: a pale pane stands in for the view */
     var wx = b.wins[i] + b.wins[i+4]*0.04, wz = b.wins[i+1] + b.wins[i+5]*0.04, dx = b.wins[i+2]*0.6, dz = b.wins[i+3]*0.6;
     m.wall(wx - dx, wz - dz, wx + dx, wz + dz, 1, 2.1, sky, 255);
@@ -2176,17 +2218,21 @@ function genLevel(b, lvl, ST, CB){
     /* layout rule 1 (0.49.3): no room over its size cap while it can still be cut into two rooms at least 2.6 m across; the cut goes across the long side, near the middle */
     var big = w*h > CAPA && Math.max(w, h) >= 5.4 && d < 7;
     if (!big && (d >= maxD || Math.max(w, h) < minS || w*h < 24)){ leaves.push([a0, b0, a1, b1]); return; }
-    var f = big ? 0.42 + rnd()*0.16 : 0.38 + rnd()*0.24, s, dc = w >= h ? eu0 : ev0, lo = w >= h ? a0 : b0, hi = w >= h ? a1 : b1;
+    /* supporting walls (0.49.4): the first two cuts are load-bearing. Where they go depends only on the shape of the region and the ground-floor door, never on the floor, so they stand directly above one another on every storey */
+    var bear = d < 2, fb = bear ? hash(b.id + 313, Math.round(a0*8) + d*977, Math.round(b0*8) + 41) : 0;
+    var f = bear ? (big ? 0.42 + fb*0.16 : 0.38 + fb*0.24) : big ? 0.42 + rnd()*0.16 : 0.38 + rnd()*0.24, s, dc = bear ? (w >= h ? gdu : gdv) : (w >= h ? eu0 : ev0), lo = w >= h ? a0 : b0, hi = w >= h ? a1 : b1;
     s = lo + (hi - lo)*f; if (hi - lo >= 5.4) s = Math.max(lo + 2.6, Math.min(hi - 2.6, s));
     if (Math.abs(s - dc) < 1.5){ s = dc + (s >= dc ? 1.5 : -1.5); if (s < lo + 2.2 || s > hi - 2.2) s = dc + (s >= dc ? -1.5 : 1.5); if (s < lo + 2.2 || s > hi - 2.2){ leaves.push([a0, b0, a1, b1]); return; } }   /* never run a wall into the front door */
-    if (HR){ var sAx = w >= h ? 0 : 1, rl = sAx ? HR[1] : HR[0], rh = sAx ? HR[3] : HR[2], ol = sAx ? HR[0] : HR[1], oh = sAx ? HR[2] : HR[3], olo = sAx ? a0 : b0, ohi = sAx ? a1 : b1;
-      if (s > rl - 1.1 && s < rh + 1.1 && ohi > ol - 1.1 && olo < oh + 1.1){ s = rl - 1.2 >= lo + 2.2 ? rl - 1.2 : rh + 1.2 <= hi - 2.2 ? rh + 1.2 : null; if (s === null){ leaves.push([a0, b0, a1, b1]); return; } } }   /* upstairs, never wall across the stairwell */
+    if (!bear) for (var hq = 0; hq < HRS.length && s !== null; hq++){ var HR = HRS[hq], sAx = w >= h ? 0 : 1, rl = sAx ? HR[1] : HR[0], rh = sAx ? HR[3] : HR[2], ol = sAx ? HR[0] : HR[1], oh = sAx ? HR[2] : HR[3], olo = sAx ? a0 : b0, ohi = sAx ? a1 : b1;
+      if (s > rl - 1.1 && s < rh + 1.1 && ohi > ol - 1.1 && olo < oh + 1.1) s = rl - 1.2 >= lo + 2.2 ? rl - 1.2 : rh + 1.2 <= hi - 2.2 ? rh + 1.2 : null; }   /* upstairs, never wall across a stairwell */
+    if (s === null){ leaves.push([a0, b0, a1, b1]); return; }
     if (w >= h){ part(s, b0, s, b1); split(a0, b0, s, b1, d+1); split(s, b0, a1, b1, d+1); }
     else { part(a0, s, a1, s); split(a0, b0, a1, s, d+1); split(a0, s, a1, b1, d+1); }
   }
   /* upstairs: the stairwell from the floor below, in this building's own u/v frame, and the landing at its top */
-  var HR = null, LX = 0, LY = 0;
-  if (ST){ var a0s = Math.min(ST.s0, ST.s1), a1s = Math.max(ST.s0, ST.s1); HR = ST.A ? [ST.c0, a0s, ST.c1, a1s] : [a0s, ST.c0, a1s, ST.c1]; var sgn0 = Math.sign(ST.s1 - ST.s0), la = ST.land === 'side' ? ST.s1 - sgn0*0.5 : ST.s1 + sgn0*0.9, lc = ST.land === 'side' ? (ST.wallHi ? ST.c0 - 0.95 : ST.c1 + 0.95) : (ST.c0 + ST.c1)/2, lu = ST.A ? lc : la, lv0 = ST.A ? la : lc; LX = lu*ux + lv0*vx; LY = lu*uy + lv0*vy; }
+  var HRS = SSl.map(function(S3){ var a0s3 = Math.min(S3.s0, S3.s1), a1s3 = Math.max(S3.s0, S3.s1); return S3.A ? [S3.c0, a0s3, S3.c1, a1s3] : [a0s3, S3.c0, a1s3, S3.c1]; });
+  var LX = 0, LY = 0, gdu = b.door ? b.door.x*ux + b.door.y*uy : 1e9, gdv = b.door ? b.door.x*vx + b.door.y*vy : 1e9;
+  if (ST){ var a0s = Math.min(ST.s0, ST.s1), a1s = Math.max(ST.s0, ST.s1); var sgn0 = Math.sign(ST.s1 - ST.s0), la = ST.land === 'side' ? ST.s1 - sgn0*0.5 : ST.s1 + sgn0*0.9, lc = ST.land === 'side' ? (ST.wallHi ? ST.c0 - 0.95 : ST.c1 + 0.95) : (ST.c0 + ST.c1)/2, lu = ST.A ? lc : la, lv0 = ST.A ? la : lc; LX = lu*ux + lv0*vx; LY = lu*uy + lv0*vy; }
   var eu0 = ST ? LX*ux + LY*uy : b.door ? b.door.x*ux + b.door.y*uy : 1e9, ev0 = ST ? LX*vx + LY*vy : b.door ? b.door.x*vx + b.door.y*vy : 1e9;
   split(u0, v0, u1, v1, 0);
   /* ---- furnish: every room gets a job, then that job's list is laid out against walls, in rows or in the middle ---- */
@@ -2247,11 +2293,12 @@ function genLevel(b, lvl, ST, CB){
     for (var ci = 0; ci < cand.length; ci++){ var it = put(name, cand[ci][1], cand[ci][2], cand[ci][3], R); if (it) return it; }
     return null;
   }
-  /* ---- the staircase: against the long wall of the biggest room, with space at its foot below and a landing at its top above ---- */
-  var SR = null, wc = C('#a8743e'), wd = C('#7a5230');
+  /* ---- the staircases: against the long wall of a big room, with space at the foot below and a landing at the top above. A tall building gets a second shaft in another place for the flights that start on the floors in between ---- */
+  var wc = C('#a8743e'), wd = C('#7a5230'), STS = [], NLx = NL || 1, unreach = false;
   var U2W = function(a, c, A){ var uu = A ? c : a, vv = A ? a : c; return [uu*ux + vv*vx, uu*uy + vv*vy]; };
-  if (!lvl && hasUp(b)){
-    var cands = rooms.filter(function(R){ return R.type !== 'bath' && R.area > 9; }).sort(function(x, y){ return y.area - x.area; });
+  var stairBox = function(S3){ var a0 = Math.min(S3.s0, S3.s1) - 1.5, a1 = Math.max(S3.s0, S3.s1) + 1.5; return S3.A ? [S3.c0 - 1.3, a0, S3.c1 + 1.3, a1] : [a0, S3.c0 - 1.3, a1, S3.c1 + 1.3]; };
+  function placeStair(avoid){
+    var cands = rooms.filter(function(R){ return R.type !== 'bath' && R.area > 9; }).sort(function(x, y){ return y.area - x.area; }), SR = null;
     for (var ri2 = 0; ri2 < cands.length && !SR; ri2++){ var R2 = cands[ri2];
       for (var A2 = 0; A2 < 2 && !SR; A2++){ var la0 = A2 ? R2.b0 : R2.a0, la1 = A2 ? R2.b1 : R2.a1, lc0 = A2 ? R2.a0 : R2.b0, lc1 = A2 ? R2.a1 : R2.b1;
         if (la1 - la0 < RUN + 1.15 || lc1 - lc0 < 2.2) continue;
@@ -2263,23 +2310,48 @@ function genLevel(b, lvl, ST, CB){
           if (ok2) land = inn(s1 + up*0.9, (c0 + c1)/2, 0.45) ? 'end' : inn(s1 - up*0.5, oc, 0.45) ? 'side' : null; if (!land) ok2 = false;   /* and somewhere to step off at the top */
           var ra = Math.min(s0, s1) - 0.3, rb = Math.max(s0, s1) + 0.3;
           for (q = 0; ok2 && q < keep.length; q += 3){ var ka = A2 ? keep[q+1] : keep[q], kc = A2 ? keep[q] : keep[q+1]; if (ka > ra - keep[q+2] && ka < rb + keep[q+2] && kc > c0 - keep[q+2] && kc < c1 + keep[q+2]) ok2 = false; }
-          if (ok2) SR = {A:A2, s0:s0, s1:s1, c0:c0, c1:c1, wallHi:!!wallHi, land:land, ux:ux, uy:uy, vx:vx, vy:vy};
+          if (ok2){ var cand2 = {A:A2, s0:s0, s1:s1, c0:c0, c1:c1, wallHi:!!wallHi, land:land, ux:ux, uy:uy, vx:vx, vy:vy}, bx2 = stairBox(cand2);
+            for (var av = 0; av < avoid.length; av++){ var o2 = avoid[av]; if (bx2[0] < o2[2] && bx2[2] > o2[0] && bx2[1] < o2[3] && bx2[3] > o2[1]) ok2 = false; }
+            if (ok2) SR = cand2; }
         } } }
+    return SR;
   }
-  var STR = SR || ST;
-  if (STR){
+  if (!lvl && NLx > 1 && hasUp(b)){
+    var SA = placeStair([]); if (SA){ SA.par = 0; SA.min = 0; STS.push(SA); NLx = Math.min(NLx, 14);
+      if (NLx >= 3){ var SB = placeStair([stairBox(SA)]); if (SB){ SB.par = 1; SB.min = 1; STS.push(SB); } else NLx = 2; } }
+    else NLx = 1;
+  } else if (lvl) STS = SSl;
+  STS.forEach(function(STR){
+    var depR = lvl%2 === STR.par && lvl >= STR.min && lvl <= NLx - 2, arrR = lvl >= 1 && (lvl - 1)%2 === STR.par && lvl - 1 >= STR.min && lvl - 1 <= NLx - 2;
+    if (!depR && !arrR) return;
     var S0 = STR.s0, S1 = STR.s1, upd = Math.sign(S1 - S0), cm = (STR.c0 + STR.c1)/2, am = (S0 + S1)/2, A3 = STR.A, cOpen = STR.wallHi ? STR.c0 : STR.c1, cWall = STR.wallHi ? STR.c1 : STR.c0;
     rects.push(A3 ? cm : am, A3 ? am : cm, A3 ? 0.55 : RUN/2 + 0.1, A3 ? RUN/2 + 0.1 : 0.55);
-    var side = STR.land === 'side', footA = lvl ? (side ? S1 - upd*0.5 : S1 + upd*0.9) : S0 - upd*0.9, fw = U2W(footA, lvl && side ? (STR.wallHi ? STR.c0 - 0.95 : STR.c1 + 0.95) : cm, A3), fu = fw[0]*ux + fw[1]*uy, fv = fw[0]*vx + fw[1]*vy; keep.push(fu, fv, 0.95);
+    var side = STR.land === 'side', footA = arrR ? (side ? S1 - upd*0.5 : S1 + upd*0.9) : S0 - upd*0.9, fw = U2W(footA, arrR && side ? (STR.wallHi ? STR.c0 - 0.95 : STR.c1 + 0.95) : cm, A3), fu = fw[0]*ux + fw[1]*uy, fv = fw[0]*vx + fw[1]*vy; keep.push(fu, fv, 0.95);
     var SEG = function(a0, c0, a1, c1){ var p0 = U2W(a0, c0, A3), p1 = U2W(a1, c1, A3); segs.push(p0[0], p0[1], p1[0], p1[1]); };
-    SEG(lvl ? S0 : S0 + upd*0.9, cOpen, lvl && side ? S1 - upd*1.0 : S1, cOpen); SEG(S0, cWall, S1, cWall);   /* the bottom steps are open at the side, so you can step on from beside them */
-    if (lvl){ SEG(S0, STR.c0, S0, STR.c1); if (side) SEG(S1, STR.c0, S1, STR.c1); } else SEG(S1, STR.c0, S1, STR.c1);
+    SEG(arrR ? S0 : S0 + upd*0.9, cOpen, arrR && side ? S1 - upd*1.0 : S1, cOpen); SEG(S0, cWall, S1, cWall);   /* the bottom steps are open at the side, so you can step on from beside them */
+    if (arrR){ SEG(S0, STR.c0, S0, STR.c1); if (side) SEG(S1, STR.c0, S1, STR.c1); } else SEG(S1, STR.c0, S1, STR.c1);
     var AX = A3 ? [vx, 0, vy] : [ux, 0, uy], CX = A3 ? [ux, 0, uy] : [vx, 0, vy], mul = function(v, f){ return [v[0]*f, v[1]*f, v[2]*f]; };
-    if (!lvl){ for (var st2 = 0; st2 < 15; st2++){ var ta = S0 + upd*(st2 + 0.5)*RUN/15, top2 = (st2 + 1)*FH/15, cw = U2W(ta, cm, A3); m.box(cw[0], top2/2 + 0.05, cw[1], mul(AX, RUN/30), [0, top2/2, 0], mul(CX, 0.5), st2 & 1 ? wc : wd); }
+    if (depR){ for (var st2 = 0; st2 < 15; st2++){ var ta = S0 + upd*(st2 + 0.5)*RUN/15, top2 = (st2 + 1)*FH/15, cw = U2W(ta, cm, A3); m.box(cw[0], top2/2 + 0.05, cw[1], mul(AX, RUN/30), [0, top2/2, 0], mul(CX, 0.5), st2 & 1 ? wc : wd); }
       for (var rp = 0; rp <= 5; rp++){ var ta2 = S0 + upd*rp*RUN/5, h2 = rp*FH/5, pw = U2W(ta2, cOpen, A3); m.box(pw[0], h2 + 0.55, pw[1], [0.03, 0, 0], [0, 0.5, 0], [0, 0, 0.03], wd); } }
     else { [[S0, STR.c0, S0, STR.c1], [S0, cOpen, side ? S1 - upd*1.0 : S1, cOpen]].concat(side ? [[S1, STR.c0, S1, STR.c1]] : []).forEach(function(r4){ var p0 = U2W(r4[0], r4[1], A3), p1 = U2W(r4[2], r4[3], A3), mx2 = (p0[0] + p1[0])/2, mz2 = (p0[1] + p1[1])/2, L4 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) || 1;
       m.box(mx2, 1.0, mz2, [(p1[0] - p0[0])/2, 0, (p1[1] - p0[1])/2], [0, 0.04, 0], [-(p1[1] - p0[1])/L4*0.04, 0, (p1[0] - p0[0])/L4*0.04], wd); for (var pp = 0; pp <= 4; pp++){ var px2 = p0[0] + (p1[0] - p0[0])*pp/4, pz2 = p0[1] + (p1[1] - p0[1])*pp/4; m.box(px2, 0.55, pz2, [0.03, 0, 0], [0, 0.45, 0], [0, 0, 0.03], wd); } }); }
-  }
+  });
+  /* ---- pillars: in big open rooms, on a six-metre grid fixed to the building, so they stand above one another on every storey; kept clear of walls, doorways, windows and stairs ---- */
+  if (NLx >= 2 || b.area > 500) rooms.forEach(function(R){
+    if (Math.min(R.w, R.h) < 7.5 || R.area < 60) return;
+    for (var gu = u0 + 4.5; gu < u1; gu += 6) for (var gv = v0 + 4.5; gv < v1; gv += 6){
+      if (gu < R.a0 + 1.6 || gu > R.a1 - 1.6 || gv < R.b0 + 1.6 || gv > R.b1 - 1.6) continue;
+      var pxw = gu*ux + gv*vx, pyw = gu*uy + gv*vy, okp = pip(p, pxw, pyw) && polyDist(p, pxw, pyw, true) >= 1.2;
+      for (q = 0; okp && q < keep.length; q += 3) if (Math.abs(keep[q] - gu) < keep[q+2] + 0.6 && Math.abs(keep[q+1] - gv) < keep[q+2] + 0.6) okp = false;
+      for (q = 0; okp && q < segs.length; q += 4) if (segDist(pxw, pyw, segs[q], segs[q+1], segs[q+2], segs[q+3]) < 0.9) okp = false;
+      for (q = 0; okp && q < HRS.length; q++){ var hb = stairBox(SSl[q] || STS[q]); if (hb && gu > hb[0] && gu < hb[2] && gv > hb[1] && gv < hb[3]) okp = false; }
+      for (q = 0; okp && q < STS.length; q++){ var hb2 = stairBox(STS[q]); if (gu > hb2[0] && gu < hb2[2] && gv > hb2[1] && gv < hb2[3]) okp = false; }
+      if (!okp) continue;
+      m.box(pxw, ceilY/2 + 0.1, pyw, [ux*0.25, 0, uy*0.25], [0, ceilY/2, 0], [vx*0.25, 0, vy*0.25], C('#b4afa3'));
+      var pq = [[-1, -1], [1, -1], [1, 1], [-1, 1]]; for (var pe = 0; pe < 4; pe++){ var pa = pq[pe], pb2 = pq[(pe + 1) % 4]; segs.push(pxw + (pa[0]*ux + pa[1]*vx)*0.27, pyw + (pa[0]*uy + pa[1]*vy)*0.27, pxw + (pb2[0]*ux + pb2[1]*vx)*0.27, pyw + (pb2[0]*uy + pb2[1]*vy)*0.27); }
+      rects.push(gu, gv, 0.32, 0.32);
+    }
+  });
   rooms.forEach(function(R){
     (ROOMS[R.type] || ROOMS.store).forEach(function(rule){
       var name = rule[0], mode = rule[1], o = rule[3] || {}, cnt = rule[2] < 0 ? Math.max(1, Math.min(40, Math.round(R.area/-rule[2]))) : rule[2], f = FURN[name], s = f.s || [f.boxes[0][3], f.boxes[0][5]], e, it, fe;
@@ -2345,6 +2417,9 @@ function genLevel(b, lvl, ST, CB){
       return bad;
     }
     flood(true).forEach(function(x){ x.on = 0; });   /* walled off even in an empty building: not worth keeping */
+    if (DEP){ var dpa = Math.sign(DEP.s1 - DEP.s0), dpw = U2W(DEP.s0 - dpa*0.9, (DEP.c0 + DEP.c1)/2, DEP.A), dpi = Math.round((dpw[0]*ux + dpw[1]*uy - u0)/st), dpj = Math.round((dpw[0]*vx + dpw[1]*vy - v0)/st), got = false;
+      for (gj = dpj - 3; gj <= dpj + 3 && !got; gj++) for (gi = dpi - 3; gi <= dpi + 3; gi++) if (gi >= 0 && gj >= 0 && gi < W && gj < H && seen[gj*W + gi]){ got = true; break; }
+      if (!got) unreach = true; }   /* the way up from this floor cannot be reached from the way in: this floor has to be the top one */
     var off = [], bad;
     for (stage = 0; stage < 6; stage++){
       bad = flood(); if (!bad.length) break;
@@ -2381,24 +2456,25 @@ function genLevel(b, lvl, ST, CB){
   var ord = conts.map(function(c, ci){ return [hash(b.id, ci, 77), c]; }).sort(function(x, y){ return x[0] - y[0]; });
   ord.forEach(function(e2, ci){ if (ci > (lvl ? 0 : b.rolls + 1)) e2[1].poor = 1; });
   /* floors and ceilings, with the stairwell cut out of the ceiling below and the floor above */
-  var HU = null; if (STR){ var hA0 = Math.min(STR.s0, STR.s1), hA1 = Math.max(STR.s0, STR.s1); HU = STR.A ? [STR.c0, hA0, STR.c1, hA1] : [hA0, STR.c0, hA1, STR.c1]; }
+  var holeOf = function(S3){ var h0 = Math.min(S3.s0, S3.s1), h1 = Math.max(S3.s0, S3.s1); return S3.A ? [S3.c0, h0, S3.c1, h1] : [h0, S3.c0, h1, S3.c1]; };
+  var HUarr = lvl && ARR ? holeOf(ARR) : null, HUdep = DEP ? holeOf(DEP) : (!lvl && STS[0] ? holeOf(STS[0]) : null);
   var flat = function(y, col, tex, hole){
     for (var i3 = 0; i3 < b.tri.length; i3 += 3){ var tri3 = [b.tri[i3]*2, b.tri[i3+1]*2, b.tri[i3+2]*2].map(function(o){ return [p[o]*ux + p[o+1]*uy, p[o]*vx + p[o+1]*vy]; }), pieces = [tri3];
       if (hole) pieces = [clipHalf(tri3, 0, hole[0], true), clipHalf(tri3, 0, hole[2], false), clipHalf(clipHalf(clipHalf(tri3, 0, hole[0], false), 0, hole[2], true), 1, hole[1], true), clipHalf(clipHalf(clipHalf(tri3, 0, hole[0], false), 0, hole[2], true), 1, hole[3], false)];
       pieces.forEach(function(pg){ if (pg.length < 3) return; var W3 = pg.map(function(q3){ return [q3[0]*ux + q3[1]*vx, q3[0]*uy + q3[1]*vy]; }); m.pl = tex;
         for (var f3 = 1; f3 < W3.length - 1; f3++) m.tri(W3[0][0], y, W3[0][1], W3[f3][0], y, W3[f3][1], W3[f3+1][0], y, W3[f3+1][1], col, 255); m.pl = null; }); }
   };
-  flat(0.1, WHITE, [b.cat === 'house' ? TX.wood : TX.floorTile, 0.5], lvl ? HU : null);
-  flat(ceilY, cc, null, !lvl && STR ? HU : null);
+  flat(0.1, WHITE, [b.cat === 'house' ? TX.wood : TX.floorTile, 0.5], HUarr);
+  flat(ceilY, cc, null, HUdep);
   var hatch = null;
-  if (lvl && b.lad !== undefined && b.h > FH + 2.4){   /* a flat roof: a ladder at the top of the stairs goes up through a hatch */
+  if (lvl && lvl === NLx - 1 && b.lad !== undefined && b.h > FH + 2.4){   /* a flat roof: a ladder at the top of the stairs goes up through a hatch */
     hatch = {x:LX, y:LY}; var hc = C('#6a6e72'), hd2 = C('#3a3d40');
     for (var hs = -1; hs <= 1; hs += 2) m.box(LX + hs*0.22, ceilY/2, LY, [0.025, 0, 0], [0, ceilY/2, 0], [0, 0, 0.025], hc);
     for (var hr = 0.3; hr < ceilY - 0.1; hr += 0.32) m.box(LX, hr, LY, [0.22, 0, 0], [0, 0.015, 0], [0, 0, 0.018], hc);
     m.box(LX, ceilY - 0.02, LY, [0.42, 0, 0], [0, 0.02, 0], [0, 0, 0.42], hd2);
   }
   var yo = (world.hg ? b.base : 0) + lvl*FH; if (yo) for (i = 1; i < m.p.length; i += 3) m.p[i] += yo;
-  return {hatch:hatch, m:m, cn:cn, stair:lvl ? null : SR, segs:segs, circs:circs, conts:conts, furn:furn, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
+  return {unreach:unreach, hatch:hatch, m:m, cn:cn, stairs:lvl ? null : STS, nl:NLx, segs:segs, circs:circs, conts:conts, furn:furn, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -2413,7 +2489,8 @@ function manageInteriors(budget){
   }
   cand.sort(function(a, b){ return a[0] - b[0]; });
   for (i = 0; i < cand.length && i < budget; i++){ cand[i][1].int = genInterior(cand[i][1]); loaded.push(cand[i][1]); }
-  for (i = loaded.length - 1; i >= 0; i--) if (bdist(loaded[i], P.x, P.y) > QS.intR + 37){ freeMesh(loaded[i].int.g); loaded[i].int = null; loaded.splice(i, 1); }
+  if (P.inside && P.inside.int && P.inside.int.lv.length < Math.min(P.inside.int.nl, (P.lvl || 0) + 3)) growInterior(P.inside, P.inside.int);   /* one more floor above you, a floor at a time */
+  for (i = loaded.length - 1; i >= 0; i--) if (bdist(loaded[i], P.x, P.y) > QS.intR + 37){ freeInt(loaded[i]); loaded[i].int = null; loaded.splice(i, 1); }
 }
 
 /* ================= collision ================= */
@@ -2460,7 +2537,7 @@ function sight(ax, ay, bx, by, lv){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
     for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone) continue; b.stamp = stampN;
       if (b.maxx < Math.min(ax, bx) || b.minx > Math.max(ax, bx) || b.maxy < Math.min(ay, by) || b.miny > Math.max(ay, by)) continue;
-      if (segsX(b.segs, ax, ay, bx, by) || segsX(sbarOf(b), ax, ay, bx, by) || (b.int && (lv && b.int.up ? segsX(b.int.up.segs, ax, ay, bx, by) : (segsX(b.int.segs, ax, ay, bx, by) || segsX(innerBar(b), ax, ay, bx, by))))) return 0;
+      if (segsX(b.segs, ax, ay, bx, by) || segsX(sbarOf(b), ax, ay, bx, by) || (b.int && (lv ? segsX(lvSegs(b, lv), ax, ay, bx, by) : (segsX(b.int.segs, ax, ay, bx, by) || segsX(innerBar(b), ax, ay, bx, by))))) return 0;
       if (!gl0 && segsX(gbarOf(b), ax, ay, bx, by)) gl0 = true; }
   }
   return gl0 ? 2 : 1;
@@ -2572,7 +2649,7 @@ function collide(e, r){
         if (b.gone || e.x < b.minx - r || e.x > b.maxx + r || e.y < b.miny - r || e.y > b.maxy + r) continue;
         pushSegs(e, r, b.segs); var br0 = barOf(b); if (br0.length) pushSegs(e, r, br0);
         if (b.int){
-          var upL = e.lvl && b.int.up; pushSegs(e, r, upL ? b.int.up.segs : b.int.segs); if (!upL){ var ib0 = innerBar(b); if (ib0.length) pushSegs(e, r, ib0); } else { if (b.dseg) pushSegs(e, r, b.dseg); if (b.wsegs && b.wsegs.length) pushSegs(e, r, b.wsegs); } var c = upL ? b.int.up.circs : b.int.circs;
+          var upL = e.lvl && b.int.lv && b.int.lv[e.lvl]; pushSegs(e, r, upL ? lvSegs(b, e.lvl) : b.int.segs); if (!upL){ var ib0 = innerBar(b); if (ib0.length) pushSegs(e, r, ib0); } else { if (b.dseg) pushSegs(e, r, b.dseg); if (b.wsegs && b.wsegs.length) pushSegs(e, r, b.wsegs); } var c = upL ? lvCircs(b, e.lvl) : b.int.circs;
           for (var q = 0; q < c.length; q += 3){ var dx = e.x - c[q], dy = e.y - c[q+1], d = Math.hypot(dx, dy), rr = r + c[q+2]; if (d < rr && d > 1e-6){ e.x += dx/d*(rr - d); e.y += dy/d*(rr - d); } }
         }
       }
@@ -2597,7 +2674,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.49.3';
+var VERSION = '0.49.4';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2614,7 +2691,7 @@ function startRun(ws, cs){
   inv = newInv(true);
   heat.clear(); w.mem = [];
   zombies = []; packsA = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
-  loaded.forEach(function(b){ freeMesh(b.int.g); b.int = null; }); loaded = []; facs = [];
+  loaded.forEach(function(b){ freeInt(b); b.int = null; }); loaded = []; facs = [];
   w.buildings.forEach(function(b){ b.got = {}; b.bar = null; b.sbar = null; b.gbar = null; b.php = null; }); w.crates.forEach(function(c){ c.looted = false; });
   w.trees.forEach(function(t){ t.alive = true; t.hp = 3; });
   if (cs && cs.inv){
@@ -2940,7 +3017,7 @@ function gridTick(){
 function findTarget(){
   if (P.veh || P.climbL) return null;
   if (P.roof){ var HT0 = hatchOf(P.roof); if (HT0 && Math.hypot(HT0.x - P.x, HT0.y - P.y) < 1.5) return ladTarget(HT0, false); var LR = P.roof.lad; return LR && Math.hypot(LR.tx - P.x, LR.ty - P.y) < 1.7 ? ladTarget(LR, false) : null; }
-  if (P.inside && P.lvl === 1){ var HT1 = hatchOf(P.inside); if (HT1 && Math.hypot(HT1.x - P.x, HT1.y - P.y) < 1.1) return ladTarget(HT1, true); }
+  if (P.inside && P.lvl === nLv(P.inside) - 1 && P.lvl > 0){ var HT1 = hatchOf(P.inside); if (HT1 && Math.hypot(HT1.x - P.x, HT1.y - P.y) < 1.1) return ladTarget(HT1, true); }
   var best = null, bd = 2.4, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), i, j, dx, dy, d;
   for (i = 0; i < loaded.length; i++){
     var b = loaded[i]; if (P.x < b.minx - 2.5 || P.x > b.maxx + 2.5 || P.y < b.miny - 2.5 || P.y > b.maxy + 2.5) continue;
@@ -3137,7 +3214,7 @@ function los(ax, ay, bx, by, lv){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
     for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone) continue; b.stamp = stampN;
       if (b.maxx < Math.min(ax, bx) || b.minx > Math.max(ax, bx) || b.maxy < Math.min(ay, by) || b.miny > Math.max(ay, by)) continue;
-      if (segsX(b.segs, ax, ay, bx, by) || segsX(barOf(b), ax, ay, bx, by) || (b.int && (lv && b.int.up ? segsX(b.int.up.segs, ax, ay, bx, by) : (segsX(b.int.segs, ax, ay, bx, by) || segsX(innerBar(b), ax, ay, bx, by))))) return false; }
+      if (segsX(b.segs, ax, ay, bx, by) || segsX(barOf(b), ax, ay, bx, by) || (b.int && (lv ? segsX(lvSegs(b, lv), ax, ay, bx, by) : (segsX(b.int.segs, ax, ay, bx, by) || segsX(innerBar(b), ax, ay, bx, by))))) return false; }
   }
   return true;
 }
@@ -3156,7 +3233,7 @@ function findPath(sx, sy, gx, gy, r, lv){
   stampN++;
   for (var cy = Math.floor(y0/G); cy <= Math.floor(y1/G); cy++) for (var cx = Math.floor(x0/G); cx <= Math.floor(x1/G); cx++){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
-    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; b.stamp = stampN; mark(b.segs); mark(barOf(b)); if (b.int){ mark(lv && b.int.up ? b.int.up.segs : b.int.segs); } if (lv && b.dseg) mark(b.dseg); }
+    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.stamp === stampN || b.gone || b.maxx < x0 || b.minx > x1 || b.maxy < y0 || b.miny > y1) continue; b.stamp = stampN; mark(b.segs); mark(barOf(b)); if (b.int){ mark(lv ? lvSegs(b, lv) : b.int.segs); } if (lv && b.dseg) mark(b.dseg); }
   }
   for (i = 0; i < cades.length; i++){ var cd = cades[i], ci2 = Math.round((cd.x - x0)/cs), cj2 = Math.round((cd.y - y0)/cs), rr = Math.ceil((0.85 + r)/cs); for (j = -rr; j <= rr; j++) for (k = -rr; k <= rr; k++){ var a2 = ci2 + k, b2 = cj2 + j; if (a2 >= 0 && b2 >= 0 && a2 < W && b2 < H && k*k + j*j <= rr*rr) blk[b2*W + a2] = 1; } }
   var si = Math.round((sx - x0)/cs), sj = Math.round((sy - y0)/cs), gi = Math.round((gx - x0)/cs), gj = Math.round((gy - y0)/cs), S = sj*W + si, Gc = gj*W + gi;
@@ -3449,7 +3526,7 @@ function spitTick(dt){
     else if (!P.veh && !P.hide && Math.hypot(s.x - P.x, s.y - P.y) < 0.65 && (P.jy || 0) < 0.7 && (s.lvl || 0) === (P.lvl || 0)){ dead = true; if (!P.sleep) P.cause = 'a spitter'; hitMe(AK[3].dmg, 3); P.hitFrom = Math.atan2(-s.vy, -s.vx); P.hitT = 1.2; sfx('hurt', undefined, undefined, 0.6); }
     if (dead){ fxAdd('effects.goo_splat', s.x, s.y, groundAt(s.x, s.y), {life:45, s0:0.9, up:0.02}); spits.splice(i, 1); } }
 }
-function drawSpits(m){ var M = fxModel('decal.spit_glob'); for (var i = 0; i < spits.length; i++){ var s = spits[i]; if (M) m.modelS(M, s.x, s.y, Math.atan2(s.vy, s.vx) - 1.5708, s.gy + 1.15 + (s.lvl ? FH : 0), 1); else { m.al = 128; m.ybox(s.x, s.y, 0, 0, 0, s.gy + 1.15, 0.12, 0.12, 0.12, C('#9dff7a')); m.al = 255; } } }
+function drawSpits(m){ var M = fxModel('decal.spit_glob'); for (var i = 0; i < spits.length; i++){ var s = spits[i]; if (M) m.modelS(M, s.x, s.y, Math.atan2(s.vy, s.vx) - 1.5708, s.gy + 1.15 + ((s.lvl | 0)*FH), 1); else { m.al = 128; m.ybox(s.x, s.y, 0, 0, 0, s.gy + 1.15, 0.12, 0.12, 0.12, C('#9dff7a')); m.al = 255; } } }
 function addAlien(k, x, y){ var z0 = {id:++net.zid, k:k, x:x, y:y, hp:AK[k].hp, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.9 + Math.random()*0.25, v:Math.random()}; zombies.push(z0); return z0; }
 /* ---- 0.48.1: roaming packs. Aliens that come out of a nest travel as a pack: a leader picks the next place to search, the rest follow, and none of them know where you are.
    They sweep the town building by building (favouring places the pack has not been, and places that have been noisy), turn to a noise as one, and at dawn a horde walks home ---- */
@@ -3908,7 +3985,7 @@ function update(dt){
   var night = dark > 0.5;
   P.noise = Math.max(0, P.noise - dt);
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridOn() && genOf(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
+    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridOn() && genOf(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
     net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, sm:p.sm || 1, eng:!!(p.vh && world.vmap && world.vmap[p.vh] && world.vmap[p.vh].t), loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, yaw:p.yaw, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); }); heatTick(dt, tg);
@@ -3922,7 +3999,7 @@ function update(dt){
       if (dAny > (z.grp ? 200 : 130)){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
       var zn = zoneAt(z.x, z.y, 0.6); if (zn){ zoneOut(zn, z, 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
-      setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y) >= 0;
+      setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y, z.lvl) >= 0;
       T = senses(z, A, tg, dt, night); if (T) d = Math.hypot(T.x - z.x, T.y - z.y);
       z.cd -= dt; z.hurt -= dt; z.thru -= dt;
       var ox = z.x, oy = z.y, zs = (night ? A.nspd : A.spd)*z.spd, vx = 0, vy = 0, L = lureAt(z.x, z.y);
@@ -3947,7 +4024,8 @@ function update(dt){
           if (z.thru > 0){ tx = dr.x - dr.nx*1.4*out; ty = dr.y - dr.ny*1.4*out; } else { tx = nx1; ty = ny1; }
         }
         var gb = buildingAt(gx0, gy0), wantL = T ? (T.lvl || 0) : 0;
-        if (gb && gb === buildingAt(z.x, z.y) && gb.int && gb.int.stair && wantL !== (z.lvl || 0)){ var S9 = gb.int.stair, sg9 = Math.sign(S9.s1 - S9.s0), fcn = (S9.c0 + S9.c1)/2, upNow = !(z.lvl || 0), fa = z.onSt ? (upNow ? S9.s1 + sg9*0.3 : S9.s0 - sg9*0.3) : (upNow ? S9.s0 + sg9*0.3 : S9.s1 - sg9*0.3), fuu = S9.A ? fcn : fa, fvv = S9.A ? fa : fcn; gx0 = fuu*S9.ux + fvv*S9.vx; gy0 = fuu*S9.uy + fvv*S9.vy; tx = gx0; ty = gy0; z.stk = z.onSt ? 0 : (z.stk || 0) + dt; if (z.stk > 7){ z.stk = 0; z.x = gx0; z.y = gy0; } } else z.stk = 0;   /* step onto the stairs, then climb (or go down) to reach a survivor on the other floor */
+        if (gb && gb === buildingAt(z.x, z.y) && gb.int && gb.int.stairs && wantL !== (z.lvl || 0)){ var upNow = wantL > (z.lvl || 0), S9 = z.onSt && z.stS ? z.stS : stairFor(gb, z.lvl || 0, upNow);
+          if (S9){ z.stS = S9; var sg9 = Math.sign(S9.s1 - S9.s0), fcn = (S9.c0 + S9.c1)/2, fa = z.onSt ? (upNow ? S9.s1 + sg9*0.3 : S9.s0 - sg9*0.3) : (upNow ? S9.s0 + sg9*0.3 : S9.s1 - sg9*0.3), fuu = S9.A ? fcn : fa, fvv = S9.A ? fa : fcn; gx0 = fuu*S9.ux + fvv*S9.vx; gy0 = fuu*S9.uy + fvv*S9.vy; tx = gx0; ty = gy0; z.stk = z.onSt ? 0 : (z.stk || 0) + dt; if (z.stk > 7){ z.stk = 0; z.x = gx0; z.y = gy0; } } else z.stk = 0; } else z.stk = 0;   /* step onto the stairs, then climb (or go down) to reach a survivor on the other floor */
         if (z.k !== 2 && !(z.thru > 0)){ var wp = route(z, tx, ty, A.r, dt);   /* the next place it is heading: a doorway, the stairs, or you */ if (wp){ tx = wp[0]; ty = wp[1]; z.av = 0; } }   /* walk around walls and through open doorways */
         var gx = tx - z.x, gy = ty - z.y, gd = Math.hypot(gx, gy) || 0.001, shy = z.k === 1 && T && T.fire && d < 11;
         if (shy){ if (d > 9){ vx = -ey/d; vy = ex/d; } else { vx = -ex/d; vy = -ey/d; } }
@@ -4575,7 +4653,7 @@ function drawCreatures(){
   for (i = 0; i < zombies.length; i++){
     var z = zombies[i], c = CRE[CNAME[z.k]]; if (!c || Math.abs(z.x - P.x) > 150 || Math.abs(z.y - P.y) > 150) continue; any = true;
     var A = AK[z.k], atk = z.cd > A.cd - 0.45;
-    var zrb = z.rf ? buildingAt(z.x, z.y) : null, zy0 = z.climb ? groundAt(z.climb.L.fx, z.climb.L.fy) + (roofY(z.climb.L.b) - groundAt(z.climb.L.fx, z.climb.L.fy))*Math.min(1, z.climb.t) : z.roof ? roofY(z.roof) : zrb ? roofY(zrb) : net.role === 'guest' ? groundAt(z.x, z.y) + (z.lvl ? FH : 0) : entY(z);
+    var zrb = z.rf ? buildingAt(z.x, z.y) : null, zy0 = z.climb ? groundAt(z.climb.L.fx, z.climb.L.fy) + (roofY(z.climb.L.b) - groundAt(z.climb.L.fx, z.climb.L.fy))*Math.min(1, z.climb.t) : z.roof ? roofY(z.roof) : zrb ? roofY(zrb) : net.role === 'guest' ? groundAt(z.x, z.y) + ((z.lvl | 0)*FH) : entY(z);
     var ev = atk ? drawCreature(c, 'attack', (A.cd - z.cd)/0.45*0.999, z.x, zy0, z.y, z.ang, z.hurt > 0) : drawCreature(c, 'walk', (z.walk || 0)/(z.k === 2 ? 5 : 6.283), z.x, zy0, z.y, z.ang, z.hurt > 0);
     z.eyeW = eyeWorld(z, ev, zy0);
   }
@@ -4817,7 +4895,7 @@ function render(){
     var rf = P.roof || (P.climbL ? P.climbL.L.b : null), ib = rf ? null : buildingAt(P.x, P.y), hx = P.x + s[0]*0.45, hy = P.y + s[2]*0.45, dist = ib ? 2.2 : 3.2;
     while (dist > 0.6){ var cx2 = hx - f[0]*dist, cy2 = hy - f[2]*dist; if (P.roof ? buildingAt(cx2, cy2) === rf : rf ? !buildingAt(cx2, cy2) : los(P.x, P.y, cx2 - f[0]*0.3, cy2 - f[2]*0.3) && (ib ? buildingAt(cx2, cy2) === ib : !buildingAt(cx2, cy2))) break; dist -= 0.4; }
     e = [hx - f[0]*dist, e[1] + 0.35 - f[1]*dist, hy - f[2]*dist];
-    var floorY = (P.roof ? roofY(P.roof) : ib ? (ib.base || 0) + lvlY(ib, P) : groundAt(e[0], e[2])) + 0.4; if (e[1] < floorY) e[1] = floorY; if (ib && e[1] > (ib.base || 0) + (P.lvl ? FH : 0) + 2.75) e[1] = (ib.base || 0) + (P.lvl ? FH : 0) + 2.75;
+    var floorY = (P.roof ? roofY(P.roof) : ib ? (ib.base || 0) + lvlY(ib, P) : groundAt(e[0], e[2])) + 0.4; if (e[1] < floorY) e[1] = floorY; if (ib && e[1] > (ib.base || 0) + ((P.lvl || 0)*FH) + 2.75) e[1] = (ib.base || 0) + ((P.lvl || 0)*FH) + 2.75;
   }
   var cFx = CAMS.fx, cBob = CAMS.bob, cVeh = P.veh ? 0 : 1, vox = 0, voz = 0, vof = 0;
   if (!tp){   /* first person: bob, breathing, landing, flinch */
@@ -4859,7 +4937,7 @@ function render(){
   }
   if (world.gl.trees) world.gl.trees.forEach(function(o){ if (o.g && Math.abs(o.x - P.x) < FRR + 130 && Math.abs(o.y - P.y) < FRR + 130) drawMesh(o.g); });
   if (world.fence && Math.abs(world.fence.x - P.x) < 400 && Math.abs(world.fence.y - P.y) < 400) drawMesh(world.fence.g);
-  for (i = 0; i < loaded.length; i++) drawMesh(loaded[i].int.g);
+  for (i = 0; i < loaded.length; i++){ var gsI = loaded[i].int.gs; for (var gq = 0; gq < gsI.length; gq++) drawMesh(gsI[gq]); }
   for (i = 0; i < facs.length; i++) if (facs[i].fac) drawMesh(facs[i].fac);
   var TR = world.gl.terr, trR = QS.far + (world.tg ? TT*world.tg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - P.x) < trR && Math.abs(o.y - P.y) < trR) drawMesh(o.g); });
 
@@ -4870,7 +4948,7 @@ function render(){
   drawItemsFx(m, now); drawFxList(m); drawSpits(m); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
-  for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); m.yo += ops[i].lvl ? FH : 0; if (ops[i].rf === 1){ var orb = buildingAt(ops[i].x, ops[i].y); if (orb) m.yo = roofY(orb); } queuePerson(m, ops[i], lookOf(ops[i]), now); }
+  for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); m.yo += (ops[i].lvl | 0)*FH; if (ops[i].rf === 1){ var orb = buildingAt(ops[i].x, ops[i].y); if (orb) m.yo = roofY(orb); } queuePerson(m, ops[i], lookOf(ops[i]), now); }
   var gold = C('#f2b134'), spin = now*2.5;
   for (i = 0; i < loaded.length; i++){
     var cs = loaded[i].int.conts, got = loaded[i].got; m.yo = loaded[i].base || 0;
@@ -5271,7 +5349,7 @@ el('packFile').addEventListener('change', function(e){
 /* ================= building: walls, beds, chests, repainting and demolishing; all stored as world edits ================= */
 var PAINT = ['#b98f6a', '#c9a27c', '#9f8a78', '#7f8fa3', '#8fa37f', '#a37f8f', '#d6cfc0', '#5d6670', '#b5563e', '#3f6f8f'];
 function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(); world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw)*1.5, dy = Math.cos(w.yaw)*1.5; s.push(w.x - dx, w.y - dy, w.x + dx, w.y + dy); }); }
-function setGone(b, on){ b.gone = !!on; if (b.int){ freeMesh(b.int.g); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
+function setGone(b, on){ b.gone = !!on; if (b.int){ freeInt(b); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
 function loadEdits(ed){
   var E = world.edits, k; if (!E.truck) E.truck = {p:{}, away:0}; E.colls = E.colls || []; E.plots = E.plots || [];
   (Array.isArray(ed.colls) ? ed.colls : []).slice(0, 40).forEach(function(c){ if (c && isFinite(c.x) && isFinite(c.y)) E.colls.push({coll:true, name:'rain collector', id:String(c.id).slice(0, 24), x:+c.x, y:+c.y, w:Math.max(0, Math.min(COLL_CAP, c.w | 0)), acc:0}); });
@@ -5320,7 +5398,7 @@ function applyEdit(e){
   else if (e.a === 'chest' && e.c && E.chests.length < 100){ E.chests.push({chest:true, name:'the chest', id:String(e.c.id), x:+e.c.x, y:+e.c.y, inv:{}, items:{}, designs:[]}); }
   else if (e.a === 'chestset'){ for (i = 0; i < E.chests.length; i++) if (E.chests[i].id === e.id){ E.chests[i].inv = e.inv || {}; E.chests[i].items = e.items || {}; E.chests[i].designs = e.designs || []; (e.designs || []).forEach(function(d){ adoptDesign(d); }); if (curChest === E.chests[i]) renderChest(); break; } }
 }
-function refreshInterior(b){ if (b.int){ freeMesh(b.int.g); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } b.ibar = null; }
+function refreshInterior(b){ if (b.int){ freeInt(b); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } b.ibar = null; }
 function doEdit(e){ applyEdit(e); emit({k:'edit', e:e}); }
 function nearBuilding(){
   if (P.inside) return P.inside; var best = null, bd = 5, cx0 = Math.floor(P.x/G), cy0 = Math.floor(P.y/G);
@@ -6060,22 +6138,22 @@ function netTick(dt){
   var k = Math.min(1, dt*12), list = otherPlayers();
   list.forEach(function(o){ var mx = (o.tx - o.x)*k, my = (o.ty - o.y)*k; o.x += mx; o.y += my; o.mv = Math.hypot(mx, my) > dt*0.5; var v = o.vh && world.vmap[o.vh]; if (v){ v.x = o.x; v.y = o.y; v.yaw = o.yaw; v.rd = time; } });
   net.t -= dt; if (net.t > 0) return;
-  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, mv:P.mv ? 1 : 0, hd:P.hide ? 1 : 0, lv:P.lvl ? 1 : 0, rf:P.roof ? 1 : P.climbL ? 2 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0, sf:Math.round((SURFN[P.surf] || 1)*10)}); return; }
+  if (net.role === 'guest'){ net.t = 0.066; send(net.host.dc, {t:'p', x:r2(P.x), y:r2(P.y), yaw:r2(P.veh ? P.veh.yaw : P.yaw), sw:P.swing > 0 ? 1 : 0, lt:lightOn() ? 1 : 0, ld:P.noise > 0 ? 1 : 0, vs:P.vis < 1 ? 1 : P.vis > 1 ? 2 : 0, mv:P.mv ? 1 : 0, hd:P.hide ? 1 : 0, lv:P.lvl | 0, rf:P.roof ? 1 : P.climbL ? 2 : 0, rd:radioOn() ? 1 : 0, hp:Math.round(P.hp), vh:P.veh ? P.veh.id : 0, sf:Math.round((SURFN[P.surf] || 1)*10)}); return; }
   net.t = 0.1;
-  var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0, (P.mv ? 1 : 0) + (P.vis < 1 ? 2 : P.vis > 1 ? 4 : 0) + (P.lvl ? 8 : 0) + (P.roof ? 16 : 0)]];
-  net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0, (p.mv ? 1 : 0) + (p.vis < 1 ? 2 : p.vis > 1 ? 4 : 0) + (p.lvl ? 8 : 0) + (p.rf === 1 ? 16 : 0)]); });
+  var ps = [[0, r2(P.x), r2(P.y), r2(P.veh ? P.veh.yaw : P.yaw), P.swing > 0 ? 1 : 0, Math.round(P.hp), P.veh ? P.veh.id : 0, (P.mv ? 1 : 0) + (P.vis < 1 ? 2 : P.vis > 1 ? 4 : 0) + (((P.lvl | 0) & 15) << 5) + (P.roof ? 16 : 0)]];
+  net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0, (p.mv ? 1 : 0) + (p.vis < 1 ? 2 : p.vis > 1 ? 4 : 0) + (((p.lvl | 0) & 15) << 5) + (p.rf === 1 ? 16 : 0)]); });
   net.peers.forEach(function(p){
     if (!p.ready) return;
-    var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 125 && Math.abs(z.y - p.y) < 125) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v), z.k, (z.lvl ? 1 : 0) + (z.roof || (z.climb && z.climb.t > 0.5) ? 2 : 0)]); }
+    var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 125 && Math.abs(z.y - p.y) < 125) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v), z.k, (z.roof || (z.climb && z.climb.t > 0.5) ? 2 : 0) + (((z.lvl | 0) & 15) << 2)]); }
     send(p.dc, {t:'s', time:r2(time), z:zs, p:ps, wx:[wx.w, wx.tor ? [r2(wx.tor.x), r2(wx.tor.y)] : 0]});
   });
 }
 function onSnapshot(m){
   time = +m.time || time; if (m.wx){ wx.w = m.wx[0] | 0; wx.tor = m.wx[1] ? {x:m.wx[1][0], y:m.wx[1][1]} : null; }
   var old = {}, i; zombies.forEach(function(z){ old[z.id] = z; }); zombies = [];
-  for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5], k:a[6] | 0}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; z.lvl = a[7] & 1 ? 1 : 0; z.rf = a[7] & 2 ? 1 : 0; if (a[4]) z.hurt = 0.15; zombies.push(z); }
+  for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5], k:a[6] | 0}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; z.lvl = (a[7] >> 2) & 15; z.rf = a[7] & 2 ? 1 : 0; if (a[4]) z.hurt = 0.15; zombies.push(z); }
   var po = {}; net.others.forEach(function(o){ po[o.id] = o; }); net.others = [];
-  for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; o.hp = b[5]; o.vh = b[6] || 0; o.mv = (b[7] | 0) & 1; o.lvl = (b[7] | 0) & 8 ? 1 : 0; o.rf = (b[7] | 0) & 16 ? 1 : 0; o.vis = (b[7] | 0) & 2 ? 0.5 : (b[7] | 0) & 4 ? 1.35 : 1; net.others.push(o); }
+  for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; o.hp = b[5]; o.vh = b[6] || 0; o.mv = (b[7] | 0) & 1; o.lvl = ((b[7] | 0) >> 5) & 15; o.rf = (b[7] | 0) & 16 ? 1 : 0; o.vis = (b[7] | 0) & 2 ? 0.5 : (b[7] | 0) & 4 ? 1.35 : 1; net.others.push(o); }
 }
 function b64(bytes){ var s = ''; for (var i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(s); }
 function unb64(str){ var s = atob(str), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
@@ -6136,7 +6214,7 @@ function hostMsg(peer, data){
   if (m.t === 'join'){
     peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.look = cleanLook(m.look); peer.cop = !!m.cop; peer.ready = true; sendWho();
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
-  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.hidden = !!m.hd; peer.lvl = m.lv ? 1 : 0; peer.rf = m.rf | 0; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; peer.sm = Math.max(0.3, Math.min(3, (+m.sf || 10)/10)); }
+  } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.hidden = !!m.hd; peer.lvl = m.lv | 0; peer.rf = m.rf | 0; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; peer.sm = Math.max(0.3, Math.min(3, (+m.sf || 10)/10)); }
   else if (m.t === 'chat' || m.t === 'ping'){
     var cm = {t:m.t, n:peer.name, txt:txt(m.txt, 120), x:+m.x || 0, y:+m.y || 0, sx:peer.x, sy:peer.y, r:peer.rd ? 1 : 0, cop:peer.cop ? 1 : 0};
     if (peer.cop && m.t === 'chat'){ var pt = null; net.peers.forEach(function(q){ if (q.id === (m.pt | 0)) pt = q; }); if (!(pt ? pt.rd : radioOn())){ send(peer.dc, {t:'sys', txt:'Your partner has no radio, so only your map markers get through.'}); return; } }
