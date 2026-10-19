@@ -368,3 +368,7 @@ man = {'region': {'id': 'springfield-mo', 'name': 'Springfield, MO', 'lat': LAT0
 p = os.path.join(ROOT, 'assets', 'map.js')
 open(p, 'w', encoding='utf-8').write('/* Afterstreet: the built-in Springfield region index, made by tools/build_region.py */\n(window.ART = window.ART || {}).map = ' + json.dumps(json.dumps(man, separators=(',', ':'), ensure_ascii=False), ensure_ascii=False) + ';\n')
 print('squares', len(SQ), 'total MB', round(total/1e6, 1), 'biggest', sorted(index, key=lambda r: -r[2])[:5])
+
+# stamp the new map data version so every device drops the old squares
+import subprocess, sys as _sys
+subprocess.call([_sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stamp_release.py')])

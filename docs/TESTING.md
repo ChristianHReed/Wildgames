@@ -541,3 +541,5 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 26. (0.50.5) On a phone, get on the bicycle at the safe house: the prompt says Tap here to get off; tap it and you step off. Same in a car and the truck.
 27. (0.56.0) Build a wall (Build menu, Wall section): it is a timber wall made of six bays. Let swarmers reach it: bays crack, then show their studs, then open. You can walk through an open bay but not past a whole one. Giants smash it fast; clingers climb over. Save, quit and come back: damaged bays stay damaged.
 28. (0.56.1) Build menu: Wall material switches timber and sheet steel; a steel wall is grey and 3.5 m tall. Damage a wall, then Repair nearest wall: the bays come back and wood or scrap is spent. A steel wall holds up much longer against aliens.
+
+29. (0.56.2) Open the game on the web address twice. The start page says the version and a map code. Open the browser's site data: only one afterstreet-<version> store (plus afterstreet-squares). After the next release, reload twice: the old store is gone and the map code changes only when map data changed.

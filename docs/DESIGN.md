@@ -183,3 +183,6 @@ Walls follow real light-frame building so they look right when broken open:
 - Materials: wood studs for houses and small buildings, light steel studs for shops and flats, a steel frame (columns on a 6 m grid, beams, deck) for offices and big stores, concrete (columns, core, slabs, block) for the biggest buildings and bunkers.
 - Storey height: 3.0 m houses, 3.5 m shops, offices and community buildings, 4.5 m and up industrial, halls and warehouses.
 - Harvest: skins give boards, plasterboard scrap, siding or bricks; the frame gives lumber, studs, plates, steel sections and nails. A frame cut out is worth more than the skins.
+
+## Versions and the offline copy (0.56.2)
+Every script is requested as `?v=BUILD`, every Springfield square as `?d=DATAV` (hash of all squares and map.js, in assets/dataver.js). The service worker serves these addresses saved-first (they never change), fetches the page itself fresh, and on activation deletes every other game cache and any square from an older map. Run `python3 tools/stamp_release.py <version>` for each release.
