@@ -408,7 +408,7 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | build | `grave_marker` | 48 / 100 / 32 |
 | build | `map_flag` | 24 / 48 / 16 |
 
-## held (`assets/shaped/held.js`, version 1)
+## held (`assets/shaped/held.js`, version 2)
 
 Weapons: the grip is at the origin, the long side runs along +Z with the business end at +Z, +Y is the weapon's "up"
 (the edge or face that leads a swing). Each weapon comes in three states: new, worn (condition under a quarter: bent,
@@ -420,7 +420,7 @@ chipped, taped) and broken (the stub left in the hand when it snaps).
 First-person arms (view space): the eye at the origin looking along +Z, +Y up, the viewer's right is -X (the same
 handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor wears on top: outer, else top).
 
-**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.212, 0.837, 0.026] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`.
+**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.212, 0.837, 0.026] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `crossbow` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`.
 
 | Model | Tris, verts, welded | Notes |
 | --- | --- | --- |
@@ -459,6 +459,53 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `weapons.pistol.new` | 72 / 144 / 48 | barrel along +Z; flash sits at the muzzle (0, 0.03, 0.155), show it one or two frames, scale 0.8 to 1.3 at random; shell is ejected to +X; length 0.2 m; ground: roll 90, lift 0.015 |
 | `weapons.pistol.flash` | 15 / 37 / 15 |  |
 | `weapons.pistol.shell` | 20 / 36 / 12 |  |
+| `weapons.revolver.new` | 124 / 240 / 80 | one hand; open = cylinder swung out to +X for reloading; no shell is thrown; length 0.3 m; ground: roll 90, lift 0.03 |
+| `weapons.revolver.worn` | 134 / 260 / 92 |  |
+| `weapons.revolver.open` | 136 / 264 / 88 |  |
+| `weapons.revolver.flash` | 15 / 37 / 15 |  |
+| `weapons.hunting_rifle.new` | 212 / 416 / 132 | two hands, butt to the shoulder; bolt_open between shots (throws a rifle_case to +X); scope line is y = 0.086; length 1.1 m; ground: roll 90, lift 0.03 |
+| `weapons.hunting_rifle.worn` | 232 / 456 / 156 |  |
+| `weapons.hunting_rifle.bolt_open` | 224 / 440 / 140 |  |
+| `weapons.hunting_rifle.flash` | 15 / 37 / 15 |  |
+| `weapons.pump_shotgun.new` | 144 / 280 / 92 | two hands; pumped = fore-end pulled back (throws a shotgun_hull to +X); length 1.04 m; ground: roll 90, lift 0.03 |
+| `weapons.pump_shotgun.worn` | 156 / 304 / 108 |  |
+| `weapons.pump_shotgun.pumped` | 144 / 280 / 92 |  |
+| `weapons.pump_shotgun.flash` | 15 / 37 / 15 |  |
+| `weapons.double_barrel.new` | 132 / 256 / 84 | two hands; open = barrels tipped 28 degrees down about (0, 0.02, 0.15) for loading, two shotgun_hull fall out; length 1.06 m; ground: roll 90, lift 0.03 |
+| `weapons.double_barrel.worn` | 142 / 276 / 96 |  |
+| `weapons.double_barrel.open` | 132 / 256 / 84 |  |
+| `weapons.double_barrel.flash` | 15 / 37 / 15 |  |
+| `weapons.carbine.new` | 152 / 300 / 100 | two hands; empty = magazine out (show a carbine_magazine in the left hand while reloading); throws a rifle_case to +X each shot; length 1.0 m; ground: roll 90, lift 0.03 |
+| `weapons.carbine.worn` | 170 / 336 / 120 |  |
+| `weapons.carbine.empty` | 140 / 276 / 92 |  |
+| `weapons.carbine.flash` | 15 / 37 / 15 |  |
+| `weapons.flare_gun.new` | 80 / 156 / 52 | one hand; fires the flare that fx.flare_glow already draws; length 0.2 m; ground: roll 90, lift 0.03 |
+| `weapons.flare_gun.worn` | 82 / 160 / 56 |  |
+| `weapons.flare_gun.flash` | 12 / 32 / 10 |  |
+| `weapons.recurve_bow.new` | 76 / 152 / 44 | held upright in the left hand in real life; here the grip is at the origin so it uses the same hand point. drawn = string at the cheek with an arrow nocked (silent, the aliens do not hear it); length 1.24 m; ground: roll 0, lift 0.02 |
+| `weapons.recurve_bow.worn` | 85 / 171 / 55 |  |
+| `weapons.recurve_bow.drawn` | 102 / 208 / 63 |  |
+| `weapons.crossbow.new` | 160 / 316 / 108 | two hands; new = string forward (unloaded), loaded = string cocked with a bolt on the rail; silent; length 0.8 m; ground: roll 90, lift 0.03 |
+| `weapons.crossbow.worn` | 170 / 336 / 120 |  |
+| `weapons.crossbow.loaded` | 182 / 364 / 125 |  |
+| `ammo.pistol_round` | 22 / 48 / 19 |  |
+| `ammo.rifle_round` | 22 / 48 / 19 |  |
+| `ammo.shotgun_shell` | 36 / 66 / 24 |  |
+| `ammo.pistol_box` | 18 / 36 / 20 |  |
+| `ammo.rifle_box` | 18 / 36 / 20 |  |
+| `ammo.shotgun_box` | 18 / 36 / 20 |  |
+| `ammo.pistol_magazine` | 24 / 48 / 16 |  |
+| `ammo.carbine_magazine` | 24 / 48 / 16 |  |
+| `ammo.ammo_can` | 50 / 100 / 36 |  |
+| `ammo.flare_shells` | 128 / 224 / 80 |  |
+| `ammo.arrow` | 26 / 56 / 19 |  |
+| `ammo.arrow_bundle` | 138 / 296 / 103 |  |
+| `ammo.quiver` | 70 / 140 / 52 |  |
+| `ammo.crossbow_bolt` | 22 / 48 / 17 |  |
+| `ammo.loose_pile` | 136 / 276 / 104 |  |
+| `cases.pistol_case` | 20 / 36 / 12 |  |
+| `cases.rifle_case` | 44 / 84 / 24 |  |
+| `cases.shotgun_hull` | 32 / 60 / 24 |  |
 | `map.folded` | 16 / 32 / 16 |  |
 | `map.open` | 61 / 121 / 105 |  |
 | `fp.hold.right` | 58 / 116 / 40 |  |
@@ -467,6 +514,10 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `fp.empty.left` | 54 / 116 / 38 |  |
 | `fp.reach.right` | 54 / 116 / 38 |  |
 | `fp.reach.left` | 58 / 116 / 40 |  |
+| `fp.shoulder.right` | 58 / 116 / 40 |  |
+| `fp.shoulder.left` | 58 / 116 / 40 |  |
+| `fp.aim.right` | 58 / 116 / 40 |  |
+| `fp.aim.left` | 58 / 116 / 40 |  |
 
 **Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3), `sit` (1), `lean_wall` (1), `wave` (3), `carry_crate` (4). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).
 

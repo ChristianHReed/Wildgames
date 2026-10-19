@@ -25,6 +25,7 @@
               closed: false makes an open arc (only the faces between listed corners); caps: [start, end] (default true when closed).
               both: true draws both sides of an open arc; cin: colour of the inner side.
      'decal'  one flat polygon, v: [[x,y,z], ...] relative to p, facing n: [nx,ny,nz]. Eyes, brows, stripes.
+              both: true draws the back too (fletching, flags, thin sheets seen from either side).
      'poly'   small solid from corners v and faces f: [[i,j,k,...], ...]; faces are turned to face away from its middle.
 
    Two ways to build, same picture:
@@ -148,7 +149,7 @@
       if (caps[1]){ var L=rings.length-1; flatFace(o,rings[L],[R[L-1][0],R[L-1][1],R[L-1][2]]); }
     }
   }
-  function shapeDecal(o, pc){ faceFacing(o, pc.v, pc.n||[0,0,1]); }
+  function shapeDecal(o, pc){ var n=pc.n||[0,0,1]; faceFacing(o, pc.v, n); if (pc.both) faceFacing(o, pc.v, [-n[0],-n[1],-n[2]]); }
   function shapePoly(o, pc){
     var v=pc.v, c=[0,0,0];
     for (var i=0;i<v.length;i++){ c[0]+=v[i][0]/v.length; c[1]+=v[i][1]/v.length; c[2]+=v[i][2]/v.length; }
