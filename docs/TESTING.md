@@ -395,6 +395,15 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 - [ ] 6.4 Tick **One of a kind** on a new item, craft it, and confirm it cannot be crafted twice.
 - [ ] 6.5 Press **Export** on "My workshop". Give the file to a friend, or import it under a different survivor with **Import pack**.
 
+## Stage 5d: first-person feel (0.45.3)
+
+1. On the start screen, find Field of view, Head bob and Camera effects. Defaults are 100°, Normal, Normal. Change each and start: they apply at once and are remembered.
+2. Walk, then stop: the view settles smoothly, with no jump in height at the end of a step. Crouch bobs less, sprinting bobs more and the view widens slightly.
+3. Hold the phone upright: you should see roughly 55° across, not a thin slit. Turn it sideways: the picture should not look stretched at the edges.
+4. Turn quickly: the held item trails behind the turn and settles. Sprint: it lowers and moves aside.
+5. Drop from a roof: a short dip on landing, bigger from higher. Get hit: a brief flinch to one side. Swing and fire: a small kick.
+6. Set Head bob and Camera effects to Off: the view must be completely steady while walking. Report anything that still makes you queasy.
+
 ## Stage 7: building and bases
 
 - [ ] 7.1 Press N. Build a wall section; you cannot walk through it.

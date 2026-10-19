@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 18 October 2026, at version 0.45.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 18 October 2026, at version 0.45.3. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -48,6 +48,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.45 | **Art 5, framed buildings:** every outside wall within about 100 m of you is a row of bays from the art chat's building kit, each a frame (posts and beams standing 6 cm proud) with a panel set back in it: wall (sided, brick or plain by the building's material), window, door, shopfront or roll-up door. Homes and shops alternate windows and wall; windows and doors keep their real size in stretched bays, and the windows you can open, board up or climb through are the ones in the frames. Upstairs glass lights up at night, warm or cold and flickering. Corner posts, a plinth, and wider bays and lighter upper storeys on very big buildings. Further off the painted walls stay. `?oldbld` brings the painted walls back everywhere |
 | 0.45.1 | Aliens keep their distance: each stops at a striking distance that keeps it in view (swarmer about 2.4 m, stalker 1.6 m, giant 2.8 m) and lunges from there, and steps back if you walk into it; your swings reach a swarmer from there |
 | 0.45.2 | Buildings built against each other no longer show through: where a neighbour stands against a wall, that stretch is a flat wall with wallpaper on both sides (no posts, sills, plinth or windows poking into the next building), up to the neighbour's height; above a lower neighbour it is plain wall |
+| 0.45.3 | First-person feel, from what games and comfort research agree on: field of view is set across the screen (default 100°, slider 70–110°) so an upright phone no longer looks down a tube; head bob follows the distance walked, eases in and out and sways little sideways; breathing that quickens when tired or hurt; a dip when you land, a short flinch when hit, a small kick on swings and shots, a slight zoom when sprinting; the held item lags behind turns, lowers when sprinting and bobs out of step with the head. Start-screen settings for field of view, head bob and camera effects (each can be turned off) |
 
 ## Next versions
 

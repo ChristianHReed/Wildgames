@@ -281,6 +281,9 @@
         <label>Length of a day<select id="dayLen"><option value="43200">12 hours (half of real time)</option><option value="7200">2 hours</option><option value="1440">24 minutes</option><option value="240">4 minutes (quick test)</option></select></label>
         <label>Sound volume<input id="vol" type="range" min="0" max="100" value="80"></label>
         <label>View distance and art detail<select id="qual"><option value="0">Low (phones, older laptops)</option><option value="1">Medium</option><option value="2">High</option></select></label>
+        <label>Field of view (how wide you see)<input id="fovS" type="range" min="70" max="110" value="100"></label>
+        <label>Head bob when walking<select id="bobS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
+        <label>Camera effects (sprint zoom, hit shake, weapon sway)<select id="fxS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Goal, for a new world<select id="scen"></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
       </div>
@@ -360,7 +363,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.2.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.3.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2495,7 +2498,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.45.2';
+var VERSION = '0.45.3';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -3528,6 +3531,35 @@ function sndTick(dt, moved){
 }
 /* ---- how you move: crouch (slow, quiet, hard to see), walk, sprint (fast, loud, uses stamina) ---- */
 var SPD = {crouch:2.3, walk:4.6, sprint:7.4, swim:2.4};
+
+/* ---- first-person feel: what the research agrees on ----
+   Field of view is set across the screen, not top to bottom, so a phone held upright is not left looking down a tube.
+   Bob follows the distance walked (feet and view stay in step), eases in and out so the view never snaps, and sways little sideways
+   (side-to-side motion is what upsets people most). Landings, hits and sprinting give short, small kicks instead of long shakes.
+   The held item lags behind turns and bobs a little out of step with the head. Every effect scales with the three settings on the start screen. */
+var CAMS = {fov:100, bob:1, fx:1};
+(function(){ try { var a = localStorage.getItem('lastblock:fov'), b = localStorage.getItem('lastblock:bob'), c = localStorage.getItem('lastblock:fx'); if (a) CAMS.fov = Math.max(70, Math.min(110, +a || 100)); if (b !== null) CAMS.bob = +b; if (c !== null) CAMS.fx = +c; } catch (e) {} })();
+var CAM = {amp:0, sprint:0, land:0, landV:0, fv:0, kick:0, kickS:1, sx:0, sy:0, yaw0:null, pit0:0, br:0, ex:0, hp0:100, shoot0:0};
+var FOVT = 1.19;   /* tan of half the vertical field of view in use, shared with the sky */
+function camTick(dt){
+  var c = CAM, mv = !!P.mv && !P.veh && !P.hide && !P.sleep && !P.climbL, g = gait(mv), want = mv ? (g === 2 ? 1 : g === 0 ? 0.35 : 0.65) : 0;
+  if (dt > 0.1) dt = 0.1;
+  c.amp += (want - c.amp)*Math.min(1, dt*(want > c.amp ? 6 : 9));
+  c.sprint += ((mv && g === 2 ? 1 : 0) - c.sprint)*Math.min(1, dt*4);
+  c.ex += (Math.max(P.tired ? 0.9 : 0, (100 - P.stam)/100*(c.sprint > 0.3 || P.stam < 60 ? 1.2 : 0.4), P.hp < 35 ? 0.6 : 0) - c.ex)*Math.min(1, dt*0.8);
+  c.br += dt*(1.6 + 3.4*Math.min(1, c.ex));
+  /* landing: remember the fall speed, then let a spring settle the dip */
+  if (P.fall) c.fv = P.fall; else if (c.fv > 0){ if (c.fv > 2.5) c.landV = -Math.min(c.fv, 9)*0.5; c.fv = 0; }
+  c.landV += (-110*c.land - 11*c.landV)*dt; c.land += c.landV*dt; c.land = Math.max(-0.3, Math.min(0.06, c.land));
+  /* a hit: a short flinch, sideways one way or the other */
+  if (c.hp0 - P.hp > 0.5){ c.kick = Math.min(1, 0.35 + (c.hp0 - P.hp)/20); c.kickS = Math.random() < 0.5 ? -1 : 1; } c.hp0 = P.hp; if (P.hp > c.hp0) c.hp0 = P.hp;
+  c.kick = Math.max(0, c.kick - dt*3.2);
+  /* the held item trails behind a turn and settles back */
+  if (c.yaw0 === null){ c.yaw0 = P.yaw; c.pit0 = P.pitch; }
+  var dy = P.yaw - c.yaw0, dp = P.pitch - c.pit0; c.yaw0 = P.yaw; c.pit0 = P.pitch;
+  var k = Math.min(1, dt*9), idt = 1/Math.max(dt, 0.004);
+  c.sx += (Math.max(-0.075, Math.min(0.075, -dy*idt*0.028)) - c.sx)*k; c.sy += (Math.max(-0.05, Math.min(0.05, dp*idt*0.02)) - c.sy)*k;
+}
 var VIEW = (function(){ try { return +localStorage.getItem('lastblock:view') || 0; } catch (e){ return 0; } })();   /* 0 through your own eyes, 1 from behind your survivor */
 function toggleView(){ VIEW = VIEW ? 0 : 1; try { localStorage.setItem('lastblock:view', VIEW); } catch (e){} feed(VIEW ? 'Third-person view (P to switch back)' : 'First-person view', '#c0c6cc'); }
 function toggleCrouch(){ if (!running || P.veh) return; P.crouch = !P.crouch; if (P.crouch) P.run = false; }
@@ -3606,9 +3638,9 @@ function update(dt){
   if (mf || ms){
     var l = Math.hypot(mf, ms), V = P.veh, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y, gt = gait(true);
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
-    if (P.roof) roofMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp); else stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V) P.bob += dt*(gt === 2 ? 14 : gt === 0 ? 6 : 10); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
+    if (P.roof) roofMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp); else stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V) P.bob += (P.mvD || 0)*(gt === 2 ? 2.9 : gt === 0 ? 4.5 : 3.7); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
-  surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms));
+  surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms)); camTick(dt);
   if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else if ((wx.w === 1 || wx.w === 2 || wx.w === 4) && !P.inside && !(P.veh && P.veh.t)){ var rc = dress().rain; P.wet = Math.min(90, (P.wet || 0) + dt*(wx.w === 2 ? 2.2 : 1.4)*(1 - rc)); if (rc > 0.7) P.wet = Math.max(0, P.wet - dt*0.3); }   /* rain soaks you unless you are covered */
   else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
@@ -4330,7 +4362,7 @@ function initSky(){
 }
 function drawSky(md, f, sv, u, hour){
   if (!skyProg){ try { initSky(); } catch (er){ skyProg = false; } } if (!skyProg) return;
-  var tz = Math.tan(1.22/2), se = Math.sin((hour - 6)/12*Math.PI), sa = (hour - 12)/12*Math.PI, sd = [Math.sin(sa)*0.9, Math.max(-0.2, se)*0.85 + 0.03, -0.42], sl = Math.hypot(sd[0], sd[1], sd[2]);
+  var tz = FOVT, se = Math.sin((hour - 6)/12*Math.PI), sa = (hour - 12)/12*Math.PI, sd = [Math.sin(sa)*0.9, Math.max(-0.2, se)*0.85 + 0.03, -0.42], sl = Math.hypot(sd[0], sd[1], sd[2]);
   gl.useProgram(skyProg); gl.disable(gl.DEPTH_TEST); gl.depthMask(false); gl.disableVertexAttribArray(aC); gl.disableVertexAttribArray(aT);
   gl.uniform3fv(skyU.f, f); gl.uniform3fv(skyU.s, sv); gl.uniform3fv(skyU.u, u); gl.uniform2f(skyU.tz, tz*W/H, tz);
   gl.uniform3fv(skyU.top, md.top); gl.uniform3fv(skyU.hor, md.hor); gl.uniform3f(skyU.sund, sd[0]/sl, sd[1]/sl, sd[2]/sl); gl.uniform3fv(skyU.sunc, md.sun); gl.uniform1f(skyU.night, dark); gl.uniform1f(skyU.tm, (performance.now()/1000) % 1000);
@@ -4391,7 +4423,7 @@ function render(){
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   var cp = Math.cos(P.pitch), f = [Math.cos(P.yaw)*cp, Math.sin(P.pitch), Math.sin(P.yaw)*cp];
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
-  var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65 + (P.eyeD || 0)) + Math.sin(P.bob)*0.03, P.y]; e[1] += P.gy || 0;
+  var e = [P.x, P.veh ? (P.veh.t ? 1.35 : 1.75) : (P.swim ? 0.85 : 1.65 + (P.eyeD || 0)), P.y]; e[1] += P.gy || 0;
   var tp = VIEW === 1 && !P.cop && !P.hide;
   if (tp){   /* over the shoulder: back off behind the head, pulled in where a wall is in the way */
     var rf = P.roof || (P.climbL ? P.climbL.L.b : null), ib = rf ? null : buildingAt(P.x, P.y), hx = P.x + s[0]*0.45, hy = P.y + s[2]*0.45, dist = ib ? 2.2 : 3.2;
@@ -4399,8 +4431,23 @@ function render(){
     e = [hx - f[0]*dist, e[1] + 0.35 - f[1]*dist, hy - f[2]*dist];
     var floorY = (P.roof ? roofY(P.roof) : ib ? (ib.base || 0) + lvlY(ib, P) : groundAt(e[0], e[2])) + 0.4; if (e[1] < floorY) e[1] = floorY; if (ib && e[1] > (ib.base || 0) + (P.lvl ? FH : 0) + 2.75) e[1] = (ib.base || 0) + (P.lvl ? FH : 0) + 2.75;
   }
+  var cFx = CAMS.fx, cBob = CAMS.bob, cVeh = P.veh ? 0 : 1, vox = 0, voz = 0, vof = 0;
+  if (!tp){   /* first person: bob, breathing, landing, flinch */
+    var cPh = P.bob, cAm = CAM.amp*cBob*cVeh, cBv = Math.cos(cPh*2)*0.032*cAm, cBl = Math.sin(cPh)*0.011*cAm, cBr = Math.sin(CAM.br), cBre = cBr*(0.0035 + 0.007*Math.min(1, CAM.ex))*(0.4 + 0.6*cFx) + (P.hp < 35 ? Math.sin(CAM.br*3.7)*0.0015 : 0);
+    e[1] += cBv + cBre + CAM.land*cFx; e[0] += s[0]*cBl; e[2] += s[2]*cBl;
+    var cdP = (Math.cos(cPh*2)*0.0035*cAm + cBr*0.0025*(0.4 + 0.6*cFx) - CAM.kick*0.035*cFx - (P.swing > 0 ? Math.sin((1 - P.swing/0.22)*3.1416)*0.02*cFx : 0) + (P.shootCd > 0.2 ? 0.012*cFx : 0)),
+        cdR = Math.sin(cPh)*0.0035*cAm + CAM.kickS*CAM.kick*0.045*cFx;
+    var cdp = Math.cos(cdP), sdp = Math.sin(cdP), f2 = [f[0]*cdp + u[0]*sdp, f[1]*cdp + u[1]*sdp, f[2]*cdp + u[2]*sdp], u2 = [u[0]*cdp - f[0]*sdp, u[1]*cdp - f[1]*sdp, u[2]*cdp - f[2]*sdp],
+        cdr = Math.cos(cdR), sdr = Math.sin(cdR), s2 = [s[0]*cdr + u2[0]*sdr, s[1]*cdr + u2[1]*sdr, s[2]*cdr + u2[2]*sdr], u3 = [u2[0]*cdr - s[0]*sdr, u2[1]*cdr - s[1]*sdr, u2[2]*cdr - s[2]*sdr];
+    f = f2; s = s2; u = u3;
+    if (!P.veh){   /* the held item: carried lower when sprinting, lags behind turns, bobs a little out of step with the head */
+      vox = CAM.sx*cFx + Math.sin(cPh)*0.012*cAm + 0.05*CAM.sprint*cFx; voz = CAM.sy*cFx - cBv*0.7 - Math.abs(Math.sin(cPh))*0.006*cAm - 0.11*CAM.sprint*cFx + cBre*0.8; vof = -0.04*CAM.sprint*cFx;
+    }
+  }
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
-  var t = 1/Math.tan(1.22/2), nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
+  /* field of view: set across the screen (CAMS.fov degrees, widened a little while sprinting), never narrower than 45 degrees tall or wider than 100 tall */
+  var cAsp = W/H, tvB = Math.max(Math.tan(22.5*Math.PI/180), Math.min(Math.tan(50*Math.PI/180), Math.tan(CAMS.fov*Math.PI/360)/cAsp)), tvK = Math.min(Math.tan(50*Math.PI/180), tvB*(1 + 0.07*CAM.sprint*CAMS.fx*cVeh)); FOVT = tvK;
+  var t = 1/tvK, nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   if (!fl) drawSky({top:md.top, hor:sky, sun:md.sun}, f, s, u, hour0);
   gl.uniform3fv(U.fogN, [md.fn, md.ff, md.fm]); gl.uniform3fv(U.sunc, md.sun); gl.uniform3fv(U.shd, md.shd); gl.uniform1f(U.winF, gridOn() ? 0.35 : 0.04);
   var vg = el('vig'); if (vg){ var vo = (md.vig*(P.inside ? 0.7 : 1)).toFixed(2); if (vg.style.opacity !== vo) vg.style.opacity = vo; }
@@ -4467,9 +4514,9 @@ function render(){
 
   /* held items */
   if (tp || P.hide) return;
-  gl.clear(gl.DEPTH_BUFFER_BIT);
+  gl.clear(gl.DEPTH_BUFFER_BIT); var cTb = 1/tvB; gl.uniformMatrix4fv(U.vp, false, mul([cTb/cAsp,0,0,0, 0,cTb,0,0, 0,0,Pm[10],-1, 0,0,Pm[14],0], V));
   var vm = new Mesh(), k = P.swing > 0 ? 1 - P.swing/0.22 : 0, sw = Math.sin(k*3.1416);
-  var at = function(a, b, c){ return [e[0] + f[0]*a + s[0]*b + u[0]*c, e[1] + f[1]*a + s[1]*b + u[1]*c, e[2] + f[2]*a + s[2]*b + u[2]*c]; };
+  var at = function(a, b, c){ a += vof; b += vox; c += voz; return [e[0] + f[0]*a + s[0]*b + u[0]*c, e[1] + f[1]*a + s[1]*b + u[1]*c, e[2] + f[2]*a + s[2]*b + u[2]*c]; };
   var ax = function(a, b, c){ return [f[0]*a + s[0]*b + u[0]*c, f[1]*a + s[1]*b + u[1]*c, f[2]*a + s[2]*b + u[2]*c]; };
   if (P.veh){
     var hb = at(0.55, 0, -0.42); vm.box(hb[0], hb[1], hb[2], ax(0.02, 0, 0), ax(0, P.veh.t ? 0.75 : 0.3, 0), ax(0, 0, P.veh.t ? 0.12 : 0.015), C(P.veh.t ? '#2a2d33' : '#8a9199'));
@@ -5837,10 +5884,14 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
   el('vRule').addEventListener('change', function(){ lsSet('lastblock:vrule', el('vRule').value); });
   syncChar(false);
   var dl0 = lsGet('lastblock:daylen'); if (dl0 && el('dayLen').querySelector('option[value="' + dl0 + '"]')) el('dayLen').value = dl0;
+  el('fovS').value = CAMS.fov; el('bobS').value = String(CAMS.bob); el('fxS').value = String(CAMS.fx);
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
 })();
 loadPacks(); wForm(); renderPacks(); fillScen();
 el('vol').value = Math.round(SND.vol*100); el('vol').addEventListener('input', function(){ SND.vol = el('vol').value/100; lsSet('lastblock:vol', el('vol').value); sndInit(); });
+el('fovS').addEventListener('input', function(){ CAMS.fov = +el('fovS').value; lsSet('lastblock:fov', CAMS.fov); });
+el('bobS').addEventListener('change', function(){ CAMS.bob = +el('bobS').value; lsSet('lastblock:bob', CAMS.bob); });
+el('fxS').addEventListener('change', function(){ CAMS.fx = +el('fxS').value; lsSet('lastblock:fx', CAMS.fx); });
 el('qual').addEventListener('change', function(){ lsSet('lastblock:quality', el('qual').value); if ((el('qual').value === '0' ? 'lite' : 'full') !== ARTSET) info('Art detail changes the next time you open or refresh the game.'); });
 /* opened from a web address (the iPhone and iPad route): keep a copy so it plays with no internet */
 if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(function(r){ r.update(); }).catch(function(){});
