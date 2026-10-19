@@ -57,6 +57,15 @@ Check every character in run and walk frames, not only standing.
 - **First-person arms:** forearm and hand in the survivor's skin and sleeve colours, in three poses (holding, empty, reaching), seen from the eye.
 - **New survivor clips:** jump, airborne, land, hurt, drink, bandage, pick up, overhead chop, thrust and flat swing, given as bone turns on top of the rest pose.
 
+## Horde nights, ground, damage, effects and icons (19 October 2026)
+
+- **New aliens:** the spitter (ranged: rears back and spits a glowing glob from its throat sac) and the clinger (six legs, low and flat, for walls and roofs). Hive nests come in three stages (small, grown, burst). There are goo and blood decals, and every alien has a corpse-fade pose.
+- **NPC survivors:** six ready-made recruitable survivors, each with its own silhouette: wide hat and cane, long coat and bag, hood up, broad farmer, poncho, crate carried in front. Clips: sit, lean on a wall, wave, carry.
+- **Ground (Art 4):** two-metre tiles in four seasons' colours, with small shapes scattered on top. Also a real kerb, plus puddle, ice, crack and pothole decals.
+- **Broken buildings (Art 6):** damaged and holed bays, snapped frames, rubble piles, torn wallpaper, bare studs and boarded doors.
+- **Effects and sky:** small pieces with notes on how each scales and fades: flames, smoke, explosions, splashes, moon phases, clouds, lightning and aurora.
+- **Icons:** the status, button and arrow icons follow the weapon icons' field-journal style (`assets/ui/`).
+
 ## Fewest vertices (18 October 2026)
 
 How every model is kept cheap, from the research in the art guide:

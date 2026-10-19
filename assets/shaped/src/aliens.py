@@ -13,10 +13,12 @@ neon threats). Each one reads from its silhouette alone:
 Each alien lists bones (pivot, tip, parent) and clips: per frame, rotations in degrees [x, y, z] for the bones that move.
 Pieces marked glow:true are drawn without lighting and should carry a small coloured light at night."""
 from kit import *
+import math
 
 PALETTE = {
   'hide': '#2c2a30', 'hideD': '#1d1b20', 'bruise': '#4a3a52', 'bone': '#b8ab94', 'slate': '#56606b', 'slateD': '#3d454e',
-  'plate': '#262b31', 'eye': '#9cff6a', 'vent': '#5df2c0', 'pod': '#3b3242', 'podD': '#28212e', 'seam': '#b4ff73'
+  'plate': '#262b31', 'eye': '#9cff6a', 'vent': '#5df2c0', 'pod': '#3b3242', 'podD': '#28212e', 'seam': '#b4ff73',
+  'sac': '#a8ff5a', 'goo': '#3a5a2a', 'gooL': '#6a8a3a', 'blood': '#5a1a18'
 }
 G = dict(glow=True)
 
@@ -132,6 +134,93 @@ def nest():
     return {'bones': {'root': {'pivot': [0, 0, 0], 'tip': [0, 1, 0]}}, 'parts': {'root': pods + tendrils + wall}, 'clips': {'idle': [{}]}, 'height': 2.4,
             'about': 'Takes over buildings and spreads. Placed at a doorway or against a wall (-Z); seams glow and pulse at night.'}
 
+# ================= spitter: a ranged alien that rears back and spits =================
+def spitter():
+    B = {'body': {'pivot': [0, 0.62, 0], 'tip': [0, 0.8, 0.3]},
+         'neck': {'pivot': [0, 0.85, 0.22], 'tip': [0, 1.3, 0.38], 'parent': 'body'},
+         'head': {'pivot': [0, 1.3, 0.38], 'tip': [0, 1.34, 0.62], 'parent': 'neck'},
+         'jaw': {'pivot': [0, 1.26, 0.42], 'tip': [0, 1.18, 0.6], 'parent': 'head'}}
+    P = {'body': [frustum([[0, 0.45, -0.1, 0.22, 0.24], [0, 0.75, -0.02, 0.3, 0.3], [0, 0.95, 0.12, 0.18, 0.18]], 'bruise'),
+                  frustum([[0, 0.58, 0.18, 0.16, 0.06], [0, 0.86, 0.26, 0.12, 0.05]], 'sac', **G),       # the glowing throat sac it spits from
+                  *[tip([0, 0.8 - 0.1*i, -0.12 - 0.05*i], [0, 0.98 - 0.1*i, -0.3 - 0.05*i], 0.05, 0.05, 'bone') for i in range(3)]],
+         'neck': [seg([0, 0.85, 0.22], [0, 1.3, 0.38], 0.08, 0.08, 0.06, 0.06, 'hide')],
+         'head': [frustum([[0, 1.28, 0.36, 0.08, 0.07], [0, 1.34, 0.5, 0.07, 0.05]], 'hideD', ax='z', caps=[True, False]), tip([0, 1.34, 0.5], [0, 1.36, 0.66], 0.1, 0.07, 'hideD', ax='z'),
+                  *[flat([(sg*0.072, 1.32, 0.42), (sg*0.072, 1.345, 0.52), (sg*0.064, 1.335, 0.54), (sg*0.066, 1.31, 0.44)], 'eye', (sg, 0, 0), **G) for sg in (1, -1)]],
+         'jaw': [tip([0, 1.25, 0.42], [0, 1.2, 0.62], 0.07, 0.025, 'bruise', ax='z'), flat([(-0.03, 1.255, 0.46), (0.03, 1.255, 0.46), (0.0, 1.235, 0.58)], 'sac', (0, 1, 0), **G)]}
+    for sg, sd in ((1, 'l'), (-1, 'r')):
+        for nm, a, b, c, par, w in (('arm', [sg*0.24, 0.85, 0.15], [sg*0.38, 0.55, 0.42], [sg*0.36, 0.0, 0.55], 'body', 0.04),
+                                    ('leg', [sg*0.2, 0.5, -0.15], [sg*0.36, 0.62, -0.42], [sg*0.4, 0.0, -0.5], 'body', 0.06)):
+            B[nm + '_' + sd] = {'pivot': a, 'tip': b, 'parent': par}; B[nm + 'lo_' + sd] = {'pivot': b, 'tip': c, 'parent': nm + '_' + sd}
+            P[nm + '_' + sd] = [seg(a, b, w, w, w*0.8, w*0.8, 'hide')]
+            P[nm + 'lo_' + sd] = [tip(b, c, w*0.9, w*0.9, 'hideD'), tip(b, [b[0], b[1] + 0.12, b[2] - 0.04], 0.025, 0.025, 'bone')]
+    walk = []
+    for k in range(4):
+        s = [1, 0, -1, 0][k]
+        walk.append({'arm_l': [-20*s, 0, 0], 'leg_r': [-20*s, 0, 0], 'arm_r': [20*s, 0, 0], 'leg_l': [20*s, 0, 0], 'neck': [0, 8*s, 0], 'body': [0, 0, 3*s]})
+    clips = {'idle': [{'neck': [-6, 0, 0], 'jaw': [8, 0, 0]}], 'walk': walk,
+             'attack': [{'neck': [-38, 0, 0], 'head': [-20, 0, 0], 'jaw': [5, 0, 0], 'body': [-8, 0, 0]},      # rears back, sac swelling
+                        {'neck': [30, 0, 0], 'head': [10, 0, 0], 'jaw': [40, 0, 0], 'body': [8, 0, 0]},        # spits: release the glob from the mouth here
+                        {'neck': [8, 0, 0], 'jaw': [12, 0, 0]}],
+             'dead': [{'body': [0, 0, 150], 'neck': [40, 0, 0], 'arm_l': [40, 0, 0], 'arm_r': [40, 0, 0], 'leg_l': [-30, 0, 0], 'leg_r': [-30, 0, 0], 'jaw': [35, 0, 0]}]}
+    C = mk(B, P, clips, 1.4, 'Ranged. About 1.4 m, a bloated body on four legs and a long neck; rears back and spits a glowing glob from its throat sac (the projectile is spit_glob, its splash goo_splat).')
+    C['spitFrom'] = {'bone': 'jaw', 'pos': [0, 1.24, 0.62], 'frame': 1}
+    return C
+# ================= clinger: climbs walls and roofs =================
+def clinger():
+    B = {'body': {'pivot': [0, 0.3, 0], 'tip': [0, 0.3, 0.5]},
+         'head': {'pivot': [0, 0.32, 0.42], 'tip': [0, 0.3, 0.78], 'parent': 'body'},
+         'tail': {'pivot': [0, 0.3, -0.42], 'tip': [0, 0.25, -1.1], 'parent': 'body'}}
+    P = {'body': [frustum([[0, 0.3, -0.45, 0.12, 0.07], [0, 0.32, 0.0, 0.2, 0.09], [0, 0.32, 0.42, 0.13, 0.08]], 'hide', ax='z'),
+                  *[tip([sg*0.08, 0.38, z], [sg*0.16, 0.48, z - 0.06], 0.03, 0.03, 'bone') for sg in (1, -1) for z in (-0.25, 0.0, 0.25)]],
+         'head': [frustum([[0, 0.32, 0.42, 0.11, 0.07], [0, 0.3, 0.62, 0.08, 0.05]], 'hideD', ax='z', caps=[True, False]), tip([0, 0.3, 0.62], [0, 0.28, 0.8], 0.08, 0.05, 'hideD', ax='z'),
+                  *[tip([sg*0.06, 0.28, 0.66], [sg*0.13, 0.26, 0.84], 0.015, 0.012, 'bone') for sg in (1, -1)],
+                  *[flat([(sg*0.04 - 0.012, 0.371, 0.5), (sg*0.04 + 0.012, 0.371, 0.5), (sg*0.04 + 0.01, 0.366, 0.56), (sg*0.04 - 0.01, 0.366, 0.56)], 'eye', (0, 1, 0), **G) for sg in (1, -1)],
+                  flat([(-0.01, 0.37, 0.44), (0.01, 0.37, 0.44), (0.006, 0.371, 0.48), (-0.006, 0.371, 0.48)], 'eye', (0, 1, 0), **G)],
+         'tail': [loft([[0, 0.3, -0.42, 0.08, 0.05], [0, 0.28, -0.75, 0.05, 0.035], [0, 0.25, -1.1, 0, 0]], 'hide', n=4, ax='z', caps=[True, False])]}
+    for i, z in enumerate((0.3, 0.0, -0.3)):
+        for sg, sd in ((1, 'l'), (-1, 'r')):
+            hp, kn, ft = [sg*0.14, 0.32, z], [sg*0.42, 0.5, z + 0.08*(1 - i)], [sg*0.62, 0.0, z + 0.16*(1 - i)]
+            nm = 'leg%d_%s' % (i, sd)
+            B[nm] = {'pivot': hp, 'tip': kn, 'parent': 'body'}; B[nm + 'lo'] = {'pivot': kn, 'tip': ft, 'parent': nm}
+            P[nm] = [seg(hp, kn, 0.03, 0.03, 0.022, 0.022, 'hide')]
+            P[nm + 'lo'] = [tip(kn, ft, 0.03, 0.03, 'hideD'), tip(ft, [ft[0] + sg*0.04, 0.0, ft[2] + 0.06], 0.012, 0.012, 'bone')]
+    walk = []
+    for k in range(4):
+        s = [1, 0, -1, 0][k]
+        f = {}
+        for i in range(3):
+            for sd, sg in (('l', 1), ('r', -1)):
+                ph = s if (i % 2 == 0) == (sd == 'l') else -s
+                f['leg%d_%s' % (i, sd)] = [0, 22*ph, 0]; f['leg%d_%slo' % (i, sd)] = [0, 0, -10*abs(ph)*sg]
+        f['tail'] = [0, 14*s, 0]; walk.append(f)
+    clips = {'idle': [{'head': [0, 14, 0], 'tail': [0, -10, 0]}], 'walk': walk,
+             'attack': [{'body': [-14, 0, 0], 'head': [-10, 0, 0], 'leg0_l': [0, 0, 20], 'leg0_r': [0, 0, -20]}, {'body': [20, 0, 0], 'head': [16, 0, 0], 'leg0_l': [-40, 0, 0], 'leg0_r': [-40, 0, 0]}, {'body': [4, 0, 0]}],
+             'cling': [{'leg0_l': [0, -20, -12], 'leg0_r': [0, 20, 12], 'leg2_l': [0, 20, -12], 'leg2_r': [0, -20, 12], 'leg1_l': [0, 0, -14], 'leg1_r': [0, 0, 14], 'head': [-20, 0, 0]}],
+             'dead': [{'body': [0, 0, 175], 'leg0_l': [0, 0, 40], 'leg1_l': [0, 0, 40], 'leg2_l': [0, 0, 40], 'leg0_r': [0, 0, -40], 'leg1_r': [0, 0, -40], 'leg2_r': [0, 0, -40]}]}
+    C = mk(B, P, clips, 0.55, 'Climber. About 1.9 m from nose to tail, low and flat on six legs with hooked feet; walks up walls and across roofs. On a wall, turn the whole model so its underside faces the wall and play cling or walk.')
+    return C
+# ================= the hive nest grows in three stages, then bursts =================
+def hive(stage):
+    import copy
+    N = nest()
+    k = {'small': 0.45, 'grown': 1.0, 'burst': 1.0}[stage]
+    parts = []
+    for q in N['parts']['root']:
+        q = copy.deepcopy(q); q['p'] = [R4(v*k) for v in q['p']]
+        if 'r' in q: q['r'] = [[R4(v*k) for v in r[:5]] + r[5:] for r in q['r']]
+        if 'v' in q: q['v'] = [[R4(v*k) for v in vv] for vv in q['v']]
+        parts.append(q)
+    if stage == 'burst':   # pods split open: dark husks, shell shards, goo spread on the ground, seams no longer glow
+        parts = [dict(q, c='podD') if q['c'] in ('pod',) else q for q in parts if not q.get('glow')]
+        parts += [hull([(x - 0.12, 0, z - 0.06), (x + 0.1, 0, z - 0.08), (x + 0.12, 0, z + 0.07), (x - 0.1, 0, z + 0.06), (x - 0.06, 0.04, z - 0.02), (x + 0.05, 0.05, z - 0.03), (x + 0.06, 0.03, z + 0.03), (x - 0.05, 0.04, z + 0.02)], 'pod')
+                  for x, z in ((1.0, 0.6), (-0.9, 0.9), (0.3, -0.9), (-1.2, -0.3), (0.8, -0.6))]
+        parts += [flat([(math.cos(a)*r, 0.01, math.sin(a)*r) for a, r in zip([i*2*math.pi/9 for i in range(9)], (1.6, 1.3, 1.8, 1.2, 1.5, 1.9, 1.3, 1.7, 1.4))], 'goo', (0, 1, 0))]
+    return {'bones': {'root': {'pivot': [0, 0, 0], 'tip': [0, 1, 0]}}, 'parts': {'root': parts}, 'clips': {'idle': [{}]}, 'height': round(2.4*k, 2),
+            'about': {'small': 'A new hive: a few pods the size of a dog.', 'grown': 'A grown hive (the nest): pods, tendrils, glowing seams.', 'burst': 'A burst hive: split husks, shell shards and a goo pool; nothing glows.'}[stage]}
+def fade_of(dead):
+    """the corpse-fade pose: the dead pose slumped flatter, every turn pushed a little further"""
+    return [{b: [round(v*1.12, 1) for v in r] for b, r in dead[0].items()}]
+
 pack = {
   'name': 'aliens', 'version': 1, 'style': 'the survivors\' shape language turned wrong: flat planes and points, wrong-way joints, drab bodies, glowing eyes and vents',
   'units': 'metres', 'facing': '+Z', 'palette': PALETTE,
@@ -140,7 +229,8 @@ pack = {
            'per frame, rotations in degrees [x, y, z] about each bone pivot (order X, then Y, then Z, child bones carried along). '
            'The game can bake each frame into a pose, as it does for the Bestiary models today, and play walk at about 4 frames a second, faster for the swarmer. '
            'Eyes, vents and seams are separate pieces marked glow:true: draw them unlit (emissive).',
-  'parts': {'swarmer': None, 'stalker': None, 'giant': None, 'nest': None}
+  'parts': {},
+  'fadeRule': 'fade is the corpse-fade pose: blend from dead to fade over about 2 s, then sink the body 0.3 m into the ground and darken it to the ground colour over 4 s before removing it.'
 }
 def scaled(C, k):
     """the whole creature (bones, pieces, height) made k times bigger; clips (angles) are unchanged"""
@@ -155,7 +245,20 @@ def scaled(C, k):
     C['parts'] = {b: [one(q) for q in ps] for b, ps in C['parts'].items()}; C['height'] = round(C['height']*k, 2)
     C['about'] = C['about'].replace('0.8 m tall and 1.5 m', '0.9 m tall and 1.65 m').replace('2.1 m hunched (2.5 m upright)', '2.2 m hunched (2.7 m upright)').replace('3.6 m tall on its knuckles and 2.6 m', '4 m tall on its knuckles and 2.9 m')
     return C
-A = {'swarmer': scaled(swarmer(), 1.1), 'stalker': scaled(stalker(), 1.075), 'giant': scaled(giant(), 1.11), 'nest': nest()}
+A = {'swarmer': scaled(swarmer(), 1.1), 'stalker': scaled(stalker(), 1.075), 'giant': scaled(giant(), 1.11), 'spitter': spitter(), 'clinger': clinger(),
+     'nest': nest(), 'hive_small': hive('small'), 'hive_grown': hive('grown'), 'hive_burst': hive('burst')}
+for k, C in A.items():
+    if 'dead' in C['clips']: C['clips']['fade'] = fade_of(C['clips']['dead'])
+# goo, blood and the spit glob: flat decals and one small solid, as their own 'creature' with no bones that move
+def blob(x, z, r, c, n=7, seed=0):
+    import random; R = random.Random(seed)
+    return flat([(x + math.cos(a)*r*R.uniform(0.6, 1.2), 0.008, z + math.sin(a)*r*R.uniform(0.6, 1.2)) for a in [i*2*math.pi/n for i in range(n)]], c, (0, 1, 0))
+DEC = {'goo_splat': [blob(0, 0, 0.5, 'goo', 9, 1), blob(0.6, 0.3, 0.12, 'goo', 6, 2), blob(-0.5, 0.5, 0.09, 'goo', 6, 3), blob(0.1, 0, 0.22, 'gooL', 7, 4)],
+       'blood_1': [blob(0, 0, 0.3, 'blood', 8, 5), blob(0.35, 0.1, 0.06, 'blood', 5, 6)], 'blood_2': [blob(0, 0, 0.18, 'blood', 7, 7), blob(0.2, -0.25, 0.1, 'blood', 6, 8), blob(-0.15, 0.3, 0.07, 'blood', 5, 9)],
+       'blood_trail': [blob(0, z, 0.07 + 0.02*(i % 2), 'blood', 5, 10 + i) for i, z in enumerate((0.0, 0.3, 0.55, 0.85, 1.2))],
+       'spit_glob': [loft([[0, 0, -0.12, 0, 0], [0, 0, -0.02, 0.06, 0.06], [0, 0, 0.06, 0.05, 0.05], [0, 0, 0.1, 0, 0]], 'sac', ax='z', n=6, caps=[False, False], glow=True)]}
+A['decals'] = {'bones': {'root': {'pivot': [0, 0, 0], 'tip': [0, 1, 0]}}, 'parts': {k: v for k, v in DEC.items()}, 'clips': {}, 'height': 0,
+               'about': 'Not a creature: ground decals and the spit projectile. goo_splat where a spit lands or an alien dies; blood_1, blood_2 and blood_trail for survivors; spit_glob flies along +Z, glowing.'}
 pack['parts'] = {k: v['parts'] for k, v in A.items()}
 pack['creatures'] = {k: {kk: vv for kk, vv in v.items() if kk != 'parts'} for k, v in A.items()}
 out, st = write_pack('aliens', pack, __file__)

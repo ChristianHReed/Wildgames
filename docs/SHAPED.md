@@ -78,14 +78,20 @@ Silhouette first: square-shouldered wedge torsos, arms tapering to points, strai
 
 ## aliens (`assets/shaped/aliens.js`, version 1)
 
-The survivors' shape language turned wrong: flat planes and points, wrong-way joints, drab bodies, glowing eyes and vents. Our own designs **and our own rigs**, replacing the Bestiary models and skeletons. Our own alien designs and rigs, replacing the Bestiary stand-ins and their skeletons. Each has bones (pivot, tip, parent), parts per bone, and clips (idle, walk, attack, dead, as the game uses today): per frame, rotations in degrees [x, y, z] about each bone pivot (order X, then Y, then Z, child bones carried along). The game can bake each frame into a pose, as it does for the Bestiary models today, and play walk at about 4 frames a second, faster for the swarmer. Eyes, vents and seams are separate pieces marked glow:true: draw them unlit (emissive).
+The survivors' shape language turned wrong: flat planes and points, wrong-way joints, drab bodies, glowing eyes and vents. Our own designs **and our own rigs**, replacing the Bestiary models and skeletons. Our own alien designs and rigs, replacing the Bestiary stand-ins and their skeletons. Each has bones (pivot, tip, parent), parts per bone, and clips (idle, walk, attack, dead, as the game uses today): per frame, rotations in degrees [x, y, z] about each bone pivot (order X, then Y, then Z, child bones carried along). The game can bake each frame into a pose, as it does for the Bestiary models today, and play walk at about 4 frames a second, faster for the swarmer. Eyes, vents and seams are separate pieces marked glow:true: draw them unlit (emissive). fade is the corpse-fade pose: blend from dead to fade over about 2 s, then sink the body 0.3 m into the ground and darken it to the ground colour over 4 s before removing it.
 
 | Alien | Height | Bones | Tris, verts, welded | What it is |
 | --- | --- | --- | --- | --- |
 | `swarmer` | 0.9 m | 12 | 192 / 452 / 149 | Small, numerous, weak alone. About 0.9 m tall and 1.65 m long, four spider legs with knees above the back, a tail spike. |
 | `stalker` | 2.2 m | 15 | 252 / 592 / 167 | Rare hunter, about 2.2 m hunched (2.7 m upright). Legs bend the wrong way, arms end in bone blades below the knee, a ragged cloak of skin. |
 | `giant` | 4.0 m | 13 | 334 / 724 / 226 | Huge and rare, about 4 m tall on its knuckles and 2.9 m wide at the shoulders. A tiny head with three eyes, glowing vents down its back. |
+| `spitter` | 1.4 m | 12 | 185 / 423 / 144 | Ranged. About 1.4 m, a bloated body on four legs and a long neck; rears back and spits a glowing glob from its throat sac (the projectile is spit_glob, its splash goo_splat). |
+| `clinger` | 0.55 m | 15 | 248 / 584 / 194 | Climber. About 1.9 m from nose to tail, low and flat on six legs with hooked feet; walks up walls and across roofs. On a wall, turn the whole model so its underside faces the wall and play cling or walk. |
 | `nest` | 2.4 m | 1 | 252 / 580 / 188 | Takes over buildings and spreads. Placed at a doorway or against a wall (-Z); seams glow and pulse at night. |
+| `hive_small` | 1.08 m | 1 | 252 / 580 / 188 | A new hive: a few pods the size of a dog. |
+| `hive_grown` | 2.4 m | 1 | 252 / 580 / 188 | A grown hive (the nest): pods, tendrils, glowing seams. |
+| `hive_burst` | 2.4 m | 1 | 307 / 735 / 213 | A burst hive: split husks, shell shards and a goo pool; nothing glows. |
+| `decals` | 0 m | 1 | 80 / 144 / 98 | Not a creature: ground decals and the spit projectile. goo_splat where a spit lands or an alien dies; blood_1, blood_2 and blood_trail for survivors; spit_glob flies along +Z, glowing. |
 
 Each creature: `parts[name][bone]` (pieces in the rest pose, model space), `creatures[name].bones` (pivot, tip, parent) and `creatures[name].clips` (`idle`, `walk` 4 frames, `attack` 3 frames, `dead`), each frame a map of bone to [x, y, z] degrees. To bake a frame: for each bone from the root down, rotate its pieces about its pivot by its angles (X, then Y, then Z), carrying the children. A bone with no entry keeps its rest pose.
 
@@ -140,6 +146,26 @@ The game places bays along each footprint edge: one bay per 2.4 m (stretch the b
 | `balcony` | 108 / 216 / 72 |
 | `awning` | 24 / 48 / 16 |
 | `sign` | 12 / 24 / 8 |
+| `wall_plain_damaged` | 78 / 180 / 86 |
+| `wall_siding_damaged` | 88 / 200 / 106 |
+| `wall_brick_damaged` | 82 / 188 / 94 |
+| `window_plain_damaged` | 154 / 332 / 134 |
+| `window_siding_damaged` | 170 / 364 / 166 |
+| `window_brick_damaged` | 154 / 332 / 134 |
+| `door_plain_damaged` | 150 / 324 / 130 |
+| `shopfront_damaged` | 126 / 276 / 118 |
+| `garage_damaged` | 98 / 220 / 110 |
+| `hole_plain` | 240 / 540 / 152 |
+| `hole_siding` | 254 / 568 / 180 |
+| `hole_brick` | 246 / 552 / 164 |
+| `frame_timber_snapped` | 96 / 240 / 66 |
+| `frame_steel_snapped` | 96 / 240 / 66 |
+| `frame_concrete_snapped` | 96 / 240 / 66 |
+| `rubble_small` | 60 / 170 / 40 |
+| `rubble_large` | 144 / 408 / 96 |
+| `inside_torn` | 24 / 36 / 36 |
+| `studs` | 96 / 192 / 64 |
+| `door_boarded` | 162 / 324 / 112 |
 
 | Template (whole building) | Tris, verts, welded |
 | --- | --- |
@@ -281,12 +307,14 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | plants | `reeds` | 78 / 184 / 59 |
 | plants | `mushrooms` | 104 / 216 / 68 |
 | plants | `bramble` | 118 / 272 / 57 |
-| vehicles | `hatchback.body` | 126 / 252 / 108 |
+| vehicles | `hatchback.body` | 128 / 256 / 112 |
 | vehicles | `hatchback.bonnet` | 12 / 24 / 8 |
 | vehicles | `hatchback.wheel` | 48 / 84 / 28 |
-| vehicles | `sedan.body` | 124 / 248 / 104 |
+| vehicles | `hatchback.boot` | 12 / 24 / 8 |
+| vehicles | `sedan.body` | 126 / 252 / 108 |
 | vehicles | `sedan.bonnet` | 12 / 24 / 8 |
 | vehicles | `sedan.wheel` | 48 / 84 / 28 |
+| vehicles | `sedan.boot` | 12 / 24 / 8 |
 | vehicles | `pickup.body` | 190 / 380 / 130 |
 | vehicles | `pickup.bonnet` | 12 / 24 / 8 |
 | vehicles | `pickup.wheel` | 48 / 84 / 28 |
@@ -431,6 +459,8 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `weapons.pistol.new` | 72 / 144 / 48 | barrel along +Z; flash sits at the muzzle (0, 0.03, 0.155), show it one or two frames, scale 0.8 to 1.3 at random; shell is ejected to +X; length 0.2 m; ground: roll 90, lift 0.015 |
 | `weapons.pistol.flash` | 15 / 37 / 15 |  |
 | `weapons.pistol.shell` | 20 / 36 / 12 |  |
+| `map.folded` | 16 / 32 / 16 |  |
+| `map.open` | 61 / 121 / 105 |  |
 | `fp.hold.right` | 58 / 116 / 40 |  |
 | `fp.hold.left` | 58 / 116 / 40 |  |
 | `fp.empty.right` | 54 / 116 / 38 |  |
@@ -438,4 +468,84 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `fp.reach.right` | 54 / 116 / 38 |  |
 | `fp.reach.left` | 58 / 116 / 40 |  |
 
-**Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).
+**Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3), `sit` (1), `lean_wall` (1), `wave` (3), `carry_crate` (4). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).
+
+**NPC looks** (in `survivor.js`, `npcLooks`, version 7): `old_ranger` (wide hat, vest and a cane: the tall slow silhouette), `medic` (long pale coat, bun and a bag across the body), `kid_hoodie` (hood up, hands low: small and hunched), `farmer` (broad, dungarees and tall yellow boots), `drifter` (a wide poncho makes a triangle), `mechanic` (leather jacket and a crate carried in front). Six ready-made recruitable survivors. Build each from its creator choices as usual, add parts.worn[body][k] for every k in worn, and parts.npc[k] for every k in npc (wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.
+
+## fx (`assets/shaped/fx.js`, version 1)
+
+Small pieces the game animates: each model is one to four pieces at about 1 m (sky pieces at unit size) with its origin at
+the centre of its base, and notes[name] says how to scale, turn and fade it over its life. Glow pieces are drawn unlit.
+Fading is the game's job (alpha or blending towards the fog colour); the shapes stay the same flat planes as every pack.
+Sky pieces are billboards: turn them to face the camera and place them on the sky dome.
+
+| Model | Tris, verts, welded | How to use it |
+| --- | --- | --- |
+| `effects.muzzle_flash` | 24 / 50 / 22 | At the muzzle, +Z along the barrel. Show 1-2 frames, random roll about Z, scale 0.8-1.3. Adds a short warm point light. |
+| `effects.tracer` | 12 / 24 / 8 | A 1.2 m streak along +Z; stretch along Z with speed, fade over 0.1 s. |
+| `effects.hit_spark` | 24 / 64 / 12 | Where a metal hit lands, +Y along the surface normal. Scale 0.6-1.0, fade over 0.15 s. |
+| `effects.dust_puff` | 102 / 216 / 57 | Landing and heavy steps. Grow from 0.5 to 1.4 and fade over 0.6 s; rises 0.1 m. |
+| `effects.step_dust` | 68 / 144 / 38 | A footstep on dry ground. Grow 0.6 to 1.2, fade over 0.4 s. |
+| `effects.step_snow` | 68 / 144 / 38 | A footstep in snow. Grow 0.6 to 1.2, fade over 0.5 s. |
+| `effects.step_splash` | 36 / 96 / 10 | A footstep in a puddle or shallow water. Rise and fall over 0.3 s. |
+| `effects.water_splash` | 82 / 200 / 59 | Something falling in water. Scale with its size; rise 0.2 s, fall 0.3 s. |
+| `effects.ripple` | 20 / 24 / 24 | A ring on the water surface (the inner disc hides the middle). Grow from 0.2 to 2 and fade over 1.2 s; rain makes many small ones. |
+| `effects.flame_small` | 22 / 56 / 17 | A candle-sized flame (lantern, match). Flicker: scale Y 0.85-1.15 at random each 0.1 s. |
+| `effects.flame_medium` | 22 / 56 / 17 | A campfire flame. Flicker: scale Y 0.8-1.2, sway the tip 5 degrees. |
+| `effects.flame_large` | 30 / 76 / 23 | A burning car or building. Flicker as medium; add smoke_column above. |
+| `effects.smoke_column` | 136 / 288 / 76 | Rising smoke, 4 m. Scroll upward and loop; scale 1-6 for a building fire; fade the top two pieces. |
+| `effects.explosion_core` | 68 / 144 / 38 | The fireball. Grow 0.3 to 2.5 over 0.25 s, then darken to smoke and fade over 1 s. Glow. |
+| `effects.explosion_ring` | 16 / 20 / 20 | The shockwave on the ground. Grow 0.5 to 6 over 0.4 s, fade. |
+| `effects.explosion_debris` | 48 / 136 / 32 | Chunks thrown out: give each piece its own velocity and spin, then leave them as rubble. |
+| `effects.flare_glow` | 20 / 24 / 24 | Billboard at a lit flare. Pulse 0.9-1.1, with a red point light; burns 60 s. |
+| `effects.goo_splat` | 12 / 16 / 16 | Alien goo where a spit lands or an alien is hit. Stays 60 s, then fades. |
+| `effects.glass_shards` | 6 / 18 / 18 | Broken window glass on the floor (also thrown out as small spinning pieces). Stays; walking on it is loud. |
+| `effects.wood_chips` | 60 / 120 / 40 | Splinters from a wood hit or a broken barricade: thrown and spinning, then left on the ground. |
+| `sky.moon_0` | 28 / 46 / 38 | Moon phase 0 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.moon_1` | 28 / 46 / 36 | Moon phase 1 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.moon_2` | 28 / 46 / 38 | Moon phase 2 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.moon_3` | 28 / 46 / 36 | Moon phase 3 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.moon_4` | 14 / 16 / 16 | Moon phase 4 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.moon_5` | 28 / 46 / 36 | Moon phase 5 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.moon_6` | 28 / 46 / 38 | Moon phase 6 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.moon_7` | 28 / 46 / 36 | Moon phase 7 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
+| `sky.cloud_fair` | 204 / 432 / 114 | A fair-weather cloud, about 3 m at unit scale: scale 20-40, drift slowly. |
+| `sky.cloud_overcast` | 182 / 394 / 103 | An overcast sheet, 6 m at unit scale: scale 40-80; many side by side make a lid of cloud. |
+| `sky.cloud_storm` | 164 / 344 / 92 | A thunderhead with an anvil top, 4.4 m tall: scale 60-120 on the horizon. |
+| `sky.rain_streak` | 4 / 8 / 8 | One raindrop streak, 0.5 m, two crossed planes. Fall 12 m/s, tilt with the wind. |
+| `sky.snow_flake` | 10 / 12 / 12 | A snowflake billboard. Fall 1 m/s with a slow side-to-side drift. |
+| `sky.lightning` | 12 / 24 / 16 | A 10 m bolt at unit scale: scale 30-80, show 2-4 frames with the screen flash. |
+| `sky.aurora` | 48 / 96 / 54 | Faint curtains for the final-night event, 8 m wide at unit scale: scale 50-100 low on the north sky, sway slowly, draw at 30-50% strength. |
+
+## ground (`assets/shaped/ground.js`, version 1)
+
+Each material is a 2 m by 2 m tile: a flat base square in colour slot BASE and a few small shapes on top in DETAIL and DETAIL2
+(tufts, pebbles, leaves, slab joints, road paint). Nothing crosses the tile's edge, so tiles repeat without seams.
+How to use it: paint the smooth ground in BASE (the terrain already has a colour per area), then scatter the tile's small
+shapes over each 2 m cell near the player, turned by a random quarter turn so the repeat does not show. seasons[material]
+gives BASE, DETAIL and DETAIL2 for spring, summer, autumn and winter (snow lies on level ground in winter).
+Decals (puddle, ice, crack, pothole) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long. kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm.
+
+| Model | Tris, verts, welded |
+| --- | --- |
+| `tiles.road` | 31 / 49 / 49 |
+| `tiles.road_centre` | 33 / 53 / 53 |
+| `tiles.sidewalk` | 21 / 49 / 27 |
+| `tiles.grass` | 146 / 364 / 118 |
+| `tiles.dry_grass` | 86 / 228 / 74 |
+| `tiles.dirt` | 70 / 168 / 64 |
+| `tiles.gravel` | 170 / 480 / 116 |
+| `tiles.mud` | 23 / 33 / 33 |
+| `tiles.sand` | 44 / 118 / 40 |
+| `tiles.water_edge` | 57 / 143 / 51 |
+| `tiles.leaf_litter` | 34 / 68 / 68 |
+| `tiles.snow` | 38 / 68 / 44 |
+| `decals.puddle` | 12 / 16 / 16 |
+| `decals.ice` | 11 / 17 / 17 |
+| `decals.crack` | 8 / 16 / 16 |
+| `decals.pothole` | 38 / 86 / 34 |
+| `kerb.kerb_strip` | 16 / 32 / 16 |
+
+## UI icons (`assets/ui/`)
+
+Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.

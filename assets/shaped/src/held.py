@@ -18,6 +18,7 @@ PALETTE = {
   'wood': '#b08c62', 'woodD': '#8a6a46', 'willow': '#d9b073', 'willowD': '#c49a5a', 'grip': '#3a2a20', 'tape': '#8f959c', 'tapeD': '#6f757c',
   'steel': '#8f969e', 'steelD': '#5b6168', 'iron': '#3c4046', 'ironD': '#1c1e22', 'blade': '#c8cdd2', 'red': '#9a3a30', 'blue': '#2e5a7a',
   'canopy': '#2f5d8c', 'canopyD': '#24496e', 'handle': '#6b4526', 'band': '#a8423a', 'leather': '#5a3a26', 'black': '#1f2024', 'polymer': '#2a2c30',
+  'paper': '#e8dfc6', 'crease': '#c8bea4', 'road': '#b8a27a', 'water': '#8aa6b8', 'pencil': '#4a4a52', 'ink': '#3a3a46',
   'brass': '#c8a24a', 'flash': '#ffd68a', 'flashCore': '#fff6d8', 'chip': '#e8dcc0', 'rust': '#8c4a2e', 'splinter': '#d9c09a', 'scuff': '#6a5a48'
 }
 G = dict(glow=True)
@@ -175,7 +176,26 @@ FP = {
             'left':  arm([0.28, -0.46, -0.08], [0.26, -0.48, 0.1], [0.24, -0.48, 0.26]) + fist([0.24, -0.48, 0.3])},
 }
 
-models = {'weapons': W, 'fp': {k: {'right': v['right'], 'left': v['left']} for k, v in FP.items()}}
+# ---------- the paper map (0.48): folded in the hand, and open in front of the eye ----------
+def map_open():
+    o = [box([0, 0, 0], [0.56, 0.4, 0.004], 'paper')]
+    o += [flat([(x - 0.002, -0.2, 0.0025), (x + 0.002, -0.2, 0.0025), (x + 0.002, 0.2, 0.0025), (x - 0.002, 0.2, 0.0025)], 'crease') for x in (-0.14, 0.0, 0.14)]
+    o += [flat([(-0.28, -0.002, 0.0025), (0.28, -0.002, 0.0025), (0.28, 0.002, 0.0025), (-0.28, 0.002, 0.0025)], 'crease')]
+    o += [flat([(-0.26, y - 0.004, 0.003), (0.26, y + 0.03, 0.003), (0.26, y + 0.038, 0.003), (-0.26, y + 0.004, 0.003)], 'road') for y in (-0.1, 0.06)]
+    o += [flat([(x - 0.003, -0.19, 0.003), (x + 0.003, -0.19, 0.003), (x + 0.02, 0.19, 0.003), (x + 0.014, 0.19, 0.003)], 'road') for x in (-0.08, 0.1)]
+    o += [flat([(-0.22, 0.1, 0.003), (-0.14, 0.12, 0.003), (-0.12, 0.17, 0.003), (-0.2, 0.18, 0.003), (-0.24, 0.14, 0.003)], 'water')]
+    o += [flat([(0.05, -0.05, 0.0035), (0.09, -0.01, 0.0035), (0.085, -0.005, 0.0035), (0.045, -0.045, 0.0035)], 'pencil'), flat([(0.05, -0.01, 0.0035), (0.09, -0.05, 0.0035), (0.095, -0.045, 0.0035), (0.055, -0.005, 0.0035)], 'pencil')]
+    o += [flat([(-0.15 + 0.012*i, -0.12 + 0.01*(i % 2), 0.0035), (-0.145 + 0.012*i, -0.12 + 0.01*(i % 2), 0.0035), (-0.145 + 0.012*i, -0.114 + 0.01*(i % 2), 0.0035), (-0.15 + 0.012*i, -0.114 + 0.01*(i % 2), 0.0035)], 'pencil') for i in range(10)]
+    cx, cy = 0.21, -0.14   # compass rose
+    o += [flat([(cx, cy + 0.05, 0.0035), (cx + 0.01, cy, 0.0035), (cx, cy - 0.05, 0.0035), (cx - 0.01, cy, 0.0035)], 'ink'), flat([(cx - 0.05, cy, 0.0035), (cx, cy + 0.01, 0.0035), (cx + 0.05, cy, 0.0035), (cx, cy - 0.01, 0.0035)], 'ink'),
+          flat([(cx - 0.006, cy + 0.06, 0.0035), (cx + 0.006, cy + 0.06, 0.0035), (cx + 0.006, cy + 0.075, 0.0035), (cx - 0.006, cy + 0.075, 0.0035)], 'red')]
+    return o
+MAP = {'folded': [box([0, 0, 0.05], [0.14, 0.02, 0.2], 'paper'), flat([(-0.07, 0.0101, 0.0), (0.07, 0.0101, 0.0), (0.07, 0.0101, 0.003), (-0.07, 0.0101, 0.003)], 'crease', (0, 1, 0)),
+                  flat([(-0.05, 0.0102, 0.06), (0.04, 0.0102, 0.1), (0.045, 0.0102, 0.105), (-0.045, 0.0102, 0.065)], 'road', (0, 1, 0))],
+       'open': map_open()}
+INFO['map'] = {'length': 0.56, 'ground': {'roll': 0, 'yaw': 0, 'lift': 0.01},
+               'note': 'folded: held like a weapon at the grip. open: a sheet 0.56 by 0.4 m printed on its +Z face; in first person turn it half a turn about Y so the print faces the eye, place its centre at (0, -0.08, 0.42), tip it back 25 degrees, and hold it with both empty hands at its lower corners.'}
+models = {'weapons': W, 'map': MAP, 'fp': {k: {'right': v['right'], 'left': v['left']} for k, v in FP.items()}}
 pack = {
   'name': 'held', 'version': 1, 'style': 'same flat planes and few corners as every pack; worn weapons are taped, chipped, rusty or bent; broken ones end in splinters',
   'units': 'metres', 'palette': PALETTE, 'slots': {'SKIN': 'survivor skin', 'SLEEVE': 'what the survivor wears on top'}, 'darker': 0.78,
