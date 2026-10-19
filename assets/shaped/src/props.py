@@ -230,10 +230,17 @@ def crop(stage):
 model('garden', 'garden_plot', plot_base())
 for st in ('sprouting', 'growing', 'ripe'): model('garden', 'garden_' + st, crop(st))
 
+# the art requests of 19 October 2026: more items, loot containers, plants, street props, hinged pieces, truck parts, wrecks and things players build
+import os
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'props_more.py')).read())
+
 pack = {
   'name': 'props', 'version': 1, 'style': 'rectangular frustums and boxes, flat colour planes, few corners; boxy worn 1970s-1990s vehicles',
   'units': 'metres', 'facing': '+Z', 'pivot': 'centre of the base', 'palette': PALETTE, 'about': __doc__.split('\n', 2)[2],
   'flatModels': True, 'models': M, 'moving': MOVING, 'vehicleRig': VRIG,
+  'containerRule': 'containers holds every searchable container twice: <name> closed and <name>_searched (doors open, drawer out, lid up, fewer things inside).',
+  'buildRule': 'build holds things players make and place; barricade has three stages (barricade, barricade_damaged, barricade_nearly_gone); campfire and generator have lit/running and out/off versions. glow pieces are flames, embers and lamps.',
+  'wreckRule': 'Every vehicle also comes as <name>_wreck (rusted, flat tyres, broken glass) and <name>_burnt (charred shell on bare rims); lower them by vehicleRig[...].sitDrop.',
   'gardenRule': 'garden_plot is the empty bed; draw garden_sprouting, garden_growing or garden_ripe on top of it for the plot\'s stage. rain_barrel is the rain collector.',
   'movingRule': 'moving lists which parts open or turn and where their hinge or axle is. The models are drawn closed; split the named part out when it needs to move.'
 }

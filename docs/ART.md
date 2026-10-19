@@ -51,6 +51,12 @@ Check every character in run and walk frames, not only standing.
 - Pieces are merged into one mesh per model with flat normals and vertex colours. Glowing pieces (lamps, lit screens, alien eyes) go in a second mesh that ignores lighting.
 - Characters keep rigid parts on the existing animation skeleton: each bone gets its own small group of pieces.
 
+## Held weapons, first-person arms and new clips (19 October 2026)
+
+- **Weapons** (`assets/shaped/held.js`): grip at the origin and business end along +Z. Each comes new, worn (taped, chipped, rusty or bent) and broken (a splintered stub). The survivor's hand carries the grip point, so one model serves first person, third person and the ground.
+- **First-person arms:** forearm and hand in the survivor's skin and sleeve colours, in three poses (holding, empty, reaching), seen from the eye.
+- **New survivor clips:** jump, airborne, land, hurt, drink, bandage, pick up, overhead chop, thrust and flat swing, given as bone turns on top of the rest pose.
+
 ## Fewest vertices (18 October 2026)
 
 How every model is kept cheap, from the research in the art guide:
