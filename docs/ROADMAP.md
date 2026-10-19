@@ -15,7 +15,8 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | World and map | OpenStreetMap city, loaded in pieces, hills, weather and seasons, journal map with memory and flags | Found, held paper map (0.53); ground tiles (Art 4) |
 | Aliens | Swarmer, stalker, giant, spitter, nests, roaming packs, horde nights | Base defence tuning, clinger, hives (0.50); alien memory (0.54) |
 | Survival | Injuries, food, sleep, clothing, farming, weapons with wear, tool bench | Carry weight (0.52) |
-| Bases and building | Grid placement with snapping, walls, fences, beds, chests, benches, salvage | Carry furniture whole (0.52); broken building states (Art 6) |
+| Bases and building | Grid placement with snapping, walls, fences, beds, chests, benches, salvage | Carry furniture whole (0.52); voxel walls, materials, harvest (0.56, 0.57); any building a base (0.58); vehicles through walls (0.60); broken building states (Art 6) |
+| Power | Power fails on a set day; generators | City power plants and cable box to the breaker panel (0.59) |
 | Vehicles | Town cars, the safe-house truck, repair, sleeping in the cab | Siphon, boots, headlights, wrecks and burnt cars (0.51) |
 | People | Your survivor with creator, skills, other players over direct connection, traders, recruitable survivors with jobs | More survivor jobs and dangers (0.49) |
 | Look and sound | Faceted pieces, framed buildings, effects, UI icons, held weapons | Moon phases, aurora, explosions and flames (0.55); remaining props and ground (Art 3, 4); music |
@@ -99,7 +100,12 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | **0.53** | The paper map as a found item and a held model (first person, using the pack's folded and open map); notes on flags; the map only works while you hold it | Map model (in the game) |
 | **0.54** | Alien memory: single aliens remember where they last saw you, return to nests at dawn, and lose interest by degrees; lone stalkers hunt along your trail | None |
 | **0.55** | The rest of the effects pack: moon phases, aurora, explosions, flames and smoke, hit sparks and tracers | Effects pack (in the game) |
-| Art 3, 4 and 6 | Loose items, ground tiles and broken building states; see the table of unused art above and the art track below | In the game |
+| **0.56** | Voxel building logic, part one: one set of rules for every wall. Inside walls and outside walls become the same thing: a wall is a run of voxel cells (0.25 m) set in a frame, and every cell has a material, a strength and a state. Frames are wood for houses and small buildings, steel for big ones, concrete for the biggest and for bunkers; the wall fill (siding, plasterboard, sheet steel, block, brick, glass) breaks more easily than the frame. Hits damage the cell, then the cell breaks into a hole, then the frame can snap. Generated buildings and player-built walls use the same cells, so a player wall can join, replace or be cut into a town wall | Voxel building kit (design chat, section 10) |
+| **0.57** | Voxel building logic, part two: harvest and build. Broken cells and torn-out frames give materials (planks, scrap wood, nails, steel beams, sheet metal, concrete chunks, rebar, bricks, glass) that go into a build menu, so any building can be cut up to extend another building or a base. Different materials have different strength, harvest time, tools needed (hand, axe, crowbar, hacksaw, sledge or cutting torch) and noise (noise draws aliens) | Material item icons (design chat, section 10) |
+| **0.58** | Any building is a base. Put a custom bed (built from harvested materials) in any building and it becomes your base: the building is claimed, its walls and rooms become a defended area that can be fortified (reinforce frames, board windows, add doors and fences), and you respawn there. Several bases allowed, the safe house is just the first | Claim marker and bed (design chat, section 10) |
+| **0.59** | Power grid. Each city has a power plant that can be repaired to light the whole town, or each district through substations. A cable box (portable junction box) takes power from generators, batteries or solar panels and plugs into the breaker panel of a house or building; breakers trip on overload. Lights, fridges, doors and pumps wake up when their building has power | Power plant, substation, breaker panel, cable box, battery, solar (design chat, section 10) |
+| **0.60** | Vehicle against buildings. With walls made of cells, a car or truck driven into a building bashes through the cells it hits; the cost to the vehicle matches the wall (wood siding scratches, brick dents the bonnet, concrete or steel frame wrecks the engine). Speed, vehicle mass and wall material set both damages; the rubble can be harvested | Car crash damage states (design chat, section 10) |
+| Art 3, 4 and 6 (after 0.60) | Loose items, ground tiles and broken building states; see the table of unused art above and the art track below | In the game |
 
 Finished from the old list: 0.47 horde nights (0.47.0, roaming packs 0.48.1), 0.48 map memory and flags (0.48.0). Moved: the held paper map to 0.53, fence and window tuning to 0.50, truck extras to 0.51.
 
@@ -122,7 +128,7 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Survivors: six NPC looks, NPC pieces, clips lean on wall and wave | In the game (0.49.0) | 0.49.0 |
 | Survivors: clips sit and carry crate | Sit in the game (0.49.2); carry crate not used | 0.49 |
 | Paper map models (folded, open) | Not used | 0.53 |
-| Props: loose items on the ground, searched container variants, hinged doors, plants, street props | Partly used | Art 3 (0.56) |
+| Props: loose items on the ground, searched container variants, hinged doors, plants, street props | Partly used | Art 3 (0.60) |
 | Ground tiles and kerb strips (`ground.js`) | Not loaded | Art 4 (0.57) |
 | Broken building states: damaged infill, holes, snapped frames, rubble, boarded door | Not used | Art 6 (0.58, with base defence work in 0.50) |
 
@@ -171,6 +177,16 @@ Ticked items are in the game.
 - [x] Place things on a half-metre grid with a ghost, snapping to walls, fences and building sides
 - [x] Take furniture and cars apart with an axe, crowbar or wrench; a tool bench to build
 - [ ] Carry furniture whole and place it (0.52)
+- [ ] Inside and outside walls from one voxel-cell logic (0.56)
+- [ ] Wood frames for small buildings, steel or concrete frames for big ones; walls break easier than frames (0.56)
+- [ ] Harvest broken walls and frames for materials, and build with them (0.57)
+- [ ] Any building becomes a base once a custom bed is in it; claimed buildings can be fortified (0.58)
+- [ ] Vehicles break through walls and are damaged in turn (0.60)
+
+### Power
+- [x] Power fails on a set day; generators
+- [ ] City power plants that can be repaired to light the whole town (0.59)
+- [ ] Cable box from generators, batteries or solar to the breaker panel of a house or building (0.59)
 
 ### Aliens
 - [x] Sight cone blocked by walls; shorter at night unless you carry a light

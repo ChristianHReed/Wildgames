@@ -70,6 +70,37 @@ Matching icons for the new buttons (Jump, Build mode, Back), a damage-direction 
 
 Jump grunt, landing thud per surface (grass, road, wood, metal), a swing and a hit for each weapon type (wood, metal, pan clang, umbrella flap), pistol shot and dry click, alien sounds for each kind (idle, notice, attack, die), door creak and slam, drawer and lid, generator hum, rain on roof versus rain outside, fire crackle, and a short musical sting for night falling and for dawn.
 
+## 10. Voxel buildings, power and vehicle damage (new, version 0.49.4, 19 October 2026)
+
+For roadmap steps 0.56 to 0.60. The game is moving to one wall logic: every wall, inside or outside, generated or player-built, is a run of **cells** (voxels). Nothing here replaces `buildings.js` yet; these pieces sit beside it and are wired in step by step. Same rules as before (shaped pieces, pack palette, metres, flat colours). Ask me before settling the cell size if it fights the look; my proposal is a **0.25 m cell** (four to a metre, so it fits the half-metre build grid), a wall panel 1.5 m wide, and storeys 3.0 m high.
+
+### 10.1 Wall cells by material
+Three frame kinds and the fills that sit in them. Each material needs **four states**: whole, cracked, breached (a hole you can pass through, frame still standing) and rubble. Where a piece has a frame, give a **snapped frame** too.
+- **Wood frame** (houses, sheds, small shops): studs and plates, siding boards, plasterboard on the inside, plank floor and ceiling joists.
+- **Steel frame** (offices, big shops, warehouses): I-beam column, beam, cross brace, sheet-metal panel, curtain-wall glass, steel deck floor.
+- **Concrete** (the biggest buildings, bunkers, car parks): poured wall, concrete block, brick, slab floor with rebar showing when cracked.
+- Joints: straight, corner, T, cross, wall end, wall on a floor edge, floor plate and ceiling plate, stair opening, and door and window **openings in each material** (frame, lintel, sill). Doors and windows need an intact, cracked and breached state too.
+- A **tileable cell sheet** per material (one cell, four states) so a wall can be built from copies, and a **wall panel** (1.5 m by 3.0 m) built from those cells for each material.
+
+### 10.2 Harvest materials (items)
+Icons and loose-on-the-ground models for what comes out of broken walls: planks, scrap wood, nails (a handful), steel beam, rebar bundle, sheet metal, concrete chunk, brick, glass sheet, wire (a coil). Plus **dust and chip bursts** per material (wood chips exist; need concrete dust, brick bits, metal sparks).
+
+### 10.3 Bases
+A **claim marker** that shows a building is a base (a small sign or flag nailed by the door), a **custom bed** made from harvested pieces (frame of planks, a mattress of cloth scraps) that looks different from the found beds, and **reinforcement pieces** laid over a wall of each material (planks across, sheet-metal plate, extra rebar mesh) in three stages like the existing barricade.
+
+### 10.4 Power
+- **Power plant**: a small plant that can stand on the edge of a city (turbine hall, stacks, transformer yard) in **dead** and **running** versions (glow pieces for windows and lights), plus control panel inside.
+- **Substation** with fence, **pole** with a transformer, **pylon**.
+- **Breaker panel** on a house wall: closed box, open box with a row of breakers, one breaker **tripped**.
+- **Cable box**: a portable junction box with a handle, three or four sockets and a status lamp (off, on, overload). **Cable**: a straight piece and a corner piece that can be laid along the ground and up a wall, and a plug end.
+- **Battery bank** (car-battery rack and a bigger box), **solar panel** (portable folding and a roof one), and an **outlet** and **light fitting** in on and off states for inside walls.
+
+### 10.5 Vehicle damage
+For every car: **front crumple** (light, heavy), **bonnet buckled**, **smoking bonnet**, cracked and missing **windscreen**, **bent bumper**. The pickup and van too. A **crash burst** (metal bits, glass, dust), **skid marks** (flat decal), and **hole in a wall** frames the car can come through, per material.
+
+### 10.6 Sound
+Wood crack, brick crumble, concrete crack, steel scream and bend, glass break, car hitting wall (light and heavy), plug in, breaker trip, power plant start, and the hum of a street coming back to power.
+
 ---
 
 Suggested order: section 1 (so the weapons and jump look right), then loose items and loot containers from section 2, then section 3, then Art 4 and Art 6.
