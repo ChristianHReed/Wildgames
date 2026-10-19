@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.46.1.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.47.0.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2547,7 +2547,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.46.1';
+var VERSION = '0.47.0';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2917,8 +2917,8 @@ function findTarget(){
 }
 /* ---- looting: searching something opens a window with what it holds ---- */
 var corpses = [], corpseN = 1, curLoot = null;
-var ANAME = ['swarmer', 'stalker', 'giant'], AROLL = [1, 2, 5];
-var ALOOT = [{scrap:2, water:1, none:4}, {ammo:3, medkit:2, bandage:1, scrap:2, fuel:1, battery:2, none:1}, {scrap:3, fuel:2, medkit:2, ammo:2, radio:1, battery:2}];
+var ANAME = ['swarmer', 'stalker', 'giant', 'spitter'], AROLL = [1, 2, 5, 2];
+var ALOOT = [{scrap:2, water:1, none:4}, {ammo:3, medkit:2, bandage:1, scrap:2, fuel:1, battery:2, none:1}, {scrap:3, fuel:2, medkit:2, ammo:2, radio:1, battery:2}, {scrap:3, water:1, battery:1, fuel:1, none:2}];
 function rollStash(tab, rolls){
   var tot = 0, got = {}, k; for (k in tab) tot += tab[k];
   for (var i = 0; i < rolls; i++){
@@ -3059,7 +3059,8 @@ function lookOf(o){ return net.role === 'host' ? o.look : (net.who[o.id] || {}).
 /* see: how far it can spot a standing survivor in daylight, straight ahead with nothing in the way. hear: how much better or worse than average its hearing is */
 var AK = [{n:'swarmer', hp:2, spd:4.3, nspd:5.0, dmg:3, r:0.3, cd:0.8, see:24, hear:1.2, reach:2.75, stand:2.4, pad:0.5},
           {n:'stalker', hp:12, spd:5.6, nspd:6.2, dmg:16, r:0.4, cd:1.3, see:20, hear:1.0, reach:1.95, stand:1.55},
-          {n:'giant', hp:70, spd:2.6, nspd:2.9, dmg:35, r:1.0, cd:1.8, see:18, hear:1.7, reach:3.3, stand:2.8}];
+          {n:'giant', hp:70, spd:2.6, nspd:2.9, dmg:35, r:1.0, cd:1.8, see:18, hear:1.7, reach:3.3, stand:2.8},
+          {n:'spitter', hp:6, spd:3.8, nspd:4.4, dmg:9, r:0.4, cd:2.4, see:24, hear:1.1, reach:0, stand:7, pad:0.4, spit:15}];
 /* stand: how close an alien comes before it strikes (centre to centre). Far enough that it stays in view in first person: a swarmer is low and long, so it stops about 2.4 m off and lunges. pad: extra reach your swings have against it, so you can still hit it from there */
 /* ---- what an alien knows. It only goes for you once it has seen you long enough, or you hit it.
    Sight: a cone ahead of it, blocked by walls and shut doors, shorter at night unless you carry a light, shorter if you crouch.
@@ -3375,15 +3376,38 @@ function nearLight(x, y, r){
 function lureAt(x, y){ for (var i = 0; i < lures.length; i++) if (Math.hypot(lures[i].x - x, lures[i].y - y) < 55) return lures[i]; return null; }
 function meleeDmg(){ return 2 + 0.25*lvl('melee'); }
 function searchTime(){ return 1.1*(1 - 0.06*lvl('scav')); }
-function addAlien(k, x, y){ zombies.push({id:++net.zid, k:k, x:x, y:y, hp:AK[k].hp, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.9 + Math.random()*0.25, v:Math.random()}); }
+function nightNo(){ return Math.floor((8 + time/DAY*24 + 4)/24); }   /* which night this is: it counts from 8 pm to 5 am */
+function hordeNight(){ var n = nightNo(); return n >= 3 && n % 3 === 0; }
+function hordeAnnounce(){ feed('A horde is coming. Get inside, bar the doors and hold until morning.', '#ff8f7a'); toast('Horde night. Wave after wave of aliens come for you. Barricade, stay inside the fence or hide, and use what you have built.', 8); }
+/* spitters: the glob flies in a straight line at chest height and splashes where it lands. Every player's own game works out whether it hit them */
+var spits = [];
+function addSpit(z, tx, ty){ var a = Math.atan2(ty - z.y, tx - z.x); spits.push({x:z.x + Math.cos(a)*0.6, y:z.y + Math.sin(a)*0.6, vx:Math.cos(a)*11, vy:Math.sin(a)*11, t:2.2, gy:groundAt(z.x, z.y), k:z.k, lvl:z.lvl || 0}); }
+function spitTick(dt){
+  for (var i = spits.length - 1; i >= 0; i--){ var s = spits[i], dead = false; s.t -= dt; s.x += s.vx*dt; s.y += s.vy*dt;
+    if (hitWall(s.x, s.y) || s.t <= 0 || (buildingAt(s.x, s.y) && !(P.inside))) dead = true;
+    else if (!P.veh && !P.hide && Math.hypot(s.x - P.x, s.y - P.y) < 0.65 && (P.jy || 0) < 0.7 && (s.lvl || 0) === (P.lvl || 0)){ dead = true; if (!P.sleep) P.cause = 'a spitter'; hitMe(AK[3].dmg, 3); P.hitFrom = Math.atan2(-s.vy, -s.vx); P.hitT = 1.2; sfx('hurt', undefined, undefined, 0.6); }
+    if (dead){ fxAdd('effects.goo_splat', s.x, s.y, groundAt(s.x, s.y), {life:45, s0:0.9, up:0.02}); spits.splice(i, 1); } }
+}
+function drawSpits(m){ var M = fxModel('decal.spit_glob'); for (var i = 0; i < spits.length; i++){ var s = spits[i]; if (M) m.modelS(M, s.x, s.y, Math.atan2(s.vy, s.vx) - 1.5708, s.gy + 1.15 + (s.lvl ? FH : 0), 1); else { m.al = 128; m.ybox(s.x, s.y, 0, 0, 0, s.gy + 1.15, 0.12, 0.12, 0.12, C('#9dff7a')); m.al = 255; } } }
+function addAlien(k, x, y){ var z0 = {id:++net.zid, k:k, x:x, y:y, hp:AK[k].hp, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.9 + Math.random()*0.25, v:Math.random()}; zombies.push(z0); return z0; }
 function spawnAliens(day){
-  var cs = [P], cnt = [0, 0, 0], i; net.peers.forEach(function(p){ if (p.ready && !p.cop) cs.push(p); });
+  var cs = [P], cnt = [0, 0, 0, 0], i; net.peers.forEach(function(p){ if (p.ready && !p.cop) cs.push(p); });
   for (i = 0; i < zombies.length; i++) cnt[zombies[i].k]++;
   var c0 = cs[Math.floor(Math.random()*cs.length)];
   var near = function(x, y, r){ for (var q = 0; q < cs.length; q++) if (Math.hypot(cs[q].x - x, cs[q].y - y) < r) return true; return false; };
   var ring = function(d0, d1, rr){ var a = Math.random()*6.283, d = d0 + Math.random()*(d1 - d0), x = c0.x + Math.cos(a)*d, y = c0.y + Math.sin(a)*d; return (near(x, y, 30) || circ(x, y, rr) || inSafe(x, y, 14)) ? null : [x, y]; };
   if (inSafe(c0.x, c0.y, 0) && Math.random() < 0.7) return;
   var p;
+  /* horde nights (0.47): every third day, once it is dark, wave after wave of swarmers (and later spitters) come for whoever is out, drawn to where you stand */
+  if (hordeNight() && dark > 0.55){
+    if (world.hordeDay !== nightNo()){ world.hordeDay = nightNo(); world.hordeLeft = Math.min(70, 18 + day*4)*(1 + 0.5*(cs.length - 1)); world.hordeT = 3; hordeAnnounce(); broadcast({t:'ev', e:{k:'horde'}}); }
+    world.hordeT -= 0.5;
+    if (world.hordeLeft > 0 && world.hordeT <= 0 && zombies.length < 55){ var hp = ring(32, 55, 0.6);
+      if (hp){ world.hordeT = 3.5; var hn = Math.min(world.hordeLeft, 4 + Math.floor(Math.random()*3)); world.hordeLeft -= hn;
+        for (i = 0; i < hn; i++){ var hx = hp[0] + Math.random()*4 - 2, hy = hp[1] + Math.random()*4 - 2; if (circ(hx, hy, 0.4)) continue; var hk = (day >= 6 && cnt[3] < 3 && Math.random() < 0.18) ? 3 : 0, hz = addAlien(hk, hx, hy); hz.st = 1; hz.stT = 25; hz.lx = c0.x; hz.ly = c0.y; hz.aw = 0.5; }
+        return; } }
+  }
+  if (day >= 4 && dark > 0.5 && cnt[3] < cs.length && Math.random() < 0.02){ p = ring(40, 65, 0.6); if (p) addAlien(3, p[0], p[1]); return; }
   if (dark > 0.6 && cnt[1] < cs.length && Math.random() < 0.05){ p = ring(45, 70, 0.6); if (p) addAlien(1, p[0], p[1]); return; }
   if (day >= 2 && !cnt[2] && Math.random() < 0.004){ p = ring(70, 100, 1.6); if (p) addAlien(2, p[0], p[1]); return; }
   if (cnt[0] >= Math.min(60, Math.round((4 + day*2)*(1 + dark*1.2)*QS.zmul*(1 + 0.6*(cs.length - 1))))) return;
@@ -3545,9 +3569,9 @@ function burst(x, y, vol, freq, dur, range, type){
 /* an alien call: a wavering tone through a growl. Swarmers chitter high, the stalker shrieks, the giant groans low */
 function alienCall(k, x, y, loud){
   if (!SND.ctx || !running || !SND.vol) return; var pl = sndPlace(x, y, loud ? 70 : 35); if (!pl) return; var t = SND.ctx.currentTime;
-  var base = [520, 300, 70][k], dur = [0.35, 0.9, 1.3][k]*(loud ? 1.3 : 1), o = SND.ctx.createOscillator(), lfo = SND.ctx.createOscillator(), lg = SND.ctx.createGain();
+  var base = [520, 300, 70, 400][k], dur = [0.35, 0.9, 1.3, 0.5][k]*(loud ? 1.3 : 1), o = SND.ctx.createOscillator(), lfo = SND.ctx.createOscillator(), lg = SND.ctx.createGain();
   o.type = k === 2 ? 'sawtooth' : 'square'; o.frequency.setValueAtTime(base*(0.9 + Math.random()*0.2), t); o.frequency.exponentialRampToValueAtTime(base*(k === 1 ? 2.4 : 0.6), t + dur);
-  lfo.frequency.value = [38, 22, 9][k]; lg.gain.value = base*0.25; lfo.connect(lg); lg.connect(o.frequency);
+  lfo.frequency.value = [38, 22, 9, 30][k]; lg.gain.value = base*0.25; lfo.connect(lg); lg.connect(o.frequency);
   var fl = SND.ctx.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = base*2.2; fl.Q.value = 2.5;
   var g = sndOut(pl[1]), v = (loud ? 0.32 : 0.16)*pl[0]; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v + 0.0001, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(fl); fl.connect(g); o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
@@ -3828,6 +3852,7 @@ function update(dt){
         if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
         if (T && T.b && !T.roof && z.k !== 2) alienAtPort(z, A, T.b, dt);
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
+        if (A.spit && T && !T.roof && !shy && d < A.spit && d > 2.5 && z.cd <= 0 && (T.lvl || 0) === (z.lvl || 0) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2) && !(buildingAt(z.x, z.y) !== buildingAt(T.x, T.y))){ z.cd = A.cd; z.ang = Math.atan2(T.y - z.y, T.x - z.x); addSpit(z, T.x, T.y); emit({k:'spit', s:{x:z.x, y:z.y, tx:T.x, ty:T.y, k:z.k, lvl:z.lvl || 0}}); alienCall(3, z.x, z.y, false); }
         if (T && !T.roof && !shy && d < A.reach && z.cd <= 0 && (((T.lvl || 0) === (z.lvl || 0)) || z.onSt || T.onSt) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ remember(P.hide.c); exitHide(); feed('It dragged you out of hiding! It will remember this place.', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.cause = 'a ' + A.n; hitMe(A.dmg, z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
       }
       if (z.k !== 2 && (T || z.st >= 1 || z.hunt)){ var zb2 = buildingAt(z.x, z.y); if (zb2 && zb2.int && zb2.int.idoors) zb2.int.idoors.forEach(function(dq, qi){ if (innerState(zb2, qi) === 0 && segDist(z.x, z.y, dq[0], dq[1], dq[2], dq[3]) < A.r + 0.45){ var ib1 = blockOf(zb2, 1000 + qi); if (ib1){ ib1.hp -= A.dmg*dt*1.1; z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.6; sfx('wood_hit', z.x, z.y, 0.7, 0.8, 50); } if (ib1.hp <= 0) doEdit({a:'unblock', b:zb2.id, k:1000 + qi}); return; } z.door = (z.door || 0) + dt; if (z.door > 1.2){ z.door = 0; setPort(zb2, 1000 + qi, 1); } } }); }   /* they shove inside doors open */
@@ -3857,6 +3882,7 @@ function update(dt){
     }
     if (dead || b.t <= 0) bullets.splice(i, 1);
   }
+  spitTick(dt);
   spawnT -= dt;
   if (spawnT <= 0 && net.role !== 'guest'){ spawnT = 0.5; spawnAliens(day); }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
@@ -4338,7 +4364,7 @@ function drawPeople(){
   }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.pplOn, 0); pplQ.length = 0;
 }
-var CNAME = ['swarmer', 'stalker', 'giant'];
+var CNAME = ['swarmer', 'stalker', 'giant', 'spitter'];
 function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
   var cl = c.clips[clip], f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1];
   gl.uniform4f(U.inst, x, gy, y, yaw); gl.uniform1f(U.hurtU, hurt ? 0.85 : 0); drawMesh(c.poses[f]);
@@ -4492,6 +4518,9 @@ function drawAlien(m, z){
     m.ybox(x, y, a, 0.05, 0, 1.5, 0.11, 0.42, 0.2, s1); m.ybox(x, y, a, 0.12, 0, 2.12, 0.13, 0.17, 0.12, s0);
     m.ybox(x, y, a, 0.3, 0.27, 1.25 + ph*0.08, 0.3, 0.05, 0.05, s0); m.ybox(x, y, a, 0.3, -0.27, 1.25 - ph*0.08, 0.3, 0.05, 0.05, s0);
     m.al = 128; m.ybox(x, y, a, 0.26, 0.05, 2.16, 0.012, 0.022, 0.022, C('#d8f4ff')); m.ybox(x, y, a, 0.26, -0.05, 2.16, 0.012, 0.022, 0.022, C('#d8f4ff')); m.al = 255;
+  } else if (z.k === 3){
+    var p0 = hc ? W1 : C('#4f6a3c'), p1 = hc ? W1 : C('#7aa05a');
+    m.ybox(x, y, a, 0, 0, 0.55, 0.3, 0.5, 0.26, p0); m.ybox(x, y, a, 0.3, 0, 0.95, 0.14, 0.14, 0.14, p1); m.al = 128; m.ybox(x, y, a, 0.42, 0, 0.95, 0.03, 0.06, 0.06, C('#d6ff7a')); m.al = 255;
   } else {
     var g0 = hc ? W1 : C('#5f5a70'), g1 = hc ? W1 : C('#77718c');
     m.ybox(x, y, a, ph*0.35, 0.5, 0.9, 0.34, 0.9, 0.34, g0); m.ybox(x, y, a, -ph*0.35, -0.5, 0.9, 0.34, 0.9, 0.34, g0);
@@ -4673,7 +4702,7 @@ function render(){
   m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
   drawEyes(m);
-  drawItemsFx(m, now); drawFxList(m); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
+  drawItemsFx(m, now); drawFxList(m); drawSpits(m); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); m.yo += ops[i].lvl ? FH : 0; if (ops[i].rf === 1){ var orb = buildingAt(ops[i].x, ops[i].y); if (orb) m.yo = roofY(orb); } queuePerson(m, ops[i], lookOf(ops[i]), now); }
@@ -5674,6 +5703,8 @@ function applyEv(e){
   else if (e.k === 'fire'){ if (e.f) fires.push({x:+e.f.x, y:+e.f.y, life:+e.f.life || 150}); }
   else if (e.k === 'cade'){ if (e.c) cades.push({x:+e.c.x, y:+e.c.y, hp:+e.c.hp || 30, yaw:+e.c.yaw || 0}); }
   else if (e.k === 'cades'){ cades = e.l || []; }
+  else if (e.k === 'spit' && e.s && net.role === 'guest' && isFinite(e.s.x) && isFinite(e.s.tx)){ addSpit({x:+e.s.x, y:+e.s.y, k:3, lvl:e.s.lvl | 0}, +e.s.tx, +e.s.ty); }
+  else if (e.k === 'horde' && net.role === 'guest'){ hordeAnnounce(); }
   else if (e.k === 'nest'){ setNest(e.b, e.on); }
   else if (e.k === 'edit'){ applyEdit(e.e); }
   else if (e.k === 'veh'){ var v = world.vmap[e.id]; if (v){ v.x = +e.x; v.y = +e.y; v.yaw = +e.yaw || 0; v.fuel = +e.fuel || 0; v.rd = -9; } }

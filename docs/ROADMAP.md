@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 19 October 2026, at version 0.46.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.47.0. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -57,6 +57,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.45.9 | Art batch 2 (sections 4 to 8), first part: the pack's effects (landing dust puff, footstep dust on gravel, snow puffs, puddle splash, water splash on swimming, goo splats when an alien is hit or dies, wood chips from felled trees) and the UI icons (status icons beside Bleeding, Infected, Soaked, Hungry and the rest, picture buttons for Jump, Build and Back, a low-health vignette under 25 health). Art delivered but not yet used by the game: spitter and clinger aliens (0.47 horde nights), hive stages, alien fade clip, NPC looks and clips (0.49), paper map (0.48), car boot parts, ground tiles (Art 4), broken building states (Art 6), moon phases, clouds, rain and snow pieces, lightning, aurora, explosions and flames. |
 | 0.46.0 | Building and salvage: choosing something in the Build menu now starts a placement mode with a ghost (green when it fits, red when not) that snaps to a half-metre grid, lines up with nearby walls and fences, sits flush against a building side and joins the end of walls you built (Rotate, Snap on/off, Place, Cancel; touch buttons too). Hold J (touch: Take apart) to take furniture, cars and bikes apart with an axe, crowbar, wrench or toolkit for wood, scrap, fibre, and from cars engine parts, batteries, tyres and fuel; the piece disappears for good (saved, shared in multiplayer) and the tool wears. Use the wood for walls and barricades, or to board doors and windows. Containers must be searched first. |
 | 0.46.1 | A tool bench you can build anywhere (Build menu: 6 wood, 3 scrap, uses the design chat's tool bench model). Stand at it with a made weapon and press E to repair for 1 scrap. It can be taken apart again (4 wood, 2 scrap back). Saved and shared like walls. |
+| 0.47.0 | Horde nights: every third night (night 3, 6, 9...) once it is dark, wave after wave of swarmers come for whoever is out, 18 to 70 per night, more with more players, heading for where you stand; a warning appears when it begins. New alien, the spitter (from night 4 alone, in hordes from day 6): keeps about 7 m away and lobs a glob that you can dodge by jumping or ducking behind walls; the glob splashes where it lands. Uses the design chat's spitter model and spit_glob. |
 
 ## Next versions
 
@@ -65,7 +66,7 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | Version | Features | Assets needed |
 | --- | --- | --- |
 | **0.46** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
-| **0.47** | Horde nights: every few nights a wave of aliens comes for your base; walls, barricades, boarded windows and light matter | None |
+| **0.47** (first part done in 0.47.0; fences and boarded windows tuning still to do) | Horde nights: every few nights a wave of aliens comes for your base; walls, barricades, boarded windows and light matter | None |
 | **0.48** | A paper map and notes: you only see where you have been, and can mark places | None |
 | **0.49** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger) | Shaped survivors (in the game) |
 

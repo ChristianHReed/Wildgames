@@ -520,3 +520,4 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 5. Barricade, campfire, bed, chest, rain collector and garden plot use the same placement; red means no room or not enough materials, and the bar says why.
 6. Use the wood from furniture to board a door (B at a door) or build a wall across it.
 7. (0.46.1) Build menu, Tool bench: place it outdoors; with a worn weapon equipped press E at it to repair for 1 scrap; hold J with an axe or crowbar to take it apart.
+8. (0.47.0) Use ?day=120 for short days. On night 3 at dusk a horde warning shows and swarmers arrive in groups of 4 to 6 until morning. From day 4 a spitter appears at night, stops about 7 m away and spits every 2 to 3 seconds; jump or step behind a wall to dodge it; a hit costs about 9 health.
