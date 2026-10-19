@@ -1,5 +1,7 @@
 # What the design chat still needs to build
 
+**Update, version 0.45.9:** sections 4 to 8 have arrived; the effects and UI icons are wired in, the rest waits for its game step (see the roadmap).
+
 **Update, version 0.45.8:** batch 1 (sections 1 to 3) has arrived and is wired in for weapons, arms, clips, barricades, fires, generators, dropped packs and outdoor crates. Still waiting on game code, not art: loose items on the ground, searched container variants inside buildings, hinged doors, plants, street props, car wrecks and burnt cars. Sections 4 onward are still to do.
 
 Written at version 0.45.5, 19 October 2026. Everything here is art the game currently fakes with plain boxes, draws with a stand-in, or does not have at all. Same rules as every pack so far: shaped pieces (box, bev, wedge, cyl, loft, decal, poly), flat colours from the pack palette, metres, origin at the centre of the base, front facing +Z, glow pieces for lights. See `docs/SHAPED.md` for the format and `docs/ART.md` for the look.

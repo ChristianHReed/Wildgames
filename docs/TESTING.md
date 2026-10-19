@@ -504,3 +504,10 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 6. Build a barricade, a fire and a generator, and drop a pack (die with items): each has a real model. Let a zombie chew a barricade: it goes through three stages. A fire shows as burnt out near the end.
 7. Add ?oldart to the address: all of the above go back to the old stand-ins.
 
+## Stage 5g: effects and icons (0.45.9)
+
+1. Jump and land outside: a puff of dust at your feet. Walk on gravel or run on leaves: small dust puffs. In winter: snow puffs. Wade through a puddle: small splashes. Walk into water: a splash.
+2. Hit an alien: green goo splats on the ground under it; kill one: a bigger splat that stays about 90 seconds then shrinks away. Chop a tree: wood chips fly.
+3. Get a wound, get wet, go hungry: each condition chip under the bars has its own small icon. Under 25 health the screen edges darken with a red vignette.
+4. On a phone, Jump and Build are pictures now; in build mode the Build button becomes Back.
+

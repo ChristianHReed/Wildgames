@@ -19,6 +19,7 @@
     --shadow:2px 3px 0 rgba(61,48,41,.16),0 10px 22px rgba(70,40,15,.14)}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--cream);font-family:var(--ui);color:var(--ink);user-select:none;touch-action:none}
   #game{display:block;width:100%;height:100%}
+  #lowhp{position:fixed;inset:0;pointer-events:none;opacity:0;background:url(assets/ui/low_health_vignette.svg) center/100% 100% no-repeat;transition:opacity .4s;z-index:3}
   #vig{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 55%,rgba(0,0,0,0) 40%,rgba(2,4,10,.92) 100%)}
   .hidden{display:none !important}
   .card,.panel,.modal,#invite,#prompt,#lockhint,#copBar{position:relative;background:var(--paper);border:1px solid var(--edge);border-radius:6px;box-shadow:var(--shadow)}
@@ -68,6 +69,7 @@
   #goalLine::before{content:"\25C6  ";color:var(--ochre);font-size:9px;vertical-align:1px}
   #conds{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
   #conds span{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(150,30,24,.78);padding:2px 6px;border-radius:8px}
+  #conds span img{width:16px;height:16px;vertical-align:-4px;margin-right:3px}
   #conds span.mild{background:rgba(90,80,60,.7)}
   #bRest{background:#b9a8e0}
   #tiredMask{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(10,6,4,.95) 100%)}
@@ -151,6 +153,7 @@
   #knob{position:absolute;left:38px;top:38px;width:50px;height:50px;border-radius:999px;background:var(--cream);border:2px solid var(--outline);box-sizing:border-box}
   /* two touch HUD modes: the everyday one (swing, shoot, throw, light) and a build one (wall, fire, mark, build menu), switched by the button above Swing */
   #touch #tAtk{right:22px;bottom:78px;width:84px;height:84px;background:var(--clay);color:#fff}
+  #tJump img,#tMode img{width:84%;height:84%;pointer-events:none}
   #tJump{right:30px;bottom:176px;width:62px;height:62px}
   #tMode{right:34px;bottom:248px;width:54px;height:54px;font-size:11px !important}
   #tShoot{right:116px;bottom:66px;width:66px;height:66px}
@@ -197,7 +200,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<div id="vig"></div><div id="hurt"></div><div id="tiredMask"></div><div id="sleepMask"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
+<div id="vig"></div><div id="lowhp"></div><div id="hurt"></div><div id="tiredMask"></div><div id="sleepMask"></div><div id="hideMask"></div><div id="hitDir"><i></i></div>
 <div id="play" class="hidden">
   <div id="cross"></div>
   <div id="vitals">
@@ -249,7 +252,7 @@
   <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><button id="bigClose">Close map</button></div></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
-    <button id="tAtk">Swing</button><button id="tJump">Jump</button><button id="tMode">Build</button>
+    <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
     <button id="tShoot" class="m1">Shoot</button><button id="tThrow" class="m1">Throw</button><button id="tLight" class="m1">Light</button>
     <button id="tCade" class="m2">Wall</button><button id="tFire" class="m2">Fire</button><button id="tPing" class="m2">Mark</button><button id="tBuild" class="m2">Build menu</button>
     <button id="tRun">Run</button><button id="tDuck">Crouch</button>
@@ -376,7 +379,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.8.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.9.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -386,7 +389,7 @@
 var ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
+  ['icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js"><\/script>'); });
   return set;
 })();
 </script>
@@ -1735,6 +1738,13 @@ var MODELS = {}, MS = 1;
     for (var n in idx){ var e = idx[n], P0 = new Float32Array(e.n*9); for (i = 0; i < e.n*9; i++) P0[i] = dv.getInt16(e.o + i*2, true)/1000*MS; MODELS[n] = {n:e.n, p:P0, c:buf.subarray(e.o + e.n*18, e.o + e.n*21), hx:e.hx*MS, hz:e.hz*MS, h:e.h*MS}; }
   } catch (er){ MODELS = {}; }
 })();
+Mesh.prototype.modelS = function(M, x, z, yaw, y0, sc){
+  var cs = Math.cos(yaw), sn = Math.sin(yaw), p = M.p, c = M.c, q = [0,0,0,0,0,0,0,0,0];
+  for (var i = 0; i < M.n; i++){
+    for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sc, lz = p[i*9 + j*3 + 2]*sc; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sc; q[j*3 + 2] = z + sn*lx + cs*lz; }
+    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
+  }
+};
 Mesh.prototype.model = function(M, x, z, yaw, y0){
   var cs = Math.cos(yaw), sn = Math.sin(yaw), p = M.p, c = M.c, q = [0,0,0,0,0,0,0,0,0];
   for (var i = 0; i < M.n; i++){
@@ -2017,9 +2027,12 @@ function hitMe(dmg, k){
     if (o.c <= 0){ delete P.worn[sl]; toast('Your ' + C.n.toLowerCase() + ' is torn to rags.', 4); } }
   injure(k, d.armor); updateHud();
 }
+/* the art chat's status icons (assets/ui/*.svg) beside each condition */
+var CONDI = {Bleeding:'bleeding', 'Open wound':'bleeding', Infected:'infected', 'Broken leg':'broken_leg', Splinted:'broken_leg', Soaked:'wet', Damp:'wet', 'Food poisoning':'sick', Exhausted:'tired', Tired:'tired', Cold:'cold', Hot:'hot', Hungry:'hungry', Thirsty:'thirsty'};
+function condIcon(t){ var k = t.split(' ')[0], n = CONDI[t] || CONDI[k] || (t.indexOf('Splinted') === 0 ? 'broken_leg' : null); return n ? '<img src="assets/ui/' + n + '.svg" alt="">' : ''; }
 function condText(){
   var c = []; if (P.bleed > 0) c.push('Bleeding'); else if (P.wound) c.push('Open wound'); if (P.inf) c.push('Infected'); if (P.leg === 1) c.push('Broken leg'); else if (P.leg === 2) c.push('Splinted leg ' + Math.ceil(P.legT/60) + ' min');
-  if (P.wet > 45) c.push('Soaked'); else if (P.wet > 15) c.push('Damp'); if (P.sick > 0) c.push('Food poisoning'); if (P.rest < 12) c.push('Exhausted'); else if (P.rest < 30) c.push('Tired'); return c;
+  if (P.wet > 45) c.push('Soaked'); else if (P.wet > 15) c.push('Damp'); if (P.sick > 0) c.push('Food poisoning'); if (P.rest < 12) c.push('Exhausted'); else if (P.rest < 30) c.push('Tired'); if (P.hunger < 20) c.push('Hungry'); if (P.thirst < 20) c.push('Thirsty'); if (P.body < -35) c.push('Cold'); else if (P.body > 50) c.push('Hot'); return c;
 }
 /* ---- roofs: up and down by a ladder, walk inside the edge, a fall hurts from above 3 m ---- */
 function roofY(b){ return (b.base || 0) + b.h; }
@@ -2525,7 +2538,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.45.8';
+var VERSION = '0.45.9';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2645,7 +2658,7 @@ function hold(id, down, up){
 }
 hold('tAtk', function(){ keys.Swing = true; }, function(){ keys.Swing = false; });
 hold('tJump', function(){ wantJump = true; });
-hold('tMode', function(){ el('touch').classList.toggle('bmode'); el('tMode').textContent = el('touch').classList.contains('bmode') ? 'Back' : 'Build'; });
+hold('tMode', function(){ el('touch').classList.toggle('bmode'); el('tMode').innerHTML = '<img src="assets/ui/' + (el('touch').classList.contains('bmode') ? 'back' : 'build') + '.svg" alt="">'; });
 hold('tBuild', function(){ el('buildBtn').click(); });
 hold('tShoot', function(){ wantShoot = true; });
 hold('tFire', function(){ place('fire'); });
@@ -2908,6 +2921,7 @@ function rollCustom(st, chance){
 }
 function stashLeft(o){ var st = o.stash, k; if (!st) return false; for (k in st.inv) if (st.inv[k] > 0) return true; for (k in st.items) if (st.items[k] > 0) return true; return false; }
 function addCorpse(z){
+  fxAdd('effects.goo_splat', z.x, z.y, z.roof ? roofY(z.roof) : groundAt(z.x, z.y), {life:90, s0:z.k === 2 ? 2.2 : 1.2, up:0.02});
   var c = {corpse:1, lvl:z.lvl || 0, ry:z.roof ? roofY(z.roof) : 0, id:'c' + (corpseN++) + '-' + Math.floor(Math.random()*1e6), x:z.x, y:z.y, k:z.k, name:'dead ' + ANAME[z.k], stash:rollStash(ALOOT[z.k], AROLL[z.k]), t:time};
   if (z.k === 2) rollCustom(c.stash, 0.5);
   if (!stashLeft(c)) return;
@@ -2998,7 +3012,7 @@ function swing(){
     if (!t.alive) return; var dx = t.x - P.x, dy = t.y - P.y; if (dx > 3 || dx < -3 || dy > 3 || dy < -3) return;
     var d = Math.hypot(dx, dy); if (d < bd && (d < 1 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; bt = t; }
   });
-  if (bt){ bt.hp--; bt.shake = 0.2; wear(0.5); sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); if (bt.id){ world.cut[bt.id] = 1; emit({k:'tree', id:bt.id}); } else emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 4 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.fresh++; feed('+1 Fresh food (fruit from the tree)', ITEMS.fresh[1]); } updateHud(); } }
+  if (bt){ bt.hp--; bt.shake = 0.2; fxAdd('effects.wood_chips', bt.x, bt.y, groundAt(bt.x, bt.y), {life:1.2, s0:0.8, s1:1.1, rise:0.3, up:0.9}); wear(0.5); sfx('chop', bt.x, bt.y, 0.8); if (bt.hp <= 0){ bt.alive = false; bt.hi = false; treeTile(bt.tk); if (bt.id){ world.cut[bt.id] = 1; emit({k:'tree', id:bt.id}); } else emit({k:'tree', i:world.trees.indexOf(bt)}); var wd0 = bt.sp >= 4 ? 3 : 2; inv.wood += wd0; feed('+' + wd0 + ' Wood', ITEMS.wood[1]); if (bt.sp < 2 && Math.random() < 0.35){ inv.fresh++; feed('+1 Fresh food (fruit from the tree)', ITEMS.fresh[1]); } updateHud(); } }
 }
 function shoot(){
   if (inv.ammo < 1){ toast('Out of ammo. Police and fire stations hold more.', 2.5); return; }
@@ -3550,11 +3564,15 @@ function surfTick(dt){
   if (P.surf !== was && P.mv && (P.surf === 'gravel' || P.surf === 'glass') && !P['said_' + P.surf]){ P['said_' + P.surf] = true; toast(P.surf === 'glass' ? 'Broken glass crunches underfoot: aliens hear it from much further. Crouch or step round it.' : 'Gravel is loud underfoot. Grass is quieter.', 4.5); }
 }
 function nearRoad(x, y){ return false; }
+function stepFx(sf){ var gy = (P.gy || 0) + (P.jy || 0), run = P.vis > 1;
+  if (sf === 'step_snow') fxAdd('effects.step_snow', P.x, P.y, gy, {life:0.5, s0:0.6, s1:1.2, rise:0.05, up:0.02});
+  else if (sf === 'water') fxAdd('effects.step_splash', P.x, P.y, gy, {life:0.3, s0:0.8, s1:1, up:0.02});
+  else if (sf === 'gravel' || (sf === 'leaves' && run)) fxAdd('effects.step_dust', P.x, P.y, gy, {life:0.4, s0:0.6, s1:1.2, rise:0.08, up:0.02}); }
 function sndTick(dt, moved){
   if (!SND.ctx) return;
   SND.out.gain.value = SND.vol;
   if (!P.veh && moved > 0){ P.stepD = (P.stepD || 0) + moved; var stride = P.crouch ? 0.6 : P.vis > 1 ? 1.45 : 1.05;
-    if (P.stepD > stride){ P.stepD = 0; if (!P.surf) P.surf = surfAt(P.x, P.y); stepSfx(P.surf, P.crouch ? 0.22 : P.vis > 1 ? 0.8 : 0.5); } }
+    if (P.stepD > stride){ P.stepD = 0; if (!P.surf) P.surf = surfAt(P.x, P.y); stepSfx(P.surf, P.crouch ? 0.22 : P.vis > 1 ? 0.8 : 0.5); stepFx(P.surf); } }
   var out = !P.inside, rain = (wx.w === 1 || wx.w === 2) ? (out ? 0.22 : 0.06) : wx.w === 4 ? (out ? 0.1 : 0.03) : 0, wind = (out ? 0.025 : 0.006) + (wx.w === 2 ? 0.07 : 0) + (wx.tor ? 0.18 : 0);
   var k = Math.min(1, dt*1.5); SND.rain.gain.value += (rain - SND.rain.gain.value)*k; SND.wind.gain.value += (wind - SND.wind.gain.value)*k;
   /* aliens nearby make themselves heard now and then, before you see them */
@@ -3660,13 +3678,13 @@ function update(dt){
   if (P.sleep){ sleepTick(dt); mf = ms = 0; if (ePress || tapUse) wakeUp(''); }
   if (P.hide){ if (Math.abs(mf) > 0.3 || Math.abs(ms) > 0.3 || ePress || tapUse){ exitHide(); ePress = false; tapUse = false; keys.KeyE = false; } mf = ms = 0; if (P.hide){ P.x = P.hide.c.x; P.y = P.hide.c.y; } }
   if (P.climbL){ climbTick(dt); mf = ms = 0; }
-  P.swim = !P.roof && !P.climbL && inWater(P.x, P.y, 0); P.inside = P.roof || P.climbL ? null : buildingAt(P.x, P.y);
+  var wasSwim = P.swim; P.swim = !P.roof && !P.climbL && inWater(P.x, P.y, 0); if (P.swim && !wasSwim) fxAdd('effects.water_splash', P.x, P.y, P.gy || 0, {life:0.5, s0:0.8, s1:1, up:0.1}); P.inside = P.roof || P.climbL ? null : buildingAt(P.x, P.y);
   setLvl(P); if (!P.inside) P.lvl = 0;
   var tgy = P.climbL ? climbH() : P.roof ? roofY(P.roof) : (world.hg ? (P.inside ? P.inside.base : hAt(P.x, P.y)) : 0) + (P.inside ? lvlY(P.inside, P) : 0);
   if (P.fall){ P.fall += 9.8*dt; P.gy -= P.fall*dt; if (P.gy <= tgy){ P.gy = tgy; P.fall = 0; } } else P.gy = P.gy === undefined || P.climbL || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
   /* jumping: a hop of about 0.7 m outdoors and half that under a ceiling; not while swimming, driving, hiding, climbing, falling or out of breath */
   if (wantJump){ wantJump = false; if (!P.jy && !P.jv && !P.fall && !P.swim && !P.veh && !P.hide && !P.climbL && !P.sleep && !P.cop && !P.tired && P.stam >= 10){ P.jv = P.inside ? 3.6 : 4.6; P.stam -= 8; P.noise = Math.max(P.noise || 0, 2); P.jy = 0.001; P.jumpT = time; } }
-  if (P.jy > 0 || P.jv){ if (P.fall || P.swim || P.climbL || P.hide || P.veh){ P.jy = 0; P.jv = 0; } else { P.jv -= 14*dt; P.jy += P.jv*dt; if (P.jy <= 0){ P.landT = time; CAM.landV = -Math.min(7, -P.jv)*0.5; P.jy = 0; P.jv = 0; P.noise = Math.max(P.noise || 0, 2.5); } } }
+  if (P.jy > 0 || P.jv){ if (P.fall || P.swim || P.climbL || P.hide || P.veh){ P.jy = 0; P.jv = 0; } else { P.jv -= 14*dt; P.jy += P.jv*dt; if (P.jy <= 0){ P.landT = time; if (!P.inside) fxAdd('effects.dust_puff', P.x, P.y, P.gy || 0, {life:0.6, s0:0.5, s1:1.4, rise:0.1, up:0.02}); CAM.landV = -Math.min(7, -P.jv)*0.5; P.jy = 0; P.jv = 0; P.noise = Math.max(P.noise || 0, 2.5); } } }
   if (net.role !== 'guest') weatherTick(dt, day);
   bodyTick(dt, hour);
   if (mf || ms){
@@ -3845,7 +3863,7 @@ function updateHud(){
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
   awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !(inv.ammo > 0)); el('tLight').classList.toggle('nx', !(inv.flashlight > 0)); el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
-  el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open|Damp)/.test(t) ? ' class="mild"' : '') + '>' + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
+  el('lowhp').style.opacity = P.hp < 25 ? Math.min(1, (25 - P.hp)/15) : 0; el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open|Damp|Cold|Hot|Hungry|Thirsty)/.test(t) ? ' class="mild"' : '') + '>' + condIcon(t) + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
   el('wxStamp').textContent = (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase() + (gridOn() ? '' : waterOn() ? ' \u00b7 power out' : ' \u00b7 no power or water');
   el('dayLine').textContent = 'Day ' + (Math.floor(hrs/24) + 1) + '  ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min;
@@ -4539,6 +4557,22 @@ function fpHeld(vm, at, sw){
 }
 function ax2(at, a, b, c){ var o = at(0, 0, 0), p = at(a, b, c); return [p[0] - o[0], p[1] - o[1], p[2] - o[2]]; }
 /* Art 5 (0.45.8): the pack's build items and containers, drawn where the game had plain boxes. spB('build.campfire') is a model once, or null (then the old boxes are drawn) */
+/* ---- Art 5 (0.45.9): the art chat's effects (assets/shaped/fx.js) and ground decals (aliens.js): dust, snow and splash steps, landing puffs, goo and blood, wood chips.
+   Each one grows between two sizes over its life and shrinks away at the end (the game has no blending for fades). ---- */
+var FXL = [], FXM = {};
+function fxModel(path){
+  if (FXM[path] !== undefined) return FXM[path]; FXM[path] = null; if (!SPON) return null;
+  try { var a = path.split('.'), pcs, pal;
+    if (a[0] === 'decal'){ if (!SHAPED.aliens) return null; pcs = SHAPED.aliens.parts.decals[a[1]]; pal = SHAPED.aliens.palette; } else { if (!SHAPED.fx) return null; pcs = SHAPED.fx.models.effects[a[1]]; pal = SHAPED.fx.palette; }
+    if (pcs) FXM[path] = spModel(pcs, spColour(pal)); } catch (er){} return FXM[path];
+}
+/* o: life seconds, s0 and s1 start and end size, rise metres over the life, yaw, up (lift off the ground) */
+function fxAdd(path, x, y, gy, o){ if (!fxModel(path)) return; o = o || {}; if (FXL.length > 90) FXL.shift(); FXL.push({p:path, x:x, y:y, gy:gy, t:time, life:o.life || 0.6, s0:o.s0 || 1, s1:o.s1 || o.s0 || 1, rise:o.rise || 0, yaw:o.yaw === undefined ? Math.random()*6.28 : o.yaw, up:o.up || 0}); }
+function drawFxList(m){
+  for (var i = FXL.length - 1; i >= 0; i--){ var f = FXL[i], u = (time - f.t)/f.life; if (u >= 1 || u < 0){ FXL.splice(i, 1); continue; }
+    if (Math.abs(f.x - P.x) > 60 || Math.abs(f.y - P.y) > 60) continue; var M = fxModel(f.p); if (!M) continue;
+    var k = u < 0.7 ? 1 : (1 - u)/0.3, sc = (f.s0 + (f.s1 - f.s0)*u)*k; m.modelS(M, f.x, f.y, f.yaw, f.gy + f.up + f.rise*u, sc); }
+}
 var SPB = {};
 function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(SHAPED.props.palette)); } catch (er){} return SPB[path]; }
 var SPHELD = {};
@@ -4618,7 +4652,7 @@ function render(){
   m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
   drawEyes(m);
-  drawItemsFx(m, now); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
+  drawItemsFx(m, now); drawFxList(m); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
   drawWorldFx(m, e, now); m.yo = 0;
   var ops = otherPlayers();
   for (i = 0; i < ops.length; i++) if (!ops[i].cop){ m.yo = groundAt(ops[i].x, ops[i].y); m.yo += ops[i].lvl ? FH : 0; if (ops[i].rf === 1){ var orb = buildingAt(ops[i].x, ops[i].y); if (orb) m.yo = roofY(orb); } queuePerson(m, ops[i], lookOf(ops[i]), now); }
@@ -5496,7 +5530,7 @@ function applyEv(e){
 }
 function hitZombie(z, dmg, kx, ky, quiet){
   sfx('hit', z.x, z.y, quiet ? 0.4 : 0.9);
-  if (!quiet) z.hurt = 0.15;
+  if (!quiet){ z.hurt = 0.15; fxAdd('effects.goo_splat', z.x + (Math.random() - 0.5)*0.6, z.y + (Math.random() - 0.5)*0.6, groundAt(z.x, z.y), {life:60, s0:0.5 + Math.random()*0.5, up:0.02}); }
   if (net.role === 'guest') send(net.host.dc, {t:'hit', id:z.id, d:dmg, kx:kx, ky:ky, td:quiet ? 1 : 0}); else { z.hp -= dmg; var kb = z.k === 2 ? 0.08 : 1; z.kx = kx*kb; z.ky = ky*kb; }
 }
 function sendWho(){ var l = [[0, el('pname').value || 'Host', me.look]]; net.peers.forEach(function(p){ if (p.ready) l.push([p.id, p.name, p.look, p.cop ? 1 : 0]); }); broadcast({t:'who', l:l}); }
