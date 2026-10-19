@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 19 October 2026, at version 0.48.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.48.3. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -76,6 +76,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.48.0 | The map now only shows where you have been (30 m squares, saved with your survivor; the safe house starts known), and you can plant flags on it: on the big map, move the cross to a place and press Mark centre; Remove mark takes away the flag under the cross. Still to do: the held paper map model in first person and map items to find. |
 | 0.48.1 | Aliens no longer know where you are. Hordes and nest groups now leave a nest as a roaming pack: a leader picks the next building to search (favouring parts of town the pack has not been and places that have been noisy), the rest follow, and they only find you by sight, sound or light. When one pack member hears or sees something the whole pack turns to it. At dawn a horde walks back to its nest and is gone. Pacing, from Left 4 Dead's director idea: no new horde pack while eight or more aliens are already on you, and the ordinary night trickle waits while a horde is still to come. Design notes taken from the genre (Project Zomboid, 7 Days to Die, Left 4 Dead, State of Decay): detection by movement, light and noise rather than by knowing the player's position; noise and mass fights draw a crowd; creatures lose interest and disperse rather than vanish; relief between peaks keeps pressure fair. |
 | 0.48.2 | Wrecked and burnt-out cars from the design chat's vehicle pack (`*_wreck`, `*_burnt` for sedan, hatchback, pickup and van): about one parked car in five is now a wreck (rusted, flat tyres) or a burnt shell on bare rims, and there are some extra wrecks beside buildings. They are sunk by the pack's `sitDrop`, cannot be driven (the prompt says Hold J to take apart) and give less when salvaged: a wreck gives 5 scrap and some parts, a burnt shell 3 scrap and rarely a part, with no fuel or tyres. |
+| 0.48.3 | Aliens pack, second part: a nest that has just spread starts as the small hive (`hive_small`) and grows into the full nest after five minutes; a destroyed nest leaves the burst hive (`hive_burst`: split husks and a goo pool), saved with the world; dead aliens now use the pack's `fade` pose in their last 14 seconds and sink into the ground before they are removed. The clinger is still not in (it needs wall climbing). |
 
 ## Next versions
 
@@ -84,7 +85,7 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | Version | Features | Assets needed |
 | --- | --- | --- |
 | **0.49** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger). Uses the design chat's six NPC looks and clips (sit, lean on wall, wave, carry crate) | Shaped survivors (in the game) |
-| **0.50** | Hordes and bases: tune fences, boarded windows and light against packs; aliens that break barricades in turn; guards defend. Then the clinger and the hive stages (small, grown, burst) from the aliens pack | Aliens pack (in the game) |
+| **0.50** | Hordes and bases: tune fences, boarded windows and light against packs; aliens that break barricades in turn; guards defend. Then the clinger (wall and roof climbing) from the aliens pack | Aliens pack (in the game) |
 | **0.51** | More for the truck: siphon fuel from town cars, search their trunks and boots (boot part is in the car art), headlights at night, the truck wears and needs upkeep | Car boot parts (in the game) |
 | **0.52** | Carry furniture: take a wardrobe or table whole instead of taking it apart, and place it with the grid to block a door; carry weight slows you | None |
 | **0.53** | The paper map as a found item and a held model (first person, using the pack's folded and open map); notes on flags; the map only works while you hold it | Map model (in the game) |
@@ -107,7 +108,8 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Effects (dust, splashes, goo) and UI icons | In the game | 0.45.9 |
 | Effects still unused: explosions, flames, hit sparks, tracer, moon phases, clouds, rain, snow, lightning, aurora | Not used | 0.55 (weather and sky) |
 | Aliens: swarmer, stalker, giant, spitter | In the game | 0.45, 0.47 |
-| Aliens: clinger, hive stages, fade clip, blood and trail decals | Not used | 0.50 |
+| Aliens: hive stages (small, grown, burst) and the fade clip | In the game (0.48.3) | 0.48.3 |
+| Aliens: clinger (wall climbing), blood and trail decals | Not used | 0.50 |
 | Survivors: six NPC looks, NPC pieces, clips (sit, lean on wall, wave, carry crate) | Not used | 0.49 |
 | Paper map models (folded, open) | Not used | 0.53 |
 | Props: loose items on the ground, searched container variants, hinged doors, plants, street props | Partly used | Art 3 (0.56) |
@@ -174,7 +176,8 @@ Ticked items are in the game.
 - [x] Giant that feels sprinting and vehicles from far away
 - [x] Spitter that keeps its distance and lobs globs you can dodge
 - [x] Roaming packs from nests: a leader searches the town building by building, the pack turns to noise together, a horde goes home at dawn
-- [ ] Clinger and hive stages
+- [x] Hive stages: small, grown, burst
+- [ ] Clinger
 - [ ] Single aliens remember where they last saw you (0.54)
 
 ### Survival
