@@ -16,7 +16,7 @@ Reference scene: `art-tests/voxel-test-street-2.html` (https://christianhreed.gi
 ## Model style (from the user's references, 13 October 2026)
 
 - **Forms:** faceted low-poly with clearly visible flat planes and flat shading. Few colours per object; no outlines; no busy textures.
-- **People (version 7, 18 October 2026, from the user's Kentucky Route Zero-style lineup):** silhouette first. Square shoulders and a torso that is one wedge narrowing to the waist; arms that taper from the shoulder to a pointed hand; long straight legs like columns; small dark block feet; a small head with a sharp profile and no eyes; hair as one or two flat angular masses; every colour one big flat plane. Costume accents at the joints (collars, cuffs, belts, rolled hems).
+- **People (version 7, 18 October 2026, from the user's Kentucky Route Zero-style lineup; slimmed 19 October 2026):** silhouette first, lean and narrow. Square shoulders and a torso that is one wedge narrowing to the waist; arms that taper from the shoulder to a pointed hand; long straight legs like columns; small dark block feet; a small head with a sharp profile and no eyes; hair as one or two flat angular masses; every colour one big flat plane. Costume accents at the joints (collars, cuffs, belts, rolled hems).
 - **Aliens:** the survivors' language turned wrong: flat planes and points, joints that bend the wrong way, knees above the body, heads too small, spikes and blades; drab bodies with glowing eyes and vents.
 - **Colour:** muted and slightly desaturated: charcoal, teal, rust, olive, sand, faded denim. One accent colour at most.
 - **Vehicles:** boxy 1970s to 1990s cars, vans, buses, RVs and trucks, worn and rusty, with cracked glass and doors, bonnet and boot that open. Simple interiors.

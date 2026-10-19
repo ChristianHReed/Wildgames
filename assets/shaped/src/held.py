@@ -149,9 +149,9 @@ W['pistol'] = {'new': pistol,
 INFO['pistol'] = {'length': 0.2, 'ground': {'roll': 90, 'yaw': 0, 'lift': 0.015}, 'note': 'barrel along +Z; flash sits at the muzzle (0, 0.03, 0.155), show it one or two frames, scale 0.8 to 1.3 at random; shell is ejected to +X'}
 
 # ---------- grip on the survivor's hand ----------
-# hand_r in survivor pack v7: wrist (-0.258, 0.9, 0.02), fingertip (-0.252, 0.76, 0.04); the fist closes around a point 45% down the hand
-GRIP = {'bone': 'hand_r', 'pos': [-0.255, 0.835, 0.045], 'note': 'Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist.'}
-GRIP_TWO = {'bone': 'hand_r', 'pos': [-0.255, 0.835, 0.045], 'offhand': 'hand_l', 'offhandAt': 0.35,
+# hand_r in survivor pack v7 (slim, 19 October 2026): wrist (-0.214, 0.9, 0.018), fingertip (-0.21, 0.76, 0.036); the fist closes around a point 45% down the hand
+GRIP = {'bone': 'hand_r', 'pos': [-0.212, 0.837, 0.026], 'note': 'Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist.'}
+GRIP_TWO = {'bone': 'hand_r', 'pos': [-0.212, 0.837, 0.026], 'offhand': 'hand_l', 'offhandAt': 0.35,
             'note': 'Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.'}
 
 # ---------- first-person arms (view space: eye at origin, looking +Z, viewer's right is -X) ----------

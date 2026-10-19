@@ -24,15 +24,15 @@ BONES = {
 }
 J = {}
 for sg, sd in ((1, 'l'), (-1, 'r')):
-    J['sh' + sd] = [sg*0.198, 1.43, 0.0]; J['el' + sd] = [sg*0.236, 1.15, -0.03]; J['wr' + sd] = [sg*0.258, 0.9, 0.02]; J['ft' + sd] = [sg*0.252, 0.76, 0.04]
-    J['hp' + sd] = [sg*0.085, 0.94, 0.0]; J['kn' + sd] = [sg*0.09, 0.5, 0.01]; J['an' + sd] = [sg*0.092, 0.08, -0.01]
+    J['sh' + sd] = [sg*0.168, 1.43, 0.0]; J['el' + sd] = [sg*0.198, 1.15, -0.026]; J['wr' + sd] = [sg*0.214, 0.9, 0.018]; J['ft' + sd] = [sg*0.21, 0.76, 0.036]
+    J['hp' + sd] = [sg*0.07, 0.94, 0.0]; J['kn' + sd] = [sg*0.074, 0.5, 0.01]; J['an' + sd] = [sg*0.077, 0.08, -0.01]
     BONES['upperarm_' + sd] = {'pivot': J['sh' + sd], 'tip': J['el' + sd], 'parent': 'spine_03'}
     BONES['lowerarm_' + sd] = {'pivot': J['el' + sd], 'tip': J['wr' + sd], 'parent': 'upperarm_' + sd}
     BONES['hand_' + sd]     = {'pivot': J['wr' + sd], 'tip': J['ft' + sd], 'parent': 'lowerarm_' + sd}
     BONES['thigh_' + sd]    = {'pivot': J['hp' + sd], 'tip': J['kn' + sd], 'parent': 'pelvis'}
     BONES['calf_' + sd]     = {'pivot': J['kn' + sd], 'tip': J['an' + sd], 'parent': 'thigh_' + sd}
-    BONES['foot_' + sd]     = {'pivot': J['an' + sd], 'tip': [sg*0.092, 0.03, 0.08], 'parent': 'calf_' + sd}
-    BONES['ball_' + sd]     = {'pivot': [sg*0.092, 0.03, 0.08], 'tip': [sg*0.092, 0.02, 0.15], 'parent': 'foot_' + sd}
+    BONES['foot_' + sd]     = {'pivot': J['an' + sd], 'tip': [sg*0.077, 0.03, 0.08], 'parent': 'calf_' + sd}
+    BONES['ball_' + sd]     = {'pivot': [sg*0.077, 0.03, 0.08], 'tip': [sg*0.077, 0.02, 0.15], 'parent': 'foot_' + sd}
 
 PALETTE = {
   'frame': '#a84a36', 'shades': '#16171a', 'lens': '#8fa7ad', 'freckle': '#a8694e', 'scar': '#c48a7a', 'lip': '#7e4840',
@@ -99,9 +99,11 @@ def head(fem):
 
 # ================= torso: square shoulders, one wedge to the waist =================
 TORSO = {  # y, half-width, half-depth, z
-  False: [(0.92, 0.142, 0.092, 0.0), (1.08, 0.126, 0.088, 0.0), (1.3, 0.18, 0.104, 0.006), (1.425, 0.212, 0.1, 0.002), (1.455, 0.206, 0.094, 0.0)],
-  True:  [(0.92, 0.152, 0.098, 0.0), (1.08, 0.116, 0.084, 0.0), (1.3, 0.152, 0.104, 0.01), (1.415, 0.184, 0.094, 0.004), (1.445, 0.178, 0.088, 0.0)]}
+  False: [(0.92, 0.12, 0.08, 0.0), (1.08, 0.104, 0.076, 0.0), (1.3, 0.15, 0.09, 0.006), (1.425, 0.18, 0.086, 0.002), (1.455, 0.175, 0.08, 0.0)],
+  True:  [(0.92, 0.13, 0.084, 0.0), (1.08, 0.098, 0.072, 0.0), (1.3, 0.128, 0.09, 0.01), (1.415, 0.156, 0.08, 0.004), (1.445, 0.15, 0.075, 0.0)]}
 HEM, SPLIT = 0.92, 1.18
+GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
+LW = 0.8     # limb thickness
 def t_at(fem, y):
     T = TORSO[fem]
     if y <= T[0][0]: return T[0][1:]
@@ -111,11 +113,12 @@ def t_at(fem, y):
     return T[-1][1:]
 def t_rings(fem, y0, y1, g):
     ys = [y0] + [r[0] for r in TORSO[fem] if y0 < r[0] < y1] + [y1]
+    g *= GK
     return [[0, y, t_at(fem, y)[2], t_at(fem, y)[0] + g, t_at(fem, y)[1] + g] for y in ys]
 def fz(fem, y, g, lift=0.003):
-    a, b, z = t_at(fem, y); return z + b + g + lift
+    a, b, z = t_at(fem, y); return z + b + g*GK + lift
 def bz(fem, y, g, lift=0.003):
-    a, b, z = t_at(fem, y); return z - b - g - lift
+    a, b, z = t_at(fem, y); return z - b - g*GK - lift
 def chest(fem, col, g=0.0, hem=HEM, flare=0.0, belly=None):
     top = TORSO[fem][-1][0]
     lo = t_rings(fem, HEM, SPLIT, g); hi = t_rings(fem, SPLIT, top, g)
@@ -135,17 +138,19 @@ def vee(fem, g, col, w=0.07, y0=1.24, top=None):
 
 # ================= limbs: tapering to points =================
 def upper(sd, g=0.0, t1=1.0):
-    S, E = J['sh' + sd], J['el' + sd]; e = mixp(S, E, t1)
-    return [[S[0], S[1] + 0.03, S[2], 0.046 + g, 0.05 + g], [*e, lerp(0.046, 0.034, t1) + g, lerp(0.05, 0.038, t1) + g]]
+    S, E = J['sh' + sd], J['el' + sd]; e = mixp(S, E, t1); g *= GK; w = LW
+    return [[S[0], S[1] + 0.03, S[2], 0.046*w + g, 0.05*w + g], [*e, lerp(0.046, 0.034, t1)*w + g, lerp(0.05, 0.038, t1)*w + g]]
 def lower(sd, g=0.0, t0=0.0, t1=1.0):
     E, W = J['el' + sd], J['wr' + sd]
     a = mixp(E, W, t0); b = mixp(E, W, t1)
     if t0 == 0.0: a = [E[0], E[1] + 0.03, E[2]]
-    return [[*a, lerp(0.035, 0.024, t0) + g, lerp(0.038, 0.026, t0) + g], [*b, lerp(0.035, 0.024, t1) + g, lerp(0.038, 0.026, t1) + g]]
+    g *= GK; w = LW
+    return [[*a, lerp(0.035, 0.024, t0)*w + g, lerp(0.038, 0.026, t0)*w + g], [*b, lerp(0.035, 0.024, t1)*w + g, lerp(0.038, 0.026, t1)*w + g]]
 def hand(sd, col='SKIN', g=0.0):
     W, F = J['wr' + sd], J['ft' + sd]
-    return [frustum([[W[0], W[1] + 0.02, W[2], 0.022 + g, 0.028 + g], [*mixp(W, F, 0.4), 0.02 + g, 0.032 + g]], col, caps=[True, False]),
-            tip(mixp(W, F, 0.4), F, 0.02*math.sqrt(2) + g, 0.032*math.sqrt(2) + g, col)]
+    w = 0.85
+    return [frustum([[W[0], W[1] + 0.02, W[2], 0.022*w + g, 0.028*w + g], [*mixp(W, F, 0.4), 0.02*w + g, 0.032*w + g]], col, caps=[True, False]),
+            tip(mixp(W, F, 0.4), F, 0.02*w*math.sqrt(2) + g, 0.032*w*math.sqrt(2) + g, col)]
 def hands(): return both_sides(lambda sg, sd: {'hand_' + sd: hand(sd)})
 def sleeves(col, style='long', g=0.014, cuff=None):
     """style: 'long' (to the wrist, with a cuff), 'short' (to mid upper arm) or 'rolled' (to mid forearm, rolled cuff)"""
@@ -162,13 +167,14 @@ def sleeves(col, style='long', g=0.014, cuff=None):
     return both_sides(f)
 def thigh(sd, g=0.0, t1=1.0):
     H, K = J['hp' + sd], J['kn' + sd]; e = mixp(H, K, t1)
-    return [[H[0], H[1] + 0.04, H[2], 0.075 + g, 0.08 + g], [*e, lerp(0.075, 0.056, t1) + g, lerp(0.08, 0.06, t1) + g]]
+    g *= GK; w = LW
+    return [[H[0], H[1] + 0.04, H[2], 0.075*w + g, 0.08*w + g], [*e, lerp(0.075, 0.056, t1)*w + g, lerp(0.08, 0.06, t1)*w + g]]
 def calf(sd, g=0.0, t0=0.0, t1=1.0, straight=False):
     K, A = J['kn' + sd], J['an' + sd]
-    a = mixp(K, A, t0) if t0 else [K[0], K[1] + 0.03, K[2]]; b = mixp(K, A, t1)
+    a = mixp(K, A, t0) if t0 else [K[0], K[1] + 0.03, K[2]]; b = mixp(K, A, t1); g *= GK; w = LW
     if straight:   # trouser legs fall as straight columns
-        return [[*a, 0.056 + g, 0.06 + g], [*b, 0.052 + g, 0.056 + g]]
-    return [[*a, lerp(0.056, 0.038, t0) + g, lerp(0.06, 0.042, t0) + g], [*b, lerp(0.056, 0.038, t1) + g, lerp(0.06, 0.042, t1) + g]]
+        return [[*a, 0.056*w + g, 0.06*w + g], [*b, 0.052*w + g, 0.056*w + g]]
+    return [[*a, lerp(0.056, 0.038, t0)*w + g, lerp(0.06, 0.042, t0)*w + g], [*b, lerp(0.056, 0.038, t1)*w + g, lerp(0.06, 0.042, t1)*w + g]]
 
 # ================= tops =================
 def tops(fem):
@@ -202,10 +208,10 @@ def tops(fem):
 
 # ================= bottoms: straight columns =================
 def bottoms(fem):
-    hip = 0.152 if fem else 0.146
+    hip = 0.13 if fem else 0.122
     def pelvis(col, g=0.008):
-        return {'pelvis': [frustum([[0, 0.84, 0.0, 0.118 + g, 0.084 + g], [0, 0.94, 0.0, hip + g, 0.098 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.096 + g]], col)]}
-    belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.016, 0.106], [0, 0.985, 0.0, hip + 0.014, 0.104]], 'belt', caps=[False, False]), box([0, 0.97, 0.108], [0.034, 0.024, 0.006], 'buckle')]}
+        return {'pelvis': [frustum([[0, 0.84, 0.0, 0.098 + g, 0.072 + g], [0, 0.94, 0.0, hip + g, 0.084 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.082 + g]], col)]}
+    belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.014, 0.092], [0, 0.985, 0.0, hip + 0.012, 0.09]], 'belt', caps=[False, False]), box([0, 0.97, 0.094], [0.034, 0.024, 0.006], 'buckle')]}
     def legs(col, g=0.008, knee=None, calf_to=None, cuff=None, hem=0.1):
         def f(sg, sd):
             K, A = J['kn' + sd], J['an' + sd]
@@ -222,12 +228,12 @@ def bottoms(fem):
         return both_sides(f)
     def stripes(sg, sd):
         H, K, A = J['hp' + sd], J['kn' + sd], J['an' + sd]; x = lambda P, w: P[0] + sg*(w + 0.0025)
-        return {'thigh_' + sd: [flat([(x(H, 0.092), 0.97, H[2] - 0.01), (x(H, 0.092), 0.97, H[2] + 0.01), (x(K, 0.074), K[1], K[2] + 0.01), (x(K, 0.074), K[1], K[2] - 0.01)], 'ACC', (sg, 0, 0))],
-                'calf_' + sd: [flat([(x(K, 0.074), K[1], K[2] - 0.01), (x(K, 0.074), K[1], K[2] + 0.01), (x(A, 0.07), 0.16, A[2] + 0.01), (x(A, 0.07), 0.16, A[2] - 0.01)], 'ACC', (sg, 0, 0))]}
+        return {'thigh_' + sd: [flat([(x(H, 0.068), 0.97, H[2] - 0.01), (x(H, 0.068), 0.97, H[2] + 0.01), (x(K, 0.054), K[1], K[2] + 0.01), (x(K, 0.054), K[1], K[2] - 0.01)], 'ACC', (sg, 0, 0))],
+                'calf_' + sd: [flat([(x(K, 0.054), K[1], K[2] - 0.01), (x(K, 0.054), K[1], K[2] + 0.01), (x(A, 0.05), 0.16, A[2] + 0.01), (x(A, 0.05), 0.16, A[2] - 0.01)], 'ACC', (sg, 0, 0))]}
     B = {}
     B['jeans'] = join(pelvis('PANTS'), legs('PANTS'), belt)
     B['shorts'] = join(pelvis('PANTS'), legs('PANTS', knee=0.8), belt)
-    B['cargo_trousers'] = join(pelvis('PANTS'), legs('PANTS', g=0.014), belt, both_sides(lambda sg, sd: {'thigh_' + sd: [box([J['hp' + sd][0] + sg*0.098, 0.66, 0.01], [0.022, 0.1, 0.08], 'PANTS_D')]}))
+    B['cargo_trousers'] = join(pelvis('PANTS'), legs('PANTS', g=0.014), belt, both_sides(lambda sg, sd: {'thigh_' + sd: [box([J['hp' + sd][0] + sg*0.072, 0.66, 0.01], [0.02, 0.1, 0.07], 'PANTS_D')]}))
     B['capri_trousers'] = join(pelvis('PANTS'), legs('PANTS', calf_to=0.27))
     B['track_pants'] = join(pelvis('PANTS'), legs('PANTS', g=0.012, cuff=(0.14, 0.09, 'PANTS_D')), both_sides(stripes))
     B['rolled_jeans'] = join(pelvis('PANTS'), legs('PANTS', hem=0.14, cuff=(0.18, 0.13, 'denimRoll')), belt)
@@ -236,19 +242,19 @@ def bottoms(fem):
 # ================= shoes: small dark blocks =================
 def shoe(sd, col, sole=None, h=0.085):
     x = J['an' + sd][0]
-    pts = [(x - 0.046, 0.0, -0.07), (x + 0.046, 0.0, -0.07), (x + 0.046, 0.0, 0.15), (x - 0.046, 0.0, 0.15),
-           (x - 0.04, h, -0.06), (x + 0.04, h, -0.06), (x + 0.04, h*0.55, 0.13), (x - 0.04, h*0.55, 0.13)]
+    pts = [(x - 0.04, 0.0, -0.065), (x + 0.04, 0.0, -0.065), (x + 0.04, 0.0, 0.14), (x - 0.04, 0.0, 0.14),
+           (x - 0.034, h, -0.055), (x + 0.034, h, -0.055), (x + 0.034, h*0.55, 0.12), (x - 0.034, h*0.55, 0.12)]
     o = [hull(pts, col)]
-    if sole: o.append(box([x, 0.008, 0.04], [0.096, 0.016, 0.226], sole))
+    if sole: o.append(box([x, 0.008, 0.037], [0.084, 0.016, 0.21], sole))
     return o
 def shoes():
     S = {}
     S['trainers'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'trainer', 'trainerSole', 0.08)})
     S['boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'boot', 'sole', 0.09),
-                                            'calf_' + sd: [frustum([[J['an' + sd][0], 0.07, -0.01, 0.048, 0.054], [J['an' + sd][0], 0.17, -0.008, 0.046, 0.052]], 'boot')]})
+                                            'calf_' + sd: [frustum([[J['an' + sd][0], 0.07, -0.01, 0.04, 0.045], [J['an' + sd][0], 0.17, -0.008, 0.038, 0.043]], 'boot')]})
     S['rain_boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'rainboot', 'sole', 0.09),
-                                                 'calf_' + sd: [frustum([[J['an' + sd][0], 0.07, -0.01, 0.052, 0.058], [J['an' + sd][0], 0.33, -0.006, 0.06, 0.066]], 'rainboot'),
-                                                                frustum([[J['an' + sd][0], 0.31, -0.006, 0.064, 0.07], [J['an' + sd][0], 0.34, -0.006, 0.064, 0.07]], 'rainbootD', caps=[False, False])]})
+                                                 'calf_' + sd: [frustum([[J['an' + sd][0], 0.07, -0.01, 0.044, 0.05], [J['an' + sd][0], 0.33, -0.006, 0.05, 0.056]], 'rainboot'),
+                                                                frustum([[J['an' + sd][0], 0.31, -0.006, 0.054, 0.06], [J['an' + sd][0], 0.34, -0.006, 0.054, 0.06]], 'rainbootD', caps=[False, False])]})
     return S
 
 # ================= faces: no eyes; glasses and hair carry the character =================
@@ -314,7 +320,7 @@ def hats():
 # ================= gear =================
 def gear():
     back = bz(False, 1.3, 0.026, 0)
-    body = frustum([[0, 1.0, back - 0.1, 0.15, 0.09], [0, 1.52, back - 0.1, 0.15, 0.09]], 'pack')
+    body = frustum([[0, 1.0, back - 0.09, 0.13, 0.08], [0, 1.52, back - 0.09, 0.13, 0.08]], 'pack')
     flap = frustum([[0, 1.48, back - 0.1, 0.155, 0.095], [0, 1.55, back - 0.1, 0.155, 0.095]], 'packD', caps=[False, True])
     pocket = frustum([[0, 1.04, back - 0.2, 0.1, 0.022], [0, 1.22, back - 0.2, 0.1, 0.022]], 'packD')
     roll = loft([[0.18, 1.6, back - 0.1, 0.05, 0.05], [-0.18, 1.6, back - 0.1, 0.05, 0.05]], 'roll', ax='x', n=6)
@@ -411,8 +417,8 @@ def npc_parts():
     N['wide_brim'] = {'Head': [frustum([[0, 1.7, 0.016, 0.078, 0.088], [0, 1.82, 0.012, 0.07, 0.08]], 'hatBrown'), loft([[0, 1.705, 0.016, 0.2, 0.2], [0, 1.72, 0.016, 0.2, 0.2]], 'hatBrown', n=8), frustum([[0, 1.72, 0.016, 0.08, 0.09], [0, 1.745, 0.016, 0.08, 0.09]], 'hatBand', caps=[False, False])]}
     N['hood_up'] = {'Head': [loft([[0, 1.56, -0.01, 0.1, 0.11], [0, 1.7, -0.02, 0.105, 0.115], [0, 1.82, -0.01, 0.07, 0.08], [0, 1.85, -0.0, 0.0, 0.0]], 'SHIRT_D', n=6, caps=[False, False]),
                          flat([(-0.07, 1.6, fzb + 0.02), (0.07, 1.6, fzb + 0.02), (0.06, 1.78, fzb - 0.01), (-0.06, 1.78, fzb - 0.01)], 'hoodShadow')]}
-    N['poncho'] = {'spine_03': [loft([[0, 1.46, 0.0, 0.12, 0.1], [0, 1.4, 0.0, 0.34, 0.24], [0, 0.95, 0.0, 0.42, 0.3]], 'ponchoC', n=8, caps=[False, False]),
-                                *[flat([(x - 0.012, 1.0, 0.31), (x + 0.012, 1.0, 0.31), (x + 0.012, 1.36, 0.25), (x - 0.012, 1.36, 0.25)], 'ponchoS') for x in (-0.18, 0.0, 0.18)]]}
+    N['poncho'] = {'spine_03': [loft([[0, 1.46, 0.0, 0.11, 0.09], [0, 1.4, 0.0, 0.27, 0.19], [0, 0.98, 0.0, 0.32, 0.23]], 'ponchoC', n=8, caps=[False, False]),
+                                *[flat([(x - 0.012, 1.02, 0.235), (x + 0.012, 1.02, 0.235), (x + 0.012, 1.36, 0.2), (x - 0.012, 1.36, 0.2)], 'ponchoS') for x in (-0.14, 0.0, 0.14)]]}
     N['vest'] = {'spine_03': [frustum(t_rings(False, SPLIT, TORSO[False][-1][0] - 0.02, 0.05), 'vestC', caps=[False, False]), *[front(False, x0, x1, 1.0, 1.1, 0.05, 'vestD', 0.006)['spine_01'][0] for x0, x1 in ((-0.12, -0.03), (0.03, 0.12))]],
                  'spine_01': [frustum(t_rings(False, 0.96, SPLIT, 0.05), 'vestC', caps=[False, False])]}
     N['satchel'] = {'spine_03': [flat([(-0.17, 1.44, fz(False, 1.44, 0.03, 0.006)), (-0.12, 1.44, fz(False, 1.44, 0.03, 0.006)), (0.16, 1.02, fz(False, 1.02, 0.03, 0.006)), (0.11, 1.02, fz(False, 1.02, 0.03, 0.006))], 'strapS')],

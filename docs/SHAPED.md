@@ -38,7 +38,7 @@ Silhouette first: square-shouldered wedge torsos, arms tapering to points, strai
 | top | `dungarees` | 122 / 244 / 92 | 122 / 244 / 92 |
 | bottoms | `jeans` | 84 / 168 / 60 | 84 / 168 / 60 |
 | bottoms | `shorts` | 104 / 208 / 76 | 104 / 208 / 76 |
-| bottoms | `cargo_trousers` | 108 / 216 / 76 | 108 / 216 / 76 |
+| bottoms | `cargo_trousers` | 108 / 216 / 74 | 108 / 216 / 74 |
 | bottoms | `capri_trousers` | 80 / 160 / 60 | 80 / 160 / 60 |
 | bottoms | `track_pants` | 96 / 192 / 72 | 96 / 192 / 72 |
 | bottoms | `rolled_jeans` | 108 / 216 / 76 | 108 / 216 / 76 |
@@ -46,7 +46,7 @@ Silhouette first: square-shouldered wedge torsos, arms tapering to points, strai
 | worn | `coat` | 130 / 260 / 96 | 130 / 260 / 96 |
 | worn | `raincoat` | 136 / 272 / 94 | 136 / 272 / 94 |
 | worn | `leather` | 141 / 287 / 101 | 141 / 287 / 101 |
-| worn | `trousers` | 132 / 264 / 92 | 132 / 264 / 92 |
+| worn | `trousers` | 132 / 264 / 90 | 132 / 264 / 90 |
 | worn | `thermals` | 96 / 192 / 72 | 96 / 192 / 72 |
 
 | Part | Key | Tris, verts, welded |
@@ -420,7 +420,7 @@ chipped, taped) and broken (the stub left in the hand when it snaps).
 First-person arms (view space): the eye at the origin looking along +Z, +Y up, the viewer's right is -X (the same
 handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor wears on top: outer, else top).
 
-**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.255, 0.835, 0.045] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`.
+**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.212, 0.837, 0.026] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`.
 
 | Model | Tris, verts, welded | Notes |
 | --- | --- | --- |
