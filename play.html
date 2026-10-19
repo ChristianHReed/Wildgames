@@ -376,7 +376,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.6.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.7.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -1281,7 +1281,7 @@ function frMod(name, cut){
       if (ny > 0.5 && cy > (fr ? 2.99 : 2.74)) continue;
       if (fr && (Math.abs(ny) > 0.5 || (Math.abs(nx) > 0.5 && Math.abs(cx) < 1.05))) continue;
       if (!fr && Math.abs(nx) > 0.5 && Math.abs(cx) > (pl ? 1.15 : 1.04)) continue;
-      out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, f:fr || pl}); } });
+      out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, f:fr || pl || (q.c.slice(0, 4) === 'TRIM' && q.p[2] >= 0)}); } });
   return FRM[key] = out;
 }
 /* a piecewise-straight stretch through knots [[from, to], ...] (from 0 up), mirrored for negative values, carried on at slope 1 past the last knot */
@@ -1321,6 +1321,19 @@ function frFlat(m, cx, cz, ex, ez, w, y0, y1, col){   /* col: plain wall colour 
   var hx = ex*w/2, hz = ez*w/2, P = [cx - hx, y0, cz - hz, cx + hx, y0, cz + hz, cx + hx, y1, cz + hz, cx - hx, y0, cz - hz, cx + hx, y1, cz + hz, cx - hx, y1, cz - hz];
   for (var i = 0; i < 6; i++){ m.p.push(P[i*3], P[i*3+1], P[i*3+2]); if (col){ m.c.push(col[0], col[1], col[2], 0); m.t.push(0, 0, -1); } else { m.c.push(255, 255, 255, 0); m.t.push(0, 0, 191); } }
 }
+/* the room side of a wall: a flat wallpapered panel 12 cm in from the wall line (the thickness of the kit's infill), so from inside the wall is one clean surface and the
+   posts, beams, trims and plinth that stand proud outside cannot show through or poke in. Each bay gets its whole rectangle minus the opening (window, door, shopfront, garage) */
+function frInQuad(m, cx, cz, ex, ez, ox, oz, xa, xb, ya, yb){
+  if (xb - xa < 0.01 || yb - ya < 0.01) return;
+  var d = -0.12, x1 = cx + ex*xa + ox*d, z1 = cz + ez*xa + oz*d, x2 = cx + ex*xb + ox*d, z2 = cz + ez*xb + oz*d, P = [x1, ya, z1, x2, ya, z2, x2, yb, z2, x1, ya, z1, x2, yb, z2, x1, yb, z1];
+  for (var i = 0; i < 6; i++){ m.p.push(P[i*3], P[i*3+1], P[i*3+2]); m.c.push(255, 255, 255, 0); m.t.push(0, 0, 191); }
+}
+function frInner(m, cx, cz, ex, ez, ox, oz, half, y0, y1, op, fx, fy){
+  if (!op){ frInQuad(m, cx, cz, ex, ez, ox, oz, -half, half, y0, y1); return; }
+  var xa = fx(-op.x), xb = fx(op.x), ya = Math.min(y1, y0 + fy(op.y0)), yb = Math.min(y1, y0 + fy(op.y1));
+  frInQuad(m, cx, cz, ex, ez, ox, oz, -half, half, y0, ya); frInQuad(m, cx, cz, ex, ez, ox, oz, -half, half, yb, y1);
+  frInQuad(m, cx, cz, ex, ez, ox, oz, -half, xa, ya, yb); frInQuad(m, cx, cz, ex, ez, ox, oz, xb, half, ya, yb);
+}
 function frWall(m, b, FS, ST, K, ax, az, dx, dz, l, ei, isDoor, lhg, Ht, corner, CAO){
   var draw = m !== NULLM, ex = -dx, ez = -dz, ox = dz, oz = -dx, bays = [], wl = [], k, BW = b.frBW || (b.frBW = frBayW(b, Ht));
   if (isDoor){ var wd = Math.min(l, 2.4), L1 = (l - wd)/2; if (L1 < 0.8){ wd = l; L1 = 0; }
@@ -1333,16 +1346,17 @@ function frWall(m, b, FS, ST, K, ax, az, dx, dz, l, ei, isDoor, lhg, Ht, corner,
     var w = B.w, cx = ax + dx*B.s, cz = az + dz*B.s, near = Math.abs(B.s - l/2), winOK = w >= 1.5 && l > 2.2, isWin = winOK && B.dd % 2 === 1, pH = frParty(b, cx, cz, ox, oz, ex, ez, w);   /* a window in every other bay, about as many as the painted walls had; pH: how high a neighbour built against this bay stands */
     var fF = w < 0.5 ? frMap([[1.2, w/2]]) : frMap([[1.1, w/2 - 0.1]]);
     st.forEach(function(S, si){
-      var y0 = S[0], Hs = S[1], ground = si === 0, fyF = frYMap([[2.75, Hs - 0.25]]), M, fx = fF, fy = fyF;
+      var y0 = S[0], Hs = S[1], ground = si === 0, fyF = frYMap([[2.75, Hs - 0.25]]), M, fx = fF, fy = fyF, op = null;
       if (!B.door && y0 < pH - 0.8){ if (draw){ var yp = Math.min(y0 + Hs, pH); frFlat(m, cx, cz, ex, ez, w, y0, yp, null); if (yp < y0 + Hs - 0.02) frFlat(m, cx, cz, ex, ez, w, yp, y0 + Hs, FS.col('WALL')); } return; }   /* a wall shared with the building next door: flat, wallpaper on both sides, no windows, nothing sticking out */
-      if (ground && B.door){ M = frMod('door_' + inf, 'door'); fx = frMap([[0.5, 0.65], [1.1, w/2 - 0.1]]); fy = frYMap([[2.2, 2.2], [2.75, Hs - 0.25]]); }
-      else if (ground && shop && near < ST.fr) M = frMod('shopfront');
-      else if (ground && gar && near < ST.fr && w >= 1.8) M = frMod('garage');
+      if (ground && B.door){ M = frMod('door_' + inf, 'door'); fx = frMap([[0.5, 0.65], [1.1, w/2 - 0.1]]); fy = frYMap([[2.2, 2.2], [2.75, Hs - 0.25]]); op = {x:0.5, y0:0, y1:2.2}; }
+      else if (ground && shop && near < ST.fr){ M = frMod('shopfront'); op = {x:1.1, y0:0.4, y1:2.4}; }
+      else if (ground && gar && near < ST.fr && w >= 1.8){ M = frMod('garage'); op = {x:1.1, y0:0, y1:2.5}; }
       else if (isWin || (!ground && winOK && B.door)){ M = frMod('window_' + inf, ground ? 'win' : si > 1 ? 'lite' : null); fx = frMap([[0.6, 0.47], [1.1, w/2 - 0.1]]); fy = ground ? frYMap([[0.9, hk], [2.2, 2.2*hk], [2.75, Hs - 0.25]]) : frYMap([[0.9, 1.0], [2.2, 2.25], [2.75, Hs - 0.25]]);
-        if (ground) wl.push(B.s); }
+        op = {x:0.6, y0:0.9, y1:2.2}; if (ground) wl.push(B.s); }
       else M = frMod('wall_' + inf);
       if (!draw) return;
       frPut(m, M, FS, cx, cz, ex, ez, ox, oz, y0, fx, fy, ao, hash(b.id, ei*97 + bi, si));
+      if (w >= 0.5) frInner(m, cx, cz, ex, ez, ox, oz, w/2, y0, y0 + Hs, op, fx, fy);
       if (w >= 0.5) frPut(m, frMod('frame_' + FS.fk, si > 1 ? 'lite' : null), FS, cx, cz, ex, ez, ox, oz, y0, fF, fyF, ao, 0);
       if (ground && !B.door) frPut(m, frMod('plinth'), FS, cx, cz, ex, ez, ox, oz, 0, frMap([[1.2, w/2]]), function(v){ return v; }, ao, 0);
     });
@@ -2511,7 +2525,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.45.6';
+var VERSION = '0.45.7';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;

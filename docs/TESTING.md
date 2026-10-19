@@ -404,6 +404,12 @@ Report anything that feels unfair or pointless: too many aliens, too few, a stal
 5. Drop from a roof: a short dip on landing, bigger from higher. Get hit: a brief flinch to one side. Swing and fire: a small kick.
 6. Set Head bob and Camera effects to Off: the view must be completely steady while walking. Report anything that still makes you queasy.
 
+## Stage 5c.4: walls from the inside (0.45.7)
+
+1. Stand inside the safe house facing a window: the wall should be one flat wallpapered surface with a clean window opening (reveal and sill), nothing floating in the room, no grey strips above the window, no notches along the top.
+2. Look at the door from inside and from the porch, and at a corner of the room. Walk through a shop or the library and look at the shopfront and any garage door from inside.
+3. Report any spot where wall pieces still cross each other, with a screenshot.
+
 ## Stage 5e: jumping and street weapons (0.45.5)
 
 1. Press Space (or tap Jump, above Swing): the view rises about 0.7 m and comes back down with a small dip. Jump under a roof or indoors: lower. Jump while sprinting: you cover more ground. You cannot jump in water, in a vehicle, while hiding, climbing or out of breath.
