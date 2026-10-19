@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.56.2</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.57.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -395,7 +395,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.56.2', ART = {}, ARTSET = (function(){
+var BUILD = '0.57.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -723,7 +723,7 @@ var LOOT = {
   food:{food:6, water:4}, medical:{medkit:6, water:1}, police:{ammo:8, medkit:1, radio:1, battery:2},
   industrial:{scrap:5, wood:4, fuel:2, battery:1}, shop:{food:2, water:2, scrap:2, ammo:0.6, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
-var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba','']};
+var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba',''], nails:['Nails','#8c8f94',''], sheet:['Sheet metal','#9fb0bd','']};
 ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096','']; ITEMS.bandage = ['Bandages','#e9e2d0','4']; ITEMS.antibio = ['Antibiotics','#9ad0a0','']; ITEMS.splint = ['Splint','#b08a5a','']; ITEMS.fresh = ['Fresh food','#e07a4a','']; ITEMS.rotten = ['Rotten food','#9a9a62','']; ITEMS.dirty = ['Unboiled water','#7aa0b0','']; ITEMS.tape = ['Duct tape','#9aa3aa',''];
 ITEMS.generator = ['Generator','#d9a845',''];
 /* 0.40: clothes, worn in six slots. warm = degrees F of warmth when cold; rain = how much rain it keeps off (outer and head);
@@ -5455,9 +5455,12 @@ function buildAct(a, pos){
   var x = pos ? pos.x : P.x + Math.cos(P.yaw)*1.8, y = pos ? pos.y : P.y + Math.sin(P.yaw)*1.8, yaw = pos ? pos.yaw : P.yaw, id = Date.now() + '-' + Math.floor(Math.random()*1e6), b = nearBuilding(), cheap = me.bg === 'builder' || me.bg === 'mechanic';
   if (a === 'cade'){ place('cade'); } else if (a === 'fire'){ place('fire'); }
   else if (a === 'wall'){
-    var wc = cheap ? 2 : 3, ws0 = WMAT === 'steel' ? (cheap ? 3 : 4) : 0, wc2 = WMAT === 'steel' ? 2 : wc; if (inv.wood < wc2 || inv.scrap < ws0){ toast('A ' + WMATS[WMAT].name + ' wall needs ' + wc2 + ' wood' + (ws0 ? ' and ' + ws0 + ' scrap' : '') + '.', 2.5); return; }
+    var wc = cheap ? 2 : 3, ws0 = WMAT === 'steel' ? (cheap ? 3 : 4) : 0, wc2 = WMAT === 'steel' ? 2 : wc;
+    /* salvaged nails stand in for wood (2 nails = 1 wood) and sheet metal for scrap (1 sheet = 2 scrap) */
+    var nl = 0, sh = 0; if (inv.wood < wc2){ nl = (wc2 - inv.wood)*2; } if (inv.scrap < ws0){ sh = Math.ceil((ws0 - inv.scrap)/2); }
+    if (inv.nails < nl || inv.sheet < sh){ toast('A ' + WMATS[WMAT].name + ' wall needs ' + wc2 + ' wood' + (ws0 ? ' and ' + ws0 + ' scrap' : '') + ' (2 nails count as a wood, a sheet of metal as 2 scrap).', 3.5); return; }
     if (hitWall(x, y) || buildingAt(x, y) !== P.inside){ toast('There is no room for a wall there.', 2.5); return; }
-    inv.wood -= wc2; inv.scrap -= ws0; doEdit({a:'wall', w:{id:id, x:x, y:y, yaw:yaw, m:WMAT}});
+    inv.nails -= nl; inv.sheet -= sh; inv.wood = Math.max(0, inv.wood - wc2); inv.scrap = Math.max(0, inv.scrap - ws0); if (sh && inv.scrap < 0) inv.scrap = 0; doEdit({a:'wall', w:{id:id, x:x, y:y, yaw:yaw, m:WMAT}});
   } else if (a === 'wallmat'){ WMAT = WMAT === 'wood' ? 'steel' : 'wood'; toast('Walls are now ' + WMATS[WMAT].name + '.', 2); renderBuild();
   } else if (a === 'wrep'){
     var rw0 = null, rd0 = 3.5; world.edits.walls.forEach(function(w){ var d = Math.hypot(w.x - P.x, w.y - P.y); if (d < rd0){ rd0 = d; rw0 = w; } });
@@ -5509,6 +5512,9 @@ function salvInfo(o){
     if (S[0] === 'wood'){ r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 2.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 4; } }
     else if (S[0] === 'metal'){ r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3.5; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5.5; } }
     else { r.need = 'an axe, a crowbar or a wrench'; id = T.axe || T.crowbar || T.wrench; if (id){ r.tool = id; r.secs = 2.5; } } }
+  else if (o.sv === 'bay'){ var wm = wallMat(o.w), stt = bayState(wallBays(o.w)[o.k], wm.hp), steel = wm === WMATS.steel; r.label = steel ? 'steel wall bay' : 'timber wall bay'; r.mat = steel ? 'metal' : 'wood'; r.state = stt;
+    if (steel){ r.y.scrap = 1; if (stt === 'whole') r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5; } }
+    else { r.y.wood = 1; r.y.nails = stt === 'whole' ? 2 : 1; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 1.8; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 3; } } }
   else if (o.sv === 'bench'){ r.label = 'tool bench'; r.mat = 'wood'; r.y.wood = 4; r.y.scrap = 2; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 2.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 4; } }
   else { var car = !!o.t; r.label = car ? 'car' : 'bicycle'; r.mat = 'car'; r.y.scrap = car ? (o.dead === 'burnt' ? 3 : o.dead ? 5 : 6) : 2; r.need = 'a wrench or a toolkit' + (car ? '' : ', or a crowbar');
     if (T.wrench){ r.tool = T.wrench; r.secs = car ? 7 : 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = car ? 7 : 3; } else if (T.crowbar && (!car || true)){ r.tool = T.crowbar; r.secs = car ? 11 : 5; r.need = 'a wrench, a toolkit or a crowbar'; } }
@@ -5520,9 +5526,12 @@ function findSalvage(){
   var test = function(o2){ dx = o2.x - P.x; dy = o2.y - P.y; d = Math.hypot(dx, dy); de = d*(1.2 - 0.4*(dx*fx + dy*fy)/(d || 1)); if (de < bd && (d < 1.0 || (dx*fx + dy*fy)/d > 0.45)){ bd = de; best = o2; } };
   for (i = 0; i < loaded.length; i++){ var b = loaded[i]; if (!b.int || !b.int.furn || P.x < b.minx - 3 || P.x > b.maxx + 3 || P.y < b.miny - 3 || P.y > b.maxy + 3) continue; for (j = 0; j < b.int.furn.length; j++){ o = b.int.furn[j]; if ((o.lvl || 0) === (P.lvl || 0)) test(o); } }
   (world.edits.benches || []).forEach(function(q){ q.sv = 'bench'; test(q); });
+  if (!P.inside) (world.edits.walls || []).forEach(function(w){ if (Math.abs(w.x - P.x) > 4 || Math.abs(w.y - P.y) > 4) return; var by = wallBays(w), ddx = -Math.sin(w.yaw), ddy = Math.cos(w.yaw);
+    for (var k = 0; k < 6; k++){ if (by[k] <= 0) continue; var key = w.id + ':' + k, o3 = BAYO[key] || (BAYO[key] = {sv:'bay', w:w, k:k}); o3.x = w.x + ddx*(-1.25 + 0.5*k); o3.y = w.y + ddy*(-1.25 + 0.5*k); test(o3); } });
   if (!P.inside) for (i = 0; i < world.vehicles.length; i++){ o = world.vehicles[i]; if (o.kind !== 'truck' && o.id !== 'truck') test(o); }
   return best;
 }
+var BAYO = {};
 var SV = {t:null, p:0, info:null, said:-9, nt:0};
 function wearTool(id, n){ if (!id || id === 'kit' || !DESIGNS[id]) return; var keep = P.weapon; P.weapon = id; wear(n); if (keep && P.items[keep] > 0) P.weapon = keep; else if (P.weapon === id && !(P.items[id] > 0)) P.weapon = null; }
 function salvTick(dt){
@@ -5530,7 +5539,7 @@ function salvTick(dt){
   if (!s){ box.classList.add('hidden'); el('tTake').classList.add('nx'); return; }
   var inf = SV.info = salvInfo(s), hold = keys.KeyJ || keys.Take, tch = document.body.classList.contains('touchmode'); el('tTake').classList.remove('nx');
   if (hold){ if (!inf.tool){ if (time - SV.said > 3){ SV.said = time; toast('Taking apart a ' + inf.label + ' needs ' + inf.need + '.', 3.5); } SV.p = 0; }
-    else { SV.p += dt/inf.secs; SV.nt -= dt; if (SV.nt <= 0){ SV.nt = 0.55; sfx(inf.mat === 'metal' || inf.mat === 'car' ? 'plank' : 'chop', s.x, s.y, 0.7); makeNoise(s.x, s.y, inf.mat === 'cloth' ? 4 : 10); fxAdd('effects.wood_chips', s.x, s.y, groundAt(s.x, s.y), {life:0.8, s0:0.6, s1:0.9, rise:0.2, up:0.5}); }
+    else { SV.p += dt/inf.secs; SV.nt -= dt; if (SV.nt <= 0){ SV.nt = 0.55; sfx(inf.mat === 'metal' || inf.mat === 'car' ? 'plank' : 'chop', s.x, s.y, 0.7); makeNoise(s.x, s.y, inf.mat === 'cloth' ? 4 : s.sv === 'bay' ? (inf.mat === 'metal' ? 22 : 14) : 10); fxAdd('effects.wood_chips', s.x, s.y, groundAt(s.x, s.y), {life:0.8, s0:0.6, s1:0.9, rise:0.2, up:0.5}); }
       if (SV.p >= 1){ SV.p = 0; doSalvage(s, inf); return; } } } else SV.p = 0;
   var gives = Object.keys(inf.y).map(function(k2){ return '+' + inf.y[k2] + ' ' + (k2 === 'fiber' ? 'fibre' : k2); }).join(' ');
   box.classList.remove('hidden'); el('sbar').style.width = (SV.p*100) + '%';
@@ -5542,6 +5551,12 @@ function doSalvage(o, inf){
     var c = null, cs = o.b.int.conts; for (var j = 0; j < cs.length; j++) if (cs[j].ii === o.ii) c = cs[j];
     if (c && !o.b.got[c.i] && c.name && !c.hide){ toast('Search the ' + c.name + ' first: there may still be something in it.', 3.5); return; }
     for (k2 in inf.y) g[k2] = inf.y[k2]; doEdit({a:'junk', b:o.b.id, ii:o.ii});
+  } else if (o.sv === 'bay'){
+    var by2 = wallBays(o.w); if (by2[o.k] <= 0) return; for (k2 in inf.y) g[k2] = inf.y[k2];
+    /* a bay holds about half what building a whole section costs per bay, so taking walls down and putting them up again always loses a little */
+    if (inf.mat === 'wood' && Math.random() < 0.5) delete g.wood; if (inf.mat === 'metal' && inf.state !== 'whole' && Math.random() < 0.4) delete g.scrap;
+    by2[o.k] = 0; emit({k:'edit', e:{a:'wbay', id:o.w.id, i:o.k, v:0}}); rebuildWalls();
+    if (by2.every(function(v){ return v <= 0; })) doEdit({a:'unwall', id:o.w.id});
   } else if (o.sv === 'bench'){ for (k2 in inf.y) g[k2] = inf.y[k2]; doEdit({a:'unbench', id:o.id});
   } else {
     for (k2 in inf.y) g[k2] = inf.y[k2];

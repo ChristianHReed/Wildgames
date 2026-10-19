@@ -186,3 +186,6 @@ Walls follow real light-frame building so they look right when broken open:
 
 ## Versions and the offline copy (0.56.2)
 Every script is requested as `?v=BUILD`, every Springfield square as `?d=DATAV` (hash of all squares and map.js, in assets/dataver.js). The service worker serves these addresses saved-first (they never change), fetches the page itself fresh, and on activation deletes every other game cache and any square from an older map. Run `python3 tools/stamp_release.py <version>` for each release.
+
+## Harvest (0.57.0)
+Wall bays are salvage targets in the same system as furniture and cars (findSalvage, salvInfo, doSalvage): tool decides time, material decides yield, noise draws aliens. Taking apart a bay yields about half what building it cost, so a loop of building and dismantling always loses. Nails and sheet metal are substitutes when building walls.
