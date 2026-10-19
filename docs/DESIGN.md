@@ -1,6 +1,6 @@
 # Afterstreet (formerly Last Block): Game Design
 
-This page says what the game is and why. [ROADMAP.md](ROADMAP.md) says what is built, what comes next and which art each step needs; the two share the same area names (see "Design areas and where they stand" in the roadmap). [ART.md](ART.md) is the look, [SHAPED.md](SHAPED.md) the art catalogue, [TESTING.md](TESTING.md) the test steps. Updated 19 October 2026, at version 0.48.4.
+This page says what the game is and why. [ROADMAP.md](ROADMAP.md) says what is built, what comes next and which art each step needs; the two share the same area names (see "Design areas and where they stand" in the roadmap). [ART.md](ART.md) is the look, [SHAPED.md](SHAPED.md) the art catalogue, [TESTING.md](TESTING.md) the test steps. Updated 19 October 2026, at version 0.48.5.
 
 ## The pitch
 
@@ -110,7 +110,7 @@ How aliens behave (the rules every alien follows):
 - **They lose interest.** Chase, search where they lost you, give up and go back to wandering; a horde walks back to its nest at dawn.
 - **Horde nights.** Every third night the nests empty and packs sweep the town. Pacing keeps it fair: no new pack while eight or more are already on you.
 - **Weather** follows Missouri's seasons, with a body temperature meter alongside health, hunger and thirst. Events: heat waves, ice storms, thunderstorms, rare tornadoes. Counters: clothing, fire, shelter.
-- **Death:** the character respawns at their bed or base with skills intact. What they carried stays where they fell.
+- **Death:** the character respawns at their bed or, failing that, the home safe house (in the south-east corner of the Springfield map), with skills intact. What they carried stays where they fell.
 - **Bases:** players claim a real building, barricade it, and add storage, a bed, and crafting stations. Placing walls, fences, beds, chests and benches uses a ghost that snaps to a half-metre grid and to nearby walls.
 - **Salvage:** furniture and wrecked cars can be taken apart with an axe, crowbar or wrench for wood, scrap and parts to build with.
 - **The map:** a journal map that only shows where you have been, with flags you plant yourself.

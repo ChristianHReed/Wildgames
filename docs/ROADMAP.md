@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 19 October 2026, at version 0.48.4. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.48.5. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -78,6 +78,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.48.2 | Wrecked and burnt-out cars from the design chat's vehicle pack (`*_wreck`, `*_burnt` for sedan, hatchback, pickup and van): about one parked car in five is now a wreck (rusted, flat tyres) or a burnt shell on bare rims, and there are some extra wrecks beside buildings. They are sunk by the pack's `sitDrop`, cannot be driven (the prompt says Hold J to take apart) and give less when salvaged: a wreck gives 5 scrap and some parts, a burnt shell 3 scrap and rarely a part, with no fuel or tyres. |
 | 0.48.3 | Aliens pack, second part: a nest that has just spread starts as the small hive (`hive_small`) and grows into the full nest after five minutes; a destroyed nest leaves the burst hive (`hive_burst`: split husks and a goo pool), saved with the world; dead aliens now use the pack's `fade` pose in their last 14 seconds and sink into the ground before they are removed. The clinger is still not in (it needs wall climbing). |
 | 0.48.4 | Weather and sky from the effects pack: drifting clouds (fair-weather ones in clear weather, a lid of overcast sheets in rain, snow and storms, thunderheads on the horizon in thunderstorms), the pack's rain streaks (leaning in the wind) and snowflakes in place of the old boxes, and the lightning bolt in the sky during a flash. Still to do from the sky pack: moon phases (the moon is still drawn by the sky shader) and the aurora for the final night. |
+| 0.48.5 | Springfield start and respawn. The game now saves where you are standing whenever it saves (every 20 seconds, and when the page is closed), so reopening Springfield puts you back where you were instead of at the entry point of the square. The safe house, supply chest and truck moved from the middle of town to the south-east corner of the map (the square E9 S12, the furthest south-east with a good number of buildings); a new game starts there. Dying away from the home square wakes you at that safe house, wherever on the map you fell (your pack stays where you fell; a bed in the same square still counts first). Existing saves keep their place; the old centre safe house stays as an ordinary safe lot. |
 
 ## Next versions
 
