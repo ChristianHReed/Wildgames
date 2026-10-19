@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.1.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.2.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2574,7 +2574,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.49.1';
+var VERSION = '0.49.2';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -4961,7 +4961,7 @@ function worldSave(){
   var got = {}, cr = [], tr = [];
   world.buildings.forEach(function(b){ var ks = Object.keys(b.got); if (ks.length) got[b.id] = ks.map(Number); });
   world.crates.forEach(function(c, i){ if (c.looted) cr.push(i); }); world.trees.forEach(function(t, i){ if (!t.alive) tr.push(i); });
-  return {surv:(world.surv || []).map(function(q){ return {id:q.id, st:q.st, job:q.job, hu:Math.round(q.hu), x:r2(q.x), y:r2(q.y), away:q.away ? Math.round(q.away - time) : 0, gone:q.gone ? 1 : 0, sc:Math.round(q.sc || 0)}; }), burst:Object.keys(world.burst || {}).map(Number), v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, cut:Object.keys(world.cut || {}).slice(-5000), fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
+  return {surv:(world.surv || []).map(function(q){ return {id:q.id, key:q.key, hp:Math.round(q.hp || 60), st:q.st, job:q.job, hu:Math.round(q.hu), x:r2(q.x), y:r2(q.y), away:q.away ? Math.round(q.away - time) : 0, gone:q.gone ? 1 : 0, sc:Math.round(q.sc || 0)}; }), burst:Object.keys(world.burst || {}).map(Number), v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, cut:Object.keys(world.cut || {}).slice(-5000), fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
@@ -5776,8 +5776,8 @@ function makeSurvivors(saved){
   c.sort(function(a, b){ return a[0] - b[0]; });
   var n = Math.max(1, Math.min(4, Math.round(w.buildings.length/220))), zk = hash(w.buildings.length, 5, 5);
   c.slice(0, n).forEach(function(a, i){ var d = a[1].door, key = keys[(Math.floor(zk*6) + i) % keys.length];
-    w.surv.push({surv:true, id:i, key:key, base:NPCN[key] || key, name:NPCN[key] || key, tip:'', x:d.x - d.nx*1.6 - d.ny*1.6, y:d.y - d.ny*1.6 + d.nx*1.6, yaw:Math.atan2(-d.ny, -d.nx), st:'wait', job:'', hu:0, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:d.x - d.nx*1.6, hy:d.y - d.ny*1.6}); });
-  if (saved) saved.forEach(function(q){ var s2 = w.surv[q.id | 0]; if (!s2) return; s2.st = /^(wait|follow|stay|base)$/.test(q.st) ? q.st : 'wait'; s2.job = SJOB[q.job] ? q.job : ''; s2.hu = Math.max(0, Math.min(100, +q.hu || 0)); if (isFinite(q.x) && isFinite(q.y)){ s2.x = +q.x; s2.y = +q.y; } s2.away = q.away > 0 ? time + q.away : 0; s2.gone = q.gone ? 1 : 0; s2.sc = +q.sc || 0; });
+    w.surv.push({surv:true, id:i, key:key, base:NPCN[key] || key, name:NPCN[key] || key, tip:'', x:d.x - d.nx*1.6 - d.ny*1.6, y:d.y - d.ny*1.6 + d.nx*1.6, yaw:Math.atan2(-d.ny, -d.nx), st:'wait', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:d.x - d.nx*1.6, hy:d.y - d.ny*1.6}); });
+  if (saved) saved.forEach(function(q){ var s2 = w.surv[q.id | 0]; if (!s2 && q.key && NPCN[q.key] && (q.id | 0) < 12){ s2 = {surv:true, id:w.surv.length, key:q.key, base:NPCN[q.key], name:NPCN[q.key], tip:'', x:+q.x || 0, y:+q.y || 0, yaw:0, st:'follow', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:+q.x || 0, hy:+q.y || 0}; w.surv.push(s2); } if (!s2) return; s2.hp = q.hp > 0 ? +q.hp : 60; s2.st = /^(wait|follow|stay|base)$/.test(q.st) ? q.st : 'wait'; s2.job = SJOB[q.job] ? q.job : ''; s2.hu = Math.max(0, Math.min(100, +q.hu || 0)); if (isFinite(q.x) && isFinite(q.y)){ s2.x = +q.x; s2.y = +q.y; } s2.away = q.away > 0 ? time + q.away : 0; s2.gone = q.gone ? 1 : 0; s2.sc = +q.sc || 0; });
 }
 function survCount(){ var n = 0; (world.surv || []).forEach(function(s){ if (!s.gone && s.st !== 'wait') n++; }); return n; }
 function survGo(s, tx, ty, sp, dt, stop){
@@ -5790,7 +5790,7 @@ function survGo(s, tx, ty, sp, dt, stop){
 function survChest(){ var cs = world.edits.chests, i; for (i = 0; i < cs.length; i++) if (cs[i].id === 'safe') return cs[i]; return null; }
 function survTip(s){
   if (s.st === 'wait') return survCount() >= 3 ? 'you already have three with you' : 'ask to come along';
-  var hung = s.hu > 75 ? ', hungry' : '', jb = SJOB[s.job];
+  var hung = (s.hu > 75 ? ', hungry' : '') + (s.hp < 30 ? ', badly hurt' : s.hp < 50 ? ', hurt' : ''), jb = SJOB[s.job];
   if (inSafe(P.x, P.y, 0)) return (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + hung + ' · change job';
   return (s.st === 'stay' ? 'waiting here' : 'with you') + hung + ' · ' + (s.st === 'stay' ? 'follow' : 'wait here');
 }
@@ -5811,6 +5811,14 @@ function survTick(dt){
       if (src){ var kf = src.fresh > 0 ? 'fresh' : 'food'; src[kf]--; s.hu = 0; s.starve = 0; if (src === inv) updateHud(); feed(s.base + ' ate a meal', '#c0c6cc'); } }
     if (s.hu >= 100){ s.starve = (s.starve || 0) + dt; if (s.starve > 150){ s.gone = 1; feed(s.base + ' left: there was nothing to eat', '#e07a5a'); toast(s.base + ' could not stay without food, and left.', 5); return; } }
     var hungry = s.hu > 75; s.tip = survTip(s); s.cd -= dt; s.atk = Math.max(0, s.atk - dt);
+    /* aliens go for survivors too (0.49.2): anything awake in reach bites them; a follower or waiting survivor fights back */
+    if (s.hp === undefined) s.hp = 60; s.hurt = Math.max(0, (s.hurt || 0) - dt); var inS = inSafe(s.x, s.y, 0), near = null, nd = 3.6;
+    for (var zi = 0; zi < zombies.length; zi++){ var zz = zombies[zi]; if (zz.hp <= 0) continue; var A2 = AK[zz.k], zd2 = Math.hypot(zz.x - s.x, zz.y - s.y);
+      if (!inS && zd2 < A2.stand + 0.6 && zd2 < Math.hypot(zz.x - P.x, zz.y - P.y) + 1){ zz.sd = (zz.sd || 0) - dt; if (zz.sd <= 0){ zz.sd = A2.cd; s.hp -= A2.dmg*0.6; s.hurt = 0.4; sfx('hurt', s.x, s.y, 0.5); } }
+      if (zd2 < nd && (s.st === 'follow' || s.st === 'stay')){ nd = zd2; near = zz; } }
+    if (s.hp <= 0){ s.gone = 1; feed(s.base + ' was killed by the aliens', '#e07a5a'); toast(s.base + ' did not make it.', 5); return; }
+    if (inS || s.hp >= 60) s.hp = Math.min(60, s.hp + (inS ? dt*1.2 : 0)); else s.hp = Math.min(60, s.hp + dt*0.05);
+    if (near && s.cd <= 0){ s.yaw = Math.atan2(near.y - s.y, near.x - s.x); s.cd = 1.1; s.atk = 0.45; hitZombie(near, 5, Math.cos(s.yaw)*2, Math.sin(s.yaw)*2, false); if (typeof alienCall === 'function') alienCall(0, s.x, s.y, false); }
     var dP = Math.hypot(P.x - s.x, P.y - s.y);
     if (s.away){ if (time >= s.away){ s.away = 0; var lt = {scrap:2 + Math.floor(Math.random()*4), wood:2 + Math.floor(Math.random()*3), food:1 + Math.floor(Math.random()*3), water:1 + Math.floor(Math.random()*2)}, tx = [];
         if (Math.random() < 0.1){ s.gone = 1; feed(s.base + ' did not come back from the supply run', '#e07a5a'); toast(s.base + ' never returned from the supply run.', 5); return; }
@@ -5851,6 +5859,7 @@ function survDraw(m, now){
     if (s.gone || s.away || Math.abs(s.x - P.x) > 120 || Math.abs(s.y - P.y) > 120) return; var look = npcLook(s.key); if (!look) return; m.yo = groundAt(s.x, s.y);
     var o = {x:s.x, y:s.y, yaw:s.yaw, id:40 + s.id, mv:s.mv ? 1 : 0, vis:s.run ? 2 : 1};
     if (s.atk > 0){ o.sw = 1; o.atk = 'attack_swing'; o.ak = 1 - s.atk/0.45; }
+    else if (s.st === 'stay' && !s.mv && !s.hurt) o.act = 'sit';
     else if (s.st === 'wait' && !s.mv){ var dw = Math.hypot(P.x - s.x, P.y - s.y); o.act = dw < 22 ? 'wave' : 'lean_wall'; if (dw < 22) s.yaw = Math.atan2(P.y - s.y, P.x - s.x); }
     svQueue(o, look, m.yo, now); });
 }
@@ -6259,6 +6268,7 @@ async function enterZone(R, lat, lon, yaw, carry, atSafe){
     var v = {veh:true, id:home ? 'truck' : 'r' + Date.now().toString(36), t:carry.veh.t, kind:tkc ? 'truck' : undefined, name:tkc ? 'the truck' : carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel};
     world.vehicles = world.vehicles.filter(function(o){ return !(tkc && o.kind === 'truck'); }); world.vehicles.push(v); world.vmap[v.id] = v; P.veh = v; v.rd = time;
     if (tkc){ var bc2 = bedChest(); if (bc2 && carry.veh.bed){ bc2.inv = carry.veh.bed.inv || {}; bc2.items = carry.veh.bed.items || {}; bc2.designs = carry.veh.bed.designs || []; } } } }
+  if (carry && carry.surv) carry.surv.forEach(function(q, qi){ var a = qi*2.1 + 0.5; (world.surv = world.surv || []).push({surv:true, id:world.surv.length, key:q.key, base:NPCN[q.key], name:NPCN[q.key], tip:'', x:P.x + Math.cos(a)*2.5, y:P.y + Math.sin(a)*2.5, yaw:P.yaw, st:'follow', job:'', hu:q.hu || 0, hp:q.hp || 60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:P.x, hy:P.y}); });
   R.last = {lat:lat, lon:lon, yaw:P.yaw}; saveRegions(); manageInteriors(99); updateHud();
 }
 /* walking or driving over the edge of a square */
@@ -6276,6 +6286,7 @@ async function zoneTravel(){
     var ti = world.vehicles.indexOf(P.veh); if (ti >= 0) world.vehicles.splice(ti, 1); P.veh = null;
   }
   if (P.veh){ var vi = world.vehicles.indexOf(P.veh); if (vi >= 0 && P.veh.id[0] === 'r') world.vehicles.splice(vi, 1); P.veh = null; }
+  carry.surv = []; (world.surv || []).forEach(function(q){ if (!q.gone && q.st === 'follow'){ carry.surv.push({key:q.key, hu:q.hu, hp:q.hp}); q.gone = 1; } });
   saveNow();
   try { await enterZone(R, ll[1], ll[0], yaw, carry); P.pitch = pitch; }
   catch (e){

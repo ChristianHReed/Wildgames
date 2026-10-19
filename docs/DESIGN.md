@@ -132,7 +132,7 @@ Each player keeps a roster of characters on their drive and picks one when enter
 - **Bicycles:** quiet, common, no fuel.
 - **Cars and trucks:** fast and carry cargo, but need fuel and repair, and their noise draws aliens.
 - **Traders:** a few fixed trading posts.
-- **Other survivors:** non-player survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger). Built in 0.49.0: up to three follow you, eat from the supply chest, and take a job at the base (guard, gardener or scavenger).
+- **Other survivors:** non-player survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger). Built in 0.49.0: up to three follow you, eat from the supply chest, and take a job at the base (guard, gardener or scavenger). Since 0.49.2 aliens bite survivors that are in reach (health 60, heal inside the safe zone), followers and waiting survivors fight back, followers cross into the next map square with you, and a waiting survivor sits down.
 - **Scenarios:** the long-term goal is a pack chosen by the host: reclaim the city, escape, endless survival, or one a friend designed.
 
 ## How the design is built
