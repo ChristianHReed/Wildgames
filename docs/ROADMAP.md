@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 19 October 2026, at version 0.48.5. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.49.0. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -17,7 +17,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | Survival | Injuries, food, sleep, clothing, farming, weapons with wear, tool bench | Carry weight (0.52) |
 | Bases and building | Grid placement with snapping, walls, fences, beds, chests, benches, salvage | Carry furniture whole (0.52); broken building states (Art 6) |
 | Vehicles | Town cars, the safe-house truck, repair, sleeping in the cab | Siphon, boots, headlights, wrecks and burnt cars (0.51) |
-| People | Your survivor with creator, skills, other players over direct connection, traders | Recruitable survivors (0.49) |
+| People | Your survivor with creator, skills, other players over direct connection, traders, recruitable survivors with jobs | More survivor jobs and dangers (0.49) |
 | Look and sound | Faceted pieces, framed buildings, effects, UI icons, held weapons | Moon phases, aurora, explosions and flames (0.55); remaining props and ground (Art 3, 4); music |
 | Hosting and saves | Direct play, passports, saves on the drive | Real-device testing of everything |
 
@@ -79,6 +79,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.48.3 | Aliens pack, second part: a nest that has just spread starts as the small hive (`hive_small`) and grows into the full nest after five minutes; a destroyed nest leaves the burst hive (`hive_burst`: split husks and a goo pool), saved with the world; dead aliens now use the pack's `fade` pose in their last 14 seconds and sink into the ground before they are removed. The clinger is still not in (it needs wall climbing). |
 | 0.48.4 | Weather and sky from the effects pack: drifting clouds (fair-weather ones in clear weather, a lid of overcast sheets in rain, snow and storms, thunderheads on the horizon in thunderstorms), the pack's rain streaks (leaning in the wind) and snowflakes in place of the old boxes, and the lightning bolt in the sky during a flash. Still to do from the sky pack: moon phases (the moon is still drawn by the sky shader) and the aurora for the final night. |
 | 0.48.5 | Springfield start and respawn. The game now saves where you are standing whenever it saves (every 20 seconds, and when the page is closed), so reopening Springfield puts you back where you were instead of at the entry point of the square. The safe house, supply chest and truck moved from the middle of town to the south-east corner of the map (the square E9 S12, the furthest south-east with a good number of buildings); a new game starts there. Dying away from the home square wakes you at that safe house, wherever on the map you fell (your pack stays where you fell; a bed in the same square still counts first). Existing saves keep their place; the old centre safe house stays as an ordinary safe lot. |
+| 0.49.0 | Other survivors, first part. The design chat's six ready-made survivors (Old Hollis, Doc Marlow, Tobias, Farmer Reed, Nix, Dale; hats, vests, satchel and cane pieces and the wave and lean-on-wall clips) stand outside a few houses in each square (one to four). Press E to ask one to come along (up to three at once); they follow you, run when you sprint, and catch up if left behind. At the safe house press E on one to give a job, press again to change it: guard (walks to the fence nearest an alien and hits it for 5 every second or so), gardener (waters dry plots and brings the harvest to the supply chest), scavenger (goes out for about two minutes every three or so and returns with scrap, wood, food and water in the chest; one run in ten they do not come back). Outside the base E tells a follower to wait or follow. Needs: each eats a meal about every five minutes of play from the supply chest (or your pack when there is no chest); hungry ones stop working and a survivor with nothing to eat for a few minutes leaves. Saved with the world. Still to do: aliens attacking survivors, following across map squares, seeing them in multiplayer, using the sit and carry-crate clips, more jobs and a survivors panel. |
 
 ## Next versions
 
@@ -86,7 +87,7 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.49** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger). Uses the design chat's six NPC looks and clips (sit, lean on wall, wave, carry crate) | Shaped survivors (in the game) |
+| **0.49** (first part done in 0.49.0) | Other survivors: still to do are aliens attacking them, following across map squares, seeing them in multiplayer, the sit and carry-crate clips, more jobs, and a panel to see all your survivors | Shaped survivors (in the game) |
 | **0.50** | Hordes and bases: tune fences, boarded windows and light against packs; aliens that break barricades in turn; guards defend. Then the clinger (wall and roof climbing) from the aliens pack | Aliens pack (in the game) |
 | **0.51** | More for the truck: siphon fuel from town cars, search their trunks and boots (boot part is in the car art), headlights at night, the truck wears and needs upkeep | Car boot parts (in the game) |
 | **0.52** | Carry furniture: take a wardrobe or table whole instead of taking it apart, and place it with the grid to block a door; carry weight slows you | None |
@@ -113,7 +114,8 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Aliens: swarmer, stalker, giant, spitter | In the game | 0.45, 0.47 |
 | Aliens: hive stages (small, grown, burst) and the fade clip | In the game (0.48.3) | 0.48.3 |
 | Aliens: clinger (wall climbing), blood and trail decals | Not used | 0.50 |
-| Survivors: six NPC looks, NPC pieces, clips (sit, lean on wall, wave, carry crate) | Not used | 0.49 |
+| Survivors: six NPC looks, NPC pieces, clips lean on wall and wave | In the game (0.49.0) | 0.49.0 |
+| Survivors: clips sit and carry crate | Not used | 0.49 |
 | Paper map models (folded, open) | Not used | 0.53 |
 | Props: loose items on the ground, searched container variants, hinged doors, plants, street props | Partly used | Art 3 (0.56) |
 | Ground tiles and kerb strips (`ground.js`) | Not loaded | Art 4 (0.57) |
@@ -193,7 +195,7 @@ Ticked items are in the game.
 
 ### World and long game
 - [x] Sound (music still to do)
-- [ ] Other survivors to recruit, with needs and jobs
+- [x] Other survivors to recruit, with needs and jobs (first part, 0.49.0)
 - [x] Horde nights: packs leave the nests every third night and sweep the town (base defence tuning still to do, 0.50)
 - [ ] Loot that does not come back
 - [x] Vehicle repair (the safe-house truck), a truck bed to store gear, sleeping in the cab

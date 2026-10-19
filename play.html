@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.48.5.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.0.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2551,7 +2551,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.48.5';
+var VERSION = '0.49.0';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2598,7 +2598,7 @@ function startRun(ws, cs){
   w.nests = {}; w.burst = {}; w.nestNew = {}; wx = {w:0, until:time + 150, tor:null, flash:0}; flares = []; lures = []; w.lastDay = 0;
   if (resumed && !ws.fresh){ (ws.nests || []).forEach(function(i){ if (w.buildings[i]) w.nests[i] = 1; }); (ws.burst || []).forEach(function(i){ if (w.buildings[i] && !w.nests[i]) w.burst[i] = 1; }); if (ws.wx){ wx.w = ws.wx.w | 0; wx.until = +ws.wx.until || 0; } } else pickNests();
   w.total = 0; w.buildings.forEach(function(b){ w.total += b.rolls + 1; }); w.total += w.crates.length;
-  hiTrees = []; clutter = []; clutKey = ''; world.trees.forEach(function(t){ t.hi = false; }); buildTrees(); makeVehicles(resumed ? ws.veh : null); makeTraders(); setupScenario(resumed ? ws : null); pings = []; P.gridWas = undefined;
+  hiTrees = []; clutter = []; clutKey = ''; world.trees.forEach(function(t){ t.hi = false; }); buildTrees(); makeVehicles(resumed ? ws.veh : null); makeTraders(); makeSurvivors(resumed ? ws.surv : null); setupScenario(resumed ? ws : null); pings = []; P.gridWas = undefined;
   manageInteriors(40); makeMini();
   el('title').classList.add('hidden'); el('play').classList.remove('hidden'); el('feed').innerHTML = '';
   running = true; inRun = true; saveT = 20; updateHud();
@@ -2917,6 +2917,7 @@ function findTarget(){
   for (i = 0; i < clutter.length && i < 40; i++){ d = Math.hypot(clutter[i].x - P.x, clutter[i].y - P.y); if (d < Math.min(bd, 1.5)){ bd = d; best = clutter[i]; } }
   var pt0 = P.lvl ? null : portNear(); if (pt0 && pt0.d < bd + 0.4 && (!best || best.plant || pt0.d < bd)){ best = pt0.o; bd = pt0.d; }
   for (i = 0; i < world.traders.length; i++){ d = Math.hypot(world.traders[i].x - P.x, world.traders[i].y - P.y); if (d < Math.min(bd, 2.6)){ bd = d; best = world.traders[i]; } }
+  for (i = 0; i < (world.surv || []).length; i++){ var sv0 = world.surv[i]; if (sv0.gone || sv0.away) continue; d = Math.hypot(sv0.x - P.x, sv0.y - P.y); if (d < Math.min(bd, 2.6)){ bd = d; best = sv0; } }
   bedFollow(); var tk0 = truckOf(); if (tk0 && !P.veh && time - (tk0.rd || -9) >= 0.6) truckSpots(tk0).forEach(function(o){ d = Math.hypot(o.x - P.x, o.y - P.y); if (d < Math.min(bd, 1.5)){ bd = d; best = o; } });
   for (i = 0; i < world.vehicles.length; i++){ var vh = world.vehicles[i]; if (vh.kind === 'truck' || time - (vh.rd || -9) < 0.6) continue; d = Math.hypot(vh.x - P.x, vh.y - P.y); if (d < Math.min(bd, 2.3)){ bd = d; best = vh; } }
   (world.edits.colls || []).concat(world.edits.plots || []).forEach(function(o2){ var d2 = Math.hypot(o2.x - P.x, o2.y - P.y); if (d2 < Math.min(bd, o2.plot ? 1.9 : 1.6)){ bd = d2; best = o2; } });
@@ -3822,6 +3823,7 @@ function update(dt){
     if (target === 'water'){ if (drinkCd <= 0){ drinkCd = 0.8; if (P.thirst < 99){ P.thirst = Math.min(100, P.thirst + 30); feed('Drank', ITEMS.water[1]); if (Math.random() < 0.12) makeSick('The river water was bad.'); } else if (inv.dirty < 8){ inv.dirty++; feed('+1 Unboiled water', ITEMS.dirty[1]); updateHud(); } } }
     else if (target.chest){ openChest(target); keys.KeyE = false; autoUse = null; }
     else if (target.trader){ openTrade(); keys.KeyE = false; autoUse = null; }
+    else if (target.surv){ if (ePress || tapped) survTalk(target); autoUse = null; }
     else if (target.truckSpot){ var tj = target.act === 'work' ? truckJob() : null;
       if (tj){ prog += dt/(me.bg === 'mechanic' ? 1.8 : 3); if (prog >= 1){ prog = 0; truckFit(tj); autoUse = null; keys.KeyE = false; } }
       else { if (ePress || tapped) truckUse(target); autoUse = null; } }
@@ -3840,7 +3842,7 @@ function update(dt){
   if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Search to come out' : 'move or press E to come out'); }
   else if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
-    el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.dead ? 'Hold J to take apart ' : target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.name);
+    el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.dead ? 'Hold J to take apart ' : target.t ? 'Press E to drive ' : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.surv ? 'Press E: ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.surv ? target.name + ' (' + target.tip + ')' : target.name);
     if (target.port) el('ptxt').textContent = portText(target);
     else if (target.gen) el('ptxt').textContent = genText(target);
     else if (target.coll) el('ptxt').textContent = collText(target);
@@ -3940,7 +3942,7 @@ function update(dt){
     }
     if (dead || b.t <= 0) bullets.splice(i, 1);
   }
-  spitTick(dt); packT = (packT || 0) - dt; if (packT <= 0 && net.role !== 'guest'){ packT = 0.5; packTick(0.5); } seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
+  survTick(dt); spitTick(dt); packT = (packT || 0) - dt; if (packT <= 0 && net.role !== 'guest'){ packT = 0.5; packTick(0.5); } seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
   spawnT -= dt;
   if (spawnT <= 0 && net.role !== 'guest'){ spawnT = 0.5; spawnAliens(day); }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
@@ -4311,7 +4313,7 @@ var RIG = null, SVC = {}, svN = 0, SVQ = [], svBuf = null;
 var SVNEW = {};
 function svClips(){
   if (SVNEW.done || !RIG || !SHAPED.survivor || !SHAPED.survivor.clips) return; SVNEW.done = 1;
-  var PK = SHAPED.survivor, nb = RIG.bones.length, names = ['jump', 'airborne', 'land', 'hurt', 'drink', 'bandage', 'pickup', 'attack_chop', 'attack_thrust', 'attack_swing'];
+  var PK = SHAPED.survivor, nb = RIG.bones.length, names = ['jump', 'airborne', 'land', 'hurt', 'drink', 'bandage', 'pickup', 'attack_chop', 'attack_thrust', 'attack_swing', 'sit', 'lean_wall', 'wave', 'carry_crate'];
   var rot = function(a){ var x = (a[0] || 0)*Math.PI/180, y = (a[1] || 0)*Math.PI/180, z = (a[2] || 0)*Math.PI/180, cx = Math.cos(x), sx = Math.sin(x), cy = Math.cos(y), sy = Math.sin(y), cz = Math.cos(z), sz = Math.sin(z);
     return [cy*cz, -cy*sz, sy,  cx*sz + sx*sy*cz, cx*cz - sx*sy*sz, -sx*cy,  sx*sz - cx*sy*cz, sx*cz + cx*sy*sz, cx*cy]; };
   var mul = function(A, B){ var R = []; for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) R.push(A[r*3]*B[c] + A[r*3+1]*B[3+c] + A[r*3+2]*B[6+c]); return R; };
@@ -4358,8 +4360,9 @@ function svParts(PK, look){
   add(P0.body[look.body]); add(P0.top[look.body][look.top]); if (legs) add(WN[legs]); else add(P0.bottoms[look.body][look.bot]);
   wl.forEach(function(k){ if (k !== legs) add(WN[k]); }); add(P0.shoes[look.shoe]); add(P0.face[look.face]); add(P0.hair[look.hair]); add(P0.hat[look.hat]);
   if (look.pack) add(P0.gear.backpack); if (look.scarf) add(P0.gear.scarf);
+  (look.npc || []).forEach(function(k){ add(P0.npc && P0.npc[k]); });   /* a recruitable survivor's own pieces: hat, vest, bag, cane */
   if (look.gloves){ delete out.hand_l; delete out.hand_r; add(P0.gear.gloves); }
-  if (look.hat !== 'none' && out.Head) out.Head = out.Head.filter(function(q){ return q.hat !== 'hide'; });
+  if ((look.hat !== 'none' || (look.npc || []).some(function(k){ return k === 'wide_brim' || k === 'hood_up'; })) && out.Head) out.Head = out.Head.filter(function(q){ return q.hat !== 'hide'; });
   var bs = PK.builds[look.build]; if (bs[0] !== 1 || bs[1] !== 1) for (var b in out){ if (b === 'Head' || b === 'neck_01') continue; out[b] = out[b].map(function(q){ return SHAPED.scaleXZ(q, bs[0], bs[1]); }); }
   if (look.wpn && window.SHAPED.held){ var wp = look.wpn.split(':'), WS = SHAPED.held.models.weapons[wp[0]], gp = SHAPED.held.grip.pos, ws = WS && (WS[wp[1]] || WS.new);   /* a weapon rides the right hand: its origin on the grip point */
     if (ws) out.hand_r = (out.hand_r || []).concat(ws.map(function(q){ var c = {}; for (var kk in q) c[kk] = q[kk]; c.p = [q.p[0] + gp[0], q.p[1] + gp[1], q.p[2] + gp[2]]; c.c = 'H:' + q.c; return c; })); }
@@ -4910,7 +4913,7 @@ function worldSave(){
   var got = {}, cr = [], tr = [];
   world.buildings.forEach(function(b){ var ks = Object.keys(b.got); if (ks.length) got[b.id] = ks.map(Number); });
   world.crates.forEach(function(c, i){ if (c.looted) cr.push(i); }); world.trees.forEach(function(t, i){ if (!t.alive) tr.push(i); });
-  return {burst:Object.keys(world.burst || {}).map(Number), v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, cut:Object.keys(world.cut || {}).slice(-5000), fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
+  return {surv:(world.surv || []).map(function(q){ return {id:q.id, st:q.st, job:q.job, hu:Math.round(q.hu), x:r2(q.x), y:r2(q.y), away:q.away ? Math.round(q.away - time) : 0, gone:q.gone ? 1 : 0, sc:Math.round(q.sc || 0)}; }), burst:Object.keys(world.burst || {}).map(Number), v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, cut:Object.keys(world.cut || {}).slice(-5000), fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
@@ -5692,6 +5695,98 @@ function truckBits(m, v, now, tr, fit, y0){
   }
   if (tr && !tr.tire && VMOD.tire) m.part(VMOD.tire, v.x, v.y, v.yaw, 0, 2.95, 0, -1.25, 0, 0.7);   /* the old flat, leaning by the front */
 }
+/* ================= 0.49.0: other survivors. A few are waiting in the town; ask one to come along, then at the base give each a job. They are the design chat's six ready-made survivors ================= */
+var NPCN = {old_ranger:'Old Hollis', medic:'Doc Marlow', kid_hoodie:'Tobias', farmer:'Farmer Reed', drifter:'Nix', mechanic:'Dale'};
+var SJOB = {guard:['guard', 'keeps watch along the fence and fights aliens that come close'], garden:['gardener', 'waters the plots and brings in the harvest'], scavenge:['scavenger', 'goes out for supplies and comes back with some']};
+function npcLook(key){
+  var L = SHAPED.survivor.npcLooks[key]; if (!L) return null;
+  return {build:L.build, body:L.body, skin:L.skin, hairC:L.hairColour, hair:L.hair, hat:L.hat || 'none', face:L.face, top:L.top, bot:L.bottoms, shoe:L.shoes, shirt:L.shirt, pants:L.pants, acc:L.acc, pack:false, wpn:'', gloves:false, scarf:false, worn:L.worn || [], npc:L.npc || []};
+}
+function makeSurvivors(saved){
+  var w = world; w.surv = []; if (!window.SHAPED || !SHAPED.survivor || !SHAPED.survivor.npcLooks) return;
+  var keys = Object.keys(SHAPED.survivor.npcLooks), c = [];
+  w.buildings.forEach(function(b){ if (b.door && !b.gone && b.kind === 'house' && !w.nests[b.id] && b.id !== w.safe && Math.hypot(b.cx - w.spawn.x, b.cy - w.spawn.y) > 60) c.push([hash(b.id, 21, 6), b]); });
+  c.sort(function(a, b){ return a[0] - b[0]; });
+  var n = Math.max(1, Math.min(4, Math.round(w.buildings.length/220))), zk = hash(w.buildings.length, 5, 5);
+  c.slice(0, n).forEach(function(a, i){ var d = a[1].door, key = keys[(Math.floor(zk*6) + i) % keys.length];
+    w.surv.push({surv:true, id:i, key:key, base:NPCN[key] || key, name:NPCN[key] || key, tip:'', x:d.x - d.nx*1.6 - d.ny*1.6, y:d.y - d.ny*1.6 + d.nx*1.6, yaw:Math.atan2(-d.ny, -d.nx), st:'wait', job:'', hu:0, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:d.x - d.nx*1.6, hy:d.y - d.ny*1.6}); });
+  if (saved) saved.forEach(function(q){ var s2 = w.surv[q.id | 0]; if (!s2) return; s2.st = /^(wait|follow|stay|base)$/.test(q.st) ? q.st : 'wait'; s2.job = SJOB[q.job] ? q.job : ''; s2.hu = Math.max(0, Math.min(100, +q.hu || 0)); if (isFinite(q.x) && isFinite(q.y)){ s2.x = +q.x; s2.y = +q.y; } s2.away = q.away > 0 ? time + q.away : 0; s2.gone = q.gone ? 1 : 0; s2.sc = +q.sc || 0; });
+}
+function survCount(){ var n = 0; (world.surv || []).forEach(function(s){ if (!s.gone && s.st !== 'wait') n++; }); return n; }
+function survGo(s, tx, ty, sp, dt, stop){
+  var dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy); s.mv = 0; if (d < (stop || 0.4)) return d;
+  var ox = s.x, oy = s.y, step = Math.min(d, sp*dt), ux = dx/d, uy = dy/d;
+  if (s.av > 0){ s.av -= dt; ux = s.ax*0.85 + ux*0.25; uy = s.ay*0.85 + uy*0.25; }   /* walking round whatever is in the way */
+  stepMove(s, ux*step, uy*step, 0.35); s.yaw = Math.atan2(uy, ux); s.mv = 1; s.run = sp > 4;
+  if (Math.hypot(s.x - ox, s.y - oy) < step*0.3){ s.stuck += dt; if (s.stuck > 0.3 && !(s.av > 0)){ var sg = Math.random() < 0.5 ? 1 : -1; s.ax = -dy/d*sg; s.ay = dx/d*sg; s.av = 0.7 + Math.random()*0.8; } } else s.stuck = Math.max(0, s.stuck - dt*2); return d;
+}
+function survChest(){ var cs = world.edits.chests, i; for (i = 0; i < cs.length; i++) if (cs[i].id === 'safe') return cs[i]; return null; }
+function survTip(s){
+  if (s.st === 'wait') return survCount() >= 3 ? 'you already have three with you' : 'ask to come along';
+  var hung = s.hu > 75 ? ', hungry' : '', jb = SJOB[s.job];
+  if (inSafe(P.x, P.y, 0)) return (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + hung + ' · change job';
+  return (s.st === 'stay' ? 'waiting here' : 'with you') + hung + ' · ' + (s.st === 'stay' ? 'follow' : 'wait here');
+}
+function survTalk(s){
+  if (s.st === 'wait'){ if (survCount() >= 3){ toast('You already have three survivors with you. They need feeding too.', 3.5); return; }
+    s.st = 'follow'; s.job = ''; s.hu = Math.min(s.hu, 30); sfx('pick', s.x, s.y, 0.6); feed(s.base + ' comes with you', '#9bd07a'); toast(s.base + ': "I will stick with you. Get me somewhere safe and I will earn my keep." At the safe house, press E on them to give a job.', 6); return; }
+  if (inSafe(P.x, P.y, 0)){ var order = ['guard', 'garden', 'scavenge'], at = order.indexOf(s.job), nx = order[(at + 1) % order.length]; s.job = nx; s.st = 'base'; s.sc = 0; s.hx = P.x + (Math.random() - 0.5)*3; s.hy = P.y + (Math.random() - 0.5)*3;
+    feed(s.base + ' is now the ' + SJOB[nx][0], '#9bd07a'); toast(s.base + ' ' + SJOB[nx][1] + '. Press E again to change the job.', 5); return; }
+  if (s.st === 'stay'){ s.st = 'follow'; s.job = ''; feed(s.base + ' follows you', '#9bd07a'); } else { s.st = 'stay'; s.job = ''; feed(s.base + ' waits here', '#9bd07a'); }
+}
+function survTick(dt){
+  if (!world || !world.surv || net.role === 'guest' || !running) return;
+  world.surv.forEach(function(s){
+    if (s.gone) return;
+    if (s.st === 'wait'){ s.mv = 0; s.tip = survTip(s); return; }
+    s.hu += dt/3; var ch = survChest();   /* a hundred in five minutes; a meal is taken from the supply chest, or from your pack */
+    if (s.hu > 60){ var src = ch && (ch.inv.food > 0 || ch.inv.fresh > 0) ? ch.inv : (!ch || ch) && (inv.food > 0 || inv.fresh > 0) ? inv : null;
+      if (src){ var kf = src.fresh > 0 ? 'fresh' : 'food'; src[kf]--; s.hu = 0; s.starve = 0; if (src === inv) updateHud(); feed(s.base + ' ate a meal', '#c0c6cc'); } }
+    if (s.hu >= 100){ s.starve = (s.starve || 0) + dt; if (s.starve > 150){ s.gone = 1; feed(s.base + ' left: there was nothing to eat', '#e07a5a'); toast(s.base + ' could not stay without food, and left.', 5); return; } }
+    var hungry = s.hu > 75; s.tip = survTip(s); s.cd -= dt; s.atk = Math.max(0, s.atk - dt);
+    var dP = Math.hypot(P.x - s.x, P.y - s.y);
+    if (s.away){ if (time >= s.away){ s.away = 0; var lt = {scrap:2 + Math.floor(Math.random()*4), wood:2 + Math.floor(Math.random()*3), food:1 + Math.floor(Math.random()*3), water:1 + Math.floor(Math.random()*2)}, tx = [];
+        if (Math.random() < 0.1){ s.gone = 1; feed(s.base + ' did not come back from the supply run', '#e07a5a'); toast(s.base + ' never returned from the supply run.', 5); return; }
+        if (ch) for (var k in lt){ ch.inv[k] = (ch.inv[k] || 0) + lt[k]; tx.push('+' + lt[k] + ' ' + k); } else for (var k2 in lt){ inv[k2] = (inv[k2] || 0) + lt[k2]; tx.push('+' + lt[k2] + ' ' + k2); }
+        feed(s.base + ' is back: ' + tx.join(', ') + (ch ? ' (in the supply chest)' : ''), '#9bd07a'); updateHud(); } return; }
+    if (s.st === 'follow'){
+      if (dP > 55 && !P.veh && !inSafe(P.x, P.y, 0)){ var a = Math.random()*6.28; s.x = P.x + Math.cos(a)*3; s.y = P.y + Math.sin(a)*3; }
+      var spd = P.veh ? 7 : (keys.ShiftLeft || P.vis > 1) ? 4.9 : 3.3; if (dP > 2.6) survGo(s, P.x, P.y, spd*(dP > 12 ? 1.2 : 1), dt, 2.4); else { s.mv = 0; s.yaw = Math.atan2(P.y - s.y, P.x - s.x); }
+      if (s.stuck > 4 && dP > 6){ s.stuck = 0; var a2 = Math.random()*6.28; s.x = P.x + Math.cos(a2)*2.5; s.y = P.y + Math.sin(a2)*2.5; } return; }
+    if (s.st === 'stay'){ s.mv = 0; return; }
+    /* at the base */
+    if (hungry){ survGo(s, s.hx, s.hy, 2.2, dt, 1); return; }
+    if (s.job === 'guard'){
+      var bz = world.zones && world.zones[0], tg = null, bd = 13, px = 0, py = 0;   /* the nearest alien within 13 m of the fence */
+      if (bz) for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (z.hp <= 0) continue; var l = zoneLocal(bz, z.x, z.y), hw = bz.hw - 1.4, hd = bz.hd - 1.4, cx2 = Math.max(-hw, Math.min(hw, l[0])), cy2 = Math.max(-hd, Math.min(hd, l[1])), qx = bz.x + cx2*bz.ux - cy2*bz.uy, qy = bz.y + cx2*bz.uy + cy2*bz.ux, dz = Math.hypot(z.x - qx, z.y - qy); if (dz < bd){ bd = dz; tg = z; px = qx; py = qy; } }
+      if (tg){ survGo(s, px, py, 4.2, dt, 0.5); var dd = Math.hypot(tg.x - s.x, tg.y - s.y);
+        if (dd < 3.6){ s.yaw = Math.atan2(tg.y - s.y, tg.x - s.x); if (s.cd <= 0){ s.cd = 1.1; s.atk = 0.45; hitZombie(tg, 5, Math.cos(s.yaw)*2, Math.sin(s.yaw)*2, false); } } }
+      else survGo(s, s.hx, s.hy, 2.4, dt, 1.2);
+      return; }
+    if (s.job === 'garden'){
+      var pl = null, pd = 1e9; (world.edits.plots || []).forEach(function(q){ if (!inSafe(q.x, q.y, 3)) return; var dq = Math.hypot(q.x - s.x, q.y - s.y); if (dq < pd){ pd = dq; pl = q; } });
+      if (!pl){ survGo(s, s.hx, s.hy, 2.4, dt, 1.2); return; }
+      survGo(s, pl.x + 1.3, pl.y, 2.6, dt, 0.5); s.sc += dt;
+      if (s.sc > 25){ s.sc = 0; (world.edits.plots || []).forEach(function(q){ if (!inSafe(q.x, q.y, 3)) return;
+          if (q.s === 2){ var nf = 3, cc = survChest(); if (cc) cc.inv.fresh = (cc.inv.fresh || 0) + nf; else inv.fresh += nf; q.s = 0; q.g = 0; plotSet(q); feed(s.base + ' harvested a plot (+' + nf + ' fresh food)', ITEMS.fresh[1]); }
+          else if (q.s === 1 && plotDry(q)){ q.wet = time; plotSet(q); feed(s.base + ' watered a plot', ITEMS.water[1]); } }); }
+      return; }
+    if (s.job === 'scavenge'){
+      var wk = s.sc = (s.sc || 0) + dt; survGo(s, s.hx, s.hy, 2.2, dt, 1.2);
+      if (wk > 200 && dP > 6){ s.sc = 0; s.away = time + 100 + Math.random()*60; s.mv = 0; feed(s.base + ' heads out to look for supplies', '#c0c6cc'); }
+      return; }
+    survGo(s, s.hx, s.hy, 2.2, dt, 1.2);
+  });
+}
+function survDraw(m, now){
+  if (!world.surv || !shapedOn()) return;
+  world.surv.forEach(function(s){
+    if (s.gone || s.away || Math.abs(s.x - P.x) > 120 || Math.abs(s.y - P.y) > 120) return; var look = npcLook(s.key); if (!look) return; m.yo = groundAt(s.x, s.y);
+    var o = {x:s.x, y:s.y, yaw:s.yaw, id:40 + s.id, mv:s.mv ? 1 : 0, vis:s.run ? 2 : 1};
+    if (s.atk > 0){ o.sw = 1; o.atk = 'attack_swing'; o.ak = 1 - s.atk/0.45; }
+    else if (s.st === 'wait' && !s.mv){ var dw = Math.hypot(P.x - s.x, P.y - s.y); o.act = dw < 22 ? 'wave' : 'lean_wall'; if (dw < 22) s.yaw = Math.atan2(P.y - s.y, P.x - s.x); }
+    svQueue(o, look, m.yo, now); });
+}
 /* ================= traders: fixed posts that swap goods for scrap ================= */
 var BUY = [['food', 1, 3], ['water', 1, 3], ['medkit', 1, 7], ['ammo', 4, 5], ['coat', 1, 8], ['raincoat', 1, 5], ['sweater', 1, 4], ['boots', 1, 4], ['gloves', 1, 3], ['seeds', 1, 2], ['fuel', 1, 6], ['radio', 1, 5], ['bandage', 2, 3], ['antibio', 1, 6], ['splint', 1, 3], ['tape', 1, 2], ['toolkit', 1, 6], ['tire', 1, 6], ['carbat', 1, 8], ['parts', 1, 6]], SELL = [['food', 1, 1], ['water', 1, 1], ['medkit', 1, 3], ['wood', 2, 1], ['fuel', 1, 2], ['coat', 1, 3], ['raincoat', 1, 2], ['sweater', 1, 2]];
 function makeTraders(){
@@ -5773,6 +5868,7 @@ function drawExtras(m, now){
   }
   engHum();
   for (i = 0; i < w.traders.length; i++){ var t = w.traders[i]; if (Math.abs(t.x - P.x) > 120 || Math.abs(t.y - P.y) > 120) continue; m.yo = groundAt(t.x, t.y); queuePerson(m, {x:t.x, y:t.y, yaw:t.yaw, id:t.id, mv:0, sw:0, talk:1}, {build:1, skin:(t.id*2) % 5, shirt:['#3f8f5a', '#8a3a3a', '#c9a24a', '#3a5f8a'][t.id % 4], pants:'#3a3f47', hat:1, body:t.id % 2, hair:1 + t.id % 5, hc:t.id % 5, face:(t.id*3) % 8, top:(t.id*5 + 2) % 8, bot:t.id % 6, shoe:t.id % 3, acc:['#e9dab0', '#2f3a4a', '#d9603a'][t.id % 3]}, now); m.al = 128; m.ybox(t.x, t.y, now*2, 0, 0, 2.5, 0.1, 0.1, 0.1, C('#5dff8a')); m.al = 255; }
+  survDraw(m, now);
   m.al = 128;
   for (i = 0; i < pings.length; i++){ m.yo = groundAt(pings[i].x, pings[i].y); m.ybox(pings[i].x, pings[i].y, now, 0, 0, 6, 0.06, 6, 0.06, C('#ffe14a')); }
   if (w.scen.type === 'escape'){

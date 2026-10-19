@@ -1,6 +1,6 @@
 # Afterstreet (formerly Last Block): Game Design
 
-This page says what the game is and why. [ROADMAP.md](ROADMAP.md) says what is built, what comes next and which art each step needs; the two share the same area names (see "Design areas and where they stand" in the roadmap). [ART.md](ART.md) is the look, [SHAPED.md](SHAPED.md) the art catalogue, [TESTING.md](TESTING.md) the test steps. Updated 19 October 2026, at version 0.48.5.
+This page says what the game is and why. [ROADMAP.md](ROADMAP.md) says what is built, what comes next and which art each step needs; the two share the same area names (see "Design areas and where they stand" in the roadmap). [ART.md](ART.md) is the look, [SHAPED.md](SHAPED.md) the art catalogue, [TESTING.md](TESTING.md) the test steps. Updated 19 October 2026, at version 0.49.0.
 
 ## The pitch
 
@@ -131,7 +131,7 @@ Each player keeps a roster of characters on their drive and picks one when enter
 - **Bicycles:** quiet, common, no fuel.
 - **Cars and trucks:** fast and carry cargo, but need fuel and repair, and their noise draws aliens.
 - **Traders:** a few fixed trading posts.
-- **Other survivors:** non-player survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger). Planned for 0.49.
+- **Other survivors:** non-player survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger). Built in 0.49.0: up to three follow you, eat from the supply chest, and take a job at the base (guard, gardener or scavenger).
 - **Scenarios:** the long-term goal is a pack chosen by the host: reclaim the city, escape, endless survival, or one a friend designed.
 
 ## How the design is built

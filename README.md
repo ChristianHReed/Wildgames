@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.48.5. Every foundation step in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.49.0. Every foundation step in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -44,6 +44,7 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | Sleep, cook, fill a bottle | E at a bed, stove, sink, bath or toilet | Tap it |
 | Swing, shoot | Click, right-click or F | Swing, Shoot |
 | Jump | Space | Jump |
+| Talk to a survivor | E | Ask a waiting survivor to come along; at the safe house E gives them a job (guard, gardener, scavenger); elsewhere E tells them to wait or follow |
 | Take apart | Hold J | Take furniture, cars and bikes apart (axe, crowbar, wrench or toolkit) for wood, scrap, fibre and parts |
 | Place | Build menu, then click | A ghost snaps to a half-metre grid, nearby walls and the ends of your walls; R turns it, Y snap on/off, right-click or Esc cancels |
 | Search, gather, open or shut a door or window, ride, trade | E | Tap it, or Search |
