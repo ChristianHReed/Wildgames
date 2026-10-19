@@ -41,7 +41,8 @@ PALETTE = {
   'sole': '#1d1a18', 'pack': '#6e5a3c', 'packD': '#4f412b', 'strap': '#2b2d33', 'roll': '#8c6a3a', 'bottle': '#5b7f86',
   'glove': '#4a3328', 'gloveD': '#33231b', 'denimRoll': '#6b84a6',
   'sweater': '#7a8a5e', 'coat': '#8a6f5a', 'raincoat': '#c8a23a', 'leather': '#4a3a32', 'trousers': '#5d6670', 'thermals': '#c9b8a0',
-  'toggle': '#d8ccb4', 'zip': '#2a2b2e', 'stripe': '#d8dcd6'
+  'toggle': '#d8ccb4', 'zip': '#2a2b2e', 'stripe': '#d8dcd6',
+  'hatBrown': '#5a4030', 'hoodShadow': '#1d1a19', 'hatBand': '#2a221d', 'ponchoC': '#8a6a4a', 'ponchoS': '#c8a26a', 'vestC': '#4a5a3a', 'vestD': '#3a4a2e', 'strapS': '#4a3a2a', 'satchelC': '#6a4a30', 'crateC': '#9a7a52', 'crateD': '#7a5a3a'
 }
 SLOTS = {
   'SKIN':  ['#f0d2bd', '#dcae8c', '#bd8860', '#8c5b3c', '#583926'],
@@ -403,6 +404,38 @@ CLIP_RULE = ('Each clip is a list of frames; a frame maps bone to [x, y, z] degr
              'Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, '
              'bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).')
 
+# ================= ready-made NPC survivors (recruitable, 0.49): extra pieces and six looks with distinct silhouettes =================
+def npc_parts():
+    fzb = face_z(0, 1.72)
+    N = {}
+    N['wide_brim'] = {'Head': [frustum([[0, 1.7, 0.016, 0.078, 0.088], [0, 1.82, 0.012, 0.07, 0.08]], 'hatBrown'), loft([[0, 1.705, 0.016, 0.2, 0.2], [0, 1.72, 0.016, 0.2, 0.2]], 'hatBrown', n=8), frustum([[0, 1.72, 0.016, 0.08, 0.09], [0, 1.745, 0.016, 0.08, 0.09]], 'hatBand', caps=[False, False])]}
+    N['hood_up'] = {'Head': [loft([[0, 1.56, -0.01, 0.1, 0.11], [0, 1.7, -0.02, 0.105, 0.115], [0, 1.82, -0.01, 0.07, 0.08], [0, 1.85, -0.0, 0.0, 0.0]], 'SHIRT_D', n=6, caps=[False, False]),
+                         flat([(-0.07, 1.6, fzb + 0.02), (0.07, 1.6, fzb + 0.02), (0.06, 1.78, fzb - 0.01), (-0.06, 1.78, fzb - 0.01)], 'hoodShadow')]}
+    N['poncho'] = {'spine_03': [loft([[0, 1.46, 0.0, 0.12, 0.1], [0, 1.4, 0.0, 0.34, 0.24], [0, 0.95, 0.0, 0.42, 0.3]], 'ponchoC', n=8, caps=[False, False]),
+                                *[flat([(x - 0.012, 1.0, 0.31), (x + 0.012, 1.0, 0.31), (x + 0.012, 1.36, 0.25), (x - 0.012, 1.36, 0.25)], 'ponchoS') for x in (-0.18, 0.0, 0.18)]]}
+    N['vest'] = {'spine_03': [frustum(t_rings(False, SPLIT, TORSO[False][-1][0] - 0.02, 0.05), 'vestC', caps=[False, False]), *[front(False, x0, x1, 1.0, 1.1, 0.05, 'vestD', 0.006)['spine_01'][0] for x0, x1 in ((-0.12, -0.03), (0.03, 0.12))]],
+                 'spine_01': [frustum(t_rings(False, 0.96, SPLIT, 0.05), 'vestC', caps=[False, False])]}
+    N['satchel'] = {'spine_03': [flat([(-0.17, 1.44, fz(False, 1.44, 0.03, 0.006)), (-0.12, 1.44, fz(False, 1.44, 0.03, 0.006)), (0.16, 1.02, fz(False, 1.02, 0.03, 0.006)), (0.11, 1.02, fz(False, 1.02, 0.03, 0.006))], 'strapS')],
+                    'pelvis': [box([0.2, 0.92, 0.04], [0.06, 0.24, 0.3], 'satchelC'), box([0.2, 1.03, 0.04], [0.065, 0.06, 0.31], 'strapS')]}
+    N['cane'] = {'hand_r': [frustum([[J['ft' + 'r'][0], 0.82, 0.07, 0.012, 0.012], [J['ft' + 'r'][0], 0.0, 0.16, 0.012, 0.012]], 'hatBrown'), box([J['ft' + 'r'][0], 0.84, 0.05], [0.03, 0.03, 0.08], 'hatBrown')]}
+    N['crate'] = {'spine_03': [box([0, 1.12, 0.32], [0.5, 0.36, 0.36], 'crateC'), *[flat([(-0.25, y, 0.501), (0.25, y, 0.501), (0.25, y + 0.03, 0.501), (-0.25, y + 0.03, 0.501)], 'crateD') for y in (1.0, 1.22)]]}
+    return N
+NPC_LOOKS = {   # creator choices plus npc pieces; colours fixed so each one is recognisable
+  'old_ranger':  {'body': 'masculine', 'build': 'slim', 'skin': 1, 'hairColour': 4, 'hair': 'beard', 'hat': 'none', 'face': 'glasses', 'top': 'flannel_shirt', 'bottoms': 'cargo_trousers', 'shoes': 'boots', 'shirt': '#5a6a4a', 'pants': '#4a4436', 'acc': '#2a2b2e', 'npc': ['wide_brim', 'vest', 'cane'], 'note': 'wide hat, vest and a cane: the tall slow silhouette'},
+  'medic':       {'body': 'feminine', 'build': 'average', 'skin': 3, 'hairColour': 0, 'hair': 'buns', 'hat': 'none', 'face': 'calm', 'top': 'tshirt', 'bottoms': 'jeans', 'shoes': 'trainers', 'shirt': '#e2ddd2', 'pants': '#3e5a7a', 'acc': '#9a3a30', 'npc': ['satchel'], 'worn': ['coat'], 'note': 'long pale coat, bun and a bag across the body'},
+  'kid_hoodie':  {'body': 'masculine', 'build': 'slim', 'skin': 2, 'hairColour': 1, 'hair': 'short', 'hat': 'none', 'face': 'calm', 'top': 'hoodie', 'bottoms': 'track_pants', 'shoes': 'trainers', 'shirt': '#c06a2a', 'pants': '#2a2b2e', 'acc': '#e2ddd2', 'npc': ['hood_up'], 'note': 'hood up, hands low: small and hunched'},
+  'farmer':      {'body': 'masculine', 'build': 'broad', 'skin': 0, 'hairColour': 2, 'hair': 'short', 'hat': 'cap', 'face': 'stubble', 'top': 'dungarees', 'bottoms': 'jeans', 'shoes': 'rain_boots', 'shirt': '#c9b48a', 'pants': '#4a5a7a', 'acc': '#8a3e30', 'npc': [], 'note': 'broad, dungarees and tall yellow boots'},
+  'drifter':     {'body': 'feminine', 'build': 'slim', 'skin': 4, 'hairColour': 0, 'hair': 'bob', 'hat': 'none', 'face': 'dark_glasses', 'top': 'striped_tee', 'bottoms': 'rolled_jeans', 'shoes': 'boots', 'shirt': '#2a2b2e', 'pants': '#3a3d42', 'acc': '#d8cfbd', 'npc': ['poncho'], 'note': 'a wide poncho makes a triangle'},
+  'mechanic':    {'body': 'masculine', 'build': 'average', 'skin': 3, 'hairColour': 0, 'hair': 'buzzed', 'hat': 'beanie', 'face': 'moustache', 'top': 'tshirt', 'bottoms': 'cargo_trousers', 'shoes': 'boots', 'shirt': '#4a5a6a', 'pants': '#4a5a6a', 'acc': '#c46a2a', 'npc': ['crate'], 'worn': ['leather'], 'note': 'leather jacket and a crate carried in front'},
+}
+CLIPS.update({
+  'sit': [F(root=[0, -0.46, 0], thigh_2=[-88, 0, 4], calf_2=[86, 0, 0], foot_2=[0, 0, 0], spine_01=[-4, 0, 0], upperarm_2=[-18, 0, 0], lowerarm_2=[-58, 0, 0])],
+  'lean_wall': [F(root=[0, -0.02, -0.06], spine_01=[-10, 0, 0], spine_03=[-4, 0, 0], thigh_l=[-6, 0, 0], thigh_r=[18, 0, 6], calf_r=[40, 0, 0], foot_r=[-20, 0, 0], upperarm_2=[12, 0, 0], lowerarm_2=[-30, 0, 0], Head=[4, 10, 0])],
+  'wave': [F(upperarm_r=[-160, 0, -20], lowerarm_r=[-20, 0, 0], Head=[0, -6, 0]), F(upperarm_r=[-160, 0, -40], lowerarm_r=[-45, 0, 0], Head=[0, -6, 0]), F(upperarm_r=[-160, 0, -10], lowerarm_r=[-5, 0, 0], Head=[0, -6, 0])],
+  'carry_crate': [F(upperarm_2=[-42, 0, 6], lowerarm_2=[-70, 0, 0], spine_03=[-6, 0, 0]), F(upperarm_2=[-42, 0, 6], lowerarm_2=[-70, 0, 0], spine_03=[-6, 0, 0], thigh_l=[-20, 0, 0], thigh_r=[16, 0, 0], calf_r=[18, 0, 0]),
+                  F(upperarm_2=[-42, 0, 6], lowerarm_2=[-70, 0, 0], spine_03=[-6, 0, 0]), F(upperarm_2=[-42, 0, 6], lowerarm_2=[-70, 0, 0], spine_03=[-6, 0, 0], thigh_r=[-20, 0, 0], thigh_l=[16, 0, 0], calf_l=[18, 0, 0])],
+})
+
 def body(fem): return join(head(fem), hands())
 pack = {
   'name': 'survivor', 'version': 7, 'style': 'silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small featureless heads (18 October 2026)',
@@ -440,7 +473,11 @@ pack = {
     'hair': {k: {'Head': v} for k, v in hair().items()},
     'hat': {k: {'Head': v} for k, v in hats().items()},
     'gear': gear(),
-    'worn': {'masculine': worn(False), 'feminine': worn(True)}}
+    'worn': {'masculine': worn(False), 'feminine': worn(True)},
+    'npc': npc_parts()},
+  'npcLooks': NPC_LOOKS,
+  'npcRule': 'Six ready-made recruitable survivors. Build each from its creator choices as usual, add parts.worn[body][k] for every k in worn, and parts.npc[k] for every k in npc '
+             '(wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.',
 }
 out, st = write_pack('survivor', pack, __file__)
 mx = lambda pre, i: max(v[i] for k, v in st.items() if k.startswith(pre))

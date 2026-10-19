@@ -298,3 +298,14 @@ model('build', 'dropped_pack', [hull([(-0.18, 0, -0.12), (0.18, 0, -0.12), (0.18
 model('build', 'grave_marker', [hull([(-0.45, 0, -0.9), (0.45, 0, -0.9), (0.45, 0, 0.9), (-0.45, 0, 0.9), (-0.3, 0.2, -0.75), (0.3, 0.2, -0.75), (0.3, 0.18, 0.75), (-0.3, 0.18, 0.75)], 'compost'),
                                 b(0, 0.0, -0.95, 0.07, 1.0, 0.07, 'wood'), b(0, 0.7, -0.95, 0.45, 0.07, 0.07, 'wood')] + [b(0.2, 0.18, 0.3, 0.12, 0.04, 0.12, 'flowerR')])
 model('build', 'map_flag', [b(0, 0, 0, 0.03, 1.6, 0.03, 'wood'), hull([(0.015, 1.25, 0), (0.45, 1.33, 0), (0.45, 1.33, 0.004), (0.015, 1.25, 0.004), (0.015, 1.55, 0), (0.45, 1.47, 0), (0.45, 1.47, 0.004), (0.015, 1.55, 0.004)], 'flag')])
+
+# ================= boot lids for the cars (the game's repair jobs and car-boot loot) =================
+def boot_lid(name, z0, z1, L, hood, half, col):
+    y0, y1 = hood_line(L, hood, z0), hood_line(L, hood, z1)
+    lid = hull([(-half, y0 + 0.004, z0), (half, y0 + 0.004, z0), (half, y1 + 0.004, z1), (-half, y1 + 0.004, z1),
+                (-half, y0 + 0.034, z0), (half, y0 + 0.034, z0), (half, y1 + 0.034, z1), (-half, y1 + 0.034, z1)], col)
+    M['vehicles'][name]['boot'] = [lid]
+    M['vehicles'][name]['body'].append(flat([(-half + 0.08, y0 + 0.003, z0 - 0.06), (half - 0.08, y0 + 0.003, z0 - 0.06), (half - 0.08, y1 + 0.003, z1 + 0.06), (-half + 0.08, y1 + 0.003, z1 + 0.06)], 'black', (0, 1, 0)))
+    VRIG[name].update({'bootHinge': [0, round(y0 + 0.034, 3), z0], 'bootAxis': 'x', 'bootRule': 'the boot lid opens upwards about its hinge (the edge nearest the cabin)'})
+boot_lid('sedan', -0.92, -2.28, 2.3, 0.95, 0.84, 'paint3')
+boot_lid('hatchback', -1.52, -1.93, 1.95, 0.92, 0.79, 'paint1')

@@ -105,6 +105,81 @@ MODULES = {
   'balcony': balcony(), 'awning': awning(), 'sign': sign(),
 }
 
+# ---------- Art 6: damage states (19 October 2026) ----------
+import math, random
+FZ = IZ + IT/2 + 0.003         # just in front of an infill's outside face
+BZ = IZ - IT/2 - 0.003         # just behind its inside face
+def cracks(seed, n=3, x0=X0 + 0.1, x1=X1 - 0.1, y0=0.3, y1=2.5):
+    R = random.Random(seed); o = []
+    for i in range(n):
+        x, y = R.uniform(x0, x1), R.uniform(y0, y1)
+        for j in range(3):
+            nx, ny = x + R.uniform(-0.35, 0.35), y + R.uniform(-0.4, 0.1)
+            dx, dy = nx - x, ny - y; l = math.hypot(dx, dy) or 1; w = 0.012
+            o.append(flat([(x - dy/l*w, y + dx/l*w, FZ), (nx - dy/l*w, ny + dx/l*w, FZ), (nx + dy/l*w, ny - dx/l*w, FZ), (x + dy/l*w, y - dx/l*w, FZ)], 'crack'))
+            x, y = nx, ny
+    return o
+def chips(seed, n=3):
+    R = random.Random(seed); o = []
+    for i in range(n):
+        x, y, r = R.uniform(X0 + 0.15, X1 - 0.15), R.uniform(0.3, 2.4), R.uniform(0.06, 0.14)
+        o.append(flat([(x + math.cos(a)*r*R.uniform(0.6, 1.2), y + math.sin(a)*r*R.uniform(0.6, 1.2), FZ + 0.001) for a in [k*2*math.pi/6 for k in range(6)]], 'WALL_D'))
+    return o
+def pile(n, spread, seed, big=False):
+    R = random.Random(seed); o = []
+    for i in range(n):
+        x, z = R.uniform(-spread, spread), R.uniform(0.15, 0.25 + spread*0.6); w = R.uniform(0.15, 0.45 if big else 0.3); h = R.uniform(0.06, 0.25 if big else 0.14); d = w*R.uniform(0.6, 1.0)
+        y = 0 if i < n*0.6 else R.uniform(0.05, 0.2 if big else 0.08)
+        o.append(hull([(x - w/2, y, z - d/2), (x + w/2, y, z - d/2), (x + w/2, y, z + d/2), (x - w/2, y, z + d/2),
+                       (x - w*0.3, y + h, z - d*0.2), (x + w*0.4, y + h*0.8, z - d*0.3), (x + w*0.2, y + h, z + d*0.3), (x - w*0.35, y + h*0.7, z + d*0.2)], ['WALL', 'rubble', 'WALL_D', 'TRIM'][i % 4]))
+    return o
+def damaged(mod): return MODULES[mod] + cracks(len(mod), 3) + chips(len(mod) + 7, 3) + pile(3, 0.6, len(mod))
+def holed(kind='plain', seed=1):
+    """the infill with a ragged hole knocked through it; the hole's edge shows the wall's thickness"""
+    hx0, hx1, hy0, hy1 = -0.55, 0.45, 0.5, 2.1
+    o = finish(X0, X1, 0, hy0, kind) + finish(X0, X1, hy1, SH - 0.25, kind) + finish(X0, hx0, hy0, hy1, kind) + finish(hx1, X1, hy0, hy1, kind)
+    R = random.Random(seed); edge = []
+    for i in range(10):     # ragged teeth around the opening, in the wall colour, sticking into the hole
+        a = i*2*math.pi/10; cx, cy = (hx0 + hx1)/2, (hy0 + hy1)/2; rx, ry = (hx1 - hx0)/2, (hy1 - hy0)/2
+        px, py = cx + math.cos(a)*rx, cy + math.sin(a)*ry; qx, qy = cx + math.cos(a)*rx*0.8, cy + math.sin(a)*ry*0.8
+        if px < hx0: px = hx0
+        if px > hx1: px = hx1
+        edge.append(hull([(px - 0.12, py - 0.1, IZ - IT/2), (px + 0.12, py - 0.1, IZ - IT/2), (px + 0.12, py + 0.1, IZ - IT/2), (px - 0.12, py + 0.1, IZ - IT/2),
+                          (qx - 0.04, qy - 0.03, IZ + IT/2), (qx + 0.04, qy - 0.03, IZ + IT/2), (qx + 0.04, qy + 0.03, IZ + IT/2), (qx - 0.04, qy + 0.03, IZ + IT/2)], 'WALL' if i % 2 else 'WALL_D'))
+    return o + edge + pile(6, 0.8, seed, True)
+def snapped(kind):
+    t = {'timber': 0.2, 'steel': 0.16, 'concrete': 0.26}[kind]
+    stub = [box([-BW/2, 0.6, 0], [t, 1.2, FD], 'FRAME'), tip([-BW/2, 1.2, 0], [-BW/2 + 0.05, 1.45, 0.02], t*0.7, FD*0.7, 'FRAME_D')]
+    hang = [hull([(-BW/2 - t/2, 2.75, -FD/2), (-BW/2 + t/2, 2.75, -FD/2), (-BW/2 + t/2, 2.75, FD/2), (-BW/2 - t/2, 2.75, FD/2),
+                   (-BW/2 + 0.15 - t/2, 1.75, -FD/2), (-BW/2 + 0.15 + t/2, 1.8, -FD/2), (-BW/2 + 0.15 + t/2, 1.8, FD/2), (-BW/2 + 0.15 - t/2, 1.75, FD/2)], 'FRAME'),
+            tip([-BW/2 + 0.15, 1.78, 0], [-BW/2 + 0.12, 1.6, 0.03], t*0.6, FD*0.6, 'FRAME_D')]
+    beam = [hull([(-BW/2, 2.6, -FD/2), (BW/2 - t/2, 2.75, -FD/2), (BW/2 - t/2, 2.75, FD/2), (-BW/2, 2.6, FD/2),
+                  (-BW/2, 2.85, -FD/2), (BW/2 - t/2, 3.0, -FD/2), (BW/2 - t/2, 3.0, FD/2), (-BW/2, 2.85, FD/2)], 'FRAME')]
+    return stub + hang + beam + pile(4, 0.5, 9)
+def torn_inside(seed=3):
+    """the inside face of an infill: wallpaper with torn patches showing plaster and a stud behind"""
+    R = random.Random(seed)
+    o = [flat([(X0, 0.05, BZ), (X1, 0.05, BZ), (X1, SH - 0.3, BZ), (X0, SH - 0.3, BZ)], 'paper', (0, 0, -1))]
+    for i in range(4):
+        x, y, r = R.uniform(X0 + 0.3, X1 - 0.3), R.uniform(0.5, 2.3), R.uniform(0.15, 0.3)
+        o.append(flat([(x + math.cos(a)*r*R.uniform(0.5, 1.2), y + math.sin(a)*r*R.uniform(0.5, 1.2), BZ - 0.001) for a in [k*2*math.pi/7 for k in range(7)]], 'plaster', (0, 0, -1)))
+    o.append(flat([(-0.04, 0.9, BZ - 0.002), (0.04, 0.9, BZ - 0.002), (0.04, 1.6, BZ - 0.002), (-0.04, 1.6, BZ - 0.002)], 'stud', (0, 0, -1)))
+    return o
+def studs():
+    """an infill stripped to its studs: daylight shows between them"""
+    return [box([x, (SH - 0.25)/2, IZ], [0.05, SH - 0.25, 0.1], 'stud') for x in (X0 + 0.04, -0.35, 0.05, 0.45, X1 - 0.04)] + \
+           [box([0, 0.04, IZ], [X1 - X0, 0.08, 0.1], 'stud'), box([0, SH - 0.29, IZ], [X1 - X0, 0.08, 0.1], 'stud'), box([0, 1.2, IZ], [X1 - X0, 0.05, 0.1], 'stud')]
+def door_boarded(kind='plain'):
+    o = door(kind)
+    return o + [flat([(-0.6, y - 0.07, IZ + 0.08), (0.6, y + 0.05, IZ + 0.08), (0.6, y + 0.19, IZ + 0.08), (-0.6, y + 0.07, IZ + 0.08)], 'board') for y in (0.5, 1.1, 1.7)] + \
+           [box([sx*0.52, y, IZ + 0.09], [0.02, 0.02, 0.01], 'boardD') for sx in (1, -1) for y in (0.5, 1.1, 1.7)]
+for m in ('wall_plain', 'wall_siding', 'wall_brick', 'window_plain', 'window_siding', 'window_brick', 'door_plain', 'shopfront', 'garage'):
+    MODULES[m + '_damaged'] = damaged(m)
+for kind in ('plain', 'siding', 'brick'): MODULES['hole_' + kind] = holed(kind, {'plain': 1, 'siding': 2, 'brick': 3}[kind])
+for kind in ('timber', 'steel', 'concrete'): MODULES['frame_' + kind + '_snapped'] = snapped(kind)
+MODULES.update({'rubble_small': pile(5, 0.6, 21), 'rubble_large': pile(12, 1.0, 22, True), 'inside_torn': torn_inside(), 'studs': studs(), 'door_boarded': door_boarded()})
+PALETTE.update({'crack': '#2a2826', 'paper': '#c8b89a', 'plaster': '#e2dccf', 'stud': '#a8885a'})
+
 # ---------- placing modules: the same quarter turns shapes.js uses ----------
 def turn(x, z, k):
     for _ in range(k % 4): x, z = z, -x
@@ -189,6 +264,9 @@ pack = {
   'placeRule': 'Each module is in bay-local coordinates. For a footprint edge, walk it in 2.4 m bays; for each bay and storey place frame_<kind>, '
                'one infill module and any extras (awning, balcony, sign) turned to face out of the wall (quarter turns as SHAPED pieces use: ry). '
                'Add plinth to the ground storey, a corner_<kind> post at every corner, then the roof.',
+  'damageRule': 'Art 6 states: <infill>_damaged (cracks, chips, a little rubble), hole_<finish> (a ragged hole knocked through plain, siding or brick infill), broken (the infill gone), '
+                'frame_<kind>_snapped (the post broken at mid height, the beam sagging), rubble_small and rubble_large piles (WALL, TRIM and rubble colours), inside_torn (the inside face: torn wallpaper, plaster, a stud), '
+                'studs (an infill stripped to its studs, daylight between them), door_boarded and boarded (window). Daylight through holes is the lighting: let sun and sky light pass where the infill is gone.',
   'breakRule': 'Infill modules break first (replace with broken: the panel falls as rubble chunks). A frame module breaks last; the bays above a broken post fall.',
   'flatModels': True, 'models': {'modules': MODULES, 'templates': TEMPLATES}
 }

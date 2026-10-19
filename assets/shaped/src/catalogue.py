@@ -5,7 +5,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(HERE, '..
 def load(n):
     s = open(os.path.join(HERE, '..', n + '.js')).read(); k = ').%s = ' % n
     return json.loads(s[s.index(k) + len(k):].rstrip().rstrip(';'))
-SV, AL, BU, PR, HE = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held')
+SV, AL, BU, PR, HE, FX, GR = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held'), load('fx'), load('ground')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -53,7 +53,7 @@ st = AL['stats']
 L.append(f'''
 ## aliens (`assets/shaped/aliens.js`, version {AL['version']})
 
-{AL['style'][0].upper() + AL['style'][1:]}. Our own designs **and our own rigs**, replacing the Bestiary models and skeletons. {AL['about']}
+{AL['style'][0].upper() + AL['style'][1:]}. Our own designs **and our own rigs**, replacing the Bestiary models and skeletons. {AL['about']} {AL['fadeRule']}
 
 | Alien | Height | Bones | Tris, verts, welded | What it is |
 | --- | --- | --- | --- | --- |''')
@@ -105,5 +105,27 @@ for k in HE['stats']:
     L.append(f"| `{k}` | {row(HE['stats'], k)} | {HE['info'][nm]['note'] + '; length ' + str(HE['info'][nm]['length']) + ' m; ground: roll ' + str(HE['info'][nm]['ground']['roll']) + ', lift ' + str(HE['info'][nm]['ground']['lift']) if nm and k.endswith('.new') else ''} |")
 L.append('''
 **Survivor clips** (in `survivor.js`, `clips`): ''' + ', '.join('`' + k + '` (' + str(len(v)) + ')' for k, v in SV['clips'].items()) + '. ' + SV['clipRule'])
+L.append(f'''
+**NPC looks** (in `survivor.js`, `npcLooks`, version 7): ''' + ', '.join(f"`{k}` ({v['note']})" for k, v in SV['npcLooks'].items()) + '. ' + SV['npcRule'])
+L.append(f'''
+## fx (`assets/shaped/fx.js`, version {FX['version']})
+
+{FX['about'].strip()}
+
+| Model | Tris, verts, welded | How to use it |
+| --- | --- | --- |''')
+for k in FX['stats']: L.append(f"| `{k}` | {row(FX['stats'], k)} | {FX['notes'][k.split('.')[1]]} |")
+L.append(f'''
+## ground (`assets/shaped/ground.js`, version {GR['version']})
+
+{GR['about'].strip()} {GR['kerbRule']}
+
+| Model | Tris, verts, welded |
+| --- | --- |''')
+for k in GR['stats']: L.append(f"| `{k}` | {row(GR['stats'], k)} |")
+L.append('''
+## UI icons (`assets/ui/`)
+
+Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.''')
 open(os.path.join(ROOT, 'docs', 'SHAPED.md'), 'w').write('\n'.join(L) + '\n')
 print('wrote docs/SHAPED.md')

@@ -22,7 +22,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -32,7 +32,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held;
+const S=window.SHAPED, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -65,7 +65,9 @@ function survivor(look){
   const W=look.worn||[], legs=W.find(k=>k==='trousers'||k==='thermals');
   add(P.body[look.body]); add(P.top[look.body][look.top]); add(legs?P.worn[look.body][legs]:P.bottoms[look.body][look.bot]); for (const k of W) if (k!==legs) add(P.worn[look.body][k]); add(P.shoes[look.shoe]); add(P.face[look.face]); add(P.hair[look.hair]); add(P.hat[look.hat]);
   for (const g of look.gear||[]) add(P.gear[g]);
-  let ps=out.filter(Boolean);
+  for (const n of look.npc||[]) add(P.npc[n]);
+  const hoodish=(look.npc||[]).some(n=>n==='wide_brim'||n==='hood_up');
+  let ps=out.filter(Boolean); if (hoodish) ps=ps.filter(q=>q.hat!=='hide');
   if (look.gear && look.gear.includes('gloves')) ps=ps.filter(q=>!(q._b.startsWith('hand_') && q.c==='SKIN'));
   const [bx,bz]=SV.builds[look.build||'average']; if (bx!==1||bz!==1) ps=ps.map(q=>(q._b==='Head'||q._b==='neck_01')?q:S.scaleXZ(q,bx,bz));
   const col=colourer(SV.palette,{SKIN:SV.slots.SKIN[look.skin],HAIR:SV.slots.HAIR[look.hc],SHIRT:look.shirt,PANTS:look.pants,ACC:look.acc});
@@ -232,6 +234,53 @@ const SCENES={
       cam.position.set(-2,13,22); ctl.target.set(0,0.5,-0.5); }},
   build:{t:'Things players build',d:'Barricade (new, damaged, nearly gone), window boards, reinforced door, campfire lit and out, fire pit, lantern post, generator off and running, compost bin, water filter, drying rack, cooking spit, tool bench, workshop table, dropped pack, grave marker and map flag.',
     make(){ grid(['barricade','barricade_damaged','barricade_nearly_gone','window_boards','reinforced_door','campfire','campfire_out','fire_pit','lantern_post','generator_off','generator_running','compost_bin','water_filter','drying_rack','cooking_spit','tool_bench','workshop_table','dropped_pack','grave_marker','map_flag'].map(n=>['build',n]),7,2.7,3.0,[0,8,15],[0,0.7,-3]); }},
+  aliens2:{t:'Horde-night aliens',d:'The spitter (ranged, with its glowing glob), the clinger on a wall and on the ground, the hive small, grown and burst, goo and blood decals, and a stalker in its corpse-fade pose.',
+    make(){ lights('dusk'); ground(80,80,0x4a4640);
+      const wall=new THREE.Mesh(new THREE.BoxGeometry(3,3,0.2),new THREE.MeshLambertMaterial({color:0x9a948a})); wall.position.set(-1.5,1.5,-2.1); wall.receiveShadow=true; scene.add(wall);
+      at(alien('spitter','attack',1),-4.2,0,0.6,0.5); const g=at(mesh(AL.parts.decals.spit_glob,colourer(AL.palette,{})),-3.6,1.3,1.5,0.5);
+      const cw=alien('clinger','cling',0); cw.rotation.x=Math.PI/2; cw.position.set(-1.5,2.0,-1.98); scene.add(cw);
+      at(alien('clinger','walk',1),-1.3,0,0.8,0.4);
+      at(alien('hive_small','idle',0),1.4,0,-0.8); at(alien('hive_grown','idle',0),3.6,0,-1.2); at(alien('hive_burst','idle',0),6.6,0,-1.0);
+      at(mesh(AL.parts.decals.goo_splat,colourer(AL.palette,{})),-3.2,0,2.6); at(mesh(AL.parts.decals.blood_1,colourer(AL.palette,{})),0.6,0,2.4); at(mesh(AL.parts.decals.blood_trail,colourer(AL.palette,{})),1.6,0,2.2,0.5);
+      at(alien('stalker','fade',0),3.0,0,2.6,1.2); at(survivor(LOOKS[3]),0.0,0,1.4,-0.3);
+      cam.position.set(0.6,4.2,13); ctl.target.set(0.8,1.0,0); }},
+  npcs:{t:'Recruitable survivors',d:'Six ready-made looks with their own silhouettes (ranger, medic, kid in a hood, farmer, drifter in a poncho, mechanic carrying a crate), and the sit, lean, wave and carry clips.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xe2ddd2);
+      const N=SV.npcLooks, keys=Object.keys(N), C=SV.clips;
+      const lookOf=(n,extra)=>{ const L=N[n]; return Object.assign({body:L.body,build:L.build,skin:L.skin,hc:L.hairColour,hair:L.hair,hat:L.hat,face:L.face,top:L.top,bot:L.bottoms,shoe:L.shoes,shirt:L.shirt,pants:L.pants,acc:L.acc,npc:L.npc,worn:L.worn||[]},extra||{}); };
+      keys.forEach((n,i)=>at(survivor(lookOf(n,{frame:n==='mechanic'?C.carry_crate[0]:n==='old_ranger'?null:undefined})),(i-2.5)*1.1,0,0,0.25));
+      at(survivor(lookOf('drifter',{frame:C.sit[0]})),-2.2,0,-2.2,0.4); const bx=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.45,0.5),new THREE.MeshLambertMaterial({color:0x7a5a3a})); bx.position.set(-2.2,0.225,-2.45); scene.add(bx);
+      at(survivor(lookOf('medic',{frame:C.lean_wall[0]})),0,0,-2.4,0); const w=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.2,0.2),new THREE.MeshLambertMaterial({color:0x9a948a})); w.position.set(0,1.1,-2.7); scene.add(w);
+      at(survivor(lookOf('farmer',{frame:C.wave[1]})),2.2,0,-2.2,-0.3);
+      cam.position.set(0,2.3,7.6); ctl.target.set(0,0.9,-1.0); }},
+  mapfx:{t:'Paper map, effects and fire',d:'The folded and open map, then muzzle flash, tracer, sparks, dust, splashes and ripples, three flames, a smoke column, explosion core, ring and debris, flare, goo, glass shards and wood chips.',
+    make(){ lights('dusk'); ground(60,40,0x6a6660);
+      const fc=colourer(FX.palette,{}), E=FX.models.effects, names=Object.keys(E);
+      names.forEach((n,i)=>{ const m=mesh(E[n],fc); const x=(i%7-3)*1.5, z=-Math.floor(i/7)*1.8; m.position.set(x, (n==='muzzle_flash'||n==='tracer'||n==='flare_glow')?0.6:0, z); if (n==='tracer'||n==='muzzle_flash') m.rotation.y=Math.PI/2; scene.add(m); });
+      const hc=colourer(HE.palette,{}); const mo=mesh(HE.models.map.open,hc); mo.position.set(-6.2,0.7,0.6); mo.rotation.set(-0.3,0,0); scene.add(mo); const mf=mesh(HE.models.map.folded,hc); mf.position.set(-6.2,0.02,1.5); scene.add(mf);
+      cam.position.set(-1,4.5,9.5); ctl.target.set(-1,0.4,-1.6); }},
+  sky:{t:'Sky pieces at night',d:'The eight moon phases, fair, overcast and storm clouds, lightning, rain and snow, and the faint aurora for the last night (shown small and close).',
+    make(){ lights('night'); scene.background=new THREE.Color(0x0b1018); ground(200,200,0x1e2420);
+      const fc=colourer(FX.palette,{}), K=FX.models.sky;
+      for (let i=0;i<8;i++){ const m=mesh(K['moon_'+i],fc); m.position.set((i-3.5)*2.4,9,-20); scene.add(m); }
+      const add=(n,x,y,z,s)=>{ const m=mesh(K[n],fc); m.position.set(x,y,z); m.scale.setScalar(s); scene.add(m); return m; };
+      add('cloud_fair',-12,4,-25,1.6); add('cloud_overcast',2,5,-30,1.2); add('cloud_storm',14,0,-30,1.6); add('lightning',8,0,-24,0.6); add('aurora',0,4,-40,2.2);
+      for (let i=0;i<40;i++) add(i%2?'rain_streak':'snow_flake',-6+(i%10)*1.3,0.5+Math.floor(i/10)*0.9,-6,i%2?2:4);
+      cam.position.set(0,3,8); ctl.target.set(0,6,-20); }},
+  ground_tiles:{t:'Ground materials',d:'Two-metre tiles in summer colours (road, centre line, sidewalk, grass, dry grass, dirt, gravel, mud, sand, water edge, leaf litter in autumn, snow), the kerb, and puddle, ice, crack and pothole decals.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null;
+      const T=GR.models.tiles, keys=Object.keys(T);
+      keys.forEach((n,i)=>{ const season=n==='leaf_litter'?'autumn':n==='snow'?'winter':'summer'; const c=colourer(GR.palette,GR.seasons[n][season],GR.darker); const m=mesh(T[n],c); m.position.set((i%6-2.5)*2.15,0,-Math.floor(i/6)*2.15); scene.add(m); });
+      const road=colourer(GR.palette,GR.seasons.road.summer); ['puddle','ice','crack','pothole'].forEach((n,i)=>{ const t=mesh(T.road,road); t.position.set((i-1.5)*2.15+1,0,-4.3); scene.add(t); const d=mesh(GR.models.decals[n],road); d.position.set((i-1.5)*2.15+1,0,-4.3); scene.add(d); });
+      const k=mesh(GR.models.kerb.kerb_strip,colourer(GR.palette,{})); k.position.set(-5.4,0,-4.3); scene.add(k);
+      cam.position.set(0,9,9); ctl.target.set(0,0,-2); }},
+  damage2:{t:'Broken building states',d:'Damaged wall, window, door, shopfront and garage bays; holes knocked through plain, siding and brick; snapped frames; rubble piles; torn wallpaper inside; bare studs; a boarded door.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,40,0xd8d2c6);
+      const cols=BU.examples.corner_store, list=[['wall_plain_damaged','concrete'],['window_siding_damaged','timber'],['door_plain_damaged','concrete'],['shopfront_damaged','steel'],['garage_damaged','concrete'],
+        ['hole_plain','concrete'],['hole_siding','timber'],['hole_brick','steel'],['studs','timber'],['door_boarded','timber'],[null,'concrete','snapped'],['rubble_large','concrete'],['inside_torn','timber']];
+      list.forEach(([inf,fr,sn],i)=>{ const x=(i%5-2)*3.1, z=-Math.floor(i/5)*4.6, pal=[BU.examples.timber_house,BU.examples.brick_shop,BU.examples.corner_store][i%3];
+        at(module(sn?'frame_'+fr+'_snapped':'frame_'+fr,pal),x,0,z); if(!sn) at(module('corner_'+fr,pal),x+1.2,0,z); at(module('plinth',pal),x,0,z); if(inf) at(module(inf,pal),x,0,z, inf==='inside_torn'?Math.PI:0); });
+      cam.position.set(1,8,17); ctl.target.set(0,1.2,-4.4); }},
   street_props:{t:'Street props, plants and vehicles',d:'Lamps, signals, bins, barriers, fences, poles, trees and four boxy worn vehicles.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,60,0xd8d2c6);
       const st=Object.keys(PR.models.street); st.forEach((n,i)=>at(prop('street',n),(i%9-4)*2.6,0,-(Math.floor(i/9))*3.4-4,0));
