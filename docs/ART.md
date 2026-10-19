@@ -125,4 +125,4 @@ Townscaper (windows lighting up, warm sunsets), Minecraft Vibrant Visuals (golde
 - Only faces that can be seen are drawn; storeys above the second are "lite" (outward faces only). Posts, beams and plinths stop at the wall line, so rooms show wallpaper.
 - Cost: about 3,000 to 6,000 triangles per building against about 1,200 for painted walls, so only map pieces within 100 m of you are framed (`FRD`); the densest Springfield square went from about 62,000 to 124,000 building triangles.
 - Breaking (Art 6) will replace an infill with `broken` and drop the panel as rubble.
-
+- Shared walls (0.45.2): `frParty()` looks 35 cm outside each bay at three points; where another building stands, the bay is a flat panel drawn as wallpaper from both sides (texture code 191) up to the neighbour's height, plain wall above it, with no window and no corner post.
