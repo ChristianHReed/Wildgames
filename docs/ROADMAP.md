@@ -63,14 +63,19 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 
 ## Next versions
 
-Each is small enough to try on the iPhone before the next one starts. Assets needed are listed in brackets.
+Each is small enough to try on the iPhone before the next one starts. Assets needed are listed in brackets. Versions already shipped are in the table above; this list is what is left, in the order I suggest.
 
 | Version | Features | Assets needed |
 | --- | --- | --- |
-| **0.46** | More for the truck: siphon fuel from town cars, search their trunks, headlights at night, the truck wears and needs upkeep | None |
-| **0.47** (first part done in 0.47.0; fences and boarded windows tuning still to do) | Horde nights: every few nights a wave of aliens comes for your base; walls, barricades, boarded windows and light matter | None |
-| **0.48** (map memory and flags done in 0.48.0; held paper map and found map items still to do) | A paper map and notes: you only see where you have been, and can mark places | None |
-| **0.49** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger) | Shaped survivors (in the game) |
+| **0.49** | Other survivors to find and recruit at your base, each with needs and a job (guard, gardener, scavenger). Uses the design chat's six NPC looks and clips (sit, lean on wall, wave, carry crate) | Shaped survivors (in the game) |
+| **0.50** | Hordes and bases: tune fences, boarded windows and light against packs; aliens that break barricades in turn; guards defend. Then the clinger and the hive stages (small, grown, burst) from the aliens pack | Aliens pack (in the game) |
+| **0.51** | More for the truck: siphon fuel from town cars, search their trunks and boots (boot part is in the car art), headlights at night, the truck wears and needs upkeep | Car boot parts (in the game) |
+| **0.52** | Carry furniture: take a wardrobe or table whole instead of taking it apart, and place it with the grid to block a door; carry weight slows you | None |
+| **0.53** | The paper map as a found item and a held model (first person, using the pack's folded and open map); notes on flags; the map only works while you hold it | Map model (in the game) |
+| **0.54** | Alien memory: single aliens remember where they last saw you, return to nests at dawn, and lose interest by degrees; lone stalkers hunt along your trail | None |
+| Art 4 and 6 | Ground tiles and broken building states from the art pack (see the art track below) | In the game |
+
+Finished from the old list: 0.47 horde nights (0.47.0, roaming packs 0.48.1), 0.48 map memory and flags (0.48.0). Moved: the held paper map to 0.53, fence and window tuning to 0.50, truck extras to 0.51.
 
 ## The new look (art track)
 
@@ -112,6 +117,9 @@ Ticked items are in the game.
 - [x] Stairs and upper floors in homes; ladders to flat roofs
 - [x] Upper floors in shops, offices and flats; roof hatches
 - [x] Power and water fail on a set day; generators
+- [x] Place things on a half-metre grid with a ghost, snapping to walls, fences and building sides
+- [x] Take furniture and cars apart with an axe, crowbar or wrench; a tool bench to build
+- [ ] Carry furniture whole and place it (0.52)
 
 ### Aliens
 - [x] Sight cone blocked by walls; shorter at night unless you carry a light
@@ -125,6 +133,10 @@ Ticked items are in the game.
 - [x] Noise draws aliens across a block; area "heat"
 - [x] Stalker that hunts and learns your hiding spots
 - [x] Giant that feels sprinting and vehicles from far away
+- [x] Spitter that keeps its distance and lobs globs you can dodge
+- [x] Roaming packs from nests: a leader searches the town building by building, the pack turns to noise together, a horde goes home at dawn
+- [ ] Clinger and hive stages
+- [ ] Single aliens remember where they last saw you (0.54)
 
 ### Survival
 - [x] Injuries with different treatments (bleeding, infection, broken leg)
@@ -137,12 +149,12 @@ Ticked items are in the game.
 ### World and long game
 - [x] Sound (music still to do)
 - [ ] Other survivors to recruit, with needs and jobs
-- [ ] Horde nights against your base
+- [x] Horde nights: packs leave the nests every third night and sweep the town (base defence tuning still to do, 0.50)
 - [ ] Loot that does not come back
 - [x] Vehicle repair (the safe-house truck), a truck bed to store gear, sleeping in the cab
 - [ ] Siphoning fuel, car trunks, headlights
 - [ ] Skill books and more skills
-- [ ] Map item with notes, instead of always knowing where you are
+- [x] The map only shows where you have been, with flags (a found, held map item still to do, 0.53)
 
 ## Assets
 
