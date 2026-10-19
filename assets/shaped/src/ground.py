@@ -7,7 +7,7 @@ Each material is a 2 m by 2 m tile: a flat base square in colour slot BASE and a
 How to use it: paint the smooth ground in BASE (the terrain already has a colour per area), then scatter the tile's small
 shapes over each 2 m cell near the player, turned by a random quarter turn so the repeat does not show. seasons[material]
 gives BASE, DETAIL and DETAIL2 for spring, summer, autumn and winter (snow lies on level ground in winter).
-Decals (puddle, ice, crack, pothole) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long."""
+Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long."""
 import math, random
 from kit import *
 
@@ -63,6 +63,9 @@ D['puddle'] = [blob(0, 0, 0.6, 'water', 9, 60, 0.01), blob(0.1, -0.05, 0.3, 'wat
 D['ice'] = [blob(0, 0, 0.7, 'ice', 9, 62, 0.01), strip(-0.3, -0.2, 0.25, 0.3, 0.02, 'iceL', 0.011), strip(0.1, -0.4, 0.4, 0.0, 0.015, 'iceL', 0.011)]
 D['crack'] = [strip(-0.8, 0.0, -0.3, 0.15, 0.025, 'crack', 0.01), strip(-0.3, 0.15, 0.1, -0.05, 0.02, 'crack', 0.01), strip(0.1, -0.05, 0.7, 0.2, 0.015, 'crack', 0.01), strip(-0.3, 0.15, -0.2, 0.5, 0.012, 'crack', 0.01)]
 D['pothole'] = [blob(0, 0, 0.45, 'holeRim', 9, 63, 0.01), blob(0, 0, 0.36, 'hole', 9, 64, 0.011)] + [pebble(x, z, 0.03, 'holeRim') for x, z in ((0.5, 0.1), (-0.45, -0.25))]
+def skid(x0, z0, x1, z1, w, c, y):
+    return flat([(x0 - w, y, z0), (x0 + w, y, z0), (x1 + w, y, z1), (x1 - w, y, z1)], c, (0, 1, 0))
+D['skid_marks'] = [skid(sx*0.75, -2.0, sx*0.75 + 0.12*(1 + sx*0.3), 2.0, 0.1, 'hole', 0.01) for sx in (1, -1)] + [skid(sx*0.75 + 0.12*(1 + sx*0.3), 2.0, sx*0.78 + 0.35, 3.0, 0.08, 'holeRim', 0.0105) for sx in (1, -1)]
 KERB = [hull([(-H, 0, -0.08), (H, 0, -0.08), (H, 0, 0.08), (-H, 0, 0.08), (-H, 0.15, -0.08), (H, 0.15, -0.08), (H, 0.15, 0.05), (-H, 0.15, 0.05)], 'kerb'),
         flat([(-H, 0.0005, 0.08), (H, 0.0005, 0.08), (H, 0.0005, 0.35), (-H, 0.0005, 0.35)], 'gutter', (0, 1, 0)), flat([(-0.005, 0.0, 0.081), (0.005, 0.0, 0.081), (0.005, 0.15, 0.051), (-0.005, 0.15, 0.051)], 'kerbD')]
 pack = {'name': 'ground', 'version': 1, 'style': 'flat colour with small shapes; seasons by palette', 'units': 'metres', 'tile': 2.0, 'palette': PALETTE, 'seasons': SEASONS, 'darker': 0.78,

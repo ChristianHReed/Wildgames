@@ -12,7 +12,7 @@ Every shaped-piece pack made for Afterstreet, what is in it and how the game use
 - **Pieces:** shape `s` (`box`, `bev`, `wedge`, `cyl`, `loft`, `decal`, `poly`), position `p` in metres, colour `c`, optional `ry` (quarter turns) and `glow: true` (unlit: lamps, lit windows, alien eyes). Y is up, models face +Z. A `loft` ring can scale each corner (`k`), move each corner along the axis (`d`) and end in a point (`a = b = 0`).
 - **Colours:** a palette name, or a slot (`SKIN`, `HAIR`, `SHIRT`, `PANTS`, `ACC` for survivors; `WALL`, `TRIM`, `FRAME`, `ROOF` for buildings). `_D` is that colour times the pack's `darker` (0.78).
 - **Counts** in the tables: triangles / vertices with `buildIndexed` / vertices after `weld`. `build` makes three vertices per triangle.
-- **Preview:** `art-tests/album.html` shows every pack (survivors, clothes, aliens, the building kit, a street by day and night, damage, items, furniture, garden, street props and vehicles); `art-tests/survivor-creator.html` is the creator preview.
+- **Preview:** `art-tests/album.html` shows every pack (survivors, clothes, aliens, the building kit, a street by day and night, damage, items, furniture, garden, street props and vehicles, guns and ammo, walls and their states, doors and windows, joints, frame, harvest and bases, vehicle damage, car holes, power); `art-tests/survivor-creator.html` is the creator preview.
 
 ## survivor (`assets/shaped/survivor.js`, version 7)
 
@@ -182,7 +182,13 @@ Moving parts (doors, lids, wheels) are separate entries in 'moving' with their h
 Vehicles are boxy 1970s to 1990s shapes, worn: rust patches, a cracked windscreen, mismatched panels.
 Pieces marked glow:true are lamps and lit screens.
 
-Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. garden_plot is the empty bed; draw garden_sprouting, garden_growing or garden_ripe on top of it for the plot's stage. rain_barrel is the rain collector. containers holds every searchable container twice: <name> closed and <name>_searched (doors open, drawer out, lid up, fewer things inside). build holds things players make and place; barricade has three stages (barricade, barricade_damaged, barricade_nearly_gone); campfire and generator have lit/running and out/off versions. glow pieces are flames, embers and lamps. Every vehicle also comes as <name>_wreck (rusted, flat tyres, broken glass) and <name>_burnt (charred shell on bare rims); lower them by vehicleRig[...].sitDrop. Every piece here hinges at the origin: doors and shutters about the y axis (the leaf runs to +X), lids about the x axis (the lid runs to +Z). garage_door rolls up instead: slide its five slats up one after another and lay them flat under the ceiling. `moving` lists other parts that open (doors, lids) and their hinges.
+Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. garden_plot is the empty bed; draw garden_sprouting, garden_growing or garden_ripe on top of it for the plot's stage. rain_barrel is the rain collector. containers holds every searchable container twice: <name> closed and <name>_searched (doors open, drawer out, lid up, fewer things inside). build holds things players make and place; barricade has three stages (barricade, barricade_damaged, barricade_nearly_gone); campfire and generator have lit/running and out/off versions. glow pieces are flames, embers and lamps. Every vehicle also comes as <name>_wreck (rusted, flat tyres, broken glass) and <name>_burnt (charred shell on bare rims); lower them by vehicleRig[...].sitDrop. Every piece here hinges at the origin: doors and shutters about the y axis (the leaf runs to +X), lids about the x axis (the lid runs to +Z). garage_door rolls up instead: slide its five slats up one after another and lay them flat under the ceiling.
+
+**Harvest materials** (`items`, section 10.2): `planks` (boards from siding, sheathing and floors), `scrap_wood` (broken boards, splinters (fuel, small repairs)), `lumber` (studs, plates and joists cut out of a frame (worth more than skins)), `nails_handful` (pulled from every wood layer), `steel_beam` (steel frame columns, beams, girts), `rebar_bundle` (from broken concrete), `sheet_metal` (sheet and cladding skins, metal deck), `concrete_chunk` (poured walls, slabs, columns), `brick` (brick skins (brick_stack is five)), `glass_sheet` (whole panes taken out before they break), `wire_coil` (stripped from walls and the power grid), `plasterboard_scrap` (inner skins (little use: patching, kindling)).
+
+**Bases** (section 10.3): build.claim_sign or build.claim_flag marks a claimed base (nail the sign by the door). build.custom_bed is the bed made from harvested planks and cloth scraps. build.reinforce_<planks|sheet|mesh> (and _damaged, _nearly_gone) is a 1.5 m by 2.4 m panel laid on the room side of a wall: its back at z = 0, facing +Z into the room. Planks suit wood walls, sheet metal steel walls, rebar mesh concrete, but any goes on any.
+
+**Vehicle damage** (section 10.5): vehicles[name].damage (sedan, hatchback, pickup, van): body_crumple_light / body_crumple_heavy and body_bumper_bent replace body; bonnet_crumple_light / bonnet_crumple_heavy (use with the matching body) and bonnet_buckled (folded up, goes with body_crumple_heavy) replace bonnet; windscreen_cracked and windscreen_missing are drawn on top of the body; smoke is a scorch mark and a few puffs over the bonnet for a smoking engine (or start fx.smoke_column at vehicleRig[name].smokeAt). Order a crash goes through: bumper_bent and windscreen_cracked (light knock), crumple_light, crumple_heavy with bonnet_buckled, smoke, windscreen_missing. `moving` lists other parts that open (doors, lids) and their hinges.
 
 | Category | Model | Tris, verts, welded |
 | --- | --- | --- |
@@ -233,6 +239,18 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | items | `lantern` | 90 / 184 / 61 |
 | items | `ammo_box` | 38 / 76 / 28 |
 | items | `pistol` | 24 / 48 / 16 |
+| items | `scrap_wood` | 54 / 112 / 37 |
+| items | `lumber` | 38 / 76 / 28 |
+| items | `nails_handful` | 84 / 168 / 56 |
+| items | `steel_beam` | 38 / 76 / 28 |
+| items | `rebar_bundle` | 84 / 168 / 64 |
+| items | `sheet_metal` | 122 / 244 / 84 |
+| items | `concrete_chunk` | 48 / 116 / 32 |
+| items | `brick` | 16 / 32 / 16 |
+| items | `brick_stack` | 60 / 120 / 40 |
+| items | `glass_sheet` | 14 / 30 / 14 |
+| items | `wire_coil` | 82 / 164 / 64 |
+| items | `plasterboard_scrap` | 14 / 28 / 12 |
 | furniture | `chair` | 72 / 144 / 46 |
 | furniture | `table` | 60 / 120 / 40 |
 | furniture | `sofa` | 120 / 240 / 76 |
@@ -311,19 +329,55 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `hatchback.bonnet` | 12 / 24 / 8 |
 | vehicles | `hatchback.wheel` | 48 / 84 / 28 |
 | vehicles | `hatchback.boot` | 12 / 24 / 8 |
+| vehicles | `hatchback.damage.body_crumple_light` | 128 / 268 / 112 |
+| vehicles | `hatchback.damage.body_crumple_heavy` | 128 / 268 / 112 |
+| vehicles | `hatchback.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `hatchback.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `hatchback.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `hatchback.damage.body_bumper_bent` | 140 / 280 / 116 |
+| vehicles | `hatchback.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `hatchback.damage.windscreen_missing` | 7 / 19 / 18 |
+| vehicles | `hatchback.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `sedan.body` | 126 / 252 / 108 |
 | vehicles | `sedan.bonnet` | 12 / 24 / 8 |
 | vehicles | `sedan.wheel` | 48 / 84 / 28 |
 | vehicles | `sedan.boot` | 12 / 24 / 8 |
+| vehicles | `sedan.damage.body_crumple_light` | 126 / 264 / 108 |
+| vehicles | `sedan.damage.body_crumple_heavy` | 126 / 264 / 108 |
+| vehicles | `sedan.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `sedan.damage.bonnet_crumple_heavy` | 12 / 26 / 8 |
+| vehicles | `sedan.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `sedan.damage.body_bumper_bent` | 138 / 276 / 112 |
+| vehicles | `sedan.damage.windscreen_cracked` | 16 / 32 / 24 |
+| vehicles | `sedan.damage.windscreen_missing` | 7 / 19 / 18 |
+| vehicles | `sedan.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `pickup.body` | 190 / 380 / 130 |
 | vehicles | `pickup.bonnet` | 12 / 24 / 8 |
 | vehicles | `pickup.wheel` | 48 / 84 / 28 |
 | vehicles | `pickup.battery` | 36 / 72 / 20 |
 | vehicles | `pickup.fuel_cap` | 20 / 36 / 12 |
 | vehicles | `pickup.hub` | 20 / 36 / 12 |
+| vehicles | `pickup.damage.body_crumple_light` | 190 / 392 / 130 |
+| vehicles | `pickup.damage.body_crumple_heavy` | 190 / 392 / 130 |
+| vehicles | `pickup.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `pickup.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `pickup.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `pickup.damage.body_bumper_bent` | 202 / 404 / 134 |
+| vehicles | `pickup.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `pickup.damage.windscreen_missing` | 7 / 19 / 19 |
+| vehicles | `pickup.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `van.body` | 72 / 144 / 62 |
 | vehicles | `van.bonnet` | 12 / 24 / 8 |
 | vehicles | `van.wheel` | 48 / 84 / 28 |
+| vehicles | `van.damage.body_crumple_light` | 72 / 152 / 62 |
+| vehicles | `van.damage.body_crumple_heavy` | 72 / 164 / 62 |
+| vehicles | `van.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `van.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `van.damage.bonnet_buckled` | 26 / 60 / 17 |
+| vehicles | `van.damage.body_bumper_bent` | 84 / 168 / 66 |
+| vehicles | `van.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `van.damage.windscreen_missing` | 7 / 19 / 18 |
+| vehicles | `van.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `hatchback_wreck.body` | 126 / 252 / 108 |
 | vehicles | `hatchback_wreck.bonnet` | 12 / 24 / 8 |
 | vehicles | `hatchback_wreck.wheel` | 48 / 84 / 28 |
@@ -407,6 +461,18 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | build | `dropped_pack` | 38 / 84 / 28 |
 | build | `grave_marker` | 48 / 100 / 32 |
 | build | `map_flag` | 24 / 48 / 16 |
+| build | `claim_sign` | 90 / 180 / 68 |
+| build | `claim_flag` | 52 / 104 / 40 |
+| build | `custom_bed` | 312 / 636 / 190 |
+| build | `reinforce_planks` | 276 / 552 / 184 |
+| build | `reinforce_planks_damaged` | 216 / 432 / 144 |
+| build | `reinforce_planks_nearly_gone` | 144 / 288 / 96 |
+| build | `reinforce_sheet` | 168 / 336 / 112 |
+| build | `reinforce_sheet_damaged` | 252 / 508 / 162 |
+| build | `reinforce_sheet_nearly_gone` | 133 / 271 / 89 |
+| build | `reinforce_mesh` | 288 / 576 / 192 |
+| build | `reinforce_mesh_damaged` | 228 / 456 / 152 |
+| build | `reinforce_mesh_nearly_gone` | 132 / 264 / 88 |
 
 ## held (`assets/shaped/held.js`, version 2)
 
@@ -420,7 +486,11 @@ chipped, taped) and broken (the stub left in the hand when it snaps).
 First-person arms (view space): the eye at the origin looking along +Z, +Y up, the viewer's right is -X (the same
 handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor wears on top: outer, else top).
 
-**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.212, 0.837, 0.026] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `crossbow` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`.
+**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.212, 0.837, 0.026] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `crossbow` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`; long guns use `fpLong` with `models.fp.shoulder` when carried and `fpAim` with `models.fp.aim` when aiming.
+
+**Guns and bows** (version 2): `pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`. Guns have new and worn (under a quarter condition: rust and tape) plus one reload state each (revolver open, hunting_rifle bolt_open, pump_shotgun pumped, double_barrel open, carbine empty, crossbow loaded, recurve_bow drawn) and a flash at INFO.muzzle. Long guns: right fist on the grip, left fist at offhandAt; first person uses fpLong when carried and fpAim when aiming. Casings from models.cases go to +X. Each gun's `info` gives its `muzzle`, the `ammo` it takes and how many it `holds`; long guns give `offhandAt`.
+
+**Ammo** (`models.ammo`, on the ground like props: origin at the centre of the base): `pistol_round` (fits pistol and revolver), `rifle_round` (fits hunting rifle and carbine), `shotgun_shell` (fits pump and double-barrel shotguns), `pistol_box` (20 pistol rounds), `rifle_box` (20 rifle rounds), `shotgun_box` (10 shells), `pistol_magazine` (full pistol magazine (pick up = 12 rounds)), `carbine_magazine` (full carbine magazine (20 rounds)), `ammo_can` (military can: a large mixed find (police station, gun shop, army truck)), `flare_shells` (four flare shells), `arrow` (one arrow, can be picked back up after a shot), `arrow_bundle` (five arrows), `quiver` (worn on the back or found: holds arrows), `crossbow_bolt` (one bolt, reusable), `loose_pile` (a few mixed rounds spilled on the ground (searched drawers, dead survivors)). `models.cases` are the casings thrown out on a shot (`pistol_case`, `rifle_case`, `shotgun_hull`).
 
 | Model | Tris, verts, welded | Notes |
 | --- | --- | --- |
@@ -552,6 +622,10 @@ Sky pieces are billboards: turn them to face the camera and place them on the sk
 | `effects.goo_splat` | 12 / 16 / 16 | Alien goo where a spit lands or an alien is hit. Stays 60 s, then fades. |
 | `effects.glass_shards` | 6 / 18 / 18 | Broken window glass on the floor (also thrown out as small spinning pieces). Stays; walking on it is loud. |
 | `effects.wood_chips` | 60 / 120 / 40 | Splinters from a wood hit or a broken barricade: thrown and spinning, then left on the ground. |
+| `effects.concrete_dust` | 104 / 246 / 62 | A concrete, block or plaster hit: the cloud grows 0.4 to 1.6 and fades over 1.2 s, drifting up; the chips are thrown and left on the ground. |
+| `effects.brick_bits` | 94 / 242 / 59 | A brick hit: the pieces are thrown and spin, then lie as rubble; the mortar puff grows to 1.2 and fades over 0.8 s. |
+| `effects.metal_sparks` | 36 / 96 / 14 | A steel hit (frame, cladding, sheet metal): six streaks thrown out along their own direction, gravity on, gone in 0.3 s. Glow; a short white point light. |
+| `effects.crash_burst` | 98 / 254 / 71 | A car hitting something: metal and paint bits and glass are thrown forward from the impact point and stay as debris; the dust grows 0.5 to 2.5 and fades over 1.5 s. Scale everything 1.5x for a heavy hit. |
 | `sky.moon_0` | 28 / 46 / 38 | Moon phase 0 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
 | `sky.moon_1` | 28 / 46 / 36 | Moon phase 1 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
 | `sky.moon_2` | 28 / 46 / 38 | Moon phase 2 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
@@ -575,7 +649,7 @@ Each material is a 2 m by 2 m tile: a flat base square in colour slot BASE and a
 How to use it: paint the smooth ground in BASE (the terrain already has a colour per area), then scatter the tile's small
 shapes over each 2 m cell near the player, turned by a random quarter turn so the repeat does not show. seasons[material]
 gives BASE, DETAIL and DETAIL2 for spring, summer, autumn and winter (snow lies on level ground in winter).
-Decals (puddle, ice, crack, pothole) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long. kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm.
+Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long. kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm.
 
 | Model | Tris, verts, welded |
 | --- | --- |
@@ -595,8 +669,125 @@ Decals (puddle, ice, crack, pothole) sit 1 cm above whatever they are on. The ke
 | `decals.ice` | 11 / 17 / 17 |
 | `decals.crack` | 8 / 16 / 16 |
 | `decals.pothole` | 38 / 86 / 34 |
+| `decals.skid_marks` | 8 / 16 / 16 |
 | `kerb.kerb_strip` | 16 / 32 / 16 |
+
+## walls (`assets/shaped/walls.js`, version 1)
+
+For the 0.56 wall construction (art requests section 10.1, with the car holes of 10.5). Loaded on its own, so the game can bring it in when it switches to cell walls.
+
+The module (docs/ART_REQUESTS.md section 10.1): studs every 0.5 m (a BAY, the build grid), CELLS of 0.25 m (half a bay) for
+breaking, wall panels of 3.0 m (six bays), storeys 3.0 m (houses), 3.5 m (shops, offices, flats) and 4.5 m (industrial).
+Wall-local coordinates: the wall runs along X, +Y up from the storey floor, +Z is the OUTSIDE face; the wall's centre line is z = 0.
+
+Layers through a wall, outside to inside: outer skin (siding, brick, sheet metal, cladding, glass), sheathing (board),
+FRAME (studs, plates, header...), inner skin (plasterboard). Each kind of wall lists its layers in kinds[...].layers with
+their z range, so the game knows where every cell sits. Concrete and block walls are one thick layer with no frame.
+
+What is in the pack:
+  cells[material][state]   one 0.25 x 0.25 cell of a skin, centred on x = 0, y from 0 to 0.25, z centred on 0 (move it to its
+                           layer's z). States: whole, cracked, gone (the torn edges left when it falls out, so the layer beneath
+                           shows) and rubble (the pile it leaves on the floor, at y = 0). An inner-layer cell is turned half a
+                           turn about Y so its painted face looks into the room.
+  sticks[family][name]     the frame, one stick each, 1 m long along its axis (sticksInfo gives the axis and size): stretch it
+                           along that axis to any length. whole and snapped (wood splinters, steel bends).
+  sections[kind][height][state]   a tileable one-bay section (0.5 m wide, x from -0.25 to 0.25), all layers, four states:
+                           whole, cracked, gone (outer skins holed, studs showing) and rubble (holed through, frame snapped,
+                           pile on the floor). Whole runs of wall are one slab per layer, not cells, so a whole house stays cheap.
+  openings[kind][door|window][intact|cracked|breached]   a three-bay module (1.5 m, x from -0.75 to 0.75) with a clear
+                           opening of 1.0 m (x -0.5 to 0.5): doors 2.25 m tall, windows from 1.0 to 2.25 m. Includes its own
+                           king and jack studs, header, sill and cripples; it replaces three sections. It stops at y = 2.5, the
+                           same for every storey; openingTops[kind][height] is the rest of the module from 2.5 to the storey top.
+  joints[kind][height][straight|corner|T|cross|end]   the pieces where walls meet (see jointInfo for where each sits).
+  carHoles[kind].below + carHoles[kind][height]   the hole a car leaves when it drives through (10.5): a four-bay module
+                           (2.0 m, x from -1 to 1), skins torn open up to about 1.5 m, studs snapped and pushed in, rubble
+                           thrown into the room. Like openings it is cut at 2.5 m: below is the same for every storey, [height] is the rest.
+  edges[kind][floor_edge|roof_edge]   height-free pieces at the top of a wall: the floor above meeting it, or the eaves.
+  floors[family][state]    a 0.5 x 0.5 floor tile (joists or deck or slab), 0.3 m thick, top at y = 0.3; whole, cracked, gone,
+                           rubble. stairs[family] is the frame round a 1.0 x 3.0 stair opening (top of floor at y = 0).
+Colour slots: WALL (outside finish: siding, sheet metal, cladding), INNER (inside paint), TRIM (casings, corner boards, doors).
+
+**Grid:** cell 0.25 m, bay 0.5 m, panel 3.0 m; storeys house 3.0 m, shop 3.5 m, office 3.5 m, community 3.5 m, industrial 4.5 m. framed walls: frame from 0 to height - 0.3, floor zone (rim joist, joist ends, subfloor) in the top 0.3 m; skins run the full height.
+
+**Breaking:** Skins: whole -> cracked -> gone (the cell is removed; draw cells.<material>.gone at its edges so the hole is ragged and the next layer shows) -> rubble on the floor. The frame breaks last: snapped sticks. A breached wall is gone in every layer of a cell with the frame still up; when a stud snaps the cells it carried above become rubble.
+
+**Openings:** replaces three sections; framed walls: it brings its own left stud, both king and jack studs, header, cripples and sill; the next section to its right supplies the stud at x = 0.75. intact, cracked (split door, cracked glass and skin), breached (door torn or splintered, glass gone, casing hanging, rubble, frame still standing).
+
+**Joints:** `straight`: a 0.2 m filler, x -0.1..0.1; `corner`: outside corner at (-X, +Z); wall 1 continues along +X, wall 2 along -Z; `T`: through wall x -0.15..0.15; the branch wall leaves the inside face along -Z; `cross`: two inside walls crossing at the origin; `end`: a free wall end at x = -0.1, the wall continues along +X.
+
+| Kind | Used for | Layers (outside to inside) | Storeys | Section whole / rubble (tris) | Door / window intact (tris) |
+| --- | --- | --- | --- | --- | --- |
+| `wood_siding` | houses, sheds, small shops | siding [0.085, 0.1], osb [0.07, 0.085], plaster [-0.0825, -0.07] | 3.0, 3.5 m | 156 / 334 | 422 / 542 |
+| `wood_brick` | brick-faced houses | brick [0.085, 0.175], osb [0.07, 0.085], plaster [-0.0825, -0.07] | 3.0, 3.5 m | 156 / 334 | 422 / 542 |
+| `lightsteel_sheet` | shops and flats | sheet [0.085, 0.095], cement [0.07, 0.085], plaster [-0.0825, -0.07] | 3.5 m | 160 / 370 | 472 / 650 |
+| `steel_cladding` | warehouses, big stores, industrial | cladding [0.05, 0.065] | 4.5 m | 84 / 258 | 348 / 456 |
+| `steel_curtain` | offices and shop fronts | glass [-0.005, 0.005] | 3.5, 4.5 m | 96 / 154 | 132 / 132 |
+| `concrete_poured` | the biggest buildings, bunkers, car parks | concrete [-0.1, 0.1] | 3.0, 3.5, 4.5 m | 14 / 284 | 198 / 260 |
+| `concrete_block` | garages, back walls, utility buildings | block [-0.1, 0.1] | 3.0, 3.5, 4.5 m | 48 / 290 | 238 / 318 |
+| `concrete_brick` | brick-faced blocks of flats and civic buildings | brick [0.1, 0.19], block [-0.1, 0.1] | 3.5 m | 92 / 352 | 310 / 396 |
+
+| Frame stick | Axis | Size at 1 m | Families |
+| --- | --- | --- | --- |
+| `stud` | y | [0.045, 1, 0.14] | wood, lightsteel |
+| `plate` | x | [1, 0.045, 0.14] | wood, lightsteel |
+| `blocking` | x | [1, 0.045, 0.14] | wood, lightsteel |
+| `sill` | x | [1, 0.045, 0.14] | wood, lightsteel |
+| `header` | x | [1, 0.235, 0.14] | wood, lightsteel |
+| `rim_joist` | x | [1, 0.24, 0.045] | wood, lightsteel |
+| `joist` | z | [0.045, 0.24, 1] | wood, lightsteel |
+| `rafter` | z | [0.045, 0.19, 1] | wood, lightsteel |
+| `corner_post` | y | [0.14, 1, 0.14] | wood, lightsteel |
+| `t_backer` | y | [0.14, 1, 0.14] | wood, lightsteel |
+| `column` | y | [0.3, 1, 0.3] | steel, concrete |
+| `beam` | x | [1, 0.4, 0.18] | steel |
+| `brace` | y | [0.08, 1, 0.012] | steel |
+| `girt` | x | [1, 0.15, 0.1] | steel |
+| `mullion` | y | [0.05, 1, 0.14] | steel |
+
+Frame per kind: `wood_siding`: wood stick frame: studs every 0.5 m, bottom plate, double top plate, blocking at 1.2 m, rim zone in the top 0.3 m; `wood_brick`: wood stick frame: studs every 0.5 m, bottom plate, double top plate, blocking at 1.2 m, rim zone in the top 0.3 m; `lightsteel_sheet`: light steel studs (channel) in the same layout as the wood frame; `steel_cladding`: steel columns on a 6 m grid (sticks.steel.column), girts every 1.25 m from 1.0 m, a 0.25 m concrete curb; `steel_curtain`: aluminium mullion every bay, transoms at the sill, 1.0 m, the spandrel and the head; `concrete_poured`: none: the wall is one thick layer with rebar inside (shown when it breaks); `concrete_block`: none: the wall is one thick layer with rebar inside (shown when it breaks); `concrete_brick`: none: the wall is one thick layer with rebar inside (shown when it breaks).
+
+## power (`assets/shaped/power.js`, version 1)
+
+Every model has its origin at the centre of its base and faces +Z. Things that hang on a wall (breaker panel, outlet,
+wall light) have their back at z = 0 and face +Z into the room; their mounting height is in the model. Lit parts are
+glow pieces: windows, lamps, screens, status lights. Most things come as a pair: <name>_dead or _off, and _running or _on.
+  Big pieces: power_plant (dead / running: turbine hall, boiler house, two stacks, transformer yard), substation (fenced),
+  pole_transformer (a wooden pole with its can), pylon (a lattice tower with three arms a side).
+  Inside: control_panel (dead / running), breaker_panel (closed / open / tripped), outlet and wall_light and ceiling_light (off / on).
+  Portable: cable_box (off / on / overload), cable pieces, plug, battery_rack, battery_box, solar_portable, solar_roof.
+
+**power_plant:** about 72 by 50 m with 55 m stacks; the running one has lit windows, red aviation lights and steam (move the steam pieces up and fade them, or replace them with fx.smoke_column in white). Put the control_panel inside the control building (the small block at the front left). **substation:** 14 by 10 m fenced yard with two transformers and a gantry; one per district. Hum when live. **pole_transformer:** a 10 m wooden pole: wires leave its crossarm along +Z and -Z at 9.4 m; string them pole to pole. **pylon:** 37 m lattice tower; wires leave each insulator along +Z and -Z at the arm tips (x = +-5.7, +-4.7, +-3.9). **breaker_panel:** hung on a house wall at 1.2 to 1.82 m. open shows two rows of breakers; tripped has one breaker flipped with a red flag and a red glow. **cable_box:** portable junction box: plug its lead (towards -X) into the breaker panel or a generator; four sockets on the front, status lamp on top: off, on (green), overload (red, sparks). **cable:** cable_straight is 1 m along X lying on the ground; cable_corner a quarter turn of radius 0.25 m from -X to -Z; cable_up runs along the ground from +Z to a wall at z = 0 and up its face to 1 m. Chain them; plug is the end. **solar:** solar_portable is a folding pair facing +Z with its own charge box; solar_roof is one 1.7 by 1.0 m panel on rails, tilted 25 degrees, for flat roofs. **lights:** outlet (at 0.3 m), wall_light (at 1.9 m) and ceiling_light (hangs 0.6 m from a ceiling at y = 0) come off and on; on has a glow piece, add a warm point light.
+
+| Model | Tris, verts, welded |
+| --- | --- |
+| `power_plant_dead` | 2,399 / 4,735 / 1,585 |
+| `power_plant_running` | 2,556 / 5,160 / 1,682 |
+| `control_panel_dead` | 348 / 696 / 226 |
+| `control_panel_running` | 348 / 696 / 226 |
+| `substation` | 1,123 / 2,217 / 689 |
+| `pole_transformer` | 306 / 582 / 201 |
+| `pylon` | 882 / 1,744 / 469 |
+| `breaker_panel_closed` | 49 / 99 / 35 |
+| `breaker_panel_open` | 648 / 1,296 / 432 |
+| `breaker_panel_tripped` | 660 / 1,320 / 440 |
+| `outlet_off` | 96 / 192 / 64 |
+| `outlet_on` | 96 / 192 / 64 |
+| `wall_light_off` | 62 / 126 / 41 |
+| `wall_light_on` | 62 / 126 / 41 |
+| `ceiling_light_off` | 64 / 128 / 45 |
+| `ceiling_light_on` | 64 / 128 / 45 |
+| `cable_box_off` | 256 / 508 / 172 |
+| `cable_box_on` | 256 / 508 / 172 |
+| `cable_box_overload` | 282 / 576 / 192 |
+| `cable_straight` | 8 / 16 / 8 |
+| `cable_corner` | 32 / 64 / 24 |
+| `cable_up` | 64 / 128 / 52 |
+| `plug` | 56 / 112 / 40 |
+| `battery_rack` | 400 / 800 / 272 |
+| `battery_box` | 108 / 216 / 72 |
+| `solar_portable` | 96 / 192 / 104 |
+| `solar_roof` | 64 / 128 / 64 |
 
 ## UI icons (`assets/ui/`)
 
-Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.
+Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). Inventory icons: harvest materials (`planks`, `scrap_wood`, `lumber`, `nails_handful`, `steel_beam`, `rebar_bundle`, `sheet_metal`, `concrete_chunk`, `brick`, `glass_sheet`, `wire_coil`, `plasterboard_scrap`), guns (`pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`) and ammo (`pistol_ammo`, `rifle_ammo`, `shotgun_shells`, `arrows`, `crossbow_bolts`, `ammo_can`, `magazine`, `flare_shells`). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.

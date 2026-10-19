@@ -5,7 +5,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(HERE, '..
 def load(n):
     s = open(os.path.join(HERE, '..', n + '.js')).read(); k = ').%s = ' % n
     return json.loads(s[s.index(k) + len(k):].rstrip().rstrip(';'))
-SV, AL, BU, PR, HE, FX, GR = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held'), load('fx'), load('ground')
+SV, AL, BU, PR, HE, FX, GR, WA, PW = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held'), load('fx'), load('ground'), load('walls'), load('power')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -23,7 +23,7 @@ Every shaped-piece pack made for Afterstreet, what is in it and how the game use
 - **Pieces:** shape `s` (`box`, `bev`, `wedge`, `cyl`, `loft`, `decal`, `poly`), position `p` in metres, colour `c`, optional `ry` (quarter turns) and `glow: true` (unlit: lamps, lit windows, alien eyes). Y is up, models face +Z. A `loft` ring can scale each corner (`k`), move each corner along the axis (`d`) and end in a point (`a = b = 0`).
 - **Colours:** a palette name, or a slot (`SKIN`, `HAIR`, `SHIRT`, `PANTS`, `ACC` for survivors; `WALL`, `TRIM`, `FRAME`, `ROOF` for buildings). `_D` is that colour times the pack's `darker` (0.78).
 - **Counts** in the tables: triangles / vertices with `buildIndexed` / vertices after `weld`. `build` makes three vertices per triangle.
-- **Preview:** `art-tests/album.html` shows every pack (survivors, clothes, aliens, the building kit, a street by day and night, damage, items, furniture, garden, street props and vehicles); `art-tests/survivor-creator.html` is the creator preview.
+- **Preview:** `art-tests/album.html` shows every pack (survivors, clothes, aliens, the building kit, a street by day and night, damage, items, furniture, garden, street props and vehicles, guns and ammo, walls and their states, doors and windows, joints, frame, harvest and bases, vehicle damage, car holes, power); `art-tests/survivor-creator.html` is the creator preview.
 ''')
 st = SV['stats']; C = SV['choices']
 mx = lambda pre, i: max(v[i] for k, v in st.items() if k.startswith(pre))
@@ -86,7 +86,13 @@ L.append(f'''
 
 {PR['about'].strip()}
 
-Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. {PR['gardenRule']} {PR['containerRule']} {PR['buildRule']} {PR['wreckRule']} {PR['moving']['doors']['rule']} `moving` lists other parts that open (doors, lids) and their hinges.
+Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. {PR['gardenRule']} {PR['containerRule']} {PR['buildRule']} {PR['wreckRule']} {PR['moving']['doors']['rule']}
+
+**Harvest materials** (`items`, section 10.2): {', '.join(f'`{k}` ({v})' for k, v in PR['harvest'].items())}.
+
+**Bases** (section 10.3): {PR['baseRule']}
+
+**Vehicle damage** (section 10.5): {PR['damageRule']} `moving` lists other parts that open (doors, lids) and their hinges.
 
 | Category | Model | Tris, verts, welded |
 | --- | --- | --- |''')
@@ -96,7 +102,11 @@ L.append(f'''
 
 {HE['about'].strip()}
 
-**Grip:** {HE['grip']['note']} Position {HE['grip']['pos']} on `{HE['grip']['bone']}`. Two-handed: {', '.join('`' + k + '`' for k in HE['twoHanded'])} ({HE['gripTwoHanded']['note']}) **States:** {HE['stateRule']} **First person:** the weapon goes at `fpWeapon` ({HE['fpWeapon']['pos']}, rotation {HE['fpWeapon']['rot']} degrees) with the arms in `models.fp.hold`.
+**Grip:** {HE['grip']['note']} Position {HE['grip']['pos']} on `{HE['grip']['bone']}`. Two-handed: {', '.join('`' + k + '`' for k in HE['twoHanded'])} ({HE['gripTwoHanded']['note']}) **States:** {HE['stateRule']} **First person:** the weapon goes at `fpWeapon` ({HE['fpWeapon']['pos']}, rotation {HE['fpWeapon']['rot']} degrees) with the arms in `models.fp.hold`; long guns use `fpLong` with `models.fp.shoulder` when carried and `fpAim` with `models.fp.aim` when aiming.
+
+**Guns and bows** (version 2): {', '.join('`' + k + '`' for k in HE['guns'])}. {HE['gunRule']} Each gun's `info` gives its `muzzle`, the `ammo` it takes and how many it `holds`; long guns give `offhandAt`.
+
+**Ammo** (`models.ammo`, on the ground like props: origin at the centre of the base): {', '.join(f'`{k}` ({v})' for k, v in HE['ammoInfo'].items())}. `models.cases` are the casings thrown out on a shot (`pistol_case`, `rifle_case`, `shotgun_hull`).
 
 | Model | Tris, verts, welded | Notes |
 | --- | --- | --- |''')
@@ -123,9 +133,46 @@ L.append(f'''
 | Model | Tris, verts, welded |
 | --- | --- |''')
 for k in GR['stats']: L.append(f"| `{k}` | {row(GR['stats'], k)} |")
+st = WA['stats']
+L.append(f'''
+## walls (`assets/shaped/walls.js`, version {WA['version']})
+
+For the 0.56 wall construction (art requests section 10.1, with the car holes of 10.5). Loaded on its own, so the game can bring it in when it switches to cell walls.
+
+{WA['about'].strip()}
+
+**Grid:** cell {WA['grid']['cell']} m, bay {WA['grid']['bay']} m, panel {WA['grid']['panel']} m; storeys ''' + ', '.join(f'{k} {v} m' for k, v in WA['grid']['storeys'].items()) + f'''. {WA['grid']['frameZone']}.
+
+**Breaking:** {WA['stateRule']}
+
+**Openings:** {WA['openingInfo']['note']}
+
+**Joints:** ''' + '; '.join(f'`{k}`: {v}' for k, v in WA['jointInfo'].items()) + '''.
+
+| Kind | Used for | Layers (outside to inside) | Storeys | Section whole / rubble (tris) | Door / window intact (tris) |
+| --- | --- | --- | --- | --- | --- |''')
+for k, K in WA['kinds'].items():
+    h = '%.1f' % K['heights'][0]
+    L.append(f"| `{k}` | {K['use']} | {', '.join(l['cell'] + ' ' + str(l['z']) for l in K['layers'])} | {', '.join(str(x) for x in K['heights'])} m | {f(st[f'sections.{k}.{h}.whole'][0])} / {f(st[f'sections.{k}.{h}.rubble'][0])} | {f(st[f'openings.{k}.door.intact'][0])} / {f(st[f'openings.{k}.window.intact'][0])} |")
+L.append('\n| Frame stick | Axis | Size at 1 m | Families |\n| --- | --- | --- | --- |')
+for n, v in WA['sticksInfo'].items():
+    fams = [fm for fm in WA['models']['sticks'] if n in WA['models']['sticks'][fm]]
+    L.append(f"| `{n}` | {v['axis']} | {v['size']} | {', '.join(fams)} |")
+L.append('\nFrame per kind: ' + '; '.join(f"`{k}`: {K['frame']}" for k, K in WA['kinds'].items()) + '.')
+st = PW['stats']
+L.append(f'''
+## power (`assets/shaped/power.js`, version {PW['version']})
+
+{PW['about'].strip()}
+
+''' + ' '.join(f'**{k}:** {v}' for k, v in PW['notes'].items()) + '''
+
+| Model | Tris, verts, welded |
+| --- | --- |''')
+for k in st: L.append(f"| `{k}` | {row(st, k)} |")
 L.append('''
 ## UI icons (`assets/ui/`)
 
-Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.''')
+Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). Inventory icons: harvest materials (`planks`, `scrap_wood`, `lumber`, `nails_handful`, `steel_beam`, `rebar_bundle`, `sheet_metal`, `concrete_chunk`, `brick`, `glass_sheet`, `wire_coil`, `plasterboard_scrap`), guns (`pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`) and ammo (`pistol_ammo`, `rifle_ammo`, `shotgun_shells`, `arrows`, `crossbow_bolts`, `ammo_can`, `magazine`, `flare_shells`). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.''')
 open(os.path.join(ROOT, 'docs', 'SHAPED.md'), 'w').write('\n'.join(L) + '\n')
 print('wrote docs/SHAPED.md')

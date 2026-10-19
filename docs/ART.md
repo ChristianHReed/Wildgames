@@ -66,6 +66,13 @@ Check every character in run and walk frames, not only standing.
 - **Effects and sky:** small pieces with notes on how each scales and fades: flames, smoke, explosions, splashes, moon phases, clouds, lightning and aurora.
 - **Icons:** the status, button and arrow icons follow the weapon icons' field-journal style (`assets/ui/`).
 
+## Guns, walls, power and crashes (19 October 2026)
+
+- **Guns and bows** (`held.js` version 2): the same flat planes as the melee weapons, so a carbine sits next to a cricket bat without looking out of place. Wood stocks for the old guns, black polymer for the newer ones, steel left plain. Worn guns get rust and tape. Each gun has one reload pose (cylinder open, bolt back, pumped, broken open, magazine out, drawn, cocked), so a reload reads as a change of shape rather than a hand animation.
+- **Walls in layers** (`walls.js`): a wall is built like a real one. From outside in: skin, sheathing, studs, plasterboard. When a wall breaks, the skin tears away first in ragged 25 cm cells and shows the board and the studs behind it. The frame goes last: wood studs snap with splinters, steel bends. Whole stretches of wall stay one slab per layer, so a street of houses costs no more than the old bays. The lines on a skin (siding boards, brick courses, block joints, sheet ribs) run unbroken across neighbouring pieces.
+- **Power:** the plant is a dead grey block by day and a lit landmark at night once restored, with lit windows, red stack lights and steam. That makes restoring it something you can see from across the city. Small powered things show they are live with one glowing light: an outlet's lamp, the cable box's status light, a breaker's red flag.
+- **Crashes:** cars crumple at the front, pushed back more on one side, rather than just changing colour. The bonnet folds up in a ridge, and smoke rises from it.
+
 ## Fewest vertices (18 October 2026)
 
 How every model is kept cheap, from the research in the art guide:

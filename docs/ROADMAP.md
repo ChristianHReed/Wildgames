@@ -132,6 +132,13 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Props: loose items on the ground, searched container variants, hinged doors, plants, street props | Partly used | Art 3 (0.60) |
 | Ground tiles and kerb strips (`ground.js`) | Not loaded | Art 4 (0.57) |
 | Broken building states: damaged infill, holes, snapped frames, rubble, boarded door | Not used | Art 6 (0.58, with base defence work in 0.50) |
+| Guns, bows and ammo (`held.js` version 2): revolver, hunting rifle, pump and double-barrel shotguns, carbine, flare gun, recurve bow, crossbow, each new and worn with a reload pose and muzzle flash; ammo boxes, magazines, ammo can, arrows, bolts, quiver; casings; first-person carry and aim poses; inventory icons | Not used (delivered 19 October 2026) | Not yet planned |
+| Walls pack (`walls.js`): eight kinds of wall in layers, cells and frame sticks in four states, sections, doors and windows, joints, floors, stair openings | Not loaded (delivered 19 October 2026) | 0.56 |
+| Material bursts: concrete dust, brick bits, metal sparks (`fx.js`) | Not used | 0.56 |
+| Harvest materials on the ground (`props.items`: scrap wood, lumber, nails, steel beam, rebar, sheet metal, concrete chunk, brick, glass sheet, wire coil, plasterboard) and their icons | Not used | 0.57 |
+| Bases: claim sign and flag, custom bed, wall reinforcement (planks, sheet, mesh in three stages) | Not used | 0.58 |
+| Power pack (`power.js`): power plant dead and running, control panel, substation, pole transformer, pylon, breaker panel, outlets, lights, cable box, cables, batteries, solar | Not loaded | 0.59 |
+| Vehicle damage (`vehicles[name].damage`), crash burst, skid marks, car holes in every kind of wall (`walls.carHoles`) | Not used | 0.60 |
 
 How a new art delivery gets in: the design chat pushes the pack to main and lists it in `docs/SHAPED.md` and `docs/ART_REQUESTS.md`; this chat reads those, adds each new piece to the table above in the same version it is wired, and ticks it off here when it ships.
 

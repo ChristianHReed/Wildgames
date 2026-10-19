@@ -68,6 +68,22 @@ fx('glass_shards', [flat([(x, 0.005, z), (x + 0.06, 0.005, z + 0.01), (x + 0.02,
 fx('wood_chips', [box([x, 0.01, z], [0.04, 0.012, 0.015], 'chip' if i % 2 else 'chipD') for i, (x, z) in enumerate(((0, 0), (0.08, 0.05), (-0.07, 0.06), (0.03, -0.08), (-0.05, -0.05)))],
    'Splinters from a wood hit or a broken barricade: thrown and spinning, then left on the ground.')
 
+# ---- section 10 (0.56 to 0.60): dust and chips per wall material, and a car crash ----
+PALETTE.update({'concDust': '#c4beb2', 'concDustD': '#a29c90', 'concChip': '#9e9a92', 'brickChip': '#9a5040', 'brickChipD': '#7a3c30', 'mortarDust': '#d0c4b0',
+                'sparkHot': '#fff2c0', 'metalBit': '#7a8088', 'metalBitL': '#a8b0b6', 'paintBit': '#6a7a8a'})
+def bits(pts, c1, c2, s=0.025, h=0.015):
+    return [hull([(x - s, 0, z - s*0.8), (x + s, 0, z - s*0.7), (x + s*0.8, 0, z + s), (x - s*0.9, 0, z + s*0.8), (x - s*0.4, h, z - s*0.2), (x + s*0.5, h*1.1, z), (x + s*0.3, h*0.9, z + s*0.4), (x - s*0.4, h, z + s*0.3)], c1 if i % 2 else c2)
+            for i, (x, z) in enumerate(pts)]
+fx('concrete_dust', [lump(0, 0, 0, 0.35, 'concDust', h=0.5), lump(0.2, 0.05, 0.1, 0.22, 'concDustD', h=0.35)] + bits(((0.3, -0.2), (-0.3, 0.15), (0.05, 0.35)), 'concChip', 'concDustD'),
+   'A concrete, block or plaster hit: the cloud grows 0.4 to 1.6 and fades over 1.2 s, drifting up; the chips are thrown and left on the ground.')
+fx('brick_bits', bits(((0, 0), (0.12, 0.06), (-0.1, 0.08), (0.05, -0.12), (-0.14, -0.06)), 'brickChip', 'brickChipD', 0.03, 0.025) + [lump(-0.05, 0, -0.18, 0.14, 'mortarDust', h=0.22)],
+   'A brick hit: the pieces are thrown and spin, then lie as rubble; the mortar puff grows to 1.2 and fades over 0.8 s.')
+fx('metal_sparks', [tip([0, 0, 0], [0.12*math.cos(a), 0.18 + 0.1*math.sin(a*2), 0.12*math.sin(a)], 0.006, 0.006, 'sparkHot' if i % 2 else 'spark', **G) for i, a in enumerate((0.3, 1.4, 2.5, 3.6, 4.7, 5.6))],
+   'A steel hit (frame, cladding, sheet metal): six streaks thrown out along their own direction, gravity on, gone in 0.3 s. Glow; a short white point light.')
+fx('crash_burst', bits(((0, 0), (0.2, 0.1), (-0.25, 0.05), (0.1, -0.2), (-0.1, 0.25)), 'metalBit', 'paintBit', 0.035, 0.012)
+   + [flat([(x, 0.006, z), (x + 0.05, 0.006, z + 0.012), (x + 0.015, 0.006, z + 0.06)], 'glass', (0, 1, 0)) for x, z in ((0.3, 0.2), (-0.2, -0.25), (0.05, 0.3), (-0.35, 0.1))]
+   + [lump(0, 0, 0, 0.4, 'dust', h=0.45)],
+   'A car hitting something: metal and paint bits and glass are thrown forward from the impact point and stay as debris; the dust grows 0.5 to 2.5 and fades over 1.5 s. Scale everything 1.5x for a heavy hit.')
 # ================= sky =================
 def moon(phase):
     """phase 0 new to 4 full to 7 waning crescent; a disc with the dark part as a second polygon in front"""

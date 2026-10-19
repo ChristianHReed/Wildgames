@@ -22,7 +22,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -32,7 +32,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, WA=S.walls, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -273,6 +273,44 @@ const SCENES={
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const col=wcol('wood_siding');
       ['wood','lightsteel','steel','concrete'].forEach((f,i)=>at(mesh(WA.models.stairs[f],col),-4.8+i*3.2,0.55,0));
       cam.position.set(0,8.5,8.5); ctl.target.set(0,0,0); }},
+  harvest:{t:'Harvest and bases',d:'Front: what comes out of broken walls (planks, scrap wood, lumber, nails, steel beam, rebar, sheet metal, concrete chunk, brick and a stack, glass sheet, wire coil, plasterboard). Middle: the claim sign and flag, and the bed made from harvested planks and cloth scraps. Back, on the wall: reinforcement of planks, sheet metal and rebar mesh, each new, damaged and nearly gone.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xd8d2c6);
+      ['planks','scrap_wood','lumber','nails_handful','steel_beam','rebar_bundle','sheet_metal','concrete_chunk','brick','brick_stack','glass_sheet','wire_coil','plasterboard_scrap'].forEach((n,i)=>at(prop('items',n),-4.6+i*0.77,0,1.6,i%2?0.4:-0.3));
+      at(prop('build','claim_sign'),-3.4,0,-0.6,0.3); at(prop('build','claim_flag'),-2.3,0,-0.6,0.2); at(prop('build','custom_bed'),0.2,0,-0.8,Math.PI/2);
+      const bk=new THREE.Mesh(new THREE.BoxGeometry(14.6,2.8,0.2),new THREE.MeshLambertMaterial({color:0xb8b0a2})); bk.position.set(0,1.4,-2.5); bk.receiveShadow=true; scene.add(bk);
+      ['planks','sheet','mesh'].forEach((k,i)=>['','_damaged','_nearly_gone'].forEach((sf,j)=>at(prop('build','reinforce_'+k+sf),-6.4+(i*3+j)*1.6,0,-2.4)));
+      cam.position.set(0,4.4,8.6); ctl.target.set(0,0.7,-0.6); }},
+  crash:{t:'Vehicle damage',d:'Each car: light knock (bent bumper, cracked windscreen), light crumple, heavy crumple with the bonnet buckled, then smoking with the windscreen gone. Front: the crash burst and skid marks.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const col=colourer(PR.palette,{});
+      ['hatchback','sedan','pickup','van'].forEach((n,r)=>{ const V=PR.models.vehicles[n], D=V.damage, rg=PR.vehicleRig[n];
+        const stages=[['body_bumper_bent','bonnet',['windscreen_cracked']],['body_crumple_light','bonnet_crumple_light',[]],['body_crumple_heavy','bonnet_crumple_heavy',['windscreen_cracked']],['body_crumple_heavy','bonnet_buckled',['windscreen_missing','smoke']]];
+        stages.forEach(([bd,bn,extra],j)=>{ const g=new THREE.Group(); g.add(mesh(D[bd],col)); g.add(mesh(bn==='bonnet'?V.bonnet:D[bn],col)); for (const e of extra) g.add(mesh(D[e],col));
+          for (const w of rg.wheels){ const wm=mesh(V.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); } at(g,-7.5+j*5,0,-r*6,0.9); }); });
+      const fc=colourer(FX.palette,{}); at(mesh(FX.models.effects.crash_burst,fc),-2,0,5,0); const gc=colourer(GR.palette,{}); at(mesh(GR.models.decals.skid_marks,gc),3,0,3.5,0.3);
+      cam.position.set(4,15,15); ctl.target.set(0,0,-8); }},
+  carholes:{t:'Car through a wall',d:'The hole a car leaves in each kind of wall, seen from inside: skins torn open, studs snapped and pushed into the room, rubble thrown in. Wood and siding, wood and brick, light steel, steel cladding, curtain wall, poured concrete, block, brick over block.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6);
+      Object.keys(WA.kinds).forEach((k,i)=>{ const H=WA.kinds[k].heights[0], col=wcol(k), g=new THREE.Group(); g.add(mesh(WA.models.carHoles[k].below,col)); g.add(mesh(WA.models.carHoles[k][H.toFixed(1)],col));
+        for (const dx of [-1.25,1.25]){ const m=mesh(WA.models.sections[k][H.toFixed(1)].whole,col); m.position.x=dx; g.add(m); } g.rotation.y=Math.PI; g.position.set(-8.4+(i%4)*5.6,0,i<4?0:-7); scene.add(g); });
+      cam.position.set(0,7,-21); ctl.target.set(0,1.2,-3.5); }},
+  power:{t:'Power plant and grid',d:'The power plant dead (left) and running (right: lit windows, red lights, steam), the fenced substation, a pole with its transformer and a pylon.',
+    make(){ lights('dusk'); const col=colourer(PW.palette,{}); ground(400,400,0x8a8a78); scene.fog=new THREE.Fog(scene.background,120,420);
+      at(mesh(PW.models.power_plant_dead,col),-45,0,0); const r=at(mesh(PW.models.power_plant_running,col),45,0,0); glowLight(r,0xffd28a,60,60).position.set(-6,10,8);
+      at(mesh(PW.models.substation,col),-10,0,45); at(mesh(PW.models.pole_transformer,col),6,0,48); at(mesh(PW.models.pylon,col),22,0,50);
+      cam.position.set(0,45,125); ctl.target.set(0,12,10); }},
+  power_small:{t:'Power inside and portable',d:'Back: control panel dead and running, breaker panel closed, open and tripped on a wall, outlets, wall lights and ceiling lights off and on. Front: cable box off, on and overloading, cable pieces and plug, battery rack and box, folding and roof solar panels.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xd8d2c6); const col=colourer(PW.palette,{}), m=n=>mesh(PW.models[n],col);
+      const wall=new THREE.Mesh(new THREE.BoxGeometry(12,3,0.2),new THREE.MeshLambertMaterial({color:0xd8d0bc})); wall.position.set(0,1.5,-2.1); wall.receiveShadow=true; scene.add(wall);
+      at(m('control_panel_dead'),-4.2,0,-1.4); at(m('control_panel_running'),-0.9,0,-1.4);
+      ['breaker_panel_closed','breaker_panel_open','breaker_panel_tripped'].forEach((n,i)=>at(m(n),1.4+i*0.75,0,-2.0)); ['outlet_off','outlet_on'].forEach((n,i)=>at(m(n),3.8+i*0.25,0,-2.0));
+      ['wall_light_off','wall_light_on'].forEach((n,i)=>at(m(n),4.6+i*0.6,0,-2.0)); ['ceiling_light_off','ceiling_light_on'].forEach((n,i)=>at(m(n),1.8+i*1.0,2.6,-1.0));
+      ['cable_box_off','cable_box_on','cable_box_overload'].forEach((n,i)=>at(m(n),-4+i*0.8,0,0.6)); at(m('cable_straight'),-1.2,0,0.8); at(m('cable_corner'),-0.2,0,0.9); at(m('plug'),0.2,0,0.6,-0.6);
+      at(m('battery_rack'),1.5,0,0.4); at(m('battery_box'),3.0,0,0.6); at(m('solar_portable'),4.3,0,0.6); at(m('solar_roof'),-2.2,0,2.2);
+      cam.position.set(0.6,3.8,7.6); ctl.target.set(0.6,0.9,-0.6); }},
+  bursts:{t:'Material bursts',d:'Concrete dust, brick bits, metal sparks, wood chips, glass shards and a crash burst, at the moment they appear.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(20,20,0xd8d2c6); const c=colourer(FX.palette,{});
+      ['concrete_dust','brick_bits','metal_sparks','wood_chips','glass_shards','crash_burst'].forEach((n,i)=>at(mesh(FX.models.effects[n],c),-2.5+i,0,0));
+      cam.position.set(0,2.2,5.6); ctl.target.set(0,0.2,0); }},
   fp:{t:'First-person arms',d:'Seen from the eye, in the survivor\'s skin and sleeve colours: holding a weapon, empty, and reaching to open or search (left to right).',
     make(){ lights('day'); scene.background=new THREE.Color(0xc9c4b8); scene.fog=null; window.__fpPanels=true;
       const g=new THREE.Group(); g.add(fpArms(window.__fpPose||'hold',SV.slots.SKIN[2],'#3a4a3e'));

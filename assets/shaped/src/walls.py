@@ -25,6 +25,9 @@ What is in the pack:
                            king and jack studs, header, sill and cripples; it replaces three sections. It stops at y = 2.5, the
                            same for every storey; openingTops[kind][height] is the rest of the module from 2.5 to the storey top.
   joints[kind][height][straight|corner|T|cross|end]   the pieces where walls meet (see jointInfo for where each sits).
+  carHoles[kind].below + carHoles[kind][height]   the hole a car leaves when it drives through (10.5): a four-bay module
+                           (2.0 m, x from -1 to 1), skins torn open up to about 1.5 m, studs snapped and pushed in, rubble
+                           thrown into the room. Like openings it is cut at 2.5 m: below is the same for every storey, [height] is the rest.
   edges[kind][floor_edge|roof_edge]   height-free pieces at the top of a wall: the floor above meeting it, or the eaves.
   floors[family][state]    a 0.5 x 0.5 floor tile (joists or deck or slab), 0.3 m thick, top at y = 0.3; whole, cracked, gone,
                            rubble. stairs[family] is the frame round a 1.0 x 3.0 stair opening (top of floor at y = 0).
@@ -107,7 +110,7 @@ def deco(mat, x0, x1, y0, y1, z, s):
     if d == 'boards':
         o += [fz(x0, y, x1, y + 0.016, z + s*0.0005, 'WALL_D', s) for y in frange(y0, y1 - 0.01, 0.25, 0.0) if y > y0 + 0.005]
     elif d == 'courses':
-        o += [fz(x0, y, x1, y + 0.012, z + s*0.0005, 'mortar', s) for y in frange(y0, y1 - 0.01, 0.125, 0.0) if y > y0 + 0.005]
+        o += [fz(x0, y, x1, y + 0.018, z + s*0.0005, 'mortar', s) for y in frange(y0, y1 - 0.01, 0.25, 0.0) if y > y0 + 0.005]
     elif d == 'blocks':
         for y in frange(y0, y1, 0.25, 0.0):
             if y > y0 + 0.005: o.append(fz(x0, y, x1, y + 0.014, z + s*0.0005, 'mortar', s))
@@ -122,6 +125,31 @@ def slab(mat, x0, x1, y0, y1, z0, z1, s):
     """a run of whole skin; s = +1 if its visible face is z1 (outside), -1 if z0 (room side)"""
     if x1 - x0 < 1e-4 or y1 - y0 < 1e-4: return []
     return [B(x0, y0, z0, x1, y1, z1, MAT[mat]['body'])] + deco(mat, x0, x1, y0, y1, z1 if s > 0 else z0, s)
+def merge(iv):
+    iv = sorted(iv); out = []
+    for a, b in iv:
+        if out and a <= out[-1][1] + 1e-6: out[-1][1] = max(out[-1][1], b)
+        else: out.append([a, b])
+    return out
+def skin(mat, z0, z1, s, rects):
+    """several rectangles (x0, x1, y0, y1) of one skin: a box each, but the lines on its face run unbroken across them"""
+    rects = [r for r in rects if r[1] - r[0] > 1e-4 and r[3] - r[2] > 1e-4]
+    o = [B(x0, y0, z0, x1, y1, z1, MAT[mat]['body']) for (x0, x1, y0, y1) in rects]
+    d = MAT[mat]['deco']; z = (z1 if s > 0 else z0) + s*0.0005
+    if d in ('boards', 'courses'):
+        step, c, h = (0.25, 'WALL_D', 0.016) if d == 'boards' else (0.25, 'mortar', 0.018)
+        ys = sorted(set(y for r in rects for y in frange(r[2], r[3] - 0.01, step, 0.0) if y > r[2] + 0.005))
+        for y in ys:
+            for a, b in merge([(r[0], r[1]) for r in rects if r[2] + 0.005 < y < r[3] - 0.01]): o.append(fz(a, y, b, y + h, z, c, s))
+    elif d == 'ribs':
+        xs = sorted(set(x for r in rects for x in frange(r[0] + 0.03, r[1] - 0.03, 0.25, 0.125)))
+        for x in xs:
+            for a, b in merge([(r[2], r[3]) for r in rects if r[0] + 0.03 < x < r[1] - 0.03]): o.append(B(x - 0.015, a, z - s*0.0005, x + 0.015, b, z + s*0.014, 'WALL_D'))
+    elif d == 'paint':
+        o += [fz(r[0], r[2], r[1], r[3], z, 'INNER', s) for r in rects]
+    elif d == 'blocks':
+        for r in rects: o += deco(mat, r[0], r[1], r[2], r[3], z - s*0.0005, s)
+    return o
 
 def cell(mat, state, t):
     """one cell of a skin, x -0.125..0.125, y 0..0.25, z -t/2..t/2, face +Z"""
@@ -258,18 +286,24 @@ def st_x(k, nm, x0, x1, y0, state='whole', z=0.0): return stretch(S(k, nm, state
 
 def layer_runs(mat, z0, z1, s, x0, x1, H, holes, pad=None):
     """one skin from x0 to x1 and 0 to H, with holes: list of (hx0, hx1, row0, row1) cut out (cells, row = 0.25 m)"""
-    o = []
-    if not holes: return slab(mat, x0, x1, 0, H, z0, z1, s)
-    xs = sorted(set([x0, x1] + [h[0] for h in holes] + [h[1] for h in holes]))
+    if not holes: return skin(mat, z0, z1, s, [(x0, x1, 0, H)])
+    xs = sorted(set([x0, x1] + [h[0] for h in holes] + [h[1] for h in holes])); rects = []; o = []
     for a, b in zip(xs, xs[1:]):
         hs = [h for h in holes if h[0] <= a + 1e-6 and h[1] >= b - 1e-6]
-        if not hs: o += slab(mat, a, b, 0, H, z0, z1, s); continue
+        if not hs: rects.append((a, b, 0, H)); continue
         h = hs[0]; y0, y1 = h[2]*CELL, h[3]*CELL
-        o += slab(mat, a, b, 0, y0, z0, z1, s) + slab(mat, a, b, y1, H, z0, z1, s)
+        rects += [(a, b, 0, y0), (a, b, y1, H)]
         body = MAT[mat]['body']
         if mat == 'glass': o += shards_edge(a, b, y0, z0, z1, 'glass', True, 2) + shards_edge(a, b, y1, z0, z1, 'glass', False, 2)
-        else: o += shards_edge(a, b, y0, z0, z1, body, True, 2) + shards_edge(a, b, y1, z0, z1, body, False, 1)
-    return o
+        else:
+            if y0 > 0: o += shards_edge(a, b, y0, z0, z1, body, True, 2)
+            o += shards_edge(a, b, y1, z0, z1, body, False, 1)
+    # merge vertically stacked rects that share x into the fewest boxes: neighbours with the same y range join up
+    rects.sort(key=lambda r: (r[2], r[3], r[0])); joined = []
+    for r in rects:
+        if joined and abs(joined[-1][2] - r[2]) < 1e-6 and abs(joined[-1][3] - r[3]) < 1e-6 and abs(joined[-1][1] - r[0]) < 1e-6: joined[-1] = (joined[-1][0], r[1], r[2], r[3])
+        else: joined.append(r)
+    return skin(mat, z0, z1, s, joined) + o
 
 def cracks_on(k, x0, x1, H, n=2):
     o = []
@@ -358,8 +392,7 @@ def opening(k, H, what, state):
     # skins: left strip, right strip, above, below (window)
     for i, (m, z0, z1, s) in enumerate(L):
         if fam == 'curtain': break
-        o += slab(m, X0, -OW, 0, H, z0, z1, s) + slab(m, OW, X1, 0, H, z0, z1, s) + slab(m, -OW, OW, DH, H, z0, z1, s)
-        if sill > 0: o += slab(m, -OW, OW, 0, sill, z0, z1, s)
+        o += skin(m, z0, z1, s, [(X0, -OW, 0, H), (OW, X1, 0, H), (-OW, OW, DH, H)] + ([(-OW, OW, 0, sill)] if sill > 0 else []))
     zo = max(l[2] for l in L); zi = min(l[1] for l in L)
     if fam == 'concrete':
         m, z0, z1, s = L[-1]
@@ -464,6 +497,57 @@ def curtain_door(k, H, what, state):
         if state == 'cracked': o += crack(-0.4, 0.4, 0.2, 2.0, 0.0062, 1, 'crackG')
         o.append(B(-OW, 0, -0.05, OW, 0.06, 0.05, 'alu'))
     if state == 'breached': o += [tet([(R.uniform(-0.7, 0.7), 0, R.uniform(0.1, 0.9)), (R.uniform(-0.7, 0.7), 0, R.uniform(0.1, 0.9)), (R.uniform(-0.7, 0.7), 0.004, R.uniform(0.1, 0.9)), (R.uniform(-0.7, 0.7), 0.025, R.uniform(0.1, 0.9))], 'glass') for _ in range(12)]
+    return o
+
+# ---------- a hole a car came through (10.5): a four-bay module, x -1..1, pushed in towards the room ----------
+def mirror_z(pcs):
+    out = []
+    for q in pcs:
+        q = copy.deepcopy(q); q['p'][2] = -q['p'][2]
+        if 'v' in q: q['v'] = [[v[0], v[1], -v[2]] for v in q['v']]
+        if 'n' in q: q['n'] = [q['n'][0], q['n'][1], -q['n'][2]]
+        out.append(q)
+    return out
+def car_hole(k, H):
+    K = KINDS[k]; fam = K['family']; L = K['layers']; X0, X1 = -1.0, 1.0; o = []
+    zo = max(l[2] for l in L); zi = min(l[1] for l in L)
+    top_out = [2, 5, 6, 6, 6, 6, 5, 3]; top_in = [3, 6, 7, 7, 7, 7, 6, 4]
+    if fam == 'curtain':
+        for x in (-1.0, -0.5, 0.0, 0.5):
+            inside = -0.75 < x < 0.75
+            st = stretch(STICKS['steel']['mullion']['snapped' if inside else 'whole'], 'y', [x + 0.025, 0, 0], H)
+            o += mirror_z(st) if inside else st
+        for y in (H - 0.6, H - 0.06): o.append(B(X0 + 0.05, y, -0.05, X1, y + 0.06, 0.05, 'alu'))
+        o.append(B(X0 + 0.05, H - 0.54, -0.01, X1, H - 0.06, 0.01, 'WALL'))
+        o += shards_edge(X0 + 0.05, X1, H - 0.6, -0.005, 0.005, 'glass', False, 6)
+        o += [tet([(R.uniform(-1, 1), 0, R.uniform(-1.4, 0.4)), (R.uniform(-1, 1), 0, R.uniform(-1.4, 0.4)), (R.uniform(-1, 1), 0.004, R.uniform(-1.4, 0.4)), (R.uniform(-1, 1), 0.025, R.uniform(-1.4, 0.4))], 'glass') for _ in range(16)]
+        return o
+    for i, (m, z0, z1, s) in enumerate(L):
+        tops = top_out if (i == 0 and len(L) > 1) else top_in
+        holes = [(X0 + c*0.25, X0 + (c + 1)*0.25, 0, t) for c, t in enumerate(tops)]
+        o += layer_runs(m, z0, z1, s, X0, X1, H, holes)
+    if fam == 'concrete':
+        o += paint_inner(k, X0, X1, H, [(X0 + c*0.25, X0 + (c + 1)*0.25, 0, t) for c, t in enumerate(top_in)])
+        for x in (-0.625, -0.375, -0.125, 0.125, 0.375, 0.625):
+            t = top_in[int((x - X0)/0.25)]*CELL
+            o.append(hull([(x - 0.006, t, -0.006), (x + 0.006, t, -0.006), (x + 0.006, t, 0.006), (x - 0.006, t, 0.006),
+                           (x - 0.006, t - 0.7, -0.45), (x + 0.006, t - 0.7, -0.45), (x + 0.006, t - 0.7, -0.438), (x - 0.006, t - 0.7, -0.438)], 'rebar'))
+    if fam in FRAMED:
+        Hf = H - RIM
+        for x in (-1.0, -0.5, 0.0, 0.5):
+            if x == -1.0: o += st_y(k, x, 0.045, Hf - 0.09)
+            else: o += mirror_z(st_y(k, x, 0.045, Hf - 0.09, 'snapped'))
+        o += st_x(k, 'plate', X0, -0.8, 0) + st_x(k, 'plate', 0.8, X1, 0) + st_x(k, 'plate', X0, X1, Hf - 0.09) + st_x(k, 'plate', X0, X1, Hf - 0.045) + rim_zone(k, X0, X1, H)
+        c = frame_col(k)
+        o.append(hull([(-0.8, 0, -0.07), (-0.2, 0, -0.5), (-0.2, 0, -0.36), (-0.8, 0, 0.07), (-0.8, 0.045, -0.07), (-0.2, 0.045, -0.5), (-0.2, 0.045, -0.36), (-0.8, 0.045, 0.07)], c))
+    if fam == 'steel':
+        o.append(B(X0, 0, -0.1, -0.75, 0.25, 0.065, 'concrete')); o.append(B(0.75, 0, -0.1, X1, 0.25, 0.065, 'concrete'))
+        for j, g in enumerate(frange(1.0, H - 0.2, 1.25)):
+            if g < 1.8: o += mirror_z(stretch(STICKS['steel']['girt']['snapped'], 'x', [X0, g, 0.0], X1 - X0))
+            else: o += stretch(STICKS['steel']['girt']['whole'], 'x', [X0, g, 0.0], X1 - X0)
+    cols = MAT[L[0][0]]['bits'] + (['lumber'] if fam in FRAMED else []) + (MAT[L[-1][0]]['bits'] if len(L) > 1 else [])
+    o += pile(-0.9, 0.9, zi - 1.3, zi - 0.15, cols, 10, 0.08) + pile(-0.7, 0.7, zo + 0.1, zo + 0.5, cols, 4, 0.06)
+    o += crack(X0 + 0.02, -0.8, 0.5, 2.3, zo + 0.0015, 1) + crack(0.8, X1 - 0.02, 0.4, 2.2, zo + 0.0015, 1)
     return o
 
 # ---------- joints ----------
@@ -647,16 +731,18 @@ def split_y(pcs, Y):
         (lo if pc['p'][1] < Y else hi).append(pc)
     return lo, hi
 
-SECTIONS, OPENINGS, OPENING_TOPS, JOINTS, EDGES = {}, {}, {}, {}, {}
+SECTIONS, OPENINGS, OPENING_TOPS, JOINTS, EDGES, CAR_HOLES = {}, {}, {}, {}, {}, {}
 for k, K in KINDS.items():
-    SECTIONS[k], JOINTS[k], OPENING_TOPS[k] = {}, {}, {}
+    SECTIONS[k], JOINTS[k], OPENING_TOPS[k], CAR_HOLES[k] = {}, {}, {}, {}
     H0 = K['heights'][0]
+    CAR_HOLES[k]['below'] = split_y(car_hole(k, H0), CUT)[0]
     OPENINGS[k] = {w: {st: split_y(opening(k, H0, w, st), CUT)[0] for st in ('intact', 'cracked', 'breached')} for w in ('door', 'window')}
     for H in K['heights']:
         h = '%.1f' % H
         SECTIONS[k][h] = {st: section(k, H, st) for st in ('whole', 'cracked', 'gone', 'rubble')}
         OPENING_TOPS[k][h] = split_y(opening(k, H, 'door', 'intact'), CUT)[1]
         JOINTS[k][h] = {j: joint(k, H, j) for j in ('straight', 'corner', 'T', 'cross', 'end')}
+        CAR_HOLES[k][h] = split_y(car_hole(k, H), CUT)[1]
     EDGES[k] = {e: edge(k, e) for e in ('floor_edge', 'roof_edge')}
 FLOORS = {f: {st: floor_tile(f, st) for st in ('whole', 'cracked', 'gone', 'rubble')} for f in ('wood', 'lightsteel', 'steel', 'concrete')}
 STAIRS = {f: stairs(f) for f in ('wood', 'lightsteel', 'steel', 'concrete')}
@@ -680,7 +766,7 @@ pack = {
   'openingInfo': {'module': [-0.75, 0.75], 'clear': [-0.5, 0.5], 'doorHead': DH, 'windowSill': WS, 'cut': CUT,
                   'note': 'replaces three sections; framed walls: it brings its own left stud, both king and jack studs, header, cripples and sill; the next section to its right supplies the stud at x = 0.75. intact, cracked (split door, cracked glass and skin), breached (door torn or splintered, glass gone, casing hanging, rubble, frame still standing).'},
   'stateRule': 'Skins: whole -> cracked -> gone (the cell is removed; draw cells.<material>.gone at its edges so the hole is ragged and the next layer shows) -> rubble on the floor. The frame breaks last: snapped sticks. A breached wall is gone in every layer of a cell with the frame still up; when a stud snaps the cells it carried above become rubble.',
-  'models': {'cells': CELLS, 'sticks': STICKS, 'sections': SECTIONS, 'openings': OPENINGS, 'openingTops': OPENING_TOPS, 'joints': JOINTS, 'edges': EDGES, 'floors': FLOORS, 'stairs': STAIRS},
+  'models': {'cells': CELLS, 'sticks': STICKS, 'sections': SECTIONS, 'openings': OPENINGS, 'openingTops': OPENING_TOPS, 'joints': JOINTS, 'carHoles': CAR_HOLES, 'edges': EDGES, 'floors': FLOORS, 'stairs': STAIRS},
 }
 out, st = write_pack('walls', pack, __file__)
 import os
