@@ -64,6 +64,7 @@
   #clock{margin-top:5px;font-size:12px;font-weight:600;letter-spacing:.03em}
   #wxStamp{opacity:.85;font-weight:400}
   #goalLine{margin-top:2px;font-size:12px;opacity:.9}
+  #goalLine,#stats,#wxStamp{transition:opacity .8s} #hud.quiet #goalLine,#hud.quiet #stats{opacity:0}
   #goalLine::before{content:"\25C6  ";color:var(--ochre);font-size:9px;vertical-align:1px}
   #conds{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
   #conds span{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(150,30,24,.78);padding:2px 6px;border-radius:8px}
@@ -147,14 +148,19 @@
   #touch button{position:fixed;border-radius:999px;background:rgba(245,234,216,.86);color:var(--ink);border:2px solid var(--outline);box-shadow:0 3px 0 rgba(61,48,41,.35);font-size:12px;font-weight:700;padding:0;touch-action:none}
   #stick{position:fixed;left:22px;bottom:70px;width:126px;height:126px;border-radius:999px;background:rgba(245,234,216,.5);border:2px solid var(--outline);touch-action:none}
   #knob{position:absolute;left:38px;top:38px;width:50px;height:50px;border-radius:999px;background:var(--cream);border:2px solid var(--outline);box-sizing:border-box}
+  /* two touch HUD modes: the everyday one (swing, shoot, throw, light) and a build one (wall, fire, mark, build menu), switched by the button above Swing */
   #touch #tAtk{right:22px;bottom:78px;width:84px;height:84px;background:var(--clay);color:#fff}
+  #tMode{right:30px;bottom:176px;width:60px;height:60px;font-size:11px !important}
   #tShoot{right:116px;bottom:66px;width:66px;height:66px}
-  #tUse{right:30px;bottom:172px;width:70px;height:70px}
-  #tFire{right:112px;bottom:142px;width:52px;height:52px}
-  #tCade{right:172px;bottom:142px;width:52px;height:52px}
-  #tLight{right:186px;bottom:74px;width:52px;height:52px}
-  #tPing{right:232px;bottom:142px;width:52px;height:52px}
-  #tRun{left:160px;bottom:150px;width:56px;height:56px} #tDuck{left:160px;bottom:84px;width:56px;height:56px} #tThrow{left:160px;bottom:216px;width:50px;height:50px;font-size:11px}
+  #tThrow{right:104px;bottom:142px;width:54px;height:54px;font-size:11px !important}
+  #tLight{right:168px;bottom:142px;width:54px;height:54px}
+  #tCade{right:116px;bottom:66px;width:66px;height:66px}
+  #tFire{right:104px;bottom:142px;width:54px;height:54px}
+  #tPing{right:168px;bottom:142px;width:54px;height:54px}
+  #tBuild{right:196px;bottom:70px;width:62px;height:62px;font-size:11px !important}
+  #touch:not(.bmode) .m2,#touch.bmode .m1,#touch button.nx{display:none}
+  #touch.bmode #tMode{background:var(--ochre);color:#fff}
+  #tRun{left:22px;bottom:208px;width:52px;height:52px} #tDuck{left:82px;bottom:208px;width:52px;height:52px}
   #touch button.on{background:var(--ochre);color:#fff}
   .touchmode #help,.touchmode #lockhint{display:none !important}
   .touchmode #vitals{left:10px;top:8px;width:170px}
@@ -177,9 +183,11 @@
   .touchmode #prompt{top:44%}
   .touchmode #chatIn{bottom:210px;left:160px}
   @media (max-width:560px){
-    .touchmode #hud{top:96px;width:240px}
+    .touchmode #hud{top:112px;width:240px}
+    .touchmode #mini{width:80px;height:80px}
+    .touchmode #hudMenu{right:100px}
+    .touchmode #hudBtns{right:100px}
     .touchmode #vitals{width:150px}
-    .touchmode #tPing{right:172px;bottom:204px}
     .touchmode #toast{top:176px;max-width:86vw}
   }
   @media (max-width:760px){h1{font-size:48px}}
@@ -239,7 +247,10 @@
   <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><button id="bigClose">Close map</button></div></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
-    <button id="tAtk">Swing</button><button id="tShoot">Shoot</button><button id="tUse">Search</button><button id="tFire">Fire</button><button id="tCade">Wall</button><button id="tLight">Light</button><button id="tPing">Mark</button><button id="tRun">Run</button><button id="tThrow">Throw</button><button id="tDuck">Crouch</button>
+    <button id="tAtk">Swing</button><button id="tMode">Build</button>
+    <button id="tShoot" class="m1">Shoot</button><button id="tThrow" class="m1">Throw</button><button id="tLight" class="m1">Light</button>
+    <button id="tCade" class="m2">Wall</button><button id="tFire" class="m2">Fire</button><button id="tPing" class="m2">Mark</button><button id="tBuild" class="m2">Build menu</button>
+    <button id="tRun">Run</button><button id="tDuck">Crouch</button>
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)">Esc frees the mouse &middot; H shows the controls</span></div>
 </div>
@@ -363,7 +374,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.3.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.4.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2498,7 +2509,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.45.3';
+var VERSION = '0.45.4';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2617,7 +2628,8 @@ function hold(id, down, up){
   el(id).addEventListener('touchcancel', function(){ if (up) up(); });
 }
 hold('tAtk', function(){ keys.Space = true; }, function(){ keys.Space = false; });
-hold('tUse', function(){ keys.KeyE = true; }, function(){ keys.KeyE = false; });
+hold('tMode', function(){ el('touch').classList.toggle('bmode'); el('tMode').textContent = el('touch').classList.contains('bmode') ? 'Back' : 'Build'; });
+hold('tBuild', function(){ el('buildBtn').click(); });
 hold('tShoot', function(){ wantShoot = true; });
 hold('tFire', function(){ place('fire'); });
 hold('tCade', function(){ place('cade'); });
@@ -3638,7 +3650,7 @@ function update(dt){
   if (mf || ms){
     var l = Math.hypot(mf, ms), V = P.veh, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y, gt = gait(true);
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
-    if (P.roof) roofMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp); else stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V) P.bob += (P.mvD || 0)*(gt === 2 ? 2.9 : gt === 0 ? 4.5 : 3.7); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
+    if (P.roof) roofMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp); else stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35); P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V) P.bob += (P.mvD || 0)*(gt === 2 ? 1.4 : gt === 0 ? 2.9 : 2.0); else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
   surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms)); camTick(dt);
   if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else if ((wx.w === 1 || wx.w === 2 || wx.w === 4) && !P.inside && !(P.veh && P.veh.t)){ var rc = dress().rain; P.wet = Math.min(90, (P.wet || 0) + dt*(wx.w === 2 ? 2.2 : 1.4)*(1 - rc)); if (rc > 0.7) P.wet = Math.max(0, P.wet - dt*0.3); }   /* rain soaks you unless you are covered */
@@ -3805,10 +3817,11 @@ function awareHud(){
   if (best === 2){ txt = 'Spotted'; col = '#d9603a'; } else if (best === 1.5) col = '#d9a845';
   e.classList.toggle('on', best > 0); if (best > 0){ e.querySelector('span').textContent = txt; e.style.setProperty('--a', Math.round(Math.min(1, best >= 1.5 ? 1 : best)*100) + '%'); e.style.setProperty('--c', col); }
 }
+var hudKey = '', hudPeek = 0;
 function updateHud(){
   el('bTemp').style.width = (P.body + 100)/2 + '%'; el('bTemp').style.background = P.body < -55 ? '#5f8a9a' : P.body > 55 ? '#c67139' : '#7a8a5e';
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
-  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
+  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !(inv.ammo > 0)); el('tLight').classList.toggle('nx', !(inv.flashlight > 0)); el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open|Damp)/.test(t) ? ' class="mild"' : '') + '>' + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
@@ -3818,8 +3831,11 @@ function updateHud(){
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
   var pw = function(k, txt, off){ return '<span' + (off ? ' class="off"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/41) + '% 0"></i>' + txt + '</span>'; };
-  el('power').innerHTML = pw('flashlight', inv.flashlight > 0 ? pct(P.fl) + (lightOn() ? ' on' : '') : 'none', !lightOn()) + pw('radio', inv.radio > 0 ? pct(P.rd) : 'none', !radioOn()) + pw('battery', '\u00d7' + inv.battery, !inv.battery);
+  el('power').innerHTML = (inv.flashlight > 0 ? pw('flashlight', pct(P.fl) + (lightOn() ? ' on' : ''), !lightOn()) : '') + (inv.radio > 0 ? pw('radio', pct(P.rd), !radioOn()) : '') + (inv.battery > 0 ? pw('battery', '\u00d7' + inv.battery, false) : '');
   el('goalLine').textContent = goalText().replace(/^Goal: /, '').replace(/^./, function(ch){ return ch.toUpperCase(); });
+  /* the goal and place lines show for a few seconds when they change, then fade so the top of the screen stays clear */
+  var hk = el('goalLine').textContent + '|' + el('stats').textContent + '|' + el('wxStamp').textContent; if (hk !== hudKey){ hudKey = hk; hudPeek = performance.now() + 7000; }
+  el('hud').classList.toggle('quiet', performance.now() > hudPeek);
   var h = '', other = 0, k;
   ['food', 'water', 'medkit', 'bandage', 'ammo'].forEach(function(k){ var qn = k === 'food' ? inv.food + inv.fresh : inv[k]; h += '<div class="slot' + (qn > 0 ? '' : ' zero') + '" title="' + ITEMS[k][0] + '"' + (ITEMS[k][2] !== 'F' ? ' data-u="' + k + '"' : '') + '><i class="ic" style="background-position:' + (ICON[k]*100/41) + '% 0"></i><span class="key">' + ITEMS[k][2] + '</span><span class="cnt">' + qn + '</span></div>'; });
   for (k in inv) if (k !== 'food' && k !== 'fresh' && k !== 'water' && k !== 'medkit' && k !== 'bandage' && k !== 'ammo') other += inv[k]; for (k in P.items) other += P.items[k] | 0;
@@ -4433,15 +4449,15 @@ function render(){
   }
   var cFx = CAMS.fx, cBob = CAMS.bob, cVeh = P.veh ? 0 : 1, vox = 0, voz = 0, vof = 0;
   if (!tp){   /* first person: bob, breathing, landing, flinch */
-    var cPh = P.bob, cAm = CAM.amp*cBob*cVeh, cBv = Math.cos(cPh*2)*0.032*cAm, cBl = Math.sin(cPh)*0.011*cAm, cBr = Math.sin(CAM.br), cBre = cBr*(0.0035 + 0.007*Math.min(1, CAM.ex))*(0.4 + 0.6*cFx) + (P.hp < 35 ? Math.sin(CAM.br*3.7)*0.0015 : 0);
+    var cPh = P.bob, cAm = CAM.amp*cBob*cVeh, cBv = Math.cos(cPh*2)*0.011*cAm, cBl = Math.sin(cPh)*0.004*cAm, cBr = Math.sin(CAM.br), cBre = cBr*(0.0035 + 0.007*Math.min(1, CAM.ex))*(0.4 + 0.6*cFx) + (P.hp < 35 ? Math.sin(CAM.br*3.7)*0.0015 : 0);
     e[1] += cBv + cBre + CAM.land*cFx; e[0] += s[0]*cBl; e[2] += s[2]*cBl;
-    var cdP = (Math.cos(cPh*2)*0.0035*cAm + cBr*0.0025*(0.4 + 0.6*cFx) - CAM.kick*0.035*cFx - (P.swing > 0 ? Math.sin((1 - P.swing/0.22)*3.1416)*0.02*cFx : 0) + (P.shootCd > 0.2 ? 0.012*cFx : 0)),
-        cdR = Math.sin(cPh)*0.0035*cAm + CAM.kickS*CAM.kick*0.045*cFx;
+    var cdP = (Math.cos(cPh*2)*0.0012*cAm + cBr*0.0025*(0.4 + 0.6*cFx) - CAM.kick*0.035*cFx - (P.swing > 0 ? Math.sin((1 - P.swing/0.22)*3.1416)*0.02*cFx : 0) + (P.shootCd > 0.2 ? 0.012*cFx : 0)),
+        cdR = Math.sin(cPh)*0.0012*cAm + CAM.kickS*CAM.kick*0.045*cFx;
     var cdp = Math.cos(cdP), sdp = Math.sin(cdP), f2 = [f[0]*cdp + u[0]*sdp, f[1]*cdp + u[1]*sdp, f[2]*cdp + u[2]*sdp], u2 = [u[0]*cdp - f[0]*sdp, u[1]*cdp - f[1]*sdp, u[2]*cdp - f[2]*sdp],
         cdr = Math.cos(cdR), sdr = Math.sin(cdR), s2 = [s[0]*cdr + u2[0]*sdr, s[1]*cdr + u2[1]*sdr, s[2]*cdr + u2[2]*sdr], u3 = [u2[0]*cdr - s[0]*sdr, u2[1]*cdr - s[1]*sdr, u2[2]*cdr - s[2]*sdr];
     f = f2; s = s2; u = u3;
     if (!P.veh){   /* the held item: carried lower when sprinting, lags behind turns, bobs a little out of step with the head */
-      vox = CAM.sx*cFx + Math.sin(cPh)*0.012*cAm + 0.05*CAM.sprint*cFx; voz = CAM.sy*cFx - cBv*0.7 - Math.abs(Math.sin(cPh))*0.006*cAm - 0.11*CAM.sprint*cFx + cBre*0.8; vof = -0.04*CAM.sprint*cFx;
+      vox = CAM.sx*cFx + Math.sin(cPh)*0.005*cAm + 0.05*CAM.sprint*cFx; voz = CAM.sy*cFx - cBv*0.5 - Math.abs(Math.sin(cPh))*0.002*cAm - 0.11*CAM.sprint*cFx + cBre*0.8; vof = -0.04*CAM.sprint*cFx;
     }
   }
   var V = [s[0],u[0],-f[0],0, s[1],u[1],-f[1],0, s[2],u[2],-f[2],0, -(s[0]*e[0]+s[1]*e[1]+s[2]*e[2]), -(u[0]*e[0]+u[1]*e[1]+u[2]*e[2]), f[0]*e[0]+f[1]*e[1]+f[2]*e[2], 1];
