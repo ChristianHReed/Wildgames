@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 19 October 2026, at version 0.48.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.48.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -75,6 +75,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.47.0 | Horde nights: every third night (night 3, 6, 9...) once it is dark, wave after wave of swarmers come for whoever is out, 18 to 70 per night, more with more players, heading for where you stand; a warning appears when it begins. New alien, the spitter (from night 4 alone, in hordes from day 6): keeps about 7 m away and lobs a glob that you can dodge by jumping or ducking behind walls; the glob splashes where it lands. Uses the design chat's spitter model and spit_glob. |
 | 0.48.0 | The map now only shows where you have been (30 m squares, saved with your survivor; the safe house starts known), and you can plant flags on it: on the big map, move the cross to a place and press Mark centre; Remove mark takes away the flag under the cross. Still to do: the held paper map model in first person and map items to find. |
 | 0.48.1 | Aliens no longer know where you are. Hordes and nest groups now leave a nest as a roaming pack: a leader picks the next building to search (favouring parts of town the pack has not been and places that have been noisy), the rest follow, and they only find you by sight, sound or light. When one pack member hears or sees something the whole pack turns to it. At dawn a horde walks back to its nest and is gone. Pacing, from Left 4 Dead's director idea: no new horde pack while eight or more aliens are already on you, and the ordinary night trickle waits while a horde is still to come. Design notes taken from the genre (Project Zomboid, 7 Days to Die, Left 4 Dead, State of Decay): detection by movement, light and noise rather than by knowing the player's position; noise and mass fights draw a crowd; creatures lose interest and disperse rather than vanish; relief between peaks keeps pressure fair. |
+| 0.48.2 | Wrecked and burnt-out cars from the design chat's vehicle pack (`*_wreck`, `*_burnt` for sedan, hatchback, pickup and van): about one parked car in five is now a wreck (rusted, flat tyres) or a burnt shell on bare rims, and there are some extra wrecks beside buildings. They are sunk by the pack's `sitDrop`, cannot be driven (the prompt says Hold J to take apart) and give less when salvaged: a wreck gives 5 scrap and some parts, a burnt shell 3 scrap and rarely a part, with no fuel or tyres. |
 
 ## Next versions
 
@@ -100,7 +101,7 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Art | State | Planned in |
 | --- | --- | --- |
 | Cars: sedan, hatchback, pickup, van, taxi and police paint | In the game | 0.45 |
-| Cars: wrecks and burnt-out versions of every car (`*_wreck`, `*_burnt`, rule in `wreckRule`) | Not used; street cars are all intact | 0.51 (wrecks and burnt cars on roads, and salvage gives less from them) |
+| Cars: wrecks and burnt-out versions of every car (`*_wreck`, `*_burnt`, rule in `wreckRule`) | In the game (0.48.2), parked beside buildings; wrecks on the roads themselves still to do | 0.51 |
 | Cars: boot lid on sedan and hatchback, pickup battery, fuel cap and hub | Not used | 0.51 (search boots, siphon fuel, truck repair) |
 | Weapons in hand, arms, new survivor clips | In the game | 0.45.8 |
 | Effects (dust, splashes, goo) and UI icons | In the game | 0.45.9 |

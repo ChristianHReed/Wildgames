@@ -1,6 +1,6 @@
 # Afterstreet (formerly Last Block): Game Design
 
-This page says what the game is and why. [ROADMAP.md](ROADMAP.md) says what is built, what comes next and which art each step needs; the two share the same area names (see "Design areas and where they stand" in the roadmap). [ART.md](ART.md) is the look, [SHAPED.md](SHAPED.md) the art catalogue, [TESTING.md](TESTING.md) the test steps. Updated 19 October 2026, at version 0.48.1.
+This page says what the game is and why. [ROADMAP.md](ROADMAP.md) says what is built, what comes next and which art each step needs; the two share the same area names (see "Design areas and where they stand" in the roadmap). [ART.md](ART.md) is the look, [SHAPED.md](SHAPED.md) the art catalogue, [TESTING.md](TESTING.md) the test steps. Updated 19 October 2026, at version 0.48.2.
 
 ## The pitch
 
