@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.62.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.63.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.62.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.63.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4064,6 +4064,7 @@ function update(dt){
   wantSwing = wantShoot = false;
 
   var night = dark > 0.5;
+  trailT -= dt; if (trailT <= 0){ trailT = 0.8; var tl = TRAIL[TRAIL.length - 1]; if (!tl || Math.hypot(tl.x - P.x, tl.y - P.y) > 1.2){ TRAIL.push({x:P.x, y:P.y, t:time}); if (TRAIL.length > 70) TRAIL.shift(); } }
   P.noise = Math.max(0, P.noise - dt); gunTick(dt); if (P.gunT > 0) P.gunT -= dt;
   if (net.role !== 'guest'){
     var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridOn() && genOf(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
@@ -4086,6 +4087,12 @@ function update(dt){
       var ox = z.x, oy = z.y, zs = (night ? A.nspd : A.spd)*z.spd, vx = 0, vy = 0, L = lureAt(z.x, z.y);
       if (z.climb || z.roof){ alienRoof(z, A, T, dt, zs); continue; }
       if (z.k === 1 && !L){ var SA = stalkerAI(z, A, T, tg, dt); if (SA){ L = SA; zs = SA.sp*z.spd; T = null; d = 1e9; } }
+      /* 0.54 memory: a stalker that lost you follows your trail (the last minute of your footprints) instead of milling about, and by day a wandering alien heads back to the nearest nest and is gone */
+      if (!T && !L && z.st === 3 && z.k === 1 && TRAIL.length > 3){ var ti = -1, tbd = 25; for (var tq = 0; tq < TRAIL.length; tq++){ var td = Math.hypot(TRAIL[tq].x - z.x, TRAIL[tq].y - z.y); if (td < tbd && time - TRAIL[tq].t < 60){ tbd = td; ti = tq; } }
+        if (ti >= 0 && ti < TRAIL.length - 1){ var tn = TRAIL[Math.min(TRAIL.length - 1, ti + 2)]; L = {x:tn.x, y:tn.y}; z.stT = Math.max(z.stT, 3); zs *= 0.9; } }
+      if (!T && !L && z.st === 0 && !z.grp && z.k !== 2 && hour >= 5.5 && hour < 9.5){
+        if (z.hb === undefined){ z.hb = null; var hbd = 450; for (var nk in world.nests){ var nb0 = world.buildings[nk]; if (!nb0) continue; var nd0 = Math.hypot(nb0.cx - z.x, nb0.cy - z.y); if (nd0 < hbd){ hbd = nd0; z.hb = nb0; } } }
+        if (z.hb && world.nests[z.hb.id]){ var hc = nestCore(z.hb); L = {x:hc.x, y:hc.y, b:z.hb}; if ((Math.hypot(hc.x - z.x, hc.y - z.y) < 3.5 || buildingAt(z.x, z.y) === z.hb) && dAny > 15){ zombies.splice(i, 1); continue; } } }
       if (!T && !L && (z.st === 1 || z.st === 3)){ L = {x:z.lx, y:z.ly}; if (Math.hypot(z.lx - z.x, z.ly - z.y) < 1.5){ if (z.st === 1){ z.st = 3; z.stT = 7; } z.lx = z.x + (Math.random() - 0.5)*14; z.ly = z.y + (Math.random() - 0.5)*14; } zs *= z.st === 3 ? 0.55 : 0.75; }   /* go and look */
       if (!T && !L && z.grp && z.st === 0){ var PG = grpOf(z); if (PG && PG.tx !== undefined && !(PG.wait > 0)){ var lm = null; for (var pk = 0; pk < zombies.length; pk++) if (zombies[pk].grp === z.grp){ lm = zombies[pk]; break; } if (lm && lm !== z && Math.hypot(lm.x - z.x, lm.y - z.y) > 14) L = {x:lm.x, y:lm.y}; else L = {x:PG.tx, y:PG.ty}; zs *= 0.55; } }
       if (!T && !L && z.face){ z.face = 0; z.ang = Math.atan2(z.ly - z.y, z.lx - z.x); }
@@ -5919,6 +5926,7 @@ function makeVehicles(saved){
 function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : 0); }); return o; }
 /* 0.51: town cars. Y (or the Boot button) at a parked car: first the boot is searched, then fuel is siphoned a can at a time (a car holds about 60 s of driving per can).
    Burnt shells are empty and wrecks hold only the odd can. */
+var TRAIL = [], trailT = 0;
 var BOOT = {scrap:3, water:1, food:1, tire:0.8, carbat:0.5, toolkit:0.25, fuel:1, ammo:0.5, battery:0.6, none:4};
 function carNear(){ var best = null, bd = 3.2; if (P.veh || P.inside) return null; world.vehicles.forEach(function(v){ if (!v.t || v.kind === 'truck' || v.id === 'truck') return; var d = Math.hypot(v.x - P.x, v.y - P.y); if (d < bd){ bd = d; best = v; } }); return best; }
 function carUse(){
