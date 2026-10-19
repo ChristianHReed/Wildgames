@@ -173,3 +173,13 @@ The ten foundation steps below were all built in the first versions of `play.htm
 - Supporting walls: the first two levels of room splitting are bearing walls, seeded from the footprint and the ground door, so they are identical on every floor; inner walls differ per floor. Columns stand on a 6 m grid fixed to the building in big open floors.
 - Stairs: two shafts, A serving flights 0, 2, 4 and B serving flights 1, 3, 5; each floor is generated when first needed. If a floor's way up cannot be reached from its way in, the building stops at that floor (roof hatch there).
 - The floor an entity is on is its level number; world height is level x 3 m + local height.
+
+## Wall construction (planned for 0.56)
+
+Walls follow real light-frame building so they look right when broken open:
+- Layers through the wall, outside to inside: outer skin (siding, brick, sheet metal), sheathing, the frame, inner skin (plasterboard, panelling). Each layer has its own strength and breaks on its own; the frame is the last thing to go.
+- Frame: a bottom plate, studs every 0.5 m, a double top plate; king and jack studs either side of every opening with a header above, and a sill and cripple studs under a window; corners a three-stud post; blocking between studs half way up.
+- Floors: joists every 0.5 m on the bearing walls (the same walls on every floor, as in 0.49.4) with a plank subfloor; roofs: rafters or trusses every 0.5 m.
+- Materials: wood studs for houses and small buildings, light steel studs for shops and flats, a steel frame (columns on a 6 m grid, beams, deck) for offices and big stores, concrete (columns, core, slabs, block) for the biggest buildings and bunkers.
+- Storey height: 3.0 m houses, 3.5 m shops, offices and community buildings, 4.5 m and up industrial, halls and warehouses.
+- Harvest: skins give boards, plasterboard scrap, siding or bricks; the frame gives lumber, studs, plates, steel sections and nails. A frame cut out is worth more than the skins.

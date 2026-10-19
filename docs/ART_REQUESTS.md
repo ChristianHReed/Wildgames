@@ -74,13 +74,21 @@ Jump grunt, landing thud per surface (grass, road, wood, metal), a swing and a h
 
 For roadmap steps 0.56 to 0.60. The game is moving to one wall logic: every wall, inside or outside, generated or player-built, is a run of **cells** (voxels). Nothing here replaces `buildings.js` yet; these pieces sit beside it and are wired in step by step. Same rules as before (shaped pieces, pack palette, metres, flat colours). Ask me before settling the cell size if it fights the look; my proposal is a **0.25 m cell** (four to a metre, so it fits the half-metre build grid), a wall panel 1.5 m wide, and storeys 3.0 m high.
 
-### 10.1 Wall cells by material
-Three frame kinds and the fills that sit in them. Each material needs **four states**: whole, cracked, breached (a hole you can pass through, frame still standing) and rubble. Where a piece has a frame, give a **snapped frame** too.
-- **Wood frame** (houses, sheds, small shops): studs and plates, siding boards, plasterboard on the inside, plank floor and ceiling joists.
-- **Steel frame** (offices, big shops, warehouses): I-beam column, beam, cross brace, sheet-metal panel, curtain-wall glass, steel deck floor.
-- **Concrete** (the biggest buildings, bunkers, car parks): poured wall, concrete block, brick, slab floor with rebar showing when cracked.
-- Joints: straight, corner, T, cross, wall end, wall on a floor edge, floor plate and ceiling plate, stair opening, and door and window **openings in each material** (frame, lintel, sill). Doors and windows need an intact, cracked and breached state too.
-- A **tileable cell sheet** per material (one cell, four states) so a wall can be built from copies, and a **wall panel** (1.5 m by 3.0 m) built from those cells for each material.
+### 10.1 Wall construction, by material
+Build walls the way a real house is built: a **stick frame sandwiched between an outer skin and an inner skin**. The game builds the wall from these layers, so each needs its own piece. Module: studs every **0.5 m** (matches the build grid), cells are half a bay (**0.25 m**) for breaking, a wall panel is 3.0 m (six bays) by the storey height, and the wall is about 0.2 m thick. Storeys are 3.0 m for houses, 3.5 m for shops, offices and community buildings, 4.5 m and up for industrial buildings, halls and warehouses, so panels are needed in those heights (or tall pieces that can be stacked).
+
+**Layers (outside to inside):** outer skin (wood siding, brick, sheet metal, curtain-wall glass), sheathing (plank or board), **frame**, inner skin (plasterboard, wood panelling, plaster). Each layer needs states: whole, cracked, **gone** (so you can see the layer beneath) and rubble.
+
+**Wood stick frame** (houses, sheds, small shops): bottom plate, studs, double top plate, king stud and jack stud either side of an opening, header over it, sill and cripple studs under a window, three-stud corner post, a T-wall backer, blocking half way up; floor joists with rim joist and plank subfloor; rafters and trusses with roof boards. A **snapped** version of every stick (studs bent or splintered).
+
+**Light steel stud frame** (shops, flats): the same layout in steel channel with track top and bottom, and sheet-metal skins.
+
+**Steel frame** (offices, big stores, warehouses): column, beam, cross brace, metal deck floor with concrete topping, curtain-wall mullion and glass panel, sheet-metal cladding panel.
+
+**Concrete** (the biggest buildings, bunkers, car parks): poured wall and column, flat slab with rebar showing where cracked, concrete block (a wall of blocks, one block missing), brick veneer.
+
+Joints needed in each material: straight, corner, T, cross, wall end, wall on a floor edge, floor and ceiling plate, stair opening, and door and window **openings** (frame, header, sill). Doors and windows need intact, cracked and breached states.
+Also a **tileable one-bay section** per material (all layers, four states) so a wall can be built from copies.
 
 ### 10.2 Harvest materials (items)
 Icons and loose-on-the-ground models for what comes out of broken walls: planks, scrap wood, nails (a handful), steel beam, rebar bundle, sheet metal, concrete chunk, brick, glass sheet, wire (a coil). Plus **dust and chip bursts** per material (wood chips exist; need concrete dust, brick bits, metal sparks).
