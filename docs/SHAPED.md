@@ -156,7 +156,7 @@ Moving parts (doors, lids, wheels) are separate entries in 'moving' with their h
 Vehicles are boxy 1970s to 1990s shapes, worn: rust patches, a cracked windscreen, mismatched panels.
 Pieces marked glow:true are lamps and lit screens.
 
-Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. garden_plot is the empty bed; draw garden_sprouting, garden_growing or garden_ripe on top of it for the plot's stage. rain_barrel is the rain collector. `moving` lists other parts that open (doors, lids) and their hinges.
+Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. garden_plot is the empty bed; draw garden_sprouting, garden_growing or garden_ripe on top of it for the plot's stage. rain_barrel is the rain collector. containers holds every searchable container twice: <name> closed and <name>_searched (doors open, drawer out, lid up, fewer things inside). build holds things players make and place; barricade has three stages (barricade, barricade_damaged, barricade_nearly_gone); campfire and generator have lit/running and out/off versions. glow pieces are flames, embers and lamps. Every vehicle also comes as <name>_wreck (rusted, flat tyres, broken glass) and <name>_burnt (charred shell on bare rims); lower them by vehicleRig[...].sitDrop. Every piece here hinges at the origin: doors and shutters about the y axis (the leaf runs to +X), lids about the x axis (the lid runs to +Z). garage_door rolls up instead: slide its five slats up one after another and lay them flat under the ceiling. `moving` lists other parts that open (doors, lids) and their hinges.
 
 | Category | Model | Tris, verts, welded |
 | --- | --- | --- |
@@ -184,6 +184,29 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | items | `generator` | 60 / 120 / 40 |
 | items | `backpack` | 36 / 72 / 24 |
 | items | `cardboard_box` | 14 / 28 / 12 |
+| items | `stone` | 12 / 34 / 8 |
+| items | `flare` | 40 / 72 / 24 |
+| items | `lure` | 44 / 84 / 28 |
+| items | `batteries` | 108 / 198 / 72 |
+| items | `matches` | 14 / 28 / 12 |
+| items | `nails` | 30 / 72 / 23 |
+| items | `seeds` | 14 / 28 / 12 |
+| items | `antibiotics` | 14 / 28 / 12 |
+| items | `painkillers` | 32 / 60 / 20 |
+| items | `vitamins` | 32 / 60 / 20 |
+| items | `soda_can` | 36 / 66 / 24 |
+| items | `granola_bar` | 14 / 28 / 12 |
+| items | `rice_bag` | 14 / 32 / 12 |
+| items | `blanket` | 24 / 48 / 16 |
+| items | `books` | 48 / 96 / 32 |
+| items | `cloth_scraps` | 13 / 37 / 11 |
+| items | `sticks` | 24 / 48 / 16 |
+| items | `tin_can` | 32 / 68 / 18 |
+| items | `berries` | 72 / 144 / 48 |
+| items | `rain_jacket` | 26 / 52 / 20 |
+| items | `lantern` | 90 / 184 / 61 |
+| items | `ammo_box` | 38 / 76 / 28 |
+| items | `pistol` | 24 / 48 / 16 |
 | furniture | `chair` | 72 / 144 / 46 |
 | furniture | `table` | 60 / 120 / 40 |
 | furniture | `sofa` | 120 / 240 / 76 |
@@ -219,12 +242,45 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | street | `sandbags` | 72 / 144 / 48 |
 | street | `power_pole` | 92 / 180 / 60 |
 | street | `newspaper_box` | 14 / 28 / 12 |
+| street | `sign_speed` | 28 / 56 / 24 |
+| street | `sign_one_way` | 27 / 55 / 23 |
+| street | `sign_yield` | 28 / 60 / 20 |
+| street | `street_name_post` | 40 / 80 / 32 |
+| street | `parking_meter` | 32 / 68 / 25 |
+| street | `bike_rack` | 156 / 312 / 104 |
+| street | `phone_box` | 48 / 100 / 41 |
+| street | `bollard` | 26 / 56 / 21 |
+| street | `crash_barrier` | 50 / 100 / 36 |
+| street | `manhole` | 34 / 60 / 28 |
+| street | `road_centre_dash` | 2 / 4 / 4 |
+| street | `road_stop_line` | 2 / 4 / 4 |
+| street | `road_crossing` | 14 / 28 / 28 |
+| street | `shop_awning` | 34 / 68 / 36 |
+| street | `hanging_sign` | 50 / 100 / 36 |
+| street | `satellite_dish` | 52 / 112 / 37 |
+| street | `ac_unit` | 52 / 96 / 32 |
+| street | `chimney` | 36 / 72 / 24 |
+| street | `water_tank` | 122 / 240 / 89 |
+| street | `roof_hatch` | 36 / 72 / 24 |
 | plants | `oak` | 164 / 348 / 96 |
 | plants | `pine` | 52 / 120 / 36 |
 | plants | `bush` | 54 / 120 / 33 |
 | plants | `dead_tree` | 36 / 88 / 28 |
 | plants | `grass_tuft` | 30 / 80 / 25 |
 | plants | `rock` | 24 / 68 / 16 |
+| plants | `autumn_oak` | 152 / 324 / 88 |
+| plants | `birch` | 94 / 204 / 72 |
+| plants | `willow` | 98 / 240 / 73 |
+| plants | `stump` | 31 / 65 / 23 |
+| plants | `cut_stump` | 66 / 120 / 48 |
+| plants | `fallen_log` | 56 / 104 / 37 |
+| plants | `fern` | 54 / 144 / 21 |
+| plants | `flowers_red` | 150 / 324 / 105 |
+| plants | `flowers_yellow` | 150 / 324 / 105 |
+| plants | `flowers_purple` | 150 / 324 / 105 |
+| plants | `reeds` | 78 / 184 / 59 |
+| plants | `mushrooms` | 104 / 216 / 68 |
+| plants | `bramble` | 118 / 272 / 57 |
 | vehicles | `hatchback.body` | 126 / 252 / 108 |
 | vehicles | `hatchback.bonnet` | 12 / 24 / 8 |
 | vehicles | `hatchback.wheel` | 48 / 84 / 28 |
@@ -234,11 +290,152 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `pickup.body` | 190 / 380 / 130 |
 | vehicles | `pickup.bonnet` | 12 / 24 / 8 |
 | vehicles | `pickup.wheel` | 48 / 84 / 28 |
+| vehicles | `pickup.battery` | 36 / 72 / 20 |
+| vehicles | `pickup.fuel_cap` | 20 / 36 / 12 |
+| vehicles | `pickup.hub` | 20 / 36 / 12 |
 | vehicles | `van.body` | 72 / 144 / 62 |
 | vehicles | `van.bonnet` | 12 / 24 / 8 |
 | vehicles | `van.wheel` | 48 / 84 / 28 |
+| vehicles | `hatchback_wreck.body` | 126 / 252 / 108 |
+| vehicles | `hatchback_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `hatchback_wreck.wheel` | 48 / 84 / 28 |
+| vehicles | `hatchback_burnt.body` | 126 / 252 / 108 |
+| vehicles | `hatchback_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `hatchback_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `sedan_wreck.body` | 124 / 248 / 104 |
+| vehicles | `sedan_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `sedan_wreck.wheel` | 48 / 84 / 28 |
+| vehicles | `sedan_burnt.body` | 124 / 248 / 104 |
+| vehicles | `sedan_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `sedan_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `pickup_wreck.body` | 190 / 380 / 130 |
+| vehicles | `pickup_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `pickup_wreck.wheel` | 48 / 84 / 28 |
+| vehicles | `pickup_burnt.body` | 190 / 380 / 130 |
+| vehicles | `pickup_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `pickup_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `van_wreck.body` | 72 / 144 / 62 |
+| vehicles | `van_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `van_wreck.wheel` | 48 / 84 / 28 |
+| vehicles | `van_burnt.body` | 72 / 144 / 62 |
+| vehicles | `van_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `van_burnt.wheel` | 20 / 36 / 12 |
 | garden | `rain_barrel` | 120 / 228 / 84 |
 | garden | `garden_plot` | 60 / 120 / 40 |
 | garden | `garden_sprouting` | 108 / 288 / 54 |
 | garden | `garden_growing` | 162 / 360 / 99 |
 | garden | `garden_ripe` | 378 / 792 / 243 |
+| containers | `cupboard` | 84 / 168 / 52 |
+| containers | `cupboard_searched` | 72 / 144 / 48 |
+| containers | `wardrobe` | 72 / 144 / 44 |
+| containers | `wardrobe_searched` | 84 / 168 / 56 |
+| containers | `kitchen_drawers` | 96 / 192 / 64 |
+| containers | `kitchen_drawers_searched` | 120 / 240 / 80 |
+| containers | `filing_cabinet` | 108 / 216 / 72 |
+| containers | `filing_cabinet_searched` | 156 / 312 / 104 |
+| containers | `medicine_cabinet` | 96 / 192 / 64 |
+| containers | `medicine_cabinet_searched` | 72 / 144 / 48 |
+| containers | `glove_box` | 36 / 72 / 24 |
+| containers | `glove_box_searched` | 35 / 71 / 24 |
+| containers | `car_boot` | 48 / 96 / 32 |
+| containers | `car_boot_searched` | 48 / 96 / 32 |
+| containers | `toolbox` | 36 / 72 / 20 |
+| containers | `toolbox_searched` | 36 / 72 / 22 |
+| containers | `till` | 50 / 100 / 36 |
+| containers | `till_searched` | 74 / 148 / 52 |
+| containers | `bin` | 24 / 48 / 16 |
+| containers | `bin_searched` | 48 / 96 / 32 |
+| containers | `shelf_stack` | 204 / 408 / 136 |
+| containers | `shelf_stack_searched` | 120 / 240 / 80 |
+| containers | `locker` | 42 / 84 / 36 |
+| containers | `locker_searched` | 48 / 96 / 32 |
+| containers | `duffel_bag` | 32 / 60 / 20 |
+| containers | `duffel_bag_searched` | 58 / 112 / 40 |
+| doors | `house_door` | 32 / 64 / 32 |
+| doors | `shop_door` | 36 / 72 / 24 |
+| doors | `garage_door` | 68 / 136 / 56 |
+| doors | `window_shutter` | 26 / 52 / 36 |
+| doors | `fridge_door` | 48 / 96 / 32 |
+| doors | `cupboard_door` | 24 / 48 / 16 |
+| doors | `chest_lid` | 24 / 48 / 16 |
+| doors | `crate_lid` | 16 / 32 / 16 |
+| build | `barricade` | 220 / 440 / 184 |
+| build | `barricade_damaged` | 165 / 331 / 139 |
+| build | `barricade_nearly_gone` | 82 / 164 / 68 |
+| build | `window_boards` | 112 / 224 / 96 |
+| build | `reinforced_door` | 136 / 272 / 96 |
+| build | `campfire` | 98 / 200 / 65 |
+| build | `campfire_out` | 88 / 168 / 56 |
+| build | `fire_pit` | 206 / 506 / 137 |
+| build | `lantern_post` | 78 / 160 / 53 |
+| build | `generator_off` | 128 / 252 / 84 |
+| build | `generator_running` | 134 / 268 / 89 |
+| build | `compost_bin` | 84 / 176 / 52 |
+| build | `water_filter` | 126 / 228 / 84 |
+| build | `drying_rack` | 144 / 288 / 96 |
+| build | `cooking_spit` | 166 / 348 / 105 |
+| build | `tool_bench` | 168 / 336 / 112 |
+| build | `workshop_table` | 108 / 216 / 72 |
+| build | `dropped_pack` | 38 / 84 / 28 |
+| build | `grave_marker` | 48 / 100 / 32 |
+| build | `map_flag` | 24 / 48 / 16 |
+
+## held (`assets/shaped/held.js`, version 1)
+
+Weapons: the grip is at the origin, the long side runs along +Z with the business end at +Z, +Y is the weapon's "up"
+(the edge or face that leads a swing). Each weapon comes in three states: new, worn (condition under a quarter: bent,
+chipped, taped) and broken (the stub left in the hand when it snaps).
+  - In the third-person hand: put the weapon's origin on GRIP (a point in the survivor pack's model space, carried by
+    hand_r) with the weapon's axes as the survivor's axes at rest; the hand bone then carries it through every clip.
+  - On the ground: turn the weapon by ground.roll degrees about Z, then ground.yaw about Y, and lift it by ground.lift.
+  - First person: put the weapon's origin on fp.hold.weapon (position and rotation) in view space.
+First-person arms (view space): the eye at the origin looking along +Z, +Y up, the viewer's right is -X (the same
+handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor wears on top: outer, else top).
+
+**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.255, 0.835, 0.045] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`.
+
+| Model | Tris, verts, welded | Notes |
+| --- | --- | --- |
+| `weapons.cricket_bat.new` | 34 / 64 / 24 | flat swing; length 0.85 m; ground: roll 0, lift 0.012 |
+| `weapons.cricket_bat.worn` | 61 / 119 / 55 |  |
+| `weapons.cricket_bat.broken` | 38 / 84 / 27 |  |
+| `weapons.frying_pan.new` | 56 / 104 / 40 | flat swing; lies face up; length 0.55 m; ground: roll 0, lift 0.02 |
+| `weapons.frying_pan.worn` | 58 / 110 / 46 |  |
+| `weapons.frying_pan.broken` | 18 / 40 / 13 |  |
+| `weapons.hockey_stick.new` | 36 / 72 / 24 | flat swing; two hands; length 1.04 m; ground: roll 90, lift 0.016 |
+| `weapons.hockey_stick.worn` | 73 / 147 / 63 |  |
+| `weapons.hockey_stick.broken` | 30 / 72 / 23 |  |
+| `weapons.wrench.new` | 60 / 120 / 40 | overhead chop; length 0.48 m; ground: roll 0, lift 0.015 |
+| `weapons.wrench.worn` | 63 / 127 / 47 |  |
+| `weapons.wrench.broken` | 18 / 40 / 13 |  |
+| `weapons.garden_rake.new` | 72 / 176 / 56 | thrust; two hands; tines face down (-Y); length 0.95 m; ground: roll 0, lift 0.02 |
+| `weapons.garden_rake.worn` | 84 / 200 / 68 |  |
+| `weapons.garden_rake.broken` | 30 / 72 / 23 |  |
+| `weapons.broom_spear.new` | 48 / 96 / 40 | thrust; two hands; length 1.08 m; ground: roll 0, lift 0.013 |
+| `weapons.broom_spear.worn` | 60 / 120 / 52 |  |
+| `weapons.broom_spear.broken` | 30 / 72 / 23 |  |
+| `weapons.umbrella.new` | 106 / 216 / 57 | flat swing; closed; length 0.83 m; ground: roll 0, lift 0.045 |
+| `weapons.umbrella.worn` | 112 / 240 / 62 |  |
+| `weapons.umbrella.broken` | 54 / 112 / 29 |  |
+| `weapons.crowbar.new` | 36 / 72 / 16 | overhead chop; length 0.73 m; ground: roll 0, lift 0.012 |
+| `weapons.crowbar.worn` | 38 / 76 / 20 |  |
+| `weapons.crowbar.broken` | 18 / 40 / 9 |  |
+| `weapons.baseball_bat.new` | 76 / 144 / 42 | flat swing; length 0.84 m; ground: roll 0, lift 0.034 |
+| `weapons.baseball_bat.worn` | 100 / 192 / 66 |  |
+| `weapons.baseball_bat.broken` | 38 / 84 / 27 |  |
+| `weapons.axe.new` | 36 / 72 / 24 | overhead chop; blade up (+Y); length 0.75 m; ground: roll 0, lift 0.015 |
+| `weapons.axe.worn` | 63 / 127 / 55 |  |
+| `weapons.axe.broken` | 30 / 72 / 23 |  |
+| `weapons.slingshot.new` | 82 / 164 / 52 | held upright, forks up (+Y), shot goes along +Z; drawn is the pulled pose; length 0.2 m; ground: roll 90, lift 0.012 |
+| `weapons.slingshot.drawn` | 82 / 164 / 52 |  |
+| `weapons.pistol.new` | 72 / 144 / 48 | barrel along +Z; flash sits at the muzzle (0, 0.03, 0.155), show it one or two frames, scale 0.8 to 1.3 at random; shell is ejected to +X; length 0.2 m; ground: roll 90, lift 0.015 |
+| `weapons.pistol.flash` | 15 / 37 / 15 |  |
+| `weapons.pistol.shell` | 20 / 36 / 12 |  |
+| `fp.hold.right` | 58 / 116 / 40 |  |
+| `fp.hold.left` | 58 / 116 / 40 |  |
+| `fp.empty.right` | 54 / 116 / 38 |  |
+| `fp.empty.left` | 54 / 116 / 38 |  |
+| `fp.reach.right` | 54 / 116 / 38 |  |
+| `fp.reach.left` | 58 / 116 / 40 |  |
+
+**Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).

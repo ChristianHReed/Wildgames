@@ -357,6 +357,52 @@ def worn(fem):
 def recolour(d, m):
     return {b: [dict(q, c=m.get(q['c'], q['c'])) for q in ps] for b, ps in d.items()}
 
+# ================= extra clips the game asked for (0.45.5): rotations about each bone's pivot, on top of the rest pose =================
+def both(d, b, v, mirror_z=True):
+    """the same rotation on both sides; sideways (z) turns mirror so both arms go out together"""
+    d[b + '_l'] = v; d[b + '_r'] = [v[0], -v[1], -v[2]] if mirror_z else v
+    return d
+def F(**k):
+    d = {}
+    for b, v in k.items():
+        if b.endswith('_2'): both(d, b[:-2], v)
+        else: d[b] = v
+    return d
+CLIPS = {
+  'jump': [F(root=[0, -0.12, 0], spine_01=[12, 0, 0], thigh_2=[-38, 0, 0], calf_2=[62, 0, 0], foot_2=[-24, 0, 0], upperarm_2=[28, 0, 6], lowerarm_2=[-24, 0, 0]),
+           F(root=[0, 0.03, 0], spine_01=[4, 0, 0], thigh_2=[-6, 0, 0], calf_2=[6, 0, 0], foot_2=[22, 0, 0], upperarm_2=[-55, 0, 8], lowerarm_2=[-30, 0, 0]),
+           F(root=[0, 0.0, 0], thigh_2=[-16, 0, 0], calf_2=[24, 0, 0], foot_2=[10, 0, 0], upperarm_2=[-70, 0, 14], lowerarm_2=[-20, 0, 0])],
+  'airborne': [F(thigh_l=[-30, 0, 0], thigh_r=[-14, 0, 0], calf_l=[48, 0, 0], calf_r=[30, 0, 0], upperarm_2=[-38, 0, 22], lowerarm_2=[-22, 0, 0], spine_01=[4, 0, 0])],
+  'land': [F(root=[0, -0.16, 0], spine_01=[16, 0, 0], spine_03=[6, 0, 0], thigh_2=[-48, 0, 0], calf_2=[78, 0, 0], foot_2=[-30, 0, 0], upperarm_2=[-30, 0, 26], lowerarm_2=[-26, 0, 0]),
+           F(root=[0, -0.04, 0], spine_01=[5, 0, 0], thigh_2=[-12, 0, 0], calf_2=[20, 0, 0], foot_2=[-8, 0, 0], upperarm_2=[-8, 0, 8], lowerarm_2=[-10, 0, 0])],
+  'hurt': [F(spine_01=[-8, 0, 0], spine_03=[-12, 6, 0], Head=[-16, 10, 0], upperarm_2=[-34, 0, -6], lowerarm_2=[-70, 0, 0], thigh_l=[-8, 0, 0], calf_l=[14, 0, 0]),
+           F(spine_01=[-3, 0, 0], spine_03=[-4, 2, 0], Head=[-5, 4, 0], upperarm_2=[-10, 0, 0], lowerarm_2=[-25, 0, 0])],
+  'drink': [F(upperarm_r=[-42, 0, 6], lowerarm_r=[-112, 12, 0], Head=[4, 0, 0]),
+            F(upperarm_r=[-56, 0, 8], lowerarm_r=[-118, 12, 0], Head=[-26, 0, 0], spine_03=[-6, 0, 0]),
+            F(upperarm_r=[-22, 0, 4], lowerarm_r=[-52, 0, 0])],
+  'bandage': [F(upperarm_l=[-36, 0, -10], lowerarm_l=[-52, -20, 0], upperarm_r=[-40, 0, 14], lowerarm_r=[-84, 30, 0], Head=[22, 6, 0], spine_03=[8, 0, 0]),
+              F(upperarm_l=[-36, 0, -10], lowerarm_l=[-52, -20, 0], upperarm_r=[-46, 0, 20], lowerarm_r=[-96, 50, 0], Head=[24, 4, 0], spine_03=[8, 0, 0]),
+              F(upperarm_l=[-36, 0, -10], lowerarm_l=[-52, -20, 0], upperarm_r=[-34, 0, 8], lowerarm_r=[-78, 10, 0], Head=[22, 8, 0], spine_03=[8, 0, 0])],
+  'pickup': [F(root=[0, -0.2, 0], spine_01=[22, 0, 0], spine_02=[14, 0, 0], spine_03=[8, 0, 0], Head=[10, 0, 0], thigh_2=[-46, 0, 0], calf_2=[66, 0, 0], foot_2=[-20, 0, 0], upperarm_r=[-34, 0, 0], lowerarm_r=[-12, 0, 0]),
+             F(root=[0, -0.34, 0], spine_01=[30, 0, 0], spine_02=[18, 0, 0], spine_03=[12, 0, 0], Head=[14, 0, 0], thigh_2=[-70, 0, 0], calf_2=[100, 0, 0], foot_2=[-30, 0, 0], upperarm_r=[-44, 0, 0], lowerarm_r=[-6, 0, 0]),
+             F(root=[0, -0.08, 0], spine_01=[8, 0, 0], thigh_2=[-16, 0, 0], calf_2=[24, 0, 0], foot_2=[-8, 0, 0], upperarm_r=[-40, 0, 0], lowerarm_r=[-80, 0, 0])],
+  'attack_chop': [F(upperarm_r=[-165, 0, -10], lowerarm_r=[-46, 0, 0], upperarm_l=[-60, 0, 0], lowerarm_l=[-50, 0, 0], spine_03=[-12, 0, 0], spine_01=[-4, 0, 0]),
+                  F(upperarm_r=[-48, 0, 0], lowerarm_r=[-12, 0, 0], upperarm_l=[-30, 0, 0], lowerarm_l=[-30, 0, 0], spine_01=[18, 0, 0], spine_03=[16, 0, 0], thigh_l=[-20, 0, 0], calf_l=[26, 0, 0]),
+                  F(upperarm_r=[-6, 0, 0], lowerarm_r=[-24, 0, 0], spine_01=[10, 0, 0], spine_03=[6, 0, 0])],
+  'attack_thrust': [F(upperarm_r=[18, 0, -6], lowerarm_r=[-108, 0, 0], upperarm_l=[-34, 0, 0], lowerarm_l=[-64, 0, 0], spine_03=[-6, 22, 0], thigh_r=[8, 0, 0]),
+                    F(upperarm_r=[-80, 0, 0], lowerarm_r=[-6, 0, 0], upperarm_l=[-72, 0, 0], lowerarm_l=[-22, 0, 0], spine_01=[14, 0, 0], spine_03=[6, -14, 0], thigh_l=[-26, 0, 0], calf_l=[32, 0, 0]),
+                    F(upperarm_r=[-30, 0, 0], lowerarm_r=[-60, 0, 0], upperarm_l=[-30, 0, 0], lowerarm_l=[-50, 0, 0], spine_01=[5, 0, 0])],
+  'attack_swing': [F(spine_03=[0, 58, 0], spine_01=[0, 12, 0], upperarm_r=[-70, 0, -48], lowerarm_r=[-46, 0, 0], upperarm_l=[-50, 0, 0], lowerarm_l=[-70, 0, 0], Head=[0, -40, 0]),
+                   F(spine_03=[0, -30, 0], spine_01=[4, -8, 0], upperarm_r=[-84, 0, 6], lowerarm_r=[-10, 0, 0], upperarm_l=[-30, 0, 0], lowerarm_l=[-40, 0, 0], Head=[0, 18, 0], thigh_l=[-14, 0, 0], calf_l=[18, 0, 0]),
+                   F(spine_03=[0, -62, 0], spine_01=[2, -14, 0], upperarm_r=[-60, 0, 40], lowerarm_r=[-30, 0, 0], Head=[0, 34, 0])],
+}
+CLIP_RULE = ('Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone\'s pivot on top of the rest pose, in the '
+             'order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack\'s at rest: for a limb hanging down, '
+             'negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, '
+             'negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. '
+             'Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, '
+             'bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).')
+
 def body(fem): return join(head(fem), hands())
 pack = {
   'name': 'survivor', 'version': 7, 'style': 'silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small featureless heads (18 October 2026)',
@@ -368,6 +414,7 @@ pack = {
   'toneRule': 'Build with SHAPED.buildIndexed(pieces, colourOf, out, {tone: pack.tone, oy: bone pivot height}). jitter is 0 so SHAPED.weld can share corners.',
   'smear': {'bones': ['upperarm', 'lowerarm', 'thigh', 'calf'], 'max': 0.14},
   'smearRule': 'Smear frames (Jumpship): while a limb swings fast, stretch that bone up to max (14%) along its length, scaled by its swing speed.',
+  'clips': CLIPS, 'clipRule': CLIP_RULE,
   'hatRule': 'When a hat is worn, leave out pieces marked hat:"hide" (the hat covers them).',
   'builds': {'slim': [0.9, 0.93], 'average': [1, 1], 'broad': [1.14, 1.08]},
   'buildRule': 'For every bone except Head and neck_01, stretch each piece with SHAPED.scaleXZ(piece, first, second).',

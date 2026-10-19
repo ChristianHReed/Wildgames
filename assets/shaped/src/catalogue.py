@@ -5,7 +5,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(HERE, '..
 def load(n):
     s = open(os.path.join(HERE, '..', n + '.js')).read(); k = ').%s = ' % n
     return json.loads(s[s.index(k) + len(k):].rstrip().rstrip(';'))
-SV, AL, BU, PR = load('survivor'), load('aliens'), load('buildings'), load('props')
+SV, AL, BU, PR, HE = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -86,10 +86,24 @@ L.append(f'''
 
 {PR['about'].strip()}
 
-Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. {PR['gardenRule']} `moving` lists other parts that open (doors, lids) and their hinges.
+Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonnet` and one `wheel`; `vehicleRig[name]` gives the wheel positions, the bonnet hinge and their axes. {PR['gardenRule']} {PR['containerRule']} {PR['buildRule']} {PR['wreckRule']} {PR['moving']['doors']['rule']} `moving` lists other parts that open (doors, lids) and their hinges.
 
 | Category | Model | Tris, verts, welded |
 | --- | --- | --- |''')
 for k in st: L.append(f"| {k.split('.')[0]} | `{'.'.join(k.split('.')[1:])}` | {row(st, k)} |")
+L.append(f'''
+## held (`assets/shaped/held.js`, version {HE['version']})
+
+{HE['about'].strip()}
+
+**Grip:** {HE['grip']['note']} Position {HE['grip']['pos']} on `{HE['grip']['bone']}`. Two-handed: {', '.join('`' + k + '`' for k in HE['twoHanded'])} ({HE['gripTwoHanded']['note']}) **States:** {HE['stateRule']} **First person:** the weapon goes at `fpWeapon` ({HE['fpWeapon']['pos']}, rotation {HE['fpWeapon']['rot']} degrees) with the arms in `models.fp.hold`.
+
+| Model | Tris, verts, welded | Notes |
+| --- | --- | --- |''')
+for k in HE['stats']:
+    nm = k.split('.')[1] if k.startswith('weapons.') else ''
+    L.append(f"| `{k}` | {row(HE['stats'], k)} | {HE['info'][nm]['note'] + '; length ' + str(HE['info'][nm]['length']) + ' m; ground: roll ' + str(HE['info'][nm]['ground']['roll']) + ', lift ' + str(HE['info'][nm]['ground']['lift']) if nm and k.endswith('.new') else ''} |")
+L.append('''
+**Survivor clips** (in `survivor.js`, `clips`): ''' + ', '.join('`' + k + '` (' + str(len(v)) + ')' for k, v in SV['clips'].items()) + '. ' + SV['clipRule'])
 open(os.path.join(ROOT, 'docs', 'SHAPED.md'), 'w').write('\n'.join(L) + '\n')
 print('wrote docs/SHAPED.md')

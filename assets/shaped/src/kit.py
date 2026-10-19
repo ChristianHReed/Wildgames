@@ -58,11 +58,17 @@ def hull(pts, c, **k):
     f = [list(range(n)), list(range(n, 2*n))] + [[i, (i + 1) % n, n + (i + 1) % n, n + i] for i in range(n)]
     return solid(pts, f, c, **k)
 def tip(p0, p1, a0, b0, c, n=4, rot=45, **k):
-    """a tapering spike from p0 (half sizes a0, b0) to a point at p1"""
+    """a tapering spike from p0 (half sizes a0, b0) to a point at p1; its base lies across the main direction"""
+    if 'ax' not in k:
+        d = [abs(p1[i] - p0[i]) for i in range(3)]; k['ax'] = 'xyz'[d.index(max(d))]
+    if k['ax'] == 'y': k.pop('ax')
     return loft([[*p0, a0, b0], [*p1, 0, 0]], c, n=n, rot=rot, caps=[True, False], **k)
 def seg(p0, p1, a0, b0, a1, b1, c, caps=(True, True), **k):
-    """a rectangular frustum between two points (mostly upright limbs): half sizes at each end"""
-    return frustum([[*p0, a0, b0], [*p1, a1, b1]], c, caps=list(caps), **k)
+    """a rectangular frustum between two points: half sizes at each end. Its rings lie across the main direction of travel
+    (y for upright limbs, z for limbs reaching forward, x for sideways), so the tube never flattens."""
+    d = [abs(p1[i] - p0[i]) for i in range(3)]
+    ax = k.pop('ax', None) or ('xyz'[d.index(max(d))])
+    return frustum([[*p0, a0, b0], [*p1, a1, b1]], c, caps=list(caps), ax=ax, **k)
 def join(*parts):
     out = {}
     for d in parts:
