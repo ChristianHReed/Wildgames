@@ -89,6 +89,7 @@ One world covers a whole city, built from OpenStreetMap data and loaded in piece
 - **Map maker:** a tool on the start page. Type a city name once while online and it builds a map pack; after that the map is offline and can be shared drive to drive.
 - **Loading in pieces:** only the area near players is active. Building interiors are generated from each building's real outline on approach and discarded on leaving.
 - **Real places keep their meaning:** hospitals and pharmacies hold medicine, police and fire stations hold ammunition, grocery stores and restaurants hold food, warehouses and hardware stores hold materials.
+- **Streets and addresses:** buildings keep their OpenStreetMap house number and street, shown on a plate by the door and on the top line of the screen when you are inside. Roads take the street name their addressed neighbours give them, signs stand along named roads, and the big map writes the names along the roads. Cars are common: parked at buildings, and abandoned in the lanes of highways (mostly wrecks and burnt-out shells) so a drive down a motorway is slow and dangerous.
 - **Loot refill:** a looted building slowly regains a little loot over in-game days, less each time.
 
 ## Survival

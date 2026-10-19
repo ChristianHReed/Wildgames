@@ -67,7 +67,7 @@ for part in ('downtown', 'city', 'suburban', 'rural'):
         rings = [g['coordinates'][0]] if g['type'] == 'Polygon' else [pg[0] for pg in g['coordinates']]
         t = {'building': BTAG.get(p['type'], 'yes')}
         if p.get('floors'): t['building:levels'] = str(max(1, min(12, int(round(float(p['floors']))))))
-        for k in ('name', 'amenity', 'shop'):
+        for k in ('name', 'amenity', 'shop', 'addr:housenumber', 'addr:street'):
             if p.get(k): t[k] = str(p[k])[:60]
         if p['type'] == 'ruin': t['ruins'] = 'yes'
         for r in rings: add_poly(t, r); nb += 1; BLD.append((sum(c[0] for c in r)/len(r), sum(c[1] for c in r)/len(r), float(p.get('footprint_m2') or 100)))

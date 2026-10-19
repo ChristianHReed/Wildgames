@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.0.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.49.1.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -508,7 +508,7 @@ function fromGeoJson(j){
   });
   return {ways:ways, pois:pois};
 }
-var KEEP = ['office','tourism','building','building:levels','name','shop','amenity','highway','waterway','railway','natural','landuse','leisure','healthcare','craft','military','area','place'];
+var KEEP = ['office','tourism','building','building:levels','name','shop','amenity','highway','waterway','railway','natural','landuse','leisure','healthcare','craft','military','area','place','addr:housenumber','addr:street','ref'];
 function keepTags(t){ var o = {}, n = 0; if (t) for (var i = 0; i < KEEP.length; i++) if (t[KEEP[i]] !== undefined){ o[KEEP[i]] = t[KEEP[i]]; n++; } return n ? o : null; }
 /* compact map file: only the tags the game uses, coordinates rounded to about 10 cm */
 function toCompact(raw, name){
@@ -810,12 +810,12 @@ function buildWorld(raw, name){
       ar = Math.abs(ar)/2; if (ar < 6) return;
       var id = w.buildings.length, kind = kindOf(t), kg = !kind; if (kg){ var hk = hash(id, 17, 4); kind = ar < 280 ? 'house' : hk < 0.45 ? 'office' : hk < 0.7 ? 'shop' : 'apartments'; }
       var cat = KIND[kind].cat;
-      w.buildings.push(bbox({pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels'])||0, civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
+      w.buildings.push(bbox({pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', hn:t['addr:housenumber'] || '', st:t['addr:street'] || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels'])||0, civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
         col:CAT[cat].cols[Math.floor(hash(id, 3, 5)*CAT[cat].cols.length)], rolls:Math.max(1, Math.min(6, Math.round(1 + ar/160))), time:Math.min(4, 1.2 + ar/400), id:id}));
       return;
     }
     if (closed && (t.place === 'square' || (t.highway === 'pedestrian' && pts.length >= 8) || (t.name && /\b(square|plaza)\b/i.test(t.name) && !t.building))){ var sq = bbox({pts:pts}); (w.squares = w.squares || []).push({x:(sq.minx + sq.maxx)/2, y:(sq.miny + sq.maxy)/2, r:Math.hypot(sq.maxx - sq.minx, sq.maxy - sq.miny)/2, name:t.name || ''}); }
-    if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road'})); return; }
+    if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || ''})); return; }
     if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water'})); return; }
     if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail'})); return; }
     if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k})); } }
@@ -825,6 +825,29 @@ function buildWorld(raw, name){
   w.water = w.areas.filter(function(r){ return r.kind === 'water'; });
   w.waterLines = w.roads.filter(function(r){ return r.kind === 'water'; });
   w.roads.sort(function(p, q){ return (p.kind === 'water' ? -1 : p.w) - (q.kind === 'water' ? -1 : q.w); });
+  /* street names (0.49.1): the map pack names no roads, so each road takes the street its addressed neighbours say they are on */
+  (function(){
+    var rs = w.roads.filter(function(r){ return r.kind === 'road' && r.w >= 6; }), votes = new Map();
+    w.buildings.forEach(function(bd){
+      if (!bd.st) return; var px = bd.cx, py = bd.cy, best = null, bd2 = 1e9;
+      rs.forEach(function(r){
+        if (px < r.minx - 45 || px > r.maxx + 45 || py < r.miny - 45 || py > r.maxy + 45) return;
+        var p = r.pts; for (var q = 0; q + 3 < p.length; q += 2){ var ax = p[q], ay = p[q+1], bx = p[q+2] - ax, by = p[q+3] - ay, l2 = bx*bx + by*by || 1, u = Math.max(0, Math.min(1, ((px - ax)*bx + (py - ay)*by)/l2)), d = Math.hypot(px - ax - bx*u, py - ay - by*u); if (d < bd2){ bd2 = d; best = r; } }
+      });
+      if (best && bd2 < 45){ var m = votes.get(best); if (!m) votes.set(best, m = {}); m[bd.st] = (m[bd.st] || 0) + 1; }
+    });
+    votes.forEach(function(m, r){ var bn = '', bc = 0; for (var k in m) if (m[k] > bc){ bc = m[k]; bn = k; } if (bn && !r.name) r.name = bn; });
+    /* street signs: a post at the roadside every 150 m or so along each named road, and one at its start */
+    w.signs = []; w.named = rs.filter(function(r){ return r.name; });
+    w.named.forEach(function(r, ri){
+      var p = r.pts, acc = 0, nxt = 6 + hash(ri, 31, 4)*40;
+      for (var q = 0; q + 3 < p.length && w.signs.length < 700; q += 2){
+        var ax = p[q], ay = p[q+1], dx = p[q+2] - ax, dy = p[q+3] - ay, L = Math.hypot(dx, dy); if (L < 0.5) continue;
+        while (nxt < acc + L){ var u = nxt - acc, nx = -dy/L, ny = dx/L, off = r.w/2 + 1.6, sd = (w.signs.length % 2 ? -1 : 1); w.signs.push({x:ax + dx/L*u + nx*off*sd, y:ay + dy/L*u + ny*off*sd, yaw:Math.atan2(dy, dx), name:r.name}); nxt += 140 + hash(ri, w.signs.length, 32)*60; }
+        acc += L;
+      }
+    });
+  })();
   w.buildings.forEach(function(bd){
     for (var cy = Math.floor(bd.miny/G); cy <= Math.floor(bd.maxy/G); cy++) for (var cx = Math.floor(bd.minx/G); cx <= Math.floor(bd.maxx/G); cx++){
       var key = gk(cx, cy), cell = w.grid.get(key); if (!cell) w.grid.set(key, cell = []); cell.push(bd);
@@ -2551,7 +2574,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.49.0';
+var VERSION = '0.49.1';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -3972,7 +3995,8 @@ function updateHud(){
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   el('lowhp').style.opacity = P.hp < 25 ? Math.min(1, (25 - P.hp)/15) : 0; el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open|Damp|Cold|Hot|Hungry|Thirsty)/.test(t) ? ' class="mild"' : '') + '>' + condIcon(t) + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
-  el('wxStamp').textContent = (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase() + (gridOn() ? '' : waterOn() ? ' \u00b7 power out' : ' \u00b7 no power or water');
+  var cst = curStreet(), pba = addrOf(pb);
+  el('wxStamp').textContent = (pba ? pba + ' \u00b7 ' : cst ? cst + ' \u00b7 ' : '') + (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase() + (gridOn() ? '' : waterOn() ? ' \u00b7 power out' : ' \u00b7 no power or water');
   el('dayLine').textContent = 'Day ' + (Math.floor(hrs/24) + 1) + '  ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min;
   el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? zoneAt(P.x, P.y, 0).name + ': aliens cannot come in here' : pb && P.roof ? 'On the roof of ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) : pb && P.climbL ? 'On a ladder' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
@@ -4041,6 +4065,10 @@ function drawBig(){
   c.font = '700 13px sans-serif'; c.textAlign = 'center';
   otherPlayers().forEach(function(q){ if (q.cop) return; var x = q.x*big.sc + o[0], y = q.y*big.sc + o[1]; c.fillStyle = '#5f8a9a'; c.beginPath(); c.arc(x, y, 7, 0, 6.283); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 3; c.stroke(); c.fillStyle = '#201e1d'; c.fillText(q.name || 'Player', x, y - 12); });
   if (big.sc >= 0.9){ c.font = '10px sans-serif'; c.fillStyle = 'rgba(32,30,29,.8)'; var vx0 = (0 - o[0])/big.sc, vy0 = (0 - o[1])/big.sc, vx1 = (W - o[0])/big.sc, vy1 = (H - o[1])/big.sc; world.buildings.forEach(function(b){ if (b.gone || b.cx < vx0 || b.cx > vx1 || b.cy < vy0 || b.cy > vy1 || b.kind === 'house' || b.kind === 'apartments' || b.kind === 'garage' || (b.kg && big.sc < 2)) return; c.fillText(KIND[b.kind].label, b.cx*big.sc + o[0], b.cy*big.sc + o[1] + 3); }); c.font = '700 13px sans-serif'; }
+  if (big.sc >= 0.35 && world.named){ c.font = 'italic 11px sans-serif'; c.fillStyle = 'rgba(52,70,92,.9)'; var lx0 = (0 - o[0])/big.sc, ly0 = (0 - o[1])/big.sc, lx1 = (W - o[0])/big.sc, ly1 = (H - o[1])/big.sc;
+    world.named.forEach(function(r){ if (r.maxx < lx0 || r.minx > lx1 || r.maxy < ly0 || r.miny > ly1) return; var p = r.pts, q = Math.floor((p.length/2 - 1)/2)*2; if (q + 3 >= p.length) q = p.length - 4; if (q < 0) return; var mx = (p[q] + p[q+2])/2*big.sc + o[0], my = (p[q+1] + p[q+3])/2*big.sc + o[1], an = Math.atan2(p[q+3] - p[q+1], p[q+2] - p[q]); if (an > 1.5708) an -= 3.1416; if (an < -1.5708) an += 3.1416;
+      if (Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1])*big.sc < r.name.length*5) return; c.save(); c.translate(mx, my); c.rotate(an); c.fillText(r.name, 0, -4); c.restore(); });
+    c.font = '700 13px sans-serif'; }
   var sfm = safeB(); if (sfm){ c.fillStyle = '#201e1d'; c.fillText('Safe house', sfm.cx*big.sc + o[0], sfm.cy*big.sc + o[1] - 8); }
   var tkm = truckOf(); if (tkm){ var tx2 = tkm.x*big.sc + o[0], ty2 = tkm.y*big.sc + o[1]; c.fillStyle = '#963e30'; c.fillRect(tx2 - 3, ty2 - 3, 6, 6); c.fillStyle = '#201e1d'; c.fillText('Truck', tx2, ty2 + 14); }
   var bd = world.edits.beds[charSlug()]; if (bd && world.buildings[bd.b]){ var bb = world.buildings[bd.b]; c.fillStyle = '#201e1d'; c.fillText('Base', bb.cx*big.sc + o[0], bb.cy*big.sc + o[1] - 8); }
@@ -4611,8 +4639,28 @@ function drawAlien(m, z){
 var NESTM = {};
 function nestModel(st){ st = st || 'nest'; if (NESTM[st] === undefined){ NESTM[st] = null; try { if (SPON && SHAPED.aliens) NESTM[st] = spModel(SHAPED.aliens.parts[st].root, spColour(SHAPED.aliens.palette), {s:[0.8, 0.8, 0.8]}); } catch (er){} } return NESTM[st]; }
 /* nests, weather, and other effects drawn each frame */
+/* ---- street names and house numbers (0.49.1), from the map's addr:street and addr:housenumber ---- */
+var stCache = {t:-9, name:''};
+function curStreet(){
+  if (time - stCache.t < 0.5) return stCache.name; stCache.t = time; var best = '', bd = 1e9;
+  (world.named || []).forEach(function(r){
+    if (P.x < r.minx - 12 || P.x > r.maxx + 12 || P.y < r.miny - 12 || P.y > r.maxy + 12) return; var p = r.pts;
+    for (var q = 0; q + 3 < p.length; q += 2){ var ax = p[q], ay = p[q+1], bx = p[q+2] - ax, by = p[q+3] - ay, l2 = bx*bx + by*by || 1, u = Math.max(0, Math.min(1, ((P.x - ax)*bx + (P.y - ay)*by)/l2)), d = Math.hypot(P.x - ax - bx*u, P.y - ay - by*u) - r.w/2; if (d < bd){ bd = d; best = r.name; } }
+  });
+  return stCache.name = bd < 9 ? best : '';
+}
+function addrOf(b){ return b && b.hn ? b.hn + (b.st ? ' ' + b.st : '') : ''; }
+function drawSigns(m){
+  var ss = world.signs || [], i;
+  for (i = 0; i < ss.length; i++){ var g = ss[i]; if (Math.abs(g.x - P.x) > 70 || Math.abs(g.y - P.y) > 70) continue; m.yo = hAt(g.x, g.y); m.ybox(g.x, g.y, g.yaw, 0, 0, 2.5, 0.04, 0.04, 0.04, C('#6d7378')); m.ybox(g.x, g.y, g.yaw, 0, 2.2, 0.32, 0.5, 0.03, 0.5, C('#1f6b47')); m.ybox(g.x, g.y, g.yaw, 0, 2.28, 0.06, 0.42, 0.036, 0.42, C('#e9ecea')); }
+  var gr = world.grid, cx = Math.floor(P.x/G), cy = Math.floor(P.y/G), seen = {};
+  for (var yy = cy - 1; yy <= cy + 1; yy++) for (var xx = cx - 1; xx <= cx + 1; xx++){ var cell = gr.get(gk(xx, yy)); if (!cell) continue;
+    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (!b.hn || !b.door || seen[b.id] || b.gone) continue; seen[b.id] = 1; var d = b.door; if (Math.abs(d.x - P.x) > 45 || Math.abs(d.y - P.y) > 45) continue; m.yo = b.base || 0; var yw = Math.atan2(d.ny, d.nx);
+      m.ybox(d.x - d.nx*0.1 - d.ny*1.1, d.y - d.ny*0.1 + d.nx*1.1, yw, 0, 1.9, 0.2, 0.03, 0.3, 0.03, C('#e9e4d6')); m.ybox(d.x - d.nx*0.14 - d.ny*1.1, d.y - d.ny*0.14 + d.nx*1.1, yw, 0, 1.95, 0.1, 0.02, 0.2, 0.02, C('#27323c')); } }
+}
 function drawWorldFx(m, e, now){
   var i, k, sb = safeB();
+  drawSigns(m);
   if (sb && Math.abs(sb.cx - P.x) < 220 && Math.abs(sb.cy - P.y) < 220){ m.yo = sb.base || 0; m.al = 128; m.ybox(sb.cx, sb.cy, now*0.8, 0, 0, sb.h + 2 + Math.sin(now*1.5)*0.25, 0.5, 0.5, 0.5, C('#9be07a')); m.al = 255; }
   for (k in world.nests){
     var b = world.buildings[k]; if (!b || Math.abs(b.cx - P.x) > 170 || Math.abs(b.cy - P.y) > 170) continue; m.yo = b.base || 0;
@@ -5545,8 +5593,27 @@ function makeVehicles(saved){
   w.buildings.forEach(function(b){
     if (!b.door || b.gone) return; var h1 = hash(b.id, 11, 2), d = b.door, tx = -d.ny, ty = d.nx, x, y;
     if (h1 < 0.06 && nb < 300){ x = d.x - d.nx*1.3 + tx*2.2; y = d.y - d.ny*1.3 + ty*2.2; if (!circ(x, y, 0.7)){ list.push({veh:true, id:'b' + b.id, t:0, name:'the bicycle', x:x, y:y, yaw:Math.atan2(ty, tx), fuel:0}); nb++; } }
-    else if (h1 > 0.975 && nc < 120 && b.id !== w.safe){ x = d.x - d.nx*5 - tx*2.5; y = d.y - d.ny*5 - ty*2.5; if (!circ(x, y, 1.6)){ var dh = hash(b.id, 14, 3), dd0 = dh < 0.14 ? 'wreck' : dh < 0.22 ? 'burnt' : 0; list.push({veh:true, id:'c' + b.id, t:1, name:dd0 ? 'the ' + (dd0 === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the car', dead:dd0, x:x, y:y, yaw:Math.atan2(ty, tx) + (dd0 ? (hash(b.id, 15, 3) - 0.5)*0.9 : 0), fuel:dd0 ? 0 : Math.round(30 + hash(b.id, 12, 2)*70)}); nc++; } }
-    else if (h1 > 0.96 && h1 <= 0.975 && nc < 160 && b.id !== w.safe){ x = d.x - d.nx*7 + tx*3.5; y = d.y - d.ny*7 + ty*3.5; if (!circ(x, y, 1.6)){ var d2 = hash(b.id, 16, 3) < 0.6 ? 'wreck' : 'burnt'; list.push({veh:true, id:'c' + b.id, t:1, name:'the ' + (d2 === 'burnt' ? 'burnt-out car' : 'wrecked car'), dead:d2, x:x, y:y, yaw:hash(b.id, 17, 3)*6.28, fuel:0}); nc++; } }
+    else if (h1 > 0.9 && nc < 380 && b.id !== w.safe){ x = d.x - d.nx*5 - tx*2.5; y = d.y - d.ny*5 - ty*2.5; if (!circ(x, y, 1.6)){ var dh = hash(b.id, 14, 3), dd0 = dh < 0.14 ? 'wreck' : dh < 0.22 ? 'burnt' : 0; list.push({veh:true, id:'c' + b.id, t:1, name:dd0 ? 'the ' + (dd0 === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the car', dead:dd0, x:x, y:y, yaw:Math.atan2(ty, tx) + (dd0 ? (hash(b.id, 15, 3) - 0.5)*0.9 : 0), fuel:dd0 ? 0 : Math.round(30 + hash(b.id, 12, 2)*70)}); nc++; } }
+    else if (h1 > 0.86 && h1 <= 0.9 && nc < 460 && b.id !== w.safe){ x = d.x - d.nx*7 + tx*3.5; y = d.y - d.ny*7 + ty*3.5; if (!circ(x, y, 1.6)){ var d2 = hash(b.id, 16, 3) < 0.6 ? 'wreck' : 'burnt'; list.push({veh:true, id:'c' + b.id, t:1, name:'the ' + (d2 === 'burnt' ? 'burnt-out car' : 'wrecked car'), dead:d2, x:x, y:y, yaw:hash(b.id, 17, 3)*6.28, fuel:0}); nc++; } }
+  });
+  /* abandoned traffic (0.49.1): cars left on the roads, thickest on the highways, mostly wrecked or burnt out */
+  var RD = {motorway:[34, 0.8], trunk:[40, 0.75], primary:[60, 0.65], secondary:[110, 0.45], tertiary:[220, 0.3]}, rc = 0, RMAX = 600;
+  w.roads.map(function(r, ri){ return [r, ri]; }).sort(function(a, b){ return b[0].w - a[0].w; }).forEach(function(e){
+    var r = e[0], ri = e[1];
+    var cfg = r.kind === 'road' && RD[r.hw]; if (!cfg || rc >= RMAX) return; var p = r.pts, acc = 0, nxt = hash(ri, 21, 4)*cfg[0], k = 0;
+    for (var q = 0; q + 3 < p.length; q += 2){
+      var ax = p[q], ay = p[q+1], dx = p[q+2] - ax, dy = p[q+3] - ay, L = Math.hypot(dx, dy); if (L < 0.5) continue; var ux = dx/L, uy = dy/L;
+      while (nxt < acc + L && rc < RMAX){
+        var u = nxt - acc, hh = hash(ri, k, 22); nxt += cfg[0]*(0.6 + hash(ri, k, 23)*0.8); k++;
+        if (hh > cfg[1]) continue;
+        var side = hash(ri, k, 24) < 0.5 ? -1 : 1, off = side*r.w*(0.12 + hash(ri, k, 25)*0.22), x = ax + ux*u - uy*off, y = ay + uy*u + ux*off;
+        if (inWater(x, y, 2) || buildingAt(x, y) || zoneAt(x, y, 10) || circ(x, y, 1.6)) continue;
+        var dd = hash(ri, k, 26), dead = dd < 0.55 ? 'wreck' : dd < 0.8 ? 'burnt' : 0, tilt = dead ? (hash(ri, k, 27) - 0.5)*1.1 : (hash(ri, k, 28) - 0.5)*0.2, yaw = Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + tilt;
+        var bk = ['sedan', 'sedan', 'suv', 'hatch', 'hatch', 'van'][Math.floor(hash(ri, k, 29)*6)];
+        list.push({veh:true, id:'x' + ri + '_' + k, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, x:x, y:y, yaw:yaw, fuel:dead ? 0 : Math.round(hash(ri, k, 30)*35)}); rc++;
+      }
+      acc += L;
+    }
   });
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck'; list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : undefined, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
