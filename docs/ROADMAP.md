@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 19 October 2026, at version 0.48.0. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.48.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -59,6 +59,7 @@ Features were compared with Project Zomboid, DayZ, 7 Days to Die, The Long Dark,
 | 0.46.1 | A tool bench you can build anywhere (Build menu: 6 wood, 3 scrap, uses the design chat's tool bench model). Stand at it with a made weapon and press E to repair for 1 scrap. It can be taken apart again (4 wood, 2 scrap back). Saved and shared like walls. |
 | 0.47.0 | Horde nights: every third night (night 3, 6, 9...) once it is dark, wave after wave of swarmers come for whoever is out, 18 to 70 per night, more with more players, heading for where you stand; a warning appears when it begins. New alien, the spitter (from night 4 alone, in hordes from day 6): keeps about 7 m away and lobs a glob that you can dodge by jumping or ducking behind walls; the glob splashes where it lands. Uses the design chat's spitter model and spit_glob. |
 | 0.48.0 | The map now only shows where you have been (30 m squares, saved with your survivor; the safe house starts known), and you can plant flags on it: on the big map, move the cross to a place and press Mark centre; Remove mark takes away the flag under the cross. Still to do: the held paper map model in first person and map items to find. |
+| 0.48.1 | Aliens no longer know where you are. Hordes and nest groups now leave a nest as a roaming pack: a leader picks the next building to search (favouring parts of town the pack has not been and places that have been noisy), the rest follow, and they only find you by sight, sound or light. When one pack member hears or sees something the whole pack turns to it. At dawn a horde walks back to its nest and is gone. Pacing, from Left 4 Dead's director idea: no new horde pack while eight or more aliens are already on you, and the ordinary night trickle waits while a horde is still to come. Design notes taken from the genre (Project Zomboid, 7 Days to Die, Left 4 Dead, State of Decay): detection by movement, light and noise rather than by knowing the player's position; noise and mass fights draw a crowd; creatures lose interest and disperse rather than vanish; relief between peaks keeps pressure fair. |
 
 ## Next versions
 

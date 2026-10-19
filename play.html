@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.48.0.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.48.1.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2547,7 +2547,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.48.0';
+var VERSION = '0.48.1';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2563,7 +2563,7 @@ function startRun(ws, cs){
   P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:false, fl:1, rd:1, noise:0, stam:100, crouch:false, run:false, tired:false, vis:1, wet:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0, worn:{}}; loadConds(null);
   inv = newInv(true);
   heat.clear(); w.mem = [];
-  zombies = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
+  zombies = []; packsA = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
   loaded.forEach(function(b){ freeMesh(b.int.g); b.int = null; }); loaded = []; facs = [];
   w.buildings.forEach(function(b){ b.got = {}; b.bar = null; b.sbar = null; b.gbar = null; b.php = null; }); w.crates.forEach(function(c){ c.looted = false; });
   w.trees.forEach(function(t){ t.alive = true; t.hp = 3; });
@@ -3379,7 +3379,7 @@ function meleeDmg(){ return 2 + 0.25*lvl('melee'); }
 function searchTime(){ return 1.1*(1 - 0.06*lvl('scav')); }
 function nightNo(){ return Math.floor((8 + time/DAY*24 + 4)/24); }   /* which night this is: it counts from 8 pm to 5 am */
 function hordeNight(){ var n = nightNo(); return n >= 3 && n % 3 === 0; }
-function hordeAnnounce(){ feed('A horde is coming. Get inside, bar the doors and hold until morning.', '#ff8f7a'); toast('Horde night. Wave after wave of aliens come for you. Barricade, stay inside the fence or hide, and use what you have built.', 8); }
+function hordeAnnounce(){ feed('Tonight the nests empty. The packs sweep the town, searching.', '#ff8f7a'); toast('Horde night. Packs of aliens are leaving the nests and combing the town. They do not know where you are: stay quiet, keep lights low and doors shut, and hold your base.', 9); }
 /* spitters: the glob flies in a straight line at chest height and splashes where it lands. Every player's own game works out whether it hit them */
 var spits = [];
 function addSpit(z, tx, ty){ var a = Math.atan2(ty - z.y, tx - z.x); spits.push({x:z.x + Math.cos(a)*0.6, y:z.y + Math.sin(a)*0.6, vx:Math.cos(a)*11, vy:Math.sin(a)*11, t:2.2, gy:groundAt(z.x, z.y), k:z.k, lvl:z.lvl || 0}); }
@@ -3391,6 +3391,48 @@ function spitTick(dt){
 }
 function drawSpits(m){ var M = fxModel('decal.spit_glob'); for (var i = 0; i < spits.length; i++){ var s = spits[i]; if (M) m.modelS(M, s.x, s.y, Math.atan2(s.vy, s.vx) - 1.5708, s.gy + 1.15 + (s.lvl ? FH : 0), 1); else { m.al = 128; m.ybox(s.x, s.y, 0, 0, 0, s.gy + 1.15, 0.12, 0.12, 0.12, C('#9dff7a')); m.al = 255; } } }
 function addAlien(k, x, y){ var z0 = {id:++net.zid, k:k, x:x, y:y, hp:AK[k].hp, cd:0, hurt:0, kx:0, ky:0, av:0, ax:0, ay:0, ang:0, thru:0, tb:null, spd:0.9 + Math.random()*0.25, v:Math.random()}; zombies.push(z0); return z0; }
+/* ---- 0.48.1: roaming packs. Aliens that come out of a nest travel as a pack: a leader picks the next place to search, the rest follow, and none of them know where you are.
+   They sweep the town building by building (favouring places the pack has not been, and places that have been noisy), turn to a noise as one, and at dawn a horde walks home ---- */
+var packsA = [], packId = 0;
+function grpOf(z){ for (var i = 0; i < packsA.length; i++) if (packsA[i].id === z.grp) return packsA[i]; return null; }
+function packPick(G, x, y){
+  var best = null, bs = 1e9, i, tries = 0, B = world.buildings;
+  while (tries++ < 14 && B.length){ var b = B[Math.floor(Math.random()*B.length)]; if (!b.door || b.gone) continue; var dd = Math.hypot(b.cx - x, b.cy - y); if (dd < 30 || dd > 150) continue;
+    var px = b.door.x + b.door.nx*2, py = b.door.y + b.door.ny*2; if (inSafe(px, py, 12)) continue;
+    var sc = (G.vis[Math.floor(b.cx/60) + ',' + Math.floor(b.cy/60)] || 0)*2.2 + Math.random()*1.6 + dd/150;
+    heat.forEach(function(h){ if (h.v > 6 && Math.hypot(h.x - px, h.y - py) < 35) sc -= 2; });
+    if (world.nests[b.id]) sc += 1.5; if (sc < bs){ bs = sc; best = [px, py, b]; } }
+  if (!best){ var a = Math.random()*6.283, r = 40 + Math.random()*60; best = [x + Math.cos(a)*r, y + Math.sin(a)*r, null]; }
+  G.tx = best[0]; G.ty = best[1]; G.t = 0; G.wait = 0; G.vis[Math.floor(x/60) + ',' + Math.floor(y/60)] = (G.vis[Math.floor(x/60) + ',' + Math.floor(y/60)] || 0) + 1;
+}
+function packTick(dt){
+  var cs = [P]; net.peers.forEach(function(p){ if (p.ready && !p.cop) cs.push(p); });
+  for (var gi = packsA.length - 1; gi >= 0; gi--){
+    var G = packsA[gi], ms = zombies.filter(function(z){ return z.grp === G.id; }), i;
+    if (!ms.length){ packsA.splice(gi, 1); continue; }
+    var Ld = ms[0], hc = null;
+    for (i = 0; i < ms.length; i++){ var m = ms[i]; if (m.st === 2 && !hc) hc = m; if (m.st === 1 && !hc && m.heard && time - m.heard < 3) hc = m; }
+    /* the whole pack turns to a noise or a sight one of them has: the others come to the same place, though they still have to find you */
+    if (hc){ if (hc.st === 2){ G.tx = hc.lx || hc.x; G.ty = hc.ly || hc.y; } else { G.tx = hc.lx; G.ty = hc.ly; } G.t = 0; G.wait = 0;
+      for (i = 0; i < ms.length; i++){ var o = ms[i]; if (o.st === 0 && Math.hypot(o.x - hc.x, o.y - hc.y) < 30){ o.st = 1; o.stT = 12; o.lx = G.tx + Math.random()*4 - 2; o.ly = G.ty + Math.random()*4 - 2; } } continue; }
+    G.t += dt;
+    if (G.horde && dark < 0.12){   /* daylight: a horde goes back to its nest, and is gone once it is there and unseen */
+      var hb = world.buildings[G.home]; if (hb && hb.door){ G.tx = hb.door.x + hb.door.nx*2; G.ty = hb.door.y + hb.door.ny*2; if (Math.hypot(Ld.x - G.tx, Ld.y - G.ty) < 12){ var seen0 = false; for (i = 0; i < cs.length; i++) if (Math.hypot(cs[i].x - Ld.x, cs[i].y - Ld.y) < 50) seen0 = true;
+        if (!seen0){ zombies = zombies.filter(function(z){ return z.grp !== G.id; }); packsA.splice(gi, 1); } } continue; } }
+    if (G.wait > 0){ G.wait -= dt; continue; }
+    if (G.tx === undefined || G.t > 75 || Math.hypot(Ld.x - G.tx, Ld.y - G.ty) < 7){ if (G.tx !== undefined && G.t <= 75){ G.wait = 3 + Math.random()*4; G.tx = undefined; continue; } packPick(G, Ld.x, Ld.y); }
+  }
+}
+function spawnPack(n, horde, cs, day, cnt){
+  var ids = Object.keys(world.nests), pick = [], i;
+  ids.forEach(function(k){ var b = world.buildings[k]; if (!b || !b.door || b.gone) return; var md = 1e9; cs.forEach(function(c){ md = Math.min(md, Math.hypot(c.x - b.cx, c.y - b.cy)); }); if (md > (horde ? 60 : 55) && md < (horde ? 160 : 110)) pick.push(b); });
+  var nb = pick.length ? pick[Math.floor(Math.random()*pick.length)] : null, px, py;
+  if (nb){ px = nb.door.x + nb.door.nx*2.5; py = nb.door.y + nb.door.ny*2.5; } else if (horde){ var c1 = cs[Math.floor(Math.random()*cs.length)], a = Math.random()*6.283; px = c1.x + Math.cos(a)*85; py = c1.y + Math.sin(a)*85; if (inSafe(px, py, 14)) return null; } else return null;
+  var G = {id:++packId, home:nb ? nb.id : -1, horde:!!horde, vis:{}, t:0, wait:0}; packsA.push(G); var made = 0;
+  for (i = 0; i < n; i++){ var x = px + Math.random()*5 - 2.5, y = py + Math.random()*5 - 2.5; if (circ(x, y, 0.4)) continue; var k = (horde && day >= 6 && cnt[3] < 3 && Math.random() < 0.18) ? 3 : 0; if (k === 3) cnt[3]++; var z = addAlien(k, x, y); z.grp = G.id; made++; }
+  if (!made){ packsA.pop(); return null; }
+  packPick(G, px, py); return G;
+}
 function spawnAliens(day){
   var cs = [P], cnt = [0, 0, 0, 0], i; net.peers.forEach(function(p){ if (p.ready && !p.cop) cs.push(p); });
   for (i = 0; i < zombies.length; i++) cnt[zombies[i].k]++;
@@ -3403,17 +3445,18 @@ function spawnAliens(day){
   if (hordeNight() && dark > 0.55){
     if (world.hordeDay !== nightNo()){ world.hordeDay = nightNo(); world.hordeLeft = Math.min(70, 18 + day*4)*(1 + 0.5*(cs.length - 1)); world.hordeT = 3; hordeAnnounce(); broadcast({t:'ev', e:{k:'horde'}}); }
     world.hordeT -= 0.5;
-    if (world.hordeLeft > 0 && world.hordeT <= 0 && zombies.length < 55){ var hp = ring(32, 55, 0.6);
-      if (hp){ world.hordeT = 3.5; var hn = Math.min(world.hordeLeft, 4 + Math.floor(Math.random()*3)); world.hordeLeft -= hn;
-        for (i = 0; i < hn; i++){ var hx = hp[0] + Math.random()*4 - 2, hy = hp[1] + Math.random()*4 - 2; if (circ(hx, hy, 0.4)) continue; var hk = (day >= 6 && cnt[3] < 3 && Math.random() < 0.18) ? 3 : 0, hz = addAlien(hk, hx, hy); hz.st = 1; hz.stT = 25; hz.lx = c0.x; hz.ly = c0.y; hz.aw = 0.5; }
-        return; } }
+    var chasing = 0; for (i = 0; i < zombies.length; i++) if (zombies[i].st === 2) chasing++;
+    if (world.hordeLeft > 0 && world.hordeT <= 0 && zombies.length < 55){   /* pacing: no new pack while eight or more are already on you */
+      if (chasing >= 8){ world.hordeT = 4; } else { var hn = Math.min(world.hordeLeft, 5 + Math.floor(Math.random()*3)), HG = spawnPack(hn, true, cs, day, cnt); world.hordeT = 7 + Math.random()*4; if (HG) world.hordeLeft -= hn; }
+      return; }
+    if (world.hordeLeft > 0) return;   /* while a horde is still to come, the ordinary night trickle waits */
   }
   if (day >= 4 && dark > 0.5 && cnt[3] < cs.length && Math.random() < 0.02){ p = ring(40, 65, 0.6); if (p) addAlien(3, p[0], p[1]); return; }
   if (dark > 0.6 && cnt[1] < cs.length && Math.random() < 0.05){ p = ring(45, 70, 0.6); if (p) addAlien(1, p[0], p[1]); return; }
   if (day >= 2 && !cnt[2] && Math.random() < 0.004){ p = ring(70, 100, 1.6); if (p) addAlien(2, p[0], p[1]); return; }
   if (cnt[0] >= Math.min(60, Math.round((4 + day*2)*(1 + dark*1.2)*QS.zmul*(1 + 0.6*(cs.length - 1))))) return;
   var nb = null, bd = 110; for (var k in world.nests){ var b = world.buildings[k]; if (!b) continue; var d = Math.hypot(b.cx - c0.x, b.cy - c0.y); if (d < bd){ bd = d; nb = b; } }
-  if (nb && nb.door && Math.random() < 0.6){ p = [nb.door.x - nb.door.nx*2, nb.door.y - nb.door.ny*2]; if (near(p[0], p[1], 12)) p = null; }
+  if (Math.random() < 0.6 && Object.keys(world.nests).length && spawnPack(2 + Math.floor(Math.random()*3), false, cs, day, cnt)) return;
   if (!p) p = ring(40, 68, 0.6);
   if (!p) return;
   for (i = 2 + Math.floor(Math.random()*3); i > 0; i--){ var x = p[0] + Math.random()*3 - 1.5, y = p[1] + Math.random()*3 - 1.5; if (!circ(x, y, 0.4)) addAlien(0, x, y); }
@@ -3815,7 +3858,7 @@ function update(dt){
         var t2 = tg[q2], dd = Math.hypot(t2.x - z.x, t2.y - z.y); if (dd < dAny) dAny = dd;
       }
       if (z.hp <= 0){ kills++; addCorpse(z); zombies.splice(i, 1); continue; }
-      if (dAny > 130){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
+      if (dAny > (z.grp ? 200 : 130)){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
       var zn = zoneAt(z.x, z.y, 0.6); if (zn){ zoneOut(zn, z, 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
       setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y) >= 0;
@@ -3825,6 +3868,7 @@ function update(dt){
       if (z.climb || z.roof){ alienRoof(z, A, T, dt, zs); continue; }
       if (z.k === 1 && !L){ var SA = stalkerAI(z, A, T, tg, dt); if (SA){ L = SA; zs = SA.sp*z.spd; T = null; d = 1e9; } }
       if (!T && !L && (z.st === 1 || z.st === 3)){ L = {x:z.lx, y:z.ly}; if (Math.hypot(z.lx - z.x, z.ly - z.y) < 1.5){ if (z.st === 1){ z.st = 3; z.stT = 7; } z.lx = z.x + (Math.random() - 0.5)*14; z.ly = z.y + (Math.random() - 0.5)*14; } zs *= z.st === 3 ? 0.55 : 0.75; }   /* go and look */
+      if (!T && !L && z.grp && z.st === 0){ var PG = grpOf(z); if (PG && PG.tx !== undefined && !(PG.wait > 0)){ var lm = null; for (var pk = 0; pk < zombies.length; pk++) if (zombies[pk].grp === z.grp){ lm = zombies[pk]; break; } if (lm && lm !== z && Math.hypot(lm.x - z.x, lm.y - z.y) > 14) L = {x:lm.x, y:lm.y}; else L = {x:PG.tx, y:PG.ty}; zs *= 0.55; } }
       if (!T && !L && z.face){ z.face = 0; z.ang = Math.atan2(z.ly - z.y, z.lx - z.x); }
       if (!T && !L){
         z.wt = (z.wt || 0) - dt; if (z.wt <= 0){ z.wt = 2 + Math.random()*3; z.wa = Math.random()*6.283;
@@ -3883,7 +3927,7 @@ function update(dt){
     }
     if (dead || b.t <= 0) bullets.splice(i, 1);
   }
-  spitTick(dt); seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
+  spitTick(dt); packT = (packT || 0) - dt; if (packT <= 0 && net.role !== 'guest'){ packT = 0.5; packTick(0.5); } seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
   spawnT -= dt;
   if (spawnT <= 0 && net.role !== 'guest'){ spawnT = 0.5; spawnAliens(day); }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
@@ -3941,7 +3985,7 @@ function path2(c, p, s, ox, oy, close){
 function makeMini(){}
 var MAPC = {grass:'#d5dbbd', park:'#c3cfa6', forest:'#a9b78c', sand:'#eadcbf', parking:'#d6cab5', water:'#9cc0c9'}, MAPR = {road:'#fbf3e4', path:'#efe3cc', water:'#9cc0c9', rail:'#b8a892'};
 /* ---- 0.48: the paper map only shows where you have walked or driven (30 m squares, kept with your survivor), and you can mark places on it ---- */
-var seen = {}, marks = [], seenT = 0, SQ = 30, fogCv = document.createElement('canvas');
+var packT = 0, seen = {}, marks = [], seenT = 0, SQ = 30, fogCv = document.createElement('canvas');
 function seeMap(first){ var R = 3, cx = Math.floor(P.x/SQ), cy = Math.floor(P.y/SQ), a, b; for (a = -R; a <= R; a++) for (b = -R; b <= R; b++) if (a*a + b*b <= R*R + 1) seen[(cx + a) + ',' + (cy + b)] = 1;
   if (first && world){ var sf = world.buildings[world.safe]; if (sf) for (a = -2; a <= 2; a++) for (b = -2; b <= 2; b++) seen[(Math.floor(sf.cx/SQ) + a) + ',' + (Math.floor(sf.cy/SQ) + b)] = 1; } }
 function mapFog(c, w, h, ox, oy, sc){
