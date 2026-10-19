@@ -519,4 +519,4 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 4. Open the Build menu (N), choose Wall section: a ghost frame appears in front of you. Walk or look to move it; it snaps to the half-metre grid and lines up with fences and building sides. Place a second wall near the end of the first: it should join end to end. R rotates, Y turns snapping off, right-click or Esc cancels.
 5. Barricade, campfire, bed, chest, rain collector and garden plot use the same placement; red means no room or not enough materials, and the bar says why.
 6. Use the wood from furniture to board a door (B at a door) or build a wall across it.
-
+7. (0.46.1) Build menu, Tool bench: place it outdoors; with a worn weapon equipped press E at it to repair for 1 scrap; hold J with an axe or crowbar to take it apart.
