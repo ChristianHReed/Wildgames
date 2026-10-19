@@ -165,6 +165,12 @@
   #tBuild{right:196px;bottom:70px;width:62px;height:62px;font-size:11px !important}
   #touch:not(.bmode) .m2,#touch.bmode .m1,#touch button.nx{display:none}
   #touch.bmode #tMode{background:var(--ochre);color:#fff}
+  #tTake{left:142px;bottom:208px;width:64px;height:52px;font-size:11px !important}
+  #salv{position:fixed;left:50%;top:66%;transform:translateX(-50%);padding:6px 14px;font-size:13px;font-weight:600;white-space:nowrap;background:rgba(61,40,20,.78);color:#fff;border-radius:999px;box-shadow:0 0 0 1px rgba(245,234,216,.25);pointer-events:none;overflow:hidden}
+  #sbar{position:absolute;left:0;bottom:0;height:3px;background:#e0a44a;width:0}
+  .touchmode #salv{top:52%}
+  #plbar{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;padding:8px 12px;background:rgba(32,30,29,.78);color:#fff;border-radius:14px;font-size:13px;font-weight:600;z-index:6;max-width:94vw}
+  #plbar .plb{display:flex;gap:6px;flex-wrap:wrap;justify-content:center} #plbar button{padding:7px 12px;font-size:13px;border-radius:999px} #plbar button:disabled{opacity:.45}
   #tRun{left:22px;bottom:208px;width:52px;height:52px} #tDuck{left:82px;bottom:208px;width:52px;height:52px}
   #touch button.on{background:var(--ochre);color:#fff}
   .touchmode #help,.touchmode #lockhint{display:none !important}
@@ -226,7 +232,9 @@
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="salv" class="hidden"><span id="stxt"></span><div id="sbar"></div></div>
+  <div id="plbar" class="hidden"><span id="pltxt"></span><span class="plb"><button id="plrot">Rotate</button><button id="plsn">Snap: on</button><button id="plok">Place</button><button id="plno" class="alt">Cancel</button></span></div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
   <div id="feed"></div>
   <input id="chatIn" class="hidden" maxlength="120" placeholder="Say something, then press Enter">
@@ -255,7 +263,7 @@
     <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
     <button id="tShoot" class="m1">Shoot</button><button id="tThrow" class="m1">Throw</button><button id="tLight" class="m1">Light</button>
     <button id="tCade" class="m2">Wall</button><button id="tFire" class="m2">Fire</button><button id="tPing" class="m2">Mark</button><button id="tBuild" class="m2">Build menu</button>
-    <button id="tRun">Run</button><button id="tDuck">Crouch</button>
+    <button id="tTake" class="nx">Take apart</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)">Esc frees the mouse &middot; H shows the controls</span></div>
 </div>
@@ -379,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.45.9.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version 0.46.0.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -2089,13 +2097,13 @@ function clipHalf(poly, ax, val, less){
     if (ia) out.push(a); if (ia !== ib){ var t = (val - a[ax])/(b[ax] - a[ax]); out.push([a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t]); } } return out;
 }
 function genInterior(b){
-  var A = genLevel(b, 0, null, 0), I = {segs:A.segs, circs:A.circs, conts:A.conts, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stair:A.stair}, m = A.m;
-  if (A.stair){ var B = genLevel(b, 1, A.stair, A.cn); m.p = m.p.concat(B.m.p); m.c = m.c.concat(B.m.c); m.t = m.t.concat(B.m.t); I.up = {segs:B.segs, circs:B.circs}; I.conts = I.conts.concat(B.conts); I.fixes = I.fixes.concat(B.fixes); I.hatch = B.hatch; I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up:' + r; })); I.n += B.n; }
+  var A = genLevel(b, 0, null, 0), I = {segs:A.segs, circs:A.circs, conts:A.conts, furn:A.furn, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stair:A.stair}, m = A.m;
+  if (A.stair){ var B = genLevel(b, 1, A.stair, A.cn); m.p = m.p.concat(B.m.p); m.c = m.c.concat(B.m.c); m.t = m.t.concat(B.m.t); I.up = {segs:B.segs, circs:B.circs}; I.conts = I.conts.concat(B.conts); I.furn = I.furn.concat(B.furn); I.fixes = I.fixes.concat(B.fixes); I.hatch = B.hatch; I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up:' + r; })); I.n += B.n; }
   I.g = upload(m); return I;
 }
 function genLevel(b, lvl, ST, CB){
   var m = new Mesh(), p = b.pts, n = p.length, k = 0, rnd = function(){ return hash(b.id + lvl*7919, k++, 31); }, i, j;
-  var segs = [], circs = [], doors = [], conts = [], idoors = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
+  var segs = [], circs = [], doors = [], conts = [], furn = [], idoors = [], t = b.tri, fc = C(FLOOR[b.cat]), cc = C('#d8d3c6'), pc = C(['#d9d2c2','#cfd3c8','#d6cabb'][b.id % 3]), sky = C('#b8d4e6');
   var ceilY = lvl ? Math.min(2.95, b.h - FH - 0.06) : Math.min(3, b.h - 0.06);
   for (i = 0; i < b.wins.length && lvl && !FRON; i += 6){   /* upstairs windows are painted only: a pale pane stands in for the view */
     var wx = b.wins[i] + b.wins[i+4]*0.04, wz = b.wins[i+1] + b.wins[i+5]*0.04, dx = b.wins[i+2]*0.6, dz = b.wins[i+3]*0.6;
@@ -2313,6 +2321,7 @@ function genLevel(b, lvl, ST, CB){
     else f.boxes.forEach(function(bx){ m.ybox(x, y, yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); });
     if (f.tex !== undefined && !(M && M.sp)){ var b0 = f.boxes[0]; m.panel(x, y, yaw, b0[5] + 0.03, 0.1, b0[1] + b0[4] + 0.1, b0[3], f.tex); }
     for (q = 0; q < it.cl.length; q++) circs.push(it.cl[q]);
+    if (!f.flat) furn.push({sv:'furn', lvl:lvl, x:x, y:y, ii:ii, f:f, b:b});
     if (f.name) conts.push({lvl:lvl, x:x, y:y, h:top + lvl*FH + 0.35, name:f.name, i:ci0, b:b, lt:f.lt, hide:!!f.hide, heavy:!!f.heavy, ii:ii, mdl:M ? f.models[it.mi] : (f.models ? f.models[0] : null), fx:it.fx, fy:it.fy});
   });
   total = nOn;
@@ -2339,7 +2348,7 @@ function genLevel(b, lvl, ST, CB){
     m.box(LX, ceilY - 0.02, LY, [0.42, 0, 0], [0, 0.02, 0], [0, 0, 0.42], hd2);
   }
   var yo = (world.hg ? b.base : 0) + lvl*FH; if (yo) for (i = 1; i < m.p.length; i += 3) m.p[i] += yo;
-  return {hatch:hatch, m:m, cn:cn, stair:lvl ? null : SR, segs:segs, circs:circs, conts:conts, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
+  return {hatch:hatch, m:m, cn:cn, stair:lvl ? null : SR, segs:segs, circs:circs, conts:conts, furn:furn, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -2538,7 +2547,7 @@ function stepMove(e, dx, dy, r){
 
 /* ================= game state ================= */
 var DAY = 43200, PACE = 240, P, inv, zombies, bullets, fires, cades, packs = [], deaths = 0, worldPlayers = {}, inRun = false, time, kills, searched, dark = 0, running = false;
-var VERSION = '0.45.9';
+var VERSION = '0.46.0';
 var net = {role:null, peers:[], host:null, others:[], who:{}, nextId:0, pid:0, t:0, zid:0}, mapSrc = null;
 var QUAL = [{fog:0.016, trees:60, chunk:150, intR:26, zmul:0.6, models:true, facR:42, facMax:110000, far:400, treeR:90, treeN:36, clutR:30, clutN:70}, {fog:0.011, trees:95, chunk:220, intR:32, zmul:0.8, models:true, facR:62, facMax:240000, far:800, treeR:150, treeN:80, clutR:45, clutN:160}, {fog:0.0085, trees:130, chunk:300, intR:38, zmul:1, models:true, facR:90, facMax:420000, far:1400, treeR:240, treeN:170, clutR:60, clutN:260}], QS = QUAL[1];
 var target = null, prog = 0, drinkCd = 0, spawnT = 0, hudT = 0, miniT = 0, intT = 0, toastT = 0, miniBg = null, miniK = 1;
@@ -2576,7 +2585,7 @@ function startRun(ws, cs){
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
     var mine = worldPlayers[charSlug()]; if (mine && !toSafe){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
   }
-  w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, blocks:{}, gens:[], truck:{p:{}, away:0}, colls:[], plots:[]}; w.wallSegs = [];
+  w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, junkv:{}, blocks:{}, gens:[], truck:{p:{}, away:0}, colls:[], plots:[]}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
   pickSafe(!resumed && net.role !== 'guest', toSafe || !(resumed && worldPlayers[charSlug()]));
@@ -2610,7 +2619,7 @@ window.addEventListener('keydown', function(e){
   keys[e.code] = true;
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit'); if (e.code === 'Digit4') useItem('bandage');
   if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
-  if (e.code === 'KeyX') pingAhead(); if (e.code === 'KeyH') el('help').classList.toggle('on'); if (e.code === 'KeyI') togglePack(); if (e.code === 'KeyT') place('lamp'); if (e.code === 'KeyR') radioScan(); if (e.code === 'KeyM') toggleBig();
+  if (e.code === 'KeyX') pingAhead(); if (e.code === 'KeyH') el('help').classList.toggle('on'); if (e.code === 'KeyI') togglePack(); if (e.code === 'KeyT') place('lamp'); if (e.code === 'KeyR'){ if (PL) plRotate(); else radioScan(); } if (e.code === 'KeyY' && PL) PL.grid = !PL.grid; if (e.code === 'Escape' && PL) endPlace(); if (e.code === 'KeyM') toggleBig();
   if (e.code === 'KeyN') toggleBuild(); if (e.code === 'KeyZ') toggleCrouch(); if (e.code === 'KeyV') throwStone(); if (e.code === 'KeyP') toggleView();
   if (e.code === 'KeyL') toggleLight(); if (e.code === 'KeyK') toggleItems(); if (e.code === 'KeyQ') cycleWeapon(); if (e.code === 'KeyG') quickItem();
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
@@ -2660,6 +2669,9 @@ hold('tAtk', function(){ keys.Swing = true; }, function(){ keys.Swing = false; }
 hold('tJump', function(){ wantJump = true; });
 hold('tMode', function(){ el('touch').classList.toggle('bmode'); el('tMode').innerHTML = '<img src="assets/ui/' + (el('touch').classList.contains('bmode') ? 'back' : 'build') + '.svg" alt="">'; });
 hold('tBuild', function(){ el('buildBtn').click(); });
+hold('tTake', function(){ keys.Take = true; }, function(){ keys.Take = false; });
+el('plrot').addEventListener('click', plRotate); el('plsn').addEventListener('click', function(){ if (PL) PL.grid = !PL.grid; }); el('plok').addEventListener('click', plConfirm); el('plno').addEventListener('click', endPlace);
+cv.addEventListener('wheel', function(e){ if (PL){ PL.dist = Math.max(1.4, Math.min(6, PL.dist + (e.deltaY < 0 ? 0.3 : -0.3))); e.preventDefault(); } }, {passive:false});
 hold('tShoot', function(){ wantShoot = true; });
 hold('tFire', function(){ place('fire'); });
 hold('tCade', function(){ place('cade'); });
@@ -2727,7 +2739,8 @@ function useItem(k){
   if (k === 'medkit'){ var heal = me.bg === 'medic' ? 75 : 50; P.hp = Math.min(100, P.hp + heal); feed('+' + heal + ' Health' + (P.bleed > 0 || P.wound ? ', wound dressed' : ''), '#7dff9a'); P.bleed = 0; P.wound = 0; P.woundT = 0; if (P.inf && me.bg === 'medic'){ P.inf = 0; feed('As a medic you clean out the infection too', '#7dff9a'); } }
   updateHud();
 }
-function place(kind){
+function place(kind, pos){
+  if (pos){ placeAt(kind, pos); return; }
   if (kind === 'cade' && target && target.shove){ shoveFurniture(target.c); return; }
   if (kind === 'cade' && target && target.gen){ genB(target); return; }
   if (kind === 'cade' && target && target.coll){ collB(target); return; }
@@ -3144,6 +3157,12 @@ function useFix(o){
   var key = o.b.id + ':' + o.ii, left = o.taps - (world.edits.taps[key] || 0); if (left <= 0){ feed('Nothing left in it', '#c0c6cc'); return; }
   var clean = o.name !== 'toilet' && time < DAY;   /* the mains run clean through the first day; cisterns never are */
   doEdit({a:'tap', key:key}); if (clean) inv.water++; else inv.dirty++; sfx('pot', o.x, o.y, 0.5, 1.4); feed((clean ? '+1 Water' : '+1 Unboiled water') + (o.name === 'toilet' ? ' (from the cistern)' : !clean && !P.tapSaid ? ' (the mains are no longer safe: boil it)' : '') + (left > 1 ? '' : '. The ' + o.name + ' runs dry.'), clean ? ITEMS.water[1] : ITEMS.dirty[1]); if (!clean) P.tapSaid = true; updateHud();
+}
+function placeAt(kind, pos){
+  var x = pos.x, y = pos.y;
+  if (kind === 'cade'){ var cw = me.bg === 'mechanic' ? 1 : 2; if (inv.wood < cw || inv.scrap < 1){ toast('A barricade needs ' + cw + ' wood and 1 scrap.', 2.5); return; } inv.wood -= cw; inv.scrap -= 1; var nc = {x:x, y:y, hp:me.bg === 'builder' ? 60 : 30, yaw:pos.yaw}; cades.push(nc); emit({k:'cade', c:nc}); }
+  else { var fw = me.bg === 'mechanic' ? 3 : 4; if (inv.wood < fw){ toast('A campfire needs ' + fw + ' wood.', 2.5); return; } inv.wood -= fw; var nf = {x:x, y:y, life:150}; fires.push(nf); emit({k:'fire', f:nf}); toast('Campfire lit. Stand near it to recover health.', 3.5); }
+  updateHud();
 }
 /* shove an emptied heavy piece against the nearest door of the same building */
 function shoveFurniture(c){
@@ -3713,7 +3732,7 @@ function update(dt){
   P.atkCd -= dt; P.swing -= dt; P.shootCd -= dt; P.hurt -= dt; drinkCd -= dt; itemsTick(dt);
   intT -= dt; if (intT <= 0){ intT = 0.1; manageInteriors(3); }
 
-  var nt = findTarget(); if (nt !== target) prog = 0; target = nt;
+  var nt = findTarget(); if (nt !== target) prog = 0; target = nt; salvTick(dt); plTick();
   var tapped = tapUse; tapUse = false; if (tapped && target) autoUse = target; if (autoUse !== target) autoUse = null;
   if (curLoot && Math.hypot(curLoot.x - P.x, curLoot.y - P.y) > 4) closeLoot();
   for (i = corpses.length - 1; i >= 0; i--) if (time - corpses[i].t > 240 && corpses[i] !== curLoot) corpses.splice(i, 1);
@@ -3750,6 +3769,7 @@ function update(dt){
     else if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
   } else pr.classList.add('hidden');
 
+  if (PL){ if (wantSwing) plConfirm(); if (wantShoot) endPlace(); wantSwing = wantShoot = false; keys.Swing = false; }
   if ((wantSwing || keys.Swing) && P.atkCd <= 0 && !P.veh) swing();
   if (wantShoot && P.shootCd <= 0 && !P.veh) shoot();
   scenT -= dt; if (scenT <= 0){ scenT = 0.5; checkScenario(); }
@@ -5069,9 +5089,10 @@ function loadEdits(ed){
   for (k in (ed.picked || {})) if (isFinite(ed.picked[k])) E.picked[String(k).slice(0, 24)] = +ed.picked[k];
   for (k in (ed.ports || {})){ var ps2 = ed.ports[k], np2 = E.ports[k]; if (!np2 || !ps2) continue; if (ps2.l === 0 || ps2.l === 1) np2.l = ps2.l; if (ps2.i){ np2.i = {}; for (var ik in ps2.i) if (ps2.i[ik] === 0 || ps2.i[ik] === 1) np2.i[ik | 0] = ps2.i[ik]; } }
   for (k in (ed.taps || {})) if (isFinite(ed.taps[k])) E.taps[String(k).slice(0, 24)] = Math.min(9, ed.taps[k] | 0);
-  for (k in (ed.moved || {})) if (world.buildings[k] && Array.isArray(ed.moved[k])) E.moved[k] = ed.moved[k].slice(0, 40).map(function(v){ return v | 0; });
+  for (k in (ed.moved || {})) if (world.buildings[k] && Array.isArray(ed.moved[k])) E.moved[k] = ed.moved[k].slice(0, 120).map(function(v){ return v | 0; });
   for (k in (ed.blocks || {})) if (world.buildings[k] && ed.blocks[k]){ E.blocks[k] = {}; for (var bk in ed.blocks[k]){ var bv = ed.blocks[k][bk]; if (bv && MODELS[bv.m]) E.blocks[k][bk | 0] = {m:String(bv.m), hp:Math.min(80, +bv.hp || 60), s:bv.s < 0 ? -1 : 1}; } }
   if (ed.truck && typeof ed.truck === 'object'){ TJOBS.forEach(function(j){ if (ed.truck.p && ed.truck.p[j[0]]) E.truck.p[j[0]] = 1; }); E.truck.away = ed.truck.away ? 1 : 0; }
+  E.junkv = E.junkv || {}; for (k in (ed.junkv || {})) E.junkv[String(k).slice(0, 24)] = 1;
   rebuildWalls();
 }
 function applyEdit(e){
@@ -5083,6 +5104,8 @@ function applyEdit(e){
   else if (e.a === 'bed' && e.s){ E.beds[slug(e.s)] = {b:e.b | 0, x:+e.x, y:+e.y}; }
   else if (e.a === 'tap' && typeof e.key === 'string'){ E.taps[e.key.slice(0, 24)] = Math.min(9, (E.taps[e.key] || 0) + 1); }
   else if (e.a === 'shove' && b && MODELS[e.m]){ var mv = E.moved[b.id] || (E.moved[b.id] = []); if (mv.indexOf(e.ii | 0) < 0) mv.push(e.ii | 0); var bl = E.blocks[b.id] || (E.blocks[b.id] = {}); bl[e.k | 0] = {m:String(e.m), hp:60, s:e.s < 0 ? -1 : 1}; b.bar = b.ibar = null; refreshInterior(b); }
+  else if (e.a === 'junk' && b){ var mv2 = E.moved[b.id] || (E.moved[b.id] = []); if (mv2.indexOf(e.ii | 0) < 0) mv2.push(e.ii | 0); b.bar = b.ibar = null; refreshInterior(b); }
+  else if (e.a === 'junkveh' && typeof e.id === 'string'){ (E.junkv || (E.junkv = {}))[e.id.slice(0, 24)] = 1; var vj = world.vmap && world.vmap[e.id]; if (vj && vj !== P.veh){ var vi2 = world.vehicles.indexOf(vj); if (vi2 >= 0) world.vehicles.splice(vi2, 1); delete world.vmap[e.id]; } }
   else if (e.a === 'unblock' && b){ if (E.blocks[b.id]) delete E.blocks[b.id][e.k | 0]; b.bar = b.ibar = null; }
   else if (e.a === 'gen' && e.g && isFinite(e.g.x) && isFinite(e.g.y) && E.gens.length < 30){ E.gens.push({gen:true, name:'generator', id:String(e.g.id).slice(0, 24), x:+e.g.x, y:+e.g.y, b:e.g.b | 0, fuel:Math.max(0, Math.min(36000, +e.g.fuel || 0)), on:e.g.on ? 1 : 0}); }
   else if (e.a === 'genset'){ for (i = 0; i < E.gens.length; i++) if (E.gens[i].id === e.id){ E.gens[i].fuel = Math.max(0, Math.min(36000, +e.fuel || 0)); E.gens[i].on = e.on ? 1 : 0; break; } }
@@ -5104,25 +5127,25 @@ function nearBuilding(){
   for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){ var cell = world.grid.get(gk(cx, cy)); if (!cell) continue; for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (b.gone) continue; var d = polyDist(b.pts, P.x, P.y, true); if (d < bd){ bd = d; best = b; } } }
   return best;
 }
-function buildAct(a){
-  var x = P.x + Math.cos(P.yaw)*1.8, y = P.y + Math.sin(P.yaw)*1.8, id = Date.now() + '-' + Math.floor(Math.random()*1e6), b = nearBuilding(), cheap = me.bg === 'builder' || me.bg === 'mechanic';
+function buildAct(a, pos){
+  var x = pos ? pos.x : P.x + Math.cos(P.yaw)*1.8, y = pos ? pos.y : P.y + Math.sin(P.yaw)*1.8, yaw = pos ? pos.yaw : P.yaw, id = Date.now() + '-' + Math.floor(Math.random()*1e6), b = nearBuilding(), cheap = me.bg === 'builder' || me.bg === 'mechanic';
   if (a === 'cade'){ place('cade'); } else if (a === 'fire'){ place('fire'); }
   else if (a === 'wall'){
     var wc = cheap ? 2 : 3; if (inv.wood < wc){ toast('A wall section needs ' + wc + ' wood.', 2.5); return; }
     if (hitWall(x, y) || buildingAt(x, y) !== P.inside){ toast('There is no room for a wall there.', 2.5); return; }
-    inv.wood -= wc; doEdit({a:'wall', w:{id:id, x:x, y:y, yaw:P.yaw}});
+    inv.wood -= wc; doEdit({a:'wall', w:{id:id, x:x, y:y, yaw:yaw}});
   } else if (a === 'unwall'){
     var bw = null, bd = 3.5; world.edits.walls.forEach(function(w){ var d = Math.hypot(w.x - P.x, w.y - P.y); if (d < bd){ bd = d; bw = w; } });
     if (!bw){ toast('No wall section within reach.', 2.5); return; } inv.wood += 1; doEdit({a:'unwall', id:bw.id});
   } else if (a === 'bed'){
     if (!P.inside){ toast('A bed has to be inside a building.', 2.5); return; } if (world.nests[P.inside.id]){ toast('Not in a nest.', 2.5); return; }
     if (inv.wood < 5){ toast('A bed needs 5 wood.', 2.5); return; }
-    inv.wood -= 5; doEdit({a:'bed', s:charSlug(), b:P.inside.id, x:P.x, y:P.y}); toast('Bed placed. This building is now your base, and you will wake here if you die.', 5);
+    inv.wood -= 5; doEdit({a:'bed', s:charSlug(), b:P.inside.id, x:pos ? x : P.x, y:pos ? y : P.y}); toast('Bed placed. This building is now your base, and you will wake here if you die.', 5);
   } else if (a === 'coll' || a === 'plot'){
     if (P.inside || buildingAt(x, y)){ toast(a === 'coll' ? 'A rain collector has to stand outside, under the open sky.' : 'A garden plot has to be outside, on open ground.', 3); return; }
     if (inWater(x, y, 1) || (world.roadAt && world.roadAt(x, y)) || hitWall(x, y) || circ(x, y, a === 'plot' ? 1 : 0.5)){ toast('There is no room for that here: pick open ground, off the road.', 3); return; }
     if (a === 'coll'){ if (inv.wood < 2 || inv.scrap < 2){ toast('A rain collector needs 2 wood and 2 scrap.', 2.5); return; } inv.wood -= 2; inv.scrap -= 2; doEdit({a:'coll', c:{id:'w' + id, x:x, y:y}}); toast('Rain collector set up. It fills with clean water whenever it rains; E takes the water.', 5); }
-    else { if (inv.wood < 3){ toast('A garden plot needs 3 wood for its edging.', 2.5); return; } inv.wood -= 3; doEdit({a:'plot', q:{id:'p' + id, x:x, y:y, yaw:P.yaw}}); toast('Garden plot dug. Plant a seed packet in it (E), and keep it watered or let the rain do it.', 5); }
+    else { if (inv.wood < 3){ toast('A garden plot needs 3 wood for its edging.', 2.5); return; } inv.wood -= 3; doEdit({a:'plot', q:{id:'p' + id, x:x, y:y, yaw:yaw}}); toast('Garden plot dug. Plant a seed packet in it (E), and keep it watered or let the rain do it.', 5); }
   } else if (a === 'chest'){
     if (!P.inside){ toast('A chest has to be inside a building.', 2.5); return; } if (inv.wood < 3 || inv.scrap < 2){ toast('A chest needs 3 wood and 2 scrap.', 2.5); return; }
     if (hitWall(x, y) || buildingAt(x, y) !== P.inside) return; inv.wood -= 3; inv.scrap -= 2; doEdit({a:'chest', c:{id:id, x:x, y:y}});
@@ -5135,6 +5158,128 @@ function buildAct(a){
     var gw = Math.min(20, 4 + Math.round(b.area/40)); inv.wood += gw; inv.scrap += Math.round(gw/2); doEdit({a:'gone', b:b.id}); feed('Demolished: +' + gw + ' wood, +' + Math.round(gw/2) + ' scrap', ITEMS.wood[1]);
   } else if (a === 'ask'){ if (net.role === 'guest'){ send(net.host.dc, {t:'askEdits'}); toast('Asked the host for their building changes.', 3); } }
   updateHud(); renderBuild();
+}
+
+/* ================= 0.46.0: taking things apart, and placing things on a grid ================= */
+/* what each piece of furniture is made of and what comes out of it: [material, wood, scrap, fibre] */
+var SALV = {bed:['cloth',3,0,3], bed2:['cloth',3,0,3], gurney:['metal',0,4,0], table:['wood',3,0,0], ctable:['wood',2,0,0], stable:['wood',2,0,0], desk:['wood',4,0,0], odesk:['wood',4,0,0], sofa:['cloth',2,1,4], armchair:['cloth',1,1,3],
+  chair:['wood',2,0,0], stool:['wood',1,0,0], wardrobe:['wood',5,0,0], closet:['wood',5,0,0], dresser:['wood',4,0,1], nightstand:['wood',2,0,0], shelf:['wood',3,1,0], counter:['metal',2,3,0], kcab:['wood',3,1,0], cabinet:['metal',1,2,0],
+  fridge:['metal',0,5,0], stove:['metal',0,5,0], sink:['metal',0,3,0], toilet:['metal',0,1,0], tub:['metal',0,6,0], basin:['metal',0,2,0], washer:['metal',0,5,0], locker:['metal',0,5,0], crate:['wood',3,0,0], barrel:['metal',0,3,0],
+  bench:['wood',2,2,0], lamp:['metal',0,1,0], plant:['cloth',0,0,2], coatrack:['wood',1,1,0], bin:['metal',0,1,0], tv:['metal',0,2,0], pew:['wood',4,0,0], altar:['wood',3,0,0], checkout:['metal',2,3,0], rack:['metal',0,3,0], vending:['metal',0,6,0], filing:['metal',0,4,0]};
+var SALVN = {kcab:'kitchen cabinet', odesk:'desk', ctable:'coffee table', stable:'side table', bed2:'bed', gurney:'gurney', coatrack:'coat rack', checkout:'checkout counter', filing:'filing cabinet'};
+function furnKey(f){ if (!f.key) for (var k in FURN) if (FURN[k] === f){ f.key = k; break; } return f.key || 'crate'; }
+/* the tools you carry, not only the one in your hand: an axe, a crowbar or a wrench from the street weapons (or a toolkit) */
+function toolsOwned(){ var o = {}, id; for (id in P.items){ if (!(P.items[id] > 0) || !DESIGNS[id]) continue; var m = DESIGNS[id].model; if (m === 'axe' || m === 'crowbar' || m === 'wrench') o[m] = id; } if (inv.toolkit > 0) o.toolkit = 1; return o; }
+/* what taking this apart needs and gives: {label, y:{wood,scrap,fiber,...}, secs, tool (design id or ''), need} */
+function salvInfo(o){
+  var T = toolsOwned(), r = {y:{}, tool:'', secs:0, need:''}, id;
+  if (o.sv === 'furn'){ var k = furnKey(o.f), S = SALV[k] || ['wood', 2, 1, 0]; r.label = SALVN[k] || k.replace(/[0-9]+$/, ''); r.mat = S[0]; if (S[1]) r.y.wood = S[1]; if (S[2]) r.y.scrap = S[2]; if (S[3]) r.y.fiber = S[3];
+    if (S[0] === 'wood'){ r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 2.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 4; } }
+    else if (S[0] === 'metal'){ r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3.5; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5.5; } }
+    else { r.need = 'an axe, a crowbar or a wrench'; id = T.axe || T.crowbar || T.wrench; if (id){ r.tool = id; r.secs = 2.5; } } }
+  else { var car = !!o.t; r.label = car ? 'car' : 'bicycle'; r.mat = 'car'; r.y.scrap = car ? 6 : 2; r.need = 'a wrench or a toolkit' + (car ? '' : ', or a crowbar');
+    if (T.wrench){ r.tool = T.wrench; r.secs = car ? 7 : 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = car ? 7 : 3; } else if (T.crowbar && (!car || true)){ r.tool = T.crowbar; r.secs = car ? 11 : 5; r.need = 'a wrench, a toolkit or a crowbar'; } }
+  return r;
+}
+function findSalvage(){
+  if (P.veh || P.climbL || P.hide || P.sleep || P.roof || P.cop) return null;
+  var best = null, bd = 2.6, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), i, j, o, dx, dy, d, de;
+  var test = function(o2){ dx = o2.x - P.x; dy = o2.y - P.y; d = Math.hypot(dx, dy); de = d*(1.2 - 0.4*(dx*fx + dy*fy)/(d || 1)); if (de < bd && (d < 1.0 || (dx*fx + dy*fy)/d > 0.45)){ bd = de; best = o2; } };
+  for (i = 0; i < loaded.length; i++){ var b = loaded[i]; if (!b.int || !b.int.furn || P.x < b.minx - 3 || P.x > b.maxx + 3 || P.y < b.miny - 3 || P.y > b.maxy + 3) continue; for (j = 0; j < b.int.furn.length; j++){ o = b.int.furn[j]; if ((o.lvl || 0) === (P.lvl || 0)) test(o); } }
+  if (!P.inside) for (i = 0; i < world.vehicles.length; i++){ o = world.vehicles[i]; if (o.kind !== 'truck' && o.id !== 'truck') test(o); }
+  return best;
+}
+var SV = {t:null, p:0, info:null, said:-9, nt:0};
+function wearTool(id, n){ if (!id || id === 'kit' || !DESIGNS[id]) return; var keep = P.weapon; P.weapon = id; wear(n); if (keep && P.items[keep] > 0) P.weapon = keep; else if (P.weapon === id && !(P.items[id] > 0)) P.weapon = null; }
+function salvTick(dt){
+  var s = findSalvage(); if (s !== SV.t){ SV.t = s; SV.p = 0; } var box = el('salv');
+  if (!s){ box.classList.add('hidden'); el('tTake').classList.add('nx'); return; }
+  var inf = SV.info = salvInfo(s), hold = keys.KeyJ || keys.Take, tch = document.body.classList.contains('touchmode'); el('tTake').classList.remove('nx');
+  if (hold){ if (!inf.tool){ if (time - SV.said > 3){ SV.said = time; toast('Taking apart a ' + inf.label + ' needs ' + inf.need + '.', 3.5); } SV.p = 0; }
+    else { SV.p += dt/inf.secs; SV.nt -= dt; if (SV.nt <= 0){ SV.nt = 0.55; sfx(inf.mat === 'metal' || inf.mat === 'car' ? 'plank' : 'chop', s.x, s.y, 0.7); makeNoise(s.x, s.y, inf.mat === 'cloth' ? 4 : 10); fxAdd('effects.wood_chips', s.x, s.y, groundAt(s.x, s.y), {life:0.8, s0:0.6, s1:0.9, rise:0.2, up:0.5}); }
+      if (SV.p >= 1){ SV.p = 0; doSalvage(s, inf); return; } } } else SV.p = 0;
+  var gives = Object.keys(inf.y).map(function(k2){ return '+' + inf.y[k2] + ' ' + (k2 === 'fiber' ? 'fibre' : k2); }).join(' ');
+  box.classList.remove('hidden'); el('sbar').style.width = (SV.p*100) + '%';
+  el('stxt').textContent = (inf.tool ? (tch ? 'Hold Take apart' : 'Hold J') + ' to take apart the ' + inf.label + ' (' + gives + ')' : 'The ' + inf.label + ' needs ' + inf.need + ' to take apart');
+}
+function doSalvage(o, inf){
+  var g = {}, k2, gain = [];
+  if (o.sv === 'furn'){
+    var c = null, cs = o.b.int.conts; for (var j = 0; j < cs.length; j++) if (cs[j].ii === o.ii) c = cs[j];
+    if (c && !o.b.got[c.i] && c.name && !c.hide){ toast('Search the ' + c.name + ' first: there may still be something in it.', 3.5); return; }
+    for (k2 in inf.y) g[k2] = inf.y[k2]; doEdit({a:'junk', b:o.b.id, ii:o.ii});
+  } else {
+    for (k2 in inf.y) g[k2] = inf.y[k2];
+    if (o.t){ if (Math.random() < 0.6) g.parts = 1; if (Math.random() < 0.4) g.carbat = 1; if (Math.random() < 0.4) g.tire = 1; if (o.fuel >= 20) g.fuel = 1; if (Math.random() < 0.4) g.battery = 1; }
+    doEdit({a:'junkveh', id:o.id});
+  }
+  for (k2 in g){ inv[k2] = (inv[k2] || 0) + g[k2]; gain.push('+' + g[k2] + ' ' + (ITEMS[k2] ? ITEMS[k2][0].toLowerCase() : k2)); }
+  wearTool(inf.tool, o.sv === 'furn' ? 1.2 : 3); sfx('plank', o.x, o.y, 0.9); makeNoise(o.x, o.y, 12); fxAdd('effects.dust_puff', o.x, o.y, groundAt(o.x, o.y), {life:0.7, s0:0.7, s1:1.6, rise:0.2, up:0.2});
+  feed('Took apart the ' + inf.label + ': ' + gain.join(', '), ITEMS.wood[1]); SV.t = null; updateHud(); renderBuild();
+}
+/* ---- placing things: a ghost shows where it will go and snaps to a half-metre grid, to the line of nearby walls and to the ends of walls you built ---- */
+var PL = null, PLS = {wall:{n:'Wall section', hx:0.1, hz:1.5, h:2.5, cost:'3 wood'}, cade:{n:'Barricade', hx:1.1, hz:0.12, h:1.0, cost:'2 wood and 1 scrap'}, fire:{n:'Campfire', hx:0.5, hz:0.5, h:0.4, cost:'4 wood'},
+  bed:{n:'Bed', hx:1.0, hz:0.5, h:0.6, cost:'5 wood'}, chest:{n:'Storage chest', hx:0.5, hz:0.3, h:0.8, cost:'3 wood and 2 scrap'}, coll:{n:'Rain collector', hx:0.5, hz:0.5, h:1.0, cost:'2 wood and 2 scrap'}, plot:{n:'Garden plot', hx:1.0, hz:1.0, h:0.3, cost:'3 wood'}};
+function startPlace(a){
+  if (!PLS[a]) return; PL = {a:a, rot:0, dist:2.8, grid:true, x:P.x, y:P.y, yaw:P.yaw, ok:false, why:''}; el('build').classList.add('hidden'); el('plbar').classList.remove('hidden');
+  toast(PLS[a].n + ': ' + (document.body.classList.contains('touchmode') ? 'move to aim, then Place' : 'click to place, R turns it, Y snap on/off, right-click or Esc cancels'), 4.5);
+}
+function endPlace(){ PL = null; el('plbar').classList.add('hidden'); }
+function plRotate(){ if (PL) PL.rot = (PL.rot + 1) % 4; }
+function plEdges(x, y, R){   /* wall lines near a point: built walls, fences and building sides, as [x1, y1, x2, y2] */
+  var out = [], s = world.wallSegs, i, q; for (i = 0; i < s.length; i += 4) if (segDist(x, y, s[i], s[i+1], s[i+2], s[i+3]) < R) out.push(s.slice(i, i + 4));
+  var cx0 = Math.floor(x/G), cy0 = Math.floor(y/G); for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){ var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
+    for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.gone) continue; var p = b.pts, n = p.length; for (q = 0; q < n; q += 2){ var j = (q + 2) % n; if (segDist(x, y, p[q], p[q+1], p[j], p[j+1]) < R) out.push([p[q], p[q+1], p[j], p[j+1]]); } } }
+  return out;
+}
+function plSnap(a, x, y, rawYaw){
+  var S = PLS[a], wallish = a === 'wall' || a === 'cade', r = {x:x, y:y, yaw:rawYaw, snap:''}, i;
+  if (!PL.grid){ return r; }
+  if (!wallish){ r.yaw = Math.round(rawYaw/1.5708)*1.5708; r.x = Math.round(x*2)/2; r.y = Math.round(y*2)/2; r.snap = 'grid'; return r; }
+  var th = a === 'wall' ? rawYaw + 1.5708 : rawYaw, edges = plEdges(x, y, 7), best = null, bd = 1e9;   /* th: the way its long side runs */
+  edges.forEach(function(e){ var d = segDist(x, y, e[0], e[1], e[2], e[3]); if (d < bd){ bd = d; best = e; } });
+  var snapped = false; if (best){ var ea = Math.atan2(best[3] - best[1], best[2] - best[0]); for (var k = 0; k < 4 && !snapped; k++){ var cand = ea + k*1.5708, df = Math.atan2(Math.sin(th - cand), Math.cos(th - cand)); if (Math.abs(df) < 0.4){ th = cand; snapped = true; r.snap = 'line'; } } }
+  if (!snapped){ th = Math.round(th/0.2618)*0.2618; r.snap = 'grid'; }
+  r.yaw = a === 'wall' ? th - 1.5708 : th; r.x = Math.round(x*2)/2; r.y = Math.round(y*2)/2;
+  /* flush against the side of a building or fence when close */
+  if (best && snapped && bd < 1.4){ var ex = best[2] - best[0], ey = best[3] - best[1], el2 = Math.hypot(ex, ey) || 1, nx = -ey/el2, ny = ex/el2, sd = (r.x - best[0])*nx + (r.y - best[1])*ny, off = 0.2 + (a === 'wall' ? 0.1 : 0.12);
+    var tg = sd >= 0 ? off : -off; r.x += nx*(tg - sd); r.y += ny*(tg - sd); r.snap = 'side'; }
+  /* end to end with a wall you built */
+  if (a === 'wall'){ var hl = 1.5, dx = -Math.sin(r.yaw)*hl, dy = Math.cos(r.yaw)*hl, bestD = 0.9, sx = 0, sy = 0;
+    world.edits.walls.forEach(function(w){ var wdx = -Math.sin(w.yaw)*1.5, wdy = Math.cos(w.yaw)*1.5; [[w.x - wdx, w.y - wdy], [w.x + wdx, w.y + wdy]].forEach(function(e){ [[r.x - dx, r.y - dy], [r.x + dx, r.y + dy]].forEach(function(g){ var d2 = Math.hypot(e[0] - g[0], e[1] - g[1]); if (d2 < bestD){ bestD = d2; sx = e[0] - g[0]; sy = e[1] - g[1]; } }); }); });
+    if (bestD < 0.9 && (sx || sy)){ r.x += sx; r.y += sy; r.snap = 'end'; } }
+  return r;
+}
+function plCheck(a, x, y, yaw){
+  var wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3, cw = me.bg === 'mechanic' ? 1 : 2, fw = me.bg === 'mechanic' ? 3 : 4;
+  if (Math.hypot(x - P.x, y - P.y) < 0.7 && a !== 'plot') return 'Too close to you';
+  if (a === 'wall'){ if (inv.wood < wc) return 'Needs ' + wc + ' wood'; if (hitWall(x, y) || buildingAt(x, y) !== P.inside) return 'No room there'; }
+  else if (a === 'cade'){ if (inv.wood < cw || inv.scrap < 1) return 'Needs ' + cw + ' wood and 1 scrap'; if (hitWall(x, y)) return 'No room there'; }
+  else if (a === 'fire'){ if (inv.wood < fw) return 'Needs ' + fw + ' wood'; if (hitWall(x, y)) return 'No room there'; }
+  else if (a === 'bed'){ if (!P.inside) return 'Beds go inside a building'; if (world.nests[P.inside.id]) return 'Not in a nest'; if (inv.wood < 5) return 'Needs 5 wood'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.5)) return 'No room there'; }
+  else if (a === 'chest'){ if (!P.inside) return 'Chests go inside a building'; if (inv.wood < 3 || inv.scrap < 2) return 'Needs 3 wood and 2 scrap'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.4)) return 'No room there'; }
+  else if (a === 'coll' || a === 'plot'){ if (P.inside || buildingAt(x, y)) return 'This goes outside'; if (a === 'coll' ? (inv.wood < 2 || inv.scrap < 2) : inv.wood < 3) return 'Not enough materials'; if (inWater(x, y, 1) || (world.roadAt && world.roadAt(x, y)) || hitWall(x, y) || circ(x, y, a === 'plot' ? 1 : 0.5)) return 'Open ground only: off the road'; }
+  return '';
+}
+function plTick(){
+  if (!PL) return; if (P.veh || P.sleep || P.hide || P.cop){ endPlace(); return; }
+  var raw = {x:P.x + Math.cos(P.yaw)*PL.dist, y:P.y + Math.sin(P.yaw)*PL.dist}, wallish = PL.a === 'wall', yaw0 = (wallish ? P.yaw : P.yaw + 1.5708) + PL.rot*1.5708;
+  if (!wallish && PL.a !== 'cade') yaw0 = PL.rot*1.5708 + (PL.grid ? 0 : P.yaw);
+  var r = plSnap(PL.a, raw.x, raw.y, yaw0); PL.x = r.x; PL.y = r.y; PL.yaw = r.yaw; PL.snap = r.snap; PL.why = plCheck(PL.a, r.x, r.y, r.yaw); PL.ok = !PL.why;
+  var S = PLS[PL.a]; el('pltxt').textContent = S.n + ' · ' + S.cost + ' · ' + (PL.ok ? (PL.snap === 'end' ? 'joins the wall' : PL.snap === 'side' ? 'flush with the wall' : PL.snap === 'line' ? 'lined up' : PL.grid ? 'on the grid' : 'free') : PL.why);
+  el('plok').disabled = !PL.ok; el('plsn').textContent = PL.grid ? 'Snap: on' : 'Snap: off';
+}
+function plConfirm(){
+  if (!PL) return; if (!PL.ok){ toast(PL.why || 'It will not go there.', 2); return; }
+  var a = PL.a, pos = {x:PL.x, y:PL.y, yaw:PL.yaw}; if (a === 'cade' || a === 'fire') place(a, pos); else buildAct(a, pos); sfx('wood_hit', pos.x, pos.y, 0.7, 0.9);
+}
+function drawGhost(m){
+  var g = PL, S = PLS[g.a], c = C(g.ok ? '#7be06b' : '#e0604a'), th = 0.035, hx = S.hx, hz = S.hz, h = S.h, sx, sz; m.yo = groundAt(g.x, g.y); m.al = 128;
+  m.ybox(g.x, g.y, g.yaw, 0, -hz, 0.04, hx, th, th, c); m.ybox(g.x, g.y, g.yaw, 0, hz, 0.04, hx, th, th, c); m.ybox(g.x, g.y, g.yaw, -hx, 0, 0.04, th, th, hz, c); m.ybox(g.x, g.y, g.yaw, hx, 0, 0.04, th, th, hz, c);
+  for (sx = -1; sx <= 1; sx += 2) for (sz = -1; sz <= 1; sz += 2) m.ybox(g.x, g.y, g.yaw, sx*hx, sz*hz, h/2, th, h/2, th, c);
+  if (h > 0.8){ m.ybox(g.x, g.y, g.yaw, 0, -hz, h, hx, th, th, c); m.ybox(g.x, g.y, g.yaw, 0, hz, h, hx, th, th, c); m.ybox(g.x, g.y, g.yaw, -hx, 0, h, th, th, hz, c); m.ybox(g.x, g.y, g.yaw, hx, 0, h, th, th, hz, c); }
+  m.ybox(g.x, g.y, g.yaw, 0, 0, 0.05, 0.12, 0.05, 0.12, c); m.ybox(g.x, g.y, g.yaw, Math.max(hx, 0.4) + 0.2, 0, 0.05, 0.12, 0.05, 0.04, c);   /* a centre mark and a nub on the front side */
+  m.al = 255; m.yo = 0;
 }
 function renderBuild(){
   var box = el('build'); if (box.classList.contains('hidden')) return;
@@ -5150,9 +5295,9 @@ function renderBuild(){
 }
 function toggleBuild(){ var b = el('build'); b.classList.toggle('hidden'); if (!b.classList.contains('hidden')){ if (document.exitPointerLock) document.exitPointerLock(); renderBuild(); } }
 el('buildBtn').addEventListener('click', toggleBuild);
-el('build').addEventListener('click', function(e){ if (e.target.id === 'bdClose'){ toggleBuild(); return; } var a = e.target.getAttribute && e.target.getAttribute('data-a'); if (a && running) buildAct(a); });
+el('build').addEventListener('click', function(e){ if (e.target.id === 'bdClose'){ toggleBuild(); return; } var a = e.target.getAttribute && e.target.getAttribute('data-a'); if (a && running){ if (PLS[a]) startPlace(a); else buildAct(a); } });
 function drawBuilt(m){
-  var E = world.edits, i, k;
+  var E = world.edits, i, k; if (PL) drawGhost(m);
   for (i = 0; i < E.walls.length; i++){ var w = E.walls[i]; if (Math.abs(w.x - P.x) > 140 || Math.abs(w.y - P.y) > 140) continue; m.yo = groundAt(w.x, w.y); m.ybox(w.x, w.y, w.yaw, 0, 0, 1.25, 0.1, 1.25, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, 2.52, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, 1.25, 0.13, 0.08, 1.5, C('#6b4a30')); }
   for (k in E.beds){ var bd = E.beds[k]; if (Math.abs(bd.x - P.x) > 60 || Math.abs(bd.y - P.y) > 60) continue; m.yo = groundAt(bd.x, bd.y); m.ybox(bd.x, bd.y, 0, 0, 0, 0.32, 1, 0.14, 0.5, C('#7a5a3c')); m.ybox(bd.x, bd.y, 0, 0, 0, 0.5, 0.95, 0.06, 0.46, C(k === charSlug() ? '#4f83e6' : '#c9d3e0')); m.ybox(bd.x, bd.y, 0, -0.72, 0, 0.6, 0.2, 0.06, 0.36, C('#f2f2f2')); }
   for (i = 0; i < E.chests.length; i++){ var c = E.chests[i]; if (c.bed || Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60) continue; m.yo = groundAt(c.x, c.y); m.ybox(c.x, c.y, 0.3, 0, 0, 0.4, 0.5, 0.3, 0.35, C('#8a5a2b')); m.ybox(c.x, c.y, 0.3, 0, 0, 0.74, 0.52, 0.05, 0.37, C('#b07a3e')); m.ybox(c.x, c.y, 0.3, 0.52, 0, 0.5, 0.01, 0.08, 0.06, C('#ffd24a')); }
@@ -5266,6 +5411,7 @@ function makeVehicles(saved){
   });
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck'; list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : undefined, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
+  if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
   w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = +s2[3] || 0; } });
   bedChest();
 }

@@ -511,3 +511,12 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 3. Get a wound, get wet, go hungry: each condition chip under the bars has its own small icon. Under 25 health the screen edges darken with a red vignette.
 4. On a phone, Jump and Build are pictures now; in build mode the Build button becomes Back.
 
+## Stage 5h: placing and taking apart (0.46.0)
+
+1. Craft a crowbar, axe and wrench (K menu). In the safe house, walk up to a table, chair, wardrobe or sofa and hold J: a bar fills and the piece disappears with wood, scrap or fibre. A fridge, stove or sink needs the wrench, toolkit or crowbar. Without the tool a message says what is needed. Leave and come back (or reload): it stays gone.
+2. Search a cupboard or shelf before taking it apart; before then the game asks you to search it first.
+3. Walk up to a parked car and hold J with a wrench or toolkit: about seven seconds, then scrap and sometimes engine parts, a battery, a tyre or fuel. The car is gone after a reload too.
+4. Open the Build menu (N), choose Wall section: a ghost frame appears in front of you. Walk or look to move it; it snaps to the half-metre grid and lines up with fences and building sides. Place a second wall near the end of the first: it should join end to end. R rotates, Y turns snapping off, right-click or Esc cancels.
+5. Barricade, campfire, bed, chest, rain collector and garden plot use the same placement; red means no room or not enough materials, and the bar says why.
+6. Use the wood from furniture to board a door (B at a door) or build a wall across it.
+
