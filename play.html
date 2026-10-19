@@ -387,7 +387,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.57.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.58.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -395,7 +395,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.57.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.58.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2516,7 +2516,7 @@ function innerBar(b){
   b.int.idoors.forEach(function(d, i){ if (innerState(b, i) === 0) a.push(d[0], d[1], d[2], d[3]); }); return b.ibar = a;
 }
 /* outside doors can be locked: keys open them at once, prying is slow and quiet, smashing is quick and loud */
-function lockedOf(b){ var s = world.edits.ports[b.id]; if (s && s.l !== undefined) return !!s.l; if (s && s.d !== undefined) return false; return b.id !== world.safe && !(world.edits.beds && Object.keys(world.edits.beds).some(function(k){ return world.edits.beds[k].b === b.id; })) && hash(b.id, 51, 3) < (b.cat === 'house' ? 0.3 : 0.45) && doorState(b) === 0; }
+function lockedOf(b){ var s = world.edits.ports[b.id]; if (s && s.l !== undefined) return !!s.l; if (s && s.d !== undefined) return false; return b.id !== world.safe && !allBeds().some(function(q){ return q.b === b.id; }) && hash(b.id, 51, 3) < (b.cat === 'house' ? 0.3 : 0.45) && doorState(b) === 0; }
 function winState(b, k){ var s = world.edits.ports[b.id]; return (s && s.w && s.w[k]) || 0; }
 /* 0.35: curtains (or a sheet, blind or cardboard over the glass in other buildings). They stop eyes and lamplight, not hands */
 function curtOf(b, k){ var s = world.edits.ports[b.id]; return !!(s && s.c && s.c[k]); }
@@ -2717,7 +2717,7 @@ function startRun(ws, cs){
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
     var mine = worldPlayers[charSlug()]; if (mine && !toSafe){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
   }
-  w.edits = {col:{}, gone:{}, walls:[], beds:{}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, junkv:{}, blocks:{}, gens:[], truck:{p:{}, away:0}, colls:[], plots:[], benches:[]}; w.wallSegs = [];
+  w.edits = {col:{}, gone:{}, walls:[], beds:{}, bases:{}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, junkv:{}, blocks:{}, gens:[], truck:{p:{}, away:0}, colls:[], plots:[], benches:[]}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
   pickSafe(!resumed && net.role !== 'guest', toSafe || !(resumed && worldPlayers[charSlug()]));
@@ -3329,7 +3329,7 @@ function goToSleep(o){
   P.sleep = {start:time, hp:P.hp}; P.x = o.x + (o.fx || 0)*0.6; P.y = o.y + (o.fy || 0)*0.6;
   doEdit({a:'bed', s:charSlug(), b:o.b.id, x:P.x, y:P.y}); el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping\u2026'; keys = {};
 }
-function wakeUp(why){ if (!P.sleep) return; var hrs = (time - P.sleep.start)/DAY*24, cab = P.sleep.cab; if (cab){ var q = tpt(cab, 0.25, 1.6); P.x = q.x; P.y = q.y; } P.sleep = null; el('sleepMask').classList.remove('on'); toast((why ? why + ' ' : '') + 'You slept ' + (hrs < 1 ? 'a little' : Math.round(hrs) + ' hours') + (cab ? ' in the truck.' : '. You will wake here if you die.'), 5); updateHud(); }
+function wakeUp(why){ if (!P.sleep) return; var hrs = (time - P.sleep.start)/DAY*24, cab = P.sleep.cab; if (cab){ var q = tpt(cab, 0.25, 1.6); P.x = q.x; P.y = q.y; } P.sleep = null; if (!cab) allBeds().forEach(function(bd){ var a = world.edits.beds[charSlug()]; if (bd.s === charSlug() && Math.hypot(bd.x - P.x, bd.y - P.y) < 3 && (!a || a.b !== bd.b)) doEdit({a:'bed', s:charSlug(), b:bd.b, x:bd.x, y:bd.y}); }); el('sleepMask').classList.remove('on'); toast((why ? why + ' ' : '') + 'You slept ' + (hrs < 1 ? 'a little' : Math.round(hrs) + ' hours') + (cab ? ' in the truck.' : '. You will wake here if you die.'), 5); updateHud(); }
 function sleepTick(dt){
   if (!P.sleep) return;
   if (P.bleed > 0) return wakeUp('You woke up bleeding.');
@@ -4194,7 +4194,7 @@ function drawBig(){
     c.font = '700 13px sans-serif'; }
   var sfm = safeB(); if (sfm){ c.fillStyle = '#201e1d'; c.fillText('Safe house', sfm.cx*big.sc + o[0], sfm.cy*big.sc + o[1] - 8); }
   var tkm = truckOf(); if (tkm){ var tx2 = tkm.x*big.sc + o[0], ty2 = tkm.y*big.sc + o[1]; c.fillStyle = '#963e30'; c.fillRect(tx2 - 3, ty2 - 3, 6, 6); c.fillStyle = '#201e1d'; c.fillText('Truck', tx2, ty2 + 14); }
-  var bd = world.edits.beds[charSlug()]; if (bd && world.buildings[bd.b]){ var bb = world.buildings[bd.b]; c.fillStyle = '#201e1d'; c.fillText('Base', bb.cx*big.sc + o[0], bb.cy*big.sc + o[1] - 8); }
+  allBeds().forEach(function(bd){ if (bd.s !== charSlug() || !world.buildings[bd.b]) return; var bb = world.buildings[bd.b], act = world.edits.beds[charSlug()]; c.fillStyle = '#201e1d'; c.fillText(act && act.b === bd.b ? 'Base (home)' : 'Base', bb.cx*big.sc + o[0], bb.cy*big.sc + o[1] - 8); });
   c.strokeStyle = 'rgba(32,30,29,.55)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(W/2 - 10, H/2); c.lineTo(W/2 + 10, H/2); c.moveTo(W/2, H/2 - 10); c.lineTo(W/2, H/2 + 10); c.stroke();
   c.save(); c.translate(P.x*big.sc + o[0], P.y*big.sc + o[1]); c.rotate(P.yaw); c.fillStyle = '#c67139'; c.strokeStyle = '#f5ead8'; c.lineWidth = 3;
   c.beginPath(); c.moveTo(14, 0); c.lineTo(-9, -10); c.lineTo(-4, 0); c.lineTo(-9, 10); c.closePath(); c.fill(); c.stroke(); c.restore();
@@ -5395,6 +5395,9 @@ function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(
 function wallHurt(w, k, d){ var by = wallBays(w), old = by[k]; if (old <= 0) return; by[k] = Math.max(0, old - d); if (bayState(by[k], wallMat(w).hp) !== bayState(old, wallMat(w).hp)){ if (by[k] <= 0) rebuildWalls(); emit({k:'edit', e:{a:'wbay', id:w.id, i:k, v:Math.round(by[k])}}); sfx(by[k] <= 0 ? 'plank' : 'wood_hit', w.x, w.y, 0.7, 0.9); } }
 function wallsAttack(z, A, dt){ var W = world.edits.walls; for (var i = 0; i < W.length; i++){ var w = W[i]; if (Math.abs(w.x - z.x) > 3.2 || Math.abs(w.y - z.y) > 3.2) continue; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (z.x - w.x)*dx + (z.y - w.y)*dy, n = Math.abs(-(z.x - w.x)*dy + (z.y - w.y)*dx); if (Math.abs(u) > 1.6 || n > A.r + 0.5) continue; var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0 && k > 0 && by[k-1] > 0 && u < -1.5 + k*0.5 + 0.25) k--; else if (by[k] <= 0 && k < 5 && by[k+1] > 0) k++; if (by[k] <= 0) continue; wallHurt(w, k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09)*wallMat(w).res); return; } }
 function setGone(b, on){ b.gone = !!on; if (b.int){ freeInt(b); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
+/* 0.58: a player may own several bases (one bed each, up to 4). The newest bed, or the one slept in last, is where you wake after dying */
+function addBase(who, b, x, y){ var E = world.edits, k = slug(who); E.bases = E.bases || {}; var L = E.bases[k] = E.bases[k] || []; for (var i = 0; i < L.length; i++) if (L[i].b === b){ L[i].x = x; L[i].y = y; return; } L.push({b:b, x:x, y:y}); if (L.length > 4) L.shift(); }
+function allBeds(){ var o = [], k; for (k in world.edits.bases) world.edits.bases[k].forEach(function(q){ o.push({s:k, b:q.b, x:q.x, y:q.y}); }); return o; }
 function loadEdits(ed){
   var E = world.edits, k; if (!E.truck) E.truck = {p:{}, away:0}; E.colls = E.colls || []; E.plots = E.plots || [];
   (Array.isArray(ed.colls) ? ed.colls : []).slice(0, 40).forEach(function(c){ if (c && isFinite(c.x) && isFinite(c.y)) E.colls.push({coll:true, name:'rain collector', id:String(c.id).slice(0, 24), x:+c.x, y:+c.y, w:Math.max(0, Math.min(COLL_CAP, c.w | 0)), acc:0}); });
@@ -5403,7 +5406,9 @@ function loadEdits(ed){
   for (k in (ed.col || {})){ var b = world.buildings[k]; if (b && okCol(ed.col[k], '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[k] = ed.col[k]; } }
   for (k in (ed.gone || {})) if (world.buildings[k]){ E.gone[k] = 1; world.buildings[k].gone = true; }
   (ed.walls || []).slice(0, 400).forEach(function(w){ var nw = {id:String(w.id), x:+w.x, y:+w.y, yaw:+w.yaw || 0}; nw.m = WMATS[w.m] ? w.m : 'wood'; if (Array.isArray(w.bays) && w.bays.length === 6) nw.bays = w.bays.map(function(v){ return Math.max(0, Math.min(12, +v || 0)); }); E.walls.push(nw); });
-  for (k in (ed.beds || {})) E.beds[slug(k)] = {b:ed.beds[k].b | 0, x:+ed.beds[k].x, y:+ed.beds[k].y};
+  E.bases = E.bases || {}; for (k in (ed.beds || {})) E.beds[slug(k)] = {b:ed.beds[k].b | 0, x:+ed.beds[k].x, y:+ed.beds[k].y};
+  for (k in (ed.bases || {})) (Array.isArray(ed.bases[k]) ? ed.bases[k] : []).slice(0, 6).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) addBase(k, q.b | 0, +q.x, +q.y); });
+  for (k in E.beds) addBase(k, E.beds[k].b, E.beds[k].x, E.beds[k].y);
   (ed.chests || []).slice(0, 100).forEach(function(c){ E.chests.push({chest:true, name:'the chest', id:String(c.id), x:+c.x, y:+c.y, inv:c.inv || {}, items:c.items || {}, designs:c.designs || []}); });
   for (k in (ed.ports || {})){ var pb = world.buildings[k], ps = ed.ports[k]; if (!pb || !ps) continue; var np = {w:{}}; if (ps.d === 0 || ps.d === 1 || ps.d === 2) np.d = ps.d; for (var wk in (ps.w || {})) if (ps.w[wk] >= 1 && ps.w[wk] <= 3) np.w[wk | 0] = ps.w[wk] | 0; if (ps.c){ np.c = {}; for (var ck in ps.c) if (ps.c[ck]) np.c[ck | 0] = 1; } E.ports[k] = np; pb.bar = null; pb.sbar = null; pb.gbar = null; }
   for (k in (ed.picked || {})) if (isFinite(ed.picked[k])) E.picked[String(k).slice(0, 24)] = +ed.picked[k];
@@ -5423,7 +5428,7 @@ function applyEdit(e){
   else if (e.a === 'wall' && e.w && E.walls.length < 400){ E.walls.push({id:String(e.w.id), x:+e.w.x, y:+e.w.y, yaw:+e.w.yaw || 0, m:WMATS[e.w.m] ? e.w.m : 'wood'}); rebuildWalls(); }
   else if (e.a === 'wbay'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ var wb = wallBays(E.walls[i]); if ((e.i | 0) >= 0 && (e.i | 0) < 6) wb[e.i | 0] = Math.max(0, Math.min(12, +e.v || 0)); rebuildWalls(); break; } }
   else if (e.a === 'unwall'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ E.walls.splice(i, 1); break; } rebuildWalls(); }
-  else if (e.a === 'bed' && e.s){ E.beds[slug(e.s)] = {b:e.b | 0, x:+e.x, y:+e.y}; }
+  else if (e.a === 'bed' && e.s){ E.beds[slug(e.s)] = {b:e.b | 0, x:+e.x, y:+e.y}; addBase(e.s, e.b | 0, +e.x, +e.y); }
   else if (e.a === 'tap' && typeof e.key === 'string'){ E.taps[e.key.slice(0, 24)] = Math.min(9, (E.taps[e.key] || 0) + 1); }
   else if (e.a === 'shove' && b && MODELS[e.m]){ var mv = E.moved[b.id] || (E.moved[b.id] = []); if (mv.indexOf(e.ii | 0) < 0) mv.push(e.ii | 0); var bl = E.blocks[b.id] || (E.blocks[b.id] = {}); bl[e.k | 0] = {m:String(e.m), hp:60, s:e.s < 0 ? -1 : 1}; b.bar = b.ibar = null; refreshInterior(b); }
   else if (e.a === 'junk' && b){ var mv2 = E.moved[b.id] || (E.moved[b.id] = []); if (mv2.indexOf(e.ii | 0) < 0) mv2.push(e.ii | 0); b.bar = b.ibar = null; refreshInterior(b); }
@@ -5475,7 +5480,7 @@ function buildAct(a, pos){
   } else if (a === 'bed'){
     if (!P.inside){ toast('A bed has to be inside a building.', 2.5); return; } if (world.nests[P.inside.id]){ toast('Not in a nest.', 2.5); return; }
     if (inv.wood < 5){ toast('A bed needs 5 wood.', 2.5); return; }
-    inv.wood -= 5; doEdit({a:'bed', s:charSlug(), b:P.inside.id, x:pos ? x : P.x, y:pos ? y : P.y}); toast('Bed placed. This building is now your base, and you will wake here if you die.', 5);
+    inv.wood -= 5; doEdit({a:'bed', s:charSlug(), b:P.inside.id, x:pos ? x : P.x, y:pos ? y : P.y}); toast(allBeds().filter(function(q){ return q.s === charSlug(); }).length > 1 ? 'Bed placed. This is a new base, and you will wake here if you die. Sleep in another of your beds to make that one home instead.' : 'Bed placed. This building is now your base, and you will wake here if you die.', 6);
   } else if (a === 'coll' || a === 'plot'){
     if (P.inside || buildingAt(x, y)){ toast(a === 'coll' ? 'A rain collector has to stand outside, under the open sky.' : 'A garden plot has to be outside, on open ground.', 3); return; }
     if (inWater(x, y, 1) || (world.roadAt && world.roadAt(x, y)) || hitWall(x, y) || circ(x, y, a === 'plot' ? 1 : 0.5)){ toast('There is no room for that here: pick open ground, off the road.', 3); return; }
@@ -5491,7 +5496,7 @@ function buildAct(a, pos){
     doEdit({a:'col', b:b.id, c:PAINT[(PAINT.indexOf(b.col) + 1) % PAINT.length]});
   } else if (a === 'demo'){
     if (!b || P.inside){ toast('Stand outside, next to the building to demolish.', 3); return; } if (world.nests[b.id]){ toast('Destroy the nest inside first.', 3); return; }
-    for (var k in world.edits.beds) if (world.edits.beds[k].b === b.id){ toast('Someone\'s bed is in there.', 3); return; }
+    if (allBeds().some(function(q){ return q.b === b.id; })){ toast('Someone\'s bed is in there.', 3); return; }
     var gw = Math.min(20, 4 + Math.round(b.area/40)); inv.wood += gw; inv.scrap += Math.round(gw/2); doEdit({a:'gone', b:b.id}); feed('Demolished: +' + gw + ' wood, +' + Math.round(gw/2) + ' scrap', ITEMS.wood[1]);
   } else if (a === 'ask'){ if (net.role === 'guest'){ send(net.host.dc, {t:'askEdits'}); toast('Asked the host for their building changes.', 3); } }
   updateHud(); renderBuild();
@@ -5697,7 +5702,7 @@ function drawBuilt(m){
       continue; } var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
   (E.benches || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80) return; m.yo = groundAt(q.x, q.y); var bm = spB('build.tool_bench'); if (bm) m.model(bm, q.x, q.y, q.yaw, 0); else { m.ybox(q.x, q.y, q.yaw, 0, 0, 0.8, 0.8, 0.04, 0.4, C('#a8743e')); m.ybox(q.x, q.y, q.yaw, 0, 0, 0.4, 0.7, 0.4, 0.3, C('#6b4526')); } });
-  for (k in E.beds){ var bd = E.beds[k]; if (Math.abs(bd.x - P.x) > 60 || Math.abs(bd.y - P.y) > 60) continue; m.yo = groundAt(bd.x, bd.y); m.ybox(bd.x, bd.y, 0, 0, 0, 0.32, 1, 0.14, 0.5, C('#7a5a3c')); m.ybox(bd.x, bd.y, 0, 0, 0, 0.5, 0.95, 0.06, 0.46, C(k === charSlug() ? '#4f83e6' : '#c9d3e0')); m.ybox(bd.x, bd.y, 0, -0.72, 0, 0.6, 0.2, 0.06, 0.36, C('#f2f2f2')); }
+  allBeds().forEach(function(bd){ if (Math.abs(bd.x - P.x) > 60 || Math.abs(bd.y - P.y) > 60) return; m.yo = groundAt(bd.x, bd.y); m.ybox(bd.x, bd.y, 0, 0, 0, 0.32, 1, 0.14, 0.5, C('#7a5a3c')); m.ybox(bd.x, bd.y, 0, 0, 0, 0.5, 0.95, 0.06, 0.46, C(bd.s === charSlug() ? '#4f83e6' : '#c9d3e0')); m.ybox(bd.x, bd.y, 0, -0.72, 0, 0.6, 0.2, 0.06, 0.36, C('#f2f2f2')); });
   for (i = 0; i < E.chests.length; i++){ var c = E.chests[i]; if (c.bed || Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60) continue; m.yo = groundAt(c.x, c.y); m.ybox(c.x, c.y, 0.3, 0, 0, 0.4, 0.5, 0.3, 0.35, C('#8a5a2b')); m.ybox(c.x, c.y, 0.3, 0, 0, 0.74, 0.52, 0.05, 0.37, C('#b07a3e')); m.ybox(c.x, c.y, 0.3, 0.52, 0, 0.5, 0.01, 0.08, 0.06, C('#ffd24a')); }
 }
 /* ---- chests ---- */
