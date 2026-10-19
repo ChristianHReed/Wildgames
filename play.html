@@ -235,7 +235,7 @@
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car boot or siphon fuel &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car boot, siphon fuel, or pick up and put down furniture &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="salv" class="hidden"><span id="stxt"></span><div id="sbar"></div></div>
   <div id="plbar" class="hidden"><span id="pltxt"></span><span class="plb"><button id="plrot">Rotate</button><button id="plsn">Snap: on</button><button id="plok">Place</button><button id="plno" class="alt">Cancel</button></span></div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.63.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.64.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.63.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.64.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2696,7 +2696,7 @@ function startRun(ws, cs){
   for (k = 0; !found && k < 6000; k++){ var a = k*0.5, rr = k*0.2; sx = w.start.x + Math.cos(a)*rr; sy = w.start.y + Math.sin(a)*rr; found = !circ(sx, sy, 1) && !inWater(sx, sy, 0); }
   w.spawn = {x:sx, y:sy};
   P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:false, fl:1, rd:1, noise:0, stam:100, crouch:false, run:false, tired:false, vis:1, wet:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0, worn:{}}; loadConds(null);
-  inv = newInv(true);
+  inv = newInv(true); P.carry = null;
   heat.clear(); w.mem = [];
   zombies = []; packsA = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
   loaded.forEach(function(b){ freeInt(b); b.int = null; }); loaded = []; facs = [];
@@ -3936,7 +3936,7 @@ function stamTick(dt, g, moving){
   if (P.tired && P.stam > 25) P.tired = false;
   P.vis = P.veh ? 1 : g === 0 ? 0.5 : g === 2 ? 1.35 : 1; P.eyeD = (P.eyeD || 0) + ((g === 0 ? -0.6 : P.climb > 0 ? -0.35 : 0) - (P.eyeD || 0))*Math.min(1, dt*9); P.climb = (P.climb || 0) - dt;
 }
-function moveMul(){ return (P.leg === 1 ? 0.55 : P.leg === 2 ? 0.8 : 1)*(P.rest < 12 ? 0.9 : 1)*(me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
+function moveMul(){ return (P.carry ? 0.55 : 1)*(P.leg === 1 ? 0.55 : P.leg === 2 ? 0.8 : 1)*(P.rest < 12 ? 0.9 : 1)*(me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
 function weatherTick(dt, day){
   if (world.lastDay !== day){ if (world.lastDay) spreadNests(); world.lastDay = day; }
   if (time >= wx.until){
@@ -4184,7 +4184,7 @@ var hudKey = '', hudPeek = 0;
 function updateHud(){
   el('bTemp').style.width = (P.body + 100)/2 + '%'; el('bTemp').style.background = P.body < -55 ? '#5f8a9a' : P.body > 55 ? '#c67139' : '#7a8a5e';
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
-  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !((P.mag && P.mag[P.gun] > 0) || inv[gunNow().am] > 0)); el('tGun').classList.toggle('nx', GORDER.filter(gunOwned).length < 2); el('tCar').classList.toggle('nx', !carNear()); gunHud(); el('tLight').classList.toggle('nx', !(inv.flashlight > 0)); el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
+  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !((P.mag && P.mag[P.gun] > 0) || inv[gunNow().am] > 0)); el('tGun').classList.toggle('nx', GORDER.filter(gunOwned).length < 2); el('tCar').classList.toggle('nx', !(carNear() || P.carry || carryTarget())); el('tCar').textContent = P.carry ? 'Put down' : carryTarget() && !carNear() ? 'Carry' : 'Boot'; gunHud(); el('tLight').classList.toggle('nx', !(inv.flashlight > 0)); el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   el('lowhp').style.opacity = P.hp < 25 ? Math.min(1, (25 - P.hp)/15) : 0; el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open|Damp|Cold|Hot|Hungry|Thirsty)/.test(t) ? ' class="mild"' : '') + '>' + condIcon(t) + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
@@ -5461,13 +5461,38 @@ function loadPowerPack(){ if (window.SHAPED && SHAPED.power){ POWER_ON = true; r
 function loadWallsPack(){ if (window.SHAPED && SHAPED.walls){ WALLS_ON = true; return; } if (document.getElementById('wallsJs')) return; var sc = document.createElement('script'); sc.id = 'wallsJs'; sc.src = 'assets/shaped/walls.js?v=' + BUILD; sc.onload = function(){ WALLS_ON = !!(window.SHAPED && SHAPED.walls); }; sc.onerror = function(){}; document.head.appendChild(sc); }
 var WLM = {};
 function wallModel(st, mat){ if (!WALLS_ON) return null; var key = (mat || 'wood') + st; if (WLM[key] !== undefined) return WLM[key]; WLM[key] = null; try { var M = WMATS[mat || 'wood'], pcs = SHAPED.walls.models.sections[M.kind][M.h][st]; if (pcs) WLM[key] = spModel(pcs, spColour(SHAPED.walls.palette, M.col)); } catch (er){} return WLM[key]; }
+/* 0.52 carried furniture: Y at a piece lifts it (search it first); you move slower; Y again sets it down in front of you, where it blocks like a wall and can be gnawed through */
+function pfSize(k){ var f = FURN[k] || FURN.crate || {boxes:[[0, .5, 0, .5, .5, .5, '#b98a52']]}, hx = 0.3, hz = 0.3; f.boxes.forEach(function(b){ hx = Math.max(hx, Math.abs(b[0]) + b[3]); hz = Math.max(hz, Math.abs(b[2]) + b[5]); }); return [Math.min(hx, 1.4), Math.min(hz, 1.4)]; }
+function pfRect(q){ var sz = pfSize(q.k), c = Math.cos(q.yaw), sn = Math.sin(q.yaw), pts = [[-sz[0], -sz[1]], [sz[0], -sz[1]], [sz[0], sz[1]], [-sz[0], sz[1]]]; return pts.map(function(u){ return [q.x + u[0]*c - u[1]*sn, q.y + u[0]*sn + u[1]*c]; }); }
+function carryTarget(){
+  if (P.veh || P.climbL || P.hide || P.sleep || P.roof) return null; var best = null, bd = 2.3, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), dx, dy, d;
+  var test = function(o){ dx = o.x - P.x; dy = o.y - P.y; d = Math.hypot(dx, dy); if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.4)){ bd = d; best = o; } };
+  loaded.forEach(function(b){ if (!b.int || !b.int.furn || P.x < b.minx - 3 || P.x > b.maxx + 3 || P.y < b.miny - 3 || P.y > b.maxy + 3) return; b.int.furn.forEach(function(o){ if ((o.lvl || 0) === (P.lvl || 0)) test(o); }); });
+  (world.edits.placed || []).forEach(function(q){ q.pf = 1; test(q); });
+  return best;
+}
+function carryUse(){
+  var E = world.edits;
+  if (P.carry){
+    if (P.lvl){ toast('Take it down to the ground floor first.', 2.5); return; }
+    var x = P.x + Math.cos(P.yaw)*(1.1 + pfSize(P.carry)[0]), y = P.y + Math.sin(P.yaw)*(1.1 + pfSize(P.carry)[0]), q = {id:Date.now() + '-' + Math.floor(Math.random()*1e6), k:P.carry, x:x, y:y, yaw:P.yaw, hp:40};
+    var ok = true; pfRect(q).forEach(function(c){ if (hitWall(c[0], c[1]) || buildingAt(c[0], c[1]) !== P.inside) ok = false; }); if (!ok || circ(x, y, 0.4)){ toast('There is no room to put it down there.', 2.5); return; }
+    doEdit({a:'place', q:q}); sfx('wood_hit', x, y, 0.8, 0.7); makeNoise(x, y, 8); feed('Put it down', ITEMS.wood[1]); P.carry = null; return; }
+  var o = carryTarget(); if (!o){ return false; }
+  if (o.pf){ P.carry = o.k; doEdit({a:'unplace', id:o.id}); feed('Picked up: ' + (FURN[o.k] && FURN[o.k].name || o.k) + '. Y puts it down. You move slowly.', ITEMS.wood[1]); return; }
+  var c = null, cs = o.b.int.conts; for (var j = 0; j < cs.length; j++) if (cs[j].ii === o.ii) c = cs[j];
+  if (c && !o.b.got[c.i] && c.name && !c.hide){ toast('Search it first: there may still be something in it.', 3); return; }
+  var k = furnKey(o.f); if (o.f.fix === 'bed' || o.f.fix2 === 'bench'){ toast('That is fixed in place. Take it apart instead (hold J).', 3); return; }
+  P.carry = k; doEdit({a:'junk', b:o.b.id, ii:o.ii}); sfx('wood_hit', o.x, o.y, 0.8, 0.8); makeNoise(o.x, o.y, 6); feed('Picked up: ' + (o.f.name || k) + '. Y puts it down. You move slowly.', ITEMS.wood[1]);
+}
 function bayState(v, hp){ var f = v/(hp || 6); return f >= 0.66 ? 'whole' : f >= 0.33 ? 'cracked' : v > 0 ? 'gone' : 'rubble'; }
 function wallBays(w){ if (!w.bays || w.bays.length !== 6){ var h = wallMat(w).hp; w.bays = [h, h, h, h, h, h]; } return w.bays; }
-function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(); world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), by = wallBays(w), k = 0;
+function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(); (world.edits.placed || []).forEach(function(q){ var r = pfRect(q); for (var i = 0; i < 4; i++){ var a = r[i], b = r[(i + 1) % 4]; s.push(a[0], a[1], b[0], b[1]); } }); world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), by = wallBays(w), k = 0;
     while (k < 6){ if (by[k] <= 0){ k++; continue; } var k0 = k; while (k < 6 && by[k] > 0) k++; var a = -1.5 + k0*0.5, b = -1.5 + k*0.5; s.push(w.x + dx*a, w.y + dy*a, w.x + dx*b, w.y + dy*b); } }); }
 /* damage to one bay; the host works out the damage and sends a bay's new health to everyone whenever its look changes */
 function wallHurt(w, k, d){ var by = wallBays(w), old = by[k]; if (old <= 0) return; by[k] = Math.max(0, old - d); if (bayState(by[k], wallMat(w).hp) !== bayState(old, wallMat(w).hp)){ if (by[k] <= 0) rebuildWalls(); emit({k:'edit', e:{a:'wbay', id:w.id, i:k, v:Math.round(by[k])}}); sfx(by[k] <= 0 ? 'plank' : 'wood_hit', w.x, w.y, 0.7, 0.9); } }
-function wallsAttack(z, A, dt){ var W = world.edits.walls; for (var i = 0; i < W.length; i++){ var w = W[i]; if (Math.abs(w.x - z.x) > 3.2 || Math.abs(w.y - z.y) > 3.2) continue; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (z.x - w.x)*dx + (z.y - w.y)*dy, n = Math.abs(-(z.x - w.x)*dy + (z.y - w.y)*dx); if (Math.abs(u) > 1.6 || n > A.r + 0.5) continue; var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0 && k > 0 && by[k-1] > 0 && u < -1.5 + k*0.5 + 0.25) k--; else if (by[k] <= 0 && k < 5 && by[k+1] > 0) k++; if (by[k] <= 0) continue; wallHurt(w, k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09)*wallMat(w).res); return; } }
+function wallsAttack(z, A, dt){ var PF = world.edits.placed || []; for (var pi = 0; pi < PF.length; pi++){ var pq = PF[pi]; if (Math.abs(pq.x - z.x) > 3.2 || Math.abs(pq.y - z.y) > 3.2) continue; var psz = pfSize(pq.k); if (Math.hypot(pq.x - z.x, pq.y - z.y) > Math.max(psz[0], psz[1]) + A.r + 0.5) continue; pq.hp -= A.dmg*dt*(z.k === 2 ? 0.5 : 0.09); if (pq.hp <= 0){ var pid = pq.id; world.edits.placed = PF.filter(function(q){ return q.id !== pid; }); rebuildWalls(); emit({k:'edit', e:{a:'unplace', id:pid}}); sfx('plank', pq.x, pq.y, 0.8, 0.8); } return; }
+  var W = world.edits.walls; for (var i = 0; i < W.length; i++){ var w = W[i]; if (Math.abs(w.x - z.x) > 3.2 || Math.abs(w.y - z.y) > 3.2) continue; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (z.x - w.x)*dx + (z.y - w.y)*dy, n = Math.abs(-(z.x - w.x)*dy + (z.y - w.y)*dx); if (Math.abs(u) > 1.6 || n > A.r + 0.5) continue; var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0 && k > 0 && by[k-1] > 0 && u < -1.5 + k*0.5 + 0.25) k--; else if (by[k] <= 0 && k < 5 && by[k+1] > 0) k++; if (by[k] <= 0) continue; wallHurt(w, k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09)*wallMat(w).res); return; } }
 function setGone(b, on){ b.gone = !!on; if (b.int){ freeInt(b); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
 /* 0.58: a player may own several bases (one bed each, up to 4). The newest bed, or the one slept in last, is where you wake after dying */
 function addBase(who, b, x, y){ var E = world.edits, k = slug(who); E.bases = E.bases || {}; var L = E.bases[k] = E.bases[k] || []; for (var i = 0; i < L.length; i++) if (L[i].b === b){ L[i].x = x; L[i].y = y; return; } L.push({b:b, x:x, y:y}); if (L.length > 4) L.shift(); }
@@ -5492,6 +5517,7 @@ function loadEdits(ed){
   for (k in (ed.moved || {})) if (world.buildings[k] && Array.isArray(ed.moved[k])) E.moved[k] = ed.moved[k].slice(0, 120).map(function(v){ return v | 0; });
   for (k in (ed.blocks || {})) if (world.buildings[k] && ed.blocks[k]){ E.blocks[k] = {}; for (var bk in ed.blocks[k]){ var bv = ed.blocks[k][bk]; if (bv && MODELS[bv.m]) E.blocks[k][bk | 0] = {m:String(bv.m), hp:Math.min(80, +bv.hp || 60), s:bv.s < 0 ? -1 : 1}; } }
   if (ed.truck && typeof ed.truck === 'object'){ TJOBS.forEach(function(j){ if (ed.truck.p && ed.truck.p[j[0]]) E.truck.p[j[0]] = 1; }); E.truck.away = ed.truck.away ? 1 : 0; }
+  E.placed = []; (Array.isArray(ed.placed) ? ed.placed : []).slice(0, 80).forEach(function(q){ if (q && FURN[q.k] && isFinite(q.x) && isFinite(q.y)) E.placed.push({id:String(q.id).slice(0, 30), k:String(q.k), x:+q.x, y:+q.y, yaw:+q.yaw || 0, hp:Math.max(1, Math.min(40, +q.hp || 40))}); });
   E.boots = {}; for (k in (ed.boots || {})) E.boots[String(k).slice(0, 24)] = 1;
   E.benches = E.benches || []; (Array.isArray(ed.benches) ? ed.benches : []).slice(0, 30).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.benches.push({fix:'bench', name:'tool bench', id:String(q.id).slice(0, 24), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.junkv = E.junkv || {}; for (k in (ed.junkv || {})) E.junkv[String(k).slice(0, 24)] = 1;
@@ -5511,6 +5537,8 @@ function applyEdit(e){
   else if (e.a === 'junk' && b){ var mv2 = E.moved[b.id] || (E.moved[b.id] = []); if (mv2.indexOf(e.ii | 0) < 0) mv2.push(e.ii | 0); b.bar = b.ibar = null; refreshInterior(b); }
   else if (e.a === 'junkveh' && typeof e.id === 'string'){ (E.junkv || (E.junkv = {}))[e.id.slice(0, 24)] = 1; var vj = world.vmap && world.vmap[e.id]; if (vj && vj !== P.veh){ var vi2 = world.vehicles.indexOf(vj); if (vi2 >= 0) world.vehicles.splice(vi2, 1); delete world.vmap[e.id]; } }
   else if (e.a === 'bench' && e.q && isFinite(e.q.x) && (E.benches || (E.benches = [])).length < 30){ E.benches.push({fix:'bench', name:'tool bench', id:String(e.q.id).slice(0, 24), x:+e.q.x, y:+e.q.y, yaw:+e.q.yaw || 0}); }
+  else if (e.a === 'place' && e.q && FURN[e.q.k] && (E.placed || (E.placed = [])).length < 80){ E.placed.push({id:String(e.q.id).slice(0, 30), k:String(e.q.k), x:+e.q.x, y:+e.q.y, yaw:+e.q.yaw || 0, hp:Math.max(1, Math.min(40, +e.q.hp || 40))}); rebuildWalls(); }
+  else if (e.a === 'unplace'){ E.placed = (E.placed || []).filter(function(q){ return q.id !== e.id; }); rebuildWalls(); }
   else if (e.a === 'boot' && typeof e.id === 'string'){ (E.boots || (E.boots = {}))[e.id.slice(0, 24)] = 1; }
   else if (e.a === 'unbench'){ E.benches = (E.benches || []).filter(function(q){ return q.id !== e.id; }); }
   else if (e.a === 'unblock' && b){ if (E.blocks[b.id]) delete E.blocks[b.id][e.k | 0]; b.bar = b.ibar = null; }
@@ -5784,6 +5812,7 @@ function drawBuilt(m){
       continue; } var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
   var pdo = plantObj(); if (pdo && Math.abs(pdo.x - P.x) < 100 && Math.abs(pdo.y - P.y) < 100 && POWER_ON && powerModel(world.edits.plant.s >= 3 ? 'control_panel_running' : 'control_panel_dead')){ m.yo = groundAt(pdo.x, pdo.y); m.modelS(powerModel(world.edits.plant.s >= 3 ? 'control_panel_running' : 'control_panel_dead'), pdo.x, pdo.y, -1.5708, groundAt(pdo.x, pdo.y), 1); }
+  (E.placed || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80) return; var f = FURN[q.k]; if (!f) return; m.yo = groundAt(q.x, q.y); f.boxes.forEach(function(bx){ m.ybox(q.x, q.y, q.yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); }); });
   (E.benches || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80) return; m.yo = groundAt(q.x, q.y); var bm = spB('build.tool_bench'); if (bm) m.model(bm, q.x, q.y, q.yaw, 0); else { m.ybox(q.x, q.y, q.yaw, 0, 0, 0.8, 0.8, 0.04, 0.4, C('#a8743e')); m.ybox(q.x, q.y, q.yaw, 0, 0, 0.4, 0.7, 0.4, 0.3, C('#6b4526')); } });
   allBeds().forEach(function(bd){ if (Math.abs(bd.x - P.x) > 60 || Math.abs(bd.y - P.y) > 60) return; m.yo = groundAt(bd.x, bd.y); m.ybox(bd.x, bd.y, 0, 0, 0, 0.32, 1, 0.14, 0.5, C('#7a5a3c')); m.ybox(bd.x, bd.y, 0, 0, 0, 0.5, 0.95, 0.06, 0.46, C(bd.s === charSlug() ? '#4f83e6' : '#c9d3e0')); m.ybox(bd.x, bd.y, 0, -0.72, 0, 0.6, 0.2, 0.06, 0.36, C('#f2f2f2')); });
   for (i = 0; i < E.chests.length; i++){ var c = E.chests[i]; if (c.bed || Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60) continue; m.yo = groundAt(c.x, c.y); m.ybox(c.x, c.y, 0.3, 0, 0, 0.4, 0.5, 0.3, 0.35, C('#8a5a2b')); m.ybox(c.x, c.y, 0.3, 0, 0, 0.74, 0.52, 0.05, 0.37, C('#b07a3e')); m.ybox(c.x, c.y, 0.3, 0.52, 0, 0.5, 0.01, 0.08, 0.06, C('#ffd24a')); }
@@ -5930,6 +5959,7 @@ var TRAIL = [], trailT = 0;
 var BOOT = {scrap:3, water:1, food:1, tire:0.8, carbat:0.5, toolkit:0.25, fuel:1, ammo:0.5, battery:0.6, none:4};
 function carNear(){ var best = null, bd = 3.2; if (P.veh || P.inside) return null; world.vehicles.forEach(function(v){ if (!v.t || v.kind === 'truck' || v.id === 'truck') return; var d = Math.hypot(v.x - P.x, v.y - P.y); if (d < bd){ bd = d; best = v; } }); return best; }
 function carUse(){
+  if (P.carry || (!carNear() && carryTarget())){ carryUse(); return; }
   var v = carNear(); if (!v || P.sleep || P.hide){ if (!v) toast('No car close enough.', 1.8); return; }
   var E = world.edits;
   if (!(E.boots && E.boots[v.id]) && v.dead !== 'burnt'){
