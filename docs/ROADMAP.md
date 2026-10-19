@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 19 October 2026, at version 0.48.3. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 19 October 2026, at version 0.48.4. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -18,7 +18,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | Bases and building | Grid placement with snapping, walls, fences, beds, chests, benches, salvage | Carry furniture whole (0.52); broken building states (Art 6) |
 | Vehicles | Town cars, the safe-house truck, repair, sleeping in the cab | Siphon, boots, headlights, wrecks and burnt cars (0.51) |
 | People | Your survivor with creator, skills, other players over direct connection, traders | Recruitable survivors (0.49) |
-| Look and sound | Faceted pieces, framed buildings, effects, UI icons, held weapons | Weather and sky (0.55); remaining props and ground (Art 3, 4); music |
+| Look and sound | Faceted pieces, framed buildings, effects, UI icons, held weapons | Moon phases, aurora, explosions and flames (0.55); remaining props and ground (Art 3, 4); music |
 | Hosting and saves | Direct play, passports, saves on the drive | Real-device testing of everything |
 
 ## Done so far
@@ -77,6 +77,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.48.1 | Aliens no longer know where you are. Hordes and nest groups now leave a nest as a roaming pack: a leader picks the next building to search (favouring parts of town the pack has not been and places that have been noisy), the rest follow, and they only find you by sight, sound or light. When one pack member hears or sees something the whole pack turns to it. At dawn a horde walks back to its nest and is gone. Pacing, from Left 4 Dead's director idea: no new horde pack while eight or more aliens are already on you, and the ordinary night trickle waits while a horde is still to come. Design notes taken from the genre (Project Zomboid, 7 Days to Die, Left 4 Dead, State of Decay): detection by movement, light and noise rather than by knowing the player's position; noise and mass fights draw a crowd; creatures lose interest and disperse rather than vanish; relief between peaks keeps pressure fair. |
 | 0.48.2 | Wrecked and burnt-out cars from the design chat's vehicle pack (`*_wreck`, `*_burnt` for sedan, hatchback, pickup and van): about one parked car in five is now a wreck (rusted, flat tyres) or a burnt shell on bare rims, and there are some extra wrecks beside buildings. They are sunk by the pack's `sitDrop`, cannot be driven (the prompt says Hold J to take apart) and give less when salvaged: a wreck gives 5 scrap and some parts, a burnt shell 3 scrap and rarely a part, with no fuel or tyres. |
 | 0.48.3 | Aliens pack, second part: a nest that has just spread starts as the small hive (`hive_small`) and grows into the full nest after five minutes; a destroyed nest leaves the burst hive (`hive_burst`: split husks and a goo pool), saved with the world; dead aliens now use the pack's `fade` pose in their last 14 seconds and sink into the ground before they are removed. The clinger is still not in (it needs wall climbing). |
+| 0.48.4 | Weather and sky from the effects pack: drifting clouds (fair-weather ones in clear weather, a lid of overcast sheets in rain, snow and storms, thunderheads on the horizon in thunderstorms), the pack's rain streaks (leaning in the wind) and snowflakes in place of the old boxes, and the lightning bolt in the sky during a flash. Still to do from the sky pack: moon phases (the moon is still drawn by the sky shader) and the aurora for the final night. |
 
 ## Next versions
 
@@ -90,7 +91,7 @@ Each is small enough to try on the iPhone before the next one starts. Assets nee
 | **0.52** | Carry furniture: take a wardrobe or table whole instead of taking it apart, and place it with the grid to block a door; carry weight slows you | None |
 | **0.53** | The paper map as a found item and a held model (first person, using the pack's folded and open map); notes on flags; the map only works while you hold it | Map model (in the game) |
 | **0.54** | Alien memory: single aliens remember where they last saw you, return to nests at dawn, and lose interest by degrees; lone stalkers hunt along your trail | None |
-| **0.55** | Weather and sky from the art pack: clouds, rain, snow, lightning, moon phases, aurora; explosions and flames | Effects pack (in the game) |
+| **0.55** | The rest of the effects pack: moon phases, aurora, explosions, flames and smoke, hit sparks and tracers | Effects pack (in the game) |
 | Art 3, 4 and 6 | Loose items, ground tiles and broken building states; see the table of unused art above and the art track below | In the game |
 
 Finished from the old list: 0.47 horde nights (0.47.0, roaming packs 0.48.1), 0.48 map memory and flags (0.48.0). Moved: the held paper map to 0.53, fence and window tuning to 0.50, truck extras to 0.51.
@@ -106,7 +107,8 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Cars: boot lid on sedan and hatchback, pickup battery, fuel cap and hub | Not used | 0.51 (search boots, siphon fuel, truck repair) |
 | Weapons in hand, arms, new survivor clips | In the game | 0.45.8 |
 | Effects (dust, splashes, goo) and UI icons | In the game | 0.45.9 |
-| Effects still unused: explosions, flames, hit sparks, tracer, moon phases, clouds, rain, snow, lightning, aurora | Not used | 0.55 (weather and sky) |
+| Sky: clouds, rain, snow and lightning | In the game (0.48.4) | 0.48.4 |
+| Effects and sky still unused: explosions, flames and smoke, hit sparks, tracer, moon phases, aurora | Not used | 0.55 |
 | Aliens: swarmer, stalker, giant, spitter | In the game | 0.45, 0.47 |
 | Aliens: hive stages (small, grown, burst) and the fade clip | In the game (0.48.3) | 0.48.3 |
 | Aliens: clinger (wall climbing), blood and trail decals | Not used | 0.50 |
