@@ -241,7 +241,7 @@ const SCENES={
       [A.pistol_round,A.rifle_round,A.shotgun_shell,C.pistol_case,C.rifle_case,C.shotgun_hull].forEach((m,i)=>{ const o=mesh(m,col); at(o,(i-2.5)*0.16,i>2?0.012:0,-0.35,Math.PI/2); });
       ['pistol_box','rifle_box','shotgun_box','pistol_magazine','carbine_magazine','ammo_can','flare_shells'].forEach((k,i)=>at(mesh(A[k],col),(i-3)*0.24,0,0,0.3));
       [['arrow',-0.75,0.4],['arrow_bundle',-0.75,0.6],['crossbow_bolt',0.1,0.45],['loose_pile',0.55,0.45]].forEach(([k,x,z])=>at(mesh(A[k],col),x,0,z,k==='loose_pile'?0:Math.PI/2));
-      const q=at(mesh(A.quiver,col),1.2,0.06,0.5,1.4); q.rotation.z=Math.PI/2;
+      const q=at(mesh(A.quiver,col),1.15,0.06,0.75,0); q.rotation.z=Math.PI/2;
       cam.position.set(0.15,1.8,2.3); ctl.target.set(0.15,0.05,0.1); }},
   fpgun:{t:'First-person guns',d:'Long guns carried ready (left) and aimed down the sights (right), with the left fist on the fore-end.',
     make(){ lights('day'); scene.background=new THREE.Color(0xc9c4b8); scene.fog=null;
