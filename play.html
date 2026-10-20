@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.65.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.66.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.65.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.66.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2987,10 +2987,13 @@ function drawGarden(m){
 }
 /* ---- 0.36: the power and the water fail; generators bring power back to one building ---- */
 var GEN_CAN = 1800;   /* one can of fuel runs a generator about an hour of game time */
-function gridOn(){ return dayNum() < POWER_DAY || !!(world.edits && world.edits.plant && world.edits.plant.s >= 3); }
+/* 0.66 districts: after the day-3 failure the town is dark until the plant runs AND the substations are repaired; each lights about 380 m around it */
+function subFixed(S){ return !!(world.edits.subs && world.edits.subs[S.id]); }
+function gridAt(x, y){ if (dayNum() < POWER_DAY) return true; var pl = world.edits && world.edits.plant; if (!pl || pl.s < 3) return false; var L = subSites(); if (!L.length) return true; for (var i = 0; i < L.length; i++) if (subFixed(L[i]) && Math.hypot(L[i].x - x, L[i].y - y) < 380) return true; return false; }
+function gridOn(){ if (dayNum() < POWER_DAY) return true; var pl = world.edits && world.edits.plant; if (!pl || pl.s < 3) return false; var L = subSites(); return !L.length || L.some(subFixed); }
 function waterOn(){ return dayNum() < WATER_DAY; }
 function genOf(b){ var G0 = world.edits && world.edits.gens; if (!b || !G0) return null; for (var i = 0; i < G0.length; i++) if (G0[i].b === b.id && G0[i].on && G0[i].fuel > 0) return G0[i]; return null; }
-function powered(b){ return !!b && (gridOn() || !!genOf(b)); }
+function powered(b){ return !!b && (gridAt(b.cx, b.cy) || !!genOf(b) || cboxPower(b)); }
 function genText(g){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', B = tch ? 'Wall' : 'B', mins = Math.round(g.fuel/GEN_CAN*60);
   var f = g.fuel > 0 ? ' (fuel for about ' + (mins >= 60 ? Math.round(mins/60*10)/10 + ' h' : mins + ' min') + ')' : ' (empty)';
@@ -3009,6 +3012,29 @@ function genB(g){
 /* running generators burn fuel, rumble (aliens hear it from about 25 m, and the noise builds heat), and at night light the windows */
 /* ---- 0.59 the power plant: the biggest warehouse that is a good walk from the safe house is the old plant. Its control panel stands outside the front.
    Three jobs, in order: new relays (3 car parts), fuel (8 cans), start-up (twenty loud seconds). Then the city grid comes back on. ---- */
+/* substations: four sites around the safe house (one a quarter), each a dead pole transformer beside an industrial building until it is repaired with 2 car parts */
+function subSites(){
+  if (world.subL) return world.subL; var L = world.subL = [], sp = world.spawn || {x:0, y:0}, plo = plantObj(), pid = plo ? plo.b.id : -1;
+  [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function(q){ var best = null, bs = -1e9; world.buildings.forEach(function(b){ if (b.gone || b.id === pid || KIND[b.kind].cat !== 'industrial') return; var dx = b.cx - sp.x, dy = b.cy - sp.y, d = Math.hypot(dx, dy); if (d < 150 || d > 900 || dx*q[0] < 0 || dy*q[1] < 0) return; var sc = b.area - d*0.2; if (sc > bs){ bs = sc; best = b; } });
+    if (best) L.push({subC:true, id:'S' + best.id, b:best, x:(best.minx + best.maxx)/2 + 4, y:best.miny - 2.2}); });
+  return L;
+}
+function subText(o){ var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', pl = world.edits.plant;
+  if (subFixed(o)) return 'Substation \u00b7 humming \u00b7 the district around it has power';
+  if (pl.s < 3) return 'Substation \u00b7 dead \u00b7 the power plant is not running yet';
+  return 'Substation \u00b7 dead \u00b7 ' + (inv.parts >= 2 ? E + 'fit 2 car parts and bring this district back' : 'needs 2 car parts (you have ' + (inv.parts | 0) + ')'); }
+function subE(o){ if (subFixed(o)) return; if (world.edits.plant.s < 3){ toast('There is nothing to feed it yet. Start the power plant first.', 3); return; } if (inv.parts < 2){ toast('It needs 2 car parts.', 2.5); return; }
+  inv.parts -= 2; doEdit({a:'sub', id:o.id}); sfx('metal', o.x, o.y, 0.9); makeNoise(o.x, o.y, 22); feed('Substation repaired: the lights come on around here.', '#f2d14a'); updateHud(); }
+/* cable box: put it in a building; it takes power from a running generator within 30 m (3), solar panels within 15 m in daylight (1 each) and batteries put into it (1 for 4 hours each). A building needs 1 (2 over 120 m2, 3 over 400 m2); too little trips the breaker until you reset it */
+function boxOf(b){ var L = world.edits.cboxes || []; for (var i = 0; i < L.length; i++) if (L[i].b === b.id) return L[i]; return null; }
+function boxSupply(c){ var s = 0, i; (world.edits.gens || []).forEach(function(g){ if (g.on && g.fuel > 0 && Math.hypot(g.x - c.x, g.y - c.y) < 30) s += 3; });
+  if (dark < 0.35) (world.edits.solars || []).forEach(function(q){ if (Math.hypot(q.x - c.x, q.y - c.y) < 15) s += 1; }); if (c.bat > 0 && !gridAt(c.x, c.y)) s += 1; return s; }
+function boxLoad(b){ return 1 + (b.area > 120 ? 1 : 0) + (b.area > 400 ? 1 : 0); }
+function cboxPower(b){ var c = boxOf(b); if (!c || c.trip) return false; var sup = boxSupply(c); if (sup <= 0) return false; if (sup < boxLoad(b)){ if (net.role !== 'guest' && b.area > 0){ c.trip = 1; emit({k:'edit', e:{a:'cboxset', id:c.id, trip:1, bat:Math.round(c.bat*10)/10}}); feed('The breaker trips: too much load for what feeds it.', '#ff9a6a'); sfx('metal', c.x, c.y, 0.8, 1.4); } return false; } return true; }
+function cboxText(c){ var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', b = world.buildings[c.b], sup = b ? boxSupply(c) : 0, ld = b ? boxLoad(b) : 1;
+  if (c.trip) return 'Cable box \u00b7 breaker tripped (the building needs ' + ld + ', it gets ' + sup + ') \u00b7 ' + E + 'reset it';
+  return 'Cable box \u00b7 ' + (sup >= ld ? 'powering the building' : 'not enough power: needs ' + ld + ', gets ' + sup) + (c.bat > 0 ? ' \u00b7 battery ' + Math.round(c.bat) + ' h' : '') + (inv.battery > 0 ? ' \u00b7 ' + E + 'put in a battery (+4 h)' : ' \u00b7 a generator within 30 m, solar panels outside, or batteries feed it'); }
+function cboxE(c){ if (c.trip){ doEdit({a:'cboxset', id:c.id, trip:0, bat:c.bat}); sfx('metal', c.x, c.y, 0.8, 0.8); feed('Breaker reset', '#cfd5db'); return; } if (inv.battery > 0){ inv.battery--; doEdit({a:'cboxset', id:c.id, trip:0, bat:Math.min(24, c.bat + 4)}); feed('Battery connected (+4 hours)', ITEMS.battery[1]); updateHud(); } else toast('Nothing to put in. Batteries go in here; a generator or solar panels feed it from outside.', 3); }
 var PLANT_PARTS = 3, PLANT_FUEL = 8, PLANT_RUN = 20;
 function plantObj(){
   if (world.plantO !== undefined) return world.plantO; world.plantO = null; var best = null, bs = 0, sp = world.spawn || {x:0, y:0};
@@ -3032,6 +3058,7 @@ function plantE(o){
   else { o.t = PLANT_RUN; o.nt = 0; feed('The plant is starting up. Hold the line.', '#ff9a6a'); }
 }
 function plantTick(dt){
+  (world.edits.cboxes || []).forEach(function(c){ if (c.bat > 0 && !c.trip && !gridAt(c.x, c.y)){ var b = world.buildings[c.b]; if (b && boxSupply({x:c.x, y:c.y, bat:0}) < boxLoad(b)) c.bat = Math.max(0, c.bat - dt/DAY*24); } });
   var o = world.plantO; if (!o || !o.t) return; o.t -= dt; o.nt -= dt;
   if (o.nt <= 0){ o.nt = 1.5; makeNoise(o.x, o.y, 90); sfx('metal', o.x, o.y, 1, 0.4 + Math.random()*0.2); }
   if (o.t <= 0){ o.t = 0; doEdit({a:'plant', s:3}); feed('The plant is running. The lights are coming back on across the city.', '#f2d14a'); toast('The city has power again.', 6); updateHud(); }
@@ -3087,6 +3114,8 @@ function findTarget(){
   (world.edits.benches || []).forEach(function(q){ var d3 = Math.hypot(q.x - P.x, q.y - P.y); if (d3 < Math.min(bd, 2)){ bd = d3; best = q; } });
   for (i = 0; i < world.edits.chests.length; i++){ var ch = world.edits.chests[i]; d = Math.hypot(ch.x - P.x, ch.y - P.y); if (d < Math.min(bd, 2)){ bd = d; best = ch; } }
   if (!P.inside){ var LG = ladNear(P.x, P.y, 1.6); if (LG){ d = Math.hypot(LG.fx - P.x, LG.fy - P.y); if (d < bd){ bd = d; best = ladTarget(LG, true); } } }
+  subSites().forEach(function(so){ var d9 = Math.hypot(so.x - P.x, so.y - P.y); if (d9 < Math.min(bd, 2.6)){ bd = d9; best = so; } });
+  (world.edits.cboxes || []).forEach(function(c9){ var d8 = Math.hypot(c9.x - P.x, c9.y - P.y); if (d8 < Math.min(bd, 2)){ bd = d8; best = c9; } });
   var pco = plantObj(); if (pco){ d = Math.hypot(pco.x - P.x, pco.y - P.y); if (d < Math.min(bd, 2.4)){ bd = d; best = pco; } }
   for (i = 0; i < loaded.length; i++) if (world.nests[loaded[i].id]){ var co = nestCore(loaded[i]); d = Math.hypot(co.x - P.x, co.y - P.y); if (d < 2.6){ bd = 0; best = co; } }
   if (best) return best;
@@ -4031,6 +4060,8 @@ function update(dt){
       else { if (ePress || tapped) truckUse(target); autoUse = null; } }
     else if (target.veh){ if (ePress || tapped) mount(target); autoUse = null; }
     else if (target.lamp){ if (ePress || tapped) takeLamp(target); autoUse = null; }
+    else if (target.subC){ if (ePress || tapped) subE(target); autoUse = null; }
+    else if (target.cboxC){ if (ePress || tapped) cboxE(target); autoUse = null; }
     else if (target.plantC){ if (ePress || tapped) plantE(target); autoUse = null; }
     else if (target.gen){ if (ePress || tapped) genE(target); autoUse = null; }
     else if (target.coll){ if (ePress || tapped) collE(target); autoUse = null; }
@@ -4048,6 +4079,8 @@ function update(dt){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
     el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.dead ? 'Hold J to take apart ' : target.t ? 'Press E to drive ' + (target.kind === 'truck' ? '' : '(Y: boot and fuel) ') : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.surv ? 'Press E: ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.surv ? target.name + ' (' + target.tip + ')' : target.name);
     if (target.port) el('ptxt').textContent = portText(target);
+    else if (target.subC) el('ptxt').textContent = subText(target);
+    else if (target.cboxC) el('ptxt').textContent = cboxText(target);
     else if (target.plantC) el('ptxt').textContent = plantText(target);
     else if (target.gen) el('ptxt').textContent = genText(target);
     else if (target.coll) el('ptxt').textContent = collText(target);
@@ -4068,7 +4101,7 @@ function update(dt){
   trailT -= dt; if (trailT <= 0){ trailT = 0.8; var tl = TRAIL[TRAIL.length - 1]; if (!tl || Math.hypot(tl.x - P.x, tl.y - P.y) > 1.2){ TRAIL.push({x:P.x, y:P.y, t:time}); if (TRAIL.length > 70) TRAIL.shift(); } }
   P.noise = Math.max(0, P.noise - dt); gunTick(dt); if (P.gunT > 0) P.gunT -= dt;
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridOn() && genOf(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
+    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridAt(P.inside.cx, P.inside.cy) && powered(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
     net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, sm:p.sm || 1, eng:!!(p.vh && world.vmap && world.vmap[p.vh] && world.vmap[p.vh].t), loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, yaw:p.yaw, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); }); heatTick(dt, tg);
@@ -5507,6 +5540,9 @@ function loadEdits(ed){
   for (k in (ed.col || {})){ var b = world.buildings[k]; if (b && okCol(ed.col[k], '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[k] = ed.col[k]; } }
   for (k in (ed.gone || {})) if (world.buildings[k]){ E.gone[k] = 1; world.buildings[k].gone = true; }
   (ed.walls || []).slice(0, 400).forEach(function(w){ var nw = {id:String(w.id), x:+w.x, y:+w.y, yaw:+w.yaw || 0}; nw.m = WMATS[w.m] ? w.m : 'wood'; if (Array.isArray(w.bays) && w.bays.length === 6) nw.bays = w.bays.map(function(v){ return Math.max(0, Math.min(12, +v || 0)); }); E.walls.push(nw); });
+  E.subs = {}; for (k in (ed.subs || {})) E.subs[String(k).slice(0, 20)] = 1;
+  E.cboxes = []; (Array.isArray(ed.cboxes) ? ed.cboxes : []).slice(0, 40).forEach(function(c){ if (c && isFinite(c.x) && isFinite(c.y)) E.cboxes.push({cboxC:true, id:String(c.id).slice(0, 30), x:+c.x, y:+c.y, b:c.b | 0, bat:Math.max(0, Math.min(24, +c.bat || 0)), trip:c.trip ? 1 : 0}); });
+  E.solars = []; (Array.isArray(ed.solars) ? ed.solars : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.solars.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.plant = {s:ed.plant && ed.plant.s >= 0 ? Math.min(3, ed.plant.s | 0) : 0};
   E.bases = E.bases || {}; for (k in (ed.beds || {})) E.beds[slug(k)] = {b:ed.beds[k].b | 0, x:+ed.beds[k].x, y:+ed.beds[k].y};
   for (k in (ed.bases || {})) (Array.isArray(ed.bases[k]) ? ed.bases[k] : []).slice(0, 6).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) addBase(k, q.b | 0, +q.x, +q.y); });
@@ -5532,6 +5568,10 @@ function applyEdit(e){
   else if (e.a === 'wall' && e.w && E.walls.length < 400){ E.walls.push({id:String(e.w.id), x:+e.w.x, y:+e.w.y, yaw:+e.w.yaw || 0, m:WMATS[e.w.m] ? e.w.m : 'wood'}); rebuildWalls(); }
   else if (e.a === 'wbay'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ var wb = wallBays(E.walls[i]); if ((e.i | 0) >= 0 && (e.i | 0) < 6) wb[e.i | 0] = Math.max(0, Math.min(12, +e.v || 0)); rebuildWalls(); break; } }
   else if (e.a === 'unwall'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ E.walls.splice(i, 1); break; } rebuildWalls(); }
+  else if (e.a === 'sub' && typeof e.id === 'string'){ (E.subs || (E.subs = {}))[e.id.slice(0, 20)] = 1; }
+  else if (e.a === 'cbox' && e.c && (E.cboxes || (E.cboxes = [])).length < 40){ E.cboxes.push({cboxC:true, id:String(e.c.id).slice(0, 30), x:+e.c.x, y:+e.c.y, b:e.c.b | 0, bat:0, trip:0}); }
+  else if (e.a === 'cboxset'){ (E.cboxes || []).forEach(function(c){ if (c.id === e.id){ c.trip = e.trip ? 1 : 0; c.bat = Math.max(0, Math.min(24, +e.bat || 0)); } }); }
+  else if (e.a === 'solar' && e.c && (E.solars || (E.solars = [])).length < 40){ E.solars.push({id:String(e.c.id).slice(0, 30), x:+e.c.x, y:+e.c.y, yaw:+e.c.yaw || 0}); }
   else if (e.a === 'plant'){ E.plant = {s:Math.max(0, Math.min(3, +e.s || 0))}; }
   else if (e.a === 'bed' && e.s){ E.beds[slug(e.s)] = {b:e.b | 0, x:+e.x, y:+e.y}; addBase(e.s, e.b | 0, +e.x, +e.y); }
   else if (e.a === 'tap' && typeof e.key === 'string'){ E.taps[e.key.slice(0, 24)] = Math.min(9, (E.taps[e.key] || 0) + 1); }
@@ -5600,6 +5640,12 @@ function buildAct(a, pos){
     else { if (inv.wood < 3){ toast('A garden plot needs 3 wood for its edging.', 2.5); return; } inv.wood -= 3; doEdit({a:'plot', q:{id:'p' + id, x:x, y:y, yaw:yaw}}); toast('Garden plot dug. Plant a seed packet in it (E), and keep it watered or let the rain do it.', 5); }
   } else if (a === 'bench'){
     if (inv.wood < 6 || inv.scrap < 3){ toast('A tool bench needs 6 wood and 3 scrap.', 2.5); return; } inv.wood -= 6; inv.scrap -= 3; doEdit({a:'bench', q:{id:'t' + id, x:x, y:y, yaw:yaw}}); toast('Tool bench built. Stand at it with a made weapon and press E to repair it for 1 scrap.', 5);
+  } else if (a === 'cbox'){
+    if (!P.inside){ toast('A cable box goes inside a building.', 2.5); return; } if (inv.scrap < 4 || inv.nails < 3){ toast('A cable box needs 4 scrap and 3 nails.', 2.5); return; } if (boxOf(P.inside)){ toast('This building already has a cable box.', 2.5); return; } if (hitWall(x, y) || buildingAt(x, y) !== P.inside) return;
+    inv.scrap -= 4; inv.nails -= 3; doEdit({a:'cbox', c:{id:'c' + id, x:x, y:y, b:P.inside.id}}); toast('Cable box fitted. Bring a generator within 30 m, a solar panel outside, or batteries.', 5);
+  } else if (a === 'solar'){
+    if (P.inside || buildingAt(x, y)){ toast('Solar panels go outside.', 2.5); return; } if (inv.scrap < 6 || inv.sheet < 2){ toast('A solar panel needs 6 scrap and 2 sheet metal.', 2.5); return; } if (hitWall(x, y)) return;
+    inv.scrap -= 6; inv.sheet -= 2; doEdit({a:'solar', c:{id:'s' + id, x:x, y:y, yaw:yaw}}); toast('Solar panel set out. A cable box within 15 m gets 1 unit of power in daylight.', 5);
   } else if (a === 'chest'){
     if (!P.inside){ toast('A chest has to be inside a building.', 2.5); return; } if (inv.wood < 3 || inv.scrap < 2){ toast('A chest needs 3 wood and 2 scrap.', 2.5); return; }
     if (hitWall(x, y) || buildingAt(x, y) !== P.inside) return; inv.wood -= 3; inv.scrap -= 2; doEdit({a:'chest', c:{id:id, x:x, y:y}});
@@ -5691,7 +5737,7 @@ function doSalvage(o, inf){
 }
 /* ---- placing things: a ghost shows where it will go and snaps to a half-metre grid, to the line of nearby walls and to the ends of walls you built ---- */
 var PL = null, PLS = {wall:{n:'Wall section', hx:0.1, hz:1.5, h:2.5, cost:'3 wood'}, cade:{n:'Barricade', hx:1.1, hz:0.12, h:1.0, cost:'2 wood and 1 scrap'}, fire:{n:'Campfire', hx:0.5, hz:0.5, h:0.4, cost:'4 wood'},
-  bed:{n:'Bed', hx:1.0, hz:0.5, h:0.6, cost:'5 wood'}, chest:{n:'Storage chest', hx:0.5, hz:0.3, h:0.8, cost:'3 wood and 2 scrap'}, coll:{n:'Rain collector', hx:0.5, hz:0.5, h:1.0, cost:'2 wood and 2 scrap'}, plot:{n:'Garden plot', hx:1.0, hz:1.0, h:0.3, cost:'3 wood'}, bench:{n:'Tool bench', hx:0.8, hz:0.4, h:0.9, cost:'6 wood and 3 scrap'}};
+  bed:{n:'Bed', hx:1.0, hz:0.5, h:0.6, cost:'5 wood'}, chest:{n:'Storage chest', hx:0.5, hz:0.3, h:0.8, cost:'3 wood and 2 scrap'}, cbox:{n:'Cable box', hx:0.3, hz:0.25, h:0.6, cost:'4 scrap and 3 nails'}, solar:{n:'Solar panel', hx:0.6, hz:0.45, h:1.0, cost:'6 scrap and 2 sheet metal'}, coll:{n:'Rain collector', hx:0.5, hz:0.5, h:1.0, cost:'2 wood and 2 scrap'}, plot:{n:'Garden plot', hx:1.0, hz:1.0, h:0.3, cost:'3 wood'}, bench:{n:'Tool bench', hx:0.8, hz:0.4, h:0.9, cost:'6 wood and 3 scrap'}};
 function startPlace(a){
   if (!PLS[a]) return; PL = {a:a, rot:0, dist:2.8, grid:true, x:P.x, y:P.y, yaw:P.yaw, ok:false, why:''}; el('build').classList.add('hidden'); el('plbar').classList.remove('hidden');
   toast(PLS[a].n + ': ' + (document.body.classList.contains('touchmode') ? 'move to aim, then Place' : 'click to place, R turns it, Y snap on/off, right-click or Esc cancels'), 4.5);
@@ -5764,6 +5810,8 @@ function plCheck(a, x, y, yaw){
   else if (a === 'fire'){ if (inv.wood < fw) return 'Needs ' + fw + ' wood'; if (hitWall(x, y)) return 'No room there'; }
   else if (a === 'bed'){ if (!P.inside) return 'Beds go inside a building'; if (world.nests[P.inside.id]) return 'Not in a nest'; if (inv.wood < 5) return 'Needs 5 wood'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.5)) return 'No room there'; }
   else if (a === 'chest'){ if (!P.inside) return 'Chests go inside a building'; if (inv.wood < 3 || inv.scrap < 2) return 'Needs 3 wood and 2 scrap'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.4)) return 'No room there'; }
+  else if (a === 'cbox'){ if (!P.inside) return 'A cable box goes inside a building'; if (inv.scrap < 4 || inv.nails < 3) return 'Needs 4 scrap and 3 nails'; if (boxOf(P.inside)) return 'This building already has one'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.35)) return 'No room there'; }
+  else if (a === 'solar'){ if (P.inside || buildingAt(x, y)) return 'Solar panels go outside, in the sun'; if (inv.scrap < 6 || inv.sheet < 2) return 'Needs 6 scrap and 2 sheet metal'; if (hitWall(x, y) || circ(x, y, 0.7) || inWater(x, y, 0.5)) return 'No room there'; }
   else if (a === 'bench'){ if (inv.wood < 6 || inv.scrap < 3) return 'Needs 6 wood and 3 scrap'; if (hitWall(x, y) || circ(x, y, 0.6) || inWater(x, y, 0.5)) return 'No room there'; }
   else if (a === 'coll' || a === 'plot'){ if (P.inside || buildingAt(x, y)) return 'This goes outside'; if (a === 'coll' ? (inv.wood < 2 || inv.scrap < 2) : inv.wood < 3) return 'Not enough materials'; if (inWater(x, y, 1) || (world.roadAt && world.roadAt(x, y)) || hitWall(x, y) || circ(x, y, a === 'plot' ? 1 : 0.5)) return 'Open ground only: off the road'; }
   return '';
@@ -5797,7 +5845,7 @@ function renderBuild(){
   var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
     '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
-    '<h3>Base</h3>' + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
+    '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 15 m of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
     (net.role === 'guest' ? '<h3>Sharing</h3>' + row('ask', 'Ask for the host\'s building changes', 'If they agree, their repaints, walls and demolitions are saved for your own copy of this map') : '') +
@@ -5813,6 +5861,9 @@ function drawBuilt(m){
       for (var wk = 0; wk < 6; wk++){ var wmm = wallModel(bayState(wby[wk], wallMat(w).hp), w.m); if (wmm){ var wof = -1.25 + wk*0.5; m.modelS(wmm, w.x + wsx*wof, w.y + wsy*wof, w.yaw + 1.5708, wg, 1); } }
       continue; } var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
+  subSites().forEach(function(so){ if (Math.abs(so.x - P.x) > 120 || Math.abs(so.y - P.y) > 120 || !POWER_ON || !powerModel('pole_transformer')) return; m.modelS(powerModel('pole_transformer'), so.x, so.y, 0, groundAt(so.x, so.y), 1); });
+  (E.cboxes || []).forEach(function(c){ if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60 || !POWER_ON) return; var b = world.buildings[c.b], on = b && boxSupply(c) >= boxLoad(b) && !c.trip, nm = c.trip ? 'cable_box_overload' : on ? 'cable_box_on' : 'cable_box_off', pm = powerModel(nm); if (pm) m.modelS(pm, c.x, c.y, 0, groundAt(c.x, c.y) + (b && b.base ? b.base : 0), 1); });
+  (E.solars || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80 || !POWER_ON) return; var pm = powerModel('solar_portable'); if (pm) m.modelS(pm, q.x, q.y, q.yaw, groundAt(q.x, q.y), 1); });
   var pdo = plantObj(); if (pdo && Math.abs(pdo.x - P.x) < 100 && Math.abs(pdo.y - P.y) < 100 && POWER_ON && powerModel(world.edits.plant.s >= 3 ? 'control_panel_running' : 'control_panel_dead')){ m.yo = groundAt(pdo.x, pdo.y); m.modelS(powerModel(world.edits.plant.s >= 3 ? 'control_panel_running' : 'control_panel_dead'), pdo.x, pdo.y, -1.5708, groundAt(pdo.x, pdo.y), 1); }
   (E.placed || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80) return; var f = FURN[q.k]; if (!f) return; m.yo = groundAt(q.x, q.y); f.boxes.forEach(function(bx){ m.ybox(q.x, q.y, q.yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); }); });
   (E.benches || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80) return; m.yo = groundAt(q.x, q.y); var bm = spB('build.tool_bench'); if (bm) m.model(bm, q.x, q.y, q.yaw, 0); else { m.ybox(q.x, q.y, q.yaw, 0, 0, 0.8, 0.8, 0.04, 0.4, C('#a8743e')); m.ybox(q.x, q.y, q.yaw, 0, 0, 0.4, 0.7, 0.4, 0.3, C('#6b4526')); } });
