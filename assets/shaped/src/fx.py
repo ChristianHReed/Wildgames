@@ -84,6 +84,8 @@ fx('crash_burst', bits(((0, 0), (0.2, 0.1), (-0.25, 0.05), (0.1, -0.2), (-0.1, 0
    + [flat([(x, 0.006, z), (x + 0.05, 0.006, z + 0.012), (x + 0.015, 0.006, z + 0.06)], 'glass', (0, 1, 0)) for x, z in ((0.3, 0.2), (-0.2, -0.25), (0.05, 0.3), (-0.35, 0.1))]
    + [lump(0, 0, 0, 0.4, 'dust', h=0.45)],
    'A car hitting something: metal and paint bits and glass are thrown forward from the impact point and stay as debris; the dust grows 0.5 to 2.5 and fades over 1.5 s. Scale everything 1.5x for a heavy hit.')
+fx('roof_splash', [flat(ring_pts(0.07, 7, 0.004, 0.3, 21), 'splashL', (0, 1, 0))] + [tip([0, 0, 0], [0.05*math.cos(a), 0.07, 0.05*math.sin(a)], 0.008, 0.008, 'splash') for a in (0.3, 2.4, 4.4)],
+   'Rain hitting a roof, a car or a hard floor: spawn many at random on surfaces in the rain, each grows 0.6 to 1.2 and fades in 0.15 s. Puddles and water use ripple instead.')
 # ================= sky =================
 def moon(phase):
     """phase 0 new to 4 full to 7 waning crescent; a disc with the dark part as a second polygon in front"""

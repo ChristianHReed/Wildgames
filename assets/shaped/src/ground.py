@@ -66,10 +66,25 @@ D['pothole'] = [blob(0, 0, 0.45, 'holeRim', 9, 63, 0.01), blob(0, 0, 0.36, 'hole
 def skid(x0, z0, x1, z1, w, c, y):
     return flat([(x0 - w, y, z0), (x0 + w, y, z0), (x1 + w, y, z1), (x1 - w, y, z1)], c, (0, 1, 0))
 D['skid_marks'] = [skid(sx*0.75, -2.0, sx*0.75 + 0.12*(1 + sx*0.3), 2.0, 0.1, 'hole', 0.01) for sx in (1, -1)] + [skid(sx*0.75 + 0.12*(1 + sx*0.3), 2.0, sx*0.78 + 0.35, 3.0, 0.08, 'holeRim', 0.0105) for sx in (1, -1)]
+# edges (11.9): a 2 m strip, z from 0 to 0.5, laid along the line where one ground meets another; the shapes sit on the +Z side and
+# thin out towards z = 0, so a hard line between two BASE colours gets a ragged, natural edge. Use the seasons colours of the ground on the +Z side.
+def edge(kind):
+    R = random.Random({'grass': 71, 'snow': 72, 'gravel': 73, 'dirt': 74, 'sand': 75}[kind]); o = []
+    zig = [(-H + i*0.25, R.uniform(0.05, 0.22)) for i in range(9)]
+    o.append(flat([(x, 0.003, z) for x, z in zig] + [(H, 0.003, 0.5), (-H, 0.003, 0.5)], 'BASE', (0, 1, 0)))
+    for i in range(12):
+        x = R.uniform(-H + 0.05, H - 0.05); z = R.uniform(0.0, 0.45)
+        if kind == 'grass': o += tuft(x, z, 0.08 + 0.12*z/0.45, 'DETAIL', i)
+        elif kind == 'snow': o.append(blob(x, z, 0.06 + 0.1*z, 'DETAIL', 6, 80 + i, 0.005))
+        elif kind == 'gravel': o.append(pebble(x, z*0.6, 0.02 + 0.02*R.random(), 'DETAIL' if i % 2 else 'DETAIL2'))
+        else: o.append(blob(x, z, 0.05 + 0.08*z, 'DETAIL', 6, 90 + i, 0.005))
+    return o
+E = {k: edge(k) for k in ('grass', 'snow', 'gravel', 'dirt', 'sand')}
 KERB = [hull([(-H, 0, -0.08), (H, 0, -0.08), (H, 0, 0.08), (-H, 0, 0.08), (-H, 0.15, -0.08), (H, 0.15, -0.08), (H, 0.15, 0.05), (-H, 0.15, 0.05)], 'kerb'),
         flat([(-H, 0.0005, 0.08), (H, 0.0005, 0.08), (H, 0.0005, 0.35), (-H, 0.0005, 0.35)], 'gutter', (0, 1, 0)), flat([(-0.005, 0.0, 0.081), (0.005, 0.0, 0.081), (0.005, 0.15, 0.051), (-0.005, 0.15, 0.051)], 'kerbD')]
 pack = {'name': 'ground', 'version': 1, 'style': 'flat colour with small shapes; seasons by palette', 'units': 'metres', 'tile': 2.0, 'palette': PALETTE, 'seasons': SEASONS, 'darker': 0.78,
-        'about': __doc__.split('\n', 2)[2], 'flatModels': True, 'models': {'tiles': T, 'decals': D, 'kerb': {'kerb_strip': KERB}},
+        'about': __doc__.split('\n', 2)[2], 'flatModels': True, 'models': {'tiles': T, 'decals': D, 'kerb': {'kerb_strip': KERB}, 'edges': E},
+        'edgeRule': 'edges[kind]: a 2 m strip (x -1..1, z 0..0.5) laid along the border where this ground meets another, +Z towards this ground: a ragged band of its BASE colour and its small shapes thinning out towards the line. Colour it with seasons[the ground on the +Z side].',
         'kerbRule': 'kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm.'}
 out, st = write_pack('ground', pack, __file__)
 for k, v in st.items(): print(k, v)

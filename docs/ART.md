@@ -73,6 +73,13 @@ Check every character in run and walk frames, not only standing.
 - **Power:** the plant is a dead grey block by day and a lit landmark at night once restored, with lit windows, red stack lights and steam. That makes restoring it something you can see from across the city. Small powered things show they are live with one glowing light: an outlet's lamp, the cable box's status light, a breaker's red flag.
 - **Crashes:** cars crumple at the front, pushed back more on one side, rather than just changing colour. The bonnet folds up in a ridge, and smoke rises from it.
 
+## Section 11: torn walls, reloads, sound (20 October 2026)
+
+- **Torn walls:** a hole in a town wall shows what the wall is made of. Siding leaves bare studs and board ends, brick leaves stepped brick teeth, metal leaves curled sheet and a bent girt, and a glass front leaves mullions with shards still in them. A rubble pile in the wall's own colours lies at its foot. Before a wall breaks it shows cracks, then missing bricks, boards or panes, so you can see it weakening.
+- **Reloads:** every gun class has its own first-person reload: the pistol tips inwards while the magazine comes up, the shotgun rolls on its side for shells, the bow stands upright to nock. Each reload is a few held poses the game blends between, in the same flat planes as the arms.
+- **Portraits:** the survivors panel uses renders of the six ready-made survivors on the field-journal paper colour, so they match the icons.
+- **Sound and music** are made in code from the same few ingredients as the look: plucked strings, soft pads and bells for days and the base; a low drone for nights; drums and a minor riff for horde nights. Effects are built from thuds, noise and ringing partials, so a pan clangs and a brick wall crumbles in a recognisable way without sounding sampled.
+
 ## Fewest vertices (18 October 2026)
 
 How every model is kept cheap, from the research in the art guide:

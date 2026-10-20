@@ -71,7 +71,7 @@ function survivor(look){
   if (look.gear && look.gear.includes('gloves')) ps=ps.filter(q=>!(q._b.startsWith('hand_') && q.c==='SKIN'));
   const [bx,bz]=SV.builds[look.build||'average']; if (bx!==1||bz!==1) ps=ps.map(q=>(q._b==='Head'||q._b==='neck_01')?q:S.scaleXZ(q,bx,bz));
   const col=colourer(SV.palette,{SKIN:SV.slots.SKIN[look.skin],HAIR:SV.slots.HAIR[look.hc],SHIRT:look.shirt,PANTS:look.pants,ACC:look.acc});
-  if (!look.frame && !look.weapon) return mesh(ps,col,{tone:SV.tone});
+  if (!look.frame && !look.weapon && !look.slung && !look.carry) return mesh(ps,col,{tone:SV.tone});
   // posed: one group per bone, turned about its pivot (forward kinematics), as the clips describe
   const f=look.frame||{}, root=new THREE.Group(), groups={}, D=Math.PI/180;
   for (const b in SV.bones){ const B=SV.bones[b], g=new THREE.Group(), par=B.parent?SV.bones[B.parent].pivot:[0,0,0];
@@ -80,7 +80,9 @@ function survivor(look){
     if (mine.length) g.add(mesh(mine,col,{tone:SV.tone,oy:B.pivot[1]})); groups[b]=g; }
   for (const b in SV.bones){ const B=SV.bones[b]; (B.parent?groups[B.parent]:root).add(groups[b]); }
   if (f.root) groups.pelvis.position.y+=f.root[1];
-  if (look.weapon){ const w=held(look.weapon,look.wstate||'new'), G=HE.grip.pos, H=SV.bones.hand_r.pivot; w.position.set(G[0]-H[0],G[1]-H[1],G[2]-H[2]); groups.hand_r.add(w); }
+  if (look.weapon){ const w=held(look.weapon,look.wstate||'new'), G=HE.grip.pos, H=SV.bones.hand_r.pivot, t=look.wturn; w.position.set(G[0]-H[0],G[1]-H[1],G[2]-H[2]); if (t) w.rotation.set(t[0]*D,t[1]*D,t[2]*D); groups.hand_r.add(w); }
+  if (look.slung){ const w=held(look.slung,'new'), Q=SV.sling, B=SV.bones[Q.bone].pivot; w.position.set(Q.pos[0]-B[0],Q.pos[1]-B[1],Q.pos[2]-B[2]); w.rotation.set(Q.rot[0]*D,Q.rot[1]*D,Q.rot[2]*D); groups[Q.bone].add(w); }
+  if (look.carry){ const w=prop('furniture',look.carry), Q=SV.carryAt, B=SV.bones[Q.bone].pivot; w.position.set(Q.pos[0]-B[0],Q.pos[1]-B[1]-0.3,Q.pos[2]-B[2]); groups[Q.bone].add(w); }
   return root;
 }
 function held(name, state){ return mesh(HE.models.weapons[name][state], colourer(HE.palette,{})); }
@@ -311,18 +313,61 @@ const SCENES={
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(20,20,0xd8d2c6); const c=colourer(FX.palette,{});
       ['concrete_dust','brick_bits','metal_sparks','wood_chips','glass_shards','crash_burst'].forEach((n,i)=>at(mesh(FX.models.effects[n],c),-2.5+i,0,0));
       cam.position.set(0,2.2,5.6); ctl.target.set(0,0.2,0); }},
+  breach:{t:'Torn walls (section 11)',d:'For the game\'s torn-open town walls: per finish (siding, brick, metal, glass curtain) left to right: whole wall cracked, bricks or boards missing, a 2.4 m torn hole with its rubble, the same boarded up, and a 4 m hole.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const col=colourer(BU.palette,BU.examples.brick_shop,BU.darker);
+      ['siding','brick','metal','glass'].forEach((m,r)=>{ const B=BU.models.breach[m], c=colourer(BU.palette,m==='siding'?BU.examples.timber_house:m==='metal'?{WALL:'#7a8a96',TRIM:'#33363a',FRAME:'#5a5650',ROOF:'#55524e'}:BU.examples.brick_shop,BU.darker), z=-r*3.2;
+        const wall=(x,W,h)=>{ const g=new THREE.Mesh(new THREE.BoxGeometry(W,h||2.7,0.1),new THREE.MeshLambertMaterial({color:m==='glass'?0x5f8490:new THREE.Color().setRGB(...c('WALL'),THREE.SRGBColorSpace).getHex()})); g.position.set(x,(h||2.7)/2,z); scene.add(g); };
+        wall(-7.0,2.4); at(mesh(B['cracked_2.4'],c),-7.0,0,z); wall(-4.3,2.4); at(mesh(B['missing_2.4'],c),-4.3,0,z);
+        at(mesh(B['hole_2.4'],c),-1.6,0,z); at(mesh(B['rubble_2.4'],c),-1.6,0,z); at(mesh(B['hole_2.4'],c),1.1,0,z); at(mesh(B['boarded_2.4'],c),1.1,0,z); at(mesh(B['hole_4.0'],c),4.6,0,z); at(mesh(B['rubble_4.0'],c),4.6,0,z); });
+      cam.position.set(-0.5,7.5,9.5); ctl.target.set(-0.8,1.2,-4.5); }},
+  house11:{t:'Numbers, signs, gun shop',d:'A house plaque with its number, the street name blades on a post, the gun shop front bay, and inside: the glass counter, a rack of long guns, ammo shelves and a target with arrows and a bolt stuck in it. Also the door brace and window boards seen from outside.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xd8d2c6); const bc=colourer(BU.palette,BU.examples.brick_shop,BU.darker), hc=colourer(BU.palette,BU.examples.timber_house,BU.darker), pc=colourer(PR.palette,{}), H=BU.models.house;
+      at(module('frame_steel',BU.examples.brick_shop),-5,0,-3); at(module('gunshop_front',BU.examples.brick_shop),-5,0,-3); at(module('plinth',BU.examples.brick_shop),-5,0,-3);
+      at(module('frame_timber',BU.examples.timber_house),-2.4,0,-3); at(module('window_siding',BU.examples.timber_house),-2.4,0,-3); at(prop('build','window_boards_bay'),-2.4,0,-3);
+      const pl=new THREE.Group(); pl.add(mesh(H.plaque,hc)); [4,2,7].forEach((n,i)=>{ const d=mesh(H['digit_'+n],hc); d.position.x=(i-1)*0.1; pl.add(d); }); pl.position.set(-1.6,1.8,-2.86); pl.scale.set(2,2,2); scene.add(pl);
+      const sp=new THREE.Group(); sp.add(prop('street','street_name_post')); const b1=mesh(H.street_blade,hc); b1.position.set(0,2.55,0); sp.add(b1); const b2=mesh(H.street_blade,hc); b2.position.set(0,2.35,0); b2.rotation.y=Math.PI/2; sp.add(b2); at(sp,0.2,0,-1.5);
+      at(prop('shop','gun_counter'),2.6,0,-0.5); at(prop('shop','gun_rack'),2.6,0,-2.7); at(prop('shop','ammo_shelf'),4.8,0,-2.5);
+      const tg=at(prop('shop','target_poster'),6.2,0,-2.6); const hc2=colourer(HE.palette,{});
+      for (const [k,y,x] of [['arrow_stuck',1.55,0.05],['arrow_stuck',1.45,-0.08],['bolt_stuck',1.5,0.12]]){ const a=mesh(HE.models.ammo[k],hc2); a.position.set(x,y,0.007); tg.add(a); }
+      at(prop('build','door_brace'),-6.6,0,0.4); const dr=new THREE.Mesh(new THREE.BoxGeometry(1.0,2.1,0.05),new THREE.MeshLambertMaterial({color:0x7a5a3a})); dr.position.set(-6.6,1.05,0.37); scene.add(dr);
+      cam.position.set(-0.2,4.0,9.6); ctl.target.set(0.2,1.2,-1.2); }},
+  items11:{t:'Section 11 odds and ends',d:'A burning car (fire on the bonnet), the fuel siphon beside a pickup, a folded map on the ground, ground edges (grass, snow, gravel, dirt, sand) and roof splashes.',
+    make(){ lights('dusk'); ground(60,60,0x8a8478); const pc=colourer(PR.palette,{}), gc=colourer(GR.palette,GR.seasons.grass.summer), fc=colourer(FX.palette,{});
+      const V=PR.models.vehicles.sedan, D=V.damage, rg=PR.vehicleRig.sedan, g=new THREE.Group(); g.add(mesh(D.body_crumple_heavy,pc)); g.add(mesh(D.bonnet_buckled,pc)); g.add(mesh(D.fire,pc)); g.add(mesh(D.windscreen_missing,pc));
+      for (const w of rg.wheels){ const wm=mesh(V.wheel,pc); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); } at(g,-3,0,0,0.6); glowLight(g,0xffa040,30,10).position.set(0,1.6,1.6);
+      at(prop('vehicles','pickup'),2.5,0,-0.5,-Math.PI/2); at(prop('items','fuel_siphon'),2.2,0,1.0,Math.PI); at(prop('items','paper_map'),0.0,0,2.5,0.3);
+      ['grass','snow','gravel','dirt','sand'].forEach((k,i)=>{ const c=colourer(GR.palette,(GR.seasons[k==='edge'?'grass':k]||GR.seasons.grass).summer||GR.seasons[k].winter); at(mesh(GR.models.edges[k],c),-4+i*2.2,0.01,4.2); });
+      for (let i=0;i<10;i++) at(mesh(FX.models.effects.roof_splash,fc),-1+Math.random()*2,1.42,0+Math.random()*0.8-0.4);
+      cam.position.set(0,6,11.5); ctl.target.set(0,0.4,1.8); }},
   fp:{t:'First-person arms',d:'Seen from the eye, in the survivor\'s skin and sleeve colours: holding a weapon, empty, and reaching to open or search (left to right).',
     make(){ lights('day'); scene.background=new THREE.Color(0xc9c4b8); scene.fog=null; window.__fpPanels=true;
       const g=new THREE.Group(); g.add(fpArms(window.__fpPose||'hold',SV.slots.SKIN[2],'#3a4a3e'));
       if ((window.__fpPose||'hold')==='hold'){ const w=held('cricket_bat','new'), W=HE.fpWeapon; w.position.set(...W.pos); w.rotation.set(W.rot[0]*Math.PI/180,W.rot[1]*Math.PI/180,W.rot[2]*Math.PI/180); g.add(w); }
       scene.add(g); const wall=new THREE.Mesh(new THREE.PlaneGeometry(6,4),new THREE.MeshLambertMaterial({color:0x8a8f86})); wall.position.set(0,0,2.5); wall.rotation.y=Math.PI; scene.add(wall);
       cam.position.set(0,0,0); cam.fov=70; cam.updateProjectionMatrix(); ctl.target.set(0,-0.05,1); }},
+  fpreload:{t:'First-person reloads',d:'Reload poses per gun: pistol and carbine magazines, shotgun rack and shell loading, double barrel broken open, rifle bolt, revolver, flare gun, bow nock and draw, crossbow cocking.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xc9c4b8); scene.fog=null; const k=window.__fpPose||'pistol_mag_out', P=HE.fpReload[k], D=Math.PI/180;
+      const c=colourer(HE.palette,{SKIN:SV.slots.SKIN[2],SLEEVE:'#3a4a3e'}), g=new THREE.Group(); g.add(mesh(HE.models.fpReload[k].right,c)); g.add(mesh(HE.models.fpReload[k].left,c));
+      const w=held(P.weapon.name,P.weapon.state); w.position.set(...P.weapon.pos); w.rotation.set(P.weapon.rot[0]*D,P.weapon.rot[1]*D,P.weapon.rot[2]*D); g.add(w);
+      if (P.item){ const it=mesh(HE.models.ammo[P.item.model.split('.')[1]],c); it.position.set(...P.item.pos); it.rotation.set(P.item.rot[0]*D,P.item.rot[1]*D,P.item.rot[2]*D); g.add(it); }
+      scene.add(g); const wall=new THREE.Mesh(new THREE.PlaneGeometry(6,4),new THREE.MeshLambertMaterial({color:0x8a8f86})); wall.position.set(0,0,2.5); wall.rotation.y=Math.PI; scene.add(wall);
+      cam.position.set(0,0,0); cam.fov=70; cam.updateProjectionMatrix(); ctl.target.set(0,-0.05,1); }},
+  portrait:{t:'Survivor portrait',d:'Head and shoulders of a ready-made survivor for the survivors panel.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xe8dfc6); scene.fog=null; const N=SV.npcLooks, k=window.__fpPose in N?window.__fpPose:'old_ranger', L=N[k];
+      const look={body:L.body,build:L.build,skin:L.skin,hc:L.hairColour,hair:L.hair,hat:L.hat,face:L.face,top:L.top,bot:L.bottoms,shoe:L.shoes,shirt:L.shirt,pants:L.pants,acc:L.acc,npc:(L.npc||[]).filter(n=>n!=='crate'&&n!=='cane'),worn:L.worn||[]};
+      at(survivor(look),0,0,0,0.35); cam.fov=24; cam.updateProjectionMatrix(); cam.position.set(0.3,1.62,2.0); ctl.target.set(0,1.47,0); }},
   clips:{t:'New survivor clips',d:'Key frames, left to right: jump (crouch, push, rise), airborne, land, hurt, drink, bandage, pick up, overhead chop, thrust and flat swing.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xe2ddd2);
       const C=SV.clips, frames=[['jump',0],['jump',1],['jump',2],['airborne',0],['land',0],['hurt',0],['drink',1],['bandage',1],['pickup',1],['attack_chop',0],['attack_chop',1],['attack_thrust',1],['attack_swing',0],['attack_swing',2]];
       const wp={attack_chop:'axe',attack_thrust:'broom_spear',attack_swing:'cricket_bat'};
       frames.forEach(([c,k],i)=>{ const L=Object.assign({},LOOKS[i%8],{frame:C[c][k],weapon:wp[c]}); const s0=survivor(L); s0.position.set((i%7-3)*1.25, c==='airborne'?0.35:0, i<7?0:-2.2); s0.rotation.y=-0.6; scene.add(s0); });
       cam.position.set(0,2.4,8.6); ctl.target.set(0,0.75,-1.1); }},
+  clips2:{t:'Long guns, carrying and work',d:'Left to right: a long gun carried across the chest, aimed at the shoulder, slung on the back with a quiver; carrying a chair; chopping (up and down); fishing (hold and cast); keeping watch.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xe2ddd2); const C=SV.clips, T=SV.heldTurn;
+      const F=[[{frame:C.carry_long[0],weapon:'hunting_rifle',wturn:T.carry_long}],[{frame:C.aim_long[0],weapon:'carbine',wturn:T.aim_long}],[{slung:'pump_shotgun',npc:['quiver'],rot:Math.PI}],[{frame:C.carry_furniture[1],carry:'chair'}],
+               [{frame:C.work_chop[0],weapon:'axe'}],[{frame:C.work_chop[1],weapon:'axe'}],[{frame:C.fish[0],npc:['fishing_rod']}],[{frame:C.fish[1],npc:['fishing_rod']}],[{frame:C.keep_watch[0]}]];
+      F.forEach(([x],i)=>{ const L=Object.assign({},LOOKS[i%8],x); const s0=survivor(L); s0.position.set((i-4)*1.15,0,0); s0.rotation.y=x.rot!==undefined?x.rot:-0.7; scene.add(s0); });
+      cam.position.set(0,2.4,11); ctl.target.set(0,0.9,0); }},
   items2:{t:'More loose items',d:'Stone, flare, lure, batteries, matches, nails, seeds, medicine, food and drink, blanket, books, scraps, sticks, berries, a folded rain jacket, lantern, ammo box and pistol.',
     make(){ grid(['stone','flare','lure','batteries','matches','nails','seeds','antibiotics','painkillers','vitamins','soda_can','granola_bar','rice_bag','blanket','books','cloth_scraps','sticks','tin_can','berries','rain_jacket','lantern','ammo_box','pistol'].map(n=>['items',n]),8,0.62,0.8,[0,3.0,3.4],[0,0,-0.2]); }},
   containers:{t:'Loot containers',d:'Each searchable container closed (front row) and searched (behind it): doors open, drawers out, lids up, less inside.',

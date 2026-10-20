@@ -225,3 +225,62 @@ DMG_RULE = ('vehicles[name].damage (sedan, hatchback, pickup, van): body_crumple
             'bonnet_crumple_light / bonnet_crumple_heavy (use with the matching body) and bonnet_buckled (folded up, goes with body_crumple_heavy) replace bonnet; windscreen_cracked and windscreen_missing are '
             'drawn on top of the body; smoke is a scorch mark and a few puffs over the bonnet for a smoking engine (or start fx.smoke_column at vehicleRig[name].smokeAt). '
             'Order a crash goes through: bumper_bent and windscreen_cracked (light knock), crumple_light, crumple_heavy with bonnet_buckled, smoke, windscreen_missing.')
+
+# ================= section 11 (20 October 2026) =================
+PALETTE.update({'gunMetal': '#2e3034', 'gunWood': '#8a6a46', 'targetW': '#e8e0cc', 'targetR': '#b8322a', 'glassCase': '#9cc4d0', 'hose': '#3a5a3a', 'fuelRed': '#b8322a', 'flameX': '#ffb04a', 'flameXC': '#fff0b8', 'flameXR': '#e0602a', 'cardG': '#3f6a3a', 'cardR': '#a8322a', 'cardB': '#2e5a7a'})
+def long_gun(x, y, z, L=1.0, wood=True, ry=0):
+    """a rifle or shotgun silhouette standing upright (muzzle up), for racks and counters"""
+    c = 'gunWood' if wood else 'gunMetal'
+    return [hull([(x - 0.02, y, z - 0.06), (x + 0.02, y, z - 0.06), (x + 0.02, y, z + 0.02), (x - 0.02, y, z + 0.02), (x - 0.02, y + 0.35*L, z - 0.025), (x + 0.02, y + 0.35*L, z - 0.025), (x + 0.02, y + 0.35*L, z + 0.0), (x - 0.02, y + 0.35*L, z + 0.0)], c),
+            box([x, y + 0.42*L, z - 0.01], [0.04, 0.16*L, 0.05], 'gunMetal'), box([x, y + 0.75*L, z - 0.01], [0.022, 0.5*L, 0.022], 'gunMetal'), box([x, y + 0.6*L, z + 0.015], [0.03, 0.22*L, 0.03], c)]
+model('shop', 'gun_counter', [b(0, 0, 0, 2.0, 0.85, 0.6, 'cupboardD'), b(0, 0.85, 0, 2.0, 0.04, 0.6, 'metalD'), b(0, 0.89, 0, 1.96, 0.18, 0.56, 'glassCase'),
+                              b(0, 1.07, 0, 2.0, 0.02, 0.6, 'metalD'), b(0, 0.3, 0.301, 1.9, 0.4, 0.002, 'cupboard')]
+      + [p for i, x in enumerate((-0.7, -0.2, 0.3, 0.75)) for p in [box([x, 0.92, 0.0], [0.18, 0.03, 0.05], 'gunMetal', ry=0), box([x - 0.06, 0.9, 0.04], [0.04, 0.025, 0.08], 'gunWood')]]
+      + [b(0.6, 1.09, -0.1, 0.35, 0.12, 0.25, 'screen'), b(-0.6, 1.09, 0.0, 0.25, 0.04, 0.2, 'label')])
+model('shop', 'gun_rack', [b(0, 0, -0.06, 2.0, 2.2, 0.06, 'cupboardD'), b(0, 0.25, 0.0, 2.0, 0.08, 0.14, 'cupboard'), b(0, 1.55, 0.0, 2.0, 0.06, 0.14, 'cupboard')]
+      + [p for i in range(7) for p in long_gun(-0.84 + i*0.28, 0.33, 0.03, 1.15 + 0.05*(i % 3), wood=i % 2 == 0)]
+      + [b(-0.5 + i*0.33, 1.9, 0.0, 0.25, 0.14, 0.12, ['cardG', 'cardR', 'cardB'][i % 3]) for i in range(4)])
+model('shop', 'ammo_shelf', [b(0, 0, 0, 1.2, 1.9, 0.4, 'metalD'), *[b(0, y, 0.0, 1.16, 0.03, 0.38, 'metal') for y in (0.1, 0.55, 1.0, 1.45)]]
+      + [b(-0.48 + i*0.135, y + 0.03, 0.05, 0.11, 0.07 if j % 2 else 0.05, 0.08, ['cardG', 'cardR', 'cardB', 'ammo'][(i + j) % 4]) for j, y in enumerate((0.1, 0.55, 1.0, 1.45)) for i in range(8) if (i*3 + j) % 7 != 2])
+model('shop', 'target_poster', [b(0, 1.0, 0.003, 0.6, 0.9, 0.006, 'targetW'), *[loft([[0, 1.5, 0.007 + 0.001*i, r, r], [0, 1.5, 0.008 + 0.001*i, r, r]], 'targetR' if i % 2 == 0 else 'targetW', ax='z', n=12) for i, r in enumerate((0.25, 0.19, 0.13, 0.06))],
+                                b(0, 1.06, 0.007, 0.5, 0.04, 0.001, 'black'), flat([(-0.1, 1.48, 0.013), (-0.08, 1.48, 0.013), (-0.08, 1.5, 0.013), (-0.1, 1.5, 0.013)], 'black'), flat([(0.05, 1.56, 0.013), (0.07, 1.56, 0.013), (0.07, 1.58, 0.013), (0.05, 1.58, 0.013)], 'black')])
+SHOP_RULE = 'shop: the inside of a gun shop (with buildings.modules.gunshop_front): gun_counter (2 m glass counter with pistols inside), gun_rack (a wall of long guns, against a wall: back at z = -0.09), ammo_shelf, target_poster (on a wall, back at z = 0; also a shooting target: arrows and bolts from held.ammo stick in it).'
+# door brace and window boards seen from outside
+model('build', 'door_brace', [b(sx*0.55, 0.95, 0.03, 0.12, 0.2, 0.06, 'steelPlate') for sx in (1, -1)] + [b(sx*0.55, 1.08, 0.08, 0.12, 0.04, 0.06, 'steelPlate') for sx in (1, -1)]
+      + [b(0, 1.0, 0.11, 1.4, 0.12, 0.08, 'plankD'), hull([(-0.05, 0.0, 0.7), (0.05, 0.0, 0.7), (0.05, 0.0, 0.8), (-0.05, 0.0, 0.8), (-0.05, 0.95, 0.12), (0.05, 0.95, 0.12), (0.05, 1.05, 0.15), (-0.05, 1.05, 0.15)], 'plank'),
+         *[box([sx*0.55, 1.0, 0.152], [0.02, 0.02, 0.004], 'nailHead') for sx in (1, -1)]])
+def bay_boards():
+    """boards nailed over a buildings.js window bay from outside: the window is 1.2 by 1.3 m from 0.9 m up"""
+    o = []
+    for i in range(5):
+        y = 1.0 + i*0.28; t = 0.04*((i % 2)*2 - 1)
+        o.append(hull([(-0.72, y - 0.08 - t, 0.11), (0.72, y - 0.08 + t, 0.11), (0.72, y - 0.08 + t, 0.135), (-0.72, y - 0.08 - t, 0.135), (-0.72, y + 0.08 - t, 0.11), (0.72, y + 0.08 + t, 0.11), (0.72, y + 0.08 + t, 0.135), (-0.72, y + 0.08 - t, 0.135)], 'plank' if i % 2 else 'plankD'))
+        o += [box([sx*0.65, y + t*sx*0.9, 0.138], [0.016, 0.016, 0.006], 'nailHead') for sx in (1, -1)]
+    return o
+model('build', 'window_boards_bay', bay_boards())
+BOARD_RULE = 'build.window_boards_bay fits a buildings.js window bay from outside (bay-local coordinates, planks just proud of the frame); build.door_brace is a bar across the inside of a door 1.2 m wide (brackets at x = +-0.55, the door face at z = 0, a prop leaning to the floor at z = 0.75).'
+# fuel siphon, paper map on the ground
+model('items', 'fuel_siphon', [b(0, 0, 0, 0.28, 0.36, 0.16, 'fuelRed'), b(0.06, 0.36, 0, 0.06, 0.06, 0.06, 'black'), b(-0.06, 0.36, 0, 0.1, 0.03, 0.04, 'fuelRed'),
+                               *[seg(p, q, 0.01, 0.01, 0.01, 0.01, 'hose', caps=(False, False)) for p, q in (([0.06, 0.42, 0], [0.1, 0.55, 0.15]), ([0.1, 0.55, 0.15], [0.2, 0.6, 0.45]), ([0.2, 0.6, 0.45], [0.35, 0.9, 0.7]))]])
+SIPHON_RULE = 'items.fuel_siphon: a jerry can with its hose rising towards +Z; set it beside a car with the hose end at vehicleRig[name].fuelCap (the pickup) or the car\'s rear flank (about 0.8 m up).'
+model('items', 'paper_map', [b(0, 0, 0, 0.2, 0.012, 0.14, 'paper'), flat([(-0.1, 0.0125, 0.0), (0.1, 0.0125, 0.0), (0.1, 0.0125, 0.004), (-0.1, 0.0125, 0.004)], 'label', (0, 1, 0)),
+                             flat([(-0.06, 0.0126, -0.04), (0.05, 0.0126, 0.03), (0.055, 0.0126, 0.04), (-0.055, 0.0126, -0.03)], 'blue', (0, 1, 0)), flat([(0.03, 0.0126, -0.05), (0.07, 0.0126, -0.05), (0.07, 0.0126, -0.01)], 'red', (0, 1, 0))])
+# fire on the bonnet for a burning car
+def bonnet_fire(V):
+    q = V['bonnet'][0]; P = abs_pts(q); c = centre(P); y = max(p[1] for p in P) + 0.02
+    o = []
+    for i, (dx, dz, h, w) in enumerate(((0, 0, 0.9, 0.3), (0.35, 0.15, 0.6, 0.2), (-0.3, -0.1, 0.7, 0.22), (0.1, 0.35, 0.45, 0.16))):
+        o.append(loft([[c[0] + dx, y, c[2] + dz, w, w*0.8], [c[0] + dx*1.1, y + h*0.45, c[2] + dz, w*0.7, w*0.6], [c[0] + dx*1.2, y + h, c[2] + dz, 0, 0]], 'flameX' if i % 2 == 0 else 'flameXR', n=5, glow=True))
+        o.append(loft([[c[0] + dx, y, c[2] + dz, w*0.45, w*0.4], [c[0] + dx, y + h*0.5, c[2] + dz, 0, 0]], 'flameXC', n=5, glow=True))
+    return o
+for nm in ('hatchback', 'sedan', 'pickup', 'van'):
+    M['vehicles'][nm]['damage']['fire'] = bonnet_fire(M['vehicles'][nm])
+DMG_RULE += (' The game\'s vehicle health maps to the looks: above 70 whole, 70 to 40 body_bumper_bent with windscreen_cracked, 40 to 15 crumple_light, under 15 crumple_heavy with bonnet_buckled and smoke, '
+             'wrecked (0) crumple_heavy, bonnet_buckled and windscreen_missing, burning: add fire (flames standing on the bonnet, glow; flicker them and add a warm light) for a minute, then the <name>_burnt shell.')
+# furniture size classes (11.6): how a piece is carried and how much it slows you
+FURNITURE_SIZE = {
+  'chair': ['small', 6], 'table': ['medium', 20], 'sofa': ['large', 45], 'bed': ['large', 50], 'wardrobe': ['large', 60], 'fridge': ['large', 70], 'stove': ['large', 55],
+  'kitchen_counter': ['large', 40], 'bookshelf': ['medium', 30], 'desk': ['medium', 28], 'tv': ['small', 12], 'floor_lamp': ['small', 4], 'toilet': ['medium', 25], 'bathtub': ['large', 70],
+  'crate': ['small', 10], 'locker': ['medium', 35], 'pew': ['large', 40], 'shop_shelf': ['medium', 30]}
+SIZE_RULE = ('furnitureSize[name] = [class, kg]. small: carried in front by one person at walking speed less 10%; medium: in front, speed less 30%, no running; '
+             'large: speed less 50%, no running or jumping, and two survivors carry it at less 25% each (the survivor clip carry_furniture holds all three).')

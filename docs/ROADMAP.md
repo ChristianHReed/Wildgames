@@ -169,6 +169,12 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Bases: claim sign and flag, custom bed, wall reinforcement (planks, sheet, mesh in three stages) | Not used | 0.58 |
 | Power pack (`power.js`): power plant dead and running, control panel, substation, pole transformer, pylon, breaker panel, outlets, lights, cable box, cables, batteries, solar | Not loaded | 0.59 |
 | Vehicle damage (`vehicles[name].damage`), crash burst, skid marks, car holes in every kind of wall (`walls.carHoles`) | Not used | 0.60 |
+| Section 11 (20 October 2026): torn wall edges, rubble, boarded and cracked states per finish (`buildings.breach`), house number plaque and digits, street name blade (`buildings.house`), gun shop front and inside (`modules.gunshop_front`, `props.shop`) | Not used | 11.1 |
+| Section 11: door brace and window boards for bays (`props.build`), fuel siphon, paper map pickup (`props.items`), fire on the bonnet (`damage.fire`), furniture size classes (`furnitureSize`) | Not used | 11.2, 11.5, 11.6, 11.8 |
+| Section 11: first-person reloads (`held.fpReload`), pistol empty and flare gun open states, flare shell, arrows and bolts stuck in targets | Not used | 11.4 |
+| Section 11: survivor clips carry_long, aim_long, carry_furniture, work_chop, fish, keep_watch; quiver and fishing rod pieces; sling point; portraits (`assets/ui/portraits/`) | Not used | 11.4, 11.6, 11.10 |
+| Section 11: ground edges (`ground.edges`), roof splash (`fx`) | Not used | 11.7, 11.9 |
+| Sound effects and music made in code (`assets/audio/`: 68 sound keys, day, night, horde, base and chase music) | Not loaded | 11.11 |
 
 How a new art delivery gets in: the design chat pushes the pack to main and lists it in `docs/SHAPED.md` and `docs/ART_REQUESTS.md`; this chat reads those, adds each new piece to the table above in the same version it is wired, and ticks it off here when it ships.
 

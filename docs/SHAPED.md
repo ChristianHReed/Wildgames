@@ -118,6 +118,12 @@ The game places bays along each footprint edge: one bay per 2.4 m (stretch the b
 
 **Colours:** WALL, TRIM, FRAME and ROOF are chosen per building (see examples); a slot ending in _D is that colour times darker. Example sets: `timber_house`, `brick_shop`, `concrete_flats`, `corner_store`.
 
+**Torn walls (section 11.1):** breach[finish] for a torn-open stretch of town wall, matching breachApply: the opening runs along X from -W/2 to W/2 and up to 2.7 m, faces at z = +0.05 (outside) and -0.05 (inside). For W = 2.4 or 4.0 use hole_<W>, rubble_<W> and (when the player closes it) boarded_<W>. For any other length put edge_left at x = -W/2, edge_right at x = +W/2 and top stretched along X to W (it is 1 m long, centred), rubble_2.4 or rubble_4.0 stretched along X, and boarded_1m stretched to W. Lower walls: scale Y by h/2.7. Before it breaks, draw cracked_<W> (cracks on both faces) and then missing_<W> (bricks out, boards off, a torn sheet, a broken pane) over the whole wall. Finishes: siding, brick, metal, glass.
+
+**House numbers and street names:** house.plaque is 0.4 by 0.2 m, its back at z = 0, hung beside the door at about 1.8 m; put up to three digit_<n> on it at x = -0.1, 0, +0.1 (each digit is 0.07 by 0.13, centred on its origin, z already in front of the plaque). The digits also work painted straight on a wall or a kerb. house.street_blade is 0.9 by 0.18, both faces green with a white border; put two at right angles on top of props.street.street_name_post and draw the road name on each face in white (the text area is 0.8 by 0.12).
+
+**Gun shop:** modules.gunshop_front is a ground-storey bay (in place of shopfront): a barred window, a steel door and a sign board with a target and a rifle; the inside pieces are props.shop (gun_counter, gun_rack, ammo_shelf, target_poster).
+
 | Module | Tris, verts, welded |
 | --- | --- |
 | `frame_timber` | 24 / 48 / 14 |
@@ -166,6 +172,7 @@ The game places bays along each footprint edge: one bay per 2.4 m (stretch the b
 | `inside_torn` | 24 / 36 / 36 |
 | `studs` | 96 / 192 / 64 |
 | `door_boarded` | 162 / 324 / 112 |
+| `gunshop_front` | 378 / 724 / 256 |
 
 | Template (whole building) | Tris, verts, welded |
 | --- | --- |
@@ -173,6 +180,77 @@ The game places bays along each footprint edge: one bay per 2.4 m (stretch the b
 | `brick_shop` | 1,720 / 3,440 / 1,040 |
 | `concrete_flats` | 5,308 / 10,616 / 3,116 |
 | `corner_store` | 1,978 / 4,136 / 1,172 |
+
+| Torn wall piece | Tris, verts, welded |
+| --- | --- |
+| `breach.siding.edge_left` | 196 / 456 / 125 |
+| `breach.siding.edge_right` | 196 / 456 / 125 |
+| `breach.siding.top` | 66 / 160 / 43 |
+| `breach.siding.boarded_1m` | 240 / 480 / 160 |
+| `breach.siding.hole_2.4` | 458 / 1,072 / 287 |
+| `breach.siding.rubble_2.4` | 146 / 352 / 100 |
+| `breach.siding.boarded_2.4` | 240 / 480 / 160 |
+| `breach.siding.cracked_2.4` | 24 / 48 / 48 |
+| `breach.siding.missing_2.4` | 76 / 152 / 88 |
+| `breach.siding.hole_4.0` | 458 / 1,072 / 288 |
+| `breach.siding.rubble_4.0` | 242 / 584 / 164 |
+| `breach.siding.boarded_4.0` | 240 / 480 / 160 |
+| `breach.siding.cracked_4.0` | 36 / 72 / 72 |
+| `breach.siding.missing_4.0` | 140 / 280 / 152 |
+| `breach.brick.edge_left` | 278 / 580 / 239 |
+| `breach.brick.edge_right` | 278 / 580 / 239 |
+| `breach.brick.top` | 52 / 104 / 38 |
+| `breach.brick.boarded_1m` | 240 / 480 / 160 |
+| `breach.brick.hole_2.4` | 608 / 1,264 / 512 |
+| `breach.brick.rubble_2.4` | 146 / 352 / 100 |
+| `breach.brick.boarded_2.4` | 240 / 480 / 160 |
+| `breach.brick.cracked_2.4` | 24 / 48 / 48 |
+| `breach.brick.missing_2.4` | 64 / 128 / 96 |
+| `breach.brick.hole_4.0` | 608 / 1,264 / 512 |
+| `breach.brick.rubble_4.0` | 242 / 584 / 164 |
+| `breach.brick.boarded_4.0` | 240 / 480 / 160 |
+| `breach.brick.cracked_4.0` | 36 / 72 / 72 |
+| `breach.brick.missing_4.0` | 116 / 232 / 168 |
+| `breach.metal.edge_left` | 44 / 100 / 30 |
+| `breach.metal.edge_right` | 44 / 100 / 30 |
+| `breach.metal.top` | 64 / 144 / 43 |
+| `breach.metal.boarded_1m` | 240 / 480 / 160 |
+| `breach.metal.hole_2.4` | 152 / 344 / 103 |
+| `breach.metal.rubble_2.4` | 146 / 380 / 100 |
+| `breach.metal.boarded_2.4` | 240 / 480 / 160 |
+| `breach.metal.cracked_2.4` | 24 / 48 / 48 |
+| `breach.metal.missing_2.4` | 54 / 118 / 78 |
+| `breach.metal.hole_4.0` | 152 / 344 / 103 |
+| `breach.metal.rubble_4.0` | 242 / 628 / 164 |
+| `breach.metal.boarded_4.0` | 240 / 480 / 160 |
+| `breach.metal.cracked_4.0` | 36 / 72 / 72 |
+| `breach.metal.missing_4.0` | 96 / 212 / 132 |
+| `breach.glass.edge_left` | 52 / 132 / 39 |
+| `breach.glass.edge_right` | 52 / 132 / 39 |
+| `breach.glass.top` | 28 / 72 / 21 |
+| `breach.glass.boarded_1m` | 240 / 480 / 160 |
+| `breach.glass.hole_2.4` | 132 / 336 / 93 |
+| `breach.glass.rubble_2.4` | 165 / 469 / 157 |
+| `breach.glass.boarded_2.4` | 240 / 480 / 160 |
+| `breach.glass.cracked_2.4` | 24 / 48 / 48 |
+| `breach.glass.missing_2.4` | 28 / 56 / 56 |
+| `breach.glass.hole_4.0` | 132 / 336 / 93 |
+| `breach.glass.rubble_4.0` | 274 / 780 / 260 |
+| `breach.glass.boarded_4.0` | 240 / 480 / 160 |
+| `breach.glass.cracked_4.0` | 36 / 72 / 72 |
+| `breach.glass.missing_4.0` | 44 / 88 / 88 |
+| `house.plaque` | 24 / 48 / 16 |
+| `house.digit_0` | 12 / 24 / 16 |
+| `house.digit_1` | 4 / 8 / 6 |
+| `house.digit_2` | 10 / 20 / 18 |
+| `house.digit_3` | 10 / 20 / 16 |
+| `house.digit_4` | 8 / 16 / 14 |
+| `house.digit_5` | 10 / 20 / 18 |
+| `house.digit_6` | 12 / 24 / 19 |
+| `house.digit_7` | 6 / 12 / 9 |
+| `house.digit_8` | 14 / 28 / 20 |
+| `house.digit_9` | 12 / 24 / 19 |
+| `house.street_blade` | 60 / 120 / 40 |
 
 ## props (`assets/shaped/props.js`, version 1)
 
@@ -188,7 +266,13 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 
 **Bases** (section 10.3): build.claim_sign or build.claim_flag marks a claimed base (nail the sign by the door). build.custom_bed is the bed made from harvested planks and cloth scraps. build.reinforce_<planks|sheet|mesh> (and _damaged, _nearly_gone) is a 1.5 m by 2.4 m panel laid on the room side of a wall: its back at z = 0, facing +Z into the room. Planks suit wood walls, sheet metal steel walls, rebar mesh concrete, but any goes on any.
 
-**Vehicle damage** (section 10.5): vehicles[name].damage (sedan, hatchback, pickup, van): body_crumple_light / body_crumple_heavy and body_bumper_bent replace body; bonnet_crumple_light / bonnet_crumple_heavy (use with the matching body) and bonnet_buckled (folded up, goes with body_crumple_heavy) replace bonnet; windscreen_cracked and windscreen_missing are drawn on top of the body; smoke is a scorch mark and a few puffs over the bonnet for a smoking engine (or start fx.smoke_column at vehicleRig[name].smokeAt). Order a crash goes through: bumper_bent and windscreen_cracked (light knock), crumple_light, crumple_heavy with bonnet_buckled, smoke, windscreen_missing. `moving` lists other parts that open (doors, lids) and their hinges.
+**Vehicle damage** (section 10.5, 11.5): vehicles[name].damage (sedan, hatchback, pickup, van): body_crumple_light / body_crumple_heavy and body_bumper_bent replace body; bonnet_crumple_light / bonnet_crumple_heavy (use with the matching body) and bonnet_buckled (folded up, goes with body_crumple_heavy) replace bonnet; windscreen_cracked and windscreen_missing are drawn on top of the body; smoke is a scorch mark and a few puffs over the bonnet for a smoking engine (or start fx.smoke_column at vehicleRig[name].smokeAt). Order a crash goes through: bumper_bent and windscreen_cracked (light knock), crumple_light, crumple_heavy with bonnet_buckled, smoke, windscreen_missing. The game's vehicle health maps to the looks: above 70 whole, 70 to 40 body_bumper_bent with windscreen_cracked, 40 to 15 crumple_light, under 15 crumple_heavy with bonnet_buckled and smoke, wrecked (0) crumple_heavy, bonnet_buckled and windscreen_missing, burning: add fire (flames standing on the bonnet, glow; flicker them and add a warm light) for a minute, then the <name>_burnt shell.
+
+**Gun shop inside (11.1):** shop: the inside of a gun shop (with buildings.modules.gunshop_front): gun_counter (2 m glass counter with pistols inside), gun_rack (a wall of long guns, against a wall: back at z = -0.09), ammo_shelf, target_poster (on a wall, back at z = 0; also a shooting target: arrows and bolts from held.ammo stick in it). **Boards and braces (11.2):** build.window_boards_bay fits a buildings.js window bay from outside (bay-local coordinates, planks just proud of the frame); build.door_brace is a bar across the inside of a door 1.2 m wide (brackets at x = +-0.55, the door face at z = 0, a prop leaning to the floor at z = 0.75). **Siphon (11.5):** items.fuel_siphon: a jerry can with its hose rising towards +Z; set it beside a car with the hose end at vehicleRig[name].fuelCap (the pickup) or the car's rear flank (about 0.8 m up). `items.paper_map` is the map pickup on the ground (11.8).
+
+**Furniture size (11.6):** furnitureSize[name] = [class, kg]. small: carried in front by one person at walking speed less 10%; medium: in front, speed less 30%, no running; large: speed less 50%, no running or jumping, and two survivors carry it at less 25% each (the survivor clip carry_furniture holds all three). `chair` small 6 kg, `table` medium 20 kg, `sofa` large 45 kg, `bed` large 50 kg, `wardrobe` large 60 kg, `fridge` large 70 kg, `stove` large 55 kg, `kitchen_counter` large 40 kg, `bookshelf` medium 30 kg, `desk` medium 28 kg, `tv` small 12 kg, `floor_lamp` small 4 kg, `toilet` medium 25 kg, `bathtub` large 70 kg, `crate` small 10 kg, `locker` medium 35 kg, `pew` large 40 kg, `shop_shelf` medium 30 kg.
+
+ `moving` lists other parts that open (doors, lids) and their hinges.
 
 | Category | Model | Tris, verts, welded |
 | --- | --- | --- |
@@ -251,6 +335,8 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | items | `glass_sheet` | 14 / 30 / 14 |
 | items | `wire_coil` | 82 / 164 / 64 |
 | items | `plasterboard_scrap` | 14 / 28 / 12 |
+| items | `fuel_siphon` | 60 / 120 / 44 |
+| items | `paper_map` | 17 / 35 / 19 |
 | furniture | `chair` | 72 / 144 / 46 |
 | furniture | `table` | 60 / 120 / 40 |
 | furniture | `sofa` | 120 / 240 / 76 |
@@ -338,6 +424,7 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `hatchback.damage.windscreen_cracked` | 16 / 32 / 20 |
 | vehicles | `hatchback.damage.windscreen_missing` | 7 / 19 / 18 |
 | vehicles | `hatchback.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `hatchback.damage.fire` | 104 / 272 / 68 |
 | vehicles | `sedan.body` | 126 / 252 / 108 |
 | vehicles | `sedan.bonnet` | 12 / 24 / 8 |
 | vehicles | `sedan.wheel` | 48 / 84 / 28 |
@@ -351,6 +438,7 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `sedan.damage.windscreen_cracked` | 16 / 32 / 24 |
 | vehicles | `sedan.damage.windscreen_missing` | 7 / 19 / 18 |
 | vehicles | `sedan.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `sedan.damage.fire` | 104 / 272 / 68 |
 | vehicles | `pickup.body` | 190 / 380 / 130 |
 | vehicles | `pickup.bonnet` | 12 / 24 / 8 |
 | vehicles | `pickup.wheel` | 48 / 84 / 28 |
@@ -366,6 +454,7 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `pickup.damage.windscreen_cracked` | 16 / 32 / 20 |
 | vehicles | `pickup.damage.windscreen_missing` | 7 / 19 / 19 |
 | vehicles | `pickup.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `pickup.damage.fire` | 104 / 272 / 68 |
 | vehicles | `van.body` | 72 / 144 / 62 |
 | vehicles | `van.bonnet` | 12 / 24 / 8 |
 | vehicles | `van.wheel` | 48 / 84 / 28 |
@@ -378,6 +467,7 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `van.damage.windscreen_cracked` | 16 / 32 / 20 |
 | vehicles | `van.damage.windscreen_missing` | 7 / 19 / 18 |
 | vehicles | `van.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `van.damage.fire` | 104 / 272 / 68 |
 | vehicles | `hatchback_wreck.body` | 126 / 252 / 108 |
 | vehicles | `hatchback_wreck.bonnet` | 12 / 24 / 8 |
 | vehicles | `hatchback_wreck.wheel` | 48 / 84 / 28 |
@@ -473,6 +563,12 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | build | `reinforce_mesh` | 288 / 576 / 192 |
 | build | `reinforce_mesh_damaged` | 228 / 456 / 152 |
 | build | `reinforce_mesh_nearly_gone` | 132 / 264 / 88 |
+| build | `door_brace` | 96 / 192 / 64 |
+| build | `window_boards_bay` | 180 / 360 / 120 |
+| shop | `gun_counter` | 180 / 360 / 116 |
+| shop | `gun_rack` | 420 / 840 / 280 |
+| shop | `ammo_shelf` | 384 / 768 / 256 |
+| shop | `target_poster` | 204 / 344 / 120 |
 
 ## held (`assets/shaped/held.js`, version 2)
 
@@ -490,7 +586,9 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 
 **Guns and bows** (version 2): `pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`. Guns have new and worn (under a quarter condition: rust and tape) plus one reload state each (revolver open, hunting_rifle bolt_open, pump_shotgun pumped, double_barrel open, carbine empty, crossbow loaded, recurve_bow drawn) and a flash at INFO.muzzle. Long guns: right fist on the grip, left fist at offhandAt; first person uses fpLong when carried and fpAim when aiming. Casings from models.cases go to +X. Each gun's `info` gives its `muzzle`, the `ammo` it takes and how many it `holds`; long guns give `offhandAt`.
 
-**Ammo** (`models.ammo`, on the ground like props: origin at the centre of the base): `pistol_round` (fits pistol and revolver), `rifle_round` (fits hunting rifle and carbine), `shotgun_shell` (fits pump and double-barrel shotguns), `pistol_box` (20 pistol rounds), `rifle_box` (20 rifle rounds), `shotgun_box` (10 shells), `pistol_magazine` (full pistol magazine (pick up = 12 rounds)), `carbine_magazine` (full carbine magazine (20 rounds)), `ammo_can` (military can: a large mixed find (police station, gun shop, army truck)), `flare_shells` (four flare shells), `arrow` (one arrow, can be picked back up after a shot), `arrow_bundle` (five arrows), `quiver` (worn on the back or found: holds arrows), `crossbow_bolt` (one bolt, reusable), `loose_pile` (a few mixed rounds spilled on the ground (searched drawers, dead survivors)). `models.cases` are the casings thrown out on a shot (`pistol_case`, `rifle_case`, `shotgun_hull`).
+**Ammo** (`models.ammo`, on the ground like props: origin at the centre of the base): `pistol_round` (fits pistol and revolver), `rifle_round` (fits hunting rifle and carbine), `shotgun_shell` (fits pump and double-barrel shotguns), `pistol_box` (20 pistol rounds), `rifle_box` (20 rifle rounds), `shotgun_box` (10 shells), `pistol_magazine` (full pistol magazine (pick up = 12 rounds)), `carbine_magazine` (full carbine magazine (20 rounds)), `ammo_can` (military can: a large mixed find (police station, gun shop, army truck)), `flare_shells` (four flare shells), `arrow` (one arrow, can be picked back up after a shot), `arrow_bundle` (five arrows), `quiver` (worn on the back or found: holds arrows), `crossbow_bolt` (one bolt, reusable), `loose_pile` (a few mixed rounds spilled on the ground (searched drawers, dead survivors)), `flare_shell` (one flare shell (loose, and the one in the hand while loading)), `arrow_stuck` (an arrow that hit: tip buried, shaft out along +Z from a surface at z = 0 (turn +Z to the hit surface normal); picked up as one arrow), `bolt_stuck` (the same for a crossbow bolt). `models.cases` are the casings thrown out on a shot (`pistol_case`, `rifle_case`, `shotgun_hull`).
+
+**Reloads in first person (11.4):** fpReload[name]: right and left arms (view space, like fp), the weapon (name, state, pos, rot in degrees, three.js Euler XYZ) and sometimes an item (a model from held.ammo in the left hand, same pos/rot rules). Play the poses of a gun in order and blend between them: pistol_mag_out -> pistol_mag_in; carbine_mag_out -> carbine_mag_in; shotgun_load (repeat) -> shotgun_rack; double_open; rifle_bolt (repeat per round); revolver_load (repeat); flare_open; bow_nock -> bow_draw; crossbow_cock. The note on each says what happens. Poses: `pistol_mag_out` (tip the pistol in, the left hand comes up with a full magazine), `pistol_mag_in` (the left fist slaps the magazine up into the grip; then go back to aim (state new)), `carbine_mag_out` (cant the carbine, the empty magazine falls, the left hand brings a full one), `carbine_mag_in` (the magazine goes into the well; then state new and back to fpLong), `shotgun_rack` (pull the fore-end back (state pumped) and push it forward again (state new): 0.35 s), `shotgun_load` (the gun rolled on its side; the left thumb pushes a shell into the port, one per 0.5 s), `double_open` (broken open; the left hand drops two shells into the chambers), `rifle_bolt` (the right hand works the bolt (state bolt_open, then new): 0.6 s per round), `revolver_load` (cylinder swung out towards the middle; the left hand loads rounds one at a time), `flare_open` (broken open; the left hand slides a flare shell into the barrel), `bow_nock` (the bow held upright in the left fist; the right hand nocks an arrow on the string), `bow_draw` (drawn: left arm straight, right fist at the cheek; release to fire), `crossbow_cock` (nose down (a foot in the stirrup), both hands haul the string back; then state loaded and back to fpLong). New weapon states for them: `pistol.empty` (magazine out, slide back) and `flare_gun.open`.
 
 | Model | Tris, verts, welded | Notes |
 | --- | --- | --- |
@@ -529,6 +627,7 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `weapons.pistol.new` | 72 / 144 / 48 | barrel along +Z; flash sits at the muzzle (0, 0.03, 0.155), show it one or two frames, scale 0.8 to 1.3 at random; shell is ejected to +X; length 0.2 m; ground: roll 90, lift 0.015 |
 | `weapons.pistol.flash` | 15 / 37 / 15 |  |
 | `weapons.pistol.shell` | 20 / 36 / 12 |  |
+| `weapons.pistol.empty` | 74 / 148 / 52 |  |
 | `weapons.revolver.new` | 124 / 240 / 80 | one hand; open = cylinder swung out to +X for reloading; no shell is thrown; length 0.3 m; ground: roll 90, lift 0.03 |
 | `weapons.revolver.worn` | 134 / 260 / 92 |  |
 | `weapons.revolver.open` | 136 / 264 / 88 |  |
@@ -552,6 +651,7 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `weapons.flare_gun.new` | 80 / 156 / 52 | one hand; fires the flare that fx.flare_glow already draws; length 0.2 m; ground: roll 90, lift 0.03 |
 | `weapons.flare_gun.worn` | 82 / 160 / 56 |  |
 | `weapons.flare_gun.flash` | 12 / 32 / 10 |  |
+| `weapons.flare_gun.open` | 82 / 160 / 56 |  |
 | `weapons.recurve_bow.new` | 76 / 152 / 44 | held upright in the left hand in real life; here the grip is at the origin so it uses the same hand point. drawn = string at the cheek with an arrow nocked (silent, the aliens do not hear it); length 1.24 m; ground: roll 0, lift 0.02 |
 | `weapons.recurve_bow.worn` | 85 / 171 / 55 |  |
 | `weapons.recurve_bow.drawn` | 102 / 208 / 63 |  |
@@ -573,6 +673,9 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `ammo.quiver` | 70 / 140 / 52 |  |
 | `ammo.crossbow_bolt` | 22 / 48 / 17 |  |
 | `ammo.loose_pile` | 136 / 276 / 104 |  |
+| `ammo.flare_shell` | 38 / 70 / 28 |  |
+| `ammo.arrow_stuck` | 22 / 44 / 18 |  |
+| `ammo.bolt_stuck` | 18 / 36 / 16 |  |
 | `cases.pistol_case` | 20 / 36 / 12 |  |
 | `cases.rifle_case` | 44 / 84 / 24 |  |
 | `cases.shotgun_hull` | 32 / 60 / 24 |  |
@@ -588,8 +691,34 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `fp.shoulder.left` | 58 / 116 / 40 |  |
 | `fp.aim.right` | 58 / 116 / 40 |  |
 | `fp.aim.left` | 58 / 116 / 40 |  |
+| `fpReload.pistol_mag_out.right` | 58 / 116 / 40 |  |
+| `fpReload.pistol_mag_out.left` | 58 / 116 / 40 |  |
+| `fpReload.pistol_mag_in.right` | 58 / 116 / 40 |  |
+| `fpReload.pistol_mag_in.left` | 58 / 116 / 40 |  |
+| `fpReload.carbine_mag_out.right` | 58 / 116 / 40 |  |
+| `fpReload.carbine_mag_out.left` | 58 / 116 / 40 |  |
+| `fpReload.carbine_mag_in.right` | 58 / 116 / 40 |  |
+| `fpReload.carbine_mag_in.left` | 58 / 116 / 40 |  |
+| `fpReload.shotgun_rack.right` | 58 / 116 / 40 |  |
+| `fpReload.shotgun_rack.left` | 58 / 116 / 40 |  |
+| `fpReload.shotgun_load.right` | 58 / 116 / 40 |  |
+| `fpReload.shotgun_load.left` | 58 / 116 / 40 |  |
+| `fpReload.double_open.right` | 58 / 116 / 40 |  |
+| `fpReload.double_open.left` | 58 / 116 / 40 |  |
+| `fpReload.rifle_bolt.right` | 58 / 116 / 40 |  |
+| `fpReload.rifle_bolt.left` | 58 / 116 / 40 |  |
+| `fpReload.revolver_load.right` | 58 / 116 / 40 |  |
+| `fpReload.revolver_load.left` | 58 / 116 / 40 |  |
+| `fpReload.flare_open.right` | 58 / 116 / 40 |  |
+| `fpReload.flare_open.left` | 58 / 116 / 40 |  |
+| `fpReload.bow_nock.right` | 58 / 116 / 40 |  |
+| `fpReload.bow_nock.left` | 58 / 116 / 40 |  |
+| `fpReload.bow_draw.right` | 58 / 116 / 40 |  |
+| `fpReload.bow_draw.left` | 58 / 116 / 40 |  |
+| `fpReload.crossbow_cock.right` | 58 / 116 / 40 |  |
+| `fpReload.crossbow_cock.left` | 58 / 116 / 40 |  |
 
-**Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3), `sit` (1), `lean_wall` (1), `wave` (3), `carry_crate` (4). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).
+**Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3), `sit` (1), `lean_wall` (1), `wave` (3), `carry_crate` (4), `carry_long` (1), `aim_long` (1), `carry_furniture` (4), `work_chop` (2), `fish` (2), `keep_watch` (2). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through). New in section 11: carry_long (a long gun held across the chest) and aim_long (shouldered); carry_furniture (arms out in front, 4 walking frames: put the carried piece at carryAt on spine_03); work_chop (2 frames, axe from held.js in the right hand, 0.9 s, looping, beside a stump or a log), fish (hold, cast; with parts.npc.fishing_rod), keep_watch (2 frames looking left and right with a hand shading the eyes, 3 s each). For carry_long and aim_long the gun sits on the usual grip and is then turned by heldTurn[clip] degrees about the grip (Euler XYZ as three.js: matrix Rx Ry Rz). heldTurn: {'carry_long': [0, 0, -90], 'aim_long': [52, 0, 0], 'work_chop': [0, 0, 0], 'fish': [0, 0, 0]}. carryAt: [0, 1.12, 0.42] on `spine_03` (centre of a carried furniture piece in model space at rest; it rides on spine_03. Scale small pieces 1, medium pieces stay 1 but sit 0.1 m lower.) Sling: a long gun not in use, slung across the back muzzle up over the left shoulder: put its grip here; its +Z (muzzle) points along forward and its +Y (top) along up; rot is the same turn as Euler degrees in the order three.js uses (XYZ: matrix Rx Ry Rz). At [0.0, 1.2, -0.15] on `spine_03`, rot [-90, 32, 0]. New npc pieces: `quiver` (worn on the back) and `fishing_rod`. Portraits of the six ready-made survivors for the survivors panel: `assets/ui/portraits/<look>.png` (256 by 256).
 
 **NPC looks** (in `survivor.js`, `npcLooks`, version 7): `old_ranger` (wide hat, vest and a cane: the tall slow silhouette), `medic` (long pale coat, bun and a bag across the body), `kid_hoodie` (hood up, hands low: small and hunched), `farmer` (broad, dungarees and tall yellow boots), `drifter` (a wide poncho makes a triangle), `mechanic` (leather jacket and a crate carried in front). Six ready-made recruitable survivors. Build each from its creator choices as usual, add parts.worn[body][k] for every k in worn, and parts.npc[k] for every k in npc (wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.
 
@@ -626,6 +755,7 @@ Sky pieces are billboards: turn them to face the camera and place them on the sk
 | `effects.brick_bits` | 94 / 242 / 59 | A brick hit: the pieces are thrown and spin, then lie as rubble; the mortar puff grows to 1.2 and fades over 0.8 s. |
 | `effects.metal_sparks` | 36 / 96 / 14 | A steel hit (frame, cladding, sheet metal): six streaks thrown out along their own direction, gravity on, gone in 0.3 s. Glow; a short white point light. |
 | `effects.crash_burst` | 98 / 254 / 71 | A car hitting something: metal and paint bits and glass are thrown forward from the impact point and stay as debris; the dust grows 0.5 to 2.5 and fades over 1.5 s. Scale everything 1.5x for a heavy hit. |
+| `effects.roof_splash` | 23 / 55 / 14 | Rain hitting a roof, a car or a hard floor: spawn many at random on surfaces in the rain, each grows 0.6 to 1.2 and fades in 0.15 s. Puddles and water use ripple instead. |
 | `sky.moon_0` | 28 / 46 / 38 | Moon phase 0 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
 | `sky.moon_1` | 28 / 46 / 36 | Moon phase 1 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
 | `sky.moon_2` | 28 / 46 / 38 | Moon phase 2 of 8 (0 new, 4 full). Unit radius: scale to about 3 degrees of sky. Billboard. |
@@ -649,7 +779,7 @@ Each material is a 2 m by 2 m tile: a flat base square in colour slot BASE and a
 How to use it: paint the smooth ground in BASE (the terrain already has a colour per area), then scatter the tile's small
 shapes over each 2 m cell near the player, turned by a random quarter turn so the repeat does not show. seasons[material]
 gives BASE, DETAIL and DETAIL2 for spring, summer, autumn and winter (snow lies on level ground in winter).
-Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long. kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm.
+Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long. kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm. edges[kind]: a 2 m strip (x -1..1, z 0..0.5) laid along the border where this ground meets another, +Z towards this ground: a ragged band of its BASE colour and its small shapes thinning out towards the line. Colour it with seasons[the ground on the +Z side].
 
 | Model | Tris, verts, welded |
 | --- | --- |
@@ -671,6 +801,11 @@ Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they ar
 | `decals.pothole` | 38 / 86 / 34 |
 | `decals.skid_marks` | 8 / 16 / 16 |
 | `kerb.kerb_strip` | 16 / 32 / 16 |
+| `edges.grass` | 153 / 395 / 131 |
+| `edges.snow` | 57 / 83 / 83 |
+| `edges.gravel` | 153 / 419 / 107 |
+| `edges.dirt` | 57 / 83 / 83 |
+| `edges.sand` | 57 / 83 / 83 |
 
 ## walls (`assets/shaped/walls.js`, version 1)
 
@@ -788,6 +923,16 @@ glow pieces: windows, lamps, screens, status lights. Most things come as a pair:
 | `solar_portable` | 96 / 192 / 104 |
 | `solar_roof` | 64 / 128 / 64 |
 
+## audio (`assets/audio/`, made in code)
+
+Sound effects and music for sections 9, 10.6 and 11.11, synthesised by `assets/audio/src/make_audio.py` (numpy, scipy and ffmpeg; no samples, nothing to license). Same form as `assets/sounds.js`: small mono MP3s stored as text so they load from a drive.
+
+- `assets/audio/sounds_design.js` adds keys to `window.ART.sounds` (each a list of 1 to 4 variations), so `sfx(name, ...)` plays them once the file is loaded after `assets/sounds.js`. Loops (`generator_hum`, `rain_roof`, `rain_outside`, `fire_crackle`) are cut to repeat seamlessly: play them with `loop = true`.
+- `assets/audio/music_<name>.js` sets `window.ART.music[name]` (one MP3) and `window.ART.musicLoop[name]` (its length in seconds). `day` (calm, 84 bpm), `night` (a low drone with sparse bells), `horde` (drums and a minor riff, 132 bpm) and `base` (warm and slow) are two-minute seamless loops: decode, set `loop = true`, `loopStart = 0`, `loopEnd = musicLoop[name]` (that skips the MP3 padding). `chase` is a five-second sting. Load each file only when it is needed.
+- `assets/audio/preview.html` plays everything.
+
+Sound keys: `jump_grunt`, `land_grass`, `land_road`, `land_wood`, `land_metal`, `step_gravel`, `swing_wood`, `swing_metal`, `hit_wood`, `hit_metal`, `pan_clang`, `umbrella_flap`, `gun_pistol`, `gun_rifle`, `gun_shotgun`, `dry_click`, `reload_click`, `mag_in`, `gun_rack`, `bolt_cycle`, `shell_insert`, `arrow_release`, `arrow_thunk`, `crossbow_shot`, `flare_pop`, `alien_swarmer_idle`, `alien_swarmer_notice`, `alien_swarmer_attack`, `alien_swarmer_die`, `alien_stalker_idle`, `alien_stalker_notice`, `alien_stalker_attack`, `alien_stalker_die`, `alien_giant_idle`, `alien_giant_notice`, `alien_giant_attack`, `alien_giant_die`, `alien_spitter_idle`, `alien_spitter_notice`, `alien_spitter_attack`, `alien_spitter_die`, `alien_clinger_idle`, `alien_clinger_notice`, `alien_clinger_attack`, `alien_clinger_die`, `door_slam`, `door_creak`, `drawer`, `lid`, `furniture_drag`, `generator_hum`, `rain_roof`, `rain_outside`, `fire_crackle`, `wood_crack`, `brick_crumble`, `concrete_crack`, `steel_bend`, `glass_break`, `car_crash_light`, `car_crash_heavy`, `plug_in`, `breaker_trip`, `klaxon`, `plant_start`, `power_on_hum`, `sting_night`, `sting_dawn`.
+
 ## UI icons (`assets/ui/`)
 
-Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). Inventory icons: harvest materials (`planks`, `scrap_wood`, `lumber`, `nails_handful`, `steel_beam`, `rebar_bundle`, `sheet_metal`, `concrete_chunk`, `brick`, `glass_sheet`, `wire_coil`, `plasterboard_scrap`), guns (`pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`) and ammo (`pistol_ammo`, `rifle_ammo`, `shotgun_shells`, `arrows`, `crossbow_bolts`, `ammo_can`, `magazine`, `flare_shells`). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.
+Survivor portraits (`portraits/<look>.png`, rendered from the survivor pack). Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). Inventory icons: harvest materials (`planks`, `scrap_wood`, `lumber`, `nails_handful`, `steel_beam`, `rebar_bundle`, `sheet_metal`, `concrete_chunk`, `brick`, `glass_sheet`, `wire_coil`, `plasterboard_scrap`), guns (`pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`) and ammo (`pistol_ammo`, `rifle_ammo`, `shotgun_shells`, `arrows`, `crossbow_bolts`, `ammo_can`, `magazine`, `flare_shells`). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.

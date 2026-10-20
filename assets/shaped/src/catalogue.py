@@ -75,11 +75,20 @@ L.append(f'''
 
 **Colours:** {BU['colourRule']} Example sets: {', '.join('`' + k + '`' for k in BU['examples'])}.
 
+**Torn walls (section 11.1):** {BU['breachRule']}
+
+**House numbers and street names:** {BU['houseRule']}
+
+**Gun shop:** {BU['gunshopRule']}
+
 | Module | Tris, verts, welded |
 | --- | --- |''')
 for k in BU['models']['modules']: L.append(f'| `{k}` | {row(st, "modules." + k)} |')
 L.append('\n| Template (whole building) | Tris, verts, welded |\n| --- | --- |')
 for k in BU['models']['templates']: L.append(f'| `{k}` | {row(st, "templates." + k)} |')
+L.append('\n| Torn wall piece | Tris, verts, welded |\n| --- | --- |')
+for k in st:
+    if k.startswith('breach.') or k.startswith('house.'): L.append(f'| `{k}` | {row(st, k)} |')
 st = PR['stats']
 L.append(f'''
 ## props (`assets/shaped/props.js`, version {PR['version']})
@@ -92,7 +101,13 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 
 **Bases** (section 10.3): {PR['baseRule']}
 
-**Vehicle damage** (section 10.5): {PR['damageRule']} `moving` lists other parts that open (doors, lids) and their hinges.
+**Vehicle damage** (section 10.5, 11.5): {PR['damageRule']}
+
+**Gun shop inside (11.1):** {PR['shopRule']} **Boards and braces (11.2):** {PR['boardRule']} **Siphon (11.5):** {PR['siphonRule']} `items.paper_map` is the map pickup on the ground (11.8).
+
+**Furniture size (11.6):** {PR['sizeRule']} {', '.join(f'`{k}` {v[0]} {v[1]} kg' for k, v in PR['furnitureSize'].items())}.
+
+ `moving` lists other parts that open (doors, lids) and their hinges.
 
 | Category | Model | Tris, verts, welded |
 | --- | --- | --- |''')
@@ -108,13 +123,17 @@ L.append(f'''
 
 **Ammo** (`models.ammo`, on the ground like props: origin at the centre of the base): {', '.join(f'`{k}` ({v})' for k, v in HE['ammoInfo'].items())}. `models.cases` are the casings thrown out on a shot (`pistol_case`, `rifle_case`, `shotgun_hull`).
 
+**Reloads in first person (11.4):** {HE['fpReloadRule']} Poses: {', '.join(f"`{k}` ({v['note']})" for k, v in HE['fpReload'].items())}. New weapon states for them: `pistol.empty` (magazine out, slide back) and `flare_gun.open`.
+
 | Model | Tris, verts, welded | Notes |
 | --- | --- | --- |''')
 for k in HE['stats']:
     nm = k.split('.')[1] if k.startswith('weapons.') else ''
     L.append(f"| `{k}` | {row(HE['stats'], k)} | {HE['info'][nm]['note'] + '; length ' + str(HE['info'][nm]['length']) + ' m; ground: roll ' + str(HE['info'][nm]['ground']['roll']) + ', lift ' + str(HE['info'][nm]['ground']['lift']) if nm and k.endswith('.new') else ''} |")
 L.append('''
-**Survivor clips** (in `survivor.js`, `clips`): ''' + ', '.join('`' + k + '` (' + str(len(v)) + ')' for k, v in SV['clips'].items()) + '. ' + SV['clipRule'])
+**Survivor clips** (in `survivor.js`, `clips`): ''' + ', '.join('`' + k + '` (' + str(len(v)) + ')' for k, v in SV['clips'].items()) + '. ' + SV['clipRule']
+         + f" heldTurn: {SV['heldTurn']}. carryAt: {SV['carryAt']['pos']} on `{SV['carryAt']['bone']}` ({SV['carryAt']['note']}) Sling: {SV['sling']['note']} At {SV['sling']['pos']} on `{SV['sling']['bone']}`, rot {SV['sling']['rot']}."
+         + " New npc pieces: `quiver` (worn on the back) and `fishing_rod`. Portraits of the six ready-made survivors for the survivors panel: `assets/ui/portraits/<look>.png` (256 by 256).")
 L.append(f'''
 **NPC looks** (in `survivor.js`, `npcLooks`, version 7): ''' + ', '.join(f"`{k}` ({v['note']})" for k, v in SV['npcLooks'].items()) + '. ' + SV['npcRule'])
 L.append(f'''
@@ -128,7 +147,7 @@ for k in FX['stats']: L.append(f"| `{k}` | {row(FX['stats'], k)} | {FX['notes'][
 L.append(f'''
 ## ground (`assets/shaped/ground.js`, version {GR['version']})
 
-{GR['about'].strip()} {GR['kerbRule']}
+{GR['about'].strip()} {GR['kerbRule']} {GR['edgeRule']}
 
 | Model | Tris, verts, welded |
 | --- | --- |''')
@@ -170,9 +189,21 @@ L.append(f'''
 | Model | Tris, verts, welded |
 | --- | --- |''')
 for k in st: L.append(f"| `{k}` | {row(st, k)} |")
+import re as _re
+_snd = open(os.path.join(ROOT, 'assets', 'audio', 'sounds_design.js')).read(); _keys = _re.findall(r'"([a-z0-9_]+)":\[', _snd)
+L.append("""
+## audio (`assets/audio/`, made in code)
+
+Sound effects and music for sections 9, 10.6 and 11.11, synthesised by `assets/audio/src/make_audio.py` (numpy, scipy and ffmpeg; no samples, nothing to license). Same form as `assets/sounds.js`: small mono MP3s stored as text so they load from a drive.
+
+- `assets/audio/sounds_design.js` adds keys to `window.ART.sounds` (each a list of 1 to 4 variations), so `sfx(name, ...)` plays them once the file is loaded after `assets/sounds.js`. Loops (`generator_hum`, `rain_roof`, `rain_outside`, `fire_crackle`) are cut to repeat seamlessly: play them with `loop = true`.
+- `assets/audio/music_<name>.js` sets `window.ART.music[name]` (one MP3) and `window.ART.musicLoop[name]` (its length in seconds). `day` (calm, 84 bpm), `night` (a low drone with sparse bells), `horde` (drums and a minor riff, 132 bpm) and `base` (warm and slow) are two-minute seamless loops: decode, set `loop = true`, `loopStart = 0`, `loopEnd = musicLoop[name]` (that skips the MP3 padding). `chase` is a five-second sting. Load each file only when it is needed.
+- `assets/audio/preview.html` plays everything.
+
+Sound keys: """ + ', '.join('`' + k + '`' for k in _keys) + '.')
 L.append('''
 ## UI icons (`assets/ui/`)
 
-Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). Inventory icons: harvest materials (`planks`, `scrap_wood`, `lumber`, `nails_handful`, `steel_beam`, `rebar_bundle`, `sheet_metal`, `concrete_chunk`, `brick`, `glass_sheet`, `wire_coil`, `plasterboard_scrap`), guns (`pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`) and ammo (`pistol_ammo`, `rifle_ammo`, `shotgun_shells`, `arrows`, `crossbow_bolts`, `ammo_can`, `magazine`, `flare_shells`). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.''')
+Survivor portraits (`portraits/<look>.png`, rendered from the survivor pack). Buttons (`jump`, `build`, `back`), `damage_arrow` (points up: turn it towards the hit), the status set (`bleeding`, `infected`, `broken_leg`, `wet`, `cold`, `hot`, `hungry`, `thirsty`, `tired`, `sick`) and `low_health_vignette.svg` (stretch over the screen, fade in under a quarter health). Inventory icons: harvest materials (`planks`, `scrap_wood`, `lumber`, `nails_handful`, `steel_beam`, `rebar_bundle`, `sheet_metal`, `concrete_chunk`, `brick`, `glass_sheet`, `wire_coil`, `plasterboard_scrap`), guns (`pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`) and ammo (`pistol_ammo`, `rifle_ammo`, `shotgun_shells`, `arrows`, `crossbow_bolts`, `ammo_can`, `magazine`, `flare_shells`). 128 by 128 SVG in the weapons icons' field-journal style; `assets/ui/preview.html` shows them all. Made by `assets/shaped/src/ui_icons.py`.''')
 open(os.path.join(ROOT, 'docs', 'SHAPED.md'), 'w').write('\n'.join(L) + '\n')
 print('wrote docs/SHAPED.md')

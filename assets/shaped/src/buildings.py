@@ -256,6 +256,8 @@ TEMPLATES = {
   'concrete_flats': building(4, 2, 4, 'concrete', flats_pick),
   'corner_store': building(3, 2, 2, 'concrete', ruin_pick),
 }
+import os
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'buildings_x.py')).read())
 pack = {
   'name': 'buildings', 'version': 1, 'style': 'framed buildings: a visible frame of posts and beams with infill panels set 6 cm back',
   'units': 'metres', 'bay': [BW, SH], 'palette': PALETTE, 'slots': SLOTS, 'examples': EXAMPLES, 'darker': 0.78,
@@ -268,7 +270,9 @@ pack = {
                 'frame_<kind>_snapped (the post broken at mid height, the beam sagging), rubble_small and rubble_large piles (WALL, TRIM and rubble colours), inside_torn (the inside face: torn wallpaper, plaster, a stud), '
                 'studs (an infill stripped to its studs, daylight between them), door_boarded and boarded (window). Daylight through holes is the lighting: let sun and sky light pass where the infill is gone.',
   'breakRule': 'Infill modules break first (replace with broken: the panel falls as rubble chunks). A frame module breaks last; the bays above a broken post fall.',
-  'flatModels': True, 'models': {'modules': MODULES, 'templates': TEMPLATES}
+  'flatModels': True, 'models': {'modules': MODULES, 'templates': TEMPLATES, 'breach': BREACH, 'house': HOUSE},
+  'breachRule': BREACH_RULE, 'houseRule': HOUSE_RULE,
+  'gunshopRule': 'modules.gunshop_front is a ground-storey bay (in place of shopfront): a barred window, a steel door and a sign board with a target and a rifle; the inside pieces are props.shop (gun_counter, gun_rack, ammo_shelf, target_poster).'
 }
 out, st = write_pack('buildings', pack, __file__)
 for k, v in st.items(): print(k, v)

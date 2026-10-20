@@ -442,6 +442,8 @@ CLIPS.update({
                   F(upperarm_2=[-42, 0, 6], lowerarm_2=[-70, 0, 0], spine_03=[-6, 0, 0]), F(upperarm_2=[-42, 0, 6], lowerarm_2=[-70, 0, 0], spine_03=[-6, 0, 0], thigh_r=[-20, 0, 0], thigh_l=[16, 0, 0], calf_l=[18, 0, 0])],
 })
 
+import os
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
 def body(fem): return join(head(fem), hands())
 pack = {
   'name': 'survivor', 'version': 7, 'style': 'silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small featureless heads (18 October 2026)',
@@ -453,7 +455,7 @@ pack = {
   'toneRule': 'Build with SHAPED.buildIndexed(pieces, colourOf, out, {tone: pack.tone, oy: bone pivot height}). jitter is 0 so SHAPED.weld can share corners.',
   'smear': {'bones': ['upperarm', 'lowerarm', 'thigh', 'calf'], 'max': 0.14},
   'smearRule': 'Smear frames (Jumpship): while a limb swings fast, stretch that bone up to max (14%) along its length, scaled by its swing speed.',
-  'clips': CLIPS, 'clipRule': CLIP_RULE,
+  'clips': CLIPS, 'clipRule': CLIP_RULE, 'heldTurn': HELD_TURN, 'carryAt': CARRY_AT, 'sling': SLING,
   'hatRule': 'When a hat is worn, leave out pieces marked hat:"hide" (the hat covers them).',
   'builds': {'slim': [0.9, 0.93], 'average': [1, 1], 'broad': [1.14, 1.08]},
   'buildRule': 'For every bone except Head and neck_01, stretch each piece with SHAPED.scaleXZ(piece, first, second).',
@@ -480,7 +482,7 @@ pack = {
     'hat': {k: {'Head': v} for k, v in hats().items()},
     'gear': gear(),
     'worn': {'masculine': worn(False), 'feminine': worn(True)},
-    'npc': npc_parts()},
+    'npc': dict(npc_parts(), **EXTRA_NPC)},
   'npcLooks': NPC_LOOKS,
   'npcRule': 'Six ready-made recruitable survivors. Build each from its creator choices as usual, add parts.worn[body][k] for every k in worn, and parts.npc[k] for every k in npc '
              '(wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.',

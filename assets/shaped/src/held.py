@@ -196,6 +196,7 @@ MAP = {'folded': [box([0, 0, 0.05], [0.14, 0.02, 0.2], 'paper'), flat([(-0.07, 0
 INFO['map'] = {'length': 0.56, 'ground': {'roll': 0, 'yaw': 0, 'lift': 0.01},
                'note': 'folded: held like a weapon at the grip. open: a sheet 0.56 by 0.4 m printed on its +Z face; in first person turn it half a turn about Y so the print faces the eye, place its centre at (0, -0.08, 0.42), tip it back 25 degrees, and hold it with both empty hands at its lower corners.'}
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'held_guns.py')).read())
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'held_reload.py')).read())
 # long guns in first person: 'shoulder' is carried ready at the hip, 'aim' brings the sights to the eye (the barrel line passes just under the eye)
 FP['shoulder'] = {'right': arm([-0.3, -0.42, -0.08], [-0.24, -0.36, 0.14], [-0.16, -0.24, 0.28]) + fist([-0.14, -0.21, 0.32]),
                   'left':  arm([0.28, -0.46, -0.08], [0.12, -0.44, 0.28], [-0.1, -0.29, 0.56]) + fist([-0.13, -0.26, 0.61]),
@@ -203,7 +204,8 @@ FP['shoulder'] = {'right': arm([-0.3, -0.42, -0.08], [-0.24, -0.36, 0.14], [-0.1
 FP['aim'] = {'right': arm([-0.24, -0.36, -0.06], [-0.17, -0.3, 0.08], [-0.05, -0.17, 0.18]) + fist([0.0, -0.13, 0.22]),
              'left':  arm([0.26, -0.42, -0.06], [0.15, -0.36, 0.25], [0.03, -0.17, 0.52]) + fist([0.0, -0.14, 0.58]),
              'weapon': {'pos': [0.0, -0.112, 0.22], 'rot': [0, 0, 0], 'note': 'aiming down the sights: the carbine front post and rear notch line up just under the eye; the rifle scope line (y 0.086) sits 3 cm low, so raise the hunting rifle by 0.026; pistols and revolvers use the same pose with only the right arm'}}
-models = {'weapons': W, 'ammo': AMMO, 'cases': CASES, 'map': MAP, 'fp': {k: {'right': v['right'], 'left': v['left']} for k, v in FP.items()}}
+models = {'weapons': W, 'ammo': AMMO, 'cases': CASES, 'map': MAP, 'fp': {k: {'right': v['right'], 'left': v['left']} for k, v in FP.items()},
+          'fpReload': {k: {'right': v['right'], 'left': v['left']} for k, v in RELOAD.items()}}
 pack = {
   'name': 'held', 'version': 2, 'style': 'same flat planes and few corners as every pack; worn weapons are taped, chipped, rusty or bent; broken ones end in splinters',
   'units': 'metres', 'palette': PALETTE, 'slots': {'SKIN': 'survivor skin', 'SLEEVE': 'what the survivor wears on top'}, 'darker': 0.78,
@@ -212,7 +214,7 @@ pack = {
   'fpWeapon': FP['hold']['weapon'], 'fpLong': FP['shoulder']['weapon'], 'fpAim': FP['aim']['weapon'],
   'guns': ['pistol', 'revolver', 'hunting_rifle', 'pump_shotgun', 'double_barrel', 'carbine', 'flare_gun', 'recurve_bow', 'crossbow'],
   'longGuns': ['hunting_rifle', 'pump_shotgun', 'double_barrel', 'carbine', 'crossbow'],
-  'ammoInfo': AMMO_INFO,
+  'ammoInfo': AMMO_INFO, 'fpReload': {k: {kk: vv for kk, vv in v.items() if kk not in ('right', 'left')} for k, v in RELOAD.items()}, 'fpReloadRule': FP_RELOAD_RULE,
   'gunRule': 'Guns have new and worn (under a quarter condition: rust and tape) plus one reload state each (revolver open, hunting_rifle bolt_open, pump_shotgun pumped, double_barrel open, carbine empty, crossbow loaded, recurve_bow drawn) and a flash at INFO.muzzle. Long guns: right fist on the grip, left fist at offhandAt; first person uses fpLong when carried and fpAim when aiming. Casings from models.cases go to +X.',
   'stateRule': 'new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped).'
 }
