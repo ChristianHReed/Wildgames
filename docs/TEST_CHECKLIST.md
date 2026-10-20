@@ -110,3 +110,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] **PHONE** World dressing (0.80.0): street signs, poles, manholes, mailboxes, bus stops, logs, ferns, reeds, flowers, road cracks. Frame rate still fine. Nothing invisible blocks you. Things face the right way (stop signs toward drivers).
 - [ ] Map setting on the home screen: all three choices behave as described and are remembered.
 - [ ] New game starts by Sequiota Park, not far out of town. The park is a short walk away.
+- [ ] **PHONE** Open the big map on a phone held upright and sideways: all buttons visible, top-right close and zoom work, the bottom bar wraps.
