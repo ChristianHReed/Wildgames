@@ -8,11 +8,16 @@
   :root{ --bg:#c9bfb0; --ink:#22201d; --panel:rgba(26,24,22,.86); --chip:#3a3632; --accent:#e0a040; }
   html,body{margin:0;height:100%;background:var(--bg);color:#eee;font:14px/1.4 system-ui,sans-serif;overflow:hidden}
   canvas{display:block;width:100%;height:100%}
-  #bar{position:fixed;left:12px;right:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-  #bar button{background:var(--panel);color:#eee;border:1px solid #555;border-radius:999px;padding:7px 12px;font:inherit;cursor:pointer}
-  #bar button[aria-pressed=true]{background:var(--accent);color:#1b1a18;border-color:var(--accent)}
-  #cap{position:fixed;left:12px;top:12px;max-width:min(560px,calc(100% - 24px));background:var(--panel);padding:10px 14px;border-radius:10px}
-  #cap b{display:block;font-size:16px;margin-bottom:2px}
+  #bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;align-items:center;max-width:calc(100% - 24px)}
+  #bar button,#bar select{background:var(--panel);color:#eee;border:1px solid #555;border-radius:999px;padding:8px 14px;font:inherit;cursor:pointer;min-width:0}
+  #bar select{max-width:min(420px,60vw);appearance:none;-webkit-appearance:none;padding-right:28px;background-image:linear-gradient(45deg,transparent 50%,#eee 50%),linear-gradient(135deg,#eee 50%,transparent 50%);background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  #bar .n{background:var(--panel);border-radius:999px;padding:8px 10px;color:#eee;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  #cap{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(62px + env(safe-area-inset-bottom,0px));width:max-content;max-width:min(560px,calc(100% - 24px));background:var(--panel);padding:8px 12px;border-radius:10px;cursor:pointer}
+  #cap b{display:block;font-size:15px}
+  #cap span{display:block;font-size:13px;margin-top:2px}
+  #cap.min span{display:none}
+  #cap b::after{content:' \25BE';opacity:.6;font-size:12px}
+  #cap.min b::after{content:' \25B8'}
   #status{position:fixed;inset:0;display:grid;place-items:center;color:var(--ink)}
   body.shot #bar, body.shot #cap{display:none}
 </style>
@@ -462,17 +467,26 @@ function street(mode){
 }
 
 /* ---------- UI ---------- */
-const bar=document.getElementById('bar');
-for (const k in SCENES){ const b=document.createElement('button'); b.textContent=SCENES[k].t; b.dataset.k=k; b.onclick=()=>show(k); bar.appendChild(b); }
+const bar=document.getElementById('bar'), KEYS=Object.keys(SCENES);
+const prevB=document.createElement('button'), nextB=document.createElement('button'), sel=document.createElement('select'), num=document.createElement('span');
+prevB.textContent='\u2039'; nextB.textContent='\u203A'; prevB.setAttribute('aria-label','Previous scene'); nextB.setAttribute('aria-label','Next scene'); num.className='n'; sel.id='scene'; sel.setAttribute('aria-label','Scene');
+KEYS.forEach((k,i)=>{ const o=document.createElement('option'); o.value=k; o.textContent=(i+1)+'. '+SCENES[k].t; sel.appendChild(o); });
+sel.onchange=()=>show(sel.value); prevB.onclick=()=>step(-1); nextB.onclick=()=>step(1);
+function step(d){ const i=KEYS.indexOf(sel.value); show(KEYS[(i+d+KEYS.length)%KEYS.length]); }
+addEventListener('keydown',e=>{ if (e.key==='ArrowRight') step(1); if (e.key==='ArrowLeft') step(-1); });
+bar.append(prevB, sel, nextB, num);
+const capEl=document.getElementById('cap'); capEl.onclick=()=>capEl.classList.toggle('min'); if (innerWidth<700) capEl.classList.add('min');
 function show(k){
   if (scene) scene.traverse(o=>{ if(o.geometry) o.geometry.dispose(); });
   scene=new THREE.Scene(); stats={tris:0,verts:0}; cam.fov=35; cam.updateProjectionMatrix(); SCENES[k].make();
-  document.getElementById('cap').hidden=false; document.getElementById('capT').textContent=SCENES[k].t;
+  capEl.hidden=false; document.getElementById('capT').textContent=SCENES[k].t;
   document.getElementById('capD').textContent=SCENES[k].d+' Scene: '+stats.tris.toLocaleString('en-US')+' triangles, '+stats.verts.toLocaleString('en-US')+' vertices.';
-  bar.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));
+  baseFov=cam.fov; fitFov(); sel.value=k; num.textContent=(KEYS.indexOf(k)+1)+' / '+KEYS.length;
   location.hash=k; ctl.update(); window.__ready=k;
 }
-function resize(){ const w=innerWidth,h=innerHeight; R.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+let baseFov=35;
+function fitFov(){ const a=cam.aspect, ref=1.6; cam.fov=a<ref?Math.min(100,2*Math.atan(Math.tan(baseFov*Math.PI/360)*ref/a)*180/Math.PI):baseFov; cam.updateProjectionMatrix(); }   /* narrow or upright screens see as much across as a wide one */
+function resize(){ const w=innerWidth,h=innerHeight; R.setSize(w,h,false); cam.aspect=w/h; fitFov(); }
 addEventListener('resize',resize); resize();
 if (/[?&]shot/.test(location.search)) document.body.classList.add('shot');
 document.getElementById('status').remove();
