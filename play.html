@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.64.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.65.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.64.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.65.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3233,6 +3233,7 @@ function shoot(){
   else sfx('wood_hit', P.x, P.y, 0.4, 1.6);
   for (var q = 0; q < g.pel; q++){ var a = P.yaw + (Math.random() - 0.5)*2*g.spr, vx = Math.cos(a)*g.sp, vy = Math.sin(a)*g.sp;
     bullets.push({x:P.x + fx*0.5, y:P.y + fy*0.5, vx:vx, vy:vy, t:g.life, dmg:g.dmg}); }
+  if (g.nz >= 4 && g.pel === 1) fxAdd('effects.tracer', P.x + fx*3, P.y + fy*3, (P.gy || 0) + ((P.lvl | 0)*FH), {life:0.12, s0:1, s1:1.6, up:1.25, yaw:Math.atan2(fy, fx) - 1.5708});
   if (g.nz >= 4) fxAdd('effects.muzzle_flash', P.x + fx*0.85, P.y + fy*0.85, (P.gy || 0) + ((P.lvl | 0)*FH), {life:0.07, s0:1, s1:1.2, up:1.3, yaw:Math.atan2(fy, fx) - 1.5708});
   if ((P.mag[P.gun] | 0) < 1 && inv[g.am] > 0) setTimeout(function(){ if (running) startReload(false); }, 350);
   gunHud(); updateHud();
@@ -5345,7 +5346,7 @@ function useCustom(id){
 function landThrow(t){
   var d = DESIGNS[t.id]; if (!d) return; var st = stats(d);
   if (d.beh === 'boom'){
-    booms.push({x:t.x, y:t.y, t:0.35}); P.noise = 4;
+    booms.push({x:t.x, y:t.y, t:0.35}); P.noise = 4; var bg = groundAt(t.x, t.y); fxAdd('effects.explosion_core', t.x, t.y, bg, {life:1.1, s0:0.4, s1:2.4, up:0.9}); fxAdd('effects.explosion_ring', t.x, t.y, bg, {life:0.5, s0:0.5, s1:6}); fxAdd('effects.explosion_debris', t.x, t.y, bg, {life:1.4, s0:0.8, s1:1.6, rise:1.5});
     for (var i = 0; i < zombies.length; i++){ var z = zombies[i], dx = z.x - t.x, dy = z.y - t.y, dd = Math.hypot(dx, dy) || 0.001; if (dd < 5 + AK[z.k].r) hitZombie(z, st.dmg, dx/dd*10, dy/dd*10); }
     if (Math.hypot(P.x - t.x, P.y - t.y) < 3){ P.hp -= 12; P.hurt = 0.3; P.cause = 'your own blast'; }
   } else if (d.beh === 'flare'){ var f = {x:t.x, y:t.y, life:st.secs}; flares.push(f); emit({k:'flare', f:f}); }
@@ -5490,7 +5491,8 @@ function wallBays(w){ if (!w.bays || w.bays.length !== 6){ var h = wallMat(w).hp
 function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(); (world.edits.placed || []).forEach(function(q){ var r = pfRect(q); for (var i = 0; i < 4; i++){ var a = r[i], b = r[(i + 1) % 4]; s.push(a[0], a[1], b[0], b[1]); } }); world.edits.walls.forEach(function(w){ var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), by = wallBays(w), k = 0;
     while (k < 6){ if (by[k] <= 0){ k++; continue; } var k0 = k; while (k < 6 && by[k] > 0) k++; var a = -1.5 + k0*0.5, b = -1.5 + k*0.5; s.push(w.x + dx*a, w.y + dy*a, w.x + dx*b, w.y + dy*b); } }); }
 /* damage to one bay; the host works out the damage and sends a bay's new health to everyone whenever its look changes */
-function wallHurt(w, k, d){ var by = wallBays(w), old = by[k]; if (old <= 0) return; by[k] = Math.max(0, old - d); if (bayState(by[k], wallMat(w).hp) !== bayState(old, wallMat(w).hp)){ if (by[k] <= 0) rebuildWalls(); emit({k:'edit', e:{a:'wbay', id:w.id, i:k, v:Math.round(by[k])}}); sfx(by[k] <= 0 ? 'plank' : 'wood_hit', w.x, w.y, 0.7, 0.9); } }
+function wallHurt(w, k, d){ var by = wallBays(w), old = by[k]; if (old <= 0) return; by[k] = Math.max(0, old - d); if (bayState(by[k], wallMat(w).hp) !== bayState(old, wallMat(w).hp)){ if (by[k] <= 0) rebuildWalls(); emit({k:'edit', e:{a:'wbay', id:w.id, i:k, v:Math.round(by[k])}}); sfx(by[k] <= 0 ? 'plank' : 'wood_hit', w.x, w.y, 0.7, 0.9);
+    var wm9 = wallMat(w), fxp = wm9 === WMATS.steel ? 'effects.metal_sparks' : wm9 === WMATS.concrete ? 'effects.concrete_dust' : 'effects.wood_chips', fxo = -1.25 + 0.5*k; fxAdd(fxp, w.x - Math.sin(w.yaw)*fxo, w.y + Math.cos(w.yaw)*fxo, groundAt(w.x, w.y), {life:0.7, s0:0.7, s1:1.2, up:1.2}); } }
 function wallsAttack(z, A, dt){ var PF = world.edits.placed || []; for (var pi = 0; pi < PF.length; pi++){ var pq = PF[pi]; if (Math.abs(pq.x - z.x) > 3.2 || Math.abs(pq.y - z.y) > 3.2) continue; var psz = pfSize(pq.k); if (Math.hypot(pq.x - z.x, pq.y - z.y) > Math.max(psz[0], psz[1]) + A.r + 0.5) continue; pq.hp -= A.dmg*dt*(z.k === 2 ? 0.5 : 0.09); if (pq.hp <= 0){ var pid = pq.id; world.edits.placed = PF.filter(function(q){ return q.id !== pid; }); rebuildWalls(); emit({k:'edit', e:{a:'unplace', id:pid}}); sfx('plank', pq.x, pq.y, 0.8, 0.8); } return; }
   var W = world.edits.walls; for (var i = 0; i < W.length; i++){ var w = W[i]; if (Math.abs(w.x - z.x) > 3.2 || Math.abs(w.y - z.y) > 3.2) continue; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (z.x - w.x)*dx + (z.y - w.y)*dy, n = Math.abs(-(z.x - w.x)*dy + (z.y - w.y)*dx); if (Math.abs(u) > 1.6 || n > A.r + 0.5) continue; var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0 && k > 0 && by[k-1] > 0 && u < -1.5 + k*0.5 + 0.25) k--; else if (by[k] <= 0 && k < 5 && by[k+1] > 0) k++; if (by[k] <= 0) continue; wallHurt(w, k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09)*wallMat(w).res); return; } }
 function setGone(b, on){ b.gone = !!on; if (b.int){ freeInt(b); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
@@ -5995,7 +5997,7 @@ function vehBash(V, mx, my, dt){
   V.hp = Math.max(0, vhp(V) - pay);
   if (E >= hp0){ by2[bk] = 0; emit({k:'edit', e:{a:'wbay', id:best.id, i:bk, v:0}}); rebuildWalls(); sfx('plank', best.x, best.y, 1, 0.7); feed('Smashed through the wall', '#e8b27a'); }
   else { wallHurt(best, bk, E); sfx('metal', best.x, best.y, 0.9, 0.5); }
-  makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. A part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
+  fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. A part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
   P.cause = P.cause || ''; if (spd > 12 && pay > 20){ P.hp -= 4; P.cause = 'a car crash'; } updateHud();
 }
 function vehSpeed(dt){
