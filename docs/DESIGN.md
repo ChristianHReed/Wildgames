@@ -203,3 +203,6 @@ Searched containers record when they were emptied (`b.gotT`). Five days later, o
 
 ## Inner walls (0.71)
 A partition is built like an outer wall: two wallpapered skins 18 cm apart, trimmed jambs and header at a doorway, and one piece per solid stretch (`iw` of each level, breach key 10000 + level*1000 + piece). Pieces have 60% of the hit points of an outer wall of the building's material and use the same attack, salvage, patch and save code as outer walls. A torn piece rebuilds the building's interior with the gap.
+
+## Sound and music (0.76)
+The design chat's sound set (assets/audio/sounds_design.js) joins the older clips. Each call uses the new clip when it exists and the old noise burst when it does not. Alien calls are named alien_<kind>_<idle|notice|attack|die>. Loops (rain_outside, rain_roof, generator_hum, fire_crackle, power_on_hum) fade with distance. Music tracks (assets/audio/music_<name>.js, about 1 MB each) load on first use, loop at the length the file names, and change at most every 25 s unless danger starts (chase, horde). Survivor portraits are assets/ui/portraits/<look>.png.

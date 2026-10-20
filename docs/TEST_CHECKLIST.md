@@ -40,7 +40,10 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 - [ ] Arrows and bolts land near the target and can be picked up.
 - [ ] A gun below a quarter condition jams; the bench repairs it for 1 scrap.
 - [ ] **PHONE** gun button, reload and cycle work with touch.
-- [ ] **EARS** gun sounds, reload clicks (no art or sound exists for these yet).
+- [ ] **EARS** gun sounds, reload clicks, dry click, pump rack, bolt cycle (0.76.0: judge them; the design chat never heard them).
+- [ ] **EARS** alien idle, notice, attack and die calls; wall crack and break sounds; car crashes; rain on street and on roof; generator hum; campfire crackle; plant hum.
+- [ ] **EARS** music: day, night, base, chase, horde. They fade into each other and loop with no gap. The Music box in settings turns them off.
+- [ ] Survivors panel shows a portrait for each survivor. Breaker panel stands beside a placed cable box (not seen in a screenshot yet).
 
 ## 7. Aliens
 - [ ] Swarmers, stalkers, giants, spitters, clingers all appear (clingers on horde nights, day 9 or later).

@@ -134,6 +134,7 @@
   .modal button,#invite button{font-size:12px;padding:6px 10px;margin-left:4px}
   .modal h3{margin:14px 0 4px;font-weight:400}
   .irow{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed var(--edge)}
+  .sport{width:44px;height:44px;border-radius:6px;object-fit:cover;flex:none;border:1px solid var(--edge)}
   .irow span.n{flex:1;color:var(--ink);font-weight:600}
   .irow i{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
   #miniWrap{pointer-events:auto;cursor:pointer}
@@ -307,6 +308,7 @@
       <div class="prow">
         <label>Length of a day<select id="dayLen"><option value="43200">12 hours (half of real time)</option><option value="7200">2 hours</option><option value="1440">24 minutes</option><option value="240">4 minutes (quick test)</option></select></label>
         <label>Sound volume<input id="vol" type="range" min="0" max="100" value="80"></label>
+        <label>Music<input id="musicOn" type="checkbox" checked></label>
         <label>View distance and art detail<select id="qual"><option value="0">Low (phones, older laptops)</option><option value="1">Medium</option><option value="2">High</option></select></label>
         <label>Field of view (how wide you see)<input id="fovS" type="range" min="70" max="110" value="100"></label>
         <label>Head bob when walking<select id="bobS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
@@ -390,7 +392,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.75.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.76.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,10 +400,10 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.75.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.76.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+  ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
   return set;
 })();
 </script>
@@ -3279,6 +3281,14 @@ function gunDur(k){ return P.gdur && P.gdur[k] !== undefined ? P.gdur[k] : 1; }
 /* a spent arrow or bolt may be picked up again; a flare shell lights where it lands */
 /* 0.75: something dropped on its own lies on the ground as the art chat's loose item (props.items), not in a pack */
 var IMAP = {food:'canned_food', water:'bottle', medkit:'medkit', ammo:'ammo_box', wood:'scrap_wood', scrap:'scrap', nails:'nails_handful', sheet:'sheet_metal', chunk:'concrete_chunk', map:'paper_map', rifle:'ammo_box', shell:'ammo_box', fuel:'fuel_can', battery:'batteries', radio:'radio', flashlight:'flashlight', lantern:'lantern', fiber:'cloth_scraps', bandage:'bandage', parts:'engine_parts', tire:'spare_tyre', carbat:'car_battery', toolkit:'toolkit', coat:'rain_jacket', book:'books', stone:'stone', tape:'duct_tape', rope:'rope', antibio:'antibiotics', berry:'berries', meal:'canned_food', fresh:'granola_bar', splint:'sticks', key:'matches', generator:'generator'};
+/* the breaker panel hangs on the inside of the outer wall nearest a cable box */
+function breakerSpot(b, c){
+  if (c.bp && c.bp.b === b.id) return c.bp; var s0 = b.segs0, best = null, bd = 1e9;
+  for (var q = 0; q < s0.length; q += 4){ if (Math.hypot(s0[q+2] - s0[q], s0[q+3] - s0[q+1]) < 0.9) continue; var d = segDist(c.x, c.y, s0[q], s0[q+1], s0[q+2], s0[q+3]); if (d < bd){ bd = d; best = q; } }
+  if (best === null) return null; var x0 = s0[best], y0 = s0[best+1], x1 = s0[best+2], y1 = s0[best+3], l = Math.hypot(x1 - x0, y1 - y0), dx = (x1 - x0)/l, dy = (y1 - y0)/l, t = Math.max(0.45, Math.min(l - 0.45, (c.x - x0)*dx + (c.y - y0)*dy)), px = x0 + dx*t, py = y0 + dy*t, ix = -dy, iy = dx;
+  if (pip(b.pts, px + ix*0.5, py + iy*0.5) === false){ ix = -ix; iy = -iy; }
+  return c.bp = {b:b.id, x:px + ix*0.13, y:py + iy*0.13, yaw:Math.atan2(-ix, iy)};
+}
 function packItemModel(pk){
   if (!SPON || (pk.items && Object.keys(pk.items).length) || (pk.designs && pk.designs.length)) return null; var ks = Object.keys(pk.inv || {}).filter(function(k){ return pk.inv[k] > 0; }); if (ks.length !== 1 || !IMAP[ks[0]]) return null;
   return spB('items.' + IMAP[ks[0]]);
@@ -3293,17 +3303,18 @@ function gunHud(){ var g = gunNow(); P.mag = P.mag || {}; var h = g.n + ' ' + (P
 function cycleGun(){ var own = GORDER.filter(gunOwned), i = own.indexOf(P.gun); P.gun = own[(i + 1) % own.length]; P.rl = null; var g = gunNow(); P.gunT = 3; toast(g.n + (own.length > 1 ? ' (U or the Gun button switches)' : ''), 1.8); gunHud(); updateHud(); }
 function startReload(manual){ var g = gunNow(); P.mag = P.mag || {}; if (P.rl || (P.mag[P.gun] | 0) >= g.mag){ return; }
   if (!(inv[g.am] > 0)){ if (manual || time - (P.noAm || -9) > 2){ P.noAm = time; toast('Out of ' + ITEMS[g.am][0].toLowerCase() + '. ' + (g.am === 'ammo' ? 'Police and fire stations hold more.' : 'Police stations, houses and shops may have some.'), 3); } return; }
-  P.rl = {t:g.rl*(g.am === 'arrow' && inv.quiver > 0 ? 0.45 : 1), g:P.gun}; P.rl.T = P.rl.t; sfx('latch', P.x, P.y, 0.5); gunHud(); }
-function gunTick(dt){ if (!P.rl) return; if (P.rl.g !== P.gun){ P.rl = null; return; } P.rl.t -= dt; if (P.rl.t > 0) return; var g = GUNS[P.gun], have = P.mag[P.gun] | 0, n = Math.min(g.mag - have, inv[g.am] | 0); P.mag[P.gun] = have + n; inv[g.am] -= n; P.rl = null; sfx('latch', P.x, P.y, 0.7); gunHud(); updateHud(); }
+  P.rl = {t:g.rl*(g.am === 'arrow' && inv.quiver > 0 ? 0.45 : 1), g:P.gun}; P.rl.T = P.rl.t; if (!rlSnd(P.gun, 0)) sfx('latch', P.x, P.y, 0.5); gunHud(); }
+function gunTick(dt){ if (!P.rl) return; if (P.rl.g !== P.gun){ P.rl = null; return; } P.rl.t -= dt; if (P.rl.t > 0) return; var g = GUNS[P.gun], have = P.mag[P.gun] | 0, n = Math.min(g.mag - have, inv[g.am] | 0); P.mag[P.gun] = have + n; inv[g.am] -= n; P.rl = null; if (!rlSnd(g === GUNS[P.gun] ? P.gun : P.gun, 1)) sfx('latch', P.x, P.y, 0.7); gunHud(); updateHud(); }
 function shoot(){
   var g = gunNow(); P.mag = P.mag || {}; if (P.rl) return;
-  if ((P.mag[P.gun] | 0) < 1){ startReload(false); return; }
+  if ((P.mag[P.gun] | 0) < 1){ if (!(inv[g.am] > 0)) sfx('dry_click', P.x, P.y, 0.7); startReload(false); return; }
   if (Math.random() < 0.5) addXp('shoot', 1);
   P.gdur = P.gdur || {}; var gd = P.gdur[P.gun] === undefined ? 1 : P.gdur[P.gun];
   if (gd < 0.25 && Math.random() < (0.25 - gd)*1.6){ P.shootCd = 0.9; toast('It jammed. Worn guns jam; repair it at a tool bench (1 scrap).', 2.5); sfx('latch', P.x, P.y, 0.6, 1.3); return; }
   P.gdur[P.gun] = Math.max(0, gd - (g.pel > 1 ? 0.012 : g.rec ? 0.004 : 0.008)); if (P.gdur[P.gun] < 0.25 && !P.gSaid){ P.gSaid = 1; toast('Your ' + g.n.toLowerCase() + ' is wearing out and will start to jam.', 4); }
   P.mag[P.gun]--; P.shootCd = g.cd; P.gunT = 3; P.noise = Math.max(P.noise, g.nz); var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), quiet = g.nz < 1;
-  if (!quiet){ burst(undefined, undefined, 0.9, g.pel > 1 ? 1800 : 3200, g.pel > 1 ? 0.6 : 0.45); burst(undefined, undefined, 0.5, 600, 0.9); }
+  if (gunSnd(P.gun)){ if (P.gun === 'pump_shotgun' || P.gun === 'hunting_rifle'){ var gg = P.gun; setTimeout(function(){ if (running && P.gun === gg) sfx(gg === 'pump_shotgun' ? 'gun_rack' : 'bolt_cycle', P.x, P.y, 0.6); }, 420); } }
+  else if (!quiet){ burst(undefined, undefined, 0.9, g.pel > 1 ? 1800 : 3200, g.pel > 1 ? 0.6 : 0.45); burst(undefined, undefined, 0.5, 600, 0.9); }
   else sfx('wood_hit', P.x, P.y, 0.4, 1.6);
   for (var q = 0; q < g.pel; q++){ var a = P.yaw + (Math.random() - 0.5)*2*g.spr*(1 - 0.05*lvl('shoot')), vx = Math.cos(a)*g.sp, vy = Math.sin(a)*g.sp;
     bullets.push({x:P.x + fx*0.5, y:P.y + fy*0.5, vx:vx, vy:vy, t:g.life, dmg:g.dmg, flare:g.flare, rec:g.rec ? g.am : 0}); }
@@ -3584,7 +3595,7 @@ var STK = {sprint:10.5, burst:2.4, rest:7, pounce:6.5, creep:2.3, walk:3.3, hour
 function alienHit(z, A, T){
   z.cd = A.cd; if (T.peer){ send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); return; }
   if (P.hide){ remember(P.hide.c); exitHide(); feed('It dragged you out of hiding! It will remember this place.', '#ff8f7a'); }
-  sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.cause = 'a ' + A.n; hitMe(A.dmg, z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2;
+  sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false, 'attack'); P.cause = 'a ' + A.n; hitMe(A.dmg, z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2;
 }
 function hidePoint(z, T, minR){
   if (z.hp2 && time < z.hp2.t) return z.hp2.p;
@@ -3903,6 +3914,14 @@ function sfx(name, x, y, vol, rate, range){
   var src = SND.ctx.createBufferSource(); src.buffer = L[Math.floor(Math.random()*L.length)]; src.playbackRate.value = (rate || 1)*(0.94 + Math.random()*0.12);
   var g = sndOut(pl[1]); g.gain.value = (vol === undefined ? 1 : vol)*pl[0]; src.connect(g); src.start();
 }
+function sfxHas(n){ return !!(SND.buf[n] && SND.buf[n].length); }
+/* 0.76 design-chat sounds: gunfire, reloads, wall breaking, crashes; each falls back to the older noise bursts when its clip is missing */
+var GSND = {pistol:['gun_pistol',1], revolver:['gun_pistol',0.8], hunting_rifle:['gun_rifle',1], carbine:['gun_rifle',1.12], pump_shotgun:['gun_shotgun',1], double_barrel:['gun_shotgun',0.85], crossbow:['crossbow_shot',1], recurve_bow:['arrow_release',1], flare_gun:['flare_pop',1]};
+var RLS = {pistol:['reload_click','mag_in'], revolver:['reload_click','gun_rack'], hunting_rifle:['reload_click','bolt_cycle'], carbine:['reload_click','mag_in'], pump_shotgun:['shell_insert','gun_rack'], double_barrel:['shell_insert','gun_rack'], crossbow:['reload_click','reload_click'], recurve_bow:['reload_click','arrow_release'], flare_gun:['reload_click','gun_rack']};
+function gunSnd(gun){ var q = GSND[gun]; if (!q || !sfxHas(q[0])) return false; sfx(q[0], undefined, undefined, 0.9, q[1], 200); return true; }
+function rlSnd(gun, end){ var q = RLS[gun]; var n = q && q[end ? 1 : 0]; if (n && sfxHas(n)){ sfx(n, P.x, P.y, end ? 0.7 : 0.55); return true; } return false; }
+function crashSnd(spd, x, y){ sfx(spd > 9 ? 'car_crash_heavy' : 'car_crash_light', x, y, 1, 1, 70); }
+function wallSnd(b, brk, x, y){ var m = bwMat(b), n = m === 'brick' ? 'brick_crumble' : m === 'concrete' ? 'concrete_crack' : (m === 'metal' || m === 'steel') ? 'steel_bend' : 'wood_crack'; sfx(n, x, y, brk ? 1 : 0.6, brk ? 1 : 1.15, 50); }
 /* noise through a filter with a quick attack and a decay: gunshots, thunder, splashes */
 function burst(x, y, vol, freq, dur, range, type){
   if (!SND.ctx || !running || !SND.vol) return; var pl = sndPlace(x, y, range || 120); if (!pl) return; var t = SND.ctx.currentTime;
@@ -3911,8 +3930,10 @@ function burst(x, y, vol, freq, dur, range, type){
   src.connect(fl); fl.connect(g); src.start(t, Math.random()); src.stop(t + dur + 0.05);
 }
 /* an alien call: a wavering tone through a growl. Swarmers chitter high, the stalker shrieks, the giant groans low */
-function alienCall(k, x, y, loud){
-  if (!SND.ctx || !running || !SND.vol) return; var pl = sndPlace(x, y, loud ? 70 : 35); if (!pl) return; var t = SND.ctx.currentTime;
+var ALN = ['swarmer', 'stalker', 'giant', 'spitter'];
+function alienCall(k, x, y, loud, kind){
+  if (!SND.ctx || !running || !SND.vol) return;
+  var an = 'alien_' + ALN[k] + '_' + (kind || (loud ? 'notice' : 'idle')); if (sfxHas(an)){ sfx(an, x, y, kind === 'attack' || loud ? 0.9 : 0.5, 1, loud ? 70 : 35); return; } var pl = sndPlace(x, y, loud ? 70 : 35); if (!pl) return; var t = SND.ctx.currentTime;
   var base = [520, 300, 70, 400][k], dur = [0.35, 0.9, 1.3, 0.5][k]*(loud ? 1.3 : 1), o = SND.ctx.createOscillator(), lfo = SND.ctx.createOscillator(), lg = SND.ctx.createGain();
   o.type = k === 2 ? 'sawtooth' : 'square'; o.frequency.setValueAtTime(base*(0.9 + Math.random()*0.2), t); o.frequency.exponentialRampToValueAtTime(base*(k === 1 ? 2.4 : 0.6), t + dur);
   lfo.frequency.value = [38, 22, 9, 30][k]; lg.gain.value = base*0.25; lfo.connect(lg); lg.connect(o.frequency);
@@ -3956,13 +3977,54 @@ function stepFx(sf){ var gy = (P.gy || 0) + (P.jy || 0), run = P.vis > 1;
   if (sf === 'step_snow') fxAdd('effects.step_snow', P.x, P.y, gy, {life:0.5, s0:0.6, s1:1.2, rise:0.05, up:0.02});
   else if (sf === 'water') fxAdd('effects.step_splash', P.x, P.y, gy, {life:0.3, s0:0.8, s1:1, up:0.02});
   else if (sf === 'gravel' || (sf === 'leaves' && run)) fxAdd('effects.step_dust', P.x, P.y, gy, {life:0.4, s0:0.6, s1:1.2, rise:0.08, up:0.02}); }
+function nearG(x, y, r){ var d = Math.hypot(x - P.x, y - P.y); return d >= r ? 0 : Math.pow(1 - d/r, 1.6); }
+function loopSet(name, g){
+  var L = SND.loops = SND.loops || {}, o = L[name];
+  if (!o){ var B = SND.buf[name]; if (!B || !B.length || g < 0.002) return; var src = SND.ctx.createBufferSource(); src.buffer = B[0]; src.loop = true; var gn = SND.ctx.createGain(); gn.gain.value = 0; src.connect(gn); gn.connect(SND.out); src.start(); o = L[name] = {g:gn}; }
+  o.g.gain.value += (g - o.g.gain.value)*0.1;
+}
+/* 0.76 music: five tracks load the first time they are wanted (about 1 MB each), then loop; they fade into each other */
+var MUS = {cur:null, buf:{}, loading:{}, t:0, hold:0, on:true, vol:0.3};
+try { if (localStorage.getItem('lastblock:music') === '0') MUS.on = false; } catch (e){}
+function musLoad(n){
+  if (MUS.loading[n] || !SND.ctx) return; MUS.loading[n] = 1; var sc = document.createElement('script'); sc.src = 'assets/audio/music_' + n + '.js?v=' + BUILD;
+  sc.onload = function(){ try { var b = ART.music[n], bin = atob(b), a = new Uint8Array(bin.length); for (var j = 0; j < bin.length; j++) a[j] = bin.charCodeAt(j); delete ART.music[n];
+    var pr = SND.ctx.decodeAudioData(a.buffer, function(ab){ MUS.buf[n] = ab; }, function(){ MUS.loading[n] = 0; }); if (pr && pr.catch) pr.catch(function(){}); } catch (e){} };
+  sc.onerror = function(){ setTimeout(function(){ MUS.loading[n] = 0; }, 30000); }; document.head.appendChild(sc);
+}
+function musPlay(n){
+  var old = MUS.cur, ab = MUS.buf[n], t = SND.ctx.currentTime; if (old){ old.g.gain.cancelScheduledValues(t); old.g.gain.setValueAtTime(old.g.gain.value, t); old.g.gain.linearRampToValueAtTime(0, t + 3); try { old.src.stop(t + 3.1); } catch (e){} MUS.cur = null; }
+  if (!n || !ab) return; var src = SND.ctx.createBufferSource(); src.buffer = ab; src.loop = true; src.loopStart = 0; src.loopEnd = Math.min(ab.duration, (ART.musicLoop && ART.musicLoop[n]) || ab.duration);
+  var g = SND.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(MUS.vol, t + 3); src.connect(g); g.connect(SND.out); src.start(); MUS.cur = {n:n, g:g, src:src};
+}
+function musWant(){
+  if (!MUS.on || !P || P.dead) return null; var near = 0, close = 0;
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (z.st !== 2) continue; var d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 30) near++; if (d < 12) close++; }
+  if (near >= 6) return 'horde'; if (close >= 1 || near >= 2) return 'chase'; if (dark > 0.5) return 'night';
+  if (P.inside && allBeds().some(function(q){ return q.b === P.inside.id; })) return 'base'; return 'day';
+}
+function musTick(dt){
+  MUS.t -= dt; MUS.hold -= dt; if (MUS.t > 0) return; MUS.t = 1.2; var w = musWant(), cur = MUS.cur && MUS.cur.n;
+  if (w === cur) return; if (w && !MUS.buf[w]){ musLoad(w); return; }
+  if (w && cur && MUS.hold > 0 && w !== 'chase' && w !== 'horde') return;   /* calm changes wait; danger does not */
+  musPlay(w); MUS.hold = 25;
+}
 function sndTick(dt, moved){
   if (!SND.ctx) return;
   SND.out.gain.value = SND.vol;
   if (!P.veh && moved > 0){ P.stepD = (P.stepD || 0) + moved; var stride = P.crouch ? 0.6 : P.vis > 1 ? 1.45 : 1.05;
     if (P.stepD > stride){ P.stepD = 0; if (!P.surf) P.surf = surfAt(P.x, P.y); stepSfx(P.surf, P.crouch ? 0.22 : P.vis > 1 ? 0.8 : 0.5); stepFx(P.surf); } }
   var out = !P.inside, rain = (wx.w === 1 || wx.w === 2) ? (out ? 0.22 : 0.06) : wx.w === 4 ? (out ? 0.1 : 0.03) : 0, wind = (out ? 0.025 : 0.006) + (wx.w === 2 ? 0.07 : 0) + (wx.tor ? 0.18 : 0);
+  if (sfxHas('rain_outside')) rain *= 0.3;
   var k = Math.min(1, dt*1.5); SND.rain.gain.value += (rain - SND.rain.gain.value)*k; SND.wind.gain.value += (wind - SND.wind.gain.value)*k;
+  /* 0.76 looping beds: rain on the street or on the roof, the generator, a campfire, the running plant */
+  var rlv = wx.w === 2 ? 0.8 : wx.w === 1 ? 0.5 : 0; loopSet('rain_outside', out ? rlv*0.6 : 0); loopSet('rain_roof', out ? 0 : rlv*0.7);
+  var gg = 0, ff = 0, G1 = world.edits && world.edits.gens || [], i2;
+  for (i2 = 0; i2 < G1.length; i2++) if (G1[i2].on) gg = Math.max(gg, nearG(G1[i2].x, G1[i2].y, 30));
+  for (i2 = 0; i2 < fires.length; i2++) if (fires[i2].life > 0) ff = Math.max(ff, nearG(fires[i2].x, fires[i2].y, 14));
+  loopSet('generator_hum', gg*0.5); loopSet('fire_crackle', ff*0.6);
+  var po = world.edits && world.edits.plant && world.edits.plant.s >= 3 ? plantObj() : null; loopSet('power_on_hum', po ? nearG(po.x, po.y, 45)*0.5 : 0);
+  musTick(dt);
   /* aliens nearby make themselves heard now and then, before you see them */
   for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - P.x) > 40 || Math.abs(z.y - P.y) > 40) continue; z.callT = (z.callT === undefined ? Math.random()*10 : z.callT) - dt; if (z.callT <= 0){ z.callT = 6 + Math.random()*10; alienCall(z.k, z.x, z.y, false); } }
 }
@@ -4167,7 +4229,7 @@ function update(dt){
       for (var q2 = 0; q2 < tg.length; q2++){
         var t2 = tg[q2], dd = Math.hypot(t2.x - z.x, t2.y - z.y); if (dd < dAny) dAny = dd;
       }
-      if (z.hp <= 0){ kills++; addCorpse(z); zombies.splice(i, 1); continue; }
+      if (z.hp <= 0){ kills++; addCorpse(z); if (z.k < 4) alienCall(z.k, z.x, z.y, true, 'die'); zombies.splice(i, 1); continue; }
       if (dAny > (z.grp ? 200 : 130)){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
       var zn = zoneAt(z.x, z.y, 0.6); if (zn){ zoneOut(zn, z, 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
@@ -4215,7 +4277,7 @@ function update(dt){
         if (T && T.b && !T.roof && z.k !== 2) alienAtPort(z, A, T.b, dt);
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
         if (A.spit && T && !T.roof && !shy && d < A.spit && d > 2.5 && z.cd <= 0 && (T.lvl || 0) === (z.lvl || 0) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2) && !(buildingAt(z.x, z.y) !== buildingAt(T.x, T.y))){ z.cd = A.cd; z.ang = Math.atan2(T.y - z.y, T.x - z.x); addSpit(z, T.x, T.y); emit({k:'spit', s:{x:z.x, y:z.y, tx:T.x, ty:T.y, k:z.k, lvl:z.lvl || 0}}); alienCall(3, z.x, z.y, false); }
-        if (T && !T.roof && !shy && d < A.reach && z.cd <= 0 && (((T.lvl || 0) === (z.lvl || 0)) || z.onSt || T.onSt) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ remember(P.hide.c); exitHide(); feed('It dragged you out of hiding! It will remember this place.', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false); P.cause = 'a ' + A.n; hitMe(A.dmg, z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
+        if (T && !T.roof && !shy && d < A.reach && z.cd <= 0 && (((T.lvl || 0) === (z.lvl || 0)) || z.onSt || T.onSt) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2)){ z.cd = A.cd; if (T.peer) send(T.peer.dc, {t:'hurt', d:A.dmg, k:z.k}); else { if (P.hide){ remember(P.hide.c); exitHide(); feed('It dragged you out of hiding! It will remember this place.', '#ff8f7a'); } sfx('hurt', undefined, undefined, 0.8); alienCall(z.k, z.x, z.y, false, 'attack'); P.cause = 'a ' + A.n; hitMe(A.dmg, z.k); P.hitFrom = Math.atan2(z.y - P.y, z.x - P.x); P.hitT = 1.2; } }
       }
       if (z.k !== 2 && (T || z.st >= 1 || z.hunt)){ var zb2 = buildingAt(z.x, z.y); if (zb2 && zb2.int && zb2.int.idoors) zb2.int.idoors.forEach(function(dq, qi){ if (innerState(zb2, qi) === 0 && segDist(z.x, z.y, dq[0], dq[1], dq[2], dq[3]) < A.r + 0.45){ var ib1 = blockOf(zb2, 1000 + qi); if (ib1){ ib1.hp -= A.dmg*dt*1.1; z.bangT = (z.bangT || 0) - dt; if (z.bangT <= 0){ z.bangT = 0.6; sfx('wood_hit', z.x, z.y, 0.7, 0.8, 50); } if (ib1.hp <= 0) doEdit({a:'unblock', b:zb2.id, k:1000 + qi}); return; } z.door = (z.door || 0) + dt; if (z.door > 1.2){ z.door = 0; setPort(zb2, 1000 + qi, 1); } } }); }   /* they shove inside doors open */
       z.kx *= Math.pow(0.002, dt); z.ky *= Math.pow(0.002, dt);
@@ -5695,8 +5757,8 @@ function breachSet(b, k, on){ var E = world.edits; E.breach = E.breach || {}; va
   delete BWHP[b.id + ':' + k]; dirtyChunk(b);
   if (k >= 10000 && b.int){ freeInt(b); b.int = null; var li = loaded.indexOf(b); if (li >= 0) loaded.splice(li, 1); } }   /* the rooms are built again with the gap */
 function breachHurt(b, k, d, x, y){
-  var key = b.id + ':' + k, mx = bwMax(b, k), hp = BWHP[key] === undefined ? mx : BWHP[key], f0 = hp/mx; hp -= d*bwRes(b); BWHP[key] = hp; if (hp > 0 && k < 10000 && ((f0 >= 0.66) !== (hp/mx >= 0.66) || (f0 >= 0.33) !== (hp/mx >= 0.33))) dirtyChunk(b);
-  if (hp <= 0){ doEdit({a:'breach', b:b.id, i:k, on:1}); sfx('plank', x, y, 1, 0.6); fxAdd('effects.wood_chips', x, y, groundAt(x, y), {life:0.9, s0:0.8, s1:1.2, rise:0.3, up:0.6}); return true; }
+  var key = b.id + ':' + k, mx = bwMax(b, k), hp = BWHP[key] === undefined ? mx : BWHP[key], f0 = hp/mx; hp -= d*bwRes(b); BWHP[key] = hp; if (hp > 0 && k < 10000 && ((f0 >= 0.66) !== (hp/mx >= 0.66) || (f0 >= 0.33) !== (hp/mx >= 0.33))){ dirtyChunk(b); wallSnd(b, 0, x, y); }
+  if (hp <= 0){ doEdit({a:'breach', b:b.id, i:k, on:1}); if (sfxHas('wood_crack')) wallSnd(b, 1, x, y); else sfx('plank', x, y, 1, 0.6); fxAdd('effects.wood_chips', x, y, groundAt(x, y), {life:0.9, s0:0.8, s1:1.2, rise:0.3, up:0.6}); return true; }
   return false;
 }
 function townAttack(z, A, dt){
@@ -6065,7 +6127,8 @@ function drawBuilt(m){
       continue; } var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
   subSites().forEach(function(so){ if (Math.abs(so.x - P.x) > 120 || Math.abs(so.y - P.y) > 120 || !POWER_ON || !powerModel('pole_transformer')) return; m.modelS(powerModel('pole_transformer'), so.x, so.y, 0, groundAt(so.x, so.y), 1); });
-  (E.cboxes || []).forEach(function(c){ if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60 || !POWER_ON) return; var b = world.buildings[c.b], on = b && boxSupply(c) >= boxLoad(b) && !c.trip, nm = c.trip ? 'cable_box_overload' : on ? 'cable_box_on' : 'cable_box_off', pm = powerModel(nm); if (pm) m.modelS(pm, c.x, c.y, 0, groundAt(c.x, c.y) + (b && b.base ? b.base : 0), 1); });
+  (E.cboxes || []).forEach(function(c){ if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60 || !POWER_ON) return; var b = world.buildings[c.b], on = b && boxSupply(c) >= boxLoad(b) && !c.trip, nm = c.trip ? 'cable_box_overload' : on ? 'cable_box_on' : 'cable_box_off', pm = powerModel(nm); if (pm) m.modelS(pm, c.x, c.y, 0, groundAt(c.x, c.y) + (b && b.base ? b.base : 0), 1);
+    var bp = b && b.segs0 && b.segs0.length ? breakerSpot(b, c) : null, pn2 = bp && powerModel(c.trip ? 'breaker_panel_tripped' : on ? 'breaker_panel_open' : 'breaker_panel_closed'); if (pn2) m.modelS(pn2, bp.x, bp.y, bp.yaw, groundAt(bp.x, bp.y) + (b.base || 0), 1); });
   (E.solars || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80 || !POWER_ON) return; var pm = powerModel('solar_portable'); if (pm) m.modelS(pm, q.x, q.y, q.yaw, groundAt(q.x, q.y), 1); });
   var pdo = plantObj(); if (pdo && Math.abs(pdo.x - P.x) < 100 && Math.abs(pdo.y - P.y) < 100 && POWER_ON && powerModel(world.edits.plant.s >= 3 ? 'control_panel_running' : 'control_panel_dead')){ m.yo = groundAt(pdo.x, pdo.y); m.modelS(powerModel(world.edits.plant.s >= 3 ? 'control_panel_running' : 'control_panel_dead'), pdo.x, pdo.y, -1.5708, groundAt(pdo.x, pdo.y), 1); }
   (E.placed || []).forEach(function(q){ if (Math.abs(q.x - P.x) > 80 || Math.abs(q.y - P.y) > 80) return; var f = FURN[q.k]; if (!f) return; m.yo = groundAt(q.x, q.y); f.boxes.forEach(function(bx){ m.ybox(q.x, q.y, q.yaw, bx[0], bx[2], bx[1] + 0.1, bx[3], bx[4], bx[5], C(bx[6])); }); });
@@ -6248,13 +6311,13 @@ function vehBash(V, mx, my, dt){
     var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0) return; if (n < bd){ bd = n; best = w; bk = k; } });
   if (!best){   /* 0.69: a town building's wall */
     var tw = twNear(fx, fy, 1.0, 0); if (!tw) return; var mass0 = V.kind === 'truck' ? VMASS.truck : VMASS.car, E0 = mass0*spd*spd/12, hp1 = BWHP[tw.b.id + ':' + tw.k] === undefined ? bwMax(tw.b, tw.k) : BWHP[tw.b.id + ':' + tw.k];
-    V.bashT = time + 0.35; V.hp = Math.max(0, vhp(V) - Math.min(40, Math.min(E0, hp1)*0.9));
+    V.bashT = time + 0.35; crashSnd(spd, tw.cx, tw.cy); V.hp = Math.max(0, vhp(V) - Math.min(40, Math.min(E0, hp1)*0.9));
     if (breachHurt(tw.b, tw.k, E0*2.5, tw.cx, tw.cy)) feed('Smashed through the wall of the building', '#e8b27a'); else sfx('metal', tw.cx, tw.cy, 0.9, 0.5);
     fxAdd('effects.crash_burst', tw.cx, tw.cy, groundAt(tw.cx, tw.cy), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. A car part from the Build menu repair will get it going.', 5); }
     if (spd > 12 && E0 > hp1){ P.hp -= 3; P.cause = 'a car crash'; } updateHud(); return;
   }
   var M = wallMat(best), by2 = wallBays(best), mass = V.kind === 'truck' ? VMASS.truck : VMASS.car, E = mass*spd*spd/12, f = M === WMATS.concrete ? 1.2 : M === WMATS.steel ? 1.2 : 0.8, hp0 = by2[bk];
-  V.bashT = time + 0.35; var pay = Math.min(60, Math.min(E, hp0)*f*(M === WMATS.concrete ? 1.2 : 1));
+  V.bashT = time + 0.35; crashSnd(spd, best.x, best.y); var pay = Math.min(60, Math.min(E, hp0)*f*(M === WMATS.concrete ? 1.2 : 1));
   V.hp = Math.max(0, vhp(V) - pay);
   if (E >= hp0){ by2[bk] = 0; emit({k:'edit', e:{a:'wbay', id:best.id, i:bk, v:0}}); rebuildWalls(); sfx('plank', best.x, best.y, 1, 0.7); feed('Smashed through the wall', '#e8b27a'); }
   else { wallHurt(best, bk, E); sfx('metal', best.x, best.y, 0.9, 0.5); }
@@ -6420,7 +6483,7 @@ function makeSurvivors(saved){
 }
 function survPanel(){
   var L = (world.surv || []).filter(function(s){ return !s.gone && s.st !== 'wait'; }); if (!L.length) return '';
-  return '<h3>Survivors</h3>' + L.map(function(s){ var jb = SJOB[s.job]; return '<div class="irow"><span class="n">' + s.base + '<br><i>' + (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + ' &middot; hunger ' + Math.round(s.hu) + '% &middot; health ' + Math.round(Math.max(0, s.hp)/0.6) + '%' + (s.away ? ' &middot; out on a run' : '') + '</i></span><button data-a="sj' + s.id + '">' + (inSafe(P.x, P.y, 0) ? 'Next job' : s.st === 'stay' ? 'Follow' : 'Wait') + '</button></div>'; }).join('');
+  return '<h3>Survivors</h3>' + L.map(function(s){ var jb = SJOB[s.job]; return '<div class="irow"><img class="sport" alt="" src="assets/ui/portraits/' + s.key + '.png?v=' + BUILD + '" onerror="this.remove()"><span class="n">' + s.base + '<br><i>' + (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + ' &middot; hunger ' + Math.round(s.hu) + '% &middot; health ' + Math.round(Math.max(0, s.hp)/0.6) + '%' + (s.away ? ' &middot; out on a run' : '') + '</i></span><button data-a="sj' + s.id + '">' + (inSafe(P.x, P.y, 0) ? 'Next job' : s.st === 'stay' ? 'Follow' : 'Wait') + '</button></div>'; }).join('');
 }
 function survCount(){ var n = 0; (world.surv || []).forEach(function(s){ if (!s.gone && s.st !== 'wait') n++; }); return n; }
 function survGo(s, tx, ty, sp, dt, stop){
@@ -7205,6 +7268,7 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
 })();
 loadPacks(); wForm(); renderPacks(); fillScen();
+el('musicOn').checked = MUS.on; el('musicOn').addEventListener('change', function(){ MUS.on = el('musicOn').checked; lsSet('lastblock:music', MUS.on ? '1' : '0'); sndInit(); });
 el('vol').value = Math.round(SND.vol*100); el('vol').addEventListener('input', function(){ SND.vol = el('vol').value/100; lsSet('lastblock:vol', el('vol').value); sndInit(); });
 el('fovS').addEventListener('input', function(){ CAMS.fov = +el('fovS').value; lsSet('lastblock:fov', CAMS.fov); });
 el('bobS').addEventListener('change', function(){ CAMS.bob = +el('bobS').value; lsSet('lastblock:bob', CAMS.bob); });
