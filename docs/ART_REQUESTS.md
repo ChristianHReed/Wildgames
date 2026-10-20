@@ -109,6 +109,65 @@ For every car: **front crumple** (light, heavy), **bonnet buckled**, **smoking b
 ### 10.6 Sound
 Wood crack, brick crumble, concrete crack, steel scream and bend, glass break, car hitting wall (light and heavy), plug in, breaker trip, power plant start, and the hum of a street coming back to power.
 
+## 11. What the game still needs after version 0.69.0 (new, 20 October 2026)
+
+Everything in the code that can be built without new art is built. These are the places where the game uses a plain box, a flat colour or a text label today and a shaped piece would replace it. Each line says where it goes in, so the piece can be dropped in without a code change if it follows the usual rules (shaped piece, pack palette, metres, flat colours, origin at the base).
+
+### 11.1 Town buildings and walls
+- **Broken wall states for the buildings pack (Art 6).** A torn-open stretch of an outer wall is a dark flat opening with five small rubble boxes today (`breachApply` in play.html). Needed: a ragged **hole frame** per wall material (siding, brick, metal, glass curtain) in 2.4 m and 4 m wide versions, with torn edges, exposed studs or bricks, and a **rubble pile** to lay at its foot. Also a **boarded** version (planks nailed across the hole) for when the player closes it.
+- **Cracked wall states** (whole, cracked, bricks missing) so a wall can be seen weakening before it goes. Today the game only shows whole or open.
+- **House number digits** (0 to 9) as a plaque or painted numerals for the front of each house, and a **street name sign** piece for corners.
+- **Gun shop** front and interior (needs the map chat to flag a building kind first, see MAP_REQUESTS.md).
+
+### 11.2 Claiming and fortifying
+- **Claim sign or flag** to nail by the door of a claimed base, a **custom bed** (planks and cloth scraps), and **reinforcement overlays** per material (planks across, sheet plate, rebar), as already listed in 10.3. Still wanted: a **door brace** (bar across a door) and **window boards** that can be seen from outside.
+
+### 11.3 Power
+- **Power plant yard**: dead and running versions, the control panel outside the front, and the glow pieces. **Substation** with fence, and **pole and pylon** pieces for roads. (10.4 has the full list. The game now has working versions of all of these and draws a box for each.)
+- **Breaker panel** and **outlet** pieces for interior walls, **wall lamp** on and off, and **cable box** and **solar panel** models (the game draws boxes for them today).
+
+### 11.4 Guns and ammunition
+- **Reload poses** for first person, per gun class: pistol (magazine out and in), rifle and shotgun (rack, shell by shell), revolver, bow (nock an arrow), crossbow (cock and load), flare gun (break open).
+- **Magazine models** (pistol, rifle), **shell** and **cartridge** props for the ground and for the thrown-casing effect, **arrow** and **bolt** models lying on the ground and stuck in a target, and the **quiver** as a worn piece on the back.
+- **Third-person long-gun carry** (rifle and shotgun slung or held at the shoulder) for the survivor rig.
+- **Rust and wear**: a worn version of each gun (pitted, grey) for guns below a quarter condition.
+
+### 11.5 Vehicles
+- Damage states from 10.5. The game now has **vehicle health** (0 to 100, wrecked at 0, burning for a minute) so the car needs **light, heavy and wrecked** looks plus **smoke** and **flame** pieces on the bonnet (the generic large flame and smoke column are used today).
+- **Boot lid open** state for searching a parked car, and a **fuel can** being siphoned.
+
+### 11.6 Carrying and furniture
+- A **carried furniture pose** (arms out front holding a chair, table or wardrobe) so the model can be seen in your arms; today the piece is hidden and you walk slowly.
+- **Weights by piece** are not in the game yet: if the design chat gives a size class per furniture piece it can drive the speed.
+
+### 11.7 Sky, weather and water
+- **Rain ripples** (a small expanding ring decal for puddles and water), **splash** on roofs, **cloud shapes** for the three weather types, and a **lightning flash** sky piece. Moon phases (eight) and the aurora are in and working.
+
+### 11.8 Map and journal
+- **Held paper map** in first person (folded in the hand, and unfolded with the player looking at it) with creases and pencil marks, and **map pickup** model for the ground.
+- **Road names** are data, not art: see MAP_REQUESTS.md.
+
+### 11.9 Ground, props and loose items (Art 4 and the props the game does not place yet)
+- **Ground tiles** (Art 4): grass, dirt, gravel, sand, mud, snow, pavement, with edges.
+- **Loose items on the ground** for every inventory item the game can drop (cans, bottles, bandages, tools, ammo boxes, planks, nails, sheet metal, concrete chunk, scrap, car part, battery, tyre, fuel can, paper map).
+- **Street props**: traffic lights, cones, barriers, bus stops, power poles, fences, sandbags.
+- **Trees and plants** from the pack (oak, pine, bush, dead tree, grass, rock) in the game's scale.
+
+### 11.10 Survivors
+- The clips from section 6 (sit, lean, wave, carry crate) are still unused. The game has survivors that can be recruited and given a job; it needs **a panel portrait** per survivor look and **work poses** (chop, fish, keep watch).
+
+### 11.11 Music and sound
+- **Music**: a quiet day loop, a tense night loop, a chase sting, a horde-night loop, a calm base loop. Two or three minutes each, seamless.
+- **Sound**: the list in 10.6, plus **gun reload clicks and rack**, **arrow thunk**, **flare gun pop**, **plant start-up klaxon**, **furniture drag**, **footsteps on gravel and snow**, **rain on a tin roof**.
+
+### 11.12 Summary by priority
+1. Broken and boarded wall pieces (11.1, 11.2): they are the most visible thing players do.
+2. Reload poses and ammo props (11.4): every gun fight shows them.
+3. Loose item props and ground tiles (11.9): the world still looks bare.
+4. Vehicle damage looks (11.5).
+5. Power yard pieces, breaker panel, outlets (11.3).
+6. Music and sound (11.11), held map (11.8), the rest.
+
 ---
 
 Suggested order: section 1 (so the weapons and jump look right), then loose items and loot containers from section 2, then section 3, then Art 4 and Art 6.

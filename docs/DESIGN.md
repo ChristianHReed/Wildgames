@@ -195,3 +195,8 @@ GUNS in play.html holds each gun's ammo type, damage, pellets, spread, rate, mag
 
 ## Power plant (0.61.1)
 plantObj() picks the site; world.edits.plant.s is the stage (0 burnt, 1 needs fuel, 2 ready, 3 running). gridOn() is true before day 3 or once stage 3 is reached. The plant pack (power.js) loads with the walls pack; only the control panel is drawn so far.
+
+## Town building walls (0.69) and leftovers (0.70)
+Every solid stretch of a town building's outer wall (the pieces of `b.segs0`, split around windows and the door) has hit points by material: timber 16, metal 24, brick or stone 34. Alien damage is scaled by a material resistance (brick 0.4, metal 0.55, timber 1). Aliens that are hunting while you are inside tear the stretch nearest them. A car driven into a stretch breaks it and takes damage itself. A tool takes one apart (J). A torn stretch is saved as `edits.breach[buildingId] = [piece numbers]`, is removed from collision, sight and bullets, and is drawn as a dark opening with rubble. Closing torn walls from the Build menu puts every torn stretch of the nearest building back while wood (3), scrap (3) or concrete chunks (2) last.
+
+Searched containers record when they were emptied (`b.gotT`). Five days later, once you are more than 90 m away, they fill again. A chase keeps a counter (`z.chaseT`); the longer it ran, the longer an alien searches after it loses sight of you (up to six extra seconds).

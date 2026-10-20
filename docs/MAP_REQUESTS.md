@@ -34,3 +34,8 @@ The same layout for other cities, so playable regions can be swapped: a small pa
 ## 6. How to hand it over
 
 One zip with the pack folder, a `REFERENCE.md` of every property it contains, a count of features per file, and the OSM extract date. The roadmap step that reads it is 0.49.6 (street names, address search) and then 0.56 to 0.60 (building materials, power, vehicles through walls).
+
+## Added 20 October 2026 (version 0.69.0)
+- **Gun shops and army surplus.** Flag `shop=gun`, `shop=hunting`, `shop=outdoor`, `military=*` and `amenity=police` buildings with a `kind` the game can read (gunshop, surplus, armory), so guns and ammunition can be placed there instead of at random.
+- **Industrial building sizes.** Warehouses and factories with `building=industrial|warehouse|factory` and their footprint area, so the power plant can pick the right one (the game takes the largest between 250 m and 1800 m from the start).
+- **Substation and power-line features.** `power=substation`, `power=pole`, `power=tower`, `power=line` where mapped; the game places four substations by quadrant today and would use the real ones.

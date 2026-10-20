@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.69.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.70.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.69.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.70.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2717,7 +2717,7 @@ function startRun(ws, cs){
   var resumed = false;
   if (ws && ws.nb === w.buildings.length){
     resumed = true; world.mem = (Array.isArray(ws.mem) ? ws.mem : []).filter(function(m){ return m && isFinite(m.x) && isFinite(m.y); }).slice(-8).map(function(m){ return {x:+m.x, y:+m.y, fx:+m.fx || 0, fy:+m.fy || 0}; }); time = +ws.time || 0; searched = ws.searched | 0; kills = ws.kills | 0;
-    for (k in (ws.got || {})){ var bd = w.buildings[k]; if (bd) ws.got[k].forEach(function(i){ bd.got[i] = 1; }); }
+    for (k in (ws.got || {})){ var bd = w.buildings[k]; if (bd) ws.got[k].forEach(function(i){ bd.got[i] = 1; gotMark(bd, i); }); }
     (ws.crates || []).forEach(function(i){ if (w.crates[i]) w.crates[i].looted = true; });
     (ws.trees || []).forEach(function(i){ if (w.trees[i]) w.trees[i].alive = false; }); (Array.isArray(ws.cut) ? ws.cut : []).forEach(function(id){ if (typeof id === 'string') w.cut[id.slice(0, 24)] = 1; });
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
@@ -3059,7 +3059,17 @@ function plantE(o){
   else if (st === 1){ if (inv.fuel < PLANT_FUEL){ toast('The tank takes ' + PLANT_FUEL + ' cans of fuel.', 3); return; } inv.fuel -= PLANT_FUEL; doEdit({a:'plant', s:2}); sfx('metal', o.x, o.y, 0.9, 0.6); makeNoise(o.x, o.y, 20); feed('Fuel in. The plant is ready to start.', ITEMS.fuel[1]); updateHud(); }
   else { o.t = PLANT_RUN; o.nt = 0; feed('The plant is starting up. Hold the line.', '#ff9a6a'); }
 }
+/* 0.70: searched containers fill up again about five days after they were emptied, once you are away from the building */
+var GOTB = [], RESTOCK = 5, restockT = 0;
+function gotMark(b, i){ if (!b.gotT) b.gotT = {}; b.gotT[i] = time; if (GOTB.indexOf(b) < 0) GOTB.push(b); }
+function restockTick(dt){
+  restockT -= dt; if (restockT > 0) return; restockT = 20;
+  for (var n = GOTB.length - 1; n >= 0; n--){ var b = GOTB[n], any = false, near = !b.gone && Math.abs(b.cx - P.x) < 90 && Math.abs(b.cy - P.y) < 90;
+    for (var i in b.gotT){ if (time - b.gotT[i] > RESTOCK*DAY && !near){ delete b.got[i]; delete b.gotT[i]; if (b.int && b.int.conts) b.int.conts.forEach(function(c){ if (String(c.i) === String(i)) c.stash = null; }); } else any = true; }
+    if (!any) GOTB.splice(n, 1); }
+}
 function plantTick(dt){
+  restockTick(dt);
   world.vehicles.forEach(function(v){ if (v.fireT > 0){ v.fireT -= dt; v.fx = (v.fx || 0) - dt; if (v.fx <= 0 && Math.abs(v.x - P.x) < 90 && Math.abs(v.y - P.y) < 90){ v.fx = 0.45; var gy = groundAt(v.x, v.y); fxAdd('effects.flame_large', v.x, v.y, gy, {life:0.6, s0:0.9, s1:1.1, up:0.6}); if (Math.random() < 0.5) fxAdd('effects.smoke_column', v.x, v.y, gy, {life:2.2, s0:1, s1:2, rise:2.5, up:1.2}); } } });
   (world.edits.cboxes || []).forEach(function(c){ if (c.bat > 0 && !c.trip && !gridAt(c.x, c.y)){ var b = world.buildings[c.b]; if (b && boxSupply({x:c.x, y:c.y, bat:0}) < boxLoad(b)) c.bat = Math.max(0, c.bat - dt/DAY*24); } });
   var o = world.plantO; if (!o || !o.t) return; o.t -= dt; o.nt -= dt;
@@ -3157,7 +3167,7 @@ function loot(o){
   if (o.plant){ gather(o); return; }
   if (!o.corpse && !o.stash){
     var cat, rolls;
-    if (o.b){ o.b.got[o.i] = 1; cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); findPart(o.b); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
+    if (o.b){ o.b.got[o.i] = 1; gotMark(o.b, o.i); cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); findPart(o.b); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
     searched++; addXp('scav', 5); sfx(/locker|safe|filing|cabinet/.test(o.name || '') ? 'latch' : /fridge|stove/.test(o.name || '') ? 'pot' : 'search', o.x, o.y, 0.7);
     if (o.poor && Math.random() < 0.6) o.stash = rollStash({none:1}, 1); else { o.stash = rollStash(o.lt && Math.random() < 0.65 ? o.lt : o.b && LOOTK[o.b.kind] || LOOT[cat], rolls); rollCustom(o.stash, 0.06); }
   }
@@ -3498,10 +3508,11 @@ function senses(z, A, tg, dt, night){
     if (seenT){
       var rs2 = A.see*seenT.vis*(night ? (seenT.lit ? 2 : 0.5) : 1);
       z.aw = Math.min(1.3, (z.aw || 0) + (sd < 3 ? 4 : 0.32 + 1.8*Math.max(0, 1 - sd/Math.max(1, rs2)))*st*(seenT.lit ? 1.5 : 1)*(z.st >= 1 ? 1.6 : 1));
+      if (z.st === 2) z.chaseT = Math.min(60, (z.chaseT || 0) + st);   /* 0.70: the longer a chase runs, the longer they keep looking after losing you */
       if (z.aw >= 1 || z.st === 2) alert(z, seenT); else { z.lx = seenT.x; z.ly = seenT.y; z.face = 1; }
     } else {
       z.aw = Math.max(0, (z.aw || 0) - st*(z.st === 2 ? 0.35 : 0.2));
-      if (z.st === 2){ z.lostT = (z.lostT || 0) + st; if (z.lostT > (z.k === 1 ? 4 : 1.2)){ z.st = 3; z.stT = 10; } }
+      if (z.st === 2){ z.lostT = (z.lostT || 0) + st; if (z.lostT > (z.k === 1 ? 4 : 1.2) + Math.min(6, (z.chaseT || 0)*0.12)){ z.st = 3; z.stT = 10; z.chaseT = 0; } }
     }
   }
   if (z.st === 2){ for (i = 0; i < tg.length; i++) if (tg[i].peer === z.tp){ t = tg[i]; if (t.safe){ z.st = 3; z.stT = 4; return null; } if (z.lostT < 0.05){ z.lx = t.x; z.ly = t.y; } return z.lostT < (z.k === 1 ? 4 : 1.2) ? t : null; } z.st = 3; z.stT = 6; }
@@ -5708,11 +5719,15 @@ function buildAct(a, pos){
     var pb = null, pd = 4, B2 = world.edits.breach || {}, bid;
     for (bid in B2){ var bb = world.buildings[bid]; if (!bb || !bb.segs0) continue; B2[bid].forEach(function(k){ var q = k*4, sg = bb.segs0, d = segDist(P.x, P.y, sg[q], sg[q+1], sg[q+2], sg[q+3]); if (d < pd){ pd = d; pb = {b:bb, k:k}; } }); }
     if (!pb){ toast('No torn-open wall within reach.', 2.5); return; }
-    var pm = bwMat(pb.b);
-    if (pm === 'brick' || pm === 'stone'){ if ((inv.chunk || 0) < 2){ toast('Closing a brick wall takes 2 concrete chunks.', 3); return; } inv.chunk -= 2; }
-    else if (pm === 'metal'){ if (inv.scrap < 3){ toast('Closing a metal wall takes 3 scrap.', 3); return; } inv.scrap -= 3; }
-    else { if (inv.wood < 3){ toast('Closing a timber wall takes 3 wood.', 3); return; } inv.wood -= 3; }
-    doEdit({a:'breach', b:pb.b.id, i:pb.k, on:0}); sfx('plank', P.x, P.y, 0.9); makeNoise(P.x, P.y, 14); toast('Wall closed.', 2); updateHud();
+    var pm = bwMat(pb.b), ks = (world.edits.breach[pb.b.id] || []).slice(), done2 = 0, lack = '';   /* 0.70: closes every torn stretch of that building while the materials last */
+    ks.sort(function(x, y){ return x === pb.k ? -1 : y === pb.k ? 1 : 0; });
+    for (var ki = 0; ki < ks.length; ki++){
+      if (pm === 'brick' || pm === 'stone'){ if ((inv.chunk || 0) < 2){ lack = 'Closing a brick wall takes 2 concrete chunks.'; break; } inv.chunk -= 2; }
+      else if (pm === 'metal'){ if (inv.scrap < 3){ lack = 'Closing a metal wall takes 3 scrap.'; break; } inv.scrap -= 3; }
+      else { if (inv.wood < 3){ lack = 'Closing a timber wall takes 3 wood.'; break; } inv.wood -= 3; }
+      doEdit({a:'breach', b:pb.b.id, i:ks[ki], on:0}); done2++;
+    }
+    if (!done2){ toast(lack, 3); return; } sfx('plank', P.x, P.y, 0.9); makeNoise(P.x, P.y, 14); toast(done2 > 1 ? done2 + ' walls closed.' + (lack ? ' Out of materials for the rest.' : '') : 'Wall closed.', 2.5); updateHud();
   } else if (a === 'vrep'){
     var rv = P.veh, rd = 6; if (!rv) world.vehicles.forEach(function(o){ if (!o.t) return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < rd){ rd = d; rv = o; } });
     if (!rv){ toast('No car or truck within reach.', 2.5); return; } if (vhp(rv) >= 100){ toast('It is already sound.', 2.5); return; }
@@ -5939,7 +5954,7 @@ function renderBuild(){
   var b = nearBuilding(), wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3;
   var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' || a === 'tpatch' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
-    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close a torn-open building wall', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
+    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close torn-open walls of the nearest building', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 15 m of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
@@ -6480,7 +6495,7 @@ function broadcast(obj, except){ net.peers.forEach(function(p){ if (p !== except
 function emit(ev){ if (net.role === 'host') broadcast({t:'ev', e:ev}); else if (net.role === 'guest') send(net.host.dc, {t:'ev', e:ev}); }
 function applyEv(e){
   if (!world || !e) return;
-  if (e.k === 'got'){ var b = world.buildings[e.b]; if (b) b.got[e.i] = 1; }
+  if (e.k === 'got'){ var b = world.buildings[e.b]; if (b){ b.got[e.i] = 1; gotMark(b, e.i); } }
   else if (e.k === 'crate'){ if (world.crates[e.i]) world.crates[e.i].looted = true; }
   else if (e.k === 'curt'){ var cb2 = world.buildings[e.b]; if (cb2 && cb2.wins && (e.i | 0) >= 0 && (e.i | 0)*6 < cb2.wins.length) setCurtain(cb2, e.i | 0, !!e.on, true); }
   else if (e.k === 'port'){ var pb2 = world.buildings[e.b]; if (pb2 && (e.i | 0) >= -2 && (e.i | 0) < 1400 && (e.s | 0) >= 0 && (e.s | 0) <= 3) setPort(pb2, e.i | 0, e.s | 0, true); }
