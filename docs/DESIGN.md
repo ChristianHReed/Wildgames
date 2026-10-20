@@ -224,3 +224,6 @@ The game speaks in inches, feet and miles; the map and physics stay in metres in
 The map data has no bridge or layer tags, so the game infers them. A road that runs through water gets a deck at bank height (parapets, piers); a road that crosses a motorway or trunk road with no shared junction is lifted over it (5.6 m clearance, ramps up to 75 m, at least 30 m). The deck is its own mesh; people and cars stand on it when their height is within 2.6 m of it, so the road beneath an overpass stays usable. Cars collide with trees (trunks), lamps, signs, hydrants, benches, dumpsters, other vehicles and deck parapets.
 
 Car types (0.89.1): top speed in mph is hatchback 76, police 80, sedan 69, taxi 67, pickup 58, van 49, truck 45; crash damage is scaled hatchback 1.4, sedan 1, police 0.9, pickup 0.75, van 0.65, truck 0.55.
+
+## Car shop (0.90)
+Shops are garages over 140 square metres, hardware stores and petrol stations. A car holds a name, a body colour, a trim colour where the model has one (hatchback, pickup, van, police), an engine level and a frame level. Engine: +8% top speed a level. Frame: 12% less crash damage a level. The shop also repairs fully for car parts and scrap. Customisation is saved with the car and follows it between map squares. Not yet shared with other players.

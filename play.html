@@ -62,7 +62,7 @@
   #compTape b{display:inline-block;width:60px;text-align:center;font-weight:700}
   #compTape b.m{font-weight:400;opacity:.7;font-size:10px}
   .cflag{position:absolute;top:0;transform:translateX(-50%);font:700 10px/20px sans-serif;white-space:nowrap;text-shadow:0 0 3px #000,0 0 3px #000;pointer-events:none;display:none}
-  #carHud{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);width:270px;padding:8px 12px 7px;border-radius:12px;background:rgba(18,20,24,.72);color:#fff;text-shadow:var(--sh);pointer-events:none;z-index:6;font:600 12px sans-serif}
+  #carHud{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);width:270px;padding:8px 12px 7px;border-radius:12px;background:rgba(18,20,24,.72);color:#fff;text-shadow:var(--sh);pointer-events:none;z-index:4;font:600 12px sans-serif}
   #carHud.hidden{display:none}
   #carHud .chTop{display:flex;align-items:baseline;gap:6px}#carHud .chTop b{font-size:34px;line-height:1;min-width:58px;text-align:right}#carHud .chTop em{margin-left:auto;font-style:normal;font-weight:800;border:2px solid #fff;border-radius:6px;padding:0 7px;font-size:16px}
   #carHud .chFuel{display:flex;align-items:center;gap:6px;margin-top:6px}#carHud .chBar{flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,.2);overflow:hidden}#carHud .chBar i{display:block;height:100%;width:0}
@@ -263,7 +263,7 @@
     <div id="stats"></div><div id="gunHud"></div>
     <div id="aware"><i></i><span></span></div>
   </div>
-  <div id="carHud" class="hidden"><div class="chTop"><b id="chSpd">0</b><span>mph</span><em id="chGear">N</em></div><div class="chFuel"><span>E</span><div class="chBar"><i id="chFuelB"></i></div><span>F</span></div><div class="chSub"><span id="chMi"></span><span class="chHpW"><i id="chHp"></i></span></div><div class="chHint">W gas &middot; S brake/reverse &middot; A D steer &middot; Space handbrake &middot; E out</div></div>
+  <div id="carHud" class="hidden"><div class="chTop"><b id="chSpd">0</b><span>mph</span><em id="chGear">N</em></div><div class="chFuel"><span>E</span><div class="chBar"><i id="chFuelB"></i></div><span>F</span></div><div class="chSub"><span id="chMi"></span><span class="chHpW"><i id="chHp"></i></span></div><button id="chShop" class="hidden" style="pointer-events:auto;margin-top:6px;width:100%;font-size:12px;padding:5px">Car shop: name, paint, tune, repair</button><div class="chHint">W gas &middot; S brake/reverse &middot; A D steer &middot; Space handbrake &middot; E out</div></div>
   <div id="miniWrap"><canvas id="mini" width="200" height="200"></canvas><div id="osm">&copy; OpenStreetMap contributors</div></div>
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
@@ -291,6 +291,7 @@
     <div id="invStatus"></div>
   </div>
   <div id="items" class="modal hidden"></div>
+  <div id="carMod" class="modal hidden"></div>
   <div id="build" class="modal hidden"></div>
   <div id="chest" class="modal hidden"></div>
   <div id="travel" class="hidden" style="position:fixed;inset:0;z-index:7;background:rgba(245,234,216,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:26px;text-align:center;padding:20px">Travelling to the next part of the map&hellip;</div>
@@ -430,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.89.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.90.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -453,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.89.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.90.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4682,6 +4683,10 @@ function drawMap(c, w, h, cx, cy, sc, big){
   if (W0.scen.type === 'escape'){ W0.partB.forEach(function(id){ if (!W0.found[id]) dot(W0.buildings[id].cx, W0.buildings[id].cy, big ? 6 : 4, '#d9a845'); }); dot(W0.evac.x, W0.evac.y, big ? 8 : 5, '#ffffff'); }
   pings.forEach(function(q){ c.strokeStyle = '#c67139'; c.lineWidth = 3; c.beginPath(); c.arc(q.x*sc + ox, q.y*sc + oy, big ? 9 : 6, 0, 6.283); c.stroke(); });
   for (i = 0; i < zombies.length; i++){ var z = zombies[i]; c.fillStyle = z.k === 1 ? '#201e1d' : '#b23a2a'; c.beginPath(); c.arc(z.x*sc + ox, z.y*sc + oy, (z.k === 2 ? 5 : z.k === 1 ? 3 : 2)*(big ? 1.6 : 1), 0, 6.283); c.fill(); }
+  if (big && sc >= 0.35) shopList().forEach(function(b){ var x = b.cx*sc + ox, y = b.cy*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return; c.fillStyle = '#2c7da0'; c.fillRect(x - 6, y - 6, 12, 12); c.fillStyle = '#fff'; c.font = '700 10px sans-serif'; c.textAlign = 'center'; c.fillText('S', x, y + 3.5); c.textAlign = 'left'; });
+  world.vehicles.forEach(function(v){ var u = v.cu; if (!u || !(u.n || u.c || u.t || u.e || u.a) || v.dead) return; var x = v.x*sc + ox, y = v.y*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return;
+    c.save(); c.translate(x, y); c.rotate(v.yaw); var L = big ? 9 : 6, Wd = big ? 5 : 3.5; c.fillStyle = u.c || '#c94a2e'; c.strokeStyle = '#201e1d'; c.lineWidth = 1.5; c.fillRect(-L, -Wd, 2*L, 2*Wd); c.strokeRect(-L, -Wd, 2*L, 2*Wd); c.restore();
+    if (big && u.n){ c.font = '700 12px sans-serif'; c.textAlign = 'left'; c.fillStyle = '#201e1d'; c.fillText(u.n, x + 12, y + 4); } });
   marks.concat(fmarks).forEach(function(q, qi){ var x = q.x*sc + ox, y = q.y*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return; c.strokeStyle = q.o ? '#1d4e6e' : '#7a2e22'; c.fillStyle = q.o ? '#3a8fc9' : '#c94a2e'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - (big ? 18 : 12)); c.stroke(); c.beginPath(); c.moveTo(x, y - (big ? 18 : 12)); c.lineTo(x + (big ? 12 : 8), y - (big ? 14 : 9)); c.lineTo(x, y - (big ? 10 : 6)); c.closePath(); c.fill();
     if (big && q.n){ c.font = '700 12px sans-serif'; c.textAlign = 'left'; c.fillStyle = '#201e1d'; c.fillText((q.o ? q.o + ': ' : '') + q.n, x + 14, y - 20); } });
   return [ox, oy];
@@ -6197,7 +6202,7 @@ function buildAct(a, pos){
   } else if (a === 'vrep'){
     var rv = P.veh, rd = 6; if (!rv) world.vehicles.forEach(function(o){ if (!o.t) return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < rd){ rd = d; rv = o; } });
     if (!rv){ toast('No car or truck within reach.', 2.5); return; } if (vhp(rv) >= 100){ toast('It is already sound.', 2.5); return; }
-    if (!(inv.parts > 0)){ toast('Repairs need a car part. Take them off wrecks with a wrench.', 3); return; } inv.parts--; rv.hp = Math.min(100, vhp(rv) + 55); rv.warnHp = false; sfx('metal', rv.x, rv.y, 0.8); makeNoise(rv.x, rv.y, 10); toast('Repaired. The vehicle is at ' + Math.round(vhp(rv)) + '%.', 3); updateHud();
+    if (!(inv.parts > 0)){ toast('Repairs need a car part. Take them off wrecks with a wrench.', 3); return; } inv.parts--; rv.hp = Math.min(100, vhp(rv) + 55); rv.warnHp = false; if (vhp(rv) > 0) rv.fireT = 0; sfx('metal', rv.x, rv.y, 0.8); makeNoise(rv.x, rv.y, 10); toast('Repaired. The vehicle is at ' + Math.round(vhp(rv)) + '%.', 3); updateHud();
   } else if (a === 'bed'){
     if (!P.inside){ toast('A bed has to be inside a building.', 2.5); return; } if (world.nests[P.inside.id]){ toast('Not in a nest.', 2.5); return; }
     if (inv.wood < 5){ toast('A bed needs 5 wood.', 2.5); return; }
@@ -6584,10 +6589,10 @@ function makeVehicles(saved){
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck', sck = typeof saved[sid][5] === 'string' && !tk ? saved[sid][5] : undefined; list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : sck, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
   if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
-  w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = (+s2[3] || 0)*(saved._u ? 1 : CAN_M/60); if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); if (s2[7]){ var dh0 = deckHit(v.x, v.y, 'hi'); if (dh0) v.gh = dh0.h; } } });
+  w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = (+s2[3] || 0)*(saved._u ? 1 : CAN_M/60); if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); if (s2[7]){ var dh0 = deckHit(v.x, v.y, 'hi'); if (dh0) v.gh = dh0.h; } if (s2[8]){ v.cu = cleanCu(s2[8]); if (v.cu) carName(v); } } });
   bedChest();
 }
-function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : v.t ? carKind(v) : 0); else o[v.id].push(0, 0); if (v.hp !== undefined && v.hp < 100) o[v.id].push(Math.round(v.hp)); else if (v.gh !== undefined) o[v.id].push(100); if (v.gh !== undefined) o[v.id][7] = 1; }); o._u = 1; return o; }
+function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : v.t ? carKind(v) : 0); else o[v.id].push(0, 0); if ((v.hp !== undefined && v.hp < 100) || v.gh !== undefined || v.cu){ o[v.id].push(v.hp !== undefined && v.hp < 100 ? Math.round(v.hp) : 100); if (v.gh !== undefined || v.cu){ o[v.id][7] = v.gh !== undefined ? 1 : 0; if (v.cu) o[v.id][8] = v.cu; } } }); o._u = 1; return o; }
 /* 0.51: town cars. Y (or the Boot button) at a parked car: first the boot is searched, then fuel is siphoned a can at a time (a car holds about 60 s of driving per can).
    Burnt shells are empty and wrecks hold only the odd can. */
 var TRAIL = [], trailT = 0;
@@ -6612,7 +6617,7 @@ function mount(v){
   feed(v.t ? 'Driving' + (v.kind === 'truck' ? ' the truck' : '') + '. Fuel for about ' + Math.round(v.fuel/MILE) + ' miles' + (v.fuel < 1 && inv.fuel > 0 ? ' (a can goes in when you set off)' : '') + '. W gas, S brake and reverse, A D steer, Space handbrake, E get out.' : 'Riding. Press E to get off.', '#cfd5db');
 }
 function dismount(){
-  var v = P.veh; if (!v) return; P.veh = null; v.x = P.x; v.y = P.y; v.rd = -9; v.vs = 0; el('carHud').classList.add('hidden');
+  var v = P.veh; if (!v) return; P.veh = null; v.x = P.x; v.y = P.y; v.rd = -9; v.vs = 0; el('carHud').classList.add('hidden'); el('carMod').classList.add('hidden');
   var sx = -Math.sin(v.yaw), sy = Math.cos(v.yaw), r0 = v.t ? 1.7 : 0.9; if (!circ(P.x + sx*r0, P.y + sy*r0, 0.35)){ P.x += sx*r0; P.y += sy*r0; } else if (!circ(P.x - sx*r0, P.y - sy*r0, 0.35)){ P.x -= sx*r0; P.y -= sy*r0; }
   emit({k:'veh', id:v.id, x:r2(v.x), y:r2(v.y), yaw:r2(v.yaw), fuel:Math.round(v.fuel)});
 }
@@ -6623,7 +6628,7 @@ var VMASS = {car:1.3, truck:3};
 /* the game speaks in inches, feet and miles; the map and physics stay in metres */
 function dist(m, rough){ var ft = m/0.3048; if (ft < 3) return Math.max(1, Math.round(ft*12)) + ' in'; if (m < 800) return (rough ? Math.round(ft/10)*10 : Math.round(ft)) + ' ft'; var mi = m/1609.34; return (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + ' mi'; }
 var MILE = 1609.34, CAN_M = 100*MILE, TANK = {sedan:380, hatch:400, suv:330, van:300, taxi:360, police:340, truck:350}, TOPSPD = {hatch:34, sedan:31, taxi:30, police:36, suv:26, van:22, truck:20}, WEAK = {hatch:1.4, sedan:1, taxi:1, police:0.9, suv:0.75, van:0.65, truck:0.55}, ACCEL = {hatch:12.5, sedan:11, taxi:11, police:13, suv:9.5, van:8, truck:7};   /* small cars are quicker and faster but give way sooner (WEAK scales crash damage) */
-function vWeak(V){ return WEAK[V.kind === 'truck' ? 'truck' : baseKind(carKind(V))] || 1; }
+function vWeak(V){ return (WEAK[V.kind === 'truck' ? 'truck' : baseKind(carKind(V))] || 1)*(1 - 0.12*((V.cu && V.cu.a) | 0)); }
 function baseKind(k){ return String(k || 'sedan').replace(/_(wreck|burnt)$/, ''); }
 function tankM(v){ return (TANK[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 350)*MILE; }
 function fuelRoll(kind, a, b){ var u = hash(a, b, 41), f = u < 0.14 ? hash(a, b, 42)*0.03 : u < 0.96 ? 0.04 + Math.pow(hash(a, b, 43), 1.6)*0.7 : 0.9 + hash(a, b, 44)*0.1; return Math.round((TANK[kind] || 350)*MILE*f*(0.92 + hash(a, b, 45)*0.16)); }
@@ -6637,7 +6642,7 @@ function vehBash(V, mx, my, dt){
     var tw = twNear(fx, fy, 1.0, 0); if (!tw) return; var mass0 = V.kind === 'truck' ? VMASS.truck : VMASS.car, E0 = mass0*spd*spd/12, hp1 = BWHP[tw.b.id + ':' + tw.k] === undefined ? bwMax(tw.b, tw.k) : BWHP[tw.b.id + ':' + tw.k];
     V.bashT = time + 0.35; crashSnd(spd, tw.cx, tw.cy); V.hp = Math.max(0, vhp(V) - Math.min(40, Math.min(E0, hp1)*0.9)*vWeak(V));
     if (breachHurt(tw.b, tw.k, E0*2.5, tw.cx, tw.cy)) feed('Smashed through the wall of the building', '#e8b27a'); else sfx('metal', tw.cx, tw.cy, 0.9, 0.5);
-    fxAdd('effects.crash_burst', tw.cx, tw.cy, groundAt(tw.cx, tw.cy), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. A car part from the Build menu repair will get it going.', 5); }
+    fxAdd('effects.crash_burst', tw.cx, tw.cy, groundAt(tw.cx, tw.cy), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. Repair it from the Build menu (a car part) before it burns, or at a car shop.', 5); }
     if (spd > 12 && E0 > hp1){ P.hp -= 3; P.cause = 'a car crash'; } updateHud(); return;
   }
   var M = wallMat(best), by2 = wallBays(best), mass = V.kind === 'truck' ? VMASS.truck : VMASS.car, E = mass*spd*spd/12, f = M === WMATS.concrete ? 1.2 : M === WMATS.steel ? 1.2 : 0.8, hp0 = by2[bk];
@@ -6645,10 +6650,50 @@ function vehBash(V, mx, my, dt){
   V.hp = Math.max(0, vhp(V) - pay*vWeak(V));
   if (E >= hp0){ by2[bk] = 0; emit({k:'edit', e:{a:'wbay', id:best.id, i:bk, v:0}}); rebuildWalls(); sfx('plank', best.x, best.y, 1, 0.7); feed('Smashed through the wall', '#e8b27a'); }
   else { wallHurt(best, bk, E); sfx('metal', best.x, best.y, 0.9, 0.5); }
-  fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60;  toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. A part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
+  fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60;  toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. Repair it from the Build menu (a car part) before it burns, or at a car shop.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
   P.cause = P.cause || ''; if (spd > 12 && pay > 20){ P.hp -= 4; P.cause = 'a car crash'; } updateHud();
 }
 /* 0.88: driving. W gas, S brake then reverse, A D steer (less at speed), Space handbrake. The car keeps its own heading and speed; the view follows the heading. */
+/* ---- 0.90 car shop: at a garage, hardware store or petrol station you can name your car, paint it, fit a bigger engine (top speed), reinforce the frame (tougher), and repair it. A named or customised car shows on the maps. ---- */
+var SLOT = {sedan:['paint3'], hatch:['paint1', 'paint2'], suv:['paint2', 'paint1'], van:['white', 'blue'], taxi:['paint3'], police:['paint3', 'paint2']}, CSM = {};
+var SWATCH = ['#c0392b', '#e67e22', '#e8c53a', '#3f8f4a', '#2c7da0', '#2b4a8a', '#6c3f8f', '#d65f9e', '#f2efe6', '#8a9199', '#2a2d33', '#7a4a2a'];
+function carStyled(k, cu){
+  if (!cu || (!cu.c && !cu.t)) return null; var key = k + '|' + (cu.c || '') + '|' + (cu.t || ''); if (CSM[key] !== undefined) return CSM[key]; CSM[key] = null;
+  try { var C0 = CKD[k]; if (!C0 || !SPON || !VMOD[k] || !VMOD[k].w) return null; var PR = SHAPED.props, V = PR.models.vehicles[C0[0]], ov = {}, sl = SLOT[k] || ['paint3'], q;
+    for (q in (C0[1] || {})) ov[q] = C0[1][q]; if (cu.c) ov[sl[0]] = cu.c; if (cu.t && sl[1]) ov[sl[1]] = cu.t;
+    var B = spModel(V.body.concat(V.bonnet || []), spColour(PR.palette, ov), {car:true}); B.w = VMOD[k].w; B.h = VMOD[k].h; B.drop = VMOD[k].drop; CSM[key] = B; } catch (er){}
+  return CSM[key];
+}
+function cleanCu(c){ if (!c || typeof c !== 'object') return undefined; var o = {}, hx = /^#[0-9a-fA-F]{6}$/; if (hx.test(c.c)) o.c = c.c; if (hx.test(c.t)) o.t = c.t; if (c.n) o.n = String(c.n).replace(/[<>&"]/g, '').slice(0, 20); o.e = Math.max(0, Math.min(3, c.e | 0)); o.a = Math.max(0, Math.min(3, c.a | 0)); return o; }
+function shopList(){ var w = world; if (w.shops) return w.shops; return w.shops = w.buildings.filter(function(b){ return !b.gone && (b.kind === 'fuel' || b.kind === 'hardware' || (b.kind === 'garage' && b.area >= 140)); }); }
+function shopNear(){ var L = shopList(), i; for (i = 0; i < L.length; i++){ var b = L[i]; if (P.x > b.minx - 20 && P.x < b.maxx + 20 && P.y > b.miny - 20 && P.y < b.maxy + 20) return b; } return null; }
+var ENG = [[0, 0], [3, 4], [5, 8], [8, 12]], FRM2 = [[0, 0], [2, 4], [4, 8], [6, 12]];
+function shopOpen(){ var v = P.veh; if (!v || !v.t || !shopNear()) return; if (document.exitPointerLock) document.exitPointerLock(); keys = {}; v.cu = v.cu || {e:0, a:0}; el('carMod').classList.remove('hidden'); shopRender(); }
+function shopRender(){
+  var v = P.veh, m = el('carMod'); if (!v){ m.classList.add('hidden'); return; } var cu = v.cu = v.cu || {e:0, a:0}, k = carKind(v), sl = SLOT[k], paint = !!CKD[k] && v.kind !== 'truck', top = (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(k)] || 26)*(1 + 0.08*(cu.e | 0))*2.237;
+  var sw = function(kind){ return SWATCH.map(function(c){ return '<i class="sw" data-act="' + kind + '" data-c="' + c + '" style="background:' + c + ';width:22px;height:22px;display:inline-block;margin:2px;border-radius:4px;cursor:pointer;border:2px solid ' + ((kind === 'body' ? cu.c : cu.t) === c ? '#fff' : 'rgba(0,0,0,.35)') + '"></i>'; }).join(''); };
+  var need = function(t, a){ return a ? (t[1] + ' scrap' + (t[0] ? ' and ' + t[0] + ' car parts' : '')) : ''; };
+  var en = (cu.e | 0) < 3 ? ENG[(cu.e | 0) + 1] : null, fr = (cu.a | 0) < 3 ? FRM2[(cu.a | 0) + 1] : null, hp = Math.round(vhp(v)), rp = Math.ceil((100 - hp)/30);
+  m.innerHTML = '<b>Car shop</b><h3>Name</h3><input id="cmName" maxlength="20" value="' + (cu.n || '') + '" placeholder="Name your car" style="width:200px"> <button data-act="name">Save name</button>' +
+    (paint ? '<h3>Body colour</h3>' + sw('body') + (sl[1] ? '<h3>Trim colour</h3>' + sw('trim') : '') + '<div style="font-size:12px;opacity:.8">Each repaint costs 1 scrap.</div>' : '') +
+    '<h3>Engine ' + (cu.e | 0) + ' of 3 &middot; top speed ' + Math.round(top) + ' mph</h3>' + (en ? '<button data-act="eng">Fit a bigger engine: ' + need(en, 1) + '</button>' : 'Fully tuned.') +
+    '<h3>Frame ' + (cu.a | 0) + ' of 3 &middot; crashes do ' + Math.round((1 - 0.12*(cu.a | 0))*100) + '% as much damage</h3>' + (fr ? '<button data-act="frame">Reinforce the frame: ' + need(fr, 1) + '</button>' : 'Fully reinforced.') +
+    '<h3>Repair &middot; condition ' + hp + '%</h3>' + (hp >= 100 ? 'Sound.' : '<button data-act="fix">Repair fully: ' + rp + ' car parts and ' + rp + ' scrap</button>') +
+    '<div style="margin-top:12px;font-size:12px">You have ' + (inv.scrap | 0) + ' scrap and ' + (inv.parts | 0) + ' car parts. <button data-act="close" style="float:right">Done</button></div>';
+}
+function shopPay(parts, scrap){ if ((inv.parts | 0) < parts || (inv.scrap | 0) < scrap){ toast('You need ' + scrap + ' scrap' + (parts ? ' and ' + parts + ' car parts' : '') + '.', 3); return false; } inv.parts -= parts; inv.scrap -= scrap; sfx('metal', P.x, P.y, 0.8); updateHud(); return true; }
+function carName(v){ v.name = v.cu && v.cu.n ? v.cu.n : (v.kind === 'truck' ? 'the truck' : 'the car'); }
+el('carMod').addEventListener('click', function(e){
+  var t = e.target; while (t && t !== this && !(t.dataset && t.dataset.act)) t = t.parentNode; if (!t || !t.dataset || !P.veh) return; var v = P.veh, cu = v.cu = v.cu || {e:0, a:0}, a = t.dataset.act;
+  if (a === 'close'){ this.classList.add('hidden'); return; }
+  if (a === 'name'){ cu.n = (el('cmName').value || '').replace(/[<>&"]/g, '').trim().slice(0, 20) || undefined; carName(v); toast(cu.n ? 'Named it ' + cu.n + '. It shows on your map.' : 'Name removed.', 3); }
+  else if (a === 'body' || a === 'trim'){ if (!shopPay(0, 1)) return; if (a === 'body') cu.c = t.dataset.c; else cu.t = t.dataset.c; }
+  else if (a === 'eng'){ var en = ENG[(cu.e | 0) + 1]; if (en && shopPay(en[0], en[1])){ cu.e = (cu.e | 0) + 1; toast('A bigger engine: top speed is up.', 3); } }
+  else if (a === 'frame'){ var fr = FRM2[(cu.a | 0) + 1]; if (fr && shopPay(fr[0], fr[1])){ cu.a = (cu.a | 0) + 1; toast('The frame is reinforced.', 3); } }
+  else if (a === 'fix'){ var rp = Math.ceil((100 - vhp(v))/30); if (rp > 0 && shopPay(rp, rp)){ v.hp = 100; v.warnHp = false; v.fireT = 0; v.burnt = 0; toast('Repaired. Good as new.', 3); } }
+  shopRender();
+});
+el('chShop').addEventListener('click', shopOpen);
 /* 0.89: what a car hits: trees (trunks), lamp posts, signs, hydrants, benches, dumpsters, other vehicles, and the parapet of a bridge. Each is a circle; the car is three circles along its length. Returns how deep it was pushed. */
 function obstBuild(){ var w = world; if (w.obst) return w.obst; var m = new Map(); w.obst = m;
   var add = function(x, y, r, t){ var k = gk(Math.floor(x/8), Math.floor(y/8)), l = m.get(k); if (!l) m.set(k, l = []); l.push([x, y, r, t]); };
@@ -6686,7 +6731,7 @@ function carDrive(V, dt, thr, str, hb){
       var im = Math.abs(vs); V.crT = time + 0.4;
       if (im > 6){ V.hp = Math.max(0, vhp(V) - (im - 5)*1.3*vWeak(V)); crashSnd(im, P.x + ux*1.7, P.y + uy*1.7); fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 30);
         if (im > 16){ P.hp -= (im - 16)*0.9; P.cause = 'a car crash'; }
-        if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. A car part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
+        if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. Repair it from the Build menu (a car part) before it burns, or at a car shop.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
         updateHud(); }
       vs = -vs*0.2;
     }
@@ -6698,12 +6743,12 @@ function carHudTick(V){
   var h = el('carHud'); h.classList.remove('hidden'); var mph = Math.abs(V.vs || 0)*2.237, tk = tankM(V), f = Math.max(0, Math.min(1, V.fuel/tk));
   el('chSpd').textContent = Math.round(mph); el('chGear').textContent = (V.vs || 0) < -0.3 ? 'R' : Math.abs(V.vs || 0) < 0.3 ? 'N' : 'D';
   el('chFuelB').style.width = (f*100).toFixed(1) + '%'; el('chFuelB').style.background = f < 0.12 ? '#e0452f' : f < 0.25 ? '#e8a73a' : '#8fc46a'; h.classList.toggle('low', f < 0.12);
-  el('chMi').textContent = Math.round(V.fuel/MILE) + ' mi left'; el('chHp').style.width = Math.max(0, vhp(V)) + '%';
+  el('chMi').textContent = Math.round(V.fuel/MILE) + ' mi left'; el('chHp').style.width = Math.max(0, vhp(V)) + '%'; el('chShop').classList.toggle('hidden', !(Math.abs(V.vs || 0) < 4 && shopNear()));
 }
 function vehSpeed(dt){
   var v = P.veh; if (P.swim) return 1.2; if (!v.t) return 10.5; if (vhp(v) <= 0) return 0;
   if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = Math.min(CAN_M, tankM(v)); feed('Poured a can of fuel into the ' + (v.kind === 'truck' ? 'truck' : 'car'), ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. Find fuel in workshops or buy it from a trader.', 4); } return 0; } }
-  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(vhp(v) < 35 ? 0.4 : 1);
+  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(1 + 0.08*((v.cu && v.cu.e) | 0))*(vhp(v) < 35 ? 0.4 : 1);
 }
 function vehMoved(v, dx, dy, dt){
   var d = Math.hypot(dx, dy); v.x = P.x; v.y = P.y; v.rd = time; if (d < 0.002) return; if (!v.t) v.yaw = Math.atan2(dy, dx);
@@ -6726,17 +6771,19 @@ function vehAnim(v, now){
 }
 /* 0.75: car damage looks (props.vehicles[name].damage) by vehicle health: whole above 70; 70 to 40 bent bumper and cracked windscreen; 40 to 15 light crumple; under 15 heavy crumple with the bonnet buckled and smoke; wrecked at 0 with the windscreen gone; then burning, then the burnt shell */
 var CKD = {sedan:['sedan'], hatch:['hatchback'], suv:['pickup'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]}, CDM = {};
-function carDmgModel(k, lv, fire){
-  var key = k + '|' + lv + (fire ? 'f' : ''); if (CDM[key] !== undefined) return CDM[key]; CDM[key] = null;
+function carDmgModel(k, lv, fire, cu){
+  var key = k + '|' + lv + (fire ? 'f' : '') + (cu && (cu.c || cu.t) ? '|' + (cu.c || '') + (cu.t || '') : ''); if (CDM[key] !== undefined) return CDM[key]; CDM[key] = null;
   try { var C0 = CKD[k]; if (!C0 || !SPON || !VMOD[k] || !VMOD[k].w) return null; var PR = SHAPED.props, V = PR.models.vehicles[C0[0]], D = V && V.damage; if (!D) return null;
     var body = lv === 1 ? D.body_bumper_bent : lv === 2 ? D.body_crumple_light : D.body_crumple_heavy, bon = lv === 1 ? V.bonnet : lv === 2 ? D.bonnet_crumple_light : D.bonnet_buckled, pcs = (body || V.body).concat(bon || []);
     if (lv >= 1) pcs = pcs.concat(lv >= 4 ? D.windscreen_missing : D.windscreen_cracked); if (lv >= 3) pcs = pcs.concat(D.smoke); if (fire) pcs = pcs.concat(D.fire);
-    var B = spModel(pcs, spColour(PR.palette, C0[1]), {car:true}); B.w = VMOD[k].w; B.h = VMOD[k].h; B.drop = VMOD[k].drop; CDM[key] = B; } catch (er){}
+    var ov = {}, q2, sl = SLOT[k] || ['paint3']; for (q2 in (C0[1] || {})) ov[q2] = C0[1][q2]; if (cu && cu.c) ov[sl[0]] = cu.c; if (cu && cu.t && sl[1]) ov[sl[1]] = cu.t;
+    var B = spModel(pcs, spColour(PR.palette, ov), {car:true}); B.w = VMOD[k].w; B.h = VMOD[k].h; B.drop = VMOD[k].drop; CDM[key] = B; } catch (er){}
   return CDM[key];
 }
 function drawCar(m, v, now){
   var k = carKind(v), B = VMOD[k]; if (!B || !B.w) return false;
-  if (v.t && v.kind !== 'truck' && !v.dead && CKD[k]){ if (v.burnt) B = VMOD[k + '_burnt'] || B; else { var hv = vhp(v), lv = hv > 70 ? 0 : hv > 40 ? 1 : hv > 15 ? 2 : hv > 0 ? 3 : 4; if (lv || v.fireT > 0){ var DB = carDmgModel(k, v.fireT > 0 ? 4 : lv, v.fireT > 0); if (DB) B = DB; } } }
+  if (v.cu && !v.dead && !v.burnt){ var SB = carStyled(k, v.cu); if (SB) B = SB; }
+  if (v.t && v.kind !== 'truck' && !v.dead && CKD[k]){ if (v.burnt) B = VMOD[k + '_burnt'] || B; else { var hv = vhp(v), lv = hv > 70 ? 0 : hv > 40 ? 1 : hv > 15 ? 2 : hv > 0 ? 3 : 4; if (lv || v.fireT > 0){ var DB = carDmgModel(k, v.fireT > 0 ? 4 : lv, v.fireT > 0, v.cu); if (DB) B = DB; } } }
   var tr = v.id === 'truck' ? truckP() : null, fit = tr ? fitting() : null, y0 = -(B.drop || 0);
   m.part(B, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0);
   B.w.forEach(function(w){
@@ -7401,7 +7448,7 @@ async function enterZone(R, lat, lon, yaw, carry, atSafe){
   var pl = R.builtin ? nearPlace(R, lat, lon) : null; if (pl && carry) toast('Near ' + pl, 4);
   if (carry){ time = carry.time; if (carry.veh){ var tkc = carry.veh.kind === 'truck', home = tkc && world.safe >= 0 && !!world.lot && isHome(world);
     if (home) world.edits.truck.away = 0;   /* driving the truck back into the home part of the map: it is the safe-house truck again */
-    var v = {veh:true, id:home ? 'truck' : 'r' + Date.now().toString(36), t:carry.veh.t, kind:tkc ? 'truck' : (carry.veh.ck || undefined), hp:carry.veh.hp, name:tkc ? 'the truck' : carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel};
+    var v = {veh:true, id:home ? 'truck' : 'r' + Date.now().toString(36), t:carry.veh.t, kind:tkc ? 'truck' : (carry.veh.ck || undefined), hp:carry.veh.hp, cu:cleanCu(carry.veh.cu), name:tkc ? 'the truck' : carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel}; if (v.cu) carName(v);
     world.vehicles = world.vehicles.filter(function(o){ return !(tkc && o.kind === 'truck'); }); world.vehicles.push(v); world.vmap[v.id] = v; P.veh = v; v.rd = time;
     if (tkc){ var bc2 = bedChest(); if (bc2 && carry.veh.bed){ bc2.inv = carry.veh.bed.inv || {}; bc2.items = carry.veh.bed.items || {}; bc2.designs = carry.veh.bed.designs || []; } } } }
   if (carry && carry.surv) carry.surv.forEach(function(q, qi){ var a = qi*2.1 + 0.5; (world.surv = world.surv || []).push({surv:true, id:world.surv.length, key:q.key, base:NPCN[q.key], name:NPCN[q.key], tip:'', x:P.x + Math.cos(a)*2.5, y:P.y + Math.sin(a)*2.5, yaw:P.yaw, st:'follow', job:'', hu:q.hu || 0, hp:q.hp || 60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:P.x, hy:P.y}); });
@@ -7414,7 +7461,7 @@ async function zoneTravel(){
   if (net.role){ back('Travelling between parts of a region only works when you play alone, for now.'); return; }
   if (!zoneIn(R, ij[0], ij[1])){ back('This is the edge of your region.'); return; }
   zoneBusy = true; running = false; keys = {}; el('travel').classList.remove('hidden');
-  var carry = {time:time, veh:P.veh ? {t:P.veh.t, fuel:P.veh.fuel, kind:P.veh.kind === 'truck' ? 'truck' : 0, ck:P.veh.t && P.veh.kind !== 'truck' ? carKind(P.veh) : 0, hp:P.veh.hp} : null}, yaw = P.yaw, pitch = P.pitch, old = {world:world, x:P.x, y:P.y};
+  var carry = {time:time, veh:P.veh ? {t:P.veh.t, fuel:P.veh.fuel, kind:P.veh.kind === 'truck' ? 'truck' : 0, ck:P.veh.t && P.veh.kind !== 'truck' ? carKind(P.veh) : 0, hp:P.veh.hp, cu:P.veh.cu} : null}, yaw = P.yaw, pitch = P.pitch, old = {world:world, x:P.x, y:P.y};
   if (P.veh && P.veh.kind === 'truck'){   /* the truck drives on with its bed; this part of the map no longer has it */
     var bc = world.bed; carry.veh.bed = bc ? {inv:bc.inv, items:bc.items, designs:bc.designs} : null;
     if (bc){ var bi = world.edits.chests.indexOf(bc); if (bi >= 0) world.edits.chests.splice(bi, 1); world.bed = null; }

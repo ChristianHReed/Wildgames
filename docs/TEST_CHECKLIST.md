@@ -125,3 +125,5 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] Sleeping: any key, click or tap wakes you.
 - [ ] Driving view: no head bob.
 - [ ] Car types: small cars faster and quicker off the line but fragile; vans and the truck slow but tough.
+- [ ] **PHONE** Car shop: button reachable, the shop panel fits the screen, swatches tappable, cost shown on every button.
+- [ ] Named car shows on the big map with its name; blue S marks car shops on the big map when zoomed in.
