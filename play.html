@@ -61,6 +61,7 @@
   #compTape{position:absolute;left:50%;top:1px;white-space:nowrap;font-size:12px;font-weight:700;letter-spacing:.04em;will-change:transform}
   #compTape b{display:inline-block;width:60px;text-align:center;font-weight:700}
   #compTape b.m{font-weight:400;opacity:.7;font-size:10px}
+  .cflag{position:absolute;top:0;transform:translateX(-50%);font:700 10px/20px sans-serif;white-space:nowrap;text-shadow:0 0 3px #000,0 0 3px #000;pointer-events:none;display:none}
   #compass::after{content:"";position:absolute;left:50%;bottom:0;margin-left:-4px;border:4px solid transparent;border-bottom:5px solid var(--ochre)}
   #clock{margin-top:5px;font-size:12px;font-weight:600;letter-spacing:.03em}
   #wxStamp{opacity:.85;font-weight:400}
@@ -269,7 +270,10 @@
   <div id="trade" class="modal hidden"></div>
   <div id="invite" class="hidden">
     <b>Invite a player</b>
-    <div>1. Send this invite code to your friend. They paste it on their start page under Play together.</div>
+    <div><b>Quick code</b> (needs internet): type a short code, press Share, and tell your friend the code. They type it on their start page under Together.</div>
+    <div class="row" style="margin:6px 0 10px;justify-content:flex-start"><input id="qcHost" maxlength="24" placeholder="my-code" style="width:150px"><button id="qcShare">Share with this code</button></div>
+    <div id="qcStatus" style="margin-bottom:6px"></div>
+    <div>Or without internet: 1. Send this invite code to your friend. They paste it on their start page under Play together.</div>
     <textarea id="invCode" readonly></textarea>
     <div class="row" style="margin:2px 0 8px;justify-content:flex-start"><button id="copyInv" class="alt">Copy invite code</button></div>
     <div>2. Paste the reply code they send back, then press Connect.</div>
@@ -400,6 +404,8 @@
     <div class="panel">
       <b>Play together</b>
       <div>To host, start your world and press <b>Invite player</b>. To join a friend's world, paste their invite code here. Both devices must be on the same Wi-Fi, hotspot or cable.</div>
+      <div class="row" style="margin:8px 0 4px"><input id="qcJoin" maxlength="24" placeholder="Quick code from your host" style="width:210px"><button id="qcGo" class="alt">Join with quick code</button></div>
+      <div style="font-size:12px;margin-bottom:6px">Quick codes need internet on both devices. Without internet, paste the long invite code below.</div>
       <textarea id="joinCode" placeholder="Paste invite code"></textarea>
       <label class="chk"><input type="checkbox" id="joinCop"> Join as co-pilot: no body in the world; you watch the map and guide a partner (good for a slow device)</label>
       <div class="row"><button id="joinBtn" class="alt">Create reply code</button></div>
@@ -415,7 +421,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.85.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.86.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -438,7 +444,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.85.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.86.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2879,7 +2885,7 @@ function startRun(ws, cs){
     if (cs.fl === undefined){ inv.radio = Math.max(1, inv.radio); inv.flashlight = Math.max(1, inv.flashlight); inv.battery += 2; } else { P.fl = Math.max(0, Math.min(1, +cs.fl || 0)); P.rd = Math.max(0, Math.min(1, +cs.rd || 0)); }
     P.hp = cs.hp > 0 ? Math.min(100, +cs.hp) : 100; P.hunger = Math.max(0, Math.min(100, +cs.hunger || 0)); P.thirst = Math.max(0, Math.min(100, +cs.thirst || 0)); deaths = cs.deaths | 0; loadConds(cs); loadWorn(cs);
   }
-  seen = {}; marks = []; if (cs && cs.sn) for (k = 0; k + 1 < cs.sn.length; k += 2) seen[(cs.sn[k] | 0) + ',' + (cs.sn[k+1] | 0)] = 1; if (cs && cs.mk) cs.mk.slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) marks.push({x:+q.x, y:+q.y, n:String(q.n || '').slice(0, 12)}); }); seenT = 0; seeMap(true);
+  seen = {}; marks = []; fmarks = []; if (cs && cs.sn) for (k = 0; k + 1 < cs.sn.length; k += 2) seen[(cs.sn[k] | 0) + ',' + (cs.sn[k+1] | 0)] = 1; if (cs && cs.mk) cs.mk.slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) marks.push({x:+q.x, y:+q.y, n:String(q.n || '').slice(0, 12)}); }); seenT = 0; seeMap(true);
   me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0, build:0, shoot:0};
   if (cs){ if (cs.bg && SKN && /^(scout|medic|mechanic|builder)$/.test(cs.bg)) me.bg = cs.bg; if (cs.skills) for (k in me.skills) me.skills[k] = Math.max(0, +cs.skills[k] || 0); }
   throws = []; booms = [];
@@ -4526,7 +4532,7 @@ function path2(c, p, s, ox, oy, close){
 function makeMini(){}
 var MAPC = {grass:'#d5dbbd', park:'#c3cfa6', forest:'#a9b78c', sand:'#eadcbf', parking:'#d6cab5', water:'#9cc0c9'}, MAPR = {road:'#fbf3e4', path:'#efe3cc', water:'#9cc0c9', rail:'#b8a892'};
 /* ---- 0.48: the paper map only shows where you have walked or driven (30 m squares, kept with your survivor), and you can mark places on it ---- */
-var packT = 0, seen = {}, marks = [], seenT = 0, SQ = 30, fogCv = document.createElement('canvas');
+var fmarks = [], packT = 0, seen = {}, marks = [], seenT = 0, SQ = 30, fogCv = document.createElement('canvas');
 function seeMap(first){ var R = 3, cx = Math.floor(P.x/SQ), cy = Math.floor(P.y/SQ), a, b; for (a = -R; a <= R; a++) for (b = -R; b <= R; b++) if (a*a + b*b <= R*R + 1) seen[(cx + a) + ',' + (cy + b)] = 1;
   if (first && world){ var sf = world.buildings[world.safe]; if (sf) for (a = -2; a <= 2; a++) for (b = -2; b <= 2; b++) seen[(Math.floor(sf.cx/SQ) + a) + ',' + (Math.floor(sf.cy/SQ) + b)] = 1; } }
 /* 0.81 home-screen choice: 'find' needs a map item and shows only explored squares; 'explore' always has the big map, only explored squares; 'all' shows everything */
@@ -4581,8 +4587,8 @@ function drawMap(c, w, h, cx, cy, sc, big){
   if (W0.scen.type === 'escape'){ W0.partB.forEach(function(id){ if (!W0.found[id]) dot(W0.buildings[id].cx, W0.buildings[id].cy, big ? 6 : 4, '#d9a845'); }); dot(W0.evac.x, W0.evac.y, big ? 8 : 5, '#ffffff'); }
   pings.forEach(function(q){ c.strokeStyle = '#c67139'; c.lineWidth = 3; c.beginPath(); c.arc(q.x*sc + ox, q.y*sc + oy, big ? 9 : 6, 0, 6.283); c.stroke(); });
   for (i = 0; i < zombies.length; i++){ var z = zombies[i]; c.fillStyle = z.k === 1 ? '#201e1d' : '#b23a2a'; c.beginPath(); c.arc(z.x*sc + ox, z.y*sc + oy, (z.k === 2 ? 5 : z.k === 1 ? 3 : 2)*(big ? 1.6 : 1), 0, 6.283); c.fill(); }
-  marks.forEach(function(q, qi){ var x = q.x*sc + ox, y = q.y*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return; c.strokeStyle = '#7a2e22'; c.fillStyle = '#c94a2e'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - (big ? 18 : 12)); c.stroke(); c.beginPath(); c.moveTo(x, y - (big ? 18 : 12)); c.lineTo(x + (big ? 12 : 8), y - (big ? 14 : 9)); c.lineTo(x, y - (big ? 10 : 6)); c.closePath(); c.fill();
-    if (big && q.n){ c.font = '700 12px sans-serif'; c.textAlign = 'left'; c.fillStyle = '#201e1d'; c.fillText(q.n, x + 14, y - 20); } });
+  marks.concat(fmarks).forEach(function(q, qi){ var x = q.x*sc + ox, y = q.y*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return; c.strokeStyle = q.o ? '#1d4e6e' : '#7a2e22'; c.fillStyle = q.o ? '#3a8fc9' : '#c94a2e'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - (big ? 18 : 12)); c.stroke(); c.beginPath(); c.moveTo(x, y - (big ? 18 : 12)); c.lineTo(x + (big ? 12 : 8), y - (big ? 14 : 9)); c.lineTo(x, y - (big ? 10 : 6)); c.closePath(); c.fill();
+    if (big && q.n){ c.font = '700 12px sans-serif'; c.textAlign = 'left'; c.fillStyle = '#201e1d'; c.fillText((q.o ? q.o + ': ' : '') + q.n, x + 14, y - 20); } });
   return [ox, oy];
 }
 var big = {on:false, sc:0.6, cx:0, cy:0, drag:null}, bigCv = el('bigCv');
@@ -4611,7 +4617,7 @@ function toggleBig(){
 function bigZoom(f){ big.sc = Math.max(MAPMODE === 'all' ? 0.004 : 0.08, Math.min(6, big.sc*f)); drawBig(); }
 el('miniWrap').addEventListener('click', toggleBig); el('bigClose').addEventListener('click', toggleBig); el('topX').addEventListener('click', toggleBig); el('topOut').addEventListener('click', function(){ el('bigOut').click(); }); el('topIn').addEventListener('click', function(){ el('bigIn').click(); });
 el('bigIn').addEventListener('click', function(){ bigZoom(1.5); }); el('bigOut').addEventListener('click', function(){ bigZoom(1/1.5); });
-el('bigMark').addEventListener('click', function(){ if (marks.length >= 40){ toast('The map is full of marks. Remove one first.', 3); return; } marks.push({x:big.cx, y:big.cy, n:(el('bigText').value || '').trim().slice(0, 28) || 'Mark ' + (marks.length + 1)}); el('bigText').value = ''; drawBig(); sfx('plank', undefined, undefined, 0.3); });
+el('bigMark').addEventListener('click', function(){ if (marks.length >= 40){ toast('The map is full of marks. Remove one first.', 3); return; } marks.push({x:big.cx, y:big.cy, n:(el('bigText').value || '').trim().slice(0, 28) || 'Mark ' + (marks.length + 1)}); el('bigText').value = ''; var nm = marks[marks.length - 1]; emit({k:'flag', o:myName(), x:r2(nm.x), y:r2(nm.y), n:nm.n}); drawBig(); sfx('plank', undefined, undefined, 0.3); });
 /* 0.68 address search: "12 Walnut", "walnut street" or a shop's name; repeated searches step through the matches nearest the map centre */
 var findN = 0, findQ = '';
 function addrFind(q){
@@ -4622,7 +4628,7 @@ function addrFind(q){
 }
 el('bigGo').addEventListener('click', function(){ var q = el('bigFind').value; var L = addrFind(q); if (q !== findQ){ findQ = q; findN = 0; } if (!L || !L.length){ toast('Nothing on this map matches that. Only streets and shops in the loaded part of the world are searched.', 3.5); return; }
   var b = L[findN % L.length]; findN++; big.cx = b.cx; big.cy = b.cy; drawBig(); toast((b.hn ? b.hn + ' ' + (b.st || '') : b.name || kindLabel(b)) + (b.name && b.hn ? ' \u00b7 ' + b.name : '') + ' \u00b7 ' + (L.length > 1 ? (((findN - 1) % L.length) + 1) + ' of ' + L.length + ', search again for the next' : 'the only match') + (seen[Math.floor(b.cx/SQ) + ',' + Math.floor(b.cy/SQ)] ? '' : ' \u00b7 not explored yet'), 5); });
-el('bigUnmark').addEventListener('click', function(){ var bi = -1, bd = 40/big.sc; marks.forEach(function(q, i){ var d = Math.hypot(q.x - big.cx, q.y - big.cy); if (d < bd){ bd = d; bi = i; } }); if (bi >= 0){ marks.splice(bi, 1); drawBig(); } else toast('Move the map so a flag is under the cross, then remove it.', 3); });
+el('bigUnmark').addEventListener('click', function(){ var bi = -1, bd = 40/big.sc; marks.forEach(function(q, i){ var d = Math.hypot(q.x - big.cx, q.y - big.cy); if (d < bd){ bd = d; bi = i; } }); if (bi >= 0){ var gone = marks.splice(bi, 1)[0]; emit({k:'unflag', o:myName(), x:r2(gone.x), y:r2(gone.y)}); drawBig(); } else toast('Move the map so a flag is under the cross, then remove it.', 3); });
 el('bigMe').addEventListener('click', function(){ big.cx = P.x; big.cy = P.y; drawBig(); });
 bigCv.addEventListener('pointerdown', function(e){ big.drag = {x:e.clientX, y:e.clientY, id:e.pointerId}; try { bigCv.setPointerCapture(e.pointerId); } catch (er){} });
 bigCv.addEventListener('pointermove', function(e){ var d = big.drag; if (!d || d.id !== e.pointerId) return; big.cx -= (e.clientX - d.x)/big.sc; big.cy -= (e.clientY - d.y)/big.sc; d.x = e.clientX; d.y = e.clientY; drawBig(); });
@@ -5502,7 +5508,22 @@ function fpsTick(ts){
   if (F.t > 600){ F.el.textContent = (F.n/(F.t/1000)).toFixed(0) + ' FPS · worst ' + F.worst.toFixed(0) + ' ms'; F.n = 0; F.t = 0; F.worst = 0; }
 }
 (function(){ var h = '', N = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']; for (var r = 0; r < 3; r++) for (var i = 0; i < 8; i++) h += '<b' + (i % 2 ? ' class="m"' : '') + '>' + N[i] + '</b>'; el('compTape').innerHTML = h; })();
-function compassTick(){ var deg = ((P.yaw*180/Math.PI + 90) % 360 + 360) % 360; el('compTape').style.transform = 'translateX(' + (-(480 + deg/45*60 + 30)).toFixed(1) + 'px)'; }
+var cmpF = [];
+function compassFlags(deg){
+  var box = el('compass'), W = box.clientWidth || 300, half = W/2 - 7, all = marks.concat(fmarks), i;
+  for (i = 0; i < all.length; i++){
+    var q = all[i], f = cmpF[i];
+    if (!f){ f = document.createElement('div'); f.className = 'cflag'; box.appendChild(f); cmpF[i] = f; }
+    var dx = q.x - P.x, dy = q.y - P.y, d = Math.hypot(dx, dy), td = Math.atan2(dy, dx)*180/Math.PI + 90, df = ((td - deg + 540) % 360) - 180, px = df/45*60, edge = Math.abs(px) > half;
+    px = Math.max(-half, Math.min(half, px));
+    f.style.display = 'block'; f.style.left = (W/2 + px).toFixed(1) + 'px'; f.style.opacity = edge ? '.6' : '1';
+    f.style.color = q.o ? '#7fc3ee' : '#ff7a5c';
+    f.textContent = '\u2691' + (d < 1000 ? Math.round(d) + 'm' : (d/1000).toFixed(1) + 'k');
+    f.title = (q.o ? q.o + ': ' : '') + q.n;
+  }
+  for (; i < cmpF.length; i++) cmpF[i].style.display = 'none';
+}
+function compassTick(){ var deg = ((P.yaw*180/Math.PI + 90) % 360 + 360) % 360; el('compTape').style.transform = 'translateX(' + (-(480 + deg/45*60 + 30)).toFixed(1) + 'px)'; compassFlags(deg); }
 el('hudMenu').addEventListener('click', function(){ el('hudBtns').classList.toggle('hidden'); if (document.exitPointerLock) document.exitPointerLock(); });
 el('hudBtns').addEventListener('click', function(e){ if (e.target.tagName === 'BUTTON') el('hudBtns').classList.add('hidden'); });
 el('helpBtn').addEventListener('click', function(){ el('help').classList.toggle('on'); });
@@ -6874,8 +6895,13 @@ function drawExtras(m, now){
 function send(dc, obj){ if (dc && dc.readyState === 'open'){ try { dc.send('J' + JSON.stringify(obj)); } catch (e) {} } }
 function broadcast(obj, except){ net.peers.forEach(function(p){ if (p !== except && p.ready) send(p.dc, obj); }); }
 function emit(ev){ if (net.role === 'host') broadcast({t:'ev', e:ev}); else if (net.role === 'guest') send(net.host.dc, {t:'ev', e:ev}); }
+function myName(){ return (el('pname').value || 'Survivor').slice(0, 16); }
+function takeFlag(o, x, y, n){ o = txt(o, 16); x = +x; y = +y; if (!isFinite(x) || !isFinite(y)) return; fmarks = fmarks.filter(function(q){ return !(q.o === o && Math.hypot(q.x - x, q.y - y) < 0.6); }); if (fmarks.length < 120) fmarks.push({x:x, y:y, n:txt(n, 28), o:o}); }
 function applyEv(e){
   if (!world || !e) return;
+  if (e.k === 'flag'){ takeFlag(e.o, e.x, e.y, e.n); feed(txt(e.o, 16) + ' flagged ' + txt(e.n, 28), '#7fc3ee'); return; }
+  if (e.k === 'unflag'){ var ux = +e.x, uy = +e.y, uo = txt(e.o, 16); fmarks = fmarks.filter(function(q){ return !(q.o === uo && Math.hypot(q.x - ux, q.y - uy) < 0.6); }); return; }
+  if (e.k === 'flags'){ var fo = txt(e.o, 16); fmarks = fmarks.filter(function(q){ return q.o !== fo; }); (e.l || []).slice(0, 40).forEach(function(a){ takeFlag(fo, a[0], a[1], a[2]); }); return; }
   if (e.k === 'got'){ var b = world.buildings[e.b]; if (b){ b.got[e.i] = 1; gotMark(b, e.i); } }
   else if (e.k === 'crate'){ if (world.crates[e.i]) world.crates[e.i].looted = true; }
   else if (e.k === 'curt'){ var cb2 = world.buildings[e.b]; if (cb2 && cb2.wins && (e.i | 0) >= 0 && (e.i | 0)*6 < cb2.wins.length) setCurtain(cb2, e.i | 0, !!e.on, true); }
@@ -6953,23 +6979,30 @@ function iceDone(pc){
   });
 }
 function netClose(){
-  var ps = net.peers.slice(), h = net.host; net.peers = []; net.host = null; net.others = []; net.role = null; pending = null;
+  fmarks = []; var ps = net.peers.slice(), h = net.host; net.peers = []; net.host = null; net.others = []; net.role = null; pending = null;
   ps.forEach(function(p){ try { p.dc.close(); p.pc.close(); } catch (e) {} });
   if (h){ try { h.dc.close(); h.pc.close(); } catch (e) {} }
   el('invite').classList.add('hidden');
 }
 /* ---- hosting ---- */
-var pending = null;
-async function hostInvite(){
+var pending = null, STUN = [{urls:'stun:stun.l.google.com:19302'}];
+/* 0.86 quick codes: the invite and reply codes are passed through a free public relay (ntfy.sh), under a topic made from the code you type. The offline way (copy and paste) stays */
+var QC = {t:null, host:'https://ntfy.sh/', join:false};
+function qcTopic(c){ c = String(c || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24); return c.length >= 4 ? 'afterstreet-' + c : null; }
+async function qcPost(topic, title, body){ var r = await fetch(QC.host + topic, {method:'POST', body:body, headers:{Title:title}}); if (!r.ok) throw new Error('the relay answered ' + r.status); return r.json(); }
+async function qcRead(topic){ var r = await fetch(QC.host + topic + '/json?poll=1&since=all'); if (!r.ok) throw new Error('the relay answered ' + r.status); var t = await r.text(); return t.split('\n').filter(Boolean).map(function(l){ try { return JSON.parse(l); } catch (e){ return null; } }).filter(function(m){ return m && m.event === 'message'; }); }
+function qcStop(){ if (QC.t){ clearInterval(QC.t); QC.t = null; } }
+async function hostInvite(stun){
   el('invStatus').textContent = 'Preparing invite code...'; el('invCode').value = ''; el('invReply').value = '';
-  var pc = new RTCPeerConnection({iceServers:[]}), dc = pc.createDataChannel('lb', {ordered:true});
+  if (pending){ try { pending.pc.close(); } catch (e){} pending = null; }
+  var pc = new RTCPeerConnection({iceServers:stun ? STUN : []}), dc = pc.createDataChannel('lb', {ordered:true});
   var peer = pending = {pc:pc, dc:dc, id:++net.nextId, name:'Guest', slug:'', x:P.x, y:P.y, tx:P.x, ty:P.y, yaw:0, sw:0, ready:false};
   dc.onopen = function(){ hostWelcome(peer); };
   dc.onmessage = function(e){ hostMsg(peer, e.data); };
   dc.onclose = function(){
     var i = net.peers.indexOf(peer); if (i < 0) return; net.peers.splice(i, 1);
     if (peer.ready && peer.slug) worldPlayers[peer.slug] = {x:peer.x, y:peer.y, yaw:peer.yaw};
-    toast(peer.name + ' left your world.', 4); if (!net.peers.length) net.role = null; else sendWho(); updateHud();
+    fmarks = fmarks.filter(function(q){ return q.o !== peer.name; }); toast(peer.name + ' left your world.', 4); if (!net.peers.length) net.role = null; else sendWho(); updateHud();
   };
   await pc.setLocalDescription(await pc.createOffer()); await iceDone(pc);
   el('invCode').value = await packCode({s:pc.localDescription.sdp}); el('invStatus').textContent = 'Invite code ready.';
@@ -6990,6 +7023,11 @@ function hostMsg(peer, data){
   if (data[0] !== 'J') return; var m; try { m = JSON.parse(data.slice(1)); } catch (e) { return; }
   if (m.t === 'join'){
     peer.name = String(m.name || 'Guest').slice(0, 16); peer.slug = slug(m.slug || peer.name); peer.x = peer.tx = +m.x || P.x; peer.y = peer.ty = +m.y || P.y; peer.look = cleanLook(m.look); peer.cop = !!m.cop; peer.ready = true; sendWho();
+    try {
+      var gf = {k:'flags', o:peer.name, l:(m.fl || []).slice(0, 40)}; applyEv(gf); broadcast({t:'ev', e:gf}, peer);
+      send(peer.dc, {t:'ev', e:{k:'flags', o:myName(), l:marks.map(function(q){ return [r2(q.x), r2(q.y), q.n]; })}});
+      net.peers.forEach(function(q){ if (q !== peer && q.ready) send(peer.dc, {t:'ev', e:{k:'flags', o:q.name, l:fmarks.filter(function(f){ return f.o === q.name; }).map(function(f){ return [f.x, f.y, f.n]; })}}); });
+    } catch (er) {}
     toast(peer.name + ' joined your world.', 4); el('invStatus').textContent = peer.name + ' joined.'; el('invite').classList.add('hidden'); updateHud();
   } else if (m.t === 'p'){ peer.tx = +m.x; peer.ty = +m.y; peer.yaw = +m.yaw; peer.sw = m.sw ? 1 : 0; peer.lit = !!m.lt; peer.loud = !!m.ld; peer.vis = m.vs === 1 ? 0.5 : m.vs === 2 ? 1.35 : 1; peer.mv = !!m.mv; peer.hidden = !!m.hd; peer.lvl = m.lv | 0; peer.rf = m.rf | 0; peer.rd = !!m.rd; peer.hp = m.hp | 0; peer.vh = m.vh ? String(m.vh) : 0; peer.sm = Math.max(0.3, Math.min(3, (+m.sf || 10)/10)); }
   else if (m.t === 'chat' || m.t === 'ping'){
@@ -7013,7 +7051,20 @@ el('invGo').addEventListener('click', async function(){
   try { var o = await unpackCode(el('invReply').value); await pending.pc.setRemoteDescription({type:'answer', sdp:o.s}); el('invStatus').textContent = 'Connecting...'; }
   catch (e) { el('invStatus').textContent = 'That reply code did not work. Check that all of it was copied.'; }
 });
-el('invClose').addEventListener('click', function(){ el('invite').classList.add('hidden'); });
+el('invClose').addEventListener('click', function(){ el('invite').classList.add('hidden'); qcStop(); });
+el('qcShare').addEventListener('click', async function(){
+  var st = el('qcStatus'), topic = qcTopic(el('qcHost').value); if (!topic){ st.textContent = 'Type a code of at least 4 letters or numbers.'; return; }
+  qcStop();
+  try {
+    st.textContent = 'Making the invite...'; await hostInvite(true); var code = el('invCode').value; if (code.length > 3900) throw new Error('the invite is too long for a quick code. Use the long code instead');
+    var posted = await qcPost(topic, 'offer', code), since = posted.time || 0; st.textContent = 'Code "' + topic.slice(12) + '" is live. Tell your friend to enter it. Waiting for them...';
+    var busy = false; QC.t = setInterval(async function(){
+      if (busy || !pending) return; busy = true;
+      try { var L = await qcRead(topic), ans = null; L.forEach(function(m){ if (m.title === 'answer' && m.time >= since && (!ans || m.time >= ans.time)) ans = m; });
+        if (ans){ qcStop(); el('invReply').value = ans.message; st.textContent = 'Friend found. Connecting...'; el('invGo').click(); } } catch (e){}
+      busy = false; }, 2500);
+  } catch (e){ st.textContent = 'Quick code failed: ' + (/fetch|network|Failed/i.test(e.message || '') ? 'no connection to the relay (are you online?)' : e.message || e.name) + '.'; }
+});
 function copyFrom(id, statusId){
   var t = el(id); t.select();
   var done = function(){ el(statusId).textContent = 'Copied.'; };
@@ -7028,7 +7079,7 @@ el('joinBtn').addEventListener('click', async function(){
   if (!glOK) return;
   if (!window.RTCPeerConnection){ st.textContent = 'This browser cannot connect devices directly.'; return; }
   try {
-    var o = await unpackCode(el('joinCode').value), pc = new RTCPeerConnection({iceServers:[]}), g = {pc:pc, dc:null, chunks:[], hello:null};
+    var o = await unpackCode(el('joinCode').value), pc = new RTCPeerConnection({iceServers:QC.join ? STUN : []}), g = {pc:pc, dc:null, chunks:[], hello:null};
     pc.ondatachannel = function(e){
       g.dc = e.channel; net.host = g;
       g.dc.onmessage = function(ev){ guestMsg(g, ev.data); };
@@ -7037,7 +7088,16 @@ el('joinBtn').addEventListener('click', async function(){
     };
     await pc.setRemoteDescription({type:'offer', sdp:o.s}); await pc.setLocalDescription(await pc.createAnswer()); await iceDone(pc);
     el('replyCode').value = await packCode({s:pc.localDescription.sdp}); el('replyBox').classList.remove('hidden'); st.textContent = 'Reply code ready. Waiting for the host...';
-  } catch (e) { st.textContent = 'That invite code did not work. Check that all of it was copied.'; }
+    if (QC.join && QC.topic){ await qcPost(QC.topic, 'answer', el('replyCode').value); st.textContent = 'Found the host. Connecting...'; el('replyBox').classList.add('hidden'); }
+  } catch (e) { st.textContent = QC.join ? 'Quick code failed: ' + (e.message || e.name) + '.' : 'That invite code did not work. Check that all of it was copied.'; }
+  QC.join = false;
+});
+el('qcGo').addEventListener('click', async function(){
+  var st = el('joinStatus'), topic = qcTopic(el('qcJoin').value); if (!topic){ st.textContent = 'Type the quick code your host gave you.'; return; }
+  try { st.textContent = 'Looking for the host...'; var L = await qcRead(topic), off = null; L.forEach(function(m){ if (m.title === 'offer' && (!off || m.time >= off.time)) off = m; });
+    if (!off){ st.textContent = 'No host is sharing that code. Check the code, and that the host pressed Share.'; return; }
+    el('joinCode').value = off.message; QC.join = true; QC.topic = topic; el('joinBtn').click();
+  } catch (e){ st.textContent = 'Quick code failed: ' + (/fetch|network|Failed/i.test(e.message || '') ? 'no connection to the relay (are you online?)' : e.message || e.name) + '.'; }
 });
 function applyRule(rule){
   P.home = newInv(false); P.homeItems = {}; if (rule !== 'cap' && rule !== 'empty') return;
@@ -7065,7 +7125,7 @@ async function guestMsg(g, data){
       startRun(h.ws, cs); el('inviteBtn').classList.add('hidden'); el('replyBox').classList.add('hidden'); el('joinCode').value = ''; el('joinStatus').textContent = '';
       applyRule(h.rule);
       if (asCop) startCop();
-      send(g.dc, {t:'join', name:el('pname').value || 'Survivor', slug:asCop ? '' : charSlug(), x:P.x, y:P.y, look:me.look, cop:asCop ? 1 : 0});
+      send(g.dc, {t:'join', name:el('pname').value || 'Survivor', slug:asCop ? '' : charSlug(), x:P.x, y:P.y, look:me.look, cop:asCop ? 1 : 0, fl:marks.map(function(q){ return [r2(q.x), r2(q.y), q.n]; })});
       if (!asCop) toast('You are visiting ' + h.name + '. What you carry goes home with you.', 6);
     } catch (e) { el('joinStatus').textContent = 'Could not load the host\'s world: ' + (e.message || e.name); netClose(); }
   }

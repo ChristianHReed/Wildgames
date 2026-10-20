@@ -574,3 +574,4 @@ If it stays on "Connecting...": report both browsers, the kind of network, and w
 58. (0.84.0) Start page: coil on the left, ruled paper, coloured sticky-note tabs on the right. The open tab pulls out. Check on a phone: tabs narrow, nothing cut off.
 59. (0.85.0) Settings, Map: Whole map visible. Open the big map and press minus until the whole region shows: main roads, rail, rivers, lakes and towns as shaded blocks. The square you stand in is drawn in detail. Offline: the overview is in assets/springfield.
 60. (0.85.1) Make a Use item in the Workshop with the heal effect, get bleeding (an alien hit, or broken glass), use it: health rises and the bleeding stops.
+61. (0.86.0) Host: Invite, type a code word, Share. Friend: Together tab, same word, Join. Both end up in the same world. Then place a flag on the big map: it shows on the compass of both players (red mine, blue friend's, with distance) and on the friend's big map. Remove it: it disappears for both.

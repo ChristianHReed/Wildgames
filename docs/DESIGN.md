@@ -209,3 +209,7 @@ The design chat's sound set (assets/audio/sounds_design.js) joins the older clip
 
 ## Map visibility (0.81)
 A home-screen setting decides how the map works: find a map in the game then explore (default), always have a map but explore to fill it in, or the whole map visible. It only changes the map and minimap fog and whether the map item is needed; it does not change the world.
+
+## Quick codes and shared flags (0.86)
+A quick code is a word the host and friend both type. It is only a meeting place: the game posts the connection offer and answer under the topic `afterstreet-<word>` on the public relay ntfy.sh, then the players connect directly (WebRTC). Needs internet on both devices; anyone who guesses the word at the same moment could try to join, so pick something unusual. Copy-and-paste codes remain for offline play.
+Flags (from the big map) show on the compass strip with distance; off-view flags stick to the edge. Friends' flags are blue with the owner's name, shared on join and when placed or removed, never saved.
