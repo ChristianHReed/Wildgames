@@ -234,6 +234,7 @@ for st in ('sprouting', 'growing', 'ripe'): model('garden', 'garden_' + st, crop
 import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'props_more.py')).read())
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'props_x.py')).read())
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'props_street.py')).read())
 
 pack = {
   'name': 'props', 'version': 1, 'style': 'rectangular frustums and boxes, flat colour planes, few corners; boxy worn 1970s-1990s vehicles',
@@ -243,7 +244,7 @@ pack = {
   'buildRule': 'build holds things players make and place; barricade has three stages (barricade, barricade_damaged, barricade_nearly_gone); campfire and generator have lit/running and out/off versions. glow pieces are flames, embers and lamps.',
   'wreckRule': 'Every vehicle also comes as <name>_wreck (rusted, flat tyres, broken glass) and <name>_burnt (charred shell on bare rims); lower them by vehicleRig[...].sitDrop.',
   'gardenRule': 'garden_plot is the empty bed; draw garden_sprouting, garden_growing or garden_ripe on top of it for the plot\'s stage. rain_barrel is the rain collector.',
-  'harvest': HARVEST, 'damageRule': DMG_RULE, 'shopRule': SHOP_RULE, 'boardRule': BOARD_RULE, 'siphonRule': SIPHON_RULE, 'furnitureSize': FURNITURE_SIZE, 'sizeRule': SIZE_RULE,
+  'harvest': HARVEST, 'damageRule': DMG_RULE, 'streetSignRule': STREET_SIGN_RULE, 'streetLightRule': STREET_LIGHT_RULE, 'shopRule': SHOP_RULE, 'boardRule': BOARD_RULE, 'siphonRule': SIPHON_RULE, 'furnitureSize': FURNITURE_SIZE, 'sizeRule': SIZE_RULE,
   'baseRule': 'build.claim_sign or build.claim_flag marks a claimed base (nail the sign by the door). build.custom_bed is the bed made from harvested planks and cloth scraps. build.reinforce_<planks|sheet|mesh> (and _damaged, _nearly_gone) is a 1.5 m by 2.4 m panel laid on the room side of a wall: its back at z = 0, facing +Z into the room. Planks suit wood walls, sheet metal steel walls, rebar mesh concrete, but any goes on any.',
   'movingRule': 'moving lists which parts open or turn and where their hinge or axle is. The models are drawn closed; split the named part out when it needs to move.'
 }

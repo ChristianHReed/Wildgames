@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -179,6 +179,36 @@ function lights(mode){
 }
 function ground(w,d,c){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d), new THREE.MeshLambertMaterial({color:c})); m.rotation.x=-Math.PI/2; m.receiveShadow=true; scene.add(m); return m; }
 
+/* ---------- world pack ---------- */
+function wm(cat, name, slots){ return mesh(WD.models[cat][name], colourer(WD.palette, slots||{})); }
+const surf=(k,t)=>{ const c=(t||WD.surfaceColours)[k]; return {BASE:c[0],DETAIL:c[1],DETAIL2:c[2]}; };
+const watc=k=>{ const c=WD.waterColours[k]; return {WATER:c[0],WATER_L:c[1],FOAM:c[2]}; };
+const LANDC={LAND:'#6d7a4f',LAND_D:'#5a6640',BASE:'#3a3a3c'};
+/* ---------- machines: parts posed by their rig ---------- */
+function machineOf(name, vals){
+  const P=MC.models[name], R=MC.rig[name], col=colourer(MC.palette,{BODY:MC.paint[name]}), D=Math.PI/180, groups={}, root=new THREE.Group(); vals=vals||{};
+  for (const k in R){ const r=R[k], par=r.parent?R[r.parent].pivot:[0,0,0], outer=new THREE.Group(), inner=new THREE.Group();
+    outer.position.set(r.pivot[0]-par[0],r.pivot[1]-par[1],r.pivot[2]-par[2]); if (r.fixed) outer.rotation.set(r.fixed[0]*D,r.fixed[1]*D,r.fixed[2]*D); outer.add(inner);
+    const v=(k in vals)?vals[k]:(r.rest||0);
+    if (r.turn){ const a=r.turn; inner.rotation.set(a[0]*v*D,a[1]*v*D,a[2]*v*D); }
+    if (r.slide){ const a=r.slide; inner.position.set(a[0]*v,a[1]*v,a[2]*v); }
+    const ps=(P[k]||[]).map(q=>Object.assign({},q,{p:[q.p[0]-r.pivot[0],q.p[1]-r.pivot[1],q.p[2]-r.pivot[2]]})); if (ps.length) inner.add(mesh(ps,col));
+    groups[k]={outer,inner}; }
+  for (const k in R){ const r=R[k]; (r.parent?groups[r.parent].inner:root).add(groups[k].outer); }
+  for (const [i,w] of (MC.wheels[name]||[]).entries()){ const wm=mesh(P.wheel,col); wm.position.set(...w); root.add(wm); }
+  return root;
+}
+/* ---------- animals: posed by clip frame ---------- */
+function animal(name, clip, frame){
+  const A=AN.creatures[name], parts=AN.parts[name], f=((A.clips[clip]||A.clips.idle)[frame||0])||{}, col=colourer(AN.palette,{}), D=Math.PI/180;
+  const root=new THREE.Group(), groups={};
+  for (const b in A.bones){ const B=A.bones[b], g=new THREE.Group(), par=B.parent?A.bones[B.parent].pivot:[0,0,0];
+    g.position.set(B.pivot[0]-par[0],B.pivot[1]-par[1],B.pivot[2]-par[2]); const r=f[b]; if (r) g.rotation.set(r[0]*D,r[1]*D,r[2]*D);
+    const mine=(parts[b]||[]).map(q=>Object.assign({},q,{p:[q.p[0]-B.pivot[0],q.p[1]-B.pivot[1],q.p[2]-B.pivot[2]]})); if (mine.length) g.add(mesh(mine,col)); groups[b]=g; }
+  for (const b in A.bones){ const B=A.bones[b]; (B.parent?groups[B.parent]:root).add(groups[b]); }
+  if (f.root) root.position.set(f.root[0],f.root[1],f.root[2]);
+  const outer=new THREE.Group(); outer.add(root); return outer;
+}
 /* ---------- scenes ---------- */
 const SCENES={
   survivors:{t:'Survivors',d:'Silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small heads with no eyes. 300 to 820 triangles each.',
@@ -344,6 +374,88 @@ const SCENES={
       ['grass','snow','gravel','dirt','sand'].forEach((k,i)=>{ const c=colourer(GR.palette,(GR.seasons[k==='edge'?'grass':k]||GR.seasons.grass).summer||GR.seasons[k].winter); at(mesh(GR.models.edges[k],c),-4+i*2.2,0.01,4.2); });
       for (let i=0;i<10;i++) at(mesh(FX.models.effects.roof_splash,fc),-1+Math.random()*2,1.42,0+Math.random()*0.8-0.4);
       cam.position.set(0,6,11.5); ctl.target.set(0,0.4,1.8); }},
+  roads:{t:'Road surfaces',d:'Road surface tiles (4 m): new, worn and patched asphalt, concrete, cobbles, gravel, dirt with wheel ruts, highway and parking lot.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(120,120,0xd8d2c6);
+      Object.keys(WD.surfaceColours).forEach((k,i)=>at(wm('roads',k,surf(k)),(i%5-2)*4.6,0.01,-Math.floor(i/5)*4.6));
+      cam.position.set(0,16,13); ctl.target.set(0,0,-2.4); }},
+  markings:{t:'Road markings',d:'Paint, seen from a driver\'s side: centre and lane lines, stop line, give-way teeth, zebra and line crossings, arrows, parking and disabled bays, a bike lane, painted words and a keep-clear box.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6);
+      const M=WD.models.markings, keys=Object.keys(M).filter(k=>!k.startsWith('kerb_'));
+      keys.forEach((k,i)=>{ const x=(i%6-2.5)*8, z=Math.floor(i/6)*13; const r=new THREE.Mesh(new THREE.PlaneGeometry(7.6,12.6),new THREE.MeshLambertMaterial({color:0x3a3a3c})); r.rotation.x=-Math.PI/2; r.position.set(x,0.03,z); scene.add(r); at(wm('markings',k),x,0.03,z); });
+      cam.position.set(0,46,-26); ctl.target.set(0,0,22); }},
+  kerbs:{t:'Kerbs, crossings and drains',d:'A corner kerb with and without a ramp, a straight kerb ramp with tactile paving, a driveway dip, a median island, a roundabout centre, a speed hump, a storm drain, manhole and utility covers and a dead-end barrier.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0x3a3a3c);
+      const K=Object.keys(WD.models.kerbs); const pos=[[-10,0],[-4,0],[3,0],[9,0],[0,-7],[-11,-9],[10,-8],[-4,5],[1,5],[5,5],[9,5]];
+      K.forEach((k,i)=>at(wm('kerbs',k,{BASE:'#3a3a3c'}),pos[i][0],0,pos[i][1]));
+      cam.position.set(0,17,19); ctl.target.set(0,0,-1.5); }},
+  sidewalks:{t:'Sidewalk tiles',d:'2 m tiles: concrete slabs, cracked slabs with a slab heaved by a root, brick pavers, stone flags, an asphalt path, a gravel path, a tree pit with its grate, a grass verge and tactile paving.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xd8d2c6);
+      const keys=Object.keys(WD.models.sidewalks); keys.forEach((k,i)=>{ const c=WD.sidewalkColours[k]||WD.sidewalkColours.concrete_slabs; at(wm('sidewalks',k,{BASE:c[0],DETAIL:c[1],DETAIL2:c[2]}),(i%5-2)*2.3,0.01,-Math.floor(i/5)*2.4); });
+      cam.position.set(0,7.5,6.5); ctl.target.set(0,0,-1.3); }},
+  water:{t:'Water',d:'Water tiles (4 m): lake, pond with lilies, river (flowing to the back), rapids, shallow with stones under the surface, deep, swamp with reeds and frozen; a ripple ring and a wake.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6);
+      const keys=Object.keys(WD.waterColours); keys.forEach((k,i)=>at(wm('water',k,watc(k)),(i%4-1.5)*4.4,0.01,-Math.floor(i/4)*4.4));
+      at(wm('water','ripple_ring',watc('lake')),-4,0.01,4); at(wm('water','wake',watc('lake')),2,0.01,5);
+      cam.position.set(0,14,13); ctl.target.set(0,0,-2.2); }},
+  banks:{t:'River and lake banks',d:'Seven kinds of shore, each straight, around a point of land and around a bay: grass, mud, sand beach, rock, a concrete channel, a steep eroded cut with roots, and reeds. The water sits 0.5 m below the land.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null;
+      const keys=Object.keys(WD.models.banks); const wt=new THREE.Mesh(new THREE.PlaneGeometry(60,40),new THREE.MeshLambertMaterial({color:0x46707e})); wt.rotation.x=-Math.PI/2; wt.position.set(0,-0.5,-10); scene.add(wt);
+      const col=colourer(WD.palette,LANDC);
+      keys.forEach((k,r)=>{ const z=-r*3.2; ['corner_out','straight','corner_in'].forEach((v,c)=>at(mesh(WD.models.banks[k][v],col),(c-1)*5.2,0.0,z)); });
+      cam.position.set(9,9,8); ctl.target.set(0,-0.5,-9); }},
+  falls:{t:'Waterfalls',d:'A waterfall from its pieces: the lip where the river goes over, sheets stacked for a 3 m drop, the splash pool with mist and spray; beside it a cascade step and a concrete weir.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; const F=WD.models.falls, wc=watc('river'), m=n=>mesh(F[n],colourer(WD.palette,wc));
+      ground(60,60,0x6d7a4f); const H=3; at(m('lip'),0,H,0); for (let i=0;i<H;i++) at(m(i%2?'sheet_1m_b':'sheet_1m'),0,H-0.4-i,0.02*i);
+      const wtop=new THREE.Mesh(new THREE.PlaneGeometry(4,6),new THREE.MeshLambertMaterial({color:0x46707e})); wtop.rotation.x=-Math.PI/2; wtop.position.set(0,H,-4.5); scene.add(wtop);
+      for (const sx of [-1,1]){ const cl=mesh(WD.models.rocks.cliff_granite,colourer(WD.palette,{LAND:'#6d7a4f',LAND_D:'#5a6640'})); cl.position.set(sx*4,-1,-0.6); scene.add(cl); }
+      const back=mesh(WD.models.rocks.cliff_granite,colourer(WD.palette,{})); back.position.set(0,-1,-0.65); back.scale.set(1,1,1); scene.add(back);
+      const pw=new THREE.Mesh(new THREE.PlaneGeometry(7,5),new THREE.MeshLambertMaterial({color:0x46707e})); pw.rotation.x=-Math.PI/2; pw.position.set(0,-0.02,2.2); scene.add(pw);
+      at(m('pool'),0,0,0.4); at(m('mist'),0,0,0.4); at(m('spray'),0,0,0.2); at(m('cascade_step'),7.5,0.6,1); at(m('weir'),-8,1.2,1);
+      cam.position.set(3,6,15); ctl.target.set(0,1.6,0); }},
+  rocks:{t:'Rocks',d:'Front to back, small, medium and large: granite, sandstone, basalt columns, limestone, slate, river stones, scree and a mossy boulder. Behind: granite, sandstone and basalt cliff panels with a turf top, ore rocks (iron, copper, coal, quartz, gold), flint and stepping stones.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(100,100,0xb8b0a0); const R=WD.models.rocks, c=colourer(WD.palette,{LAND:'#6d7a4f',LAND_D:'#5a6640'});
+      ['granite','sandstone','basalt','limestone','slate','river_stones','scree','mossy'].forEach((k,i)=>['small','medium','large'].forEach((sz,j)=>at(mesh(R[k][sz],c),(i-3.5)*4.2,0,6-j*4)));
+      ['cliff_granite','cliff_sandstone','cliff_basalt'].forEach((k,i)=>at(mesh(R[k],c),-13+i*4.6,0,-10)); at(mesh(R.cliff_top,c),-13,4,-10);
+      ['ore_iron','ore_copper','ore_coal','ore_quartz','ore_gold','flint_nodules'].forEach((k,i)=>at(mesh(R[k],c),2+i*2.2,0,-6)); at(mesh(R.stepping_stones,c),15,0.4,-7);
+      Object.keys(WD.models.items).forEach((k,i)=>at(mesh(WD.models.items[k],c),2+i*0.6,0,-3.6));
+      cam.position.set(0,16,30); ctl.target.set(0,1,-2); }},
+  machines:{t:'Construction and service vehicles',d:'Parked: excavator, bulldozer, dump truck, cement mixer, garbage truck, fire truck, ambulance, tow truck, mobile crane, bucket truck, forklift, road roller, street sweeper and school bus, with a survivor for scale.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(140,100,0xd8d2c6); const N=Object.keys(MC.models);
+      N.forEach((n,i)=>at(machineOf(n),(i%5-2)*7.2,0,-Math.floor(i/5)*13,0.5)); at(survivor(LOOKS[0]),-17,0,3,0.4);
+      cam.position.set(-6,22,30); ctl.target.set(0,1,-11); }},
+  machines_work:{t:'Machines at work',d:'The same machines moving: the excavator digging and swinging, the bulldozer blade up, the dump truck tipping, the mixer pouring, the garbage truck lifting a bin and unloading, the fire truck ladder up and out, the ambulance doors open, the tow truck lift up, the crane boom raised and extended, the bucket truck reaching, the forklift lifting, the school bus stopped with its door and stop sign out.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,120,0xd8d2c6); const C=MC.clips, last=(n,c)=>Object.assign({},...C[n][c]);
+      const poses={excavator:{boom:30,stick:30,bucket:55,house:60},bulldozer:{blade:15},dump_truck:{bed:45},cement_mixer:{chute:45},garbage_truck:{arm:150,tailgate:50},fire_truck:last('fire_truck','raise'),ambulance:{door_rl:160,door_rr:160},
+        tow_truck:{lift:0.6,boom:20},mobile_crane:last('mobile_crane','lift'),bucket_truck:last('bucket_truck','reach'),forklift:{carriage:1.4,mast:6},road_roller:{front:20},street_sweeper:{hopper:40},school_bus:last('school_bus','stop')};
+      Object.keys(MC.models).forEach((n,i)=>{ const v=Object.assign({},poses[n]); delete v.t; at(machineOf(n,v),(i%5-2)*9,0,-Math.floor(i/5)*16,0.5); });
+      cam.position.set(-8,30,36); ctl.target.set(0,3,-14); }},
+  animals:{t:'Animals',d:'Four legs, back to front: bear, cow, deer buck, deer, boar, wolf, goat, sheep, dog, fox, raccoon, rabbit and squirrel. Birds: turkey, goose, chicken, duck, crow and pigeon. Fish: trout, bass and catfish. A survivor for scale.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xd8d2c6);
+      const big=['bear','cow','deer_buck','deer','boar','wolf','goat'], mid=['sheep','dog','fox','raccoon','rabbit','squirrel'], birds=['turkey','goose','chicken','duck','crow','pigeon'], fish=['trout','bass','catfish'];
+      let x=-6.4; big.forEach(n=>{ const L=AN.creatures[n].info.length||1; at(animal(n,'idle',0),x+L*0.25,0,-2.5,Math.PI/2.4); x+=Math.max(1.2,L*0.85); });
+      x=-4.5; mid.forEach(n=>{ at(animal(n,'idle',0),x,0,0.2,Math.PI/2.4); x+=1.2; });
+      x=-4.2; birds.forEach(n=>{ at(animal(n,'idle',0),x,0,2.0,Math.PI/2.4); x+=1.0; }); at(animal('crow','glide',0),1.5,1.0,3.4,Math.PI/2.4); x=2.3; fish.forEach(n=>{ at(animal(n,'flop',0),x,0,2.2,Math.PI/2.4); x+=0.75; });
+      at(survivor(LOOKS[2]),-6.0,0,0.8,0.6); cam.position.set(0,4.4,11.5); ctl.target.set(-0.6,0.5,-0.4); }},
+  animals_clips:{t:'Animal clips',d:'Left to right: a deer walking, running, eating and alert, a deer dying, a bear rearing, a wolf attacking, a rabbit bounding, a turkey flying, a duck floating, a goose pecking and a trout swimming.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xd8d2c6);
+      const L=[['deer','walk',1],['deer','run',2],['deer','eat',0],['deer','alert',0],['deer','dead',0],['bear','rear',0],['wolf','attack',1],['rabbit','run',0],['turkey','fly',0],['duck','float',0],['goose','peck',0],['trout','swim',0]];
+      L.forEach(([n,c,f],i)=>at(animal(n,c,f),(i%6-2.5)*2.6,c==='fly'?-1.0:0,-Math.floor(i/6)*4,Math.PI/2.4));
+      cam.position.set(0,6,13); ctl.target.set(0,0.6,-2); }},
+  animal_items:{t:'From the hunt',d:'Raw and cooked meat, a fish fillet, a hide, a pelt, feathers, a bone, a jar of fat, an antler, wool, an egg, and meat drying on a rack.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(30,30,0xd8d2c6); const c=colourer(AN.palette,{});
+      const K=Object.keys(AN.items).filter(k=>k!=='meat_on_rack'); K.forEach((k,i)=>at(mesh(AN.items[k],c),(i%6-2.5)*0.6,0,-Math.floor(i/6)*0.7)); at(mesh(AN.items.meat_on_rack,c),0,0,-2.0);
+      cam.position.set(0,2.2,3.2); ctl.target.set(0,0.3,-0.8); }},
+  signs:{t:'Street signs',d:'No parking, no entry, all-way stop, warnings (pedestrians, school, deer, curve, crossroads, slippery), road work and detour, dead end, hospital, parking, evacuation route, speed limits 25, 35 and 55, a route shield, a railroad crossing (lamps on) and an overhead sign gantry.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6);
+      const K=Object.keys(PR.models.street).filter(k=>k.startsWith('sign_')&&k!=='sign_gantry'&&!['sign_speed','sign_one_way','sign_yield'].includes(k)).concat(['railroad_crossing_on']);
+      K.forEach((k,i)=>at(prop('street',k),(i%11-5)*1.3,0,-Math.floor(i/11)*2.6)); at(prop('street','sign_gantry'),0,0,-9);
+      cam.position.set(0,3.8,11); ctl.target.set(0,3,-3); }},
+  lights_street:{t:'Street lights and signals',d:'Each light off then on: cobra-head, double-armed, ornate, a 16 m mast and a wall lantern; traffic signals on a mast arm (red, amber, green, flashing, dark) and on a span wire (green), walk signals (walk, stop) and a flasher. At dusk.',
+    make(){ lights('dusk'); ground(120,120,0x4a4846);
+      [['lamp_cobra',-14],['lamp_double',-9],['lamp_ornate',-5],['lamp_mast',0],['lamp_wall',4]].forEach(([k,x])=>{ at(prop('street',k+'_off'),x-1.4,0,-6); const l=at(prop('street',k+'_on'),x+1.4,0,-6); glowLight(l,0xffc070,14,14).position.set(0,4,1); });
+      ['red','amber','green','flash','dark'].forEach((s,i)=>at(prop('street','traffic_mast_'+s),-6+i*7.5,0,6));
+      at(prop('street','traffic_span_green'),6,0,-16); ['walk','stop'].forEach((s,i)=>at(prop('street','walk_signal_'+s),10+i*1.2,0,-4)); at(prop('street','flasher_on'),13,0,-4);
+      cam.position.set(0,9,30); ctl.target.set(0,4,-2); }},
   fp:{t:'First-person arms',d:'Seen from the eye, in the survivor\'s skin and sleeve colours: holding a weapon, empty, and reaching to open or search (left to right).',
     make(){ lights('day'); scene.background=new THREE.Color(0xc9c4b8); scene.fog=null; window.__fpPanels=true;
       const g=new THREE.Group(); g.add(fpArms(window.__fpPose||'hold',SV.slots.SKIN[2],'#3a4a3e'));
