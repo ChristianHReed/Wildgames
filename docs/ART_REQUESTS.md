@@ -168,6 +168,33 @@ Everything in the code that can be built without new art is built. These are the
 5. Power yard pieces, breaker panel, outlets (11.3).
 6. Music and sound (11.11), held map (11.8), the rest.
 
+### 11.13 Delivered by the design chat (20 October 2026, pushed to main)
+
+Everything in section 11 is now on main. About half of it had already been delivered in sections 1 to 10 and only needs wiring; the rest is new. Formats and rules for every piece are in `docs/SHAPED.md`.
+
+| Request | Where it is | New? |
+| --- | --- | --- |
+| 11.1 Torn wall hole frames (siding, brick, metal, glass; 2.4 m and 4 m), rubble pile, boarded | `buildings.breach[finish]`: `hole_2.4`, `hole_4.0`, `rubble_*`, `boarded_*`; for any other length `edge_left`, `edge_right`, `top` (stretch) and `boarded_1m`. Matches `breachApply`: faces at z = ±0.05, up to 2.7 m | New |
+| 11.1 Cracked, bricks missing | `buildings.breach[finish].cracked_<W>` and `missing_<W>`, drawn over a whole wall | New |
+| 11.1 House numbers, street name sign | `buildings.house.plaque` and `digit_0`..`digit_9`; `street_blade` (two on `props.street.street_name_post`) | New |
+| 11.1 Gun shop | `buildings.modules.gunshop_front` (a ground-storey bay); inside: `props.shop.gun_counter`, `gun_rack`, `ammo_shelf`, `target_poster` | New |
+| 11.2 Claim sign or flag, custom bed, reinforcement | `props.build.claim_sign`, `claim_flag`, `custom_bed`, `reinforce_planks`, `reinforce_sheet` and `reinforce_mesh` (each with `_damaged` and `_nearly_gone`) | Already there |
+| 11.2 Door brace, window boards from outside | `props.build.door_brace`, `window_boards_bay` (fits a buildings.js window bay) | New |
+| 11.3 Power plant, control panel, substation, pole, pylon, breaker panel, outlet, wall lamp, cable box, solar | `power.js`: `power_plant_dead`/`_running`, `control_panel_*`, `substation`, `pole_transformer`, `pylon`, `breaker_panel_closed`/`open`/`tripped`, `outlet_*`, `wall_light_*`, `ceiling_light_*`, `cable_box_off`/`on`/`overload`, `solar_portable`, `solar_roof`, `battery_rack`, `battery_box`, cables and plug | Already there |
+| 11.4 Reload poses | `held.models.fpReload` plus `held.fpReload` (weapon, state, position, item in hand): pistol and carbine magazine out and in, shotgun rack and shell loading, double barrel open, rifle bolt, revolver, flare gun open, bow nock and draw, crossbow cock. New states: `pistol.empty`, `flare_gun.open` | New |
+| 11.4 Magazines, shells, cartridges, casings, arrows, bolts, quiver | `held.ammo`: `pistol_magazine`, `carbine_magazine`, rounds, boxes, `arrow`, `crossbow_bolt`, `quiver`; `held.cases` for thrown casings. New: `arrow_stuck`, `bolt_stuck`, `flare_shell`; `survivor.parts.npc.quiver` worn on the back | Partly new |
+| 11.4 Third-person long-gun carry | `survivor.clips.carry_long`, `aim_long` with `heldTurn`; `survivor.sling` puts a gun across the back | New |
+| 11.4 Worn guns | `held.weapons[gun].worn` for every gun | Already there |
+| 11.5 Light, heavy, wrecked, smoke, flame | `props.vehicles[car].damage`: `body_bumper_bent`, `body_crumple_light`/`heavy`, `bonnet_buckled`, `windscreen_cracked`/`missing`, `smoke`, and new `fire`. `damageRule` maps vehicle health to the looks | Fire is new |
+| 11.5 Boot lid open, fuel siphon | `vehicles.sedan.boot` and `hatchback.boot` with `vehicleRig[...].bootHinge`; new `props.items.fuel_siphon` | Siphon is new |
+| 11.6 Carry pose, weights | `survivor.clips.carry_furniture` (with `carryAt`), `props.furnitureSize` (class and kg per piece, with a speed rule) | New |
+| 11.7 Ripples, roof splash, clouds, lightning | `fx.effects.ripple`, new `fx.effects.roof_splash`, `fx.sky` clouds and `lightning` | Splash is new |
+| 11.8 Held map, map pickup | `held.map.folded` and `open`; new `props.items.paper_map` | Pickup is new |
+| 11.9 Ground tiles with edges | `ground.js` tiles; new `ground.edges` (grass, snow, gravel, dirt, sand) | Edges are new |
+| 11.9 Loose items, street props, trees | `props.items` (every listed item; the car part is `engine_parts`, the tyre `spare_tyre`), `props.street` (traffic light, cones, barriers, bus stop, power pole, fences, sandbags), `props.plants` | Already there |
+| 11.10 Portraits, work poses | `assets/ui/portraits/<look>.png`; `survivor.clips.work_chop`, `fish` (with `parts.npc.fishing_rod`), `keep_watch` | New |
+| 11.11 Music and sound | `assets/audio/`: `sounds_design.js` (68 keys added to `window.ART.sounds`), `music_day`, `music_night`, `music_horde`, `music_base` (two-minute seamless loops) and `music_chase` (sting); `preview.html` | New |
+
 ---
 
 Suggested order: section 1 (so the weapons and jump look right), then loose items and loot containers from section 2, then section 3, then Art 4 and Art 6.
