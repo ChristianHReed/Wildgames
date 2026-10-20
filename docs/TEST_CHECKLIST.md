@@ -119,3 +119,8 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] **PHONE** Drive a car: stick up and down is gas and brake, left and right steers, the jump button is the handbrake; the dashboard sits above the item bar and nothing overlaps.
 - [ ] Drive across a map square edge: the car does not change into another vehicle; fuel and damage carry over.
 - [ ] Fuel: cars you find hold different amounts; a full tank lasts 300 to 400 miles of driving.
+- [ ] Cars collide with trees, lamps, signs, benches, dumpsters and other vehicles.
+- [ ] Bridges over streams and rivers: deck, parapets, no swimming while crossing; walking on them works too.
+- [ ] Overpass at a motorway: ramp up and down, roads beneath still usable.
+- [ ] Sleeping: any key, click or tap wakes you.
+- [ ] Driving view: no head bob.

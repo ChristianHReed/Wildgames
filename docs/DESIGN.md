@@ -219,3 +219,6 @@ Abandoned cars thicken with road size: a car every 14 m on motorways, every 30 m
 
 ## Driving and units (0.88)
 The game speaks in inches, feet and miles; the map and physics stay in metres inside. Cars have a heading and a speed (top 24 to 36 m/s by kind, about 55 to 80 mph), accelerate gradually, brake harder than they accelerate, and steer less at speed. Fuel is range: a tank is 300 to 400 miles, a can is 100 miles, and burn is by distance (a little while idling). Found cars hold a random fraction of a tank: roughly 14% nearly empty, 82% between a twentieth and three quarters, and 4% nearly full. Road wrecks are about 42% of road cars, the rest drivable with some wear.
+
+## Bridges and overpasses (0.89)
+The map data has no bridge or layer tags, so the game infers them. A road that runs through water gets a deck at bank height (parapets, piers); a road that crosses a motorway or trunk road with no shared junction is lifted over it (5.6 m clearance, ramps up to 75 m, at least 30 m). The deck is its own mesh; people and cars stand on it when their height is within 2.6 m of it, so the road beneath an overpass stays usable. Cars collide with trees (trunks), lamps, signs, hydrants, benches, dumpsters, other vehicles and deck parapets.

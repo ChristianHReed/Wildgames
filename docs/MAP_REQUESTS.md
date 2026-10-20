@@ -42,3 +42,5 @@ One zip with the pack folder, a `REFERENCE.md` of every property it contains, a 
 
 ## Overview file (0.85.0)
 The game reads `assets/springfield/overview.js` for the whole-region big map. After every `tools/build_region.py` run, run `python3 tools/build_overview.py` as well. Wanted later: parks, woods and farmland polygons in the overview, and place names (towns) with their centre points.
+
+- **Bridges and overpasses (0.89).** The game now infers bridges from water crossings and motorway crossings. Real tags would be better: send `bridge`, `tunnel`, `layer` and the bridge's start and end points per road, and keep the road pieces whole across junction-free crossings so overpasses have room for their ramps.

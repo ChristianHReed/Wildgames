@@ -430,7 +430,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.88.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.89.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -453,7 +453,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.88.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.89.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -985,6 +985,78 @@ function hAt(x, y){
   var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*g.cols + i, d = g.d, a = d[k], b = d[k + 1], c = d[k + g.cols], e = d[k + g.cols + 1];
   return fu + fv <= 1 ? a + (b - a)*fu + (c - a)*fv : e + (c - e)*(1 - fu) + (b - e)*(1 - fv);
 }
+/* ---- 0.89 bridges and overpasses. Roads that cross water get a raised deck at bank height with piers; a road that crosses a motorway or trunk road with no junction goes over it on a deck with long ramps. The deck is its own mesh, and cars and people stand on it by height (baseAt with the height they are at) ---- */
+var DK = null, LASTDECK = false, DKG = null, BRHW = {motorway:1, trunk:1};
+function roadLen(r){ if (r.cum) return r.cum; var c = [0], p = r.pts; for (var q = 0; q + 3 < p.length; q += 2) c.push(c[c.length - 1] + Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1])); return r.cum = c; }
+function roadPt(r, s){ var c = roadLen(r), n = c.length - 1, i = 0; s = Math.max(0, Math.min(c[n], s)); while (i < n - 1 && c[i+1] < s) i++; var l = c[i+1] - c[i] || 1, u = (s - c[i])/l, p = r.pts; return [p[i*2] + (p[i*2+2] - p[i*2])*u, p[i*2+1] + (p[i*2+3] - p[i*2+1])*u, i]; }
+function brH(sp, s, terr){ var k = s < sp.a ? Math.max(0, 1 - (sp.a - s)/sp.rs) : s > sp.b ? Math.max(0, 1 - (s - sp.b)/sp.re) : 1; k = k*k*(3 - 2*k); var base = sp.ba + (sp.bb - sp.ba)*Math.max(0, Math.min(1, (s - sp.a)/Math.max(1, sp.b - sp.a))); return terr + (base - terr)*k; }
+function bridgeScan(w){
+  DK = null; DKG = null; if (!w.hg) return; var spans = {}, cand = [], mws = [];
+  w.roads.forEach(function(r, ri){ r.br = null; r.gap = null; r.cum = null; if (r.kind === 'road' && r.w >= 6 && r.pts.length >= 4){ cand.push(ri); if (BRHW[r.hw]) mws.push(ri); } });
+  var add = function(ri, a, b, ba, bb, ramp, wet){ (spans[ri] = spans[ri] || []).push({a:a, b:b, ba:ba, bb:bb, ramp:ramp, wet:wet}); };
+  cand.forEach(function(ri){ var r = w.roads[ri], c = roadLen(r), L = c[c.length - 1], run = -1, s;
+    for (s = 0; s <= L + 3; s += 3){ var pt = roadPt(r, Math.min(s, L)), wet = s <= L && inWater(pt[0], pt[1], 0.4);
+      if (wet && run < 0) run = s;
+      if (!wet && run >= 0){ var e = s - 3; if (e - run >= 7 && e - run < 160){ var a = Math.max(0, run - 6), b = Math.min(L, e + 6), pa = roadPt(r, a), pb = roadPt(r, b); add(ri, a, b, hAt(pa[0], pa[1]) + 0.45, hAt(pb[0], pb[1]) + 0.45, 22, 1); } run = -1; } } });
+  mws.forEach(function(mi){ var A = w.roads[mi], ca = roadLen(A);
+    cand.forEach(function(bi){ if (bi === mi) return; var B = w.roads[bi]; if (BRHW[B.hw] && bi < mi) return; if (A.maxx < B.minx || A.minx > B.maxx || A.maxy < B.miny || A.miny > B.maxy) return; var cb = roadLen(B);
+      for (var q = 0; q + 3 < A.pts.length; q += 2) for (var t = 0; t + 3 < B.pts.length; t += 2){
+        var ax = A.pts[q], ay = A.pts[q+1], bx = A.pts[q+2], by = A.pts[q+3], cx = B.pts[t], cy = B.pts[t+1], dx = B.pts[t+2], dy = B.pts[t+3], d = (bx - ax)*(dy - cy) - (by - ay)*(dx - cx); if (Math.abs(d) < 1e-9) continue;
+        var u = ((cx - ax)*(dy - cy) - (cy - ay)*(dx - cx))/d, v = ((cx - ax)*(by - ay) - (cy - ay)*(bx - ax))/d; if (u <= 0.002 || u >= 0.998 || v <= 0.002 || v >= 0.998) continue;
+        var x = ax + u*(bx - ax), y = ay + u*(by - ay), upR = BRHW[B.hw] ? B : B, hh = hAt(x, y) + 5.6, half = (BRHW[B.hw] ? A.w : A.w)/2 + 12 + (BRHW[B.hw] ? 0 : 0);
+        if (BRHW[B.hw]){ /* two controlled roads: the later one goes over */ half = A.w/2 + 12; add(bi, cb[t/2] + v*Math.hypot(dx - cx, dy - cy) - half, cb[t/2] + v*Math.hypot(dx - cx, dy - cy) + half, hh, hh, 75, 0); }
+        else { half = A.w/2 + 12; add(bi, cb[t/2] + v*Math.hypot(dx - cx, dy - cy) - half, cb[t/2] + v*Math.hypot(dx - cx, dy - cy) + half, hh, hh, 75, 0); }
+        q = A.pts.length; break; } }); });
+  var any = 0;
+  Object.keys(spans).forEach(function(k){ var r = w.roads[k], c = roadLen(r), L = c[c.length - 1], list = spans[k].sort(function(a, b){ return a.a - b.a; }), m = [];
+    list.forEach(function(sp){ sp.a = Math.max(0, sp.a); sp.b = Math.min(L, sp.b); var l = m[m.length - 1]; if (l && sp.a - sp.ramp <= l.b + l.ramp && sp.b - l.a < 260){ l.b = Math.max(l.b, sp.b); l.bb = sp.bb; l.ramp = Math.max(l.ramp, sp.ramp); l.wet = l.wet && sp.wet; } else m.push(sp); });
+    m = m.filter(function(sp){ sp.rs = Math.max(1, Math.min(sp.ramp, sp.a)); sp.re = Math.max(1, Math.min(sp.ramp, L - sp.b)); return sp.wet || (sp.rs >= 30 && sp.re >= 30); }); if (!m.length) return;
+    r.br = m; r.gap = [];
+    m.forEach(function(sp){ var ga = Math.max(0, sp.a - sp.rs), gb = Math.min(L, sp.b + sp.re), i0 = 0, i1 = c.length - 2; while (i0 < i1 && c[i0 + 1] <= ga) i0++; while (i1 > i0 && c[i1] >= gb) i1--; sp.ga = c[i0]; sp.gb = c[i1 + 1]; r.gap.push([i0*2, i1*2]); any++; }); });
+  w.bridgeCount = any;
+}
+function bridgeBuild(g){
+  var w = world, segs = []; if (!w.hg) return;
+  var wall = function(ax, az, bx, bz, y0a, y1a, y0b, y1b, col){ g.pl = null; g.quad(ax, y0a, az, bx, y0b, bz, bx, y1b, bz, ax, y1a, az, col, 255); g.quad(ax, y0a, az, ax, y1a, az, bx, y1b, bz, bx, y0b, bz, col, 255); };
+  w.roads.forEach(function(r){ if (!r.br) return; var hw = r.w/2;
+    r.br.forEach(function(sp){
+      var ga = sp.ga, gb = sp.gb, n = Math.max(2, Math.ceil((gb - ga)/3)), P = [], i;
+      for (i = 0; i <= n; i++){ var s = ga + (gb - ga)*i/n, q = roadPt(r, s), q2 = roadPt(r, s + 0.6), q1 = roadPt(r, s - 0.6), dx = q2[0] - q1[0], dy = q2[1] - q1[1], l = Math.hypot(dx, dy) || 1, t = hAt(q[0], q[1]);
+        P.push({s:s, x:q[0], y:q[1], nx:-dy/l, ny:dx/l, t:t, H:brH(sp, s, t) + 0.14, core:s >= sp.a && s <= sp.b}); }
+      var run = 0;
+      for (i = 0; i < n; i++){ var a = P[i], b = P[i+1], l = Math.hypot(b.x - a.x, b.y - a.y), nxa = a.nx*hw, nya = a.ny*hw, nxb = b.nx*hw, nyb = b.ny*hw;
+        if (r.w >= 8){ g.pl = null; g.quadUV([a.x + nxa, a.H, a.y + nya, b.x + nxb, b.H, b.y + nyb, b.x - nxb, b.H, b.y - nyb, a.x - nxa, a.H, a.y - nya], [0, run/8, 0, (run + l)/8, 1, (run + l)/8, 1, run/8], TX.lanes, WHITE, 255); }
+        else { g.pl = [TX.asphalt, 0.25]; g.quad(a.x + nxa, a.H, a.y + nya, b.x + nxb, b.H, b.y + nyb, b.x - nxb, b.H, b.y - nyb, a.x - nxa, a.H, a.y - nya, WHITE, 255); }
+        run += l; var e = Math.min(a.H - a.t, b.H - b.t);
+        if (e > 0.5) [1, -1].forEach(function(sg){
+          var ex = a.x + sg*nxa, ey = a.y + sg*nya, fx = b.x + sg*nxb, fy = b.y + sg*nyb;
+          wall(ex, ey, fx, fy, a.H - 0.7, a.H, b.H - 0.7, b.H, [150, 148, 142]);   /* the edge of the slab */
+          wall(ex, ey, fx, fy, a.H, a.H + 0.85, b.H, b.H + 0.85, [176, 174, 168]);   /* parapet */
+          g.pl = null; g.quad(ex, a.H + 0.85, ey, fx, b.H + 0.85, fy, fx - sg*b.nx*0.28, b.H + 0.85, fy - sg*b.ny*0.28, ex - sg*a.nx*0.28, a.H + 0.85, ey - sg*a.ny*0.28, [196, 194, 188], 255);
+          if (!sp.wet && !(a.core && b.core)){ var ta = hAt(ex, ey) - 0.3, tb = hAt(fx, fy) - 0.3; wall(ex, ey, fx, fy, ta, a.H - 0.7, tb, b.H - 0.7, [102, 88, 68]); }   /* earth bank under a ramp */
+        });
+        segs.push({x0:a.x, y0:a.y, x1:b.x, y1:b.y, h0:a.H, h1:b.H, hw:hw, e:e});
+      }
+      if (sp.wet) for (i = 2; i < n - 1; i += 4){ var c = P[i], hb = hAt(c.x, c.y) - 1.5, hx = hw*0.92, ux = -c.ny, uy = c.nx, o = 0.55;
+        var pc = function(sx, sy){ return [c.x + c.nx*hx*sx + ux*o*sy, c.y + c.ny*hx*sx + uy*o*sy]; }, p1 = pc(1, 1), p2 = pc(1, -1), p3 = pc(-1, -1), p4 = pc(-1, 1), col = [142, 140, 134];
+        wall(p1[0], p1[1], p2[0], p2[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p2[0], p2[1], p3[0], p3[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p3[0], p3[1], p4[0], p4[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p4[0], p4[1], p1[0], p1[1], hb, c.H - 0.7, hb, c.H - 0.7, col); }
+    }); });
+  g.pl = null; DK = segs; DKG = new Map();
+  segs.forEach(function(sg, i){ var x0 = Math.floor((Math.min(sg.x0, sg.x1) - sg.hw)/16), x1 = Math.floor((Math.max(sg.x0, sg.x1) + sg.hw)/16), y0 = Math.floor((Math.min(sg.y0, sg.y1) - sg.hw)/16), y1 = Math.floor((Math.max(sg.y0, sg.y1) + sg.hw)/16);
+    for (var cy = y0; cy <= y1; cy++) for (var cx = x0; cx <= x1; cx++){ var k = gk(cx, cy), l = DKG.get(k); if (!l) DKG.set(k, l = []); l.push(i); } });
+}
+/* the deck under (x, y) nearest the height hint (within 2.6 m), or the highest raised one for hint 'hi'; null when none */
+function deckHit(x, y, hint){
+  if (!DK) return null; var l = DKG.get(gk(Math.floor(x/16), Math.floor(y/16))); if (!l) return null; var best = null, bd = 1e9;
+  for (var i = 0; i < l.length; i++){ var sg = DK[l[i]], dx = sg.x1 - sg.x0, dy = sg.y1 - sg.y0, l2 = dx*dx + dy*dy || 1, u = Math.max(0, Math.min(1, ((x - sg.x0)*dx + (y - sg.y0)*dy)/l2)), px = sg.x0 + dx*u, py = sg.y0 + dy*u, lat = Math.hypot(x - px, y - py);
+    if (lat > sg.hw) continue; var h = sg.h0 + (sg.h1 - sg.h0)*u;
+    if (hint === 'hi'){ if (sg.e > 0.5 && -h < bd){ bd = -h; best = {h:h, lat:((x - sg.x0)*dy - (y - sg.y0)*dx)/Math.sqrt(l2), hw:sg.hw, e:sg.e, dx:dx, dy:dy}; } continue; }
+    var dh = Math.abs(h - hint); if (dh < 2.6 && dh < bd){ bd = dh; best = {h:h, lat:((x - sg.x0)*dy - (y - sg.y0)*dx)/Math.sqrt(l2), hw:sg.hw, e:sg.e, dx:dx, dy:dy}; } }
+  return best;
+}
+function baseAt(x, y, hint){ LASTDECK = false; if (DK && hint !== undefined){ var d = deckHit(x, y, hint); if (d){ LASTDECK = true; return d.h; } } return hAt(x, y); }
+function deckBlock(x, y){ if (!DK) return false; var l = DKG.get(gk(Math.floor(x/16), Math.floor(y/16))); if (!l) return false; for (var i = 0; i < l.length; i++){ var sg = DK[l[i]]; if (sg.e < 0.3) continue; if (segDist(x, y, sg.x0, sg.y0, sg.x1, sg.y1) < sg.hw + 2.5) return true; } return false; }
+function deckOfRoad(r, s, x, y){ if (!r.br) return null; for (var i = 0; i < r.br.length; i++){ var sp = r.br[i]; if (s >= sp.ga && s <= sp.gb){ var t = hAt(x, y), H = brH(sp, s, t) + 0.14; return H - t > 0.3 || inWater(x, y, 2) ? H : null; } } return null; }
 /* height you stand at: a building's level floor indoors, the ground outdoors */
 function groundAt(x, y){ if (!world.hg) return 0; var b = buildingAt(x, y); return b ? b.base : hAt(x, y); }
 /* the height something is standing at, counting stairs and upper floors */
@@ -1794,9 +1866,10 @@ function seat(b, m, lm, s0, l0){
   if (b.door){ var ox = -b.door.nx, oy = -b.door.ny, sx = b.door.x + ox*0.8, sy = b.door.y + oy*0.8, lo = hAt(sx + ox*0.8, sy + oy*0.8) - 0.4; if (base - lo > 0.5) m.ybox(sx, sy, Math.atan2(oy, ox), 0, 0, (base + lo)/2, 0.8, (base - lo)/2, 1.0, [196,186,170]); }
 }
 /* street furniture: lights along main roads, hydrants on side streets, benches in parks, dumpsters by shops, bushes by houses */
+var OBR = {streetlight:0.25, firehydrant:0.3, bench:0.75, dumpster:1.3, bush:0.5};
 function placeProps(g){
   var w = world, M = MODELS; if (!M.streetlight) return;
-  var cand = {light:[], hyd:[], bench:[], dump:[], bush:[]}, i, ok = function(x, y){ return !blocked(x, y) && !inWater(x, y, 0.5) && x > w.minx && x < w.maxx && y > w.miny && y < w.maxy; };
+  var cand = {light:[], hyd:[], bench:[], dump:[], bush:[]}, i, ok = function(x, y){ return !blocked(x, y) && !deckBlock(x, y) && !inWater(x, y, 0.5) && x > w.minx && x < w.maxx && y > w.miny && y < w.maxy; };
   w.roads.forEach(function(r, ri){
     if (r.kind !== 'road' || r.w < 7) return; var p = r.pts, main = r.w >= 8, gap = main ? 55 : 130, run = gap*hash(ri, 3, 41), side = ri % 2 ? 1 : -1;
     for (var q = 0; q < p.length - 2; q += 2){
@@ -1811,7 +1884,7 @@ function placeProps(g){
     if (b.cat === 'house'){ if (h < 0.45){ var sd = h < 0.22 ? 1 : -1; x = d.x - d.nx*0.7 + tx*1.7*sd; y = d.y - d.ny*0.7 + ty*1.7*sd; if (ok(x, y)) cand.bush.push([x, y, h*20]); } }
     else if (h < 0.5){ x = d.x - d.nx*1.1 + tx*3.4; y = d.y - d.ny*1.1 + ty*3.4; if (ok(x, y) && ok(x + tx, y + ty) && ok(x - tx, y - ty)) cand.dump.push([x, y, Math.atan2(ty, tx)]); }
   });
-  w.slights = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
+  w.slights = []; w.obstL = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
   put(cand.light, 'streetlight', 700); put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
 }
 /* 0.80 dressing from the art pack's unused street, plant and road pieces: signs and poles on the streets, mailboxes at houses, bus stops, manholes,
@@ -1820,7 +1893,7 @@ var GB = {};
 function gB(path){ if (GB[path] !== undefined) return GB[path]; GB[path] = null; var a = path.split('.'), m = window.SHAPED && SHAPED.ground && SHAPED.ground.models[a[0]], pcs = m && m[a[1]]; if (pcs) try { GB[path] = spModel(pcs, spColour(SHAPED.ground.palette)); } catch (er){} return GB[path]; }
 function placeDress(g){
   var w = world; if (!SPON || !w.roadOk) return; var hasM = false;
-  var ok = function(x, y, e){ return !blocked(x, y) && !inWater(x, y, 0.5) && x > w.minx && x < w.maxx && y > w.miny && y < w.maxy && w.roadOk(x, y, e === undefined ? 1.5 : e); };
+  var ok = function(x, y, e){ return !blocked(x, y) && !deckBlock(x, y) && !inWater(x, y, 0.5) && x > w.minx && x < w.maxx && y > w.miny && y < w.maxy && w.roadOk(x, y, e === undefined ? 1.5 : e); };
   var out = {}, add = function(path, x, y, yaw, cap){ var L = out[path] || (out[path] = {c:cap, l:[]}); L.l.push([x, y, yaw]); };
   w.roads.forEach(function(r, ri){
     if (r.kind !== 'road' || r.w < 5) return; var p = r.pts, main = r.w >= 8, n = p.length; if (n < 4) return;
@@ -1873,7 +1946,7 @@ function placeDress(g){
         if (!inWater(x, y, 0.2) && !blocked(x, y)) add('plants.reeds', x, y, hash(q, u, 8)*6.28, 600); } } });
   var total = 0;
   Object.keys(out).forEach(function(path){ var L = out[path], M = path.indexOf('ground.') === 0 ? gB(path.slice(7)) : spB(path); if (!M) return; var st = Math.max(1, Math.ceil(L.l.length/L.c));
-    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' ? 0.115 : 0.02)); total++; } });
+    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' ? 0.115 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
   w.dressCount = total; w.dressOut = out;
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */
@@ -1890,24 +1963,26 @@ function prep3D(){
     var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : 0.25];
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
   });
-  var ribbon = function(p, hw, y, tile, col, lanes){
-    var run = 0;
+  bridgeScan(w);
+  var ribbon = function(p, hw, y, tile, col, lanes, gap){
+    var run = 0, inGap = function(q){ if (gap) for (var gi = 0; gi < gap.length; gi++) if (q >= gap[gi][0] && q <= gap[gi][1]) return true; return false; };
     for (var q = 0; q < p.length - 2; q += 2){
-      var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx-ax, bz-az); if (l < 0.01) continue;
+      if (inGap(q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx-ax, bz-az); if (l < 0.01) continue;
       var nx = -(bz-az)/l*hw, nz = (bx-ax)/l*hw;
       if (lanes){ g.pl = null; g.quadUV([ax+nx,y,az+nz, bx+nx,y,bz+nz, bx-nx,y,bz-nz, ax-nx,y,az-nz], [0,run/8, 0,(run+l)/8, 1,(run+l)/8, 1,run/8], TX.lanes, col, 255); run += l; }
       else { g.pl = [tile, 0.25]; g.quad(ax+nx,y,az+nz, bx+nx,y,bz+nz, bx-nx,y,bz-nz, ax-nx,y,az-nz, col, 255); }
     }
-    if (hw >= 1.5){ g.pl = [lanes ? TX.asphalt : tile, 0.25]; for (q = 2; q < p.length - 2; q += 2) for (var k = 0; k < 6; k++){ var a0 = k*1.0472, a1 = a0 + 1.0472; g.tri(p[q], y - 0.004, p[q+1], p[q] + Math.cos(a0)*hw, y - 0.004, p[q+1] + Math.sin(a0)*hw, p[q] + Math.cos(a1)*hw, y - 0.004, p[q+1] + Math.sin(a1)*hw, col, 255); } }
+    if (hw >= 1.5){ g.pl = [lanes ? TX.asphalt : tile, 0.25]; for (q = 2; q < p.length - 2; q += 2) if (!inGap(q) && !inGap(q - 2)) for (var k = 0; k < 6; k++){ var a0 = k*1.0472, a1 = a0 + 1.0472; g.tri(p[q], y - 0.004, p[q+1], p[q] + Math.cos(a0)*hw, y - 0.004, p[q+1] + Math.sin(a0)*hw, p[q] + Math.cos(a1)*hw, y - 0.004, p[q+1] + Math.sin(a1)*hw, col, 255); } }
   };
-  w.roads.forEach(function(r){ if (r.kind === 'road' && r.w >= 6) ribbon(r.pts, r.w/2 + 2, 0.062, TX.sidewalk, WHITE, false); });
+  w.roads.forEach(function(r){ if (r.kind === 'road' && r.w >= 6) ribbon(r.pts, r.w/2 + 2, 0.062, TX.sidewalk, WHITE, false, r.gap); });
   w.roads.forEach(function(r){
     if (r.kind === 'water') ribbon(r.pts, r.w/2, 0.05, TX.water, WHITE, false);
     else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false);
     else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false); }
-    else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8);
+    else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8, r.gap);
   });
   g.pl = null; if (w.hg) drape(g, 0.05);
+  try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
   w.buildings.forEach(function(b){
     b.base = 0; b.low = 0;
     if (w.hg){ var hi = hAt(b.cx, b.cy), lo = hi; for (var q = 0; q < b.pts.length; q += 2){ var hq = hAt(b.pts[q], b.pts[q+1]); if (hq > hi) hi = hq; if (hq < lo) lo = hq; } b.base = hi + 0.04; b.low = lo; }
@@ -3650,12 +3725,16 @@ function shoveFurniture(c){
 function goToSleep(o){
   for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
   var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90 && P.rest > 50){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
-  P.sleep = {start:time, hp:P.hp}; P.x = o.x + (o.fx || 0)*0.6; P.y = o.y + (o.fy || 0)*0.6;
+  P.sleep = {start:time, hp:P.hp, rt:performance.now()}; wakeReq = false; P.x = o.x + (o.fx || 0)*0.6; P.y = o.y + (o.fy || 0)*0.6;
   doEdit({a:'bed', s:charSlug(), b:o.b.id, x:P.x, y:P.y}); el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping\u2026'; keys = {};
 }
 function wakeUp(why){ if (!P.sleep) return; var hrs = (time - P.sleep.start)/DAY*24, cab = P.sleep.cab; if (cab){ var q = tpt(cab, 0.25, 1.6); P.x = q.x; P.y = q.y; } P.sleep = null; if (!cab) allBeds().forEach(function(bd){ var a = world.edits.beds[charSlug()]; if (bd.s === charSlug() && Math.hypot(bd.x - P.x, bd.y - P.y) < 3 && (!a || a.b !== bd.b)) doEdit({a:'bed', s:charSlug(), b:bd.b, x:bd.x, y:bd.y}); }); el('sleepMask').classList.remove('on'); toast((why ? why + ' ' : '') + 'You slept ' + (hrs < 1 ? 'a little' : Math.round(hrs) + ' hours') + (cab ? ' in the truck.' : '. You will wake here if you die.'), 5); updateHud(); }
+/* 0.89: any key, click or tap wakes you, not only E */
+var wakeReq = false;
+['keydown', 'mousedown', 'touchstart'].forEach(function(ev){ document.addEventListener(ev, function(e){ if (P.sleep && !P.cop && performance.now() - (P.sleep.rt || 0) > 600 && !(e.target && e.target.closest && e.target.closest('#menu, .modal'))) wakeReq = true; }, true); });
 function sleepTick(dt){
   if (!P.sleep) return;
+  if (wakeReq){ wakeReq = false; return wakeUp(''); }
   if (P.bleed > 0) return wakeUp('You woke up bleeding.');
   var hr = (8 + time/DAY*24) % 24, slept = time - P.sleep.start;
   if (P.hurt > 0 || P.hp < P.sleep.hp - 2) return wakeUp('Something hurt you!');
@@ -3663,7 +3742,7 @@ function sleepTick(dt){
   for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (z.st === 2 && !z.tp && Math.hypot(z.x - P.x, z.y - P.y) < 25) return wakeUp('A noise woke you!'); }
   if (hr >= 7 && hr < 9 && slept > DAY/24) return wakeUp('Morning.');
   if (slept > DAY/2) return wakeUp('');
-  P.sleep.hp = P.hp; el('sleepMask').textContent = (P.sleep.cab ? 'Sleeping in the truck\u2026 ' : 'Sleeping\u2026 ') + String(Math.floor(hr)).padStart(2, '0') + ':' + String(Math.floor((hr % 1)*60)).padStart(2, '0');
+  P.sleep.hp = P.hp; el('sleepMask').textContent = (P.sleep.cab ? 'Sleeping in the truck\u2026 ' : 'Sleeping\u2026 ') + String(Math.floor(hr)).padStart(2, '0') + ':' + String(Math.floor((hr % 1)*60)).padStart(2, '0') + ' \u00b7 press any key or tap to wake up';
 }
 /* ---- hiding: step into an emptied wardrobe or locker. Aliens that did not see you go in walk past; one that did will drag you out ---- */
 function enterHide(c){
@@ -4307,9 +4386,9 @@ function update(dt){
   if (P.hide){ if (Math.abs(mf) > 0.3 || Math.abs(ms) > 0.3 || ePress || tapUse){ exitHide(); ePress = false; tapUse = false; keys.KeyE = false; } mf = ms = 0; if (P.hide){ P.x = P.hide.c.x; P.y = P.hide.c.y; } }
   if (P.climbL){ climbTick(dt); mf = ms = 0; }
   if (P.veh && P.veh.t && !P.sleep && !P.hide){ carDrive(P.veh, dt, mf, ms, !!(keys.Space || keys.HB)); mf = ms = 0; } else if (!P.veh) el('carHud').classList.add('hidden');
-  var wasSwim = P.swim; P.swim = !P.roof && !P.climbL && inWater(P.x, P.y, 0); if (P.swim && !wasSwim) fxAdd('effects.water_splash', P.x, P.y, P.gy || 0, {life:0.5, s0:0.8, s1:1, up:0.1}); P.inside = P.roof || P.climbL ? null : buildingAt(P.x, P.y);
+  var wasSwim = P.swim; P.swim = !P.roof && !P.climbL && inWater(P.x, P.y, 0) && !(DK && P.gy !== undefined && deckHit(P.x, P.y, P.gy)); if (P.swim && !wasSwim) fxAdd('effects.water_splash', P.x, P.y, P.gy || 0, {life:0.5, s0:0.8, s1:1, up:0.1}); P.inside = P.roof || P.climbL ? null : buildingAt(P.x, P.y);
   setLvl(P); if (!P.inside) P.lvl = 0;
-  var tgy = P.climbL ? climbH() : P.roof ? roofY(P.roof) : (world.hg ? (P.inside ? P.inside.base : hAt(P.x, P.y)) : 0) + (P.inside ? lvlY(P.inside, P) : 0);
+  var tgy = P.climbL ? climbH() : P.roof ? roofY(P.roof) : (world.hg ? (P.inside ? P.inside.base : baseAt(P.x, P.y, P.gy)) : 0) + (P.inside ? lvlY(P.inside, P) : 0); if (P.veh) P.veh.gh = !P.inside && LASTDECK ? tgy : undefined;
   if (P.fall){ P.fall += 9.8*dt; P.gy -= P.fall*dt; if (P.gy <= tgy){ P.gy = tgy; P.fall = 0; } } else P.gy = P.gy === undefined || P.climbL || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
   /* jumping: a hop of about 0.7 m outdoors and half that under a ceiling; not while swimming, driving, hiding, climbing, falling or out of breath */
   if (wantJump){ wantJump = false; if (!P.jy && !P.jv && !P.fall && !P.swim && !P.veh && !P.hide && !P.climbL && !P.sleep && !P.cop && !P.tired && P.stam >= 10){ P.jv = P.inside ? 3.6 : 4.6; P.stam -= 8; P.noise = Math.max(P.noise || 0, 2); P.jy = 0.001; P.jumpT = time; } }
@@ -5385,7 +5464,7 @@ function render(){
   }
   var cFx = CAMS.fx, cBob = CAMS.bob, cVeh = P.veh ? 0 : 1, vox = 0, voz = 0, vof = 0;
   if (!tp){   /* first person: bob, breathing, landing, flinch */
-    var cPh = P.bob, cAm = CAM.amp*cBob*cVeh, cBv = Math.cos(cPh*2)*0.011*cAm, cBl = Math.sin(cPh)*0.004*cAm, cBr = Math.sin(CAM.br), cBre = cBr*(0.0035 + 0.007*Math.min(1, CAM.ex))*(0.4 + 0.6*cFx) + (P.hp < 35 ? Math.sin(CAM.br*3.7)*0.0015 : 0);
+    var cPh = P.bob, cAm = CAM.amp*cBob*cVeh, cBv = Math.cos(cPh*2)*0.011*cAm, cBl = Math.sin(cPh)*0.004*cAm, cBr = Math.sin(CAM.br), cBre = cVeh*cBr*(0.0035 + 0.007*Math.min(1, CAM.ex))*(0.4 + 0.6*cFx) + (P.hp < 35 ? Math.sin(CAM.br*3.7)*0.0015 : 0);
     e[1] += cBv + cBre + CAM.land*cFx; e[0] += s[0]*cBl; e[2] += s[2]*cBl;
     var cdP = (Math.cos(cPh*2)*0.0012*cAm + cBr*0.0025*(0.4 + 0.6*cFx) - CAM.kick*0.035*cFx - (P.swing > 0 ? Math.sin((1 - P.swing/0.22)*3.1416)*0.02*cFx : 0) + (P.shootCd > 0.2 ? 0.012*cFx : 0)),
         cdR = Math.sin(cPh)*0.0012*cAm + CAM.kickS*CAM.kick*0.045*cFx;
@@ -5512,7 +5591,7 @@ function render(){
 var lastTs = 0;
 function frame(ts){
   var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
-  if (running){ if (P.sleep && !P.cop){ for (var sk = 0; sk < 40 && P.sleep && running; sk++) update(0.75); if (running) update(dt*0.01); } else update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
+  if (running){ if (P.sleep && !P.cop){ for (var sk = 0; sk < 40 && P.sleep && running && !wakeReq; sk++) update(0.75); if (wakeReq && P.sleep) update(0.001); if (running) update(dt*0.01); } else update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
   if (FPSM) fpsTick(ts);
   requestAnimationFrame(frame);
 }
@@ -6491,12 +6570,13 @@ function makeVehicles(saved){
         var u = nxt - acc, hh = hash(ri, k, 22); nxt += cfg[0]*(0.6 + hash(ri, k, 23)*0.8); k++;
         if (hh > cfg[1]) continue;
         var side = hash(ri, k, 24) < 0.5 ? -1 : 1, off = side*r.w*(0.12 + hash(ri, k, 25)*0.22), x = ax + ux*u - uy*off, y = ay + uy*u + ux*off;
-        if (inWater(x, y, 2) || buildingAt(x, y) || zoneAt(x, y, 10) || circ(x, y, 1.6)) continue;
+        var dkH = r.br ? deckOfRoad(r, acc + u, x, y) : null;
+        if ((dkH === null && inWater(x, y, 2)) || buildingAt(x, y) || zoneAt(x, y, 10) || circ(x, y, 1.6)) continue;
         var dd = hash(ri, k, 26), dead = dd < 0.3 ? 'wreck' : dd < 0.42 ? 'burnt' : 0, tilt = dead ? (hash(ri, k, 27) - 0.5)*1.1 : (hash(ri, k, 28) - 0.5)*0.2, yaw = Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + tilt;
         var bk = ['sedan', 'sedan', 'suv', 'hatch', 'hatch', 'van'][Math.floor(hash(ri, k, 29)*6)];
         if (MACH.length && hash(ri, k, 31) < (r.hw === 'motorway' || r.hw === 'trunk' ? 0.16 : r.hw === 'primary' ? 0.1 : 0.05)){ var mk = MACH[Math.floor(hash(ri, k, 32)*MACH.length)];
-          if (!circ(x, y, 3.2)){ list.push({veh:true, id:'x' + ri + '_' + k, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(ri, k, 33) - 0.5)*0.5, fuel:0}); rc++; } continue; }
-        list.push({veh:true, id:'x' + ri + '_' + k, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(ri, k, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, ri, k)}); rc++;
+          if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:'x' + ri + '_' + k, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(ri, k, 33) - 0.5)*0.5, fuel:0}); rc++; } continue; }
+        list.push({veh:true, gh:dkH === null ? undefined : dkH, id:'x' + ri + '_' + k, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(ri, k, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, ri, k)}); rc++;
       }
       acc += L;
     }
@@ -6504,10 +6584,10 @@ function makeVehicles(saved){
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck', sck = typeof saved[sid][5] === 'string' && !tk ? saved[sid][5] : undefined; list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : sck, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
   if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
-  w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = (+s2[3] || 0)*(saved._u ? 1 : CAN_M/60); if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); } });
+  w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = (+s2[3] || 0)*(saved._u ? 1 : CAN_M/60); if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); if (s2[7]){ var dh0 = deckHit(v.x, v.y, 'hi'); if (dh0) v.gh = dh0.h; } } });
   bedChest();
 }
-function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : v.t ? carKind(v) : 0); else o[v.id].push(0, 0); if (v.hp !== undefined && v.hp < 100) o[v.id].push(Math.round(v.hp)); }); o._u = 1; return o; }
+function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : v.t ? carKind(v) : 0); else o[v.id].push(0, 0); if (v.hp !== undefined && v.hp < 100) o[v.id].push(Math.round(v.hp)); else if (v.gh !== undefined) o[v.id].push(100); if (v.gh !== undefined) o[v.id][7] = 1; }); o._u = 1; return o; }
 /* 0.51: town cars. Y (or the Boot button) at a parked car: first the boot is searched, then fuel is siphoned a can at a time (a car holds about 60 s of driving per can).
    Burnt shells are empty and wrecks hold only the odd can. */
 var TRAIL = [], trailT = 0;
@@ -6568,6 +6648,23 @@ function vehBash(V, mx, my, dt){
   P.cause = P.cause || ''; if (spd > 12 && pay > 20){ P.hp -= 4; P.cause = 'a car crash'; } updateHud();
 }
 /* 0.88: driving. W gas, S brake then reverse, A D steer (less at speed), Space handbrake. The car keeps its own heading and speed; the view follows the heading. */
+/* 0.89: what a car hits: trees (trunks), lamp posts, signs, hydrants, benches, dumpsters, other vehicles, and the parapet of a bridge. Each is a circle; the car is three circles along its length. Returns how deep it was pushed. */
+function obstBuild(){ var w = world; if (w.obst) return w.obst; var m = new Map(); w.obst = m;
+  var add = function(x, y, r, t){ var k = gk(Math.floor(x/8), Math.floor(y/8)), l = m.get(k); if (!l) m.set(k, l = []); l.push([x, y, r, t]); };
+  w.trees.forEach(function(t){ add(t.x, t.y, 0.4, t); }); (w.obstL || []).forEach(function(o){ add(o[0], o[1], o[2]); }); return m; }
+function carObst(V, ux, uy){
+  var m = obstBuild(), hit = 0, pass, ci, gx, gy, i, cx, cy;
+  for (pass = 0; pass < 2; pass++) for (ci = -1; ci <= 1; ci++){ cx = P.x + ux*1.3*ci; cy = P.y + uy*1.3*ci;
+    for (gy = Math.floor((cy - 3)/8); gy <= Math.floor((cy + 3)/8); gy++) for (gx = Math.floor((cx - 3)/8); gx <= Math.floor((cx + 3)/8); gx++){ var l = m.get(gk(gx, gy)); if (!l) continue;
+      for (i = 0; i < l.length; i++){ var o = l[i]; if (o[3] && !o[3].alive) continue; var dx = cx - o[0], dy = cy - o[1], d = Math.hypot(dx, dy), rr = 0.95 + o[2]; if (d < rr && d > 1e-6){ P.x += dx/d*(rr - d); P.y += dy/d*(rr - d); cx = P.x + ux*1.3*ci; cy = P.y + uy*1.3*ci; hit = Math.max(hit, rr - d); } } } }
+  for (i = 0; i < world.vehicles.length; i++){ var o2 = world.vehicles[i]; if (o2 === V || Math.abs(o2.x - P.x) > 9 || Math.abs(o2.y - P.y) > 9) continue;
+    var M = o2.t ? VMOD[carKind(o2)] : null, hl = o2.t ? Math.max(1.5, (M && M.hx) || 2.1) : 0.9, hwd = o2.t ? Math.max(0.7, Math.min(1.4, (M && M.hz) || 0.95)) : 0.35, n = Math.max(1, Math.round(hl/hwd)), ox = Math.cos(o2.yaw), oy = Math.sin(o2.yaw);
+    for (var k = 0; k < n; k++){ var off = n === 1 ? 0 : -(hl - hwd) + (hl - hwd)*2*k/(n - 1), qx = o2.x + ox*off, qy = o2.y + oy*off;
+      for (ci = -1; ci <= 1; ci++){ cx = P.x + ux*1.3*ci; cy = P.y + uy*1.3*ci; var ddx = cx - qx, ddy = cy - qy, dd = Math.hypot(ddx, ddy), r2c = 0.95 + hwd; if (dd < r2c && dd > 1e-6){ P.x += ddx/dd*(r2c - dd); P.y += ddy/dd*(r2c - dd); hit = Math.max(hit, r2c - dd); } } } }
+  if (DK && V.gh !== undefined){ var dh = deckHit(P.x, P.y, P.gy === undefined ? V.gh : P.gy);
+    if (dh && dh.e > 0.5){ var over = Math.abs(dh.lat) - (dh.hw - 1.05); if (over > 0){ var ln = Math.hypot(dh.dx, dh.dy) || 1, sg = dh.lat < 0 ? -1 : 1; P.x -= sg*over*dh.dy/ln; P.y += sg*over*dh.dx/ln; hit = Math.max(hit, over); } } }
+  return hit;
+}
 function carDrive(V, dt, thr, str, hb){
   if (V.hd === undefined){ V.hd = V.yaw; V.vs = 0; V.sw = 0; }
   var top = vehSpeed(dt), vs = V.vs || 0, vs0 = vs, acc = 0, sg = vs > 0 ? 1 : vs < 0 ? -1 : 0;
@@ -6583,8 +6680,8 @@ function carDrive(V, dt, thr, str, hb){
   if (Math.abs(d) > 0.0005){
     if (!P.roof) vehBash(V, ux*d, uy*d, dt);
     if (P.roof) roofMove(P, ux*d, uy*d); else stepMove(P, ux*d, uy*d, 1.0);
-    var moved = Math.hypot(P.x - x0, P.y - y0);
-    if (moved < Math.abs(d)*0.55 && Math.abs(vs) > 2.5 && time > (V.crT || 0)){
+    var oh = carObst(V, ux, uy), moved = Math.hypot(P.x - x0, P.y - y0);
+    if ((moved < Math.abs(d)*0.55 || oh > 0.04) && Math.abs(vs) > 2.5 && time > (V.crT || 0)){
       var im = Math.abs(vs); V.crT = time + 0.4;
       if (im > 6){ V.hp = Math.max(0, vhp(V) - (im - 5)*1.3); crashSnd(im, P.x + ux*1.7, P.y + uy*1.7); fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 30);
         if (im > 16){ P.hp -= (im - 16)*0.9; P.cause = 'a car crash'; }
@@ -6639,7 +6736,7 @@ function carDmgModel(k, lv, fire){
 function drawCar(m, v, now){
   var k = carKind(v), B = VMOD[k]; if (!B || !B.w) return false;
   if (v.t && v.kind !== 'truck' && !v.dead && CKD[k]){ if (v.burnt) B = VMOD[k + '_burnt'] || B; else { var hv = vhp(v), lv = hv > 70 ? 0 : hv > 40 ? 1 : hv > 15 ? 2 : hv > 0 ? 3 : 4; if (lv || v.fireT > 0){ var DB = carDmgModel(k, v.fireT > 0 ? 4 : lv, v.fireT > 0); if (DB) B = DB; } } }
-  var tr = v.id === 'truck' ? truckP() : null, fit = tr ? fitting() : null, y0 = v === P.veh && v.spd > 1 ? Math.sin(now*13)*0.012 : -(B.drop || 0);
+  var tr = v.id === 'truck' ? truckP() : null, fit = tr ? fitting() : null, y0 = -(B.drop || 0);
   m.part(B, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0);
   B.w.forEach(function(w){
     var W = VMOD[w[4]]; if (!W) return;
@@ -6716,7 +6813,7 @@ function truckUse(o){
 function cabSleep(v){
   for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
   var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90 && P.rest > 50){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
-  P.sleep = {start:time, hp:P.hp, cab:v, ox:P.x, oy:P.y}; P.x = v.x; P.y = v.y; el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping in the truck…'; keys = {};
+  P.sleep = {start:time, hp:P.hp, cab:v, ox:P.x, oy:P.y, rt:performance.now()}; wakeReq = false; P.x = v.x; P.y = v.y; el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping in the truck…'; keys = {};
 }
 /* the moving bits of the truck: the bonnet lifting over the engine bay, the driver's door off its hinges, the flat tire, a part being fitted */
 function truckBits(m, v, now, tr, fit, y0){
@@ -6932,7 +7029,7 @@ function engHum(){
 function drawExtras(m, now){
   var i, w = world;
   for (i = 0; i < w.vehicles.length; i++){
-    var v = w.vehicles[i]; vehAnim(v, now); if ((v === P.veh && VIEW !== 1) || Math.abs(v.x - P.x) > 130 || Math.abs(v.y - P.y) > 130) continue; m.yo = groundAt(v.x, v.y);
+    var v = w.vehicles[i]; vehAnim(v, now); if ((v === P.veh && VIEW !== 1) || Math.abs(v.x - P.x) > 130 || Math.abs(v.y - P.y) > 130) continue; m.yo = baseAt(v.x, v.y, v.gh); if (LASTDECK) v.gh = m.yo; else { v.gh = undefined; m.yo = groundAt(v.x, v.y); }
     if (!v.t){ m.ybox(v.x, v.y, v.yaw, 0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, -0.5, 0, 0.33, 0.33, 0.33, 0.03, C('#22262b')); m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 0.55, 0.04, 0.035, C('#c8553a')); m.ybox(v.x, v.y, v.yaw, 0.45, 0, 0.95, 0.03, 0.03, 0.25, C('#8a9199')); m.ybox(v.x, v.y, v.yaw, -0.3, 0, 0.9, 0.12, 0.03, 0.07, C('#16181c')); }
     else if ((v.kind === 'truck' || (Math.abs(v.x - P.x) < 80 && Math.abs(v.y - P.y) < 80)) && drawCar(m, v, now)){}
     else { var cc = C(['#8a2f2f', '#2f5f8a', '#6f7480', '#c9b458', '#3f6b4a'][Math.floor(hash(i, 3, 8)*5)]);
