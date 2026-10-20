@@ -112,3 +112,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] New game starts by Sequiota Park, not far out of town. The park is a short walk away.
 - [ ] **PHONE** Open the big map on a phone held upright and sideways: all buttons visible, top-right close and zoom work, the bottom bar wraps.
 - [ ] **PHONE** Start page tabs on the right: all seven tabs reachable, nothing cut off, every button inside each tab still works.
+- [ ] Whole map visible: zoom the big map out to the whole region (all squares), pan around, zoom back in. Reasonable speed on a phone.

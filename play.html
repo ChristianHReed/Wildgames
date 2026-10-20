@@ -415,7 +415,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.84.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.85.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -438,7 +438,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.84.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.85.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4540,10 +4540,32 @@ function mapFog(c, w, h, ox, oy, sc){
   for (var k in seen){ var sp = k.split(','), x = sp[0]*SQ*sc + ox, y = sp[1]*SQ*sc + oy; if (x + sz < 0 || y + sz < 0 || x > w || y > h) continue; f.fillRect(x, y, sz, sz); }
   c.drawImage(fogCv, 0, 0);
 }
+/* 0.85 'whole map visible': assets/springfield/overview.js (tools/build_overview.py) is a light picture of every square: major roads, rail, rivers, lakes and a density grid
+   of buildings. It is drawn under the close-up of the square you are standing in */
+var OV = null, OVL = 0;
+function ovLoad(){
+  if (OV || OVL || !(window.SPRING && SPRING.builtin)) return; OVL = 1; var sc = document.createElement('script'); sc.src = 'assets/springfield/overview.js?d=' + (window.DATAV || '0');
+  sc.onload = function(){ sc.remove(); try { var o = JSON.parse(ART.overview); delete ART.overview; OV = o; if (big && big.on) drawBig(); } catch (e){ OVL = 0; } };
+  sc.onerror = function(){ sc.remove(); setTimeout(function(){ OVL = 0; }, 20000); }; document.head.appendChild(sc);
+}
+function drawOverview(c, w, h, ox, oy, sc){
+  if (!OV){ ovLoad(); c.fillStyle = 'rgba(32,30,29,.55)'; c.font = '13px sans-serif'; c.textAlign = 'center'; c.fillText('Loading the whole map...', w/2, 70); return; }
+  var g = world.geo; if (!g) return; var q = OV.q, ax = (OV.lon0 - g.lon0)*g.kx, ay = -(OV.lat0 - g.lat0)*g.ky, kx = g.kx/q, ky = g.ky/q;
+  var X = function(u){ return (ax + u*kx)*sc + ox; }, Y = function(v){ return (ay - v*ky)*sc + oy; };
+  if (sc < 0.45){ var cw = OV.cell[1]*g.kx*sc + 0.6, ch = OV.cell[0]*g.ky*sc + 0.6;
+    OV.cells.forEach(function(r){ var yy = ((OV.lat0 - g.lat0)*g.ky*-1 - (r[0] + 1)*OV.cell[0]*g.ky)*sc + oy; if (yy > h || yy + ch < 0) return;
+      for (var i = 1; i < r.length; i += 2){ var xx = ((OV.lon0 - g.lon0)*g.kx + r[i]*OV.cell[1]*g.kx)*sc + ox; if (xx > w || xx + cw < 0) continue; c.fillStyle = 'rgba(122,98,84,' + Math.min(0.62, 0.12 + r[i+1]*0.012).toFixed(2) + ')'; c.fillRect(xx, yy, cw, ch); } }); }
+  var path = function(a, close){ var u = a[0], v = a[1]; c.moveTo(X(u), Y(v)); for (var i = 2; i < a.length; i += 2){ u += a[i]; v += a[i+1]; c.lineTo(X(u), Y(v)); } if (close) c.closePath(); };
+  c.fillStyle = '#9fc4d0'; OV.lakes.forEach(function(a){ c.beginPath(); path(a, true); c.fill(); });
+  c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = '#8fb8c6'; c.lineWidth = Math.max(1, 5*sc); OV.water.forEach(function(a){ c.beginPath(); path(a, false); c.stroke(); });
+  var W2 = [2.6, 1.8, 1.3, 1, 1.2], COL = ['#f6efe0', '#fbf6ea', '#fbf6ea', '#fbf6ea', '#a39a8c'];
+  for (var kd = 4; kd >= 0; kd--){ if (kd === 3) continue; c.strokeStyle = COL[kd]; c.lineWidth = Math.max(kd === 4 ? 0.8 : 1, W2[kd]*Math.max(1, 14*sc)); c.beginPath(); OV.roads.forEach(function(a){ if (a[0] === kd) path(a.slice(1), false); }); c.stroke(); }
+}
 /* top-down journal map centred on (cx, cy): sc pixels per metre */
 function drawMap(c, w, h, cx, cy, sc, big){
   var ox = w/2 - cx*sc, oy = h/2 - cy*sc, x0 = -ox/sc, y0 = -oy/sc, x1 = (w - ox)/sc, y1 = (h - oy)/sc, i, W0 = world;
   c.fillStyle = '#e6d6bb'; c.fillRect(0, 0, w, h);
+  if (big && MAPMODE === 'all') drawOverview(c, w, h, ox, oy, sc);
   W0.areas.forEach(function(a){ if (a.maxx < x0 || a.minx > x1 || a.maxy < y0 || a.miny > y1) return; c.fillStyle = MAPC[a.kind]; path2(c, a.pts, sc, ox, oy, true); c.fill(); });
   c.lineCap = 'round'; c.lineJoin = 'round';
   W0.roads.forEach(function(r){ if (r.maxx < x0 || r.minx > x1 || r.maxy < y0 || r.miny > y1 || (!big && r.kind === 'path')) return; c.strokeStyle = MAPR[r.kind]; c.lineWidth = Math.max(1, r.w*sc); path2(c, r.pts, sc, ox, oy, false); c.stroke(); });
@@ -4586,7 +4608,7 @@ function toggleBig(){
   if (!running || P.cop) return; if (!big.on && MAPMODE === 'find' && !(inv.map > 0)){ toast('You have no map. Houses, gas stations and shops have them; the minimap only shows what is close.', 4); return; } big.on = !big.on; el('bigMap').classList.toggle('hidden', !big.on); el('bigSee').textContent = MAPMODE === 'all' ? 'The whole map is shown.' : 'You only see where you have been.';
   if (big.on){ big.cx = P.x; big.cy = P.y; big.sc = Math.max(0.3, Math.min(W, H)/600); if (document.exitPointerLock) document.exitPointerLock(); drawBig(); }
 }
-function bigZoom(f){ big.sc = Math.max(0.08, Math.min(6, big.sc*f)); drawBig(); }
+function bigZoom(f){ big.sc = Math.max(MAPMODE === 'all' ? 0.004 : 0.08, Math.min(6, big.sc*f)); drawBig(); }
 el('miniWrap').addEventListener('click', toggleBig); el('bigClose').addEventListener('click', toggleBig); el('topX').addEventListener('click', toggleBig); el('topOut').addEventListener('click', function(){ el('bigOut').click(); }); el('topIn').addEventListener('click', function(){ el('bigIn').click(); });
 el('bigIn').addEventListener('click', function(){ bigZoom(1.5); }); el('bigOut').addEventListener('click', function(){ bigZoom(1/1.5); });
 el('bigMark').addEventListener('click', function(){ if (marks.length >= 40){ toast('The map is full of marks. Remove one first.', 3); return; } marks.push({x:big.cx, y:big.cy, n:(el('bigText').value || '').trim().slice(0, 28) || 'Mark ' + (marks.length + 1)}); el('bigText').value = ''; drawBig(); sfx('plank', undefined, undefined, 0.3); });

@@ -39,3 +39,6 @@ One zip with the pack folder, a `REFERENCE.md` of every property it contains, a 
 - **Gun shops and army surplus.** Flag `shop=gun`, `shop=hunting`, `shop=outdoor`, `military=*` and `amenity=police` buildings with a `kind` the game can read (gunshop, surplus, armory), so guns and ammunition can be placed there instead of at random.
 - **Industrial building sizes.** Warehouses and factories with `building=industrial|warehouse|factory` and their footprint area, so the power plant can pick the right one (the game takes the largest between 250 m and 1800 m from the start).
 - **Substation and power-line features.** `power=substation`, `power=pole`, `power=tower`, `power=line` where mapped; the game places four substations by quadrant today and would use the real ones.
+
+## Overview file (0.85.0)
+The game reads `assets/springfield/overview.js` for the whole-region big map. After every `tools/build_region.py` run, run `python3 tools/build_overview.py` as well. Wanted later: parks, woods and farmland polygons in the overview, and place names (towns) with their centre points.
