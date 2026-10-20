@@ -260,7 +260,7 @@
   <div id="travel" class="hidden" style="position:fixed;inset:0;z-index:7;background:rgba(245,234,216,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:26px;text-align:center;padding:20px">Travelling to the next part of the map&hellip;</div>
   <div id="loot" class="modal hidden"></div>
   <div id="pack" class="modal hidden"></div>
-  <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map. You only see where you have been. Put a flag at the cross with Mark centre.</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><button id="bigMark" class="alt">Mark centre</button><button id="bigUnmark" class="alt">Remove mark</button><button id="bigClose">Close map</button></div></div>
+  <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map. You only see where you have been. Put a flag at the cross with Mark centre.</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><input id="bigText" maxlength="28" placeholder="note for the flag" style="width:130px"><button id="bigMark" class="alt">Mark centre</button><input id="bigFind" maxlength="40" placeholder="address or shop" style="width:130px"><button id="bigGo" class="alt">Find</button><button id="bigUnmark" class="alt">Remove mark</button><button id="bigClose">Close map</button></div></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
     <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.67.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.68.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.67.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.68.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -722,11 +722,11 @@ var CAT = {
 var ICON_COL = {food:'#b3541e', medical:'#c8322b', police:'#f2d14a', industrial:'#22262b', shop:'#0f4a44'};
 var POWER_DAY = 3, WATER_DAY = 5;   /* 0.36: the power fails at midnight going into day 3, the water mains going into day 5 */
 var LOOT = {
-  house:{food:3, water:2, medkit:0.5, ammo:0.4, wood:1, scrap:1.5, coat:0.4, battery:0.9, rifle:0.15, shell:0.3, arrow:0.2, hunting_rifle:0.07, double_barrel:0.09, revolver:0.05, none:1.5},
+  house:{map:0.35, food:3, water:2, medkit:0.5, ammo:0.4, wood:1, scrap:1.5, coat:0.4, battery:0.9, rifle:0.15, shell:0.3, arrow:0.2, hunting_rifle:0.07, double_barrel:0.09, revolver:0.05, none:1.5},
   food:{food:6, water:4}, medical:{medkit:6, water:1}, police:{ammo:8, medkit:1, radio:1, battery:2, rifle:2, shell:2.5, revolver:0.6, pump_shotgun:0.5, carbine:0.35},
-  industrial:{scrap:5, wood:4, fuel:2, battery:1, chunk:2.5, bolt:0.4, crossbow:0.05}, shop:{food:2, water:2, scrap:2, ammo:0.6, shell:0.5, arrow:0.4, recurve_bow:0.08, medkit:1, coat:0.6, radio:0.3, battery:1.6}
+  industrial:{scrap:5, wood:4, fuel:2, battery:1, chunk:2.5, bolt:0.4, crossbow:0.05}, shop:{map:0.8, food:2, water:2, scrap:2, ammo:0.6, shell:0.5, arrow:0.4, recurve_bow:0.08, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
-var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba',''], nails:['Nails','#8c8f94',''], sheet:['Sheet metal','#9fb0bd',''], chunk:['Concrete chunk','#9a9890',''], rifle:['Rifle rounds','#d9b34a',''], shell:['Shotgun shells','#c8553d',''], arrow:['Arrows','#c9a56a',''], bolt:['Crossbow bolts','#9fa6ad',''],
+var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba',''], nails:['Nails','#8c8f94',''], sheet:['Sheet metal','#9fb0bd',''], chunk:['Concrete chunk','#9a9890',''], map:['Paper map','#d9c9a0',''], rifle:['Rifle rounds','#d9b34a',''], shell:['Shotgun shells','#c8553d',''], arrow:['Arrows','#c9a56a',''], bolt:['Crossbow bolts','#9fa6ad',''],
   revolver:['Revolver','#8d949c',''], hunting_rifle:['Hunting rifle','#7a5a3c',''], pump_shotgun:['Pump shotgun','#6b6f75',''], double_barrel:['Double-barrel shotgun','#6b5a48',''], carbine:['Carbine','#4f565e',''], crossbow:['Crossbow','#7a6a4a',''], recurve_bow:['Recurve bow','#a8743e',''], flare_gun:['Flare gun','#c8553d',''], flareshell:['Flare shells','#e8632a',''], quiver:['Quiver','#8a6a44','']};
 ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096','']; ITEMS.bandage = ['Bandages','#e9e2d0','4']; ITEMS.antibio = ['Antibiotics','#9ad0a0','']; ITEMS.splint = ['Splint','#b08a5a','']; ITEMS.fresh = ['Fresh food','#e07a4a','']; ITEMS.rotten = ['Rotten food','#9a9a62','']; ITEMS.dirty = ['Unboiled water','#7aa0b0','']; ITEMS.tape = ['Duct tape','#9aa3aa',''];
 ITEMS.generator = ['Generator','#d9a845',''];
@@ -757,7 +757,7 @@ ITEMS.seeds = ['Seed packets', '#7a9a4a', ''];   /* 0.43: planted in a garden pl
 ITEMS.toolkit = ['Toolkit','#c64834','']; ITEMS.tire = ['Spare tire','#3a383a','']; ITEMS.carbat = ['Car battery','#d9a845','']; ITEMS.parts = ['Engine parts','#8a9199',''];
 (function(){   /* 0.39: what it takes to get the truck at the safe house running, found in garages, auto shops and gas stations */
   var add = function(t, o){ for (var k in o) t[k] = (t[k] || 0) + o[k]; };
-  add(LOOTK.hardware, {shell:.8, arrow:.6, bolt:.4, flareshell:.3, hunting_rifle:.1, crossbow:.08, quiver:.15}); add(LOOTK.outdoors, {arrow:1.2, bolt:.5, recurve_bow:.15, quiver:.5, flare_gun:.1, flareshell:.6, shell:.4, hunting_rifle:.12}); add(LOOTK.police, {flareshell:.8, flare_gun:.15});
+  add(LOOTK.fuel, {map:3}); add(LOOTK.outdoors, {map:2}); add(LOOTK.hardware, {map:1, shell:.8, arrow:.6, bolt:.4, flareshell:.3, hunting_rifle:.1, crossbow:.08, quiver:.15}); add(LOOTK.outdoors, {arrow:1.2, bolt:.5, recurve_bow:.15, quiver:.5, flare_gun:.1, flareshell:.6, shell:.4, hunting_rifle:.12}); add(LOOTK.police, {flareshell:.8, flare_gun:.15});
   add(LOOTK.garage, {toolkit:1, tire:1.4, carbat:1, parts:1}); add(LOOTK.hardware, {toolkit:.8, tire:1.2, carbat:.9, parts:1.2}); add(LOOTK.fuel, {carbat:.7, parts:.7, tire:.4, toolkit:.2});
   add(LOOTK.parking, {tire:.6, carbat:.4}); add(LOOTK.warehouse, {tire:.3, parts:.3, toolkit:.2}); add(LOOT.industrial, {toolkit:.4, tire:.5, carbat:.4, parts:.5}); add(LOOT.house, {toolkit:.12, tire:.06});
 })();
@@ -768,7 +768,7 @@ ITEMS.toolkit = ['Toolkit','#c64834','']; ITEMS.tire = ['Spare tire','#3a383a','
   add(LOOTK.outdoors, {bandage:1, tape:1}); add(LOOTK.hardware, {tape:3}); add(LOOTK.garage, {tape:1.5}); add(LOOTK.warehouse, {tape:1}); add(LOOTK.school, {bandage:1}); add(LOOTK.gym, {bandage:1}); add(LOOTK.apartments, {fresh:1, bandage:.5}); add(LOOTK.hotel, {fresh:1, bandage:.5});
 })();
 var CORE = {food:1, water:1, medkit:1, ammo:1, wood:1, scrap:1};
-function newInv(start){ var o = {}; for (var k in ITEMS) o[k] = 0; if (start){ o.food = 1; o.water = 1; o.ammo = 8; o.radio = 1; o.flashlight = 1; o.battery = 2; } return o; }
+function newInv(start){ var o = {}; for (var k in ITEMS) o[k] = 0; if (start){ o.map = 1; o.food = 1; o.water = 1; o.ammo = 8; o.radio = 1; o.flashlight = 1; o.battery = 2; } return o; }
 var AREA_COL = {grass:'#7f9a5c', park:'#6fa25a', forest:'#4f7f4a', sand:'#cdbb8a', parking:'#6a6e75', water:'#3f86b8'};
 var AREA_RANK = {field:0, grass:0, park:1, forest:2, sand:3, parking:4, water:5};
 var G = 16, world = null;
@@ -3059,6 +3059,7 @@ function plantE(o){
   else { o.t = PLANT_RUN; o.nt = 0; feed('The plant is starting up. Hold the line.', '#ff9a6a'); }
 }
 function plantTick(dt){
+  world.vehicles.forEach(function(v){ if (v.fireT > 0){ v.fireT -= dt; v.fx = (v.fx || 0) - dt; if (v.fx <= 0 && Math.abs(v.x - P.x) < 90 && Math.abs(v.y - P.y) < 90){ v.fx = 0.45; var gy = groundAt(v.x, v.y); fxAdd('effects.flame_large', v.x, v.y, gy, {life:0.6, s0:0.9, s1:1.1, up:0.6}); if (Math.random() < 0.5) fxAdd('effects.smoke_column', v.x, v.y, gy, {life:2.2, s0:1, s1:2, rise:2.5, up:1.2}); } } });
   (world.edits.cboxes || []).forEach(function(c){ if (c.bat > 0 && !c.trip && !gridAt(c.x, c.y)){ var b = world.buildings[c.b]; if (b && boxSupply({x:c.x, y:c.y, bat:0}) < boxLoad(b)) c.bat = Math.max(0, c.bat - dt/DAY*24); } });
   var o = world.plantO; if (!o || !o.t) return; o.t -= dt; o.nt -= dt;
   if (o.nt <= 0){ o.nt = 1.5; makeNoise(o.x, o.y, 90); sfx('metal', o.x, o.y, 1, 0.4 + Math.random()*0.2); }
@@ -3900,7 +3901,7 @@ function surfAt(x, y){
 function stepSfx(s, v){
   if (s === 'water') burst(P.x, P.y, 0.25, 900, 0.35, 10, 'bandpass');
   else if (s === 'gravel') sfx('step_snow', P.x, P.y, v*1.1, 1.35);
-  else if (s === 'glass'){ sfx('step_concrete', P.x, P.y, v); sfx('glass', P.x, P.y, v*0.35, 1.7); }
+  else if (s === 'glass'){ sfx('step_concrete', P.x, P.y, v); sfx('glass', P.x, P.y, v*0.35, 1.7); fxAdd('effects.glass_shards', P.x, P.y, groundAt(P.x, P.y) + (P.lvl | 0)*FH, {life:1.2, s0:0.5, s1:0.7}); }
   else if (s === 'leaves') sfx('step_grass', P.x, P.y, v*1.25, 0.8);
   else sfx(s, P.x, P.y, v);
 }
@@ -4216,7 +4217,7 @@ function update(dt){
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
 }
-var ICON = {flareshell:9, flare_gun:5, quiver:5, rifle:9, shell:9, arrow:9, bolt:9, revolver:5, hunting_rifle:5, pump_shotgun:5, double_barrel:5, carbine:5, crossbow:5, recurve_bow:5, nails:5, sheet:5, chunk:5, seeds:41, coat:31, beanie:32, cap:33, helmet:34, sweater:35, leather:36, gloves:37, trousers:38, thermals:39, boots:40, raincoat:6, toolkit:27, tire:28, carbat:29, parts:30, generator:26, food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18, bandage:19, antibio:20, splint:21, fresh:22, rotten:23, dirty:24, tape:25};
+var ICON = {map:5, flareshell:9, flare_gun:5, quiver:5, rifle:9, shell:9, arrow:9, bolt:9, revolver:5, hunting_rifle:5, pump_shotgun:5, double_barrel:5, carbine:5, crossbow:5, recurve_bow:5, nails:5, sheet:5, chunk:5, seeds:41, coat:31, beanie:32, cap:33, helmet:34, sweater:35, leather:36, gloves:37, trousers:38, thermals:39, boots:40, raincoat:6, toolkit:27, tire:28, carbat:29, parts:30, generator:26, food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18, bandage:19, antibio:20, splint:21, fresh:22, rotten:23, dirty:24, tape:25};
 /* the eye: how close any alien is to spotting you */
 function awareHud(){
   var e = el('aware'), best = 0, txt = '', col = '#e9dcc0', i;
@@ -4319,13 +4320,23 @@ function drawBig(){
   c.beginPath(); c.moveTo(14, 0); c.lineTo(-9, -10); c.lineTo(-4, 0); c.lineTo(-9, 10); c.closePath(); c.fill(); c.stroke(); c.restore();
 }
 function toggleBig(){
-  if (!running || P.cop) return; big.on = !big.on; el('bigMap').classList.toggle('hidden', !big.on);
+  if (!running || P.cop) return; if (!big.on && !(inv.map > 0)){ toast('You have no map. Houses, gas stations and shops have them; the minimap only shows what is close.', 4); return; } big.on = !big.on; el('bigMap').classList.toggle('hidden', !big.on);
   if (big.on){ big.cx = P.x; big.cy = P.y; big.sc = Math.max(0.3, Math.min(W, H)/600); if (document.exitPointerLock) document.exitPointerLock(); drawBig(); }
 }
 function bigZoom(f){ big.sc = Math.max(0.08, Math.min(6, big.sc*f)); drawBig(); }
 el('miniWrap').addEventListener('click', toggleBig); el('bigClose').addEventListener('click', toggleBig);
 el('bigIn').addEventListener('click', function(){ bigZoom(1.5); }); el('bigOut').addEventListener('click', function(){ bigZoom(1/1.5); });
-el('bigMark').addEventListener('click', function(){ if (marks.length >= 40){ toast('The map is full of marks. Remove one first.', 3); return; } marks.push({x:big.cx, y:big.cy, n:'Mark ' + (marks.length + 1)}); drawBig(); sfx('plank', undefined, undefined, 0.3); });
+el('bigMark').addEventListener('click', function(){ if (marks.length >= 40){ toast('The map is full of marks. Remove one first.', 3); return; } marks.push({x:big.cx, y:big.cy, n:(el('bigText').value || '').trim().slice(0, 28) || 'Mark ' + (marks.length + 1)}); el('bigText').value = ''; drawBig(); sfx('plank', undefined, undefined, 0.3); });
+/* 0.68 address search: "12 Walnut", "walnut street" or a shop's name; repeated searches step through the matches nearest the map centre */
+var findN = 0, findQ = '';
+function addrFind(q){
+  q = (q || '').toLowerCase().trim(); if (!q) return null; var m = q.match(/^(\d+)\s+(.+)$/), hn = m ? m[1] : '', st = (m ? m[2] : q).replace(/\b(street|st|road|rd|avenue|ave|drive|dr|lane|ln|boulevard|blvd)\b\.?/g, '').trim(), out = [];
+  world.buildings.forEach(function(b){ if (b.gone) return; var bs = (b.st || '').toLowerCase().replace(/\b(street|st|road|rd|avenue|ave|drive|dr|lane|ln|boulevard|blvd)\b\.?/g, '').trim(), nm = (b.name || '').toLowerCase();
+    if (hn ? (b.hn === hn && bs.indexOf(st) >= 0) : ((st && bs.indexOf(st) >= 0) || (nm && nm.indexOf(q) >= 0))) out.push(b); });
+  out.sort(function(a, b){ return Math.hypot(a.cx - big.cx, a.cy - big.cy) - Math.hypot(b.cx - big.cx, b.cy - big.cy); }); return out;
+}
+el('bigGo').addEventListener('click', function(){ var q = el('bigFind').value; var L = addrFind(q); if (q !== findQ){ findQ = q; findN = 0; } if (!L || !L.length){ toast('Nothing on this map matches that. Only streets and shops in the loaded part of the world are searched.', 3.5); return; }
+  var b = L[findN % L.length]; findN++; big.cx = b.cx; big.cy = b.cy; drawBig(); toast((b.hn ? b.hn + ' ' + (b.st || '') : b.name || kindLabel(b)) + (b.name && b.hn ? ' \u00b7 ' + b.name : '') + ' \u00b7 ' + (L.length > 1 ? (((findN - 1) % L.length) + 1) + ' of ' + L.length + ', search again for the next' : 'the only match') + (seen[Math.floor(b.cx/SQ) + ',' + Math.floor(b.cy/SQ)] ? '' : ' \u00b7 not explored yet'), 5); });
 el('bigUnmark').addEventListener('click', function(){ var bi = -1, bd = 40/big.sc; marks.forEach(function(q, i){ var d = Math.hypot(q.x - big.cx, q.y - big.cy); if (d < bd){ bd = d; bi = i; } }); if (bi >= 0){ marks.splice(bi, 1); drawBig(); } else toast('Move the map so a flag is under the cross, then remove it.', 3); });
 el('bigMe').addEventListener('click', function(){ big.cx = P.x; big.cy = P.y; drawBig(); });
 bigCv.addEventListener('pointerdown', function(e){ big.drag = {x:e.clientX, y:e.clientY, id:e.pointerId}; try { bigCv.setPointerCapture(e.pointerId); } catch (er){} });
@@ -4937,6 +4948,12 @@ function skyFx(m, e, now){
     m.modelS(mod, e[0] + ox, e[2] + oz, hash(i, 6, 9)*6.28, 95 + hash(i, 4, 9)*30, sc); }
   if (w === 2){ var th = fxModel('sky.cloud_storm'); if (th) for (i = 0; i < 6; i++){ var a = i*1.05 + 0.4, d = 170 + hash(i, 3, 9)*50; m.modelS(th, e[0] + Math.cos(a)*d, e[2] + Math.sin(a)*d, a, 40, 70 + hash(i, 2, 9)*30); }
     var LG = fxModel('sky.lightning'); m.al = 128; if (LG && wx.flash > 0){ var la = (Math.floor(time/3) % 7)*0.9, ld = 90 + (Math.floor(time/3) % 4)*25; m.modelS(LG, e[0] + Math.cos(la)*ld, e[2] + Math.sin(la)*ld, la, 0, 45 + (Math.floor(time/3) % 3)*15); } }
+  /* 0.68: the moon goes through its eight phases (a bit under four days each) and on clear winter nights the aurora hangs in the north */
+  if (dark > 0.45 && (w === 0 || w === 3)){
+    var ph = Math.floor((dayNum() + 2)/3.7) % 8, MM = fxModel('sky.moon_' + ph); m.yo = 0; m.al = Math.round(255*Math.min(1, (dark - 0.45)*3));
+    if (MM) m.modelS(MM, e[0] + 0.35*300, e[2] - 0.76*300, Math.atan2(-(0.35), 0.76) + 1.5708, e[1] + 0.55*300, 26);
+    if (season() === 3 && dark > 0.8 && hash(dayNum(), 11, 5) < 0.45){ var AU = fxModel('sky.aurora'); m.al = Math.round(150*Math.min(1, (dark - 0.8)*5)); if (AU) m.modelS(AU, e[0], e[2] - 320, 0, 70, 90 + Math.sin(now*0.05)*6); }
+  }
   m.al = 255;
 }
 /* held models for the named weapons: [centre along the swing m, half length, half width, half thickness, lift, sideways, colour]. Simple stand-ins; the design chat is asked for real shaped pieces */
@@ -6063,7 +6080,7 @@ function vehBash(V, mx, my, dt){
   V.hp = Math.max(0, vhp(V) - pay);
   if (E >= hp0){ by2[bk] = 0; emit({k:'edit', e:{a:'wbay', id:best.id, i:bk, v:0}}); rebuildWalls(); sfx('plank', best.x, best.y, 1, 0.7); feed('Smashed through the wall', '#e8b27a'); }
   else { wallHurt(best, bk, E); sfx('metal', best.x, best.y, 0.9, 0.5); }
-  fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. A part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
+  fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60;  toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. A part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
   P.cause = P.cause || ''; if (spd > 12 && pay > 20){ P.hp -= 4; P.cause = 'a car crash'; } updateHud();
 }
 function vehSpeed(dt){
