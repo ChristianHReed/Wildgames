@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.71.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.72.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.71.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.72.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -754,12 +754,12 @@ ITEMS.seeds = ['Seed packets', '#7a9a4a', ''];   /* 0.43: planted in a garden pl
   add(LOOTK.police, {helmet:1.5, leather:.6, boots:.8, gloves:.8}); add(LOOTK.hardware, {gloves:2, boots:1.2, helmet:1, trousers:1.5}); add(LOOTK.garage, {gloves:1, trousers:.8, boots:.5});
   add(LOOTK.warehouse, {gloves:.8, boots:.5, helmet:.4}); add(LOOTK.hotel, {sweater:.5, raincoat:.3}); add(LOOTK.gym, {cap:.6, sweater:.4}); add(LOOTK.church, {sweater:.6, beanie:.4});
 })();
-ITEMS.toolkit = ['Toolkit','#c64834','']; ITEMS.tire = ['Spare tire','#3a383a','']; ITEMS.carbat = ['Car battery','#d9a845','']; ITEMS.parts = ['Engine parts','#8a9199',''];
+ITEMS.toolkit = ['Toolkit','#c64834','']; ITEMS.book = ['Skill book','#b0804a','']; ITEMS.tire = ['Spare tire','#3a383a','']; ITEMS.carbat = ['Car battery','#d9a845','']; ITEMS.parts = ['Engine parts','#8a9199',''];
 (function(){   /* 0.39: what it takes to get the truck at the safe house running, found in garages, auto shops and gas stations */
   var add = function(t, o){ for (var k in o) t[k] = (t[k] || 0) + o[k]; };
   add(LOOTK.fuel, {map:3}); add(LOOTK.outdoors, {map:2}); add(LOOTK.hardware, {map:1, shell:.8, arrow:.6, bolt:.4, flareshell:.3, hunting_rifle:.1, crossbow:.08, quiver:.15}); add(LOOTK.outdoors, {arrow:1.2, bolt:.5, recurve_bow:.15, quiver:.5, flare_gun:.1, flareshell:.6, shell:.4, hunting_rifle:.12}); add(LOOTK.police, {flareshell:.8, flare_gun:.15});
   add(LOOTK.garage, {toolkit:1, tire:1.4, carbat:1, parts:1}); add(LOOTK.hardware, {toolkit:.8, tire:1.2, carbat:.9, parts:1.2}); add(LOOTK.fuel, {carbat:.7, parts:.7, tire:.4, toolkit:.2});
-  add(LOOTK.parking, {tire:.6, carbat:.4}); add(LOOTK.warehouse, {tire:.3, parts:.3, toolkit:.2}); add(LOOT.industrial, {toolkit:.4, tire:.5, carbat:.4, parts:.5}); add(LOOT.house, {toolkit:.12, tire:.06});
+  add(LOOTK.parking, {tire:.6, carbat:.4}); add(LOOTK.warehouse, {tire:.3, parts:.3, toolkit:.2}); add(LOOT.industrial, {toolkit:.4, tire:.5, carbat:.4, parts:.5}); add(LOOT.house, {toolkit:.12, tire:.06, book:.22}); add(LOOT.shop, {book:.12}); add(LOOTK.library, {book:3}); if (LOOTK.school) add(LOOTK.school, {book:1.5});
 })();
 (function(){   /* 0.29: medical supplies, fresh food and tape join the loot */
   var add = function(t, o){ for (var k in o) t[k] = (t[k] || 0) + o[k]; };
@@ -2718,7 +2718,7 @@ function startRun(ws, cs){
     P.hp = cs.hp > 0 ? Math.min(100, +cs.hp) : 100; P.hunger = Math.max(0, Math.min(100, +cs.hunger || 0)); P.thirst = Math.max(0, Math.min(100, +cs.thirst || 0)); deaths = cs.deaths | 0; loadConds(cs); loadWorn(cs);
   }
   seen = {}; marks = []; if (cs && cs.sn) for (k = 0; k + 1 < cs.sn.length; k += 2) seen[(cs.sn[k] | 0) + ',' + (cs.sn[k+1] | 0)] = 1; if (cs && cs.mk) cs.mk.slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) marks.push({x:+q.x, y:+q.y, n:String(q.n || '').slice(0, 12)}); }); seenT = 0; seeMap(true);
-  me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0};
+  me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0, build:0, shoot:0};
   if (cs){ if (cs.bg && SKN && /^(scout|medic|mechanic|builder)$/.test(cs.bg)) me.bg = cs.bg; if (cs.skills) for (k in me.skills) me.skills[k] = Math.max(0, +cs.skills[k] || 0); }
   throws = []; booms = [];
   if (cs){ (cs.designs || []).forEach(function(d){ adoptDesign(d); }); for (k in (cs.items || {})) if (DESIGNS[k] && cs.items[k] > 0) P.items[k] = Math.min(99, cs.items[k] | 0); if (cs.weapon && P.items[cs.weapon]) P.weapon = cs.weapon; }
@@ -2866,6 +2866,7 @@ function takeLamp(o){ var i = lamps.indexOf(o); if (i < 0) return; lamps.splice(
 function nearFire(){ for (var i = 0; i < fires.length; i++) if (Math.hypot(fires[i].x - P.x, fires[i].y - P.y) < 4) return true; return false; }
 function makeSick(why){ if (!(P.sick > 0)) toast(why + ' You have food poisoning: thirst drains fast and you lose a little health for a couple of minutes.', 6); P.sick = Math.max(P.sick || 0, 120); }
 function useItem(k){
+  if (k === 'book'){ if (!(inv.book > 0)){ toast('No skill book.', 2); return; } inv.book--; var sks = Object.keys(SKN), sk0 = sks[Math.floor(Math.random()*sks.length)]; addXp(sk0, 60); feed('Read a book: ' + SKN[sk0] + ' improved', ITEMS.book[1]); sfx('search', undefined, undefined, 0.5); updateHud(); return; }
   if (CLOTHES[k]){ wearItem(k); return; }
   if (k === 'food' && inv.fresh > 0) k = 'fresh';   /* key 1 eats whatever would go off first */
   if (k === 'fiber'){ if (inv.fiber < 2){ toast('A bandage takes 2 plant fibre.', 3); return; } inv.fiber -= 2; inv.bandage++; feed('Made a bandage', ITEMS.bandage[1]); updateHud(); return; }
@@ -3286,13 +3287,14 @@ function gunTick(dt){ if (!P.rl) return; if (P.rl.g !== P.gun){ P.rl = null; ret
 function shoot(){
   var g = gunNow(); P.mag = P.mag || {}; if (P.rl) return;
   if ((P.mag[P.gun] | 0) < 1){ startReload(false); return; }
+  if (Math.random() < 0.5) addXp('shoot', 1);
   P.gdur = P.gdur || {}; var gd = P.gdur[P.gun] === undefined ? 1 : P.gdur[P.gun];
   if (gd < 0.25 && Math.random() < (0.25 - gd)*1.6){ P.shootCd = 0.9; toast('It jammed. Worn guns jam; repair it at a tool bench (1 scrap).', 2.5); sfx('latch', P.x, P.y, 0.6, 1.3); return; }
   P.gdur[P.gun] = Math.max(0, gd - (g.pel > 1 ? 0.012 : g.rec ? 0.004 : 0.008)); if (P.gdur[P.gun] < 0.25 && !P.gSaid){ P.gSaid = 1; toast('Your ' + g.n.toLowerCase() + ' is wearing out and will start to jam.', 4); }
   P.mag[P.gun]--; P.shootCd = g.cd; P.gunT = 3; P.noise = Math.max(P.noise, g.nz); var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), quiet = g.nz < 1;
   if (!quiet){ burst(undefined, undefined, 0.9, g.pel > 1 ? 1800 : 3200, g.pel > 1 ? 0.6 : 0.45); burst(undefined, undefined, 0.5, 600, 0.9); }
   else sfx('wood_hit', P.x, P.y, 0.4, 1.6);
-  for (var q = 0; q < g.pel; q++){ var a = P.yaw + (Math.random() - 0.5)*2*g.spr, vx = Math.cos(a)*g.sp, vy = Math.sin(a)*g.sp;
+  for (var q = 0; q < g.pel; q++){ var a = P.yaw + (Math.random() - 0.5)*2*g.spr*(1 - 0.05*lvl('shoot')), vx = Math.cos(a)*g.sp, vy = Math.sin(a)*g.sp;
     bullets.push({x:P.x + fx*0.5, y:P.y + fy*0.5, vx:vx, vy:vy, t:g.life, dmg:g.dmg, flare:g.flare, rec:g.rec ? g.am : 0}); }
   if (g.nz >= 4 && g.pel === 1) fxAdd('effects.tracer', P.x + fx*3, P.y + fy*3, (P.gy || 0) + ((P.lvl | 0)*FH), {life:0.12, s0:1, s1:1.6, up:1.25, yaw:Math.atan2(fy, fx) - 1.5708});
   if (g.nz >= 4) fxAdd('effects.muzzle_flash', P.x + fx*0.85, P.y + fy*0.85, (P.gy || 0) + ((P.lvl | 0)*FH), {life:0.07, s0:1, s1:1.2, up:1.3, yaw:Math.atan2(fy, fx) - 1.5708});
@@ -3300,8 +3302,8 @@ function shoot(){
   gunHud(); updateHud();
 }
 /* ================= characters: look, background, skills ================= */
-var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:'Scavenging', melee:'Melee', endur:'Endurance'};
-var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0}, cap:false};
+var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:'Scavenging', melee:'Melee', endur:'Endurance', build:'Building', shoot:'Marksmanship'};
+var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0, build:0, shoot:0}, cap:false};
 function okCol(c, d){ return /^#[0-9a-f]{6}$/i.test(c) ? c : d; }
 function cleanLook(l){ l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(3, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(5, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(7, l.face | 0)), top:Math.max(0, Math.min(7, l.top | 0)), bot:Math.max(0, Math.min(5, l.bot | 0)), shoe:Math.max(0, Math.min(2, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0')}; }
 function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value, face:el('cFace').value, top:el('cTop').value, bot:el('cBot').value, shoe:el('cShoe').value, acc:el('cAcc').value}); }
@@ -5721,6 +5723,7 @@ function buildAct(a, pos){
     var nl = 0, sh = 0; if (inv.wood < wc2){ nl = (wc2 - inv.wood)*2; } if (inv.scrap < ws0){ sh = Math.ceil((ws0 - inv.scrap)/2); }
     if (inv.nails < nl || inv.sheet < sh){ toast('A ' + WMATS[WMAT].name + ' wall needs ' + wc2 + ' wood' + (ws0 ? ' and ' + ws0 + ' scrap' : '') + ' (2 nails count as a wood, a sheet of metal as 2 scrap).', 3.5); return; }
     if (hitWall(x, y) || buildingAt(x, y) !== P.inside){ toast('There is no room for a wall there.', 2.5); return; }
+    addXp('build', 3);
     inv.chunk -= wcc; inv.nails -= nl; inv.sheet -= sh; inv.wood = Math.max(0, inv.wood - wc2); inv.scrap = Math.max(0, inv.scrap - ws0); if (sh && inv.scrap < 0) inv.scrap = 0; doEdit({a:'wall', w:{id:id, x:x, y:y, yaw:yaw, m:WMAT}});
   } else if (a === 'wallmat'){ WMAT = WMORDER[(WMORDER.indexOf(WMAT) + 1) % 3]; toast('Walls are now ' + WMATS[WMAT].name + '.', 2); renderBuild();
   } else if (a === 'wrep'){
@@ -5857,6 +5860,7 @@ function doSalvage(o, inf){
     else if (o.t){ if (Math.random() < 0.6) g.parts = 1; if (Math.random() < 0.4) g.carbat = 1; if (Math.random() < 0.4) g.tire = 1; if (o.fuel >= 20) g.fuel = 1; if (Math.random() < 0.4) g.battery = 1; }
     doEdit({a:'junkveh', id:o.id});
   }
+  addXp('build', 2); if (lvl('build') >= 2 && Math.random() < 0.12*lvl('build')){ var gk3 = Object.keys(g)[0]; if (gk3) g[gk3]++; }   /* 0.72: practice makes for better salvage */
   for (k2 in g){ inv[k2] = (inv[k2] || 0) + g[k2]; gain.push('+' + g[k2] + ' ' + (ITEMS[k2] ? ITEMS[k2][0].toLowerCase() : k2)); }
   wearTool(inf.tool, o.sv === 'furn' ? 1.2 : 3); sfx('plank', o.x, o.y, 0.9); makeNoise(o.x, o.y, 12); fxAdd('effects.dust_puff', o.x, o.y, groundAt(o.x, o.y), {life:0.7, s0:0.7, s1:1.6, rise:0.2, up:0.2});
   feed('Took apart the ' + inf.label + ': ' + gain.join(', '), ITEMS.wood[1]); SV.t = null; updateHud(); renderBuild();
@@ -7085,7 +7089,7 @@ function syncChar(fromRoster){
     var c = found.c, l = cleanLook(c.look); if (fromRoster) el('pname').value = c.name || found.slug;
     el('cBuild').value = l.build; el('cSkin').value = l.skin; el('cShirt').value = l.shirt; el('cPants').value = l.pants; el('cHat').value = l.hat; el('cBody').value = l.body; el('cHair').value = l.hair; el('cHairC').value = l.hc; el('cFace').value = l.face; el('cTop').value = l.top; el('cBot').value = l.bot; el('cShoe').value = l.shoe; el('cAcc').value = l.acc;
     if (c.bg) el('cBg').value = c.bg; el('cBg').disabled = !!c.bg;
-    var sk = c.skills || {}; el('cInfo').textContent = 'Scavenging ' + xpLvl(sk.scav) + ' \u00b7 Melee ' + xpLvl(sk.melee) + ' \u00b7 Endurance ' + xpLvl(sk.endur) + ' \u00b7 Deaths ' + (c.deaths | 0) + '. Background is fixed once a survivor has played.';
+    var sk = c.skills || {}; el('cInfo').textContent = 'Scavenging ' + xpLvl(sk.scav) + ' \u00b7 Melee ' + xpLvl(sk.melee) + ' \u00b7 Endurance ' + xpLvl(sk.endur) + ' \u00b7 Building ' + xpLvl(sk.build) + ' \u00b7 Marksmanship ' + xpLvl(sk.shoot) + ' \u00b7 Deaths ' + (c.deaths | 0) + '. Background is fixed once a survivor has played.';
   } else { el('cBg').disabled = false; if (fromRoster) el('pname').value = ''; el('cInfo').textContent = 'New survivor. Pick a name, a look and a background.'; }
   drawPrev();
 }

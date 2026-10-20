@@ -1,4 +1,4 @@
-# Afterstreet test checklist (version 0.71.0)
+# Afterstreet test checklist (version 0.72.0)
 
 Tick each box as you go. Everything here was tested headlessly (no real phone, no real sound, no real controller). Anything marked **PHONE** or **EARS** needs you. The longer numbered list in TESTING.md has the exact steps per version; this one is the quick pass.
 
@@ -84,7 +84,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 ## 13. Survival
 - [ ] Food, water, rest, warmth meters fall and recover.
 - [ ] Cook at a campfire or stove; boil water; rain collector fills; garden plot grows.
-- [ ] Skills gain XP as you scavenge and fight.
+- [ ] Skills (scavenging, melee, endurance, building, marksmanship) gain XP with use; a skill book adds to a random one.
 
 ## 14. Multiplayer
 - [ ] Host and join: you see each other, chat, markers work with a radio.
