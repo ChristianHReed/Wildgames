@@ -1,4 +1,4 @@
-# Afterstreet test checklist (version 0.70.0)
+# Afterstreet test checklist (version 0.71.0)
 
 Tick each box as you go. Everything here was tested headlessly (no real phone, no real sound, no real controller). Anything marked **PHONE** or **EARS** needs you. The longer numbered list in TESTING.md has the exact steps per version; this one is the quick pass.
 
@@ -62,6 +62,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 - [ ] Hide inside; a swarmer tears a stretch open to get at you.
 - [ ] Drive a car into a house wall at speed: it breaks, the car loses health.
 - [ ] Build menu, Close torn-open walls of the nearest building: all gaps close while materials last.
+- [ ] Inner walls: thick, trimmed doorways; an axe (hold J) or a swarmer opens one; closing torn walls puts it back.
 - [ ] Save and reload: torn walls are still torn. Multiplayer: the other player sees the gap too.
 
 ## 10. Bases

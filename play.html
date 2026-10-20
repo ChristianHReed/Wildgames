@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.70.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.71.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.70.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.71.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2162,7 +2162,7 @@ function clipHalf(poly, ax, val, less){
 }
 function genInterior(b){
   var A = genLevel(b, 0, null, 0, nFl(b)); if (A.unreach) A = genLevel(b, 0, null, 0, 1);
-  var I = {segs:A.segs, circs:A.circs, conts:A.conts, furn:A.furn, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stairs:A.stairs, nl:A.nl, cn:A.cn, lv:[{segs:A.segs, circs:A.circs}]};
+  var I = {segs:A.segs, circs:A.circs, conts:A.conts, furn:A.furn, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stairs:A.stairs, nl:A.nl, cn:A.cn, lv:[{segs:A.segs, circs:A.circs, iw:A.iw}]};
   if (!(A.stairs && A.stairs.length && A.nl >= 2)) I.nl = 1;
   I.gs = [upload(A.m)]; I.g = I.gs[0];
   if (I.nl >= 2) growInterior(b, I);   /* the first floor up at once; the rest are built as you climb (a tall tower would stall the game if all fourteen were built together) */
@@ -2172,7 +2172,7 @@ function genInterior(b){
 function growInterior(b, I){
   var L = I.lv.length; if (L >= I.nl) return false;
   var B = genLevel(b, L, I.stairs, I.cn, I.nl); if (B.unreach && L < I.nl - 1){ I.nl = L + 1; B = genLevel(b, L, I.stairs, I.cn, I.nl); } I.cn = B.cn; I.gs.push(upload(B.m));
-  I.lv.push({segs:B.segs, circs:B.circs}); I.conts = I.conts.concat(B.conts); I.furn = I.furn.concat(B.furn); I.fixes = I.fixes.concat(B.fixes);
+  I.lv.push({segs:B.segs, circs:B.circs, iw:B.iw}); I.conts = I.conts.concat(B.conts); I.furn = I.furn.concat(B.furn); I.fixes = I.fixes.concat(B.fixes);
   if (L === I.nl - 1) I.hatch = B.hatch; I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up' + L + ':' + r; })); I.n += B.n; return true;
 }
 function freeInt(b){ var I = b.int; if (I && I.gs) I.gs.forEach(freeMesh); }
@@ -2194,6 +2194,15 @@ function genLevel(b, lvl, SS, CB, NL){
   j = (bi+2) % n; var ux = (p[j]-p[bi])/bl, uy = (p[j+1]-p[bi+1])/bl, vx = -uy, vy = ux, u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
   for (i = 0; i < n; i += 2){ var pu = p[i]*ux + p[i+1]*uy, pv = p[i]*vx + p[i+1]*vy; if (pu < u0) u0 = pu; if (pu > u1) u1 = pu; if (pv < v0) v0 = pv; if (pv > v1) v1 = pv; }
   var leaves = [], maxD = b.cat === 'house' ? 4 : b.cat === 'industrial' ? 1 : 2, minS = b.cat === 'house' ? 7.5 : 12, CAPA = b.cat === 'house' ? 34 : b.cat === 'industrial' ? 260 : b.kind === 'church' || b.kind === 'school' || b.kind === 'stadium' || b.kind === 'warehouse' ? 200 : 78;
+  var iw = [], BRL = (world.edits && world.edits.breach && world.edits.breach[b.id]) || [], iwk = 10000 + lvl*1000;
+  /* 0.71: a partition is built like the outer walls: two skins with a core between (0.18 m), trimmed jambs at a doorway, one piece per solid stretch, each with hit points, breakable, saved */
+  function ipiece(x0, y0, x1, y1, ya, yb, solid){
+    var l = Math.hypot(x1 - x0, y1 - y0); if (l < 0.02) return; var nx = -(y1 - y0)/l, ny = (x1 - x0)/l, h = 0.09, tc = [226,222,212];
+    if (solid){ var id = iw.length/4; iw.push(x0, y0, x1, y1); if (BRL.indexOf(iwk + id) >= 0){ rubbleAt(m, b.id + ':' + lvl, id, x0, y0, x1, y1, nx, ny); return; } segs.push(x0, y0, x1, y1); }
+    m.wt = [TX.wallpaper, 2, 2]; m.wall(x0 + nx*h, y0 + ny*h, x1 + nx*h, y1 + ny*h, ya, yb, WHITE, 255); m.wall(x1 - nx*h, y1 - ny*h, x0 - nx*h, y0 - ny*h, ya, yb, WHITE, 255); m.wt = null;
+    if (!solid) m.quad(x0 + nx*h, ya, y0 + ny*h, x1 + nx*h, ya, y1 + ny*h, x1 - nx*h, ya, y1 - ny*h, x0 - nx*h, ya, y0 - ny*h, tc, 255);   /* the underside of the header */
+    if (solid) for (var e = 0; e < 2; e++){ var ex0 = e ? x1 : x0, ey0 = e ? y1 : y0; m.quad(ex0 - nx*h, ya, ey0 - ny*h, ex0 + nx*h, ya, ey0 + ny*h, ex0 + nx*h, yb, ey0 + ny*h, ex0 - nx*h, yb, ey0 - ny*h, tc, 255); }   /* the end of the wall: the jamb */
+  }
   function part(ua, va, ub, vb){
     var ax = ua*ux + va*vx, ay = ua*uy + va*vy, bx = ub*ux + vb*vx, by = ub*uy + vb*vy, len = Math.hypot(bx-ax, by-ay), ts = [0, 1], q;
     if (len < 0.5) return;
@@ -2218,8 +2227,7 @@ function genLevel(b, lvl, SS, CB, NL){
       for (tr = 0; tr < 40; tr++){ gt = tr === 0 ? g0 : L < 2.6 ? g0 : 0.6 + (L - 2.3)*((tr*0.381966) % 1); var mx0 = sx0 + dxn*(gt + 0.55), my0 = sy0 + dyn*(gt + 0.55), okd = true; for (var sd = -1; sd <= 1 && okd; sd += 2){ var qx = mx0 - dyn*sd*0.9, qy = my0 + dxn*sd*0.9; if (!pip(p, qx, qy) || polyDist(p, qx, qy, true) < 0.5) okd = false; } if (okd){ g0 = gt; break; } }
       g1 = g0 + 1.1;
       var ax1 = sx0 + dxn*g0, ay1 = sy0 + dyn*g0, ax2 = sx0 + dxn*g1, ay2 = sy0 + dyn*g1, ex = sx0 + dxn*L, ey = sy0 + dyn*L;
-      m.wt = [TX.wallpaper, 2, 2]; m.wall(sx0, sy0, ax1, ay1, 0.1, 3, WHITE, 255); m.wall(ax2, ay2, ex, ey, 0.1, 3, WHITE, 255); m.wall(ax1, ay1, ax2, ay2, 2.2, 3, WHITE, 255); m.wt = null;
-      if (g0 > 0.05) segs.push(sx0, sy0, ax1, ay1); if (L - g1 > 0.05) segs.push(ax2, ay2, ex, ey);
+      if (g0 > 0.05) ipiece(sx0, sy0, ax1, ay1, 0.1, ceilY, true); if (L - g1 > 0.05) ipiece(ax2, ay2, ex, ey, 0.1, ceilY, true); ipiece(ax1, ay1, ax2, ay2, 2.2, ceilY, false);
       doors.push((ax1+ax2)/2, (ay1+ay2)/2); if (!lvl) idoors.push([ax1, ay1, ax2, ay2]);
     }
   }
@@ -2484,7 +2492,7 @@ function genLevel(b, lvl, SS, CB, NL){
     m.box(LX, ceilY - 0.02, LY, [0.42, 0, 0], [0, 0.02, 0], [0, 0, 0.42], hd2);
   }
   var yo = (world.hg ? b.base : 0) + lvl*FH; if (yo) for (i = 1; i < m.p.length; i += 3) m.p[i] += yo;
-  return {unreach:unreach, hatch:hatch, m:m, cn:cn, stairs:lvl ? null : STS, nl:NLx, segs:segs, circs:circs, conts:conts, furn:furn, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
+  return {unreach:unreach, hatch:hatch, m:m, cn:cn, stairs:lvl ? null : STS, nl:NLx, segs:segs, iw:iw, circs:circs, conts:conts, furn:furn, idoors:lvl ? [] : idoors, fixes:fixes, rooms:rooms.map(function(R){ return R.type; }), n:total};
 }
 var loaded = [], stampN = 0;
 function bdist(b, x, y){ var dx = Math.max(b.minx - x, 0, x - b.maxx), dy = Math.max(b.miny - y, 0, y - b.maxy); return Math.hypot(dx, dy); }
@@ -5574,9 +5582,14 @@ function wallHurt(w, k, d){ var by = wallBays(w), old = by[k]; if (old <= 0) ret
    Torn pieces are saved in edits.breach[buildingId] = [piece numbers]; a patch from the Build menu puts one back. */
 var BWHP = {};
 function bwMat(b){ var m = 'siding'; try { m = bstyle(b).mat || 'siding'; } catch (e) {} return m; }
-function bwMax(b){ var m = bwMat(b); return m === 'brick' || m === 'stone' ? 34 : m === 'metal' ? 24 : 16; }
+function bwMax(b, k){ var m = bwMat(b), v = m === 'brick' || m === 'stone' ? 34 : m === 'metal' ? 24 : 16; return k >= 10000 ? Math.round(v*0.6) : v; }   /* a partition is lighter than an outer wall */
 function bwRes(b){ var m = bwMat(b); return m === 'brick' || m === 'stone' ? 0.4 : m === 'metal' ? 0.55 : 1; }
 function bwDown(b, k){ var L = world.edits.breach && world.edits.breach[b.id]; return !!L && L.indexOf(k) >= 0; }
+function rubbleAt(m, id, q, x0, z0, x1, z1, ox, oz){   /* a heap of broken wall along a torn stretch */
+  var l = Math.hypot(x1 - x0, z1 - z0) || 1, dx = (x1 - x0)/l, dz = (z1 - z0)/l, n = Math.max(3, Math.min(8, Math.round(l*1.6)));
+  for (var u = 0; u < n; u++){ var r = hash(id, q + u, 77), t = (u + 0.5)/n, cx = x0 + dx*l*t + ox*(r - 0.5)*0.9, cz = z0 + dz*l*t + oz*(r - 0.5)*0.9, hh = 0.07 + 0.12*hash(id, q + u, 79);
+    m.ybox(cx, cz, r*6.28, 0, 0, hh, 0.09 + 0.12*r, hh, 0.08 + 0.1*hash(id, q + u, 80), u % 2 ? [120,112,102] : [150,140,126]); }
+}
 function breachApply(b, m, lhg){
   var L = world.edits && world.edits.breach && world.edits.breach[b.id], s0 = b.segs0; if (!L || !L.length || !s0) return;
   var keep = [], q, h = Math.min(lhg || 3, 2.7);
@@ -5588,30 +5601,33 @@ function breachApply(b, m, lhg){
       var e = 0.05*sd, ax = x0 + ox*e, az = z0 + oz*e, bx = x1 + ox*e, bz = z1 + oz*e;
       if (sd > 0) m.quad(ax, 0.02, az, bx, 0.02, bz, bx, h, bz, ax, h, az, dk, 255); else m.quad(bx, 0.02, bz, ax, 0.02, az, ax, h, az, bx, h, bz, dk, 255);
     }
-    for (var u = 0; u < 5; u++){ r = hash(b.id, q + u, 77); var t = 0.15 + 0.7*hash(b.id, q + u, 78), cx = x0 + dx*l*t + ox*(0.3 + 0.5*r), cz = z0 + dz*l*t + oz*(0.3 + 0.5*r), hh = 0.12 + 0.2*hash(b.id, q + u, 79);
-      m.box(cx, hh/2, cz, 0.18 + 0.2*r, hh, 0.16 + 0.18*r, u % 2 ? [120,112,102] : [150,140,126]); }
+    rubbleAt(m, b.id, q, x0, z0, x1, z1, ox, oz);
   }
   b.segs = keep;
 }
-function twNear(x, y, r){   /* the nearest solid piece of any town wall within r: {b, k, d, cx, cy} */
+function twNear(x, y, r, lvl){   /* the nearest solid piece of any town wall within r: {b, k, d, cx, cy} */
   var best = null, cx0 = Math.floor(x/G), cy0 = Math.floor(y/G), bd = r;
   for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
-    for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (b.gone || !b.segs0 || x < b.minx - r || x > b.maxx + r || y < b.miny - r || y > b.maxy + r) continue;
-      var s = b.segs0; for (var q = 0; q < s.length; q += 4){ if (Math.hypot(s[q+2] - s[q], s[q+3] - s[q+1]) < 0.7 || bwDown(b, q/4)) continue;
-        var d = segDist(x, y, s[q], s[q+1], s[q+2], s[q+3]); if (d < bd){ bd = d; var sx = s[q+2] - s[q], sy = s[q+3] - s[q+1], tt = Math.max(0, Math.min(1, ((x - s[q])*sx + (y - s[q+1])*sy)/(sx*sx + sy*sy))); best = {b:b, k:q/4, d:d, cx:s[q] + sx*tt, cy:s[q+1] + sy*tt}; } } } }
+    for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (b.gone || (!b.segs0 && !b.int) || x < b.minx - r || x > b.maxx + r || y < b.miny - r || y > b.maxy + r) continue;
+      var s = b.segs0 || []; for (var q = 0; q < s.length; q += 4){ if (Math.hypot(s[q+2] - s[q], s[q+3] - s[q+1]) < 0.7 || bwDown(b, q/4)) continue;
+        var d = segDist(x, y, s[q], s[q+1], s[q+2], s[q+3]); if (d < bd){ bd = d; var sx = s[q+2] - s[q], sy = s[q+3] - s[q+1], tt = Math.max(0, Math.min(1, ((x - s[q])*sx + (y - s[q+1])*sy)/(sx*sx + sy*sy))); best = {b:b, k:q/4, d:d, cx:s[q] + sx*tt, cy:s[q+1] + sy*tt}; } }
+      var LV = b.int && b.int.lv && b.int.lv[lvl | 0], iw = LV && LV.iw;   /* 0.71: the walls inside are pieces too */
+      if (iw) for (q = 0; q < iw.length; q += 4){ var kk = 10000 + (lvl | 0)*1000 + q/4; if (Math.hypot(iw[q+2] - iw[q], iw[q+3] - iw[q+1]) < 0.7 || bwDown(b, kk)) continue;
+        var d2 = segDist(x, y, iw[q], iw[q+1], iw[q+2], iw[q+3]); if (d2 < bd){ bd = d2; var sx2 = iw[q+2] - iw[q], sy2 = iw[q+3] - iw[q+1], t2 = Math.max(0, Math.min(1, ((x - iw[q])*sx2 + (y - iw[q+1])*sy2)/(sx2*sx2 + sy2*sy2))); best = {b:b, k:kk, d:d2, cx:iw[q] + sx2*t2, cy:iw[q+1] + sy2*t2}; } } } }
   return best;
 }
 function breachSet(b, k, on){ var E = world.edits; E.breach = E.breach || {}; var L = E.breach[b.id] = E.breach[b.id] || [], i = L.indexOf(k);
   if (on && i < 0) L.push(k); else if (!on && i >= 0) L.splice(i, 1); if (!L.length) delete E.breach[b.id];
-  delete BWHP[b.id + ':' + k]; dirtyChunk(b); if (b.int) {} }
+  delete BWHP[b.id + ':' + k]; dirtyChunk(b);
+  if (k >= 10000 && b.int){ freeInt(b); b.int = null; var li = loaded.indexOf(b); if (li >= 0) loaded.splice(li, 1); } }   /* the rooms are built again with the gap */
 function breachHurt(b, k, d, x, y){
-  var key = b.id + ':' + k, hp = BWHP[key] === undefined ? bwMax(b) : BWHP[key]; hp -= d*bwRes(b); BWHP[key] = hp;
+  var key = b.id + ':' + k, hp = BWHP[key] === undefined ? bwMax(b, k) : BWHP[key]; hp -= d*bwRes(b); BWHP[key] = hp;
   if (hp <= 0){ doEdit({a:'breach', b:b.id, i:k, on:1}); sfx('plank', x, y, 1, 0.6); fxAdd('effects.wood_chips', x, y, groundAt(x, y), {life:0.9, s0:0.8, s1:1.2, rise:0.3, up:0.6}); return true; }
   return false;
 }
 function townAttack(z, A, dt){
-  if (!P.inside || z.k === 3) return; var t = twNear(z.x, z.y, A.r + 0.7); if (!t || t.b !== P.inside) return;
+  if (!P.inside || z.k === 3) return; var t = twNear(z.x, z.y, A.r + 0.7, z.lvl | 0); if (!t || t.b !== P.inside) return;
   if (Math.hypot(P.x - z.x, P.y - z.y) > 30) return; breachHurt(t.b, t.k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09), t.cx, t.cy);
 }
 function wallsAttack(z, A, dt){ var PF = world.edits.placed || []; for (var pi = 0; pi < PF.length; pi++){ var pq = PF[pi]; if (Math.abs(pq.x - z.x) > 3.2 || Math.abs(pq.y - z.y) > 3.2) continue; var psz = pfSize(pq.k); if (Math.hypot(pq.x - z.x, pq.y - z.y) > Math.max(psz[0], psz[1]) + A.r + 0.5) continue; pq.hp -= A.dmg*dt*(z.k === 2 ? 0.5 : 0.09); if (pq.hp <= 0){ var pid = pq.id; world.edits.placed = PF.filter(function(q){ return q.id !== pid; }); rebuildWalls(); emit({k:'edit', e:{a:'unplace', id:pid}}); sfx('plank', pq.x, pq.y, 0.8, 0.8); } return; }
@@ -5628,7 +5644,7 @@ function loadEdits(ed){
   for (k in (ed.col || {})){ var b = world.buildings[k]; if (b && okCol(ed.col[k], '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[k] = ed.col[k]; } }
   for (k in (ed.gone || {})) if (world.buildings[k]){ E.gone[k] = 1; world.buildings[k].gone = true; }
   (ed.walls || []).slice(0, 400).forEach(function(w){ var nw = {id:String(w.id), x:+w.x, y:+w.y, yaw:+w.yaw || 0}; nw.m = WMATS[w.m] ? w.m : 'wood'; if (Array.isArray(w.bays) && w.bays.length === 6) nw.bays = w.bays.map(function(v){ return Math.max(0, Math.min(12, +v || 0)); }); E.walls.push(nw); });
-  E.breach = {}; for (k in (ed.breach || {})) if (world.buildings[k] && Array.isArray(ed.breach[k])){ var bl2 = ed.breach[k].slice(0, 40).map(function(v){ return v | 0; }).filter(function(v){ return v >= 0 && v < 400; }); if (bl2.length) E.breach[k] = bl2; }
+  E.breach = {}; for (k in (ed.breach || {})) if (world.buildings[k] && Array.isArray(ed.breach[k])){ var bl2 = ed.breach[k].slice(0, 40).map(function(v){ return v | 0; }).filter(function(v){ return v >= 0 && v < 20000; }); if (bl2.length) E.breach[k] = bl2; }
   E.subs = {}; for (k in (ed.subs || {})) E.subs[String(k).slice(0, 20)] = 1;
   E.cboxes = []; (Array.isArray(ed.cboxes) ? ed.cboxes : []).slice(0, 40).forEach(function(c){ if (c && isFinite(c.x) && isFinite(c.y)) E.cboxes.push({cboxC:true, id:String(c.id).slice(0, 30), x:+c.x, y:+c.y, b:c.b | 0, bat:Math.max(0, Math.min(24, +c.bat || 0)), trip:c.trip ? 1 : 0}); });
   E.solars = []; (Array.isArray(ed.solars) ? ed.solars : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.solars.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
@@ -5717,7 +5733,7 @@ function buildAct(a, pos){
     if (!bw){ toast('No wall section within reach.', 2.5); return; } inv.wood += 1; doEdit({a:'unwall', id:bw.id});
   } else if (a === 'tpatch'){
     var pb = null, pd = 4, B2 = world.edits.breach || {}, bid;
-    for (bid in B2){ var bb = world.buildings[bid]; if (!bb || !bb.segs0) continue; B2[bid].forEach(function(k){ var q = k*4, sg = bb.segs0, d = segDist(P.x, P.y, sg[q], sg[q+1], sg[q+2], sg[q+3]); if (d < pd){ pd = d; pb = {b:bb, k:k}; } }); }
+    for (bid in B2){ var bb = world.buildings[bid]; if (!bb) continue; B2[bid].forEach(function(k){ var q = k*4, sg = bb.segs0, d; if (k >= 10000){ var lvk = Math.floor((k - 10000)/1000), LV2 = bb.int && bb.int.lv && bb.int.lv[lvk], iq = ((k - 10000)%1000)*4; if (!LV2 || !LV2.iw) return; sg = LV2.iw; q = iq; } if (!sg) return; d = segDist(P.x, P.y, sg[q], sg[q+1], sg[q+2], sg[q+3]); if (d < pd){ pd = d; pb = {b:bb, k:k}; } }); }
     if (!pb){ toast('No torn-open wall within reach.', 2.5); return; }
     var pm = bwMat(pb.b), ks = (world.edits.breach[pb.b.id] || []).slice(), done2 = 0, lack = '';   /* 0.70: closes every torn stretch of that building while the materials last */
     ks.sort(function(x, y){ return x === pb.k ? -1 : y === pb.k ? 1 : 0; });
@@ -5784,7 +5800,7 @@ function salvInfo(o){
     if (conc){ r.y.chunk = stt === 'whole' ? 2 : 1; r.need = 'a crowbar'; if (T.crowbar){ r.tool = T.crowbar; r.secs = 9; } }
     else if (steel){ r.y.scrap = 1; if (stt === 'whole') r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5; } }
     else { r.y.wood = 1; r.y.nails = stt === 'whole' ? 2 : 1; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 1.8; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 3; } } }
-  else if (o.sv === 'tw'){ var tm = bwMat(o.b); r.label = tm === 'brick' || tm === 'stone' ? 'brick wall' : tm === 'metal' ? 'metal wall' : 'timber wall'; r.mat = tm === 'metal' ? 'metal' : tm === 'brick' || tm === 'stone' ? 'stone' : 'wood';
+  else if (o.sv === 'tw'){ var tm = bwMat(o.b); r.label = (o.k >= 10000 ? 'inner ' : '') + (tm === 'brick' || tm === 'stone' ? 'brick wall' : tm === 'metal' ? 'metal wall' : 'timber wall'); r.mat = tm === 'metal' ? 'metal' : tm === 'brick' || tm === 'stone' ? 'stone' : 'wood';
     if (r.mat === 'stone'){ r.y.chunk = 1; r.need = 'a crowbar'; if (T.crowbar){ r.tool = T.crowbar; r.secs = 10; } }
     else if (r.mat === 'metal'){ r.y.scrap = 2; r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 5; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 8; } }
     else { r.y.wood = 2; r.y.nails = 2; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 3.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 6; } } }
@@ -5802,7 +5818,7 @@ function findSalvage(){
   if (!P.inside) (world.edits.walls || []).forEach(function(w){ if (Math.abs(w.x - P.x) > 4 || Math.abs(w.y - P.y) > 4) return; var by = wallBays(w), ddx = -Math.sin(w.yaw), ddy = Math.cos(w.yaw);
     for (var k = 0; k < 6; k++){ if (by[k] <= 0) continue; var key = w.id + ':' + k, o3 = BAYO[key] || (BAYO[key] = {sv:'bay', w:w, k:k}); o3.x = w.x + ddx*(-1.25 + 0.5*k); o3.y = w.y + ddy*(-1.25 + 0.5*k); test(o3); } });
   if (!P.inside) for (i = 0; i < world.vehicles.length; i++){ o = world.vehicles[i]; if (o.kind !== 'truck' && o.id !== 'truck') test(o); }
-  if (!best || bd > 1.4){ var tw = twNear(P.x, P.y, 1.5); if (tw){ var key2 = 'tw' + tw.b.id + ':' + tw.k, o4 = BAYO[key2] || (BAYO[key2] = {sv:'tw'}); o4.b = tw.b; o4.k = tw.k; o4.x = tw.cx; o4.y = tw.cy; bd = 99; test(o4); } }
+  if (!best || bd > 1.4){ var tw = twNear(P.x, P.y, 1.5, P.lvl | 0); if (tw){ var key2 = 'tw' + tw.b.id + ':' + tw.k, o4 = BAYO[key2] || (BAYO[key2] = {sv:'tw'}); o4.b = tw.b; o4.k = tw.k; o4.x = tw.cx; o4.y = tw.cy; bd = 99; test(o4); } }
   return best;
 }
 var BAYO = {};
@@ -6154,7 +6170,7 @@ function vehBash(V, mx, my, dt){
   world.edits.walls.forEach(function(w){ if (Math.abs(w.x - fx) > 3 || Math.abs(w.y - fy) > 3) return; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (fx - w.x)*dx + (fy - w.y)*dy, n = Math.abs(-(fx - w.x)*dy + (fy - w.y)*dx); if (Math.abs(u) > 1.6 || n > 0.9) return;
     var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0) return; if (n < bd){ bd = n; best = w; bk = k; } });
   if (!best){   /* 0.69: a town building's wall */
-    var tw = twNear(fx, fy, 1.0); if (!tw) return; var mass0 = V.kind === 'truck' ? VMASS.truck : VMASS.car, E0 = mass0*spd*spd/12, hp1 = BWHP[tw.b.id + ':' + tw.k] === undefined ? bwMax(tw.b) : BWHP[tw.b.id + ':' + tw.k];
+    var tw = twNear(fx, fy, 1.0, 0); if (!tw) return; var mass0 = V.kind === 'truck' ? VMASS.truck : VMASS.car, E0 = mass0*spd*spd/12, hp1 = BWHP[tw.b.id + ':' + tw.k] === undefined ? bwMax(tw.b, tw.k) : BWHP[tw.b.id + ':' + tw.k];
     V.bashT = time + 0.35; V.hp = Math.max(0, vhp(V) - Math.min(40, Math.min(E0, hp1)*0.9));
     if (breachHurt(tw.b, tw.k, E0*2.5, tw.cx, tw.cy)) feed('Smashed through the wall of the building', '#e8b27a'); else sfx('metal', tw.cx, tw.cy, 0.9, 0.5);
     fxAdd('effects.crash_burst', tw.cx, tw.cy, groundAt(tw.cx, tw.cy), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. A car part from the Build menu repair will get it going.', 5); }
