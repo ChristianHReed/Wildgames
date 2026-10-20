@@ -392,7 +392,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.76.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.77.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -400,7 +400,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.76.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.77.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4084,7 +4084,9 @@ function stamTick(dt, g, moving){
   if (P.tired && P.stam > 25) P.tired = false;
   P.vis = P.veh ? 1 : g === 0 ? 0.5 : g === 2 ? 1.35 : 1; P.eyeD = (P.eyeD || 0) + ((g === 0 ? -0.6 : P.climb > 0 ? -0.35 : 0) - (P.eyeD || 0))*Math.min(1, dt*9); P.climb = (P.climb || 0) - dt;
 }
-function moveMul(){ return (P.carry ? 0.55 : 1)*(P.leg === 1 ? 0.55 : P.leg === 2 ? 0.8 : 1)*(P.rest < 12 ? 0.9 : 1)*(me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
+/* 0.77: what you carry slows you by its weight (props.furnitureSize: kg): a chair hardly, a fridge to a crawl */
+function carryMul(k){ var fs = window.SHAPED && SHAPED.props && SHAPED.props.furnitureSize, w = fs && fs[k] ? fs[k][1] : 0; return w ? Math.max(0.35, 1 - w/100) : 0.55; }
+function moveMul(){ return (P.carry ? carryMul(P.carry) : 1)*(P.leg === 1 ? 0.55 : P.leg === 2 ? 0.8 : 1)*(P.rest < 12 ? 0.9 : 1)*(me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
 function weatherTick(dt, day){
   if (world.lastDay !== day){ if (world.lastDay) spreadNests(); world.lastDay = day; }
   if (time >= wx.until){
@@ -6576,6 +6578,8 @@ function survDraw(m, now){
     if (s.gone || s.away || Math.abs(s.x - P.x) > 120 || Math.abs(s.y - P.y) > 120) return; var look = npcLook(s.key); if (!look) return; m.yo = groundAt(s.x, s.y);
     var o = {x:s.x, y:s.y, yaw:s.yaw, id:40 + s.id, mv:s.mv ? 1 : 0, vis:s.run ? 2 : 1};
     if (s.atk > 0){ o.sw = 1; o.atk = 'attack_swing'; o.ak = 1 - s.atk/0.45; }
+    else if (!s.mv && s.st !== 'wait' && s.job === 'guard') o.act = 'keep_watch';
+    else if (!s.mv && s.st !== 'wait' && s.job === 'repair') o.act = 'work_chop';
     else if (s.st === 'stay' && !s.mv && !s.hurt) o.act = 'sit';
     else if (s.st === 'wait' && !s.mv){ var dw = Math.hypot(P.x - s.x, P.y - s.y); o.act = dw < 22 ? 'wave' : 'lean_wall'; if (dw < 22) s.yaw = Math.atan2(P.y - s.y, P.x - s.x); }
     svQueue(o, look, m.yo, now); });
