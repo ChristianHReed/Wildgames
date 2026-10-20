@@ -112,6 +112,17 @@
   .screen{position:fixed;inset:0;background:radial-gradient(rgba(61,48,41,.09) 1px,transparent 1.5px) 0 0/18px 18px,var(--cream);display:flex;align-items:flex-start;justify-content:center;overflow:auto}
   .box{max-width:700px;width:100%;padding:34px 22px 40px;box-sizing:border-box}
   h1{font-family:var(--disp);font-weight:400;font-size:68px;line-height:.92;margin:8px 0 10px;color:var(--ink)}
+  /* 0.83 the start page as a journal: pages on the left, index tabs down the right edge */
+  #title .box{max-width:900px}
+  .jrn{display:flex;align-items:flex-start;gap:0;margin:6px 0 26px}
+  .jpages{flex:1;min-width:0;background:var(--paper2);border:1px solid var(--edge);border-right:none;border-radius:8px 0 0 8px;padding:6px 20px 18px;box-shadow:var(--shadow);min-height:300px;position:relative}
+  .jpage{display:none}.jpage.on{display:block}
+  .jpage>.panel:first-child{margin-top:18px}
+  .jtabs{position:sticky;top:18px;display:flex;flex-direction:column;gap:6px;padding-top:22px;flex:none;width:112px}
+  .jtab{display:block;text-align:left;font-family:var(--ui);font-size:14px;font-weight:700;letter-spacing:.02em;color:var(--ink);background:var(--tc,#d9a845);border:1px solid var(--outline);border-left:none;border-radius:0 10px 10px 0;padding:11px 10px 11px 14px;margin-left:0;cursor:pointer;box-shadow:2px 2px 0 rgba(61,48,41,.25);transition:transform .08s;filter:saturate(.8) brightness(.96)}
+  .jtab:hover{transform:translateX(3px)}
+  .jtab.on{margin-left:-1px;width:calc(100% + 8px);padding-right:18px;filter:none;box-shadow:3px 2px 0 rgba(61,48,41,.3);position:relative;z-index:2}
+  @media (max-width:640px){.jtabs{width:74px}.jtab{font-size:12px;padding:10px 6px 10px 9px}.jpages{padding:4px 10px 14px}#title .box{padding-left:8px;padding-right:0}.jtab.on{width:calc(100% + 6px)}}
   .box>p{font-size:16px;line-height:1.5;color:var(--inkSoft);margin:0 0 22px}
   .row{margin:14px 0;display:flex;gap:10px;flex-wrap:wrap}
   .panel{padding:16px 20px;margin:22px 0;font-size:14px;line-height:1.5;color:var(--inkSoft)}
@@ -396,15 +407,30 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.82.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.83.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
 
 <script>
+/* 0.83: sort the start page's sections into journal tabs (the elements are moved, not rebuilt, so every button keeps working) */
+(function(){
+  var box = document.querySelector('#title .box'); if (!box) return; var K = box.children, c = [].slice.call(K);
+  var pick = function(i){ return c[i]; };
+  var T = [['play', 'Play', '#d9a845', [5, 6, 9, 10]], ['survivor', 'Survivor', '#c67139', [3]], ['maps', 'Maps', '#7a8a5e', [7, 8, 14]], ['settings', 'Settings', '#5f8a9a', [4]], ['saves', 'Saves', '#8a6a8a', [11]], ['workshop', 'Workshop', '#b8913a', [12]], ['together', 'Together', '#c0795f', [13]]];
+  var jr = document.createElement('div'); jr.className = 'jrn'; var pg = document.createElement('div'); pg.className = 'jpages'; var tb = document.createElement('div'); tb.className = 'jtabs'; jr.appendChild(pg); jr.appendChild(tb);
+  var first = c[5]; box.insertBefore(jr, first);
+  var show = function(id){ T.forEach(function(t){ t[4].classList.toggle('on', t[0] === id); t[5].classList.toggle('on', t[0] === id); }); try { localStorage.setItem('lastblock:tab', id); } catch (e){} };
+  T.forEach(function(t){ var page = document.createElement('div'); page.className = 'jpage'; t[3].forEach(function(i){ if (pick(i)) page.appendChild(pick(i)); }); pg.appendChild(page);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'jtab'; b.textContent = t[1]; b.style.setProperty('--tc', t[2]); b.addEventListener('click', function(){ show(t[0]); }); tb.appendChild(b); t[4] = page; t[5] = b; });
+  var last = null; try { last = localStorage.getItem('lastblock:tab'); } catch (e){} show(T.some(function(t){ return t[0] === last; }) ? last : 'play');
+  window.showTab = show;
+})();
+</script>
+<script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.82.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.83.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });

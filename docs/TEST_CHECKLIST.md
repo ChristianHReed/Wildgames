@@ -111,3 +111,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] Map setting on the home screen: all three choices behave as described and are remembered.
 - [ ] New game starts by Sequiota Park, not far out of town. The park is a short walk away.
 - [ ] **PHONE** Open the big map on a phone held upright and sideways: all buttons visible, top-right close and zoom work, the bottom bar wraps.
+- [ ] **PHONE** Start page tabs on the right: all seven tabs reachable, nothing cut off, every button inside each tab still works.
