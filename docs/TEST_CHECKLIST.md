@@ -106,3 +106,4 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where pieces of art are still missing, road names, house number digits, held map, gun reload poses, rain ripples, music, survivor combat.
 - [ ] Carry a chair, sofa and fridge: the heavier, the slower. Guard and builder survivors show their working poses.
 - [ ] Door brace (Build menu, inside near the front door): the bar is visible, aliens struggle, E removes it, survives save and reload. (Not seen in a screenshot yet.)
+- [ ] Board up all windows from the Build menu: boards on every window, wood used 2 each.
