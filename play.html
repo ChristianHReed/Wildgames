@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.72.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.73.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.72.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.73.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3592,6 +3592,14 @@ function relocate(z, tg){   /* it keeps up with you, however far you go */
   for (var k = 0; k < 10; k++){ var a = Math.atan2(z.y - t.y, z.x - t.x) + (Math.random() - 0.5)*1.2, r = 95 + Math.random()*25, x = t.x + Math.cos(a)*r, y = t.y + Math.sin(a)*r; if (!circ(x, y, 0.6) && !inSafe(x, y, 10) && !inWater(x, y, 0.5)){ z.x = x; z.y = y; z.path = null; z.hunt = null; if (z.obs){ z.obs.x += (t.x - z.obs.x)*0.5; z.obs.y += (t.y - z.obs.y)*0.5; z.obs.r = Math.max(z.obs.r, 30); } return true; } }
   return false;
 }
+/* 0.73: a clinger needs no ladder: it climbs the wall itself, at the point of the footprint nearest to it, to reach someone on the roof */
+function wallL(z, b){
+  var p = b.pts, best = null, bd = 1e9;
+  for (var i = 0; i < p.length; i += 2){ var j = (i + 2) % p.length, d = segDist(z.x, z.y, p[i], p[i+1], p[j], p[j+1]); if (d < bd){ bd = d; best = i; } }
+  if (best === null) return null; var j2 = (best + 2) % p.length, sx = p[j2] - p[best], sy = p[j2+1] - p[best+1], l = Math.hypot(sx, sy) || 1, t = Math.max(0.2, Math.min(0.8, ((z.x - p[best])*sx + (z.y - p[best+1])*sy)/(l*l))), mx = p[best] + sx*t, my = p[best+1] + sy*t, nx = sy/l, ny = -sx/l;
+  var out = buildingAt(mx + nx*0.6, my + ny*0.6) === b ? -1 : 1; nx *= out; ny *= out;   /* outward */
+  return {b:b, fx:mx + nx*0.5, fy:my + ny*0.5, tx:mx - nx*1.2, ty:my - ny*1.2, nx:nx, ny:ny, wall:1};
+}
 function stalkerAI(z, A, T, tg, dt){
   z.sst = Math.min(1, (z.sst === undefined ? 1 : z.sst) + (z.pounce > 0 ? 0 : dt/STK.rest)); z.tired = (z.tired || 0) - dt;
   if (z.climb || z.roof || (T && T.roof)) return null;   /* ladders and roofs are handled elsewhere */
@@ -4174,7 +4182,7 @@ function update(dt){
       } else {
         var gx0, gy0, pb = null;
         if (L && !(T && d < 6)){ gx0 = L.x; gy0 = L.y; pb = L.b || null; T = null; d = Math.hypot(gx0 - z.x, gy0 - z.y) || 0.001; } else { gx0 = T.x; gy0 = T.y; pb = T.b; d = d || 0.001; }
-        if (T && T.roof){ var LT = T.roof.lad; pb = null; if (LT && z.k === 1){ gx0 = LT.fx; gy0 = LT.fy; if (Math.hypot(z.x - LT.fx, z.y - LT.fy) < 0.9){ z.climb = {L:LT, t:0}; alienCall(1, z.x, z.y, false); } } else if (LT){ var la = (z.id % 7)*0.9; gx0 = LT.fx + LT.nx*(1 + (z.id % 3)*0.8) + Math.cos(la)*0.8; gy0 = LT.fy + LT.ny*(1 + (z.id % 3)*0.8) + Math.sin(la)*0.8; } d = Math.hypot(gx0 - z.x, gy0 - z.y) || 0.001; if (d < 1.6 && z.k !== 1){ z.bored = (z.bored || 0) + dt; if (z.bored > 25){ z.bored = 0; z.st = 3; z.stT = 8; z.aw = 0; z.tp = undefined; } } }   /* they cannot climb: they wait under the ladder */
+        if (T && T.roof){ var LT = T.roof.lad; pb = null; if (z.cl){ if (!z.wl || z.wl.b !== T.roof) z.wl = wallL(z, T.roof); LT = z.wl || LT; } if (LT && (z.k === 1 || z.cl)){ gx0 = LT.fx; gy0 = LT.fy; if (Math.hypot(z.x - LT.fx, z.y - LT.fy) < 0.9){ z.climb = {L:LT, t:0}; alienCall(1, z.x, z.y, false); } } else if (LT){ var la = (z.id % 7)*0.9; gx0 = LT.fx + LT.nx*(1 + (z.id % 3)*0.8) + Math.cos(la)*0.8; gy0 = LT.fy + LT.ny*(1 + (z.id % 3)*0.8) + Math.sin(la)*0.8; } d = Math.hypot(gx0 - z.x, gy0 - z.y) || 0.001; if (d < 1.6 && z.k !== 1){ z.bored = (z.bored || 0) + dt; if (z.bored > 25){ z.bored = 0; z.st = 3; z.stT = 8; z.aw = 0; z.tp = undefined; } } }   /* they cannot climb: they wait under the ladder */
         var ex = gx0 - z.x, ey = gy0 - z.y, tx = gx0, ty = gy0, zb = (z.k !== 2 && d < 60) ? buildingAt(z.x, z.y) : null, db = z.k !== 2 && zb !== pb ? (zb || pb) : null;
         if (db && db.door && d < 60){
           var out = zb ? 1 : -1, dr = db.door, nx1 = dr.x + dr.nx*1.1*out, ny1 = dr.y + dr.ny*1.1*out;
@@ -6560,14 +6568,14 @@ function netTick(dt){
   net.peers.forEach(function(p){ if (p.ready && !p.cop) ps.push([p.id, r2(p.tx), r2(p.ty), r2(p.yaw), p.sw, p.hp, p.vh || 0, (p.mv ? 1 : 0) + (p.vis < 1 ? 2 : p.vis > 1 ? 4 : 0) + (((p.lvl | 0) & 15) << 5) + (p.rf === 1 ? 16 : 0)]); });
   net.peers.forEach(function(p){
     if (!p.ready) return;
-    var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 125 && Math.abs(z.y - p.y) < 125) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v), z.k, (z.roof || (z.climb && z.climb.t > 0.5) ? 2 : 0) + (((z.lvl | 0) & 15) << 2)]); }
+    var zs = []; for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (Math.abs(z.x - p.x) < 125 && Math.abs(z.y - p.y) < 125) zs.push([z.id, r2(z.x), r2(z.y), r2(z.ang), z.hurt > 0 ? 1 : 0, r2(z.v), z.k, (z.roof || (z.climb && z.climb.t > 0.5) ? 2 : 0) + (((z.lvl | 0) & 15) << 2) + ((z.cy || 0) > 0.6 ? 64 : 0)]); }
     send(p.dc, {t:'s', time:r2(time), z:zs, p:ps, wx:[wx.w, wx.tor ? [r2(wx.tor.x), r2(wx.tor.y)] : 0]});
   });
 }
 function onSnapshot(m){
   time = +m.time || time; if (m.wx){ wx.w = m.wx[0] | 0; wx.tor = m.wx[1] ? {x:m.wx[1][0], y:m.wx[1][1]} : null; }
   var old = {}, i; zombies.forEach(function(z){ old[z.id] = z; }); zombies = [];
-  for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5], k:a[6] | 0}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; z.lvl = (a[7] >> 2) & 15; z.rf = a[7] & 2 ? 1 : 0; if (a[4]) z.hurt = 0.15; zombies.push(z); }
+  for (i = 0; i < m.z.length; i++){ var a = m.z[i], z = old[a[0]] || {id:a[0], x:a[1], y:a[2], walk:0, hurt:0, v:a[5], k:a[6] | 0}; z.tx = a[1]; z.ty = a[2]; z.ang = a[3]; z.lvl = (a[7] >> 2) & 15; z.rf = a[7] & 2 ? 1 : 0; z.cyT = a[7] & 64 ? 1.15 : 0; z.cy = (z.cy || 0) + (z.cyT - (z.cy || 0))*0.5; if (a[4]) z.hurt = 0.15; zombies.push(z); }
   var po = {}; net.others.forEach(function(o){ po[o.id] = o; }); net.others = [];
   for (i = 0; i < m.p.length; i++){ var b = m.p[i]; if (b[0] === net.pid) continue; var o = po[b[0]] || {id:b[0], x:b[1], y:b[2]}; o.tx = b[1]; o.ty = b[2]; o.yaw = b[3]; o.sw = b[4]; o.hp = b[5]; o.vh = b[6] || 0; o.mv = (b[7] | 0) & 1; o.lvl = ((b[7] | 0) >> 5) & 15; o.rf = (b[7] | 0) & 16 ? 1 : 0; o.vis = (b[7] | 0) & 2 ? 0.5 : (b[7] | 0) & 4 ? 1.35 : 1; net.others.push(o); }
 }

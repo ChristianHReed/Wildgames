@@ -1,4 +1,4 @@
-# Afterstreet test checklist (version 0.72.0)
+# Afterstreet test checklist (version 0.73.0)
 
 Tick each box as you go. Everything here was tested headlessly (no real phone, no real sound, no real controller). Anything marked **PHONE** or **EARS** needs you. The longer numbered list in TESTING.md has the exact steps per version; this one is the quick pass.
 
@@ -47,7 +47,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 - [ ] After dawn lone aliens walk back to nests and disappear.
 - [ ] A long chase: they keep looking longer after losing you.
 - [ ] Nests: destroying one stops that group; the power plant nest must be cleared first.
-- [ ] Clingers go over fences and walls (not through a friend's client in multiplayer yet, see section 14).
+- [ ] Clingers go over fences and walls, and climb a house wall to reach you on the roof.
 
 ## 8. Walls you build
 - [ ] Build timber, steel, concrete walls; switch Wall material; costs match the Build menu.
@@ -89,7 +89,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 ## 14. Multiplayer
 - [ ] Host and join: you see each other, chat, markers work with a radio.
 - [ ] Edits (walls, beds, torn walls, searched containers) show for both players.
-- [ ] Known gaps: clinger lift is not synced to guests; survivor NPCs are host only; the alien footprint trail is host only.
+- [ ] Known gaps: survivor NPCs are host only; the alien footprint trail is host only.
 
 ## 15. Phone and controller
 - [ ] **PHONE** Every button in the touch bar does what its label says, none overlap in portrait or landscape.
