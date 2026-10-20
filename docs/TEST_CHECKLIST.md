@@ -116,3 +116,6 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] **TWO DEVICES** Quick invite code: host types a word and Shares, friend types it and Joins over the internet. Copy-and-paste codes still work with no internet.
 - [ ] Flags show on the compass with distance, point the right way as you turn, and friends' flags appear (blue, with name) on your compass and map.
 - [ ] **PHONE** Busy highway: many cars and some service vehicles in view, still smooth. Machines can be searched and scrapped.
+- [ ] **PHONE** Drive a car: stick up and down is gas and brake, left and right steers, the jump button is the handbrake; the dashboard sits above the item bar and nothing overlaps.
+- [ ] Drive across a map square edge: the car does not change into another vehicle; fuel and damage carry over.
+- [ ] Fuel: cars you find hold different amounts; a full tank lasts 300 to 400 miles of driving.

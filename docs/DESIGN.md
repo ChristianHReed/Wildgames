@@ -216,3 +216,6 @@ Flags (from the big map) show on the compass strip with distance; off-view flags
 
 ## Road traffic (0.87)
 Abandoned cars thicken with road size: a car every 14 m on motorways, every 30 m on primary roads, down to one every 260 m on side streets, up to 1100 per square. A few of each highway's vehicles are service or construction machines (fire truck, bus, ambulance, excavator and the rest), always dead and never driveable.
+
+## Driving and units (0.88)
+The game speaks in inches, feet and miles; the map and physics stay in metres inside. Cars have a heading and a speed (top 24 to 36 m/s by kind, about 55 to 80 mph), accelerate gradually, brake harder than they accelerate, and steer less at speed. Fuel is range: a tank is 300 to 400 miles, a can is 100 miles, and burn is by distance (a little while idling). Found cars hold a random fraction of a tank: roughly 14% nearly empty, 82% between a twentieth and three quarters, and 4% nearly full. Road wrecks are about 42% of road cars, the rest drivable with some wear.
