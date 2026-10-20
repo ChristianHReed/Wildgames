@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.66.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.67.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.66.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.67.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -727,7 +727,7 @@ var LOOT = {
   industrial:{scrap:5, wood:4, fuel:2, battery:1, chunk:2.5, bolt:0.4, crossbow:0.05}, shop:{food:2, water:2, scrap:2, ammo:0.6, shell:0.5, arrow:0.4, recurve_bow:0.08, medkit:1, coat:0.6, radio:0.3, battery:1.6}
 };
 var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba',''], nails:['Nails','#8c8f94',''], sheet:['Sheet metal','#9fb0bd',''], chunk:['Concrete chunk','#9a9890',''], rifle:['Rifle rounds','#d9b34a',''], shell:['Shotgun shells','#c8553d',''], arrow:['Arrows','#c9a56a',''], bolt:['Crossbow bolts','#9fa6ad',''],
-  revolver:['Revolver','#8d949c',''], hunting_rifle:['Hunting rifle','#7a5a3c',''], pump_shotgun:['Pump shotgun','#6b6f75',''], double_barrel:['Double-barrel shotgun','#6b5a48',''], carbine:['Carbine','#4f565e',''], crossbow:['Crossbow','#7a6a4a',''], recurve_bow:['Recurve bow','#a8743e','']};
+  revolver:['Revolver','#8d949c',''], hunting_rifle:['Hunting rifle','#7a5a3c',''], pump_shotgun:['Pump shotgun','#6b6f75',''], double_barrel:['Double-barrel shotgun','#6b5a48',''], carbine:['Carbine','#4f565e',''], crossbow:['Crossbow','#7a6a4a',''], recurve_bow:['Recurve bow','#a8743e',''], flare_gun:['Flare gun','#c8553d',''], flareshell:['Flare shells','#e8632a',''], quiver:['Quiver','#8a6a44','']};
 ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096','']; ITEMS.bandage = ['Bandages','#e9e2d0','4']; ITEMS.antibio = ['Antibiotics','#9ad0a0','']; ITEMS.splint = ['Splint','#b08a5a','']; ITEMS.fresh = ['Fresh food','#e07a4a','']; ITEMS.rotten = ['Rotten food','#9a9a62','']; ITEMS.dirty = ['Unboiled water','#7aa0b0','']; ITEMS.tape = ['Duct tape','#9aa3aa',''];
 ITEMS.generator = ['Generator','#d9a845',''];
 /* 0.40: clothes, worn in six slots. warm = degrees F of warmth when cold; rain = how much rain it keeps off (outer and head);
@@ -757,6 +757,7 @@ ITEMS.seeds = ['Seed packets', '#7a9a4a', ''];   /* 0.43: planted in a garden pl
 ITEMS.toolkit = ['Toolkit','#c64834','']; ITEMS.tire = ['Spare tire','#3a383a','']; ITEMS.carbat = ['Car battery','#d9a845','']; ITEMS.parts = ['Engine parts','#8a9199',''];
 (function(){   /* 0.39: what it takes to get the truck at the safe house running, found in garages, auto shops and gas stations */
   var add = function(t, o){ for (var k in o) t[k] = (t[k] || 0) + o[k]; };
+  add(LOOTK.hardware, {shell:.8, arrow:.6, bolt:.4, flareshell:.3, hunting_rifle:.1, crossbow:.08, quiver:.15}); add(LOOTK.outdoors, {arrow:1.2, bolt:.5, recurve_bow:.15, quiver:.5, flare_gun:.1, flareshell:.6, shell:.4, hunting_rifle:.12}); add(LOOTK.police, {flareshell:.8, flare_gun:.15});
   add(LOOTK.garage, {toolkit:1, tire:1.4, carbat:1, parts:1}); add(LOOTK.hardware, {toolkit:.8, tire:1.2, carbat:.9, parts:1.2}); add(LOOTK.fuel, {carbat:.7, parts:.7, tire:.4, toolkit:.2});
   add(LOOTK.parking, {tire:.6, carbat:.4}); add(LOOTK.warehouse, {tire:.3, parts:.3, toolkit:.2}); add(LOOT.industrial, {toolkit:.4, tire:.5, carbat:.4, parts:.5}); add(LOOT.house, {toolkit:.12, tire:.06});
 })();
@@ -3243,25 +3244,36 @@ var GUNS = {
   pump_shotgun:{n:'Pump shotgun', am:'shell', dmg:4, cd:0.9, mag:6, rl:3.0, nz:7, sp:70, life:0.45, spr:0.13, pel:8},
   double_barrel:{n:'Double-barrel', am:'shell', dmg:4, cd:0.35, mag:2, rl:2.4, nz:7, sp:70, life:0.45, spr:0.15, pel:8},
   carbine:{n:'Carbine', am:'rifle', dmg:8, cd:0.18, mag:20, rl:2.4, nz:6, sp:110, life:1.0, spr:0.03, pel:1},
-  crossbow:{n:'Crossbow', am:'bolt', dmg:18, cd:1.6, mag:1, rl:2.2, nz:0.6, sp:60, life:1.0, spr:0.005, pel:1},
-  recurve_bow:{n:'Recurve bow', am:'arrow', dmg:12, cd:0.9, mag:1, rl:0.8, nz:0.5, sp:50, life:1.1, spr:0.02, pel:1}
-}, GORDER = ['pistol', 'revolver', 'carbine', 'hunting_rifle', 'pump_shotgun', 'double_barrel', 'crossbow', 'recurve_bow'];
+  crossbow:{n:'Crossbow', am:'bolt', dmg:18, cd:1.6, mag:1, rl:2.2, nz:0.6, sp:60, life:1.0, spr:0.005, pel:1, rec:1},
+  recurve_bow:{n:'Recurve bow', am:'arrow', dmg:12, cd:0.9, mag:1, rl:0.8, nz:0.5, sp:50, life:1.1, spr:0.02, pel:1, rec:1},
+  flare_gun:{n:'Flare gun', am:'flareshell', dmg:1, cd:1.2, mag:1, rl:2.0, nz:2, sp:38, life:1.5, spr:0.01, pel:1, flare:1}
+}, GORDER = ['pistol', 'revolver', 'carbine', 'hunting_rifle', 'pump_shotgun', 'double_barrel', 'crossbow', 'recurve_bow', 'flare_gun'];
 function gunOwned(k){ return k === 'pistol' || inv[k] > 0; }
+function gunDur(k){ return P.gdur && P.gdur[k] !== undefined ? P.gdur[k] : 1; }
+/* a spent arrow or bolt may be picked up again; a flare shell lights where it lands */
+function dropAt(x, y, what, nm){ var np = {id:Date.now() + '-' + Math.floor(Math.random()*1e6), x:x, y:y, inv:what, items:{}, designs:[], from:'the ground', name:nm || 'something on the ground', pack:true}; packs.push(np); emit({k:'pack', p:np}); }
+function landBullet(b){
+  if (b.flare){ var f = {x:b.x, y:b.y, life:60}; flares.push(f); emit({k:'flare', f:f}); return; }
+  if (b.rec && Math.random() < (b.hz ? 0.5 : 0.75)){ var w = {}; w[b.rec] = 1; dropAt(b.x, b.y, w, b.rec === 'bolt' ? 'a crossbow bolt' : 'an arrow'); }
+}
 function gunNow(){ if (!P.gun || !gunOwned(P.gun)) P.gun = 'pistol'; if (!P.mag){ var n0 = Math.min(12, inv.ammo | 0); P.mag = {pistol:n0}; inv.ammo -= n0; } return GUNS[P.gun]; }
 function gunHud(){ var g = gunNow(); P.mag = P.mag || {}; var h = g.n + ' ' + (P.mag[P.gun] | 0) + ' / ' + (inv[g.am] | 0) + (P.rl ? ' (reloading)' : ''); var e = el('gunHud'); if (e && e.textContent !== h) e.textContent = h; }
 function cycleGun(){ var own = GORDER.filter(gunOwned), i = own.indexOf(P.gun); P.gun = own[(i + 1) % own.length]; P.rl = null; var g = gunNow(); P.gunT = 3; toast(g.n + (own.length > 1 ? ' (U or the Gun button switches)' : ''), 1.8); gunHud(); updateHud(); }
 function startReload(manual){ var g = gunNow(); P.mag = P.mag || {}; if (P.rl || (P.mag[P.gun] | 0) >= g.mag){ return; }
   if (!(inv[g.am] > 0)){ if (manual || time - (P.noAm || -9) > 2){ P.noAm = time; toast('Out of ' + ITEMS[g.am][0].toLowerCase() + '. ' + (g.am === 'ammo' ? 'Police and fire stations hold more.' : 'Police stations, houses and shops may have some.'), 3); } return; }
-  P.rl = {t:g.rl, g:P.gun}; sfx('latch', P.x, P.y, 0.5); gunHud(); }
+  P.rl = {t:g.rl*(g.am === 'arrow' && inv.quiver > 0 ? 0.45 : 1), g:P.gun}; sfx('latch', P.x, P.y, 0.5); gunHud(); }
 function gunTick(dt){ if (!P.rl) return; if (P.rl.g !== P.gun){ P.rl = null; return; } P.rl.t -= dt; if (P.rl.t > 0) return; var g = GUNS[P.gun], have = P.mag[P.gun] | 0, n = Math.min(g.mag - have, inv[g.am] | 0); P.mag[P.gun] = have + n; inv[g.am] -= n; P.rl = null; sfx('latch', P.x, P.y, 0.7); gunHud(); updateHud(); }
 function shoot(){
   var g = gunNow(); P.mag = P.mag || {}; if (P.rl) return;
   if ((P.mag[P.gun] | 0) < 1){ startReload(false); return; }
+  P.gdur = P.gdur || {}; var gd = P.gdur[P.gun] === undefined ? 1 : P.gdur[P.gun];
+  if (gd < 0.25 && Math.random() < (0.25 - gd)*1.6){ P.shootCd = 0.9; toast('It jammed. Worn guns jam; repair it at a tool bench (1 scrap).', 2.5); sfx('latch', P.x, P.y, 0.6, 1.3); return; }
+  P.gdur[P.gun] = Math.max(0, gd - (g.pel > 1 ? 0.012 : g.rec ? 0.004 : 0.008)); if (P.gdur[P.gun] < 0.25 && !P.gSaid){ P.gSaid = 1; toast('Your ' + g.n.toLowerCase() + ' is wearing out and will start to jam.', 4); }
   P.mag[P.gun]--; P.shootCd = g.cd; P.gunT = 3; P.noise = Math.max(P.noise, g.nz); var fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), quiet = g.nz < 1;
   if (!quiet){ burst(undefined, undefined, 0.9, g.pel > 1 ? 1800 : 3200, g.pel > 1 ? 0.6 : 0.45); burst(undefined, undefined, 0.5, 600, 0.9); }
   else sfx('wood_hit', P.x, P.y, 0.4, 1.6);
   for (var q = 0; q < g.pel; q++){ var a = P.yaw + (Math.random() - 0.5)*2*g.spr, vx = Math.cos(a)*g.sp, vy = Math.sin(a)*g.sp;
-    bullets.push({x:P.x + fx*0.5, y:P.y + fy*0.5, vx:vx, vy:vy, t:g.life, dmg:g.dmg}); }
+    bullets.push({x:P.x + fx*0.5, y:P.y + fy*0.5, vx:vx, vy:vy, t:g.life, dmg:g.dmg, flare:g.flare, rec:g.rec ? g.am : 0}); }
   if (g.nz >= 4 && g.pel === 1) fxAdd('effects.tracer', P.x + fx*3, P.y + fy*3, (P.gy || 0) + ((P.lvl | 0)*FH), {life:0.12, s0:1, s1:1.6, up:1.25, yaw:Math.atan2(fy, fx) - 1.5708});
   if (g.nz >= 4) fxAdd('effects.muzzle_flash', P.x + fx*0.85, P.y + fy*0.85, (P.gy || 0) + ((P.lvl | 0)*FH), {life:0.07, s0:1, s1:1.2, up:1.3, yaw:Math.atan2(fy, fx) - 1.5708});
   if ((P.mag[P.gun] | 0) < 1 && inv[g.am] > 0) setTimeout(function(){ if (running) startReload(false); }, 350);
@@ -3378,6 +3390,7 @@ function fixText(o){
   if (o.fix === 'bed') return E + 'sleep in the ' + o.name + ' until morning';
   if (o.fix === 'stove' && powered(o.b)) return inv.dirty > 0 ? E + 'boil your water on the electric stove (' + inv.dirty + ' bottle' + (inv.dirty > 1 ? 's' : '') + ')' : (inv.food > 0 || inv.fresh > 0) ? E + 'cook a hot meal on the electric stove (1 food)' : 'Stove (it has power) \u00b7 a hot meal takes 1 food';
   if (o.fix === 'stove') return inv.dirty > 0 && inv.wood > 0 ? E + 'boil your water (' + inv.dirty + ' bottle' + (inv.dirty > 1 ? 's' : '') + ', 1 wood)' : (inv.food > 0 || inv.fresh > 0) && inv.wood > 0 ? E + 'cook a hot meal (1 food, 1 wood)' : 'Stove (no power) \u00b7 a hot meal takes 1 food and 1 wood for a fire in it; boiling water takes 1 wood';
+  if (o.fix === 'bench' && gunDur(P.gun || 'pistol') < 1 && !(P.weapon && P.items[P.weapon] > 0 && durOf(P.weapon) < 1)) return E + 'repair your ' + gunNow().n.toLowerCase() + ' for 1 scrap';
   if (o.fix === 'bench'){ var bw = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; return !bw ? 'Tool bench \u00b7 equip a made weapon to repair it here' : durOf(bw) >= 1 ? 'Tool bench \u00b7 your ' + DESIGNS[bw].name + ' is in good shape' : E + 'repair your ' + DESIGNS[bw].name + ' (' + pct(durOf(bw)) + ', 1 scrap)'; }
   if (o.name !== 'toilet' && !waterOn()) return 'The ' + o.name + ' is dry: the water mains have failed';
   var left = o.taps - (world.edits.taps[o.b.id + ':' + o.ii] || 0); return left > 0 ? E + 'fill a bottle at the ' + o.name : 'The ' + o.name + ' is dry';
@@ -3385,6 +3398,7 @@ function fixText(o){
 function useFix(o){
   if (o.fix === 'ladder') return startClimb(o.L, o.up);
   if (o.fix === 'bed') return goToSleep(o);
+  if (o.fix === 'bench' && gunNow() && gunDur(P.gun) < 1 && !(P.weapon && P.items[P.weapon] > 0 && durOf(P.weapon) < 1)){ if (!(inv.scrap > 0)){ toast('A repair takes 1 scrap.', 2.5); return; } inv.scrap--; P.gdur[P.gun] = 1; P.gSaid = 0; sfx('metal', o.x, o.y, 0.8); makeNoise(o.x, o.y, 6); feed('Repaired the ' + GUNS[P.gun].n.toLowerCase(), '#cfd5db'); updateHud(); return; }
   if (o.fix === 'bench'){ var bw2 = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; if (!bw2 || durOf(bw2) >= 1) return; if (!(inv.scrap > 0)){ toast('A repair takes 1 scrap.', 2.5); return; } inv.scrap--; P.dur[bw2] = 1; sfx('metal', o.x, o.y, 0.8); makeNoise(o.x, o.y, 6); feed('Repaired the ' + DESIGNS[bw2].name, '#cfd5db'); updateHud(); return; }
   var pw0 = o.fix === 'stove' && powered(o.b);
   if (o.fix === 'stove' && inv.dirty > 0 && (pw0 || inv.wood > 0)){ var nb2 = inv.dirty; if (!pw0) inv.wood--; inv.water += nb2; inv.dirty = 0; sfx('pot', o.x, o.y, 0.8); makeNoise(o.x, o.y, 5); feed('Boiled ' + nb2 + ' bottle' + (nb2 > 1 ? 's' : '') + ' of water', ITEMS.water[1]); updateHud(); return; }
@@ -4188,9 +4202,9 @@ function update(dt){
     for (var s = 0; s < st && !dead; s++){
       b.x += b.vx*dt/st; b.y += b.vy*dt/st;
       if (hitWall(b.x, b.y)){ dead = true; fxAdd('effects.hit_spark', b.x, b.y, groundAt(b.x, b.y), {life:0.18, s0:0.8, s1:1.1, up:1.2}); break; }
-      for (var q = 0; q < zombies.length; q++){ var zz = zombies[q]; if (Math.hypot(zz.x - b.x, zz.y - b.y) < 0.35 + AK[zz.k].r){ hitZombie(zz, b.dmg || 5, 0, 0); dead = true; break; } }
+      for (var q = 0; q < zombies.length; q++){ var zz = zombies[q]; if (Math.hypot(zz.x - b.x, zz.y - b.y) < 0.35 + AK[zz.k].r){ hitZombie(zz, b.dmg || 5, 0, 0); b.hz = 1; dead = true; break; } }
     }
-    if (dead || b.t <= 0) bullets.splice(i, 1);
+    if (dead || b.t <= 0){ landBullet(b); bullets.splice(i, 1); }
   }
   survTick(dt); spitTick(dt); packT = (packT || 0) - dt; if (packT <= 0 && net.role !== 'guest'){ packT = 0.5; packTick(0.5); } seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
   spawnT -= dt;
@@ -4202,7 +4216,7 @@ function update(dt){
   saveT -= dt; if (saveT <= 0){ saveT = 20; saveNow(); }
   if (P.hp <= 0) die();
 }
-var ICON = {rifle:9, shell:9, arrow:9, bolt:9, revolver:5, hunting_rifle:5, pump_shotgun:5, double_barrel:5, carbine:5, crossbow:5, recurve_bow:5, nails:5, sheet:5, chunk:5, seeds:41, coat:31, beanie:32, cap:33, helmet:34, sweater:35, leather:36, gloves:37, trousers:38, thermals:39, boots:40, raincoat:6, toolkit:27, tire:28, carbat:29, parts:30, generator:26, food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18, bandage:19, antibio:20, splint:21, fresh:22, rotten:23, dirty:24, tape:25};
+var ICON = {flareshell:9, flare_gun:5, quiver:5, rifle:9, shell:9, arrow:9, bolt:9, revolver:5, hunting_rifle:5, pump_shotgun:5, double_barrel:5, carbine:5, crossbow:5, recurve_bow:5, nails:5, sheet:5, chunk:5, seeds:41, coat:31, beanie:32, cap:33, helmet:34, sweater:35, leather:36, gloves:37, trousers:38, thermals:39, boots:40, raincoat:6, toolkit:27, tire:28, carbat:29, parts:30, generator:26, food:0, water:1, medkit:2, battery:3, wood:4, scrap:5, fuel:7, ammo:9, flashlight:10, lantern:11, radio:12, berry:13, herb:14, fiber:15, stone:16, key:17, meal:18, bandage:19, antibio:20, splint:21, fresh:22, rotten:23, dirty:24, tape:25};
 /* the eye: how close any alien is to spotting you */
 function awareHud(){
   var e = el('aware'), best = 0, txt = '', col = '#e9dcc0', i;
@@ -4941,7 +4955,7 @@ function pAct(){
 }
 /* the weapon in the third-person hand ('name:state' for the held pack) and which attack clip it swings with */
 function heldWpn(){
-  if (!heldOn()) return ''; if (P.gun && P.gun !== 'pistol' && P.gunT > 0 && gunOwned(P.gun)) return P.gun + ':new'; if (P.shootCd > 0) return 'pistol:new';
+  if (!heldOn()) return ''; if (P.gun && P.gun !== 'pistol' && P.gunT > 0 && gunOwned(P.gun)) return P.gun + (gunDur(P.gun) < 0.25 ? ':worn' : ':new'); if (P.shootCd > 0) return 'pistol:' + (gunDur('pistol') < 0.25 ? 'worn' : 'new');
   var wdz = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null, name = wdz ? wdz.model : 'baseball_bat'; if (!name || !SHAPED.held.models.weapons[name]) return '';
   return name + ':' + (wdz && durOf(P.weapon) < 0.25 ? 'worn' : 'new');
 }
@@ -4966,7 +4980,7 @@ function fpHeld(vm, at, sw){
   if (prog > 0 && target && target !== 'water' && !target.port){   /* opening or searching: both hands reach out */
     draw(heldArm('reach', 'right', cols), cam); draw(heldArm('reach', 'left', cols), cam); return; }
   var wdz = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null, name = wdz ? wdz.model : 'baseball_bat', W = H.models.weapons, Mw, two = false, gunOut = P.gun && P.gun !== 'pistol' && P.gunT > 0 && gunOwned(P.gun); if (gunOut){ name = P.gun; wdz = null; }
-  if (name && W[name]){ Mw = heldPart('w|' + name + '|' + (wdz && durOf(P.weapon) < 0.25 ? 'worn' : 'new'), W[name][wdz && durOf(P.weapon) < 0.25 ? 'worn' : 'new'], {}); two = H.twoHanded.indexOf(name) >= 0; }
+  if (name && W[name]){ var wst = gunOut ? (gunDur(P.gun) < 0.25 ? 'worn' : 'new') : (wdz && durOf(P.weapon) < 0.25 ? 'worn' : 'new'); Mw = heldPart('w|' + name + '|' + wst, W[name][wst] || W[name].new, {}); two = H.twoHanded.indexOf(name) >= 0; }
   else { var sh = wdz ? wdz.shape : 0, L = sh === 3 ? 0.95 : 0.7, th = sh === 1 ? 0.02 : 0.045, pcs = [{s:'box', p:[0, 0, L/2 - 0.2], d:[th, th, L], c:'DES'}]; if (sh === 2) pcs.push({s:'box', p:[0, 0, L - 0.2], d:[0.05, 0.12, 0.14], c:'IRON'});
     Mw = heldPart('d|' + (wdz ? wdz.id : 'x'), pcs, {DES:wdz ? wdz.color : '#c9a56a', IRON:'#7d838c'}); }
   var a1 = gunOut ? 1 : 0.12, a2 = gunOut ? -0.2 : -0.022 - 0.08*sw, a3 = gunOut ? 0.07 - rec*0.3 : 0.094 - sw*0.07, an = Math.hypot(a1, a2, a3), am2 = Math.hypot(a1, a3), ua = ax2(at, a1/an, a2/an, a3/an), up2 = ax2(at, -a3/am2, 0, a1/am2), sd2 = ax2(at, 0, 1, 0), g = at(0.45*K + sw*0.15, 0.2*K - sw*0.5, -0.26*K + 0.2 - sw*0.05);
@@ -6009,6 +6023,7 @@ function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r
 /* 0.51: town cars. Y (or the Boot button) at a parked car: first the boot is searched, then fuel is siphoned a can at a time (a car holds about 60 s of driving per can).
    Burnt shells are empty and wrecks hold only the odd can. */
 var TRAIL = [], trailT = 0;
+var ARMYBOOT = {ammo:3, rifle:3, shell:2.5, flareshell:1, medkit:1.5, battery:1, carbine:0.35, revolver:0.3, hunting_rifle:0.25, pump_shotgun:0.3, flare_gun:0.2, none:2};
 var BOOT = {scrap:3, water:1, food:1, tire:0.8, carbat:0.5, toolkit:0.25, fuel:1, ammo:0.5, battery:0.6, none:4};
 function carNear(){ var best = null, bd = 3.2; if (P.veh || P.inside) return null; world.vehicles.forEach(function(v){ if (!v.t || v.kind === 'truck' || v.id === 'truck') return; var d = Math.hypot(v.x - P.x, v.y - P.y); if (d < bd){ bd = d; best = v; } }); return best; }
 function carUse(){
@@ -6016,7 +6031,7 @@ function carUse(){
   var v = carNear(); if (!v || P.sleep || P.hide){ if (!v) toast('No car close enough.', 1.8); return; }
   var E = world.edits;
   if (!(E.boots && E.boots[v.id]) && v.dead !== 'burnt'){
-    doEdit({a:'boot', id:v.id}); var r = rollStash(BOOT, v.dead ? 2 : 3), got = [], k; for (k in r.inv){ inv[k] = (inv[k] || 0) + r.inv[k]; got.push('+' + r.inv[k] + ' ' + (ITEMS[k] ? ITEMS[k][0].toLowerCase() : k)); }
+    doEdit({a:'boot', id:v.id}); var army = v.dead && hash(Math.round(v.x), Math.round(v.y), 61) < 0.08, r = rollStash(army ? ARMYBOOT : BOOT, army ? 5 : v.dead ? 2 : 3), got = [], k; for (k in r.inv){ inv[k] = (inv[k] || 0) + r.inv[k]; got.push('+' + r.inv[k] + ' ' + (ITEMS[k] ? ITEMS[k][0].toLowerCase() : k)); }
     sfx('plank', v.x, v.y, 0.8, 0.7); makeNoise(v.x, v.y, 8); feed(got.length ? 'Searched the boot: ' + got.join(', ') : 'The boot is empty', ITEMS.wood[1]); updateHud(); return; }
   var can = v.dead ? (v.siph ? 0 : (hash(v.id.length*7 + (v.x | 0), v.y | 0, 5) < 0.25 ? 1 : 0)) : Math.floor((v.fuel || 0)/60);
   if (can < 1){ toast(v.dead === 'burnt' ? 'A burnt-out shell. Nothing left in it.' : 'No fuel left to siphon.', 2.5); return; }
