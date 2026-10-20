@@ -108,3 +108,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] Door brace (Build menu, inside near the front door): the bar is visible, aliens struggle, E removes it, survives save and reload. (Not seen in a screenshot yet.)
 - [ ] Board up all windows from the Build menu: boards on every window, wood used 2 each.
 - [ ] **PHONE** World dressing (0.80.0): street signs, poles, manholes, mailboxes, bus stops, logs, ferns, reeds, flowers, road cracks. Frame rate still fine. Nothing invisible blocks you. Things face the right way (stop signs toward drivers).
+- [ ] Map setting on the home screen: all three choices behave as described and are remembered.

@@ -261,7 +261,7 @@
   <div id="travel" class="hidden" style="position:fixed;inset:0;z-index:7;background:rgba(245,234,216,.9);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:26px;text-align:center;padding:20px">Travelling to the next part of the map&hellip;</div>
   <div id="loot" class="modal hidden"></div>
   <div id="pack" class="modal hidden"></div>
-  <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map. You only see where you have been. Put a flag at the cross with Mark centre.</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><input id="bigText" maxlength="28" placeholder="note for the flag" style="width:130px"><button id="bigMark" class="alt">Mark centre</button><input id="bigFind" maxlength="40" placeholder="address or shop" style="width:130px"><button id="bigGo" class="alt">Find</button><button id="bigUnmark" class="alt">Remove mark</button><button id="bigClose">Close map</button></div></div>
+  <div id="bigMap" class="hidden"><canvas id="bigCv"></canvas><div id="bigNote">&copy; OpenStreetMap contributors &middot; drag to move the map. <span id="bigSee">You only see where you have been.</span> Put a flag at the cross with Mark centre.</div><div id="bigBar"><button id="bigOut" class="alt">&minus;</button><button id="bigIn" class="alt">+</button><button id="bigMe" class="alt">Find me</button><input id="bigText" maxlength="28" placeholder="note for the flag" style="width:130px"><button id="bigMark" class="alt">Mark centre</button><input id="bigFind" maxlength="40" placeholder="address or shop" style="width:130px"><button id="bigGo" class="alt">Find</button><button id="bigUnmark" class="alt">Remove mark</button><button id="bigClose">Close map</button></div></div>
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
     <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
@@ -307,6 +307,7 @@
       <b>Settings</b>
       <div class="prow">
         <label>Length of a day<select id="dayLen"><option value="43200">12 hours (half of real time)</option><option value="7200">2 hours</option><option value="1440">24 minutes</option><option value="240">4 minutes (quick test)</option></select></label>
+        <label>Map<select id="mapMode"><option value="find">Find a map in the game, then explore to fill it in</option><option value="explore">Always have a map, but explore to fill it in</option><option value="all">Whole map visible from the start</option></select></label>
         <label>Sound volume<input id="vol" type="range" min="0" max="100" value="80"></label>
         <label>Music<input id="musicOn" type="checkbox" checked></label>
         <label>View distance and art detail<select id="qual"><option value="0">Low (phones, older laptops)</option><option value="1">Medium</option><option value="2">High</option></select></label>
@@ -392,7 +393,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.80.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.81.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -400,7 +401,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.80.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.81.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4491,7 +4492,10 @@ var MAPC = {grass:'#d5dbbd', park:'#c3cfa6', forest:'#a9b78c', sand:'#eadcbf', p
 var packT = 0, seen = {}, marks = [], seenT = 0, SQ = 30, fogCv = document.createElement('canvas');
 function seeMap(first){ var R = 3, cx = Math.floor(P.x/SQ), cy = Math.floor(P.y/SQ), a, b; for (a = -R; a <= R; a++) for (b = -R; b <= R; b++) if (a*a + b*b <= R*R + 1) seen[(cx + a) + ',' + (cy + b)] = 1;
   if (first && world){ var sf = world.buildings[world.safe]; if (sf) for (a = -2; a <= 2; a++) for (b = -2; b <= 2; b++) seen[(Math.floor(sf.cx/SQ) + a) + ',' + (Math.floor(sf.cy/SQ) + b)] = 1; } }
+/* 0.81 home-screen choice: 'find' needs a map item and shows only explored squares; 'explore' always has the big map, only explored squares; 'all' shows everything */
+var MAPMODE = (function(){ var v = null; try { v = localStorage.getItem('lastblock:mapmode'); } catch (e){} return v === 'all' || v === 'explore' ? v : 'find'; })();
 function mapFog(c, w, h, ox, oy, sc){
+  if (MAPMODE === 'all') return;
   if (fogCv.width !== w || fogCv.height !== h){ fogCv.width = w; fogCv.height = h; }
   var f = fogCv.getContext('2d'); f.globalCompositeOperation = 'source-over'; f.fillStyle = '#cdbb98'; f.fillRect(0, 0, w, h);
   f.fillStyle = 'rgba(120,100,70,.10)'; var st = Math.max(8, 24*sc); for (var yy = -((oy % st) + st) % st; yy < h; yy += st) f.fillRect(0, yy, w, 1);
@@ -4542,7 +4546,7 @@ function drawBig(){
   c.beginPath(); c.moveTo(14, 0); c.lineTo(-9, -10); c.lineTo(-4, 0); c.lineTo(-9, 10); c.closePath(); c.fill(); c.stroke(); c.restore();
 }
 function toggleBig(){
-  if (!running || P.cop) return; if (!big.on && !(inv.map > 0)){ toast('You have no map. Houses, gas stations and shops have them; the minimap only shows what is close.', 4); return; } big.on = !big.on; el('bigMap').classList.toggle('hidden', !big.on);
+  if (!running || P.cop) return; if (!big.on && MAPMODE === 'find' && !(inv.map > 0)){ toast('You have no map. Houses, gas stations and shops have them; the minimap only shows what is close.', 4); return; } big.on = !big.on; el('bigMap').classList.toggle('hidden', !big.on); el('bigSee').textContent = MAPMODE === 'all' ? 'The whole map is shown.' : 'You only see where you have been.';
   if (big.on){ big.cx = P.x; big.cy = P.y; big.sc = Math.max(0.3, Math.min(W, H)/600); if (document.exitPointerLock) document.exitPointerLock(); drawBig(); }
 }
 function bigZoom(f){ big.sc = Math.max(0.08, Math.min(6, big.sc*f)); drawBig(); }
@@ -7401,6 +7405,7 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
   syncChar(false);
   var dl0 = lsGet('lastblock:daylen'); if (dl0 && el('dayLen').querySelector('option[value="' + dl0 + '"]')) el('dayLen').value = dl0;
   el('fovS').value = CAMS.fov; el('bobS').value = String(CAMS.bob); el('fxS').value = String(CAMS.fx);
+  el('mapMode').value = MAPMODE; el('mapMode').addEventListener('change', function(){ MAPMODE = el('mapMode').value; lsSet('lastblock:mapmode', MAPMODE); });
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
 })();
 loadPacks(); wForm(); renderPacks(); fillScen();

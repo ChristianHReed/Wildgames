@@ -206,3 +206,6 @@ A partition is built like an outer wall: two wallpapered skins 18 cm apart, trim
 
 ## Sound and music (0.76)
 The design chat's sound set (assets/audio/sounds_design.js) joins the older clips. Each call uses the new clip when it exists and the old noise burst when it does not. Alien calls are named alien_<kind>_<idle|notice|attack|die>. Loops (rain_outside, rain_roof, generator_hum, fire_crackle, power_on_hum) fade with distance. Music tracks (assets/audio/music_<name>.js, about 1 MB each) load on first use, loop at the length the file names, and change at most every 25 s unless danger starts (chase, horde). Survivor portraits are assets/ui/portraits/<look>.png.
+
+## Map visibility (0.81)
+A home-screen setting decides how the map works: find a map in the game then explore (default), always have a map but explore to fill it in, or the whole map visible. It only changes the map and minimap fog and whether the map item is needed; it does not change the world.
