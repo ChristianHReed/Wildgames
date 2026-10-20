@@ -392,6 +392,53 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | street | `chimney` | 36 / 72 / 24 |
 | street | `water_tank` | 122 / 240 / 89 |
 | street | `roof_hatch` | 36 / 72 / 24 |
+| street | `sign_no_parking` | 102 / 188 / 81 |
+| street | `sign_no_entry` | 68 / 120 / 40 |
+| street | `sign_stop_all_way` | 124 / 240 / 150 |
+| street | `sign_pedestrian` | 42 / 80 / 48 |
+| street | `sign_school` | 106 / 204 / 141 |
+| street | `sign_deer` | 44 / 88 / 56 |
+| street | `sign_curve` | 31 / 63 / 31 |
+| street | `sign_crossroads` | 30 / 60 / 28 |
+| street | `sign_slippery` | 34 / 68 / 36 |
+| street | `sign_road_work` | 121 / 239 / 170 |
+| street | `sign_detour` | 87 / 175 / 114 |
+| street | `sign_dead_end` | 90 / 180 / 136 |
+| street | `sign_hospital` | 42 / 84 / 36 |
+| street | `sign_parking` | 32 / 64 / 29 |
+| street | `sign_evacuation` | 121 / 235 / 153 |
+| street | `sign_speed_25` | 114 / 228 / 174 |
+| street | `sign_speed_35` | 112 / 224 / 172 |
+| street | `sign_speed_55` | 114 / 228 / 174 |
+| street | `sign_route` | 49 / 95 / 55 |
+| street | `railroad_crossing_off` | 188 / 340 / 116 |
+| street | `railroad_crossing_on` | 188 / 340 / 116 |
+| street | `sign_gantry` | 263 / 527 / 324 |
+| street | `lamp_cobra_off` | 50 / 104 / 36 |
+| street | `lamp_cobra_on` | 50 / 104 / 36 |
+| street | `lamp_double_off` | 76 / 152 / 52 |
+| street | `lamp_double_on` | 76 / 152 / 52 |
+| street | `lamp_ornate_off` | 102 / 204 / 63 |
+| street | `lamp_ornate_on` | 102 / 204 / 63 |
+| street | `lamp_mast_off` | 108 / 208 / 80 |
+| street | `lamp_mast_on` | 108 / 208 / 80 |
+| street | `lamp_wall_off` | 42 / 88 / 29 |
+| street | `lamp_wall_on` | 42 / 88 / 29 |
+| street | `traffic_mast_red` | 350 / 676 / 286 |
+| street | `traffic_mast_amber` | 350 / 676 / 286 |
+| street | `traffic_mast_green` | 350 / 676 / 286 |
+| street | `traffic_mast_flash` | 350 / 676 / 286 |
+| street | `traffic_mast_dark` | 350 / 676 / 286 |
+| street | `traffic_span_red` | 528 / 1,008 / 364 |
+| street | `traffic_span_amber` | 528 / 1,008 / 364 |
+| street | `traffic_span_green` | 528 / 1,008 / 364 |
+| street | `traffic_span_flash` | 528 / 1,008 / 364 |
+| street | `traffic_span_dark` | 528 / 1,008 / 364 |
+| street | `walk_signal_walk` | 50 / 96 / 48 |
+| street | `walk_signal_stop` | 46 / 92 / 44 |
+| street | `walk_signal_dark` | 60 / 116 / 68 |
+| street | `flasher_off` | 46 / 88 / 32 |
+| street | `flasher_on` | 46 / 88 / 32 |
 | plants | `oak` | 164 / 348 / 96 |
 | plants | `pine` | 52 / 120 / 36 |
 | plants | `bush` | 54 / 120 / 33 |
@@ -922,6 +969,148 @@ glow pieces: windows, lamps, screens, status lights. Most things come as a pair:
 | `battery_box` | 108 / 216 / 72 |
 | `solar_portable` | 96 / 192 / 104 |
 | `solar_roof` | 64 / 128 / 64 |
+
+## world (`assets/shaped/world.js`, version 1)
+
+Same rules as every pack: shaped pieces, flat colours, metres, Y up. Ground pieces lie on y = 0 and decals sit 1 cm above.
+  roads       4 m by 4 m surface tiles (x and z from -2 to 2), each a BASE square with small shapes in DETAIL and DETAIL2;
+              surfaceColours[kind] gives the three colours. Nothing crosses the tile edge, so tiles repeat without seams.
+  markings    road paint as decals, along +Z (the direction of travel), centred on x = 0 unless said otherwise.
+  kerbs       the 3D pieces where roads meet sidewalks: corners, ramps, driveway dips, islands, a speed hump, drains.
+  sidewalks   2 m by 2 m tiles, top at y = 0 (raise them to the kerb height, 0.15 m, in the game), plus a tree pit and a verge.
+  water       4 m by 4 m water surface tiles in slots WATER, WATER_L and FOAM; waterColours[kind] gives them per kind.
+              River tiles flow towards +Z: scroll their DETAIL shapes along +Z to show the current.
+  banks       2 m of shore along X: land at -Z (top at y = 0), water at +Z (its surface at y = -0.5). Each kind comes straight,
+              as an outer corner and as an inner corner (quarter turns of radius 2 m about x = 0, z = 0), so a lake or river
+              outline can be walked with them. LAND and LAND_D take the ground colour of the area.
+  falls       waterfall pieces 4 m wide: a lip at the top, a 1 m sheet (stack as many as the drop needs), a splash pool, mist
+              and spray, a small cascade step, and a weir.
+  rocks       eight kinds of stone in three sizes (small about 0.4 m, medium about 1.2 m, large about 3 m), a cliff panel 4 m wide
+              by 4 m high that stacks, and ore rocks for harvesting.
+Notes for each group are in notes[].
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `roads` | 9 | 14 to 270 |
+| `markings` | 25 | 2 to 52 |
+| `kerbs` | 11 | 16 to 288 |
+| `sidewalks` | 9 | 6 to 484 |
+| `water` | 10 | 2 to 206 |
+| `banks` | 21 | 20 to 192 |
+| `falls` | 8 | 30 to 143 |
+| `rocks` | 35 | 16 to 288 |
+| `items` | 9 | 8 to 20 |
+
+## machines (`assets/shaped/machines.js`, version 1)
+
+Same rules as every pack: shaped pieces, flat colours, metres, Y up, the front faces +Z, the origin at the centre of the ground
+under the vehicle. Each machine is
+  parts[name]         pieces in machine space at rest (like survivor and alien bones: subtract the part's pivot to turn it)
+  rig[name]           how each part moves: parent (another part, or none for the body), pivot [x, y, z],
+                      'turn': an axis ([1,0,0] and so on) and a range [min, max] in degrees, positive as the note says, or
+                      'slide': a direction and a range in metres; 'fixed' is a turn in degrees ([x, y, z], three.js Euler XYZ)
+                      the part always has before it moves; 'rest' is its value when parked.
+  wheels              positions for the one 'wheel' part (spin it about X; steer the ones listed in 'steer' about Y)
+  clips[name]         movements as key frames: each frame {part: value, ..., 't': seconds from the start}; blend between frames
+  beacons             the part that holds the flashing lights (glow pieces): flash it, and add a coloured light
+Kinds: excavator, bulldozer, dump_truck, cement_mixer, garbage_truck, fire_truck, ambulance, tow_truck, mobile_crane,
+bucket_truck, forklift, road_roller, street_sweeper, school_bus. BODY is a colour slot (each has a usual colour in 'paint').
+
+Machines: `excavator`, `bulldozer`, `dump_truck`, `cement_mixer`, `garbage_truck`, `fire_truck`, `ambulance`, `tow_truck`, `mobile_crane`, `bucket_truck`, `forklift`, `road_roller`, `street_sweeper`, `school_bus`.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `excavator` | 1 | 746 to 746 |
+| `bulldozer` | 1 | 616 to 616 |
+| `dump_truck` | 1 | 436 to 436 |
+| `cement_mixer` | 1 | 418 to 418 |
+| `garbage_truck` | 1 | 402 to 402 |
+| `fire_truck` | 1 | 1064 to 1064 |
+| `ambulance` | 1 | 288 to 288 |
+| `tow_truck` | 1 | 448 to 448 |
+| `mobile_crane` | 1 | 586 to 586 |
+| `bucket_truck` | 1 | 408 to 408 |
+| `forklift` | 1 | 412 to 412 |
+| `road_roller` | 1 | 292 to 292 |
+| `street_sweeper` | 1 | 524 to 524 |
+| `school_bus` | 1 | 318 to 318 |
+
+## animals (`assets/shaped/animals.js`, version 1)
+
+The same shape language as the survivors: flat planes, tapering points, silhouette first, no eyes beyond a dark facet.
+Each animal lists bones (pivot, tip, parent) and parts (pieces per bone, in model space at rest), and clips: per frame, rotations
+in degrees [x, y, z] for the bones that move, and 'root': [x, y, z] metres to move the whole body. Positive X on a leg swings
+its foot back; positive X on the neck or head lowers it. Animals face +Z, the origin is the ground under the middle of the body.
+Kinds:
+  four legs  deer (and deer_buck with antlers), boar, cow, sheep, goat, dog, wolf, fox, bear, raccoon, rabbit, squirrel
+  birds      turkey, chicken, duck, goose, pigeon, crow
+  fish       trout, bass, catfish
+Clips: every animal has idle, walk, run, eat, alert, die (and dead, the last pose); four legs also have attack (predators and
+boars) or rear (bear); birds have peck, fly and glide (duck and goose also float); fish have swim and flop.
+Bird wings are modelled spread (span along X); every clip on the ground folds them against the flank with [-90, 0, 90] on wing_l and
+[-90, 0, -90] on wing_r (three.js Euler XYZ), and fly flaps them about Z.
+info[name] gives size, speed, how it behaves, and what it gives when butchered (yield, with the tool needed);
+items are the materials on the ground: meat, fish, hide, pelt, feathers, bone, fat, antler, wool, and two carcasses.
+
+Creatures: `deer`, `boar`, `cow`, `sheep`, `goat`, `dog`, `wolf`, `fox`, `bear`, `raccoon`, `rabbit`, `squirrel`, `deer_buck`, `turkey`, `chicken`, `duck`, `goose`, `pigeon`, `crow`, `trout`, `bass`, `catfish`.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `deer` | 1 | 268 to 268 |
+| `boar` | 1 | 316 to 316 |
+| `cow` | 1 | 310 to 310 |
+| `sheep` | 1 | 312 to 312 |
+| `goat` | 1 | 286 to 286 |
+| `dog` | 1 | 268 to 268 |
+| `wolf` | 1 | 288 to 288 |
+| `fox` | 1 | 288 to 288 |
+| `bear` | 1 | 268 to 268 |
+| `raccoon` | 1 | 310 to 310 |
+| `rabbit` | 1 | 274 to 274 |
+| `squirrel` | 1 | 280 to 280 |
+| `deer_buck` | 1 | 328 to 328 |
+| `turkey` | 1 | 282 to 282 |
+| `chicken` | 1 | 240 to 240 |
+| `duck` | 1 | 234 to 234 |
+| `goose` | 1 | 234 to 234 |
+| `pigeon` | 1 | 228 to 228 |
+| `crow` | 1 | 228 to 228 |
+| `trout` | 1 | 78 to 78 |
+| `bass` | 1 | 74 to 74 |
+| `catfish` | 1 | 86 to 86 |
+
+## interiors (`assets/shaped/interiors.js`, version 1)
+
+signs     one board per kind of business (wall board, back at z = 0, text on the front) in its own colours, in two states
+          (<name> and <name>_faded for a street that has been dead for a year), and a blade sign (blade_<name>) that sticks out
+          from the wall on a bracket (back at z = 0, 0.9 m square, 1.0 m of bracket) with a pictogram or an initial.
+          Also window stickers (open / closed), a price pylon for fuel, and a plain "boarded shop" board.
+retail, food, security, medical, school, faith, office, industrial, utility, home
+          the fixtures that make a room read as what it is. All stand on the floor at the centre of their base, face +Z,
+          units metres. sizes[...] gives the footprint [width, depth] and height so the game's room filler can place them
+          (roomFixtures lists what goes in each room type, in the same form as ROOMS in play.html).
+Colour names are in the palette; nothing uses slots, so a building's interior looks the same whoever built it.
+
+**signs:** signs: <name> is a wall board (width 1.6 to 3.6 m by 0.78 m, bottom-left-centre at the origin: x centred, y from 0 up, back at z = 0, 0.09 m deep); mount it over the shopfront at 3.2 to 4.0 m. For a dead street draw the same sign with every colour name given a trailing F (sg_pharmacy_bg becomes sg_pharmacy_bgF): the palette has a sun-bleached version of each. blade_<name> is a 0.9 m square projecting sign on a bracket (bracket on the wall at z = 0, sign at z = 0.95, both faces; mount at 2.5 m). Business kinds: grocery, supermarket, deli, bakery, butcher, pharmacy, hardware, diner, pizza, cafe, bar, liquor, clothes, shoes, gas, garage, autoparts, bank, police, fire, clinic, hospital, school, library, church, hotel, motel, gym, electronics, books, toys, furniture, pawn, laundry, barber, post, townhall, warehouse, factory, storage, waterworks, power, office, vet, florist, bookie, arcade. pylon_gas is a 6 m price sign for forecourts. Stickers (open, closed, sale) go on the glass inside, back at z = 0. **retail:** retail: shelving (gondola 1.8 m double sided for aisles, shelf_wall 1.8 m against a wall: back at z = -0.3), checkout, produce_bin, freezer_chest, drinks_cooler (against a wall), carts and baskets, pharmacy_counter and pill_wall, clothes_rack, mannequin, fitting_room, shoe_wall, display_table, paint_rack, tool_wall (flat on a wall: back at z = -0.08), lumber_rack, book_shelf, toy_bin, vitrine, tv_wall, and for forecourts fuel_pump, pump_island (two pumps would go on its ends), pump_canopy and ice_box. **food:** food: diner (booth 1.5 x 2.0 seats four, diner_counter, counter_stool, jukebox, menu_board on a wall, pie_case), bar (bar_counter with back_bar behind it, bar_stool, pool_table, dartboard on a wall), cafe (espresso_bar, pastry_case, cafe_table), kitchens (kitchen_range, prep_table, walk_in_cold, dish_sink). **security:** security and emergency: holding_cell (2 m cube of bars, back at z = -1), cell_door, evidence_locker, booking_desk, radio_desk, gun_safe, fire_pole (3.2 m), hose_rack, turnout_rack, bunk_bed (single stack 0.9 x 1.95), metal_locker. **medical:** medical: exam_table, hospital_bed (0.95 x 2.1, head at -Z), iv_stand, xray_light (on a wall, back at z = -0.08, glowing), med_cabinet, curtain_rail (a ceiling-hung screen 2.4 m), wheelchair, reception_desk, waiting_bench. **school:** school and library: school_desk (with chair, 0.62 x 0.62 +chair at +Z), teacher_desk, blackboard (on a wall, back at z = -0.06), trophy_case, library_stack (double sided, 1.6 x 0.8 x 2.2), card_catalogue, reading_table, lunch_table (with benches), globe. **faith:** faith: altar (2 m), pulpit, font, candle_rack (glow flames), organ (2.4 m with pipes), confessional (2.2 m), hymn_board and cross_wall (flat on a wall, back at z = -0.06), lectern. The pew is in props.furniture. **office:** office and bank: cubicle (2 x 1.8, open at +Z), office_desk (1.6 x 0.8, chair at +Z), office_chair, copier, water_cooler, conference_table (3.8 x 1.4), filing_cabinet, safe_big, safe_deposit (a wall of boxes), teller_window (glass screen on a counter), atm, vault_door (a frame 2.4 m wide with a round door set into it; the door is the wheel at z 0.25 to 0.5). **industrial:** industrial: pallet, pallet_loaded, pallet_rack (4.2 m, 2.7 m wide, three levels, partly loaded), steel_drum_stack, conveyor (4 m along Z), lathe, drill_press, workbench (back wall board at z = -0.38), control_console, hydraulic_press, tool_chest, loading_dock_door (a 3 m door frame on the outside wall, back at z = -0.2), forklift_cage. **utility:** utility (pumping station, substation, boiler house, plant room): transformer_cabinet, switchgear (3 m wall of panels), power_pole_xfmr (9 m pole with a transformer), pump_set, boiler (3.2 m flue), water_tank_indoor, valve_wheel, gas_meter_bank, plant_panel (flat on a wall, lamps glow), cooling_unit. **home:** home (adds to props.furniture): dining_table (1.6 x 1.0), kitchen_chair, armchair, coffee_table, nightstand, dresser, bunk_beds_kids, crib, washer, dryer, water_heater, fireplace (back at z = -0.45), bath_sink, shower (0.9 square, glass at +X), bookcase_low, piano, wood_stove.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `signs` | 99 | 42 to 146 |
+| `retail` | 26 | 38 to 672 |
+| `food` | 18 | 22 to 312 |
+| `security` | 11 | 32 to 396 |
+| `medical` | 9 | 26 to 180 |
+| `school` | 9 | 60 to 492 |
+| `faith` | 9 | 24 to 228 |
+| `office` | 12 | 48 to 228 |
+| `industrial` | 13 | 68 to 204 |
+| `utility` | 10 | 76 to 272 |
+| `home` | 17 | 48 to 204 |
+
+## floor plans (`assets/shaped/floorplan.js`)
+
+A generator and a checker, not a model pack: `FLOORPLAN.gen(kind, w, d, {seed, storeys})` returns walls, doors, rooms and keep-clear walkways for a building of that footprint; `FLOORPLAN.check(plan)` walks a 0.6 m agent through every door and fails if any room on any storey cannot be reached. Rules and how to plug it into `genInterior` are in `docs/FLOORPLANS.md`; `node assets/shaped/src/floorplan_test.js` runs it over thousands of footprints.
+
 
 ## audio (`assets/audio/`, made in code)
 

@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -445,6 +445,46 @@ const SCENES={
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(30,30,0xd8d2c6); const c=colourer(AN.palette,{});
       const K=Object.keys(AN.items).filter(k=>k!=='meat_on_rack'); K.forEach((k,i)=>at(mesh(AN.items[k],c),(i%6-2.5)*0.6,0,-Math.floor(i/6)*0.7)); at(mesh(AN.items.meat_on_rack,c),0,0,-2.0);
       cam.position.set(0,2.2,3.2); ctl.target.set(0,0.3,-0.8); }},
+
+  shopsigns:{t:'Shop signs',d:'A wall board for each of 49 kinds of business, in its own colours, then the projecting blade signs, window stickers, a boarded-up board and the fuel price pylon.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xd8d2c6); const c=colourer(IN.palette,{}), K=Object.keys(IN.signKinds);
+      const wall=new THREE.Mesh(new THREE.PlaneGeometry(40,22),new THREE.MeshLambertMaterial({color:0xcfc8b8})); wall.position.set(0,10,-0.01); scene.add(wall);
+      K.forEach((k,i)=>at(mesh(IN.models.signs[k],c),(i%5-2)*4.4,Math.floor((K.length-1-i)/5)*1.15+3.4,0));
+      const B=K.slice(0,12); B.forEach((k,i)=>at(mesh(IN.models.signs['blade_'+k],c),-19.8+i*3.6,0,3,Math.PI/2));
+      cam.position.set(0,7,24); ctl.target.set(0,6.2,0); }},
+  in_retail:{t:'Fixtures: shops',d:'Shelving, checkouts, produce, freezers, cart, pharmacy, clothing, hardware, books, jewellery, tv wall and the forecourt pump.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const c=colourer(IN.palette,{}); const G=["retail.gondola", "retail.shelf_wall", "retail.checkout", "retail.produce_bin", "retail.freezer_chest", "retail.drinks_cooler", "retail.shopping_cart", "retail.basket_stack", "retail.pharmacy_counter", "retail.pill_wall", "retail.clothes_rack", "retail.mannequin", "retail.fitting_room", "retail.shoe_wall", "retail.display_table", "retail.paint_rack", "retail.tool_wall", "retail.lumber_rack", "retail.book_shelf", "retail.toy_bin", "retail.vitrine", "retail.tv_wall", "retail.pump_island", "retail.fuel_pump", "retail.ice_box"]; let x=0,z=0,rowH=0; const W=16;
+      G.forEach(g=>{ const k=g.split('.')[1], sz=IN.sizes[g]||[1,1,1]; const w=Math.max(sz[0],1.0)+0.5, d=Math.max(sz[1],0.6)+0.4; if (x+w>W){ x=0; z-=rowH; rowH=0; } at(mesh(IN.models[g.split('.')[0]][k],c),x+w/2-W/2,0,z); x+=w; rowH=Math.max(rowH,d+0.8); });
+      cam.position.set(0,15,16); ctl.target.set(0,0.8,-6); }},
+  in_food:{t:'Fixtures: food and drink',d:'A diner (booth, counter, stools, jukebox, pie case), a bar (counter, back bar, stools, pool table, dartboard), a cafe and a commercial kitchen.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const c=colourer(IN.palette,{}); const G=["food.booth", "food.diner_counter", "food.counter_stool", "food.jukebox", "food.menu_board", "food.pie_case", "food.bar_counter", "food.back_bar", "food.bar_stool", "food.pool_table", "food.dartboard", "food.espresso_bar", "food.pastry_case", "food.cafe_table", "food.kitchen_range", "food.prep_table", "food.walk_in_cold", "food.dish_sink"]; let x=0,z=0,rowH=0; const W=14;
+      G.forEach(g=>{ const k=g.split('.')[1], sz=IN.sizes[g]||[1,1,1]; const w=Math.max(sz[0],1.0)+0.5, d=Math.max(sz[1],0.6)+0.4; if (x+w>W){ x=0; z-=rowH; rowH=0; } at(mesh(IN.models[g.split('.')[0]][k],c),x+w/2-W/2,0,z); x+=w; rowH=Math.max(rowH,d+0.8); });
+      cam.position.set(0,13,14); ctl.target.set(0,0.8,-4); }},
+  in_civic:{t:'Fixtures: police, fire, medical, school, faith',d:'Cells, evidence locker, booking desk, fire pole and hose racks, exam and hospital beds, school desks, library stacks, trophy case, altar, pulpit, organ, confessional.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const c=colourer(IN.palette,{}); const G=["security.holding_cell", "security.cell_door", "security.evidence_locker", "security.booking_desk", "security.radio_desk", "security.gun_safe", "security.fire_pole", "security.hose_rack", "security.turnout_rack", "security.bunk_bed", "security.metal_locker", "medical.exam_table", "medical.hospital_bed", "medical.iv_stand", "medical.xray_light", "medical.med_cabinet", "medical.curtain_rail", "medical.wheelchair", "medical.reception_desk", "medical.waiting_bench", "school.school_desk", "school.teacher_desk", "school.blackboard", "school.trophy_case", "school.library_stack", "school.card_catalogue", "school.reading_table", "school.lunch_table", "school.globe", "faith.altar", "faith.pulpit", "faith.font", "faith.candle_rack", "faith.organ", "faith.confessional", "faith.hymn_board", "faith.cross_wall", "faith.lectern"]; let x=0,z=0,rowH=0; const W=18;
+      G.forEach(g=>{ const k=g.split('.')[1], sz=IN.sizes[g]||[1,1,1]; const w=Math.max(sz[0],1.0)+0.5, d=Math.max(sz[1],0.6)+0.4; if (x+w>W){ x=0; z-=rowH; rowH=0; } at(mesh(IN.models[g.split('.')[0]][k],c),x+w/2-W/2,0,z); x+=w; rowH=Math.max(rowH,d+0.8); });
+      cam.position.set(0,20,18); ctl.target.set(0,0.8,-8); }},
+  in_work:{t:'Fixtures: offices, banks, industry, utility',d:'Cubicle, desks, copier, safes and vault door, teller window, pallet racking, conveyor, lathe, press, control console, switchgear, pump, boiler, tanks.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const c=colourer(IN.palette,{}); const G=["office.cubicle", "office.office_desk", "office.office_chair", "office.copier", "office.water_cooler", "office.conference_table", "office.filing_cabinet", "office.safe_big", "office.safe_deposit", "office.teller_window", "office.atm", "office.vault_door", "industrial.pallet", "industrial.pallet_loaded", "industrial.pallet_rack", "industrial.steel_drum_stack", "industrial.conveyor", "industrial.lathe", "industrial.drill_press", "industrial.workbench", "industrial.control_console", "industrial.hydraulic_press", "industrial.tool_chest", "industrial.loading_dock_door", "industrial.forklift_cage", "utility.transformer_cabinet", "utility.switchgear", "utility.power_pole_xfmr", "utility.pump_set", "utility.boiler", "utility.water_tank_indoor", "utility.valve_wheel", "utility.gas_meter_bank", "utility.plant_panel", "utility.cooling_unit"]; let x=0,z=0,rowH=0; const W=18;
+      G.forEach(g=>{ const k=g.split('.')[1], sz=IN.sizes[g]||[1,1,1]; const w=Math.max(sz[0],1.0)+0.5, d=Math.max(sz[1],0.6)+0.4; if (x+w>W){ x=0; z-=rowH; rowH=0; } at(mesh(IN.models[g.split('.')[0]][k],c),x+w/2-W/2,0,z); x+=w; rowH=Math.max(rowH,d+0.8); });
+      cam.position.set(0,20,20); ctl.target.set(0,0.8,-8); }},
+  in_home:{t:'Fixtures: homes',d:'Dining set, armchair, dresser, bunks, crib, washer and dryer, water heater, fireplace, bathroom, piano, wood stove.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const c=colourer(IN.palette,{}); const G=["home.dining_table", "home.kitchen_chair", "home.armchair", "home.coffee_table", "home.nightstand", "home.dresser", "home.bunk_beds_kids", "home.crib", "home.washer", "home.dryer", "home.water_heater", "home.fireplace", "home.bath_sink", "home.shower", "home.bookcase_low", "home.piano", "home.wood_stove"]; let x=0,z=0,rowH=0; const W=12;
+      G.forEach(g=>{ const k=g.split('.')[1], sz=IN.sizes[g]||[1,1,1]; const w=Math.max(sz[0],1.0)+0.5, d=Math.max(sz[1],0.6)+0.4; if (x+w>W){ x=0; z-=rowH; rowH=0; } at(mesh(IN.models[g.split('.')[0]][k],c),x+w/2-W/2,0,z); x+=w; rowH=Math.max(rowH,d+0.8); });
+      cam.position.set(0,9,12); ctl.target.set(0,0.8,-2); }},
+
+  plans:{t:'Floor plans',d:'Generated plans, floor 0 (and the first floor beside it where there is one): a two-storey house, a grocery, a church, an office, a hospital wing, a fire station and a pumping station. Colour by room, white strips are the walkways that stay clear of furniture, every door is a 1.0 m gap, and the checker has walked an agent through all of them.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const F=window.FLOORPLAN;
+      const COL={hall:'#e6e0d0',stairs:'#c8b08a',bedroom:'#c8a0a0',bath:'#a0c0d0',wc:'#a0c0d0',store:'#b0a890',kitchen:'#d0c080',living:'#c0b080',living_k:'#c8b878',studio:'#c0a890',office:'#98a8c0',market:'#a0c090',stock:'#b0a890',nave:'#c8b0d0',vestry:'#b098b8',boardroom:'#90a0b8',openplan:'#a0b0c8',breakroom:'#c0b898',waiting:'#98c0b8',exam:'#a8d0c8',ward:'#b0d0d8',pharmacy:'#a0d0a8',firebay:'#d09080',bunkroom:'#c0a090',pumphouse:'#90b0c8',control:'#a0a8b0',plantroom:'#90a0b0',substation:'#a8a890',boilerhouse:'#c0a090',libhall:'#b0a088',classroom:'#d0c090',cafeteria:'#c8b080'};
+      const pal={wall:'#4a4540',clear:'#f4f2ea',stairRun:'#8a6a46'}; Object.keys(COL).forEach(k=>pal[k]=COL[k]); const col=colourer(pal,{});
+      const pieces=(S)=>{ const o=[]; S.rooms.forEach(r=>o.push({s:'box',p:[(r.x0+r.x1)/2,0.03,(r.z0+r.z1)/2],d:[r.x1-r.x0-0.02,0.06,r.z1-r.z0-0.02],c:COL[r.type]?r.type:'hall'}));
+        S.keepClear.forEach(k=>o.push({s:'box',p:[(k.x0+k.x1)/2,0.075,(k.z0+k.z1)/2],d:[k.x1-k.x0,0.03,k.z1-k.z0],c:'clear'}));
+        S.walls.forEach(w=>o.push({s:'box',p:[(w.x0+w.x1)/2,1.2,(w.z0+w.z1)/2],d:[Math.max(0.18,w.x1-w.x0+0.18),2.4,Math.max(0.18,w.z1-w.z0+0.18)],c:'wall'}));
+        if (S.stair){ const t=S.stair; o.push({s:'box',p:[(t.x0+t.x1)/2,0.15,(t.z0+t.z1)/2],d:[t.x1-t.x0,S.stair.hole?0.01:0.3,t.z1-t.z0],c:'stairRun'}); } return o; };
+      const L=[['house',13,10,2],['grocery',22,14,1],['church',20,13,1],['office',26,17,2],['hospital',30,18,1],['fire',20,14,2],['pumphouse',14,10,1]]; let x=0, z=0;
+      L.forEach(([k,w,d,n],i)=>{ const P=F.gen(k,w,d,{seed:i+4,storeys:n}), chk=F.check(P); if(!chk.ok) console.error('plan failed',k,chk.errors);
+        P.storeys.forEach((S,l)=>{ const m=mesh(pieces(S),col); m.position.set(x-P.w/2+0,0,z-P.d/2-0); scene.add(m); x+=P.w+3; }); if (i===3){ x=0; z+=-28; } });
+      cam.position.set(70,120,45); ctl.target.set(70,0,-22); }},
   signs:{t:'Street signs',d:'No parking, no entry, all-way stop, warnings (pedestrians, school, deer, curve, crossroads, slippery), road work and detour, dead end, hospital, parking, evacuation route, speed limits 25, 35 and 55, a route shield, a railroad crossing (lamps on) and an overhead sign gantry.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6);
       const K=Object.keys(PR.models.street).filter(k=>k.startsWith('sign_')&&k!=='sign_gantry'&&!['sign_speed','sign_one_way','sign_yield'].includes(k)).concat(['railroad_crossing_on']);

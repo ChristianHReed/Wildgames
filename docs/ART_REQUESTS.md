@@ -233,3 +233,20 @@ Suggested order: section 1 (so the weapons and jump look right), then loose item
 - Ceiling pieces: ceiling light (off, on, flickering), ceiling fan, smoke alarm, air vent, exposed beams.
 - Room clutter: books, papers, dishes, bottles, clothes pile, toys, tin cans, toolbox, boxes, cobwebs, mould, blood and debris decals, fallen ceiling tile, tipped chair.
 - Room kinds still empty: classroom (desks, board), office (cubicle, filing), hospital (bed, drip stand, curtain), church (altar, font), warehouse (racking, pallet), garage (tool wall, workbench, jack stand), supermarket (aisle shelves, freezer, checkout).
+
+## 13. Delivered: the design list of 20 October 2026
+
+Roads, sidewalks, water and edges, rocks, service vehicles, animals, street signs and lights, shop signs and interiors, and floor plans. Formats and rules for every piece are in `docs/SHAPED.md` (each pack's own notes), floor plans in `docs/FLOORPLANS.md`. The album (`art-tests/album.html`) has a scene for each.
+
+| Request | Where it is |
+| --- | --- |
+| Roads | `world.roads` (asphalt new, worn, patched, concrete, cobbles, gravel, dirt, highway, parking lot; 4 m tiles), `world.markings` (centre, lane, edge, stop line, crossings, arrows, bays, painted words), `world.kerbs` (corners, ramps, driveway dips, medians, roundabout centre, speed hump, drains, manholes) |
+| Sidewalks | `world.sidewalks` (slabs, cracked, brick, stone, asphalt path, gravel path, tree pit, grass verge, tactile strip; 2 m tiles) |
+| Water, rivers | `world.water` (lake, pond, river, rapids, shallow, deep, swamp, frozen, ripple ring, wake). Flow animation is done by the game by scrolling streaks along +Z |
+| Edges of rivers, lakes, waterfalls | `world.banks` (grass, mud, sand, rock, concrete, steep, reeds, each straight, corner_out and corner_in) and `world.falls` (lip, sheets, pool, mist, spray, cascade step, weir) |
+| Rocks | `world.rocks` (granite, sandstone, basalt, limestone, slate, river stones, scree, mossy, each small, medium, large; cliffs; iron, copper, coal, quartz and gold ore; flint; stepping stones) and `world.items` for what they give |
+| Construction and service vehicles and their movements | `machines.js`: excavator, bulldozer, dump truck, cement mixer, garbage truck, fire truck, ambulance, tow truck, mobile crane, bucket truck, forklift, road roller, street sweeper, school bus. Each has a rig (what turns or slides, where, how far), wheels, steering, work clips and beacons |
+| Animals and animations, hunted for food and resources | `animals.js`: deer, buck, boar, cow, sheep, goat, dog, wolf, fox, bear, raccoon, rabbit, squirrel; turkey, chicken, duck, goose, pigeon, crow; trout, bass, catfish. Clips: walk, run, eat, alert, idle, die, dead (a carcass is the animal in its dead clip), attack and rear where they apply, fly, glide, peck, float, swim, flop. `INFO[name]` gives size, speed, behaviour and yields; `items`: raw and cooked meat, fish, hide, pelt, feathers, bone, fat, antler, wool, egg, meat on a rack |
+| Street signs and lights | `props.street`: 24 new signs (no parking, no entry, all-way stop, warnings, road work, detour, hospital, evacuation, speed limits, route shield, railroad crossing off and on, overhead gantry), five lamp types each `_off` and `_on`, traffic signals on a mast arm and a span wire in five states, walk signals, flasher |
+| Shop signs, interiors per building type and use | `interiors.js`: a wall board and a blade sign for each of 49 business kinds, window stickers, fuel pylon; about 110 fixtures grouped retail, food, security, medical, school, faith, office, industrial, utility, home; `roomFixtures` maps each room type to its fixtures in the form `ROOMS` uses |
+| Floor plans with an unobstructed walkway to every room: residential, commercial, religious, utility | `floorplan.js` (generator and checker; 45 building kinds and aliases, one to four storeys); see `docs/FLOORPLANS.md` |

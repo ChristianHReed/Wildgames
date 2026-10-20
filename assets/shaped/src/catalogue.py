@@ -6,6 +6,7 @@ def load(n):
     s = open(os.path.join(HERE, '..', n + '.js')).read(); k = ').%s = ' % n
     return json.loads(s[s.index(k) + len(k):].rstrip().rstrip(';'))
 SV, AL, BU, PR, HE, FX, GR, WA, PW = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held'), load('fx'), load('ground'), load('walls'), load('power')
+WD, MC, AN, IN = load('world'), load('machines'), load('animals'), load('interiors')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -190,6 +191,38 @@ L.append(f'''
 | --- | --- |''')
 for k in st: L.append(f"| `{k}` | {row(st, k)} |")
 import re as _re
+def tri_table(P, groups=True):
+    st = P['stats']; cats = {}
+    for k, v in st.items(): cats.setdefault(k.split('.')[0], []).append(v[0])
+    return '\n| Group | Models | Triangles (smallest to largest) |\n| --- | --- | --- |\n' + '\n'.join(f'| `{c}` | {len(v)} | {min(v)} to {max(v)} |' for c, v in cats.items())
+L.append(f'''
+## world (`assets/shaped/world.js`, version {WD['version']})
+
+{WD['about'].strip()}
+''' + tri_table(WD))
+L.append(f'''
+## machines (`assets/shaped/machines.js`, version {MC['version']})
+
+{MC['about'].strip()}
+
+Machines: ''' + ', '.join('`' + k + '`' for k in MC['models']) + '.\n' + tri_table(MC))
+L.append(f'''
+## animals (`assets/shaped/animals.js`, version {AN['version']})
+
+{AN['about'].strip()}
+
+Creatures: ''' + ', '.join('`' + k + '`' for k in AN['creatures']) + '.\n' + tri_table(AN))
+L.append(f'''
+## interiors (`assets/shaped/interiors.js`, version {IN['version']})
+
+{IN['about'].strip()}
+
+''' + ' '.join(f'**{k}:** {v}' for k, v in IN['notes'].items()) + '\n' + tri_table(IN) + '''
+
+## floor plans (`assets/shaped/floorplan.js`)
+
+A generator and a checker, not a model pack: `FLOORPLAN.gen(kind, w, d, {seed, storeys})` returns walls, doors, rooms and keep-clear walkways for a building of that footprint; `FLOORPLAN.check(plan)` walks a 0.6 m agent through every door and fails if any room on any storey cannot be reached. Rules and how to plug it into `genInterior` are in `docs/FLOORPLANS.md`; `node assets/shaped/src/floorplan_test.js` runs it over thousands of footprints.
+''')
 _snd = open(os.path.join(ROOT, 'assets', 'audio', 'sounds_design.js')).read(); _keys = _re.findall(r'"([a-z0-9_]+)":\[', _snd)
 L.append("""
 ## audio (`assets/audio/`, made in code)
