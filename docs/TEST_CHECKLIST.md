@@ -115,3 +115,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] Whole map visible: zoom the big map out to the whole region (all squares), pan around, zoom back in. Reasonable speed on a phone.
 - [ ] **TWO DEVICES** Quick invite code: host types a word and Shares, friend types it and Joins over the internet. Copy-and-paste codes still work with no internet.
 - [ ] Flags show on the compass with distance, point the right way as you turn, and friends' flags appear (blue, with name) on your compass and map.
+- [ ] **PHONE** Busy highway: many cars and some service vehicles in view, still smooth. Machines can be searched and scrapped.

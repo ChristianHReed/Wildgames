@@ -213,3 +213,6 @@ A home-screen setting decides how the map works: find a map in the game then exp
 ## Quick codes and shared flags (0.86)
 A quick code is a word the host and friend both type. It is only a meeting place: the game posts the connection offer and answer under the topic `afterstreet-<word>` on the public relay ntfy.sh, then the players connect directly (WebRTC). Needs internet on both devices; anyone who guesses the word at the same moment could try to join, so pick something unusual. Copy-and-paste codes remain for offline play.
 Flags (from the big map) show on the compass strip with distance; off-view flags stick to the edge. Friends' flags are blue with the owner's name, shared on join and when placed or removed, never saved.
+
+## Road traffic (0.87)
+Abandoned cars thicken with road size: a car every 14 m on motorways, every 30 m on primary roads, down to one every 260 m on side streets, up to 1100 per square. A few of each highway's vehicles are service or construction machines (fire truck, bus, ambulance, excavator and the rest), always dead and never driveable.
