@@ -112,17 +112,25 @@
   .screen{position:fixed;inset:0;background:radial-gradient(rgba(61,48,41,.09) 1px,transparent 1.5px) 0 0/18px 18px,var(--cream);display:flex;align-items:flex-start;justify-content:center;overflow:auto}
   .box{max-width:700px;width:100%;padding:34px 22px 40px;box-sizing:border-box}
   h1{font-family:var(--disp);font-weight:400;font-size:68px;line-height:.92;margin:8px 0 10px;color:var(--ink)}
-  /* 0.83 the start page as a journal: pages on the left, index tabs down the right edge */
-  #title .box{max-width:900px}
-  .jrn{display:flex;align-items:flex-start;gap:0;margin:6px 0 26px}
-  .jpages{flex:1;min-width:0;background:var(--paper2);border:1px solid var(--edge);border-right:none;border-radius:8px 0 0 8px;padding:6px 20px 18px;box-shadow:var(--shadow);min-height:300px;position:relative}
-  .jpage{display:none}.jpage.on{display:block}
+  /* 0.84 the start page as a spiral notebook: ruled pages with a coil down the left, sticky-note markers on the right */
+  #title .box{max-width:920px}
+  .jrn{display:flex;align-items:flex-start;gap:0;margin:10px 0 30px;padding-left:12px}
+  .jpages{flex:1;min-width:0;position:relative;padding:8px 22px 22px 58px;min-height:320px;border:1px solid #cdbb98;border-radius:4px 10px 10px 4px;
+    background:linear-gradient(90deg,transparent 46px,rgba(198,90,70,.45) 46px,rgba(198,90,70,.45) 48px,transparent 48px),repeating-linear-gradient(to bottom,transparent 0 27px,rgba(95,138,154,.22) 27px 28px),#fffaf0;
+    box-shadow:3px 3px 0 #efe3c9,3px 3px 0 1px #cdbb98,6px 6px 0 #e6d6bb,6px 6px 0 1px #cdbb98,10px 12px 22px rgba(61,48,41,.25)}
+  .jpages::before{content:"";position:absolute;left:-14px;top:10px;bottom:10px;width:44px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='30' viewBox='0 0 44 30'%3E%3Ccircle cx='30' cy='15' r='5' fill='%232b2420' opacity='.55'/%3E%3Cpath d='M3 15 C3 8 10 8 16 11 L33 14' fill='none' stroke='%236c7378' stroke-width='3.4' stroke-linecap='round'/%3E%3Cpath d='M3 15 C3 8 10 8 16 11 L33 14' fill='none' stroke='%23cfd4d8' stroke-width='1.3' stroke-linecap='round' transform='translate%280%2C-.6%29'/%3E%3C/svg%3E") repeat-y 0 0/44px 30px;pointer-events:none;z-index:3}
+  .jpage{display:none}.jpage.on{display:block;animation:jturn .22s ease-out}
+  @keyframes jturn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
   .jpage>.panel:first-child{margin-top:18px}
-  .jtabs{position:sticky;top:18px;display:flex;flex-direction:column;gap:6px;padding-top:22px;flex:none;width:112px}
-  .jtab{display:block;text-align:left;font-family:var(--ui);font-size:14px;font-weight:700;letter-spacing:.02em;color:var(--ink);background:var(--tc,#d9a845);border:1px solid var(--outline);border-left:none;border-radius:0 10px 10px 0;padding:11px 10px 11px 14px;margin-left:0;cursor:pointer;box-shadow:2px 2px 0 rgba(61,48,41,.25);transition:transform .08s;filter:saturate(.8) brightness(.96)}
-  .jtab:hover{transform:translateX(3px)}
-  .jtab.on{margin-left:-1px;width:calc(100% + 8px);padding-right:18px;filter:none;box-shadow:3px 2px 0 rgba(61,48,41,.3);position:relative;z-index:2}
-  @media (max-width:640px){.jtabs{width:74px}.jtab{font-size:12px;padding:10px 6px 10px 9px}.jpages{padding:4px 10px 14px}#title .box{padding-left:8px;padding-right:0}.jtab.on{width:calc(100% + 6px)}}
+  .jpage .panel{background:rgba(251,243,228,.96)}
+  .jtabs{position:sticky;top:20px;display:flex;flex-direction:column;gap:12px;padding-top:26px;flex:none;width:104px;margin-left:-4px}
+  .jtab{position:relative;display:block;text-align:left;font-family:"Segoe Print","Bradley Hand","Marker Felt","Comic Sans MS",cursive,var(--ui);font-size:14px;font-weight:700;color:#3d3029;background:var(--tc,#f6dd6a);border:none;border-radius:2px 6px 6px 2px;padding:12px 8px 12px 14px;margin-left:0;cursor:pointer;box-shadow:1px 3px 5px rgba(61,48,41,.35);transform:rotate(var(--r,0deg)) translateX(-10px);transition:transform .12s,margin .12s;z-index:1}
+  .jtab::after{content:"";position:absolute;right:0;bottom:0;border-style:solid;border-width:0 0 11px 11px;border-color:transparent transparent rgba(61,48,41,.14) transparent}
+  .jtab::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(90deg,rgba(255,255,255,.55),rgba(255,255,255,0))}
+  .jtab:nth-child(odd){--r:1.4deg}.jtab:nth-child(even){--r:-1.2deg}
+  .jtab:hover{transform:rotate(var(--r,0deg)) translateX(-4px)}
+  .jtab.on{background:var(--tc);color:#3d3029;transform:rotate(0deg) translateX(8px);margin-right:-8px;z-index:4;box-shadow:2px 4px 8px rgba(61,48,41,.4);filter:saturate(1.15)}
+  @media (max-width:640px){.jrn{padding-left:8px}.jpages{padding:6px 10px 16px 40px;background-position:0 0}.jpages::before{left:-12px;width:38px;background-size:38px 26px}.jtabs{width:68px}.jtab{font-size:11.5px;padding:10px 4px 10px 9px}#title .box{padding-left:6px;padding-right:6px}}
   .box>p{font-size:16px;line-height:1.5;color:var(--inkSoft);margin:0 0 22px}
   .row{margin:14px 0;display:flex;gap:10px;flex-wrap:wrap}
   .panel{padding:16px 20px;margin:22px 0;font-size:14px;line-height:1.5;color:var(--inkSoft)}
@@ -407,7 +415,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.83.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.84.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -417,7 +425,7 @@
 (function(){
   var box = document.querySelector('#title .box'); if (!box) return; var K = box.children, c = [].slice.call(K);
   var pick = function(i){ return c[i]; };
-  var T = [['play', 'Play', '#d9a845', [5, 6, 9, 10]], ['survivor', 'Survivor', '#c67139', [3]], ['maps', 'Maps', '#7a8a5e', [7, 8, 14]], ['settings', 'Settings', '#5f8a9a', [4]], ['saves', 'Saves', '#8a6a8a', [11]], ['workshop', 'Workshop', '#b8913a', [12]], ['together', 'Together', '#c0795f', [13]]];
+  var T = [['play', 'Play', '#f7de6b', [5, 6, 9, 10]], ['survivor', 'Survivor', '#f4a98a', [3]], ['maps', 'Maps', '#b9d98f', [7, 8, 14]], ['settings', 'Settings', '#9fd0e6', [4]], ['saves', 'Saves', '#d2b4e6', [11]], ['workshop', 'Workshop', '#f6c36a', [12]], ['together', 'Together', '#f2b5cf', [13]]];
   var jr = document.createElement('div'); jr.className = 'jrn'; var pg = document.createElement('div'); pg.className = 'jpages'; var tb = document.createElement('div'); tb.className = 'jtabs'; jr.appendChild(pg); jr.appendChild(tb);
   var first = c[5]; box.insertBefore(jr, first);
   var show = function(id){ T.forEach(function(t){ t[4].classList.toggle('on', t[0] === id); t[5].classList.toggle('on', t[0] === id); }); try { localStorage.setItem('lastblock:tab', id); } catch (e){} };
@@ -430,7 +438,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.83.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.84.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
