@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.73.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.74.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.73.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.74.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -5723,6 +5723,7 @@ function nearBuilding(){
 var WMORDER = ['wood', 'steel', 'concrete'];
 function buildAct(a, pos){
   var x = pos ? pos.x : P.x + Math.cos(P.yaw)*1.8, y = pos ? pos.y : P.y + Math.sin(P.yaw)*1.8, yaw = pos ? pos.yaw : P.yaw, id = Date.now() + '-' + Math.floor(Math.random()*1e6), b = nearBuilding(), cheap = me.bg === 'builder' || me.bg === 'mechanic';
+  if (/^sj\d+$/.test(a)){ var sv0 = (world.surv || [])[+a.slice(2)]; if (sv0 && !sv0.gone && sv0.st !== 'wait' && !sv0.away){ survTalk(sv0); renderBuild(); } return; }
   if (a === 'cade'){ place('cade'); } else if (a === 'fire'){ place('fire'); }
   else if (a === 'wall'){
     var wcc = WMAT === 'concrete' ? (cheap ? 5 : 6) : 0; if (wcc && inv.chunk < wcc){ toast('A concrete wall needs ' + wcc + ' concrete chunks. Industrial buildings have them, and so do broken concrete walls.', 3.5); return; }
@@ -5982,6 +5983,7 @@ function renderBuild(){
   var b = nearBuilding(), wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3;
   var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' || a === 'tpatch' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
+    survPanel() +
     '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close torn-open walls of the nearest building', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 15 m of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
@@ -6327,7 +6329,7 @@ function truckBits(m, v, now, tr, fit, y0){
 }
 /* ================= 0.49.0: other survivors. A few are waiting in the town; ask one to come along, then at the base give each a job. They are the design chat's six ready-made survivors ================= */
 var NPCN = {old_ranger:'Old Hollis', medic:'Doc Marlow', kid_hoodie:'Tobias', farmer:'Farmer Reed', drifter:'Nix', mechanic:'Dale'};
-var SJOB = {guard:['guard', 'keeps watch along the fence and fights aliens that come close'], garden:['gardener', 'waters the plots and brings in the harvest'], scavenge:['scavenger', 'goes out for supplies and comes back with some']};
+var SJOB = {guard:['guard', 'keeps watch along the fence and fights aliens that come close'], garden:['gardener', 'waters the plots and brings in the harvest'], scavenge:['scavenger', 'goes out for supplies and comes back with some'], repair:['builder', 'mends damaged walls around the base, using wood from the supply chest'], cook:['cook', 'turns raw food in the supply chest into hot meals']};
 function npcLook(key){
   var L = SHAPED.survivor.npcLooks[key]; if (!L) return null;
   return {build:L.build, body:L.body, skin:L.skin, hairC:L.hairColour, hair:L.hair, hat:L.hat || 'none', face:L.face, top:L.top, bot:L.bottoms, shoe:L.shoes, shirt:L.shirt, pants:L.pants, acc:L.acc, pack:false, wpn:'', gloves:false, scarf:false, worn:L.worn || [], npc:L.npc || []};
@@ -6341,6 +6343,10 @@ function makeSurvivors(saved){
   c.slice(0, n).forEach(function(a, i){ var d = a[1].door, key = keys[(Math.floor(zk*6) + i) % keys.length];
     w.surv.push({surv:true, id:i, key:key, base:NPCN[key] || key, name:NPCN[key] || key, tip:'', x:d.x - d.nx*1.6 - d.ny*1.6, y:d.y - d.ny*1.6 + d.nx*1.6, yaw:Math.atan2(-d.ny, -d.nx), st:'wait', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:d.x - d.nx*1.6, hy:d.y - d.ny*1.6}); });
   if (saved) saved.forEach(function(q){ var s2 = w.surv[q.id | 0]; if (!s2 && q.key && NPCN[q.key] && (q.id | 0) < 12){ s2 = {surv:true, id:w.surv.length, key:q.key, base:NPCN[q.key], name:NPCN[q.key], tip:'', x:+q.x || 0, y:+q.y || 0, yaw:0, st:'follow', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:+q.x || 0, hy:+q.y || 0}; w.surv.push(s2); } if (!s2) return; s2.hp = q.hp > 0 ? +q.hp : 60; s2.st = /^(wait|follow|stay|base)$/.test(q.st) ? q.st : 'wait'; s2.job = SJOB[q.job] ? q.job : ''; s2.hu = Math.max(0, Math.min(100, +q.hu || 0)); if (isFinite(q.x) && isFinite(q.y)){ s2.x = +q.x; s2.y = +q.y; } s2.away = q.away > 0 ? time + q.away : 0; s2.gone = q.gone ? 1 : 0; s2.sc = +q.sc || 0; });
+}
+function survPanel(){
+  var L = (world.surv || []).filter(function(s){ return !s.gone && s.st !== 'wait'; }); if (!L.length) return '';
+  return '<h3>Survivors</h3>' + L.map(function(s){ var jb = SJOB[s.job]; return '<div class="irow"><span class="n">' + s.base + '<br><i>' + (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + ' &middot; hunger ' + Math.round(s.hu) + '% &middot; health ' + Math.round(Math.max(0, s.hp)/0.6) + '%' + (s.away ? ' &middot; out on a run' : '') + '</i></span><button data-a="sj' + s.id + '">' + (inSafe(P.x, P.y, 0) ? 'Next job' : s.st === 'stay' ? 'Follow' : 'Wait') + '</button></div>'; }).join('');
 }
 function survCount(){ var n = 0; (world.surv || []).forEach(function(s){ if (!s.gone && s.st !== 'wait') n++; }); return n; }
 function survGo(s, tx, ty, sp, dt, stop){
@@ -6360,7 +6366,7 @@ function survTip(s){
 function survTalk(s){
   if (s.st === 'wait'){ if (survCount() >= 3){ toast('You already have three survivors with you. They need feeding too.', 3.5); return; }
     s.st = 'follow'; s.job = ''; s.hu = Math.min(s.hu, 30); sfx('pick', s.x, s.y, 0.6); feed(s.base + ' comes with you', '#9bd07a'); toast(s.base + ': "I will stick with you. Get me somewhere safe and I will earn my keep." At the safe house, press E on them to give a job.', 6); return; }
-  if (inSafe(P.x, P.y, 0)){ var order = ['guard', 'garden', 'scavenge'], at = order.indexOf(s.job), nx = order[(at + 1) % order.length]; s.job = nx; s.st = 'base'; s.sc = 0; s.hx = P.x + (Math.random() - 0.5)*3; s.hy = P.y + (Math.random() - 0.5)*3;
+  if (inSafe(P.x, P.y, 0)){ var order = ['guard', 'garden', 'scavenge', 'repair', 'cook'], at = order.indexOf(s.job), nx = order[(at + 1) % order.length]; s.job = nx; s.st = 'base'; s.sc = 0; s.hx = P.x + (Math.random() - 0.5)*3; s.hy = P.y + (Math.random() - 0.5)*3;
     feed(s.base + ' is now the ' + SJOB[nx][0], '#9bd07a'); toast(s.base + ' ' + SJOB[nx][1] + '. Press E again to change the job.', 5); return; }
   if (s.st === 'stay'){ s.st = 'follow'; s.job = ''; feed(s.base + ' follows you', '#9bd07a'); } else { s.st = 'stay'; s.job = ''; feed(s.base + ' waits here', '#9bd07a'); }
 }
@@ -6408,6 +6414,17 @@ function survTick(dt){
       if (s.sc > 25){ s.sc = 0; (world.edits.plots || []).forEach(function(q){ if (!inSafe(q.x, q.y, 3)) return;
           if (q.s === 2){ var nf = 3, cc = survChest(); if (cc) cc.inv.fresh = (cc.inv.fresh || 0) + nf; else inv.fresh += nf; q.s = 0; q.g = 0; plotSet(q); feed(s.base + ' harvested a plot (+' + nf + ' fresh food)', ITEMS.fresh[1]); }
           else if (q.s === 1 && plotDry(q)){ q.wet = time; plotSet(q); feed(s.base + ' watered a plot', ITEMS.water[1]); } }); }
+      return; }
+    if (s.job === 'repair'){
+      var rw = null, rdv = 1e9; (world.edits.walls || []).forEach(function(w){ if (!inSafe(w.x, w.y, 6)) return; var by = wallBays(w), hp0 = wallMat(w).hp; for (var q = 0; q < 6; q++) if (by[q] < hp0){ var dq = Math.hypot(w.x - s.x, w.y - s.y); if (dq < rdv){ rdv = dq; rw = w; } break; } });
+      if (!rw){ survGo(s, s.hx, s.hy, 2.4, dt, 1.2); return; }
+      survGo(s, rw.x + 1.2, rw.y + 1.2, 2.8, dt, 1.0); s.sc += dt;
+      if (s.sc > 12 && rdv < 6){ s.sc = 0; var rm = wallMat(rw), nd = rm === WMATS.steel ? 'scrap' : rm === WMATS.concrete ? 'chunk' : 'wood', src2 = ch && ch.inv[nd] > 0 ? ch.inv : inv[nd] > 0 ? inv : null, by2 = wallBays(rw);
+        if (src2) for (var q2 = 0; q2 < 6; q2++) if (by2[q2] < rm.hp){ var cost = by2[q2] <= 0 ? 2 : 1; if (src2[nd] < cost) break; src2[nd] -= cost; by2[q2] = rm.hp; emit({k:'edit', e:{a:'wbay', id:rw.id, i:q2, v:rm.hp}}); rebuildWalls(); sfx('plank', rw.x, rw.y, 0.6, 0.9); feed(s.base + ' mended a wall', '#9bd07a'); if (src2 === inv) updateHud(); break; } }
+      return; }
+    if (s.job === 'cook'){
+      survGo(s, s.hx, s.hy, 2.2, dt, 1.2); s.sc += dt;
+      if (s.sc > 40 && ch && ch.inv.food > 0){ s.sc = 0; ch.inv.food--; ch.inv.meal = (ch.inv.meal || 0) + 1; sfx('pot', s.x, s.y, 0.5); feed(s.base + ' cooked a hot meal (in the supply chest)', ITEMS.meal[1]); }
       return; }
     if (s.job === 'scavenge'){
       var wk = s.sc = (s.sc || 0) + dt; survGo(s, s.hx, s.hy, 2.2, dt, 1.2);

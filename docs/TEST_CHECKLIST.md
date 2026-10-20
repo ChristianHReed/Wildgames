@@ -1,4 +1,4 @@
-# Afterstreet test checklist (version 0.73.0)
+# Afterstreet test checklist (version 0.74.0)
 
 Tick each box as you go. Everything here was tested headlessly (no real phone, no real sound, no real controller). Anything marked **PHONE** or **EARS** needs you. The longer numbered list in TESTING.md has the exact steps per version; this one is the quick pass.
 
@@ -69,6 +69,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 - [ ] Place a bed: the building becomes your base; a second bed makes a second base (up to four).
 - [ ] Sleep in a bed: you wake there if you die.
 - [ ] Claimed buildings are shown as Base on the map.
+- [ ] Survivors: recruit, give each job (guard, gardener, scavenger, builder, cook) with E at the safe house; the Build menu lists them.
 
 ## 11. Power
 - [ ] Day 3: the power goes out at midnight; the water mains go on day 5.
