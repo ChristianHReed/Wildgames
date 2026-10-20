@@ -392,7 +392,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.79.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.80.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -400,10 +400,10 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.79.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.80.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+  ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
   return set;
 })();
 </script>
@@ -1150,6 +1150,7 @@ function plantTrees(w, cov){
     }
   });
   w.treeCount = count; w.roadOk = roadOk;
+  w.roadCell = function(cx, cy){ return RG.get(gk(cx, cy)); }; w.RC = RC;
   w.roadAt = function(x, y){ var l = RG.get(gk(Math.floor(x/RC), Math.floor(y/RC))), best = null; if (l) for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + (s[5] === 'paved' && s[4] >= 3 ? 2 : 0)){ best = s[5]; if (best === 'gravel') return best; } } return best; };
 }
 /* 0.38: which kind of tree, by where it grows (Kenney Nature Kit models): 0 oak, 1 maple, 2 sycamore, 3 poplar, 4 pine, 5 cedar */
@@ -1607,7 +1608,7 @@ function shell(b, m, lm){
 var NULLM = {box:function(){}, ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, quadV:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
+  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
@@ -1665,6 +1666,59 @@ function wildTrees(o){
   }
   return list;
 }
+/* 0.80 ground detail: the ground pack's tufts, leaves, pebbles and sand, scattered over 2 m cells in 32 m tiles near you. The terrain keeps its painted
+   base; these small shapes stand on it. Tiles are built once per season and dropped when you walk away */
+var DT = 32, GDM = {};
+function grdModel(mat, sea){
+  var key = mat + sea, M = GDM[key]; if (M !== undefined) return M; GDM[key] = null;
+  try { var G = SHAPED.ground, pcs = G.models.tiles[mat], sc = G.seasons[mat] && G.seasons[mat][['spring', 'summer', 'autumn', 'winter'][sea]]; if (!pcs || !sc) return null;
+    pcs = pcs.filter(function(q){ return q.c !== 'BASE'; }); if (!pcs.length) return null;
+    GDM[key] = spModel(pcs, function(n){ return SHAPED.hex(sc[n.replace('_D', '')] || sc.DETAIL); }); } catch (er){ GDM[key] = null; }
+  return GDM[key];
+}
+function grdKind(x, y, sea){
+  var g = world.tg; if (!g) return null; var i = Math.round((x - g.x0)/g.cell), j = Math.round((y - g.y0)/g.cell); if (i < 0 || j < 0 || i >= g.cols || j >= g.rows) return null;
+  var k = j*g.cols + i, o = k*6, rk = world.roadAt ? world.roadAt(x, y) : null; if (rk && rk !== 'gravel') return null; if (rk === 'gravel') return 'gravel';
+  if (inWater(x, y, 0.4)) return null; if (sea === 3) return 'snow';
+  if (g.wd && g.wd[k] < 10) return 'mud'; if (g.td[k] >= 90) return 'leaf_litter';
+  if (g.c[o] > 120) return sea === 1 || sea === 2 ? 'dry_grass' : 'grass'; return 'grass';
+}
+function grdTile(o){
+  var m = new Mesh(), sea = season(), x0 = o.kx*DT, y0 = o.ky*DT, a, b;
+  for (a = 0; a < DT/2; a++) for (b = 0; b < DT/2; b++){
+    var x = x0 + a*2 + 1, y = y0 + b*2 + 1, h = hash(Math.round(x), Math.round(y), 301); if (h > 0.3) continue;
+    var kd = grdKind(x, y, sea); if (!kd) continue; var M = grdModel(kd, sea); if (!M) continue; if (buildingAt(x, y)) continue;
+    x += (hash(Math.round(x), Math.round(y), 302) - 0.5)*0.8; y += (hash(Math.round(x), Math.round(y), 303) - 0.5)*0.8;
+    m.model(M, x, y, Math.floor(h*8)*1.5708, hAt(x, y) + 0.015);
+  }
+  grdKerbs(m, o, x0, y0);
+  if (o.g) freeMesh(o.g); o.g = m.p.length ? upload(m) : null; o.sea = sea;
+}
+/* kerbs: a 15 cm kerb along the edge of every paved street that has a pavement; none where another street crosses */
+function grdKerbs(m, o, x0, y0){
+  var G = SHAPED.ground, pcs = G.models.kerb && G.models.kerb.kerb_strip; if (!pcs || !world.roadCell) return; var K = GDM.kerb; if (!K){ try { K = GDM.kerb = spModel(pcs, spColour(G.palette)); } catch (er){ GDM.kerb = K = null; } } if (!K) return;
+  var RC = world.RC, seen = new Set(), cx, cy, i, j;
+  for (cy = Math.floor(y0/RC); cy <= Math.floor((y0 + DT)/RC); cy++) for (cx = Math.floor(x0/RC); cx <= Math.floor((x0 + DT)/RC); cx++){
+    var L = world.roadCell(cx, cy); if (!L) continue;
+    for (i = 0; i < L.length; i++){ var sg = L[i]; if (sg[5] !== 'paved' || sg[4] < 3 || seen.has(sg)) continue; seen.add(sg);
+      var dx = sg[2] - sg[0], dy = sg[3] - sg[1], len = Math.hypot(dx, dy); if (len < 2) continue; dx /= len; dy /= len; var ang = Math.atan2(dy, dx);
+      for (var side = -1; side <= 1; side += 2) for (var t = 1; t < len; t += 2){
+        var px = sg[0] + dx*t - dy*sg[4]*side, py = sg[1] + dy*t + dx*sg[4]*side; if (px < x0 || px >= x0 + DT || py < y0 || py >= y0 + DT) continue;
+        var skip = false, L2 = world.roadCell(Math.floor(px/RC), Math.floor(py/RC)); if (L2) for (j = 0; j < L2.length && !skip; j++){ var q = L2[j]; if (q !== sg && q[5] !== 'path' && segDist(px, py, q[0], q[1], q[2], q[3]) < q[4] - 0.2) skip = true; }
+        if (skip || buildingAt(px, py) || inWater(px, py, 0.3)) continue;
+        m.model(K, px, py, ang + (side > 0 ? 3.14159 : 0), hAt(px, py));
+      }
+    }
+  }
+}
+function manageGround(budget){
+  var D = world.gl.det; if (!D) D = world.gl.det = new Map(); if (!SPON || !window.SHAPED || !SHAPED.ground) return; var R = QS.clutR*0.8 + 10, n = 0;
+  for (var ky = Math.floor((P.y - R)/DT); ky <= Math.floor((P.y + R)/DT); ky++) for (var kx = Math.floor((P.x - R)/DT); kx <= Math.floor((P.x + R)/DT); kx++){
+    var key = gk(kx, ky), o = D.get(key); if (!o){ o = {kx:kx, ky:ky, x:(kx + 0.5)*DT, y:(ky + 0.5)*DT, g:null, sea:-1}; D.set(key, o); }
+    if (o.sea === season() || n >= budget) continue; grdTile(o); n++;
+  }
+  D.forEach(function(o, key){ if (Math.abs(o.x - P.x) > R + 2*DT || Math.abs(o.y - P.y) > R + 2*DT){ if (o.g) freeMesh(o.g); D.delete(key); } });
+}
 function manageTrees(budget){
   var T = world.gl.trees; if (!T) return; var R = QS.far + CH + 130, n = 0, K = TREE_T;
   for (var ky = Math.floor((P.y - R)/K); ky <= Math.floor((P.y + R)/K); ky++) for (var kx = Math.floor((P.x - R)/K); kx <= Math.floor((P.x + R)/K); kx++){
@@ -1706,6 +1760,68 @@ function placeProps(g){
   });
   w.slights = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
   put(cand.light, 'streetlight', 700); put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
+}
+/* 0.80 dressing from the art pack's unused street, plant and road pieces: signs and poles on the streets, mailboxes at houses, bus stops, manholes,
+   and in the wild logs, stumps, ferns, mushrooms, brambles, flowers and reeds. All are small and decorative: nothing here blocks you */
+var GB = {};
+function gB(path){ if (GB[path] !== undefined) return GB[path]; GB[path] = null; var a = path.split('.'), m = window.SHAPED && SHAPED.ground && SHAPED.ground.models[a[0]], pcs = m && m[a[1]]; if (pcs) try { GB[path] = spModel(pcs, spColour(SHAPED.ground.palette)); } catch (er){} return GB[path]; }
+function placeDress(g){
+  var w = world; if (!SPON || !w.roadOk) return; var hasM = false;
+  var ok = function(x, y, e){ return !blocked(x, y) && !inWater(x, y, 0.5) && x > w.minx && x < w.maxx && y > w.miny && y < w.maxy && w.roadOk(x, y, e === undefined ? 1.5 : e); };
+  var out = {}, add = function(path, x, y, yaw, cap){ var L = out[path] || (out[path] = {c:cap, l:[]}); L.l.push([x, y, yaw]); };
+  w.roads.forEach(function(r, ri){
+    if (r.kind !== 'road' || r.w < 5) return; var p = r.pts, main = r.w >= 8, n = p.length; if (n < 4) return;
+    var ends = [[p[0], p[1], p[2], p[3]], [p[n-2], p[n-1], p[n-4], p[n-3]]];
+    ends.forEach(function(e, ei){ var dx = e[2] - e[0], dy = e[3] - e[1], l = Math.hypot(dx, dy); if (l < 8) return; dx /= l; dy /= l; var side = ei ? 1 : -1, off = r.w/2 + 2.4, yaw = Math.atan2(dx, dy), bk = main ? 10 : 5;
+      var sx = e[0] + dx*bk - dy*off*side, sy = e[1] + dy*bk + dx*off*side;
+      if (main){ if (ok(sx, sy)) add('street.traffic_light', sx, sy, yaw, 120); }
+      else { if (ok(sx, sy)) add('street.stop_sign', sx, sy, yaw, 300); var nx2 = e[0] + dx*bk + dy*off*side, ny2 = e[1] + dy*bk - dx*off*side; if (ok(nx2, ny2) && hash(ri, ei, 77) < 0.6) add('street.street_name_post', nx2, ny2, yaw, 250); } });
+    var run = 30 + hash(ri, 5, 61)*40, k = 0;
+    for (var q = 0; q + 3 < n; q += 2){ var ax = p[q], ay = p[q+1], l = Math.hypot(p[q+2] - ax, p[q+3] - ay); if (l < 0.5) continue; var dx = (p[q+2] - ax)/l, dy = (p[q+3] - ay)/l, yaw = Math.atan2(dx, dy);
+      for (; run < l; run += main ? 70 : 60, k++){
+        var sd = k % 2 ? 1 : -1, off = r.w/2 + 3.6, x = ax + dx*run - dy*off*sd, y = ay + dy*run + dx*off*sd, h = hash(ri*13 + q, k, 83);
+        if (!main && ok(x, y, 2)) add('street.power_pole', x, y, yaw, 450);
+        var h2 = hash(ri*11 + q, k, 97), lat = (hash(ri, k + q, 98) - 0.5)*(r.w - 2.5), xd = ax + dx*run - dy*lat, yd = ay + dy*run + dx*lat;
+        if (h2 < 0.45){ for (var cc = 0; cc < 3; cc++) add('ground.decals.crack', xd + (cc - 1)*0.5*dy, yd - (cc - 1)*0.5*dx, yaw + (hash(ri, k, 100 + cc) - 0.5)*1.4, 1500); }
+        else if (h2 > 0.93) add('ground.decals.pothole', xd, yd, h2*40, 500); else if (h2 > 0.86 && main) add('ground.decals.skid_marks', xd, yd, yaw, 400);
+        var xm = ax + dx*run + dy*1.8, ym = ay + dy*run - dx*1.8; if (h < 0.35 && !blocked(xm, ym)) add('street.manhole', xm, ym, h*6.28, 500);
+        if (main){ var xs = ax + dx*run - dy*(r.w/2 + 2.2)*sd, ys = ay + dy*run + dx*(r.w/2 + 2.2)*sd;
+          if (h > 0.9 && ok(xs, ys)) add('street.sign_speed', xs, ys, yaw + (sd > 0 ? 0 : 3.14159), 120);
+          else if (h > 0.8 && ok(xs, ys) && bldNear(xs, ys, 25)) add('street.bus_stop', xs, ys, yaw + (sd > 0 ? 1.5708 : -1.5708), 90);
+          else if (h < 0.3 && ok(xs, ys) && bldNear(xs, ys, 12)) add('street.parking_meter', xs, ys, yaw, 200);
+          else if (h > 0.7 && ok(xs, ys) && bldNear(xs, ys, 12)) add('street.bollard', xs, ys, 0, 150); }
+      }
+      run -= l; }
+  });
+  w.buildings.forEach(function(b){
+    if (!b.door || b.gone) return; var d = b.door, tx = -d.ny, ty = d.nx, h = hash(b.id, 17, 5), x, y;
+    if (b.cat === 'house'){ if (h < 0.5){ x = d.x - d.nx*7 + tx*2.6; y = d.y - d.ny*7 + ty*2.6; if (ok(x, y, 3)) add('street.mailbox', x, y, Math.atan2(-d.nx, -d.ny), 600); } }
+    else if (b.cat === 'shop' || b.cat === 'food'){
+      if (h < 0.35){ x = d.x - d.nx*1.3 - tx*3.2; y = d.y - d.ny*1.3 - ty*3.2; if (ok(x, y, 0.3)) add('street.newspaper_box', x, y, Math.atan2(-d.nx, -d.ny), 150); }
+      else if (h > 0.8){ x = d.x - d.nx*1.5 + tx*3.4; y = d.y - d.ny*1.5 + ty*3.4; if (ok(x, y, 0.3)) add('street.bike_rack', x, y, Math.atan2(tx, ty), 120); }
+      else if (h > 0.72){ x = d.x - d.nx*2.2 - tx*4; y = d.y - d.ny*2.2 - ty*4; if (ok(x, y, 0.3)) add('street.phone_box', x, y, Math.atan2(-d.nx, -d.ny), 40); }
+    }
+  });
+  /* the wild: round trees in woods and yards */
+  w.trees.forEach(function(t, i){
+    if (t.h !== 'wood' && t.h !== 'poi' && t.h !== 'river' && t.h !== 'field') return; var h = hash(i, 9, 31), a = hash(i, 10, 31)*6.283, d = 1.8 + hash(i, 11, 31)*2.2, x = t.x + Math.cos(a)*d, y = t.y + Math.sin(a)*d;
+    var path = h < 0.10 ? 'plants.fallen_log' : h < 0.22 ? 'plants.fern' : h < 0.30 ? 'plants.mushrooms' : h < 0.36 ? 'plants.stump' : h < 0.42 ? 'plants.bramble' : null; if (!path) return;
+    if (ok(x, y, 2) && !inWater(x, y, 2)) add(path, x, y, hash(i, 12, 31)*6.283, 700);
+    if (t.h === 'river' && h > 0.9){ var rx = t.x + Math.cos(a)*(d + 2), ry = t.y + Math.sin(a)*(d + 2); if (ok(rx, ry, 2)) add('plants.reeds', rx, ry, a, 500); }
+  });
+  w.buildings.forEach(function(b, bi){ if (b.cat !== 'house' || b.gone || hash(bi, 21, 7) > 0.3) return; var a = hash(bi, 22, 7)*6.283, d = Math.sqrt(Math.max(30, (b.maxx - b.minx)*(b.maxy - b.miny)))/2 + 2.5, x = b.cx + Math.cos(a)*d, y = b.cy + Math.sin(a)*d, h = hash(bi, 23, 7);
+    if (ok(x, y, 3) && !buildingAt(x, y)) add(h < 0.34 ? 'plants.flowers_red' : h < 0.67 ? 'plants.flowers_yellow' : 'plants.flowers_purple', x, y, h*60, 500); });
+  w.areas.forEach(function(ar, ai){ if (ar.kind !== 'park') return; var n = Math.min(40, Math.floor((ar.maxx - ar.minx)*(ar.maxy - ar.miny)/900));
+    for (var k = 0; k < n; k++){ var x = ar.minx + hash(ai, k, 91)*(ar.maxx - ar.minx), y = ar.miny + hash(ai, k, 92)*(ar.maxy - ar.miny); if (!pip(ar.pts, x, y) || !ok(x, y, 3)) continue;
+      var h = hash(ai, k, 93); add(h < 0.34 ? 'plants.flowers_red' : h < 0.67 ? 'plants.flowers_yellow' : 'plants.flowers_purple', x, y, h*60, 300); } });
+  w.waterLines.forEach(function(r, n){ var pt = r.pts, hw = r.w/2;
+    for (var q = 0; q + 3 < pt.length; q += 2){ var ax = pt[q], ay = pt[q+1], l = Math.hypot(pt[q+2] - ax, pt[q+3] - ay); if (l < 0.5) continue; var dx = (pt[q+2] - ax)/l, dy = (pt[q+3] - ay)/l;
+      for (var u = 0; u < l; u += 11){ var sd = hash(n + q, Math.floor(u), 5) < 0.5 ? 1 : -1; if (hash(n + q, Math.floor(u), 6) > 0.45) continue; var o = hw + 0.6 + hash(n, Math.floor(u), 7)*1.5, x = ax + dx*u - dy*o*sd, y = ay + dy*u + dx*o*sd;
+        if (!inWater(x, y, 0.2) && !blocked(x, y)) add('plants.reeds', x, y, hash(q, u, 8)*6.28, 600); } } });
+  var total = 0;
+  Object.keys(out).forEach(function(path){ var L = out[path], M = path.indexOf('ground.') === 0 ? gB(path.slice(7)) : spB(path); if (!M) return; var st = Math.max(1, Math.ceil(L.l.length/L.c));
+    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' ? 0.115 : 0.02)); total++; } });
+  w.dressCount = total; w.dressOut = out;
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */
 function manageFacades(){}
@@ -1749,7 +1865,7 @@ function prep3D(){
   facs.forEach(function(fb){ if (fb.fac){ freeMesh(fb.fac); fb.fac = null; } }); facs = [];
   if (w.gl){ w.gl.ground.forEach(function(o){ freeMesh(o.g); }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
   var list = []; chunks.forEach(function(c){ list.push(c); });
-  g.pl = null; placeProps(g);
+  g.pl = null; placeProps(g); try { placeDress(g); } catch (er){ console.log('dress', er); }
   /* the ground is cut into squares so only the part near you is drawn */
   var GT = 256, buckets = new Map(), gt = [];
   for (i = 0; i < g.p.length; i += 9){
@@ -2750,7 +2866,7 @@ function startRun(ws, cs){
   hiTrees = []; clutter = []; clutKey = ''; world.trees.forEach(function(t){ t.hi = false; }); buildTrees(); makeVehicles(resumed ? ws.veh : null); makeTraders(); makeSurvivors(resumed ? ws.surv : null); setupScenario(resumed ? ws : null); pings = []; P.gridWas = undefined;
   manageInteriors(40); makeMini();
   el('title').classList.add('hidden'); el('play').classList.remove('hidden'); el('feed').innerHTML = '';
-  loadWallsPack(); loadPowerPack(); running = true; inRun = true; saveT = 20; updateHud();
+  loadWallsPack(); loadPowerPack(); loadGroundPack(); running = true; inRun = true; saveT = 20; updateHud();
   toast(resumed ? 'Welcome back to ' + w.name + '. Your progress was restored.' : w.name + ': ' + w.buildings.length + ' buildings, ' + w.roads.length + ' roads. You start at the safe house on the edge of town: a small home with supplies in its chest, on a one-acre lot inside a white picket fence. Aliens cannot come inside the fence (the dotted square on your map); the gates are front and back.' + (w.vmap && w.vmap.truck && !truckFixed(w.vmap.truck) ? ' The old pickup in the drive is broken, but the parts to fix it (toolkit, spare tire, car battery, engine parts) are in the supply chest.' : ''), 10);
 }
 function die(){
@@ -5220,6 +5336,7 @@ function render(){
     if (ch.g && cdx < NR && cdy < NR){ drawMesh(ch.g); if (cdx < 170 && cdy < 170) drawMesh(ch.l, gl.LINES); }
     else if (ch.far && cdx < FRR && cdy < FRR) drawMesh(ch.far);
   }
+  if (world.gl.det) world.gl.det.forEach(function(o){ if (o.g && Math.abs(o.x - P.x) < QS.clutR*0.8 + 10 + DT && Math.abs(o.y - P.y) < QS.clutR*0.8 + 10 + DT) drawMesh(o.g); });
   if (world.gl.trees) world.gl.trees.forEach(function(o){ if (o.g && Math.abs(o.x - P.x) < FRR + 130 && Math.abs(o.y - P.y) < FRR + 130) drawMesh(o.g); });
   if (world.fence && Math.abs(world.fence.x - P.x) < 400 && Math.abs(world.fence.y - P.y) < 400) drawMesh(world.fence.g);
   for (i = 0; i < loaded.length; i++){ var gsI = loaded[i].int.gs; for (var gq = 0; gq < gsI.length; gq++) drawMesh(gsI[gq]); }
@@ -5647,6 +5764,7 @@ var POWER_ON = false, PWM = {};
 function powerModel(name){ if (!POWER_ON) return null; if (PWM[name] !== undefined) return PWM[name]; PWM[name] = null; try { var pcs = SHAPED.power.models[name]; if (pcs) PWM[name] = spModel(pcs, spColour(SHAPED.power.palette, {})); } catch (er){} return PWM[name]; }
 function loadPowerPack(){ if (window.SHAPED && SHAPED.power){ POWER_ON = true; return; } if (document.getElementById('powerJs')) return; var sc = document.createElement('script'); sc.id = 'powerJs'; sc.src = 'assets/shaped/power.js?v=' + BUILD; sc.onload = function(){ POWER_ON = !!(window.SHAPED && SHAPED.power); }; sc.onerror = function(){}; document.head.appendChild(sc); }
 function loadWallsPack(){ if (window.SHAPED && SHAPED.walls){ WALLS_ON = true; return; } if (document.getElementById('wallsJs')) return; var sc = document.createElement('script'); sc.id = 'wallsJs'; sc.src = 'assets/shaped/walls.js?v=' + BUILD; sc.onload = function(){ WALLS_ON = !!(window.SHAPED && SHAPED.walls); }; sc.onerror = function(){}; document.head.appendChild(sc); }
+function loadGroundPack(){ if (window.SHAPED && SHAPED.ground) return; if (document.getElementById('groundJs')) return; var sc = document.createElement('script'); sc.id = 'groundJs'; sc.src = 'assets/shaped/ground.js?v=' + BUILD; sc.onerror = function(){}; document.head.appendChild(sc); }
 var WLM = {};
 function wallModel(st, mat){ if (!WALLS_ON) return null; var key = (mat || 'wood') + st; if (WLM[key] !== undefined) return WLM[key]; WLM[key] = null; try { var M = WMATS[mat || 'wood'], pcs = SHAPED.walls.models.sections[M.kind][M.h][st]; if (pcs) WLM[key] = spModel(pcs, spColour(SHAPED.walls.palette, M.col)); } catch (er){} return WLM[key]; }
 /* 0.52 carried furniture: Y at a piece lifts it (search it first); you move slower; Y again sets it down in front of you, where it blocks like a wall and can be gnawed through */

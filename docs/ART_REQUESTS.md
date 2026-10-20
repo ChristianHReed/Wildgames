@@ -198,3 +198,38 @@ Everything in section 11 is now on main. About half of it had already been deliv
 ---
 
 Suggested order: section 1 (so the weapons and jump look right), then loose items and loot containers from section 2, then section 3, then Art 4 and Art 6.
+
+## 12. Making the world look better: what is still missing (new, version 0.80.0, 20 October 2026)
+
+**What the game now uses from your packs (0.80.0):** street (stop sign, traffic light, street name post, power pole, manhole, speed sign, bus stop, parking meter, bollard, phone box, bike rack, newspaper box, mailbox), plants (fallen log, stump, fern, mushrooms, bramble, three flower patches, reeds), ground decals (crack, pothole, skid marks). Still **not used because the game side has no place for them yet** (I will do these next, no new art needed): traffic cones and jersey barriers (road works), crash barrier, tyre pile, chain-link and picket fences on lots, road paint models (centre dash, stop line, crossing), shop awnings and hanging signs, roof pieces (AC unit, chimney, water tank, satellite dish, roof hatch), birch and willow as choppable trees, tile edges and kerb strips, puddle and ice decals, snow and leaf tiles.
+
+**New art that would help most, in the same style and palette rules as before** (pieces, flat colour, metres, +Z front, pivot at base centre):
+
+*Farms and fields* (the map has farmland and farm buildings that are plain boxes today)
+- Crop rows as tileable 2 m strips: corn (tall, brown in autumn), wheat, soybean, bare ploughed earth, hay stubble; plus a harvested look.
+- Round and square hay bales, a hay stack, a scarecrow, a wire and post fence run (1 m, 3 m, corner, gate), a field gate, a feed trough, a water trough, an irrigation pivot (one span with wheel), a mailbox on a post.
+- Farm buildings: barn (red, open and shut loft door), silo, grain bin, machine shed, chicken coop, farmhouse look, windmill, farm pond dock, tractor and flatbed trailer as vehicle shells.
+
+*Woods*
+- More trees: spruce, a tall thin woodland oak, a young sapling, a dead pine, winter (bare) and snow-laden versions of oak and pine, with the trunk radius for collision in the notes.
+- Undergrowth: tall grass clump (three heights), a fallen tree across a path, a root ball (tipped tree), moss rock, boulder cluster, hollow log, deer track decal, leaf pile, berry bush (food).
+
+*Rivers, ponds and lakes*
+- Bridge pieces (deck, rail, pier, abutment) for roads and paths, a culvert pipe, stepping stones, rock bank pieces, a boat ramp and a small dock, a rowboat and a canoe, lily pads and cattails (taller than the reeds), a duck and a heron (static is fine), shore foam strip, a dam or weir.
+
+*Parks and sports*
+- Playground (swing set, slide, seesaw, climbing frame, sandpit), picnic table, BBQ grill, drinking fountain, trash can with a lid, park sign, gazebo or pavilion, statue on a plinth, fountain (dry and running), baseball backstop and bases, basketball hoop and court lines, goal posts, tennis net, running track lines, trail marker post.
+
+*Streets and town*
+- Gas station pieces (pump, canopy, price sign), car wash, drive-through menu board, shopping cart (upright and knocked over), vending machine, ATM, billboard, utility wire span between poles (a sagging line piece), transformer on a pole, storm drain grate, kerb ramp, speed bump, road works barrier and arrow board, fire escape stairs for buildings, graffiti and litter decals, tyre marks, oil stain.
+- Church steeple, school bell, hospital helipad and sign, a stadium stand section, parking garage ramp.
+
+*Cars*
+- More vehicle kinds: bus, school bus, ambulance, fire truck, police car, box truck, motorbike, bicycle, semi cab. Visible seats, wheel and dash through the windows (the interior seen from outside), licence plates, headlight and tail-light glow pieces, a roof rack, a mud-spattered variant.
+
+*Building interiors*
+- Floor materials with real patterns: carpet, wood boards, kitchen tile, bathroom tile, linoleum, concrete, warehouse floor (drawn as flat tiles, 2 m).
+- Wall decor: framed picture (three sizes), wall clock, mirror, curtains (open and shut), blinds, poster, shelf brackets, coat hooks, light switch and socket plate.
+- Ceiling pieces: ceiling light (off, on, flickering), ceiling fan, smoke alarm, air vent, exposed beams.
+- Room clutter: books, papers, dishes, bottles, clothes pile, toys, tin cans, toolbox, boxes, cobwebs, mould, blood and debris decals, fallen ceiling tile, tipped chair.
+- Room kinds still empty: classroom (desks, board), office (cubicle, filing), hospital (bed, drip stand, curtain), church (altar, font), warehouse (racking, pallet), garage (tool wall, workbench, jack stand), supermarket (aisle shelves, freezer, checkout).
