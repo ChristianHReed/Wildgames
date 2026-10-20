@@ -1,4 +1,4 @@
-# Afterstreet test checklist (version 0.74.0)
+# Afterstreet test checklist (version 0.75.0)
 
 Tick each box as you go. Everything here was tested headlessly (no real phone, no real sound, no real controller). Anything marked **PHONE** or **EARS** needs you. The longer numbered list in TESTING.md has the exact steps per version; this one is the quick pass.
 
@@ -35,6 +35,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 
 ## 6. Guns and weapons
 - [ ] Press U to cycle guns (only owned guns); O to reload; fire until empty and it reloads by itself.
+- [ ] Each gun's reload shows its own first-person poses.
 - [ ] Pistol, revolver, shotgun, rifle, bow, crossbow, flare gun each fire and use the right ammo.
 - [ ] Arrows and bolts land near the target and can be picked up.
 - [ ] A gun below a quarter condition jams; the bench repairs it for 1 scrap.
@@ -63,6 +64,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 - [ ] Drive a car into a house wall at speed: it breaks, the car loses health.
 - [ ] Build menu, Close torn-open walls of the nearest building: all gaps close while materials last.
 - [ ] Inner walls: thick, trimmed doorways; an axe (hold J) or a swarmer opens one; closing torn walls puts it back.
+- [ ] Tear open a wall: torn edges and rubble, the room is visible. Damaged walls show cracks.
 - [ ] Save and reload: torn walls are still torn. Multiplayer: the other player sees the gap too.
 
 ## 10. Bases
@@ -79,7 +81,7 @@ Tick each box as you go. Everything here was tested headlessly (no real phone, n
 
 ## 12. Vehicles
 - [ ] Bicycle, car, truck: get on and off (**PHONE** tap prompt to get off).
-- [ ] Crash damage; Repair vehicle uses a car part; a wrecked car burns for a minute.
+- [ ] Cars show damage looks by health and a burnt shell after a fire; health is saved. Crash damage; Repair vehicle uses a car part; a wrecked car burns for a minute.
 - [ ] Siphon fuel; the truck holds items.
 
 ## 13. Survival

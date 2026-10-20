@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.74.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.75.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.74.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.75.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1496,7 +1496,12 @@ function shell(b, m, lm){
       m.quad(ax + ox2*co, 0, az + oz2*co, ax + dx*cw0*2 + ox2*co, 0, az + dz*cw0*2 + oz2*co, ax + dx*cw0*2 + ox2*co, Ht, az + dz*cw0*2 + oz2*co, ax + ox2*co, Ht, az + oz2*co, cc0, 255);
       m.quad(ax + pox*co, 0, az + poz*co, ax - pdx*cw0*2 + pox*co, 0, az - pdz*cw0*2 + poz*co, ax - pdx*cw0*2 + pox*co, Ht, az - pdz*cw0*2 + poz*co, ax + pox*co, Ht, az + poz*co, cc0, 255); }
   }
-  b.segs0 = b.segs; breachApply(b, m, lhg);   /* 0.69: pieces of the outer wall that have been torn open */
+  b.segs0 = b.segs; breachApply(b, m, lhg, FS, ST);   /* 0.69: pieces of the outer wall that have been torn open */
+  if (FS && FD && b.door && b.hn && b.kind === 'house'){   /* 0.75: the house number on a plaque beside the front door */
+    var hd = String(b.hn).replace(/[^0-9]/g, '').slice(-3), pm0 = hd && bkMod('house', '', 'plaque');
+    if (pm0){ var dr = b.door, ddx = dr.ny, ddz = -dr.nx, o2x = -dr.nx, o2z = -dr.ny, hx0 = dr.x + ddx*1.4 + o2x*0.09, hz0 = dr.y + ddz*1.4 + o2z*0.09, idf = function(v){ return v; }, aof = function(){ return 0.96; };
+      if (!blocked(hx0 + o2x*0.5, hz0 + o2z*0.5) || true){ frPut(m, pm0, FS, hx0, hz0, -ddx, -ddz, o2x, o2z, 1.8, idf, idf, aof, 0);
+        for (var di = 0; di < hd.length; di++){ var dm = bkMod('house', '', 'digit_' + hd[di]); if (dm) frPut(m, dm, FS, hx0, hz0, -ddx, -ddz, o2x, o2z, 1.8, function(off){ return function(v){ return v + off; }; }((di - (hd.length - 1)/2)*0.1), idf, aof, 0); } } } }
   /* the door: a casing round it, and over the entrance of glass-fronted buildings a canopy */
   if (b.door && !ST.porch && !K.awn){ var dr0 = b.door, dox = -dr0.nx, doz = -dr0.ny, tx0 = -doz, tz0 = dox, dc0 = ST.mat === 'metal' ? [96,100,104] : [234,230,220];
     for (var sd0 = -1; sd0 <= 1; sd0 += 2) m.box(dr0.x + tx0*0.72*sd0 + dox*0.03, 1.15, dr0.y + tz0*0.72*sd0 + doz*0.03, [tx0*0.07, 0, tz0*0.07], [0, 1.15, 0], [dox*0.05, 0, doz*0.05], dc0);
@@ -3079,7 +3084,7 @@ function restockTick(dt){
 }
 function plantTick(dt){
   restockTick(dt);
-  world.vehicles.forEach(function(v){ if (v.fireT > 0){ v.fireT -= dt; v.fx = (v.fx || 0) - dt; if (v.fx <= 0 && Math.abs(v.x - P.x) < 90 && Math.abs(v.y - P.y) < 90){ v.fx = 0.45; var gy = groundAt(v.x, v.y); fxAdd('effects.flame_large', v.x, v.y, gy, {life:0.6, s0:0.9, s1:1.1, up:0.6}); if (Math.random() < 0.5) fxAdd('effects.smoke_column', v.x, v.y, gy, {life:2.2, s0:1, s1:2, rise:2.5, up:1.2}); } } });
+  world.vehicles.forEach(function(v){ if (v.fireT > 0){ v.fireT -= dt; if (v.fireT <= 0 && v.kind !== 'truck' && v.id !== 'truck') v.burnt = 1; v.fx = (v.fx || 0) - dt; if (v.fx <= 0 && Math.abs(v.x - P.x) < 90 && Math.abs(v.y - P.y) < 90){ v.fx = 0.45; var gy = groundAt(v.x, v.y); fxAdd('effects.flame_large', v.x, v.y, gy, {life:0.6, s0:0.9, s1:1.1, up:0.6}); if (Math.random() < 0.5) fxAdd('effects.smoke_column', v.x, v.y, gy, {life:2.2, s0:1, s1:2, rise:2.5, up:1.2}); } } });
   (world.edits.cboxes || []).forEach(function(c){ if (c.bat > 0 && !c.trip && !gridAt(c.x, c.y)){ var b = world.buildings[c.b]; if (b && boxSupply({x:c.x, y:c.y, bat:0}) < boxLoad(b)) c.bat = Math.max(0, c.bat - dt/DAY*24); } });
   var o = world.plantO; if (!o || !o.t) return; o.t -= dt; o.nt -= dt;
   if (o.nt <= 0){ o.nt = 1.5; makeNoise(o.x, o.y, 90); sfx('metal', o.x, o.y, 1, 0.4 + Math.random()*0.2); }
@@ -3272,6 +3277,12 @@ var GUNS = {
 function gunOwned(k){ return k === 'pistol' || inv[k] > 0; }
 function gunDur(k){ return P.gdur && P.gdur[k] !== undefined ? P.gdur[k] : 1; }
 /* a spent arrow or bolt may be picked up again; a flare shell lights where it lands */
+/* 0.75: something dropped on its own lies on the ground as the art chat's loose item (props.items), not in a pack */
+var IMAP = {food:'canned_food', water:'bottle', medkit:'medkit', ammo:'ammo_box', wood:'scrap_wood', scrap:'scrap', nails:'nails_handful', sheet:'sheet_metal', chunk:'concrete_chunk', map:'paper_map', rifle:'ammo_box', shell:'ammo_box', fuel:'fuel_can', battery:'batteries', radio:'radio', flashlight:'flashlight', lantern:'lantern', fiber:'cloth_scraps', bandage:'bandage', parts:'engine_parts', tire:'spare_tyre', carbat:'car_battery', toolkit:'toolkit', coat:'rain_jacket', book:'books', stone:'stone', tape:'duct_tape', rope:'rope', antibio:'antibiotics', berry:'berries', meal:'canned_food', fresh:'granola_bar', splint:'sticks', key:'matches', generator:'generator'};
+function packItemModel(pk){
+  if (!SPON || (pk.items && Object.keys(pk.items).length) || (pk.designs && pk.designs.length)) return null; var ks = Object.keys(pk.inv || {}).filter(function(k){ return pk.inv[k] > 0; }); if (ks.length !== 1 || !IMAP[ks[0]]) return null;
+  return spB('items.' + IMAP[ks[0]]);
+}
 function dropAt(x, y, what, nm){ var np = {id:Date.now() + '-' + Math.floor(Math.random()*1e6), x:x, y:y, inv:what, items:{}, designs:[], from:'the ground', name:nm || 'something on the ground', pack:true}; packs.push(np); emit({k:'pack', p:np}); }
 function landBullet(b){
   if (b.flare){ var f = {x:b.x, y:b.y, life:60}; flares.push(f); emit({k:'flare', f:f}); return; }
@@ -3282,7 +3293,7 @@ function gunHud(){ var g = gunNow(); P.mag = P.mag || {}; var h = g.n + ' ' + (P
 function cycleGun(){ var own = GORDER.filter(gunOwned), i = own.indexOf(P.gun); P.gun = own[(i + 1) % own.length]; P.rl = null; var g = gunNow(); P.gunT = 3; toast(g.n + (own.length > 1 ? ' (U or the Gun button switches)' : ''), 1.8); gunHud(); updateHud(); }
 function startReload(manual){ var g = gunNow(); P.mag = P.mag || {}; if (P.rl || (P.mag[P.gun] | 0) >= g.mag){ return; }
   if (!(inv[g.am] > 0)){ if (manual || time - (P.noAm || -9) > 2){ P.noAm = time; toast('Out of ' + ITEMS[g.am][0].toLowerCase() + '. ' + (g.am === 'ammo' ? 'Police and fire stations hold more.' : 'Police stations, houses and shops may have some.'), 3); } return; }
-  P.rl = {t:g.rl*(g.am === 'arrow' && inv.quiver > 0 ? 0.45 : 1), g:P.gun}; sfx('latch', P.x, P.y, 0.5); gunHud(); }
+  P.rl = {t:g.rl*(g.am === 'arrow' && inv.quiver > 0 ? 0.45 : 1), g:P.gun}; P.rl.T = P.rl.t; sfx('latch', P.x, P.y, 0.5); gunHud(); }
 function gunTick(dt){ if (!P.rl) return; if (P.rl.g !== P.gun){ P.rl = null; return; } P.rl.t -= dt; if (P.rl.t > 0) return; var g = GUNS[P.gun], have = P.mag[P.gun] | 0, n = Math.min(g.mag - have, inv[g.am] | 0); P.mag[P.gun] = have + n; inv[g.am] -= n; P.rl = null; sfx('latch', P.x, P.y, 0.7); gunHud(); updateHud(); }
 function shoot(){
   var g = gunNow(); P.mag = P.mag || {}; if (P.rl) return;
@@ -4602,6 +4613,7 @@ function pplPal(l){
 }
 function pplClip(o, B){
   var c = o.dead || o.hp <= 0 ? 'dead' : o.act ? o.act : o.sw ? (o.atk && B.clips[o.atk] ? o.atk : 'attack') : o.swim ? (o.mv ? 'swim' : 'swimidle') : o.mv ? (o.vis < 1 ? 'crouchwalk' : o.vis > 1 ? 'run' : 'walk') : o.vis < 1 ? 'crouch' : o.talk ? 'talk' : o.lit ? 'light' : 'idle';
+  if ((c === 'idle' || c === 'light') && o.wpn && window.SHAPED && SHAPED.held && SHAPED.held.longGuns && SHAPED.held.longGuns.indexOf(o.wpn.split(':')[0]) >= 0){ var lc = o.shk !== undefined ? 'aim_long' : 'carry_long'; if (B.clips[lc]) return lc; }   /* 0.75: a long gun is held at the ready, and shouldered when it fires */
   return B.clips[c] ? c : c === 'crouchwalk' ? 'crouch' : c === 'swim' || c === 'swimidle' ? 'walk' : 'idle';   /* fall back when an older art file lacks a move */
 }
 /* ================= Art 2: shaped survivors (assets/shaped/survivor.js, made in the art chat) =================
@@ -5018,6 +5030,21 @@ function heldGrip(M){
   for (var i = 0; i < p.length; i += 3){ var x = M.p[i] - F.pos[0], y = M.p[i+1] - F.pos[1], z = M.p[i+2] - F.pos[2], x1 = x*cb - z*sb, z1 = x*sb + z*cb, y2 = y*ca + z1*sa, z2 = -y*sa + z1*ca; p[i] = x1; p[i+1] = y2; p[i+2] = z2; }
   return (M.grip = {n:M.n, p:p, c:M.c, a:M.a});
 }
+/* 0.75: first-person reloads from the art chat's held.fpReload poses. Each gun plays its poses in order across the reload time */
+var RLSEQ = {pistol:['pistol_mag_out', 'pistol_mag_in'], revolver:['revolver_load'], hunting_rifle:['rifle_bolt'], pump_shotgun:['shotgun_load', 'shotgun_rack'], double_barrel:['double_open'], carbine:['carbine_mag_out', 'carbine_mag_in'], crossbow:['crossbow_cock'], recurve_bow:['bow_nock'], flare_gun:['flare_open']}, RLREP = {shotgun_load:1, rifle_bolt:1, revolver_load:1};
+function rlEuler(rot){ var a = rot[0]*Math.PI/180, b = rot[1]*Math.PI/180, c = rot[2]*Math.PI/180, ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b), cc = Math.cos(c), sc = Math.sin(c);
+  return function(x, y, z){ var x1 = x*cc - y*sc, y1 = x*sc + y*cc, z1 = z; var x2 = x1*cb + z1*sb, z2 = -x1*sb + z1*cb, y2 = y1; return [x2, y2*ca - z2*sa, y2*sa + z2*ca]; }; }
+function fpReloadDraw(draw, cam, cols){
+  var H = SHAPED.held, name = P.gun, seq = RLSEQ[name]; if (!seq || !H.fpReload || !P.rl || !P.rl.T) return false;
+  var f = Math.max(0, Math.min(0.999, 1 - P.rl.t/P.rl.T)), n = seq.length, si = Math.min(n - 1, Math.floor(f*n)), lf = f*n - si, pn = seq[si], pose = H.fpReload[pn], PM = H.models.fpReload && H.models.fpReload[pn]; if (!pose || !PM) return false;
+  var cyc = lf; if (RLREP[pn]){ var rounds = Math.max(1, Math.min(8, (GUNS[name].mag - (P.mag[name] | 0)))); cyc = (lf*rounds) % 1; }
+  var st = pose.weapon.state; if ((pn === 'shotgun_rack' || pn === 'rifle_bolt') && cyc > 0.5) st = 'new';
+  var wob = RLREP[pn] ? Math.sin(cyc*Math.PI)*0.025 : 0, W = H.models.weapons[pose.weapon.name], Mw = W && heldPart('w|' + pose.weapon.name + '|' + st, W[st] || W.new, {}), R = rlEuler(pose.weapon.rot), wp = pose.weapon.pos;
+  draw(heldPart('rr|' + pn + cols.SKIN + cols.SLEEVE, PM.right, cols), cam); draw(heldPart('rl|' + pn + cols.SKIN + cols.SLEEVE, PM.left, cols), function(x, y, z){ return cam(x, y + wob, z); });
+  draw(Mw, function(x, y, z){ var r = R(x, y, z); return cam(r[0] + wp[0], r[1] + wp[1] + wob*0.5, r[2] + wp[2]); });
+  if (pose.item){ var ia = pose.item.model.split('.'), IM = H.models[ia[0]] && H.models[ia[0]][ia[1]], Mi = IM && heldPart('i|' + pose.item.model, IM, {}), R2 = rlEuler(pose.item.rot), ip = pose.item.pos; if (Mi) draw(Mi, function(x, y, z){ var r = R2(x, y, z); return cam(r[0] + ip[0], r[1] + ip[1] + wob, r[2] + ip[2]); }); }
+  return true;
+}
 function fpHeld(vm, at, sw){
   var H = SHAPED.held, cols = heldCols(), K = 1.25, rec = Math.max(0, P.shootCd - 0.15)*0.6;
   var draw = function(M, fn){ if (!M) return; var q = [0, 0, 0, 0, 0, 0, 0, 0, 0], t, j, r;
@@ -5026,6 +5053,7 @@ function fpHeld(vm, at, sw){
   var cam = function(x, y, z){ return at(z*K, -x*K, y*K + 0.2); }, camS = cam;
   if (prog > 0 && target && target !== 'water' && !target.port){   /* opening or searching: both hands reach out */
     draw(heldArm('reach', 'right', cols), cam); draw(heldArm('reach', 'left', cols), cam); return; }
+  if (P.rl && P.rl.g === P.gun && P.rl.T && (P.gun !== 'pistol' || true) && fpReloadDraw(draw, cam, cols)) return;
   var wdz = P.weapon && P.items[P.weapon] > 0 ? DESIGNS[P.weapon] : null, name = wdz ? wdz.model : 'baseball_bat', W = H.models.weapons, Mw, two = false, gunOut = P.gun && P.gun !== 'pistol' && P.gunT > 0 && gunOwned(P.gun); if (gunOut){ name = P.gun; wdz = null; }
   if (name && W[name]){ var wst = gunOut ? (gunDur(P.gun) < 0.25 ? 'worn' : 'new') : (wdz && durOf(P.weapon) < 0.25 ? 'worn' : 'new'); Mw = heldPart('w|' + name + '|' + wst, W[name][wst] || W[name].new, {}); two = H.twoHanded.indexOf(name) >= 0; }
   else { var sh = wdz ? wdz.shape : 0, L = sh === 3 ? 0.95 : 0.7, th = sh === 1 ? 0.02 : 0.045, pcs = [{s:'box', p:[0, 0, L/2 - 0.2], d:[th, th, L], c:'DES'}]; if (sh === 2) pcs.push({s:'box', p:[0, 0, L - 0.2], d:[0.05, 0.12, 0.14], c:'IRON'});
@@ -5158,7 +5186,7 @@ function render(){
     m.ybox(gn.x + jig, gn.y, gyw, 0, 0, 0.3, 0.36, 0.3, 0.26, C('#d9a845')); m.ybox(gn.x + jig, gn.y, gyw, 0, 0, 0.27, 0.28, 0.2, 0.2, C('#3e4246')); m.ybox(gn.x + jig, gn.y, gyw, 0.05, 0, 0.66, 0.2, 0.07, 0.14, C('#c6713a'));
     if (gn.on){ m.al = 128; m.ybox(gn.x, gn.y, gyw, 0.3, 0, 0.45, 0.03, 0.04, 0.04, C('#9ef07a')); m.al = 255; } }
   for (i = 0; i < lamps.length; i++){ var lm0 = lamps[i]; if (Math.abs(lm0.x - P.x) > 90 || Math.abs(lm0.y - P.y) > 90) continue; m.yo = groundAt(lm0.x, lm0.y); m.ybox(lm0.x, lm0.y, 0.4, 0, 0, 0.05, 0.13, 0.05, 0.13, C('#9a5226')); m.al = lm0.life > 0 ? 128 : 255; m.ybox(lm0.x, lm0.y, 0.4, 0, 0, 0.26, 0.1, 0.16, 0.1, C(lm0.life > 0 ? '#ffe9a8' : '#6b6456')); m.al = 255; m.ybox(lm0.x, lm0.y, 0.4, 0, 0, 0.45, 0.13, 0.03, 0.13, C('#9a5226')); }
-  for (i = 0; i < packs.length; i++){ m.yo = groundAt(packs[i].x, packs[i].y); var pkm = spB('build.dropped_pack'); if (pkm) m.model(pkm, packs[i].x, packs[i].y, 0.3, 0); else m.ybox(packs[i].x, packs[i].y, 0.3, 0, 0, 0.25, 0.3, 0.25, 0.22, C('#3566c4')); m.ybox(packs[i].x, packs[i].y, spin, 0, 0, 0.95, 0.1, 0.1, 0.1, gold); }
+  for (i = 0; i < packs.length; i++){ m.yo = groundAt(packs[i].x, packs[i].y); var pkm = packItemModel(packs[i]) || spB('build.dropped_pack'); if (pkm) m.model(pkm, packs[i].x, packs[i].y, 0.3, 0); else m.ybox(packs[i].x, packs[i].y, 0.3, 0, 0, 0.25, 0.3, 0.25, 0.22, C('#3566c4')); m.ybox(packs[i].x, packs[i].y, spin, 0, 0, 0.95, 0.1, 0.1, 0.1, gold); }
   for (i = 0; i < cades.length; i++){ var cd = cades[i]; m.yo = groundAt(cd.x, cd.y); var cdm = spB('build.' + (cd.hp > 18 ? 'barricade' : cd.hp > 7 ? 'barricade_damaged' : 'barricade_nearly_gone')); if (cdm){ m.model(cdm, cd.x, cd.y, cd.yaw, 0); continue; } m.ybox(cd.x, cd.y, cd.yaw, 0, 0, 0.5, 1.1, 0.12, 0.06, C('#a8743e')); m.ybox(cd.x, cd.y, cd.yaw, 0, 0, 1.0, 1.1, 0.12, 0.06, C('#8a5a2b')); m.ybox(cd.x, cd.y, cd.yaw, -0.9, 0, 0.6, 0.07, 0.6, 0.09, C('#6b4526')); m.ybox(cd.x, cd.y, cd.yaw, 0.9, 0, 0.6, 0.07, 0.6, 0.09, C('#6b4526')); }
   for (i = 0; i < fires.length; i++){
     var fi = fires[i], fk = 0.8 + 0.25*Math.sin(now*17 + i); m.yo = groundAt(fi.x, fi.y);
@@ -5600,13 +5628,48 @@ function rubbleAt(m, id, q, x0, z0, x1, z1, ox, oz){   /* a heap of broken wall 
   for (var u = 0; u < n; u++){ var r = hash(id, q + u, 77), t = (u + 0.5)/n, cx = x0 + dx*l*t + ox*(r - 0.5)*0.9, cz = z0 + dz*l*t + oz*(r - 0.5)*0.9, hh = 0.07 + 0.12*hash(id, q + u, 79);
     m.ybox(cx, cz, r*6.28, 0, 0, hh, 0.09 + 0.12*r, hh, 0.08 + 0.1*hash(id, q + u, 80), u % 2 ? [120,112,102] : [150,140,126]); }
 }
-function breachApply(b, m, lhg){
-  var L = world.edits && world.edits.breach && world.edits.breach[b.id], s0 = b.segs0; if (!L || !L.length || !s0) return;
-  var keep = [], q, h = Math.min(lhg || 3, 2.7);
+/* 0.75: the art chat's torn, cracked and boarded wall pieces (buildings.breach), and the house number plaque */
+var BKM = {};
+function bkMod(grp, fin, name){
+  var key = grp + '.' + fin + '.' + name; if (BKM[key] !== undefined) return BKM[key]; BKM[key] = null;
+  try { var BK = SHAPED.buildings, pcs = grp === 'breach' ? BK.models.breach[fin][name] : BK.models.house[name]; if (!pcs) return null; var out = [];
+    pcs.forEach(function(q){ var o = SHAPED.build([q], function(){ return [0, 0, 0]; }, null, {}), P0 = o.pos, glass = /^glass/.test(q.c);
+      for (var t = 0; t < P0.length; t += 9) out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, f:false}); }); BKM[key] = out; } catch (e){}
+  return BKM[key];
+}
+function bkFin(ST){ var mt = ST && ST.mat; return mt === 'siding' ? 'siding' : mt === 'metal' ? 'metal' : mt === 'glass' ? 'glass' : 'brick'; }
+/* one stretch of wall from (x0,z0) to (x1,z1): what = 'hole' | 'boarded' | 'cracked' | 'missing' */
+function bkWall(m, FS, fin, what, x0, z0, x1, z1, hMax, gid){
+  var l = Math.hypot(x1 - x0, z1 - z0) || 1, dx = (x1 - x0)/l, dz = (z1 - z0)/l, ex = -dx, ez = -dz, ox = dz, oz = -dx, cx = (x0 + x1)/2 + ox*0.04, cz = (z0 + z1)/2 + oz*0.04, sy = Math.min(1, hMax/2.7), ao = function(){ return 0.93; }, id = function(v){ return v; }, fy = function(v){ return v*sy; };
+  var W = Math.abs(l - 2.4) < 0.2 ? '2.4' : Math.abs(l - 4) < 0.25 ? '4.0' : '', put = function(M, sx, off){ if (M) frPut(m, M, FS, cx + ex*(off || 0), cz + ez*(off || 0), ex, ez, ox, oz, 0, function(v){ return v*sx; }, fy, ao, gid); };
+  if (what === 'cracked' || what === 'missing'){ var W2 = l < 3.2 ? '2.4' : '4.0'; put(bkMod('breach', fin, what + '_' + W2), l/parseFloat(W2)); return; }
+  if (what === 'boarded'){ if (W) put(bkMod('breach', fin, 'boarded_' + W), l/parseFloat(W)); else put(bkMod('breach', fin, 'boarded_1m'), l); return; }
+  if (W){ put(bkMod('breach', fin, 'hole_' + W), l/parseFloat(W)); put(bkMod('breach', fin, 'rubble_' + W), l/parseFloat(W)); return; }
+  put(bkMod('breach', fin, 'edge_left'), 1, -l/2); put(bkMod('breach', fin, 'edge_right'), 1, l/2); put(bkMod('breach', fin, 'top'), l); put(bkMod('breach', fin, l > 3.2 ? 'rubble_4.0' : 'rubble_2.4'), l/(l > 3.2 ? 4 : 2.4));
+}
+/* take out the triangles of a mesh that lie in a stretch of wall (along it, within 45 cm of its line, below 2.4 m) */
+function meshCut(m, x0, z0, x1, z1){
+  var l = Math.hypot(x1 - x0, z1 - z0) || 1, dx = (x1 - x0)/l, dz = (z1 - z0)/l, P = m.p, C = m.c, T = m.t, w = 0, n = P.length/9;
+  for (var i = 0; i < n; i++){
+    var o = i*9, cx = (P[o] + P[o+3] + P[o+6])/3 - x0, cy = (P[o+1] + P[o+4] + P[o+7])/3, cz = (P[o+2] + P[o+5] + P[o+8])/3 - z0, u = cx*dx + cz*dz, v = Math.abs(-cx*dz + cz*dx);
+    if (u > -0.02 && u < l + 0.02 && v < 0.45 && cy < 2.4 && cy > -0.2) continue;
+    if (w !== i){ for (var k = 0; k < 9; k++){ P[w*9 + k] = P[o + k]; T[w*9 + k] = T[o + k]; } for (k = 0; k < 12; k++) C[w*12 + k] = C[i*12 + k]; } w++;
+  }
+  P.length = w*9; T.length = w*9; C.length = w*12;
+}
+function breachApply(b, m, lhg, FS, ST){
+  var L = (world.edits && world.edits.breach && world.edits.breach[b.id]) || [], s0 = b.segs0; if (!s0) return;
+  var keep = [], q, h = Math.min(lhg || 3, 2.7), art = !!FS && m !== NULLM && !!bkMod('breach', bkFin(ST), 'top'), fin = bkFin(ST);
   for (q = 0; q < s0.length; q += 4){
-    if (L.indexOf(q/4) < 0){ keep.push(s0[q], s0[q+1], s0[q+2], s0[q+3]); continue; }
+    var kq = q/4, x0 = s0[q], z0 = s0[q+1], x1 = s0[q+2], z1 = s0[q+3];
+    if (L.indexOf(kq) < 0){
+      keep.push(x0, z0, x1, z1);
+      if (art){ var hp = BWHP[b.id + ':' + kq]; if (hp !== undefined && Math.hypot(x1 - x0, z1 - z0) >= 1.2){ var fr0 = hp/bwMax(b, kq); if (fr0 < 0.66) bkWall(m, FS, fin, fr0 < 0.33 ? 'missing' : 'cracked', x0, z0, x1, z1, lhg || 3, 0); } }   /* hurt but standing */
+      continue; }
     if (m === NULLM) continue;
-    var x0 = s0[q], z0 = s0[q+1], x1 = s0[q+2], z1 = s0[q+3], l = Math.hypot(x1 - x0, z1 - z0) || 1, dx = (x1 - x0)/l, dz = (z1 - z0)/l, ox = dz, oz = -dx, dk = [22,20,18], r;
+    meshCut(m, x0, z0, x1, z1);   /* the wall itself goes; the torn edges and rubble take its place */
+    if (art){ bkWall(m, FS, fin, 'hole', x0, z0, x1, z1, lhg || 3, 0); continue; }
+    var l = Math.hypot(x1 - x0, z1 - z0) || 1, dx = (x1 - x0)/l, dz = (z1 - z0)/l, ox = dz, oz = -dx, dk = [22,20,18];
     for (var sd = -1; sd <= 1; sd += 2){
       var e = 0.05*sd, ax = x0 + ox*e, az = z0 + oz*e, bx = x1 + ox*e, bz = z1 + oz*e;
       if (sd > 0) m.quad(ax, 0.02, az, bx, 0.02, bz, bx, h, bz, ax, h, az, dk, 255); else m.quad(bx, 0.02, bz, ax, 0.02, az, ax, h, az, bx, h, bz, dk, 255);
@@ -5632,7 +5695,7 @@ function breachSet(b, k, on){ var E = world.edits; E.breach = E.breach || {}; va
   delete BWHP[b.id + ':' + k]; dirtyChunk(b);
   if (k >= 10000 && b.int){ freeInt(b); b.int = null; var li = loaded.indexOf(b); if (li >= 0) loaded.splice(li, 1); } }   /* the rooms are built again with the gap */
 function breachHurt(b, k, d, x, y){
-  var key = b.id + ':' + k, hp = BWHP[key] === undefined ? bwMax(b, k) : BWHP[key]; hp -= d*bwRes(b); BWHP[key] = hp;
+  var key = b.id + ':' + k, mx = bwMax(b, k), hp = BWHP[key] === undefined ? mx : BWHP[key], f0 = hp/mx; hp -= d*bwRes(b); BWHP[key] = hp; if (hp > 0 && k < 10000 && ((f0 >= 0.66) !== (hp/mx >= 0.66) || (f0 >= 0.33) !== (hp/mx >= 0.33))) dirtyChunk(b);
   if (hp <= 0){ doEdit({a:'breach', b:b.id, i:k, on:1}); sfx('plank', x, y, 1, 0.6); fxAdd('effects.wood_chips', x, y, groundAt(x, y), {life:0.9, s0:0.8, s1:1.2, rise:0.3, up:0.6}); return true; }
   return false;
 }
@@ -6142,10 +6205,10 @@ function makeVehicles(saved){
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck'; list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : undefined, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
   if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
-  w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = +s2[3] || 0; } });
+  w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = +s2[3] || 0; if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); } });
   bedChest();
 }
-function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : 0); }); return o; }
+function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : 0); else o[v.id].push(0, 0); if (v.hp !== undefined && v.hp < 100) o[v.id].push(Math.round(v.hp)); }); return o; }
 /* 0.51: town cars. Y (or the Boot button) at a parked car: first the boot is searched, then fuel is siphoned a can at a time (a car holds about 60 s of driving per can).
    Burnt shells are empty and wrecks hold only the odd can. */
 var TRAIL = [], trailT = 0;
@@ -6222,8 +6285,19 @@ function vehAnim(v, now){
   } else if (dtf > 0) v.spd = 0;
   v.ax = v.x; v.ay = v.y; v.ayaw = v.yaw;
 }
+/* 0.75: car damage looks (props.vehicles[name].damage) by vehicle health: whole above 70; 70 to 40 bent bumper and cracked windscreen; 40 to 15 light crumple; under 15 heavy crumple with the bonnet buckled and smoke; wrecked at 0 with the windscreen gone; then burning, then the burnt shell */
+var CKD = {sedan:['sedan'], hatch:['hatchback'], suv:['pickup'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]}, CDM = {};
+function carDmgModel(k, lv, fire){
+  var key = k + '|' + lv + (fire ? 'f' : ''); if (CDM[key] !== undefined) return CDM[key]; CDM[key] = null;
+  try { var C0 = CKD[k]; if (!C0 || !SPON || !VMOD[k] || !VMOD[k].w) return null; var PR = SHAPED.props, V = PR.models.vehicles[C0[0]], D = V && V.damage; if (!D) return null;
+    var body = lv === 1 ? D.body_bumper_bent : lv === 2 ? D.body_crumple_light : D.body_crumple_heavy, bon = lv === 1 ? V.bonnet : lv === 2 ? D.bonnet_crumple_light : D.bonnet_buckled, pcs = (body || V.body).concat(bon || []);
+    if (lv >= 1) pcs = pcs.concat(lv >= 4 ? D.windscreen_missing : D.windscreen_cracked); if (lv >= 3) pcs = pcs.concat(D.smoke); if (fire) pcs = pcs.concat(D.fire);
+    var B = spModel(pcs, spColour(PR.palette, C0[1]), {car:true}); B.w = VMOD[k].w; B.h = VMOD[k].h; B.drop = VMOD[k].drop; CDM[key] = B; } catch (er){}
+  return CDM[key];
+}
 function drawCar(m, v, now){
   var k = carKind(v), B = VMOD[k]; if (!B || !B.w) return false;
+  if (v.t && v.kind !== 'truck' && !v.dead && CKD[k]){ if (v.burnt) B = VMOD[k + '_burnt'] || B; else { var hv = vhp(v), lv = hv > 70 ? 0 : hv > 40 ? 1 : hv > 15 ? 2 : hv > 0 ? 3 : 4; if (lv || v.fireT > 0){ var DB = carDmgModel(k, v.fireT > 0 ? 4 : lv, v.fireT > 0); if (DB) B = DB; } } }
   var tr = v.id === 'truck' ? truckP() : null, fit = tr ? fitting() : null, y0 = v === P.veh && v.spd > 1 ? Math.sin(now*13)*0.012 : -(B.drop || 0);
   m.part(B, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0);
   B.w.forEach(function(w){
