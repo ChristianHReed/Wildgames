@@ -392,7 +392,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.77.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.78.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -400,7 +400,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.77.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.78.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2603,7 +2603,7 @@ function portNear(){
 }
 function portText(o){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', B = tch ? 'Wall' : 'B';
-  var bk0 = blockOf(o.b, o.k); if (bk0) return 'Blocked with furniture \u00b7 ' + E + 'pull it away';
+  var bk0 = blockOf(o.b, o.k); if (bk0) return (bk0.br ? 'Braced with a bar' : 'Blocked with furniture') + ' \u00b7 ' + E + (bk0.br ? 'take the bar down' : 'pull it away');
   if (o.k >= 1000) return E + (innerState(o.b, o.k - 1000) ? 'close the door' : 'open the door');
   if (o.k < 0 && doorState(o.b) === 0 && lockedOf(o.b)) return 'Locked \u00b7 ' + (inv.key > 0 ? (tch ? 'Tap' : 'Press E') + ' to use your keys' : (tch ? 'Hold' : 'Hold E') + ' to pry it (quiet, slow) \u00b7 Swing to smash it (loud)');
   if (o.k < 0){ var d = doorState(o.b); return d === 0 ? E + 'open the door' : d === 1 ? E + 'close the door' : E + 'repair the door (2 wood)'; }
@@ -2639,8 +2639,9 @@ function drawPorts(m){
     var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
     for (var i = 0; i < cell.length; i++){
       var b = cell[i]; if (b.stamp === stampN) continue; b.stamp = stampN; if (b.gone || !b.h) continue; m.yo = b.base || 0;
-      var BL = world.edits.blocks[b.id]; if (BL) for (var bkk in BL){ var bo = BL[bkk], kk = bkk | 0, M2 = MODELS[bo.m]; if (!M2) continue; var cx0, cy0, nx0, ny0;
+      var BL = world.edits.blocks[b.id]; if (BL) for (var bkk in BL){ var bo = BL[bkk], kk = bkk | 0, M2 = bo.br ? null : MODELS[bo.m]; if (!M2 && !(bo.br && kk === -1 && b.door)) continue; var cx0, cy0, nx0, ny0;
         if (kk === -1 && b.door){ cx0 = b.door.x; cy0 = b.door.y; nx0 = b.door.nx; ny0 = b.door.ny; } else if (kk >= 1000 && b.int && b.int.idoors && b.int.idoors[kk - 1000]){ var q3 = b.int.idoors[kk - 1000], l3 = Math.hypot(q3[2] - q3[0], q3[3] - q3[1]) || 1; cx0 = (q3[0] + q3[2])/2; cy0 = (q3[1] + q3[3])/2; nx0 = -(q3[3] - q3[1])/l3*(bo.s || 1); ny0 = (q3[2] - q3[0])/l3*(bo.s || 1); } else continue;
+        if (bo.br){ var brm = spB('build.door_brace'); if (brm) m.modelS(brm, cx0 + nx0*0.1, cy0 + ny0*0.1, Math.atan2(ny0, nx0) - 1.5708, groundAt(cx0, cy0) + (b.base || 0), 1); else m.ybox(cx0 + nx0*0.12, cy0 + ny0*0.12, Math.atan2(ny0, nx0), 0, 0, 1.0, 0.06, 0.6, 0.08, [120,90,60]); continue; }
         var dep = Math.min(M2.hx, M2.hz) + 0.12, bx3 = cx0 + nx0*dep, by3 = cy0 + ny0*dep; m.model(M2, bx3, by3, Math.atan2(ny0, nx0) - 1.5708, 0.1); }   /* its back against the door */
       if (b.int && b.int.idoors) for (var iq = 0; iq < b.int.idoors.length; iq++){ var dq2 = b.int.idoors[iq], ln = Math.hypot(dq2[2] - dq2[0], dq2[3] - dq2[1]), uxd = (dq2[2] - dq2[0])/ln, uyd = (dq2[3] - dq2[1])/ln, op = innerState(b, iq), an = op ? 1.6 : 0, wx2 = uxd*Math.cos(an) - uyd*Math.sin(an), wy2 = uyd*Math.cos(an) + uxd*Math.sin(an);
         m.ybox(dq2[0] + wx2*ln/2, dq2[1] + wy2*ln/2, Math.atan2(wy2, wx2), 0, 0, 1.08, ln/2 - 0.03, 1.02, 0.025, [176,138,96]); m.ybox(dq2[0] + wx2*(ln - 0.12), dq2[1] + wy2*(ln - 0.12), Math.atan2(wy2, wx2), 0, 0, 1.05, 0.03, 0.03, 0.06, [214,190,120]); }
@@ -5795,7 +5796,7 @@ function loadEdits(ed){
   for (k in (ed.ports || {})){ var ps2 = ed.ports[k], np2 = E.ports[k]; if (!np2 || !ps2) continue; if (ps2.l === 0 || ps2.l === 1) np2.l = ps2.l; if (ps2.i){ np2.i = {}; for (var ik in ps2.i) if (ps2.i[ik] === 0 || ps2.i[ik] === 1) np2.i[ik | 0] = ps2.i[ik]; } }
   for (k in (ed.taps || {})) if (isFinite(ed.taps[k])) E.taps[String(k).slice(0, 24)] = Math.min(9, ed.taps[k] | 0);
   for (k in (ed.moved || {})) if (world.buildings[k] && Array.isArray(ed.moved[k])) E.moved[k] = ed.moved[k].slice(0, 120).map(function(v){ return v | 0; });
-  for (k in (ed.blocks || {})) if (world.buildings[k] && ed.blocks[k]){ E.blocks[k] = {}; for (var bk in ed.blocks[k]){ var bv = ed.blocks[k][bk]; if (bv && MODELS[bv.m]) E.blocks[k][bk | 0] = {m:String(bv.m), hp:Math.min(80, +bv.hp || 60), s:bv.s < 0 ? -1 : 1}; } }
+  for (k in (ed.blocks || {})) if (world.buildings[k] && ed.blocks[k]){ E.blocks[k] = {}; for (var bk in ed.blocks[k]){ var bv = ed.blocks[k][bk]; if (bv && bv.br && (bk | 0) === -1) E.blocks[k][-1] = {m:'', br:1, hp:Math.min(90, +bv.hp || 90), s:1}; else if (bv && MODELS[bv.m]) E.blocks[k][bk | 0] = {m:String(bv.m), hp:Math.min(80, +bv.hp || 60), s:bv.s < 0 ? -1 : 1}; } }
   if (ed.truck && typeof ed.truck === 'object'){ TJOBS.forEach(function(j){ if (ed.truck.p && ed.truck.p[j[0]]) E.truck.p[j[0]] = 1; }); E.truck.away = ed.truck.away ? 1 : 0; }
   E.placed = []; (Array.isArray(ed.placed) ? ed.placed : []).slice(0, 80).forEach(function(q){ if (q && FURN[q.k] && isFinite(q.x) && isFinite(q.y)) E.placed.push({id:String(q.id).slice(0, 30), k:String(q.k), x:+q.x, y:+q.y, yaw:+q.yaw || 0, hp:Math.max(1, Math.min(40, +q.hp || 40))}); });
   E.boots = {}; for (k in (ed.boots || {})) E.boots[String(k).slice(0, 24)] = 1;
@@ -5826,6 +5827,7 @@ function applyEdit(e){
   else if (e.a === 'unplace'){ E.placed = (E.placed || []).filter(function(q){ return q.id !== e.id; }); rebuildWalls(); }
   else if (e.a === 'boot' && typeof e.id === 'string'){ (E.boots || (E.boots = {}))[e.id.slice(0, 24)] = 1; }
   else if (e.a === 'unbench'){ E.benches = (E.benches || []).filter(function(q){ return q.id !== e.id; }); }
+  else if (e.a === 'brace' && b && b.door){ var bl2 = E.blocks[b.id] || (E.blocks[b.id] = {}); bl2[-1] = {m:'', br:1, hp:90, s:1}; b.bar = b.ibar = null; }
   else if (e.a === 'unblock' && b){ if (E.blocks[b.id]) delete E.blocks[b.id][e.k | 0]; b.bar = b.ibar = null; }
   else if (e.a === 'gen' && e.g && isFinite(e.g.x) && isFinite(e.g.y) && E.gens.length < 30){ E.gens.push({gen:true, name:'generator', id:String(e.g.id).slice(0, 24), x:+e.g.x, y:+e.g.y, b:e.g.b | 0, fuel:Math.max(0, Math.min(36000, +e.g.fuel || 0)), on:e.g.on ? 1 : 0}); }
   else if (e.a === 'genset'){ for (i = 0; i < E.gens.length; i++) if (E.gens[i].id === e.id){ E.gens[i].fuel = Math.max(0, Math.min(36000, +e.fuel || 0)); E.gens[i].on = e.on ? 1 : 0; break; } }
@@ -5870,6 +5872,12 @@ function buildAct(a, pos){
   } else if (a === 'unwall'){
     var bw = null, bd = 3.5; world.edits.walls.forEach(function(w){ var d = Math.hypot(w.x - P.x, w.y - P.y); if (d < bd){ bd = d; bw = w; } });
     if (!bw){ toast('No wall section within reach.', 2.5); return; } inv.wood += 1; doEdit({a:'unwall', id:bw.id});
+  } else if (a === 'brace'){   /* 0.78: a bar across the inside of the front door; aliens must break it (90) before the door gives */
+    var bb2 = P.inside; if (!bb2 || !bb2.door){ toast('Stand inside the building whose door you want to brace.', 2.8); return; }
+    if (blockOf(bb2, -1)){ toast('That door is already blocked.', 2.5); return; }
+    if (Math.hypot(bb2.door.x - P.x, bb2.door.y - P.y) > 6){ toast('Stand near the front door.', 2.5); return; }
+    if (inv.wood < 3 || inv.scrap < 2){ toast('A door brace needs 3 wood and 2 scrap.', 2.8); return; }
+    inv.wood -= 3; inv.scrap -= 2; setPort(bb2, -1, 0); doEdit({a:'brace', b:bb2.id}); sfx('wood_hit', P.x, P.y, 0.9, 0.7); makeNoise(P.x, P.y, 8); addXp('build', 1); feed('Door braced from inside. Press E on it to take the bar down.', ITEMS.wood[1]); updateHud();
   } else if (a === 'tpatch'){
     var pb = null, pd = 4, B2 = world.edits.breach || {}, bid;
     for (bid in B2){ var bb = world.buildings[bid]; if (!bb) continue; B2[bid].forEach(function(k){ var q = k*4, sg = bb.segs0, d; if (k >= 10000){ var lvk = Math.floor((k - 10000)/1000), LV2 = bb.int && bb.int.lv && bb.int.lv[lvk], iq = ((k - 10000)%1000)*4; if (!LV2 || !LV2.iw) return; sg = LV2.iw; q = iq; } if (!sg) return; d = segDist(P.x, P.y, sg[q], sg[q+1], sg[q+2], sg[q+3]); if (d < pd){ pd = d; pb = {b:bb, k:k}; } }); }
@@ -6111,7 +6119,7 @@ function renderBuild(){
   var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' || a === 'tpatch' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
     survPanel() +
-    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close torn-open walls of the nearest building', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
+    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('brace', 'Door brace', '3 wood, 2 scrap. A bar across the inside of the front door; aliens have to break it. Build from inside') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close torn-open walls of the nearest building', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 15 m of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
