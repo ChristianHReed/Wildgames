@@ -430,7 +430,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.89.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.89.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -453,7 +453,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.89.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.89.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -6622,7 +6622,8 @@ var VMASS = {car:1.3, truck:3};
 /* 0.88: fuel is metres of range. A tank holds 300 to 400 miles; a fuel can is 100 miles. Cars lying around hold a random amount: a few empty, most a fifth to three quarters, very few full */
 /* the game speaks in inches, feet and miles; the map and physics stay in metres */
 function dist(m, rough){ var ft = m/0.3048; if (ft < 3) return Math.max(1, Math.round(ft*12)) + ' in'; if (m < 800) return (rough ? Math.round(ft/10)*10 : Math.round(ft)) + ' ft'; var mi = m/1609.34; return (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + ' mi'; }
-var MILE = 1609.34, CAN_M = 100*MILE, TANK = {sedan:380, hatch:400, suv:330, van:300, taxi:360, police:340, truck:350}, TOPSPD = {sedan:30, hatch:28, suv:27, van:24, taxi:30, police:36, truck:21};
+var MILE = 1609.34, CAN_M = 100*MILE, TANK = {sedan:380, hatch:400, suv:330, van:300, taxi:360, police:340, truck:350}, TOPSPD = {hatch:34, sedan:31, taxi:30, police:36, suv:26, van:22, truck:20}, WEAK = {hatch:1.4, sedan:1, taxi:1, police:0.9, suv:0.75, van:0.65, truck:0.55}, ACCEL = {hatch:12.5, sedan:11, taxi:11, police:13, suv:9.5, van:8, truck:7};   /* small cars are quicker and faster but give way sooner (WEAK scales crash damage) */
+function vWeak(V){ return WEAK[V.kind === 'truck' ? 'truck' : baseKind(carKind(V))] || 1; }
 function baseKind(k){ return String(k || 'sedan').replace(/_(wreck|burnt)$/, ''); }
 function tankM(v){ return (TANK[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 350)*MILE; }
 function fuelRoll(kind, a, b){ var u = hash(a, b, 41), f = u < 0.14 ? hash(a, b, 42)*0.03 : u < 0.96 ? 0.04 + Math.pow(hash(a, b, 43), 1.6)*0.7 : 0.9 + hash(a, b, 44)*0.1; return Math.round((TANK[kind] || 350)*MILE*f*(0.92 + hash(a, b, 45)*0.16)); }
@@ -6634,14 +6635,14 @@ function vehBash(V, mx, my, dt){
     var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0) return; if (n < bd){ bd = n; best = w; bk = k; } });
   if (!best){   /* 0.69: a town building's wall */
     var tw = twNear(fx, fy, 1.0, 0); if (!tw) return; var mass0 = V.kind === 'truck' ? VMASS.truck : VMASS.car, E0 = mass0*spd*spd/12, hp1 = BWHP[tw.b.id + ':' + tw.k] === undefined ? bwMax(tw.b, tw.k) : BWHP[tw.b.id + ':' + tw.k];
-    V.bashT = time + 0.35; crashSnd(spd, tw.cx, tw.cy); V.hp = Math.max(0, vhp(V) - Math.min(40, Math.min(E0, hp1)*0.9));
+    V.bashT = time + 0.35; crashSnd(spd, tw.cx, tw.cy); V.hp = Math.max(0, vhp(V) - Math.min(40, Math.min(E0, hp1)*0.9)*vWeak(V));
     if (breachHurt(tw.b, tw.k, E0*2.5, tw.cx, tw.cy)) feed('Smashed through the wall of the building', '#e8b27a'); else sfx('metal', tw.cx, tw.cy, 0.9, 0.5);
     fxAdd('effects.crash_burst', tw.cx, tw.cy, groundAt(tw.cx, tw.cy), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. A car part from the Build menu repair will get it going.', 5); }
     if (spd > 12 && E0 > hp1){ P.hp -= 3; P.cause = 'a car crash'; } updateHud(); return;
   }
   var M = wallMat(best), by2 = wallBays(best), mass = V.kind === 'truck' ? VMASS.truck : VMASS.car, E = mass*spd*spd/12, f = M === WMATS.concrete ? 1.2 : M === WMATS.steel ? 1.2 : 0.8, hp0 = by2[bk];
   V.bashT = time + 0.35; crashSnd(spd, best.x, best.y); var pay = Math.min(60, Math.min(E, hp0)*f*(M === WMATS.concrete ? 1.2 : 1));
-  V.hp = Math.max(0, vhp(V) - pay);
+  V.hp = Math.max(0, vhp(V) - pay*vWeak(V));
   if (E >= hp0){ by2[bk] = 0; emit({k:'edit', e:{a:'wbay', id:best.id, i:bk, v:0}}); rebuildWalls(); sfx('plank', best.x, best.y, 1, 0.7); feed('Smashed through the wall', '#e8b27a'); }
   else { wallHurt(best, bk, E); sfx('metal', best.x, best.y, 0.9, 0.5); }
   fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60;  toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. A part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
@@ -6668,7 +6669,7 @@ function carObst(V, ux, uy){
 function carDrive(V, dt, thr, str, hb){
   if (V.hd === undefined){ V.hd = V.yaw; V.vs = 0; V.sw = 0; }
   var top = vehSpeed(dt), vs = V.vs || 0, vs0 = vs, acc = 0, sg = vs > 0 ? 1 : vs < 0 ? -1 : 0;
-  if (thr > 0.05){ acc = vs < -0.3 ? 16 : (top > 0 ? 11*Math.max(0, 1 - vs/top) : 0); }
+  if (thr > 0.05){ acc = vs < -0.3 ? 16 : (top > 0 ? (ACCEL[V.kind === 'truck' ? 'truck' : baseKind(carKind(V))] || 10)*Math.max(0, 1 - vs/top) : 0); }
   else if (thr < -0.05){ acc = vs > 0.3 ? -16 : (vs > -Math.max(2, top*0.28) && top > 0 ? -5 : 0); }
   acc -= sg*(1.1 + 0.0035*vs*vs + (thr > -0.05 && thr < 0.05 ? 1.6 : 0)); if (hb) acc -= sg*22;
   vs += acc*dt; if (vs0*vs < 0 && (hb || Math.abs(thr) < 0.05)) vs = 0; if (Math.abs(thr) < 0.05 && Math.abs(vs) < 0.2) vs = 0;
@@ -6683,7 +6684,7 @@ function carDrive(V, dt, thr, str, hb){
     var oh = carObst(V, ux, uy), moved = Math.hypot(P.x - x0, P.y - y0);
     if ((moved < Math.abs(d)*0.55 || oh > 0.04) && Math.abs(vs) > 2.5 && time > (V.crT || 0)){
       var im = Math.abs(vs); V.crT = time + 0.4;
-      if (im > 6){ V.hp = Math.max(0, vhp(V) - (im - 5)*1.3); crashSnd(im, P.x + ux*1.7, P.y + uy*1.7); fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 30);
+      if (im > 6){ V.hp = Math.max(0, vhp(V) - (im - 5)*1.3*vWeak(V)); crashSnd(im, P.x + ux*1.7, P.y + uy*1.7); fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 30);
         if (im > 16){ P.hp -= (im - 16)*0.9; P.cause = 'a car crash'; }
         if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. A car part from the Build menu repair will get it going.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
         updateHud(); }
