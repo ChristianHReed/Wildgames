@@ -393,7 +393,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.81.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.82.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -401,7 +401,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.81.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.82.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -807,7 +807,7 @@ function buildWorld(raw, name){
   var proj = function(cs){ var o = []; for (var q = 0; q < cs.length; q++) o.push((cs[q][0]-lon0)*kx, -(cs[q][1]-lat0)*ky); return o; };
   var w = {name:name, buildings:[], roads:[], areas:[], trees:[], cut:{}, crates:[], grid:new Map(),
     minx:(a-lon0)*kx, maxx:(b-lon0)*kx, miny:-(d-lat0)*ky, maxy:-(c-lat0)*ky,
-    start:raw.spawn ? {x:(raw.spawn[0]-lon0)*kx, y:-(raw.spawn[1]-lat0)*ky} : {x:0, y:0}};
+    start:raw.spawn ? {x:(raw.spawn[0]-lon0)*kx, y:-(raw.spawn[1]-lat0)*ky} : {x:0, y:0}, pin:!!raw.pin};
   w.geo = {lon0:lon0, lat0:lat0, kx:kx, ky:ky}; w.core = Z ? {x0:(Z.w - lon0)*kx, x1:(Z.e - lon0)*kx, y0:-(Z.n - lat0)*ky, y1:-(Z.s - lat0)*ky} : null;
   buildHeights(w, raw, lon0, lat0, kx, ky); w.tcls = decodeCls(raw.tclass, lon0, lat0, kx, ky);
   raw.ways.forEach(function(way){
@@ -3938,7 +3938,7 @@ function pickLot(){
   cands.forEach(function(cd){
     var b = cd[0], d = cd[1], dr = b.door, ox = -dr.nx, oy = -dr.ny, ux = -oy, uy = ox, cx = b.cx + ox*6, cy = b.cy + oy*6, z = {x:cx, y:cy, ux:ux, uy:uy, hw:LOT_W, hd:LOT_D};
     var cr = zoneCorners(z), ok = cr.every(function(p){ return p[0] > bx.x0 + 8 && p[0] < bx.x1 - 8 && p[1] > bx.y0 + 8 && p[1] < bx.y1 - 8; }); if (!ok) return;
-    var sc = (maxD - d)*0.04 + Math.max(0, b.area - 150)*0.5 + (b.area < 80 ? 40 : 0), inz = function(x, y, e){ var l = zoneLocal(z, x, y); return Math.abs(l[0]) < LOT_W + e && Math.abs(l[1]) < LOT_D + e; };
+    var sc = (w.pin ? d*2.5 : (maxD - d)*0.04) + Math.max(0, b.area - 150)*0.5 + (b.area < 80 ? 40 : 0), inz = function(x, y, e){ var l = zoneLocal(z, x, y); return Math.abs(l[0]) < LOT_W + e && Math.abs(l[1]) < LOT_D + e; };
     w.roads.forEach(function(r){ if (r.kind === 'path') return; var p = r.pts; for (var q = 0; q + 3 < p.length; q += 2){ var L2 = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), n = Math.max(1, Math.ceil(L2/3)); for (var s2 = 0; s2 <= n; s2++){ var x = p[q] + (p[q+2] - p[q])*s2/n, y = p[q+1] + (p[q+3] - p[q+1])*s2/n; if (inz(x, y, r.w/2)){ sc += r.kind === 'water' ? 400 : 60; return; } } } });
     w.buildings.forEach(function(o){ if (o !== b && !o.gone && inz(o.cx, o.cy, 6)) sc += o.area > 400 ? 120 : 12; });
     if (inWater(cx, cy, LOT_W)) sc += 400;
@@ -7083,7 +7083,8 @@ function toLL(x, y){ var g = world.geo; return [g.lon0 + x/g.kx, g.lat0 - y/g.ky
 /* the home square holds the supply chest and the truck: for Springfield it is the square just south-east of downtown (it used to be the far south-east corner of the map); other regions use the square they were started in */
 function homeZone(R){ if (!R.builtin) return [0, 0]; if (R.home) return R.home; if (R.id === 'springfield-mo' && R.have && R.have['1:-1']) return R.home = [1, -1];   /* 0.50.2: the home is on the south-east side of the city itself, one square east and one south of downtown, not out at the edge of the map */
   var best = null, bs = -1e9; (R.squares || []).forEach(function(q){ if (q[2] < 60) return; var sc = q[0] - q[1]; if (sc > bs){ bs = sc; best = [q[0], q[1]]; } }); return R.home = best || [0, 0]; }
-function homeLL(R){ var h = homeZone(R); return {lat:R.lat + h[1]*R.dLat, lon:R.lon + h[0]*R.dLon, yaw:0}; }
+var SEQUIOTA = {lat:37.147902, lon:-93.238224};   /* Sequiota Park, 3500 S Lone Pine Ave: the start of a new game (0.82) */
+function homeLL(R){ var h = homeZone(R); if (R.id === 'springfield-mo' && h[0] === 1 && h[1] === -1) return {lat:SEQUIOTA.lat, lon:SEQUIOTA.lon, yaw:0}; return {lat:R.lat + h[1]*R.dLat, lon:R.lon + h[0]*R.dLon, yaw:0}; }
 function isHome(w){ if (!w.core) return true; if (!region) return /E0 N0$/.test(w.name); var h = homeZone(region); return w.name === zoneName(region, h[0], h[1]); }
 function zoneOf(R, lat, lon){ return [Math.floor((lon - R.lon)/R.dLon + 0.5), Math.floor((lat - R.lat)/R.dLat + 0.5)]; }
 function zoneBox(R, i, j){ return {w:R.lon + (i - 0.5)*R.dLon, e:R.lon + (i + 0.5)*R.dLon, s:R.lat + (j - 0.5)*R.dLat, n:R.lat + (j + 0.5)*R.dLat}; }
@@ -7115,7 +7116,7 @@ async function enterZone(R, lat, lon, yaw, carry, atSafe){
   var ij = zoneOf(R, lat, lon), text = R.builtin ? await builtinSquare(ij[0], ij[1]) : await zoneGet(R, ij[0], ij[1]);
   if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1]); }
   var raw = parseText(text); if (R.builtin) raw.name = '';   /* each square keeps its own save, named by the square */
-  raw.spawn = [lon, lat]; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
+  raw.spawn = [lon, lat]; raw.pin = R.id === 'springfield-mo' && Math.abs(lat - SEQUIOTA.lat) < 1e-6 && Math.abs(lon - SEQUIOTA.lon) < 1e-6; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
   mapSrc = {text:text}; inRun = false; region = R; await enter(raw, zoneName(R, ij[0], ij[1])); if (!inRun) throw new Error('that part of the map could not be loaded');
   region = R;
   var g = world.geo, x = (lon - g.lon0)*g.kx, y = -(lat - g.lat0)*g.ky; if (circ(x, y, 0.5) && !buildingAt(x, y)){ x = world.spawn.x; y = world.spawn.y; }
