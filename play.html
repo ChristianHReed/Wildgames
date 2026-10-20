@@ -390,7 +390,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.68.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.69.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -398,7 +398,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.68.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.69.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1496,6 +1496,7 @@ function shell(b, m, lm){
       m.quad(ax + ox2*co, 0, az + oz2*co, ax + dx*cw0*2 + ox2*co, 0, az + dz*cw0*2 + oz2*co, ax + dx*cw0*2 + ox2*co, Ht, az + dz*cw0*2 + oz2*co, ax + ox2*co, Ht, az + oz2*co, cc0, 255);
       m.quad(ax + pox*co, 0, az + poz*co, ax - pdx*cw0*2 + pox*co, 0, az - pdz*cw0*2 + poz*co, ax - pdx*cw0*2 + pox*co, Ht, az - pdz*cw0*2 + poz*co, ax + pox*co, Ht, az + poz*co, cc0, 255); }
   }
+  b.segs0 = b.segs; breachApply(b, m, lhg);   /* 0.69: pieces of the outer wall that have been torn open */
   /* the door: a casing round it, and over the entrance of glass-fronted buildings a canopy */
   if (b.door && !ST.porch && !K.awn){ var dr0 = b.door, dox = -dr0.nx, doz = -dr0.ny, tx0 = -doz, tz0 = dox, dc0 = ST.mat === 'metal' ? [96,100,104] : [234,230,220];
     for (var sd0 = -1; sd0 <= 1; sd0 += 2) m.box(dr0.x + tx0*0.72*sd0 + dox*0.03, 1.15, dr0.y + tz0*0.72*sd0 + doz*0.03, [tx0*0.07, 0, tz0*0.07], [0, 1.15, 0], [dox*0.05, 0, doz*0.05], dc0);
@@ -2722,7 +2723,7 @@ function startRun(ws, cs){
     fires = ws.fires || []; lamps = (ws.lamps || []).map(function(l){ return {lamp:true, name:'lantern', x:+l.x, y:+l.y, life:+l.life || 0}; }); cades = ws.cades || []; packs = ws.packs || []; worldPlayers = ws.players || {};
     var mine = worldPlayers[charSlug()]; if (mine && !toSafe){ P.x = +mine.x; P.y = +mine.y; P.yaw = +mine.yaw || 0; }
   }
-  w.edits = {col:{}, gone:{}, walls:[], beds:{}, bases:{}, plant:{s:0}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, junkv:{}, blocks:{}, gens:[], truck:{p:{}, away:0}, colls:[], plots:[], benches:[], boots:{}}; w.wallSegs = [];
+  w.edits = {breach:{}, col:{}, gone:{}, walls:[], beds:{}, bases:{}, plant:{s:0}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, junkv:{}, blocks:{}, gens:[], truck:{p:{}, away:0}, colls:[], plots:[], benches:[], boots:{}}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
   pickSafe(!resumed && net.role !== 'guest', toSafe || !(resumed && worldPlayers[charSlug()]));
@@ -4182,7 +4183,7 @@ function update(dt){
         var cd = cades[c], bx = z.x - cd.x, by = z.y - cd.y, bl = Math.hypot(bx, by) || 0.001, br = 0.85 + A.r;
         if (bl < br && !z.cl){ z.x = cd.x + bx/bl*br; z.y = cd.y + by/bl*br; cd.hp -= dt*(z.k === 2 ? 200 : z.k === 1 ? 12 : 3); if (cd.hp <= 0){ cades.splice(c, 1); cadesChanged = true; } }
       }
-      if (!z.cl && world.edits.walls.length && (T || z.st >= 1 || z.hunt || z.k === 2)) wallsAttack(z, A, dt);   /* 0.56: they tear a way through, one bay at a time */
+      if (!z.cl && (T || z.st >= 1 || z.hunt || z.k === 2)){ if (world.edits.walls.length || (world.edits.placed || []).length) wallsAttack(z, A, dt); townAttack(z, A, dt); }   /* 0.56: they tear a way through, one bay at a time */
       if (z.cl){   /* over a fence, wall or barricade it rides up on top of it */
         var on = false, ws9 = world.wallSegs; for (var w9 = 0; w9 < ws9.length && !on; w9 += 4) if (segDist(z.x, z.y, ws9[w9], ws9[w9+1], ws9[w9+2], ws9[w9+3]) < 0.55) on = true;
         for (var c9 = 0; c9 < cades.length && !on; c9++) if (Math.hypot(cades[c9].x - z.x, cades[c9].y - z.y) < 1.2) on = true;
@@ -5557,6 +5558,51 @@ function rebuildWalls(){ var s = world.wallSegs = (world.fenceSegs || []).slice(
 /* damage to one bay; the host works out the damage and sends a bay's new health to everyone whenever its look changes */
 function wallHurt(w, k, d){ var by = wallBays(w), old = by[k]; if (old <= 0) return; by[k] = Math.max(0, old - d); if (bayState(by[k], wallMat(w).hp) !== bayState(old, wallMat(w).hp)){ if (by[k] <= 0) rebuildWalls(); emit({k:'edit', e:{a:'wbay', id:w.id, i:k, v:Math.round(by[k])}}); sfx(by[k] <= 0 ? 'plank' : 'wood_hit', w.x, w.y, 0.7, 0.9);
     var wm9 = wallMat(w), fxp = wm9 === WMATS.steel ? 'effects.metal_sparks' : wm9 === WMATS.concrete ? 'effects.concrete_dust' : 'effects.wood_chips', fxo = -1.25 + 0.5*k; fxAdd(fxp, w.x - Math.sin(w.yaw)*fxo, w.y + Math.cos(w.yaw)*fxo, groundAt(w.x, w.y), {life:0.7, s0:0.7, s1:1.2, up:1.2}); } }
+
+/* 0.69: town buildings. Each solid stretch of an outer wall (a piece of b.segs0) has hit points by material; aliens, cars and tools can tear one open.
+   Torn pieces are saved in edits.breach[buildingId] = [piece numbers]; a patch from the Build menu puts one back. */
+var BWHP = {};
+function bwMat(b){ var m = 'siding'; try { m = bstyle(b).mat || 'siding'; } catch (e) {} return m; }
+function bwMax(b){ var m = bwMat(b); return m === 'brick' || m === 'stone' ? 34 : m === 'metal' ? 24 : 16; }
+function bwRes(b){ var m = bwMat(b); return m === 'brick' || m === 'stone' ? 0.4 : m === 'metal' ? 0.55 : 1; }
+function bwDown(b, k){ var L = world.edits.breach && world.edits.breach[b.id]; return !!L && L.indexOf(k) >= 0; }
+function breachApply(b, m, lhg){
+  var L = world.edits && world.edits.breach && world.edits.breach[b.id], s0 = b.segs0; if (!L || !L.length || !s0) return;
+  var keep = [], q, h = Math.min(lhg || 3, 2.7);
+  for (q = 0; q < s0.length; q += 4){
+    if (L.indexOf(q/4) < 0){ keep.push(s0[q], s0[q+1], s0[q+2], s0[q+3]); continue; }
+    if (m === NULLM) continue;
+    var x0 = s0[q], z0 = s0[q+1], x1 = s0[q+2], z1 = s0[q+3], l = Math.hypot(x1 - x0, z1 - z0) || 1, dx = (x1 - x0)/l, dz = (z1 - z0)/l, ox = dz, oz = -dx, dk = [22,20,18], r;
+    for (var sd = -1; sd <= 1; sd += 2){
+      var e = 0.05*sd, ax = x0 + ox*e, az = z0 + oz*e, bx = x1 + ox*e, bz = z1 + oz*e;
+      if (sd > 0) m.quad(ax, 0.02, az, bx, 0.02, bz, bx, h, bz, ax, h, az, dk, 255); else m.quad(bx, 0.02, bz, ax, 0.02, az, ax, h, az, bx, h, bz, dk, 255);
+    }
+    for (var u = 0; u < 5; u++){ r = hash(b.id, q + u, 77); var t = 0.15 + 0.7*hash(b.id, q + u, 78), cx = x0 + dx*l*t + ox*(0.3 + 0.5*r), cz = z0 + dz*l*t + oz*(0.3 + 0.5*r), hh = 0.12 + 0.2*hash(b.id, q + u, 79);
+      m.box(cx, hh/2, cz, 0.18 + 0.2*r, hh, 0.16 + 0.18*r, u % 2 ? [120,112,102] : [150,140,126]); }
+  }
+  b.segs = keep;
+}
+function twNear(x, y, r){   /* the nearest solid piece of any town wall within r: {b, k, d, cx, cy} */
+  var best = null, cx0 = Math.floor(x/G), cy0 = Math.floor(y/G), bd = r;
+  for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){
+    var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
+    for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (b.gone || !b.segs0 || x < b.minx - r || x > b.maxx + r || y < b.miny - r || y > b.maxy + r) continue;
+      var s = b.segs0; for (var q = 0; q < s.length; q += 4){ if (Math.hypot(s[q+2] - s[q], s[q+3] - s[q+1]) < 0.7 || bwDown(b, q/4)) continue;
+        var d = segDist(x, y, s[q], s[q+1], s[q+2], s[q+3]); if (d < bd){ bd = d; var sx = s[q+2] - s[q], sy = s[q+3] - s[q+1], tt = Math.max(0, Math.min(1, ((x - s[q])*sx + (y - s[q+1])*sy)/(sx*sx + sy*sy))); best = {b:b, k:q/4, d:d, cx:s[q] + sx*tt, cy:s[q+1] + sy*tt}; } } } }
+  return best;
+}
+function breachSet(b, k, on){ var E = world.edits; E.breach = E.breach || {}; var L = E.breach[b.id] = E.breach[b.id] || [], i = L.indexOf(k);
+  if (on && i < 0) L.push(k); else if (!on && i >= 0) L.splice(i, 1); if (!L.length) delete E.breach[b.id];
+  delete BWHP[b.id + ':' + k]; dirtyChunk(b); if (b.int) {} }
+function breachHurt(b, k, d, x, y){
+  var key = b.id + ':' + k, hp = BWHP[key] === undefined ? bwMax(b) : BWHP[key]; hp -= d*bwRes(b); BWHP[key] = hp;
+  if (hp <= 0){ doEdit({a:'breach', b:b.id, i:k, on:1}); sfx('plank', x, y, 1, 0.6); fxAdd('effects.wood_chips', x, y, groundAt(x, y), {life:0.9, s0:0.8, s1:1.2, rise:0.3, up:0.6}); return true; }
+  return false;
+}
+function townAttack(z, A, dt){
+  if (!P.inside || z.k === 3) return; var t = twNear(z.x, z.y, A.r + 0.7); if (!t || t.b !== P.inside) return;
+  if (Math.hypot(P.x - z.x, P.y - z.y) > 30) return; breachHurt(t.b, t.k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09), t.cx, t.cy);
+}
 function wallsAttack(z, A, dt){ var PF = world.edits.placed || []; for (var pi = 0; pi < PF.length; pi++){ var pq = PF[pi]; if (Math.abs(pq.x - z.x) > 3.2 || Math.abs(pq.y - z.y) > 3.2) continue; var psz = pfSize(pq.k); if (Math.hypot(pq.x - z.x, pq.y - z.y) > Math.max(psz[0], psz[1]) + A.r + 0.5) continue; pq.hp -= A.dmg*dt*(z.k === 2 ? 0.5 : 0.09); if (pq.hp <= 0){ var pid = pq.id; world.edits.placed = PF.filter(function(q){ return q.id !== pid; }); rebuildWalls(); emit({k:'edit', e:{a:'unplace', id:pid}}); sfx('plank', pq.x, pq.y, 0.8, 0.8); } return; }
   var W = world.edits.walls; for (var i = 0; i < W.length; i++){ var w = W[i]; if (Math.abs(w.x - z.x) > 3.2 || Math.abs(w.y - z.y) > 3.2) continue; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (z.x - w.x)*dx + (z.y - w.y)*dy, n = Math.abs(-(z.x - w.x)*dy + (z.y - w.y)*dx); if (Math.abs(u) > 1.6 || n > A.r + 0.5) continue; var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0 && k > 0 && by[k-1] > 0 && u < -1.5 + k*0.5 + 0.25) k--; else if (by[k] <= 0 && k < 5 && by[k+1] > 0) k++; if (by[k] <= 0) continue; wallHurt(w, k, A.dmg*dt*(z.k === 2 ? 0.5 : 0.09)*wallMat(w).res); return; } }
 function setGone(b, on){ b.gone = !!on; if (b.int){ freeInt(b); b.int = null; var i = loaded.indexOf(b); if (i >= 0) loaded.splice(i, 1); } if (on) delete world.nests[b.id]; dirtyChunk(b); }
@@ -5571,6 +5617,7 @@ function loadEdits(ed){
   for (k in (ed.col || {})){ var b = world.buildings[k]; if (b && okCol(ed.col[k], '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[k] = ed.col[k]; } }
   for (k in (ed.gone || {})) if (world.buildings[k]){ E.gone[k] = 1; world.buildings[k].gone = true; }
   (ed.walls || []).slice(0, 400).forEach(function(w){ var nw = {id:String(w.id), x:+w.x, y:+w.y, yaw:+w.yaw || 0}; nw.m = WMATS[w.m] ? w.m : 'wood'; if (Array.isArray(w.bays) && w.bays.length === 6) nw.bays = w.bays.map(function(v){ return Math.max(0, Math.min(12, +v || 0)); }); E.walls.push(nw); });
+  E.breach = {}; for (k in (ed.breach || {})) if (world.buildings[k] && Array.isArray(ed.breach[k])){ var bl2 = ed.breach[k].slice(0, 40).map(function(v){ return v | 0; }).filter(function(v){ return v >= 0 && v < 400; }); if (bl2.length) E.breach[k] = bl2; }
   E.subs = {}; for (k in (ed.subs || {})) E.subs[String(k).slice(0, 20)] = 1;
   E.cboxes = []; (Array.isArray(ed.cboxes) ? ed.cboxes : []).slice(0, 40).forEach(function(c){ if (c && isFinite(c.x) && isFinite(c.y)) E.cboxes.push({cboxC:true, id:String(c.id).slice(0, 30), x:+c.x, y:+c.y, b:c.b | 0, bat:Math.max(0, Math.min(24, +c.bat || 0)), trip:c.trip ? 1 : 0}); });
   E.solars = []; (Array.isArray(ed.solars) ? ed.solars : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.solars.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
@@ -5597,6 +5644,7 @@ function applyEdit(e){
   if (e.a === 'col' && b && okCol(e.c, '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[b.id] = e.c; dirtyChunk(b); }
   else if (e.a === 'gone' && b){ E.gone[b.id] = 1; setGone(b, true); }
   else if (e.a === 'wall' && e.w && E.walls.length < 400){ E.walls.push({id:String(e.w.id), x:+e.w.x, y:+e.w.y, yaw:+e.w.yaw || 0, m:WMATS[e.w.m] ? e.w.m : 'wood'}); rebuildWalls(); }
+  else if (e.a === 'breach' && b){ breachSet(b, e.i | 0, !!e.on); }
   else if (e.a === 'wbay'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ var wb = wallBays(E.walls[i]); if ((e.i | 0) >= 0 && (e.i | 0) < 6) wb[e.i | 0] = Math.max(0, Math.min(12, +e.v || 0)); rebuildWalls(); break; } }
   else if (e.a === 'unwall'){ for (i = 0; i < E.walls.length; i++) if (E.walls[i].id === e.id){ E.walls.splice(i, 1); break; } rebuildWalls(); }
   else if (e.a === 'sub' && typeof e.id === 'string'){ (E.subs || (E.subs = {}))[e.id.slice(0, 20)] = 1; }
@@ -5656,6 +5704,15 @@ function buildAct(a, pos){
   } else if (a === 'unwall'){
     var bw = null, bd = 3.5; world.edits.walls.forEach(function(w){ var d = Math.hypot(w.x - P.x, w.y - P.y); if (d < bd){ bd = d; bw = w; } });
     if (!bw){ toast('No wall section within reach.', 2.5); return; } inv.wood += 1; doEdit({a:'unwall', id:bw.id});
+  } else if (a === 'tpatch'){
+    var pb = null, pd = 4, B2 = world.edits.breach || {}, bid;
+    for (bid in B2){ var bb = world.buildings[bid]; if (!bb || !bb.segs0) continue; B2[bid].forEach(function(k){ var q = k*4, sg = bb.segs0, d = segDist(P.x, P.y, sg[q], sg[q+1], sg[q+2], sg[q+3]); if (d < pd){ pd = d; pb = {b:bb, k:k}; } }); }
+    if (!pb){ toast('No torn-open wall within reach.', 2.5); return; }
+    var pm = bwMat(pb.b);
+    if (pm === 'brick' || pm === 'stone'){ if ((inv.chunk || 0) < 2){ toast('Closing a brick wall takes 2 concrete chunks.', 3); return; } inv.chunk -= 2; }
+    else if (pm === 'metal'){ if (inv.scrap < 3){ toast('Closing a metal wall takes 3 scrap.', 3); return; } inv.scrap -= 3; }
+    else { if (inv.wood < 3){ toast('Closing a timber wall takes 3 wood.', 3); return; } inv.wood -= 3; }
+    doEdit({a:'breach', b:pb.b.id, i:pb.k, on:0}); sfx('plank', P.x, P.y, 0.9); makeNoise(P.x, P.y, 14); toast('Wall closed.', 2); updateHud();
   } else if (a === 'vrep'){
     var rv = P.veh, rd = 6; if (!rv) world.vehicles.forEach(function(o){ if (!o.t) return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < rd){ rd = d; rv = o; } });
     if (!rv){ toast('No car or truck within reach.', 2.5); return; } if (vhp(rv) >= 100){ toast('It is already sound.', 2.5); return; }
@@ -5712,6 +5769,10 @@ function salvInfo(o){
     if (conc){ r.y.chunk = stt === 'whole' ? 2 : 1; r.need = 'a crowbar'; if (T.crowbar){ r.tool = T.crowbar; r.secs = 9; } }
     else if (steel){ r.y.scrap = 1; if (stt === 'whole') r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 3; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5; } }
     else { r.y.wood = 1; r.y.nails = stt === 'whole' ? 2 : 1; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 1.8; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 3; } } }
+  else if (o.sv === 'tw'){ var tm = bwMat(o.b); r.label = tm === 'brick' || tm === 'stone' ? 'brick wall' : tm === 'metal' ? 'metal wall' : 'timber wall'; r.mat = tm === 'metal' ? 'metal' : tm === 'brick' || tm === 'stone' ? 'stone' : 'wood';
+    if (r.mat === 'stone'){ r.y.chunk = 1; r.need = 'a crowbar'; if (T.crowbar){ r.tool = T.crowbar; r.secs = 10; } }
+    else if (r.mat === 'metal'){ r.y.scrap = 2; r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 5; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 8; } }
+    else { r.y.wood = 2; r.y.nails = 2; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 3.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 6; } } }
   else if (o.sv === 'bench'){ r.label = 'tool bench'; r.mat = 'wood'; r.y.wood = 4; r.y.scrap = 2; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 2.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 4; } }
   else { var car = !!o.t; r.label = car ? 'car' : 'bicycle'; r.mat = 'car'; r.y.scrap = car ? (o.dead === 'burnt' ? 3 : o.dead ? 5 : 6) : 2; r.need = 'a wrench or a toolkit' + (car ? '' : ', or a crowbar');
     if (T.wrench){ r.tool = T.wrench; r.secs = car ? 7 : 3; } else if (T.toolkit){ r.tool = 'kit'; r.secs = car ? 7 : 3; } else if (T.crowbar && (!car || true)){ r.tool = T.crowbar; r.secs = car ? 11 : 5; r.need = 'a wrench, a toolkit or a crowbar'; } }
@@ -5726,6 +5787,7 @@ function findSalvage(){
   if (!P.inside) (world.edits.walls || []).forEach(function(w){ if (Math.abs(w.x - P.x) > 4 || Math.abs(w.y - P.y) > 4) return; var by = wallBays(w), ddx = -Math.sin(w.yaw), ddy = Math.cos(w.yaw);
     for (var k = 0; k < 6; k++){ if (by[k] <= 0) continue; var key = w.id + ':' + k, o3 = BAYO[key] || (BAYO[key] = {sv:'bay', w:w, k:k}); o3.x = w.x + ddx*(-1.25 + 0.5*k); o3.y = w.y + ddy*(-1.25 + 0.5*k); test(o3); } });
   if (!P.inside) for (i = 0; i < world.vehicles.length; i++){ o = world.vehicles[i]; if (o.kind !== 'truck' && o.id !== 'truck') test(o); }
+  if (!best || bd > 1.4){ var tw = twNear(P.x, P.y, 1.5); if (tw){ var key2 = 'tw' + tw.b.id + ':' + tw.k, o4 = BAYO[key2] || (BAYO[key2] = {sv:'tw'}); o4.b = tw.b; o4.k = tw.k; o4.x = tw.cx; o4.y = tw.cy; bd = 99; test(o4); } }
   return best;
 }
 var BAYO = {};
@@ -5754,6 +5816,8 @@ function doSalvage(o, inf){
     if (inf.mat === 'wood' && Math.random() < 0.5) delete g.wood; if (inf.mat === 'metal' && inf.state !== 'whole' && Math.random() < 0.4) delete g.scrap;
     by2[o.k] = 0; emit({k:'edit', e:{a:'wbay', id:o.w.id, i:o.k, v:0}}); rebuildWalls();
     if (by2.every(function(v){ return v <= 0; })) doEdit({a:'unwall', id:o.w.id});
+  } else if (o.sv === 'tw'){
+    if (bwDown(o.b, o.k)) return; for (k2 in inf.y) g[k2] = inf.y[k2]; if (inf.mat === 'wood' && Math.random() < 0.4) delete g.wood; doEdit({a:'breach', b:o.b.id, i:o.k, on:1}); makeNoise(o.x, o.y, inf.mat === 'metal' ? 22 : inf.mat === 'stone' ? 26 : 14);
   } else if (o.sv === 'bench'){ for (k2 in inf.y) g[k2] = inf.y[k2]; doEdit({a:'unbench', id:o.id});
   } else {
     for (k2 in inf.y) g[k2] = inf.y[k2];
@@ -5873,9 +5937,9 @@ function drawGhost(m){
 function renderBuild(){
   var box = el('build'); if (box.classList.contains('hidden')) return;
   var b = nearBuilding(), wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3;
-  var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
+  var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' || a === 'tpatch' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
-    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
+    '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close a torn-open building wall', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 15 m of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
     '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
@@ -6070,11 +6134,17 @@ function dismount(){
 var VMASS = {car:1.3, truck:3};
 function vhp(v){ return v.hp === undefined ? 100 : v.hp; }
 function vehBash(V, mx, my, dt){
-  if (!world.edits.walls.length || (V.bashT || 0) > time) return; var d = Math.hypot(mx, my), spd = d/dt; if (spd < 4) return;
+  if ((V.bashT || 0) > time) return; var d = Math.hypot(mx, my), spd = d/dt; if (spd < 4) return;
   var ux = mx/d, uy = my/d, fx = P.x + ux*1.7, fy = P.y + uy*1.7, best = null, bk = -1, bd = 9;
   world.edits.walls.forEach(function(w){ if (Math.abs(w.x - fx) > 3 || Math.abs(w.y - fy) > 3) return; var dx = -Math.sin(w.yaw), dy = Math.cos(w.yaw), u = (fx - w.x)*dx + (fy - w.y)*dy, n = Math.abs(-(fx - w.x)*dy + (fy - w.y)*dx); if (Math.abs(u) > 1.6 || n > 0.9) return;
     var k = Math.max(0, Math.min(5, Math.floor((u + 1.5)/0.5))), by = wallBays(w); if (by[k] <= 0) return; if (n < bd){ bd = n; best = w; bk = k; } });
-  if (!best) return;
+  if (!best){   /* 0.69: a town building's wall */
+    var tw = twNear(fx, fy, 1.0); if (!tw) return; var mass0 = V.kind === 'truck' ? VMASS.truck : VMASS.car, E0 = mass0*spd*spd/12, hp1 = BWHP[tw.b.id + ':' + tw.k] === undefined ? bwMax(tw.b) : BWHP[tw.b.id + ':' + tw.k];
+    V.bashT = time + 0.35; V.hp = Math.max(0, vhp(V) - Math.min(40, Math.min(E0, hp1)*0.9));
+    if (breachHurt(tw.b, tw.k, E0*2.5, tw.cx, tw.cy)) feed('Smashed through the wall of the building', '#e8b27a'); else sfx('metal', tw.cx, tw.cy, 0.9, 0.5);
+    fxAdd('effects.crash_burst', tw.cx, tw.cy, groundAt(tw.cx, tw.cy), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. A car part from the Build menu repair will get it going.', 5); }
+    if (spd > 12 && E0 > hp1){ P.hp -= 3; P.cause = 'a car crash'; } updateHud(); return;
+  }
   var M = wallMat(best), by2 = wallBays(best), mass = V.kind === 'truck' ? VMASS.truck : VMASS.car, E = mass*spd*spd/12, f = M === WMATS.concrete ? 1.2 : M === WMATS.steel ? 1.2 : 0.8, hp0 = by2[bk];
   V.bashT = time + 0.35; var pay = Math.min(60, Math.min(E, hp0)*f*(M === WMATS.concrete ? 1.2 : 1));
   V.hp = Math.max(0, vhp(V) - pay);
