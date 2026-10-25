@@ -2,7 +2,7 @@
 
 The AfterStreet Maps Builder (`builder.html` beside `play.html`). Owned by the map chat; the scope is `docs/MAPS_BUILDER.md`.
 
-Version 1.0.0 (25 October 2026) is the **data side of builder version 1**:
+Version 1.1.0 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
 - choose the area;
 - give it map data (upload or download);
 - build the map squares;
@@ -25,6 +25,19 @@ All are plain classic scripts, so the builder opens from a USB drive (`file://`)
 | `build.js` | One whole build (run in the worker), the builder's storage (IndexedDB `afterstreet-builder`), the 2D preview data, map-file zip writer and reader |
 | `worker.js` | Starts the worker (or runs on the page if workers are not allowed) |
 | `app.js` | The page: area, source cards, build, report, export, the flat preview map |
+| `lib/*.js` | Open-source libraries, each packed into one classic script by `tools/bundle_lib.mjs`; licences in `lib/LICENSES.md` |
+
+### Libraries (1.1.0)
+
+| Library | Licence | Used for |
+| --- | --- | --- |
+| flatbush (with flatqueue) | ISC | Spatial index for the Overture merge and for gap filling's road and land lookups. At 50 miles, gap filling dropped from 32 s to 23 s and from about 1.23 GB to 0.96 GB, with identical results |
+| polylabel (with tinyqueue) | ISC | A point surely inside each building, so L- and U-shaped buildings are matched correctly in the Overture merge |
+| fflate | MIT | Compressed map files (5 times smaller in the test); a much faster fallback when a browser has no built-in decompression |
+| hyparquet and fzstd | MIT | Reading Overture's own GeoParquet files, ZSTD-compressed as Overture publishes them |
+| earcut | ISC | In `lib/` but not loaded yet: for the 3D view and roofs |
+
+To update a library: clone it from GitHub, run `node tools/bundle_lib.mjs <name> <entry file> [dependency=path ...] --version v --repo owner/name --licence L`, and update `lib/LICENSES.md`. The packed file keeps the library's code unchanged.
 
 ## What a build does
 
@@ -33,7 +46,7 @@ All are plain classic scripts, so the builder opens from a USB drive (`file://`)
    - Pass 1 keeps the nodes inside the area plus a margin (sorted typed arrays), the tagged nodes, and the multipolygon relations.
    - Pass 2 keeps the ways.
    - Tags are filtered to the list in `gen.js` (`KEEP`), which covers everything in `docs/MAP_REQUESTS.md`.
-3. **Overture.** Buildings from GeoJSON are added only where no OpenStreetMap building stands (centroid tests both ways), tagged `src=overture`.
+3. **Overture.** Buildings from GeoParquet (Overture's own format) or GeoJSON are added only where no OpenStreetMap building stands, and where no Overture building was already added. The test uses a point surely inside each building, both ways. They are tagged `src=overture`.
 4. **Gaps.** Made-up buildings, all tagged `generated=yes`:
    - **Town lots.** Homes go on empty lots along town streets: street length of at least 450 m per 250 m cell, or inside `landuse=residential`. Shops go on bigger streets and in commercial areas. A lot is used only when no building stands within a lot's width, so mapped streets get nothing.
    - **Farmsteads.** Along country roads, every 400–800 m where nothing stands within 180 m: a house, barn and shed, a drive, and sometimes a stock pond.
@@ -58,7 +71,7 @@ Inside `ways` and `pois`, tags carry many more OpenStreetMap keys than before: h
 
 ## The map file (`.asmap`)
 
-A zip (stored, not compressed) holding:
+A zip holding the entries below. From 1.1.0 each entry is deflate-compressed (zip method 8); 1.0.0 files are stored uncompressed (method 0), and readers should accept both:
 - `manifest.json`: region, squares index, places, credits, sources, the report, `format`, `required` (empty for now) and `layers`;
 - `squares/I_J.json`: one square each;
 - `CREDITS.txt` and `README.txt`.

@@ -2,7 +2,8 @@
    when the builder is opened straight from a USB drive, where a separate worker file would be refused. Falls back to running on the page. */
 (function(){
 'use strict';
-var LIBS = ['inflate', 'geo', 'pbf', 'tiff', 'gen', 'build'];
+/* the packed open-source libraries first (builder/lib, see LICENSES.md), then the builder's own; earcut is in builder/lib for the 3D view and roofs, not loaded yet */
+var LIBS = ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'build'];
 function workerMain(){
   var L = {}; for (var k in BLIB) BLIB[k](L);
   var stopFlag = false;
@@ -20,14 +21,14 @@ function workerMain(){
 window.BuildWorker = function(onMsg){
   var w = null;
   try {
-    var src = 'var window = self; var BLIB = {};\n' + LIBS.map(function(k){ return 'BLIB.' + k + ' = ' + window.BLIB[k].toString() + ';'; }).join('\n') + '\n(' + workerMain.toString() + ')();';
+    var src = 'var window = self; var BLIB = {};\n' + LIBS.filter(function(k){ return window.BLIB[k]; }).map(function(k){ return 'BLIB.' + k + ' = ' + window.BLIB[k].toString() + ';'; }).join('\n') + '\n(' + workerMain.toString() + ')();';
     w = new Worker(URL.createObjectURL(new Blob([src], {type:'text/javascript'})));
     w.onmessage = function(e){ onMsg(e.data); };
     w.onerror = function(e){ onMsg({t:'error', text:'the background worker failed: ' + (e.message || 'unknown error')}); };
   } catch (e){ w = null; }
   if (w) return {post:function(m){ w.postMessage(m); }, inPage:false};
   /* no workers: run on the page (the screen may pause while it builds) */
-  var L = {}, stopFlag = false; LIBS.forEach(function(k){ window.BLIB[k](L); });
+  var L = {}, stopFlag = false; LIBS.forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
   return {inPage:true, post:function(m){
     if (m.t === 'stop'){ stopFlag = true; return; }
     stopFlag = false;

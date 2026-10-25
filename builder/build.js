@@ -52,7 +52,11 @@ L.runBuild = async function(job, post, stop){
   /* 2. Overture buildings */
   if (job.overture && job.overture.length){
     say(0.46, 'Adding Overture buildings'); var ov = [];
-    for (var k = 0; k < job.overture.length; k++){ var oj = JSON.parse(await job.overture[k].text()); ov = ov.concat(L.readOverture(oj)); }
+    for (var k = 0; k < job.overture.length; k++){
+      var of = job.overture[k];
+      if (/\.(parquet|geoparquet)$/i.test(of.name)) ov = ov.concat(await L.readOvertureParquet(of, R.read, function(f){ say(0.46 + 0.03*f, 'Reading Overture buildings'); }));
+      else ov = ov.concat(L.readOverture(JSON.parse(await of.text())));
+    }
     var bw = R.read; ov = ov.filter(function(w){ return w.c[0] >= bw[0] && w.c[0] <= bw[2] && w.c[1] >= bw[1] && w.c[1] <= bw[3]; });
     stats.overture = L.mergeOverture(F, ov, loc);
   }
@@ -130,16 +134,16 @@ L.preview = function(F, loc){
   return {segs:new Float32Array(segs), scls:new Uint8Array(scls), pts:new Float32Array(pts), pofs:new Uint32Array(pofs), pcls:new Uint8Array(pcls)};
 };
 /* the map file: a plain zip (no compression; the squares are already compact), built from parts so it never needs one huge array */
-L.zipParts = function(entries){   /* entries: [{name, data:Uint8Array}] -> array of Blob parts */
+L.zipParts = function(entries){   /* entries: [{name, data:Uint8Array, z?:deflated data}] -> array of Blob parts; with z the entry is stored compressed (method 8) */
   var parts = [], central = [], off = 0, enc = new TextEncoder(), dos = function(){ var d = new Date(); return [((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xffff, (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xffff]; }(), n = 0;
   entries.forEach(function(e){
-    var nm = enc.encode(e.name), crc = L.crc32(e.data), h = new DataView(new ArrayBuffer(30));
-    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, dos[0], true); h.setUint16(12, dos[1], true);
-    h.setUint32(14, crc, true); h.setUint32(18, e.data.length, true); h.setUint32(22, e.data.length, true); h.setUint16(26, nm.length, true); h.setUint16(28, 0, true);
-    parts.push(h.buffer, nm, e.data);
-    var c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true); c.setUint16(12, dos[0], true); c.setUint16(14, dos[1], true);
-    c.setUint32(16, crc, true); c.setUint32(20, e.data.length, true); c.setUint32(24, e.data.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
-    central.push(c.buffer, nm); off += 30 + nm.length + e.data.length; n++;
+    var nm = enc.encode(e.name), crc = L.crc32(e.data), body = e.z || e.data, meth = e.z ? 8 : 0, h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, meth, true); h.setUint16(10, dos[0], true); h.setUint16(12, dos[1], true);
+    h.setUint32(14, crc, true); h.setUint32(18, body.length, true); h.setUint32(22, e.data.length, true); h.setUint16(26, nm.length, true); h.setUint16(28, 0, true);
+    parts.push(h.buffer, nm, body);
+    var c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, meth, true); c.setUint16(12, dos[0], true); c.setUint16(14, dos[1], true);
+    c.setUint32(16, crc, true); c.setUint32(20, body.length, true); c.setUint32(24, e.data.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+    central.push(c.buffer, nm); off += 30 + nm.length + body.length; n++;
   });
   var cs = 0; central.forEach(function(p){ cs += p.byteLength; });
   var end = new DataView(new ArrayBuffer(22)); end.setUint32(0, 0x06054b50, true); end.setUint16(8, n, true); end.setUint16(10, n, true); end.setUint32(12, cs, true); end.setUint32(16, off, true);

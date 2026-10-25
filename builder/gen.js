@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.0.0';
+L.VERSION = '1.1.0';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp'];
@@ -170,9 +170,10 @@ L.readOverture = function(j){
   var out = [], feats = j.features || [];
   feats.forEach(function(f){
     var g = f.geometry, p = f.properties || {}; if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) return;
-    var t = {building:p.class || p.subtype || 'yes', src:'overture'};
-    if (p.height > 0) t.height = String(Math.round(p.height*10)/10);
-    if (p.num_floors > 0) t['building:levels'] = String(Math.round(p.num_floors));
+    var t = {building:p.class || p.subtype || 'yes', src:'overture'}, hgt = Number(p.height), fl = Number(p.num_floors);   /* Number(): Parquet integers can arrive as BigInt */
+    if (typeof p.names === 'string'){ try { p.names = JSON.parse(p.names); } catch (e){ p.names = null; } }
+    if (hgt > 0) t.height = String(Math.round(hgt*10)/10);
+    if (fl > 0) t['building:levels'] = String(Math.round(fl));
     if (p.roof_shape) t['roof:shape'] = String(p.roof_shape);
     if (p.facade_material) t['building:material'] = String(p.facade_material);
     var nm = p.names && (p.names.primary || (p.names.common && p.names.common.en)); if (nm) t.name = String(nm).slice(0, 60);
@@ -181,23 +182,66 @@ L.readOverture = function(j){
   return out;
 };
 
+/* Overture's own GeoParquet files (from the Overture download tool or the cloud release), read with hyparquet (hyparam/hyparquet, MIT).
+   Overture compresses with ZSTD, decoded by fzstd (101arrowz/fzstd, MIT); GZIP by fflate. Only rows inside the box are kept, a slice at a time. */
+L.parquetCompressors = function(){
+  var c = {};
+  if (L.fzstd) c.ZSTD = function(input, n){ return L.fzstd.decompress(input, new Uint8Array(n)); };
+  if (L.fflate) c.GZIP = function(input, n){ return L.fflate.gunzipSync(input, {out:new Uint8Array(n)}); };
+  return c;
+};
+L.readOvertureParquet = async function(file, b, progress){
+  if (!L.hyparquet) throw new Error('the Parquet reader is missing (builder/lib/hyparquet.js)');
+  var H = L.hyparquet, buf = {byteLength:file.size, slice:function(s, e){ return file.slice(s, e).arrayBuffer(); }};
+  var md = await H.parquetMetadataAsync(buf), have = H.parquetSchema(md).children.map(function(c){ return c.element.name; });
+  if (have.indexOf('geometry') < 0) throw new Error(file.name + ' has no geometry column; is it an Overture buildings file?');
+  var cols = ['geometry', 'height', 'num_floors', 'class', 'subtype', 'names', 'roof_shape', 'facade_material', 'bbox'].filter(function(n){ return have.indexOf(n) >= 0; });
+  var total = Number(md.num_rows), step = 20000, out = [], comp = L.parquetCompressors();
+  for (var r = 0; r < total; r += step){
+    var rows = await H.parquetReadObjects({file:buf, metadata:md, columns:cols, rowStart:r, rowEnd:Math.min(total, r + step), compressors:comp}), feats = [];
+    for (var i = 0; i < rows.length; i++){
+      var row = rows[i], bb = row.bbox, g = row.geometry;
+      if (!g || (bb && (bb.xmax < b[0] || bb.xmin > b[2] || bb.ymax < b[1] || bb.ymin > b[3]))) continue;
+      delete row.geometry; feats.push({geometry:g, properties:row});
+    }
+    out = out.concat(L.readOverture({features:feats}));
+    if (progress) progress(Math.min(1, (r + step)/total));
+  }
+  return out;
+};
 /* ---------------- merging Overture into OpenStreetMap: added only where no OSM building is there ---------------- */
 L.mergeOverture = function(R, ovt, loc){
-  var G = 60, grid = new Map(), add = 0, skip = 0;
-  var key = function(x, y){ return Math.floor(x/G) + ',' + Math.floor(y/G); };
-  R.ways.forEach(function(w){
-    if (!w.poly || !w.t.building) return;
-    var m = toM(w.c, loc), bx = bbox(m); w._m = m; w._b = bx;
-    for (var gx = Math.floor(bx[0]/G); gx <= Math.floor(bx[2]/G); gx++) for (var gy = Math.floor(bx[1]/G); gy <= Math.floor(bx[3]/G); gy++){ var k = gx + ',' + gy; if (!grid.has(k)) grid.set(k, []); grid.get(k).push(w); }
-  });
+  /* the OpenStreetMap buildings in a flatbush index (mourner/flatbush, ISC); each building's inside point from polylabel (mapbox/polylabel,
+     ISC), which unlike a centroid is always inside, even for L and U shapes */
+  var add = 0, skip = 0, osm = [];
+  R.ways.forEach(function(w){ if (w.poly && w.t.building){ var m = toM(w.c, loc); osm.push({m:m, b:bbox(m), p:null}); } });
+  var idx = L.spatial(osm.length || 1); osm.forEach(function(o){ idx.add(o.b[0], o.b[1], o.b[2], o.b[3]); }); if (!osm.length) idx.add(0, 0, 0, 0); idx.finish();
+  var placed = L.spatialGrow();   /* Overture buildings already added, so Overture's own overlaps are not doubled either */
   ovt.forEach(function(o){
-    var m = toM(o.c, loc), c = centroid(m), list = grid.get(key(c[0], c[1])) || [], hit = false;
-    for (var i = 0; i < list.length && !hit; i++){ var w = list[i]; if (c[0] >= w._b[0] && c[0] <= w._b[2] && c[1] >= w._b[1] && c[1] <= w._b[3] && L.pip(w._m, c[0], c[1])) hit = true; else { var wc = centroid(w._m); if (L.pip(m, wc[0], wc[1])) hit = true; } }
+    var m = toM(o.c, loc), b = bbox(m), p = L.inside(m), hit = false, list = osm.length ? idx.search(b[0], b[1], b[2], b[3]) : [];
+    for (var i = 0; i < list.length && !hit; i++){
+      var w = osm[list[i]]; if (L.pip(w.m, p[0], p[1])){ hit = true; break; }
+      if (!w.p) w.p = L.inside(w.m); if (L.pip(m, w.p[0], w.p[1])) hit = true;
+    }
+    if (!hit) hit = placed.any(b, function(q){ return L.pip(q.m, p[0], p[1]) || L.pip(m, q.p[0], q.p[1]); });
     if (hit){ skip++; return; }
-    R.ways.push(o); add++;
+    R.ways.push(o); placed.add(b, {m:m, p:p}); add++;
   });
-  R.ways.forEach(function(w){ delete w._m; delete w._b; });
   return {added:add, skipped:skip};
+};
+/* helpers over the packed libraries, with plain fallbacks so the generator still runs if a library file is missing */
+L.spatial = function(n){
+  if (L.flatbush) return new L.flatbush.default(Math.max(1, n));
+  var boxes = []; return {add:function(a, b, c, d){ boxes.push([a, b, c, d]); }, finish:function(){}, search:function(a, b, c, d){ var o = []; for (var i = 0; i < boxes.length; i++){ var q = boxes[i]; if (q[0] <= c && q[2] >= a && q[1] <= d && q[3] >= b) o.push(i); } return o; }};
+};
+L.spatialGrow = function(cell){   /* a grid for things added while working (flatbush indexes are fixed once finished) */
+  cell = cell || 100; var g = new Map();
+  return {add:function(b, item){ item.b = b; for (var x = Math.floor(b[0]/cell); x <= Math.floor(b[2]/cell); x++) for (var y = Math.floor(b[1]/cell); y <= Math.floor(b[3]/cell); y++){ var k = x + ',' + y; if (!g.has(k)) g.set(k, []); g.get(k).push(item); } },
+    any:function(b, test){ for (var x = Math.floor(b[0]/cell); x <= Math.floor(b[2]/cell); x++) for (var y = Math.floor(b[1]/cell); y <= Math.floor(b[3]/cell); y++){ var l = g.get(x + ',' + y); if (!l) continue; for (var i = 0; i < l.length; i++){ var q = l[i]; if (q.b[0] <= b[2] && q.b[2] >= b[0] && q.b[1] <= b[3] && q.b[3] >= b[1] && test(q)) return true; } } return false; }};
+};
+L.inside = function(m){   /* a point surely inside a flat ring [x,y,...] */
+  if (L.polylabel){ var r = []; for (var i = 0; i < m.length; i += 2) r.push([m[i], m[i + 1]]); var p = L.polylabel.default([r], 0.5); if (isFinite(p[0]) && L.pip(m, p[0], p[1])) return [p[0], p[1]]; }
+  return centroid(m);
 };
 function toM(c, loc){ var m = new Array(c.length); for (var i = 0; i < c.length; i += 2){ var p = loc.m(c[i], c[i + 1]); m[i] = p[0]; m[i + 1] = p[1]; } return m; }
 function bbox(m){ var b = [1e18, 1e18, -1e18, -1e18]; for (var i = 0; i < m.length; i += 2){ if (m[i] < b[0]) b[0] = m[i]; if (m[i] > b[2]) b[2] = m[i]; if (m[i + 1] < b[1]) b[1] = m[i + 1]; if (m[i + 1] > b[3]) b[3] = m[i + 1]; } return b; }
@@ -208,9 +252,9 @@ function centroid(m){ var x = 0, y = 0, n = 0; for (var i = 0; i < m.length - 2;
    buildings at all, and farmsteads are added along country roads where there is nothing for 180 m. */
 var RW = {motorway:11, trunk:8, primary:7, secondary:5, tertiary:4, residential:3.5, unclassified:3, service:2, track:1.8, living_street:3};
 L.fillGaps = function(R, loc, centreR){
-  var h3 = L.h3, G = 120, segGrid = new Map(), den = new Map(), bden = new Map(), occ = new Map(), roads = [];
+  var h3 = L.h3, G = 120, den = new Map(), bden = new Map(), occ = new Map(), roads = [];
   var gkey = function(x, y){ return Math.floor(x/G) + ',' + Math.floor(y/G); };
-  var blockPolys = [], resPolys = [], PG = 250, pgrid = new Map();
+  var polys = [], segs = [];   /* land areas and road pieces, indexed with flatbush once all are read */
   R.ways.forEach(function(w){
     var t = w.t;
     if (w.poly){
@@ -222,23 +266,26 @@ L.fillGaps = function(R, loc, centreR){
                t.leisure === 'park' || t.leisure === 'golf_course' || t.leisure === 'nature_reserve' || t.leisure === 'pitch' || t.amenity === 'school' || t.amenity === 'university' || t.amenity === 'hospital' || t.amenity === 'parking' || t.aeroway) kind = 1;
       else if (t.landuse === 'commercial' || t.landuse === 'retail') kind = 3;
       if (!kind) return;
-      var poly = {m:m, b:b, kind:kind};
-      for (var gx = Math.floor(b[0]/PG); gx <= Math.floor(b[2]/PG); gx++) for (var gy = Math.floor(b[1]/PG); gy <= Math.floor(b[3]/PG); gy++){ var k = gx + ',' + gy; if (!pgrid.has(k)) pgrid.set(k, []); pgrid.get(k).push(poly); }
+      polys.push({m:m, b:b, kind:kind});
       return;
     }
     var hw = t.highway; if (!hw || !RW[hw]) return;
     var pts = toM(w.c, loc); roads.push({hw:hw, pts:pts});
     for (var i = 0; i + 3 < pts.length; i += 2){
-      var ax = pts[i], ay = pts[i + 1], bx2 = pts[i + 2], by = pts[i + 3], Lg = Math.hypot(bx2 - ax, by - ay), sg = [ax, ay, bx2, by, RW[hw]];
-      for (var gx2 = Math.floor(Math.min(ax, bx2)/G) - 1; gx2 <= Math.floor(Math.max(ax, bx2)/G) + 1; gx2++) for (var gy2 = Math.floor(Math.min(ay, by)/G) - 1; gy2 <= Math.floor(Math.max(ay, by)/G) + 1; gy2++){ var kk = gx2 + ',' + gy2; if (!segGrid.has(kk)) segGrid.set(kk, []); segGrid.get(kk).push(sg); }
+      var ax = pts[i], ay = pts[i + 1], bx2 = pts[i + 2], by = pts[i + 3], Lg = Math.hypot(bx2 - ax, by - ay);
+      segs.push(ax, ay, bx2, by, RW[hw]);
       if (hw === 'residential' || hw === 'unclassified' || hw === 'tertiary' || hw === 'service' || hw === 'living_street'){ var dk = Math.floor((ax + bx2)/500) + ',' + Math.floor((ay + by)/500); den.set(dk, (den.get(dk) || 0) + Lg); }
     }
   });
+  var pIdx = L.spatial(polys.length || 1); polys.forEach(function(p){ pIdx.add(p.b[0], p.b[1], p.b[2], p.b[3]); }); if (!polys.length) pIdx.add(-1e9, -1e9, -1e9, -1e9); pIdx.finish();
+  var nSeg = segs.length/5, sIdx = L.spatial(nSeg || 1);
+  for (var si = 0; si < nSeg; si++){ var o = si*5; sIdx.add(Math.min(segs[o], segs[o + 2]), Math.min(segs[o + 1], segs[o + 3]), Math.max(segs[o], segs[o + 2]), Math.max(segs[o + 1], segs[o + 3])); }
+  if (!nSeg) sIdx.add(-1e9, -1e9, -1e9, -1e9); sIdx.finish();
   function occAdd(x, y, r){ var k = gkey(x, y); if (!occ.has(k)) occ.set(k, []); occ.get(k).push([x, y, r]); }
   function town(x, y){ var i = Math.floor(x/250), j = Math.floor(y/250), s = 0; for (var a = -1; a <= 1; a++) for (var b2 = -1; b2 <= 1; b2++) s += den.get((i + a) + ',' + (j + b2)) || 0; return s/9; }
   function homes(x, y){ var i = Math.floor(x/250), j = Math.floor(y/250), s = 0; for (var a = -1; a <= 1; a++) for (var b2 = -1; b2 <= 1; b2++) s += bden.get((i + a) + ',' + (j + b2)) || 0; return s; }
-  function landAt(x, y){ var list = pgrid.get(Math.floor(x/PG) + ',' + Math.floor(y/PG)) || [], best = 0; for (var i = 0; i < list.length; i++){ var p = list[i]; if (x < p.b[0] || x > p.b[2] || y < p.b[1] || y > p.b[3]) continue; if (L.pip(p.m, x, y)){ if (p.kind === 1) return 1; best = Math.max(best, p.kind); } } return best; }
-  function roadClear(x, y, extra){ var l = segGrid.get(gkey(x, y)) || []; for (var i = 0; i < l.length; i++){ var s = l[i]; if (L.segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + extra) return false; } return true; }
+  function landAt(x, y){ if (!polys.length) return 0; var list = pIdx.search(x, y, x, y), best = 0; for (var i = 0; i < list.length; i++){ var p = polys[list[i]]; if (L.pip(p.m, x, y)){ if (p.kind === 1) return 1; best = Math.max(best, p.kind); } } return best; }
+  function roadClear(x, y, extra){ if (!nSeg) return true; var r = 11 + extra, l = sIdx.search(x - r, y - r, x + r, y + r); for (var i = 0; i < l.length; i++){ var o = l[i]*5; if (L.segDist(x, y, segs[o], segs[o + 1], segs[o + 2], segs[o + 3]) < segs[o + 4] + extra) return false; } return true; }
   function free(x, y, r, gap){ var gx = Math.floor(x/G), gy = Math.floor(y/G); for (var i = gx - 1; i <= gx + 1; i++) for (var j = gy - 1; j <= gy + 1; j++){ var l = occ.get(i + ',' + j) || []; for (var k = 0; k < l.length; k++) if (Math.hypot(l[k][0] - x, l[k][1] - y) < r + l[k][2] + gap) return false; } return true; }
   function nearAny(x, y, r){ var gx = Math.floor(x/G), gy = Math.floor(y/G), n = Math.ceil(r/G); for (var i = gx - n; i <= gx + n; i++) for (var j = gy - n; j <= gy + n; j++){ var l = occ.get(i + ',' + j) || []; for (var k = 0; k < l.length; k++) if (Math.hypot(l[k][0] - x, l[k][1] - y) < r) return true; } return false; }
   function rect(cx, cy, ux, uy, w, d){ var vx = -uy, vy = ux, hw = w/2, hd = d/2; return [cx - ux*hw - vx*hd, cy - uy*hw - vy*hd, cx + ux*hw - vx*hd, cy + uy*hw - vy*hd, cx + ux*hw + vx*hd, cy + uy*hw + vy*hd, cx - ux*hw + vx*hd, cy - uy*hw + vy*hd]; }

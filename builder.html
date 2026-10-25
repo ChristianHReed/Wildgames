@@ -136,8 +136,9 @@
       <div class="src" id="cOvt">
         <h3>Overture buildings <span class="tag">fills gaps</span></h3>
         <p class="muted">Buildings OpenStreetMap is missing, from Microsoft, Google and Esri footprints. Only added where OpenStreetMap has no building.</p>
-        <ul><li><a href="https://explore.overturemaps.org/#14/37.2089/-93.2923" target="_blank" rel="noopener">Overture Maps Explorer</a>: turn on Buildings, move to your area, download as <b>GeoJSON</b>. (More ways: <a href="https://docs.overturemaps.org/getting-data/" target="_blank" rel="noopener">Overture docs</a>.)</li></ul>
-        <div class="row"><label class="btn sm">Upload GeoJSON<input id="fOvt" type="file" accept=".geojson,.json" multiple hidden></label></div>
+        <ul><li><a href="https://explore.overturemaps.org/#14/37.2089/-93.2923" target="_blank" rel="noopener">Overture Maps Explorer</a>: turn on Buildings, move to your area, download (<b>GeoParquet</b> or <b>GeoJSON</b>).</li>
+          <li>Or the <a href="https://docs.overturemaps.org/getting-data/" target="_blank" rel="noopener">Overture download tool</a> for a box (<code>.parquet</code>, smaller and faster to read).</li></ul>
+        <div class="row"><label class="btn sm">Upload buildings<input id="fOvt" type="file" accept=".parquet,.geoparquet,.geojson,.json" multiple hidden></label></div>
         <div class="st" id="stOvt">No files yet.</div>
       </div>
 
@@ -196,6 +197,11 @@
   </div>
 </main>
 <div id="toast"></div>
+<script src="builder/lib/flatbush.js"></script>
+<script src="builder/lib/polylabel.js"></script>
+<script src="builder/lib/fflate.js"></script>
+<script src="builder/lib/fzstd.js"></script>
+<script src="builder/lib/hyparquet.js"></script>
 <script src="builder/inflate.js"></script>
 <script src="builder/geo.js"></script>
 <script src="builder/pbf.js"></script>

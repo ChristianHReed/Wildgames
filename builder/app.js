@@ -2,7 +2,7 @@
    Classic script. The heavy work runs in the background worker (worker.js); this file only drives the page. */
 (function(){
 'use strict';
-var L = {}; ['inflate', 'geo', 'pbf', 'tiff', 'gen', 'build'].forEach(function(k){ window.BLIB[k](L); });
+var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
 var $ = function(id){ return document.getElementById(id); };
 var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]; }); };
 var fmtN = function(n){ return Math.round(n).toLocaleString('en-US'); };
@@ -176,8 +176,15 @@ $('exAsmap').addEventListener('click', async function(){
       (M.stats && M.stats.overture ? 'Overture Maps data: https://docs.overturemaps.org/attribution/\n' : '') + 'USGS 3DEP elevation is in the public domain.\nBuildings tagged generated=yes are made up by the builder where the data had nothing.\n')});
     ents.push({name:'README.txt', data:enc.encode('This is an AfterStreet map file (a zip). Open it in the AfterStreet game or the Maps Builder.\nmanifest.json describes the map; squares/I_J.json are the game\'s map squares (0.05 degree squares around the centre).\n')});
     sq.forEach(function(q){ ents.push({name:'squares/' + q.i + '_' + q.j + '.json', data:enc.encode(q.text)}); });
+    /* compressed with fflate (101arrowz/fflate, MIT): map squares shrink several times. A few at a time, so the page stays responsive */
+    var raw = 0, packed = 0;
+    for (var k = 0; k < ents.length; k++){
+      if (L.fflate) ents[k].z = L.fflate.deflateSync(ents[k].data, {level:6});
+      raw += ents[k].data.length; packed += (ents[k].z || ents[k].data).length;
+      if (k % 8 === 7){ b.textContent = 'Packing ' + Math.round(k/ents.length*100) + '%'; await new Promise(function(r){ setTimeout(r, 0); }); }
+    }
     download(slug(M.region.name) + '.asmap', new Blob(L.zipParts(ents), {type:'application/zip'}));
-    toast('Map file saved (' + sq.length + ' squares).');
+    toast('Map file saved: ' + sq.length + ' squares, ' + fmtMB(packed) + (packed < raw ? ' (' + fmtMB(raw) + ' before packing)' : '') + '.', 5);
   } catch (e){ toast('Could not pack the map file: ' + e.message, 6); }
   b.disabled = false; b.textContent = 'Save map file (.asmap)';
 });

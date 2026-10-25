@@ -68,6 +68,12 @@ These are whole map-to-world projects. Their value is in years of decisions abou
 | [hec-ovi/interiorforge](https://github.com/hec-ovi/interiorforge), [kvasdopil/building-editor](https://github.com/kvasdopil/building-editor), [lovehandle/voxel-osm](https://github.com/lovehandle/voxel-osm) | No licence file, so no right to reuse, however useful they look |
 | [mrdoob/three.js](https://github.com/mrdoob/three.js), [maplibre/maplibre-gl-js](https://github.com/maplibre/maplibre-gl-js) | Fine licences (MIT, BSD-3), but large and a second renderer. The game has its own WebGL engine, and the builder must draw exactly as the game does |
 
+## Done (builder 1.1.0, 25 October 2026)
+
+- **Packed into `builder/lib/`:** flatbush, polylabel, fflate, fzstd and hyparquet, in use. Earcut is packed too, ready for the 3D view and roofs.
+- **Licences:** full texts in `builder/lib/LICENSES.md`, plus a line in `CREDITS.md`.
+- **Packing tool:** `tools/bundle_lib.mjs`.
+
 ## Suggested order
 
 | When | What |

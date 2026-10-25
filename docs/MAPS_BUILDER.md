@@ -155,6 +155,12 @@ Rules agreed with the main chat:
 | The game opening `.asmap` | Main chat, with builder version 1 |
 | Springfield rebuilt as the sample | Waiting for the user's Missouri OpenStreetMap file (and ideally Overture and USGS 1 m files) |
 
+**Builder 1.1.0, 25 October 2026: open-source libraries** (from `docs/MAP_CODE.md`):
+- **Overture GeoParquet:** Overture's own downloads now read directly, alongside GeoJSON.
+- **Compressed map files:** five times smaller in the test.
+- **Faster, lighter gap filling:** 32 s down to 23 s at 50 miles, using less memory.
+- **Better Overture matching** for L- and U-shaped buildings.
+
 What testing showed:
 - **The map pack's Springfield is short of houses.** Outside downtown, the streets of central Springfield have few buildings. The builder's lot-by-lot gap filling puts marked made-up homes on the empty lots (about 5 made-up for every real building in the test). Overture buildings should replace most of them with real footprints.
 - **Whole 50-mile regions need a computer.** At city density everywhere the stress test used about 1.3 GB. The builder suggests up to 8 miles on phones and 25 miles on tablets.

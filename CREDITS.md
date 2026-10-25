@@ -2,6 +2,7 @@
 
 - **Shaped art (0.42 and 0.44):** survivors, aliens, nests, furniture, street props, cars, garden and building kit in `assets/shaped/` are made in code for Afterstreet (generators in `assets/shaped/src/`). The older models below are still used where the shaped packs have nothing yet, and when `?oldart` is added to the address.
 
+- **Maps Builder libraries:** flatbush, flatqueue and tinyqueue by Vladimir Agafonkin (ISC), polylabel and earcut by Mapbox (ISC), fflate and fzstd by Arjun Barrett (MIT), hyparquet by Hyperparam (MIT). Full licence texts in `builder/lib/LICENSES.md`.
 - **Map data:** © OpenStreetMap contributors, Open Database License. The built-in Springfield region comes from the Afterstreet map pack (`design/afterstreet_handoff/map_data/springfield_50mi/`), pulled from the Overpass API and OpenFreeMap vector tiles in October 2026, with elevation from AWS Terrain Tiles (SRTM/3DEP); `tools/build_region.py` cuts it into squares.
 - **Furniture and street props:** KayKit Furniture Bits 1.0 and KayKit City Builder Bits 1.0 by Kay Lousberg (www.kaylousberg.com), CC0. Converted and recoloured by `tools/build_models.py`.
 - **Icons and interface design:** the Afterstreet design pack in `design/afterstreet_handoff/`.

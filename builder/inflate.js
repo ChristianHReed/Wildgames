@@ -9,8 +9,9 @@ L.inflate = async function(u8, raw){
     try {
       var s = new Blob([u8]).stream().pipeThrough(new DecompressionStream(raw ? 'deflate-raw' : 'deflate'));
       return new Uint8Array(await new Response(s).arrayBuffer());
-    } catch (e){ /* fall through to the decoder below (a stream error on a slightly odd file) */ }
+    } catch (e){ /* fall through to the decoders below (a stream error on a slightly odd file) */ }
   }
+  if (L.fflate) try { return raw ? L.fflate.inflateSync(u8) : L.fflate.unzlibSync(u8); } catch (e){}   /* fflate (MIT), much faster than the small decoder */
   return inflateJS(u8, raw);
 };
 /* ---- a plain deflate decoder (RFC 1951), used only when the browser has no DecompressionStream ---- */

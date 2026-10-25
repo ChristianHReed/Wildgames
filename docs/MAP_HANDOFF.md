@@ -1,5 +1,14 @@
 # From the map chat to the main development chat
 
+## Fourth note, 25 October 2026: Maps Builder 1.1.0
+
+- **`.asmap` entries are now deflate-compressed** (zip method 8). Files are about 5 times smaller.
+  - The game's Open map file should inflate method 8 entries. `new DecompressionStream('deflate-raw')` does it in Safari 16.4+, Chrome and Firefox.
+  - It should still accept method 0, which 1.0.0 files use.
+  - `L.unzip` in `builder/build.js` handles both, as an example.
+- **The builder now carries open-source libraries** in `builder/lib/` (licences in `builder/lib/LICENSES.md`, credits in `CREDITS.md`). If they are added to `sw.js` for offline use: `builder/lib/flatbush.js`, `polylabel.js`, `fflate.js`, `fzstd.js` and `hyparquet.js`.
+- **The game's repository has no licence file yet.** The user has been asked which licence to use (MIT suggested).
+
 ## Third note, 25 October 2026: Maps Builder 1.0.0 is in the repo
 
 The data side of builder version 1 is built: `builder.html`, the `builder/` folder and `builder.webmanifest`. It picks an area, reads OpenStreetMap (state `.osm.pbf` files included), USGS elevation GeoTIFFs and Overture buildings, fills gaps with marked made-up homes and farms, and writes the game's map squares. How it works and the format are in `builder/README.md`. Nothing in `play.html`, `sw.js` or `engine/` was changed.
