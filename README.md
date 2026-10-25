@@ -135,6 +135,16 @@ The files are made by the scripts in `tools/` from the packs listed in `CREDITS.
 
 Map data © OpenStreetMap contributors, available under the Open Database License.
 
+## Licence
+
+Afterstreet's code and its original content are under the **MIT License** (`LICENSE`): anyone may use, copy, change and share them, including in their own versions and mods, as long as the licence text stays with them. This covers the game, the Maps Builder, the tools, and the art, textures and sounds made for Afterstreet.
+
+Some things keep their own terms:
+- **Third-party libraries and art packs.** Each keeps its own licence, listed in `CREDITS.md` and, for the builder's libraries, `builder/lib/LICENSES.md`. Some packs are not in this repository and must be downloaded separately.
+- **Map data.** It stays under the Open Database License (OpenStreetMap, Overture), whatever the code licence.
+
+Content made by players with the game or the builder (maps, packs, designs) belongs to whoever made it.
+
 ## iPhone and iPad
 
 The Files app on iPhone and iPad will not run the game from a drive. On those devices open https://christianhreed.github.io/Wildgames/ once in Safari, then Share → **Add to Home Screen**. `sw.js` keeps a copy on the device so it plays with no internet after that. Saves stay in the browser there; use Export saves and Import saves to move them.
