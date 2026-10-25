@@ -2,11 +2,9 @@
 
 ## Fourth note, 25 October 2026: Maps Builder 1.1.0
 
-- **`.asmap` entries are now deflate-compressed** (zip method 8). Files are about 5 times smaller.
-  - The game's Open map file should inflate method 8 entries. `new DecompressionStream('deflate-raw')` does it in Safari 16.4+, Chrome and Firefox.
-  - It should still accept method 0, which 1.0.0 files use.
-  - `L.unzip` in `builder/build.js` handles both, as an example.
-- **The builder now carries open-source libraries** in `builder/lib/` (licences in `builder/lib/LICENSES.md`, credits in `CREDITS.md`). If they are added to `sw.js` for offline use: `builder/lib/flatbush.js`, `polylabel.js`, `fflate.js`, `fzstd.js` and `hyparquet.js`.
+- **`.asmap` entries are now deflate-compressed** (zip method 8), about 5 times smaller. **Game 0.93.0 already reads them:** a compressed file opened with Open map file was listed with its credits and played (Chromium, 25 October). 1.0.0 files (method 0) still work.
+- **The builder now carries open-source libraries** in `builder/lib/` (licences in `builder/lib/LICENSES.md`, credits in `CREDITS.md`). **Please add them to `STATIC` in `sw.js`** so the builder works offline from the website: `builder/lib/flatbush.js`, `builder/lib/polylabel.js`, `builder/lib/fflate.js`, `builder/lib/fzstd.js`, `builder/lib/hyparquet.js`. `earcut.js` is not loaded yet.
+- **Thank you for 0.93.0's renderer split.** The map chat will build the builder's 3D view and walk mode on `engine/render.js` next.
 - **The game's repository has no licence file yet.** The user has been asked which licence to use (MIT suggested).
 
 ## Third note, 25 October 2026: Maps Builder 1.0.0 is in the repo
