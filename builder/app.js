@@ -68,6 +68,20 @@ function setOsm(o){
   $('stage').textContent = o ? 'Ready to build.' : 'Waiting for map data.';
 }
 $('fOsm').addEventListener('change', function(){ var f = this.files[0]; if (f) setOsm({kind:kindOf(f.name), file:f, name:f.name, size:f.size}); this.value = ''; });
+
+/* Drop files on the page (iPad: drag them out of the Files app in Split View). A second way in that skips the file picker, which some iPad browsers grey files out of. */
+(function(){
+  var route = function(f){ var n = f.name.toLowerCase(); return /\.(pbf|osm|xml)$/.test(n) ? 'fOsm' : /\.tiff?$/.test(n) ? 'fTif' : /\.(parquet|geoparquet)$/.test(n) ? 'fOvt' : /\.(asmap|zip)$/.test(n) ? 'openAsmap' : /\.(geo)?json$/.test(n) ? 'fOvt' : 'fOsm'; };
+  window.addEventListener('dragover', function(e){ if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0){ e.preventDefault(); document.body.classList.add('dropping'); } });
+  window.addEventListener('dragleave', function(e){ if (!e.relatedTarget) document.body.classList.remove('dropping'); });
+  window.addEventListener('drop', function(e){
+    document.body.classList.remove('dropping'); if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return; e.preventDefault();
+    var by = {}; Array.prototype.forEach.call(e.dataTransfer.files, function(f){ (by[route(f)] = by[route(f)] || []).push(f); });
+    Object.keys(by).forEach(function(id){ var dt = new DataTransfer(); (id === 'fTif' || id === 'fOvt' ? by[id] : by[id].slice(0, 1)).forEach(function(f){ dt.items.add(f); }); var inp = $(id); inp.files = dt.files; inp.dispatchEvent(new Event('change')); });
+    toast('Got ' + e.dataTransfer.files.length + (e.dataTransfer.files.length === 1 ? ' file' : ' files') + '.', 3);
+  });
+})();
+
 $('dlOsm').addEventListener('click', function(){ if (!navigator.onLine){ toast('Downloading needs an internet connection.'); return; } setOsm({kind:'download', name:'OpenStreetMap download', size:0}); });
 $('fTif').addEventListener('change', async function(){
   var fs = Array.prototype.slice.call(this.files); this.value = '';

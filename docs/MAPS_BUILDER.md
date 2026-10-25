@@ -199,6 +199,8 @@ What testing showed:
 
 **Builder 1.4.1, 25 October 2026: file pickers accept any file.** The upload buttons had a file-type filter (`accept=".pbf,..."`). Some browsers, notably Safari on iPhone and iPad and some Android pickers, grey out a file whose type they do not know, and `.pbf` is one of them, so the user's Missouri file could not be chosen. The filter is gone; the builder reads the file by its name and contents. Tested with the real `missouri-261024_osm.pbf` (199.8 MB): a 2-mile Springfield build finished in 43 s with 10,401 real buildings.
 
+**Builder 1.4.2, 25 October 2026: drop files on the page.** On an iPad in Brave the file picker still greyed out the user's `.pbf` after 1.4.1 removed the type filter (the picker or a saved copy of the page may be to blame). Files can now be dragged onto the page from the Files app (iPad: Split View) and are sent to the right card by their name (`.pbf/.osm/.xml` to OpenStreetMap, `.tif` to elevation, `.parquet` and `.json` to Overture, `.asmap/.zip` to Open map file). The version number at the top of the page shows which copy is running. Tested in Chromium with all three kinds dropped together.
+
 ## Versions
 
 | Version | Contents |
