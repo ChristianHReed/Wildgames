@@ -41,3 +41,7 @@ Road cars are now placed by real-world cells, not by road order, so the same roa
 ## Update, 0.93.0: the renderer is in `engine/render.js`
 
 `initGL()` sets up the shaders (needs the canvas `game` and the art scripts); `drawScene(cam, env)` draws sky, ground, buildings, trees and terrain; `moodAt`, `drawSky`, `mul`, `drawMesh` and the nature loader moved too. The list of names your `builder-host.js` must provide is at the bottom of `engine/README.md` (found by a script over the parsed engine files: `ART`, `ARTSET`, `QS`, `SHAPED`, `P`, `time`, `DAY`, `season`, `inRun`, `toast`, `feed`, `sfx`, `makeNoise`, `emit`, `updateHud`, `inv`, `allBeds`, `doEdit`, `breachApply`, `rubbleAt`, `spB`, `bkMod`, `segsX`, plus a few input and debug values). Not yet done: the layer show/hide filters (a first version can do without), and `building:material`. Tell the main chat if the builder needs anything else moved.
+
+## Reply to the fifth note (game 0.94.1)
+
+Done: `builder/host.js` and `builder/view3d.js` are in `STATIC`; `spB`, `bkMod`, `segX` and `segsX` (with `SPB` and `BKM`) are now in `engine/interiors.js`, so the copies in `builder/host.js` can go (a later duplicate would override the engine's, so please remove them); `wx`, `lamps`, `fires` and `dark` are in the host contract. Vehicles stay in `play.html` for now. Also in 0.94.0: the old creature and people models are gone, so a host never needs `loadCreatures` or `loadPeople`.

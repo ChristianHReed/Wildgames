@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.94.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.94.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.94.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.94.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1124,8 +1124,6 @@ var AK = [{n:'swarmer', hp:2, spd:4.3, nspd:5.0, dmg:3, r:0.3, cd:0.8, see:24, h
    Sight: a cone ahead of it, blocked by walls and shut doors, shorter at night unless you carry a light, shorter if you crouch.
    Hearing: how far your movement carries (crouch 2.5 m, walk 7 m, sprint 18 m, gunfire and engines much further). Hearing only makes it come and look.
    States: 0 wandering, 1 coming to look at a noise, 2 chasing, 3 searching where it lost you ---- */
-function segX(ax, ay, bx, by, cx, cy, dx, dy){ var rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy, den = rx*sy - ry*sx; if (Math.abs(den) < 1e-9) return false; var t = ((cx - ax)*sy - (cy - ay)*sx)/den, u = ((cx - ax)*ry - (cy - ay)*rx)/den; return t > 0.001 && t < 0.999 && u >= 0 && u <= 1; }
-function segsX(L, ax, ay, bx, by){ for (var i = 0; i < L.length; i += 4) if (segX(ax, ay, bx, by, L[i], L[i+1], L[i+2], L[i+3])) return true; return false; }
 function los(ax, ay, bx, by, lv){
   if (world.wallSegs.length && segsX(world.wallSegs, ax, ay, bx, by)) return false;
   var x0 = Math.floor(Math.min(ax, bx)/G), x1 = Math.floor(Math.max(ax, bx)/G), y0 = Math.floor(Math.min(ay, by)/G), y1 = Math.floor(Math.max(ay, by)/G), cx, cy, i; stampN++;
@@ -2729,8 +2727,6 @@ function drawFxList(m){
     if (Math.abs(f.x - P.x) > 60 || Math.abs(f.y - P.y) > 60) continue; var M = fxModel(f.p); if (!M) continue;
     var k = u < 0.7 ? 1 : (1 - u)/0.3, sc = (f.s0 + (f.s1 - f.s0)*u)*k; m.modelS(M, f.x, f.y, f.yaw, f.gy + f.up + f.rise*u, sc); }
 }
-var SPB = {};
-function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(SHAPED.props.palette)); } catch (er){} return SPB[path]; }
 var SPHELD = {};
 function spHeld(name){ if (!SPON) return null; if (SPHELD[name] !== undefined) return SPHELD[name]; SPHELD[name] = null; var pcs = spPieces('items.' + name); if (pcs) try { SPHELD[name] = spModel(pcs, spColour(SHAPED.props.palette)); } catch (er){} return SPHELD[name]; }
 var WMODEL = {
@@ -3259,14 +3255,6 @@ function rubbleAt(m, id, q, x0, z0, x1, z1, ox, oz){   /* a heap of broken wall 
     m.ybox(cx, cz, r*6.28, 0, 0, hh, 0.09 + 0.12*r, hh, 0.08 + 0.1*hash(id, q + u, 80), u % 2 ? [120,112,102] : [150,140,126]); }
 }
 /* 0.75: the art chat's torn, cracked and boarded wall pieces (buildings.breach), and the house number plaque */
-var BKM = {};
-function bkMod(grp, fin, name){
-  var key = grp + '.' + fin + '.' + name; if (BKM[key] !== undefined) return BKM[key]; BKM[key] = null;
-  try { var BK = SHAPED.buildings, pcs = grp === 'breach' ? BK.models.breach[fin][name] : BK.models.house[name]; if (!pcs) return null; var out = [];
-    pcs.forEach(function(q){ var o = SHAPED.build([q], function(){ return [0, 0, 0]; }, null, {}), P0 = o.pos, glass = /^glass/.test(q.c);
-      for (var t = 0; t < P0.length; t += 9) out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, f:false}); }); BKM[key] = out; } catch (e){}
-  return BKM[key];
-}
 function bkFin(ST){ var mt = ST && ST.mat; return mt === 'siding' ? 'siding' : mt === 'metal' ? 'metal' : mt === 'glass' ? 'glass' : 'brick'; }
 /* one stretch of wall from (x0,z0) to (x1,z1): what = 'hole' | 'boarded' | 'cracked' | 'missing' */
 function bkWall(m, FS, fin, what, x0, z0, x1, z1, hMax, gid){

@@ -15,6 +15,8 @@ Load order matters (top-level code runs as the files load):
 | `collision.js` | collision against the built world |
 | `render.js` | the renderer: `initGL` (shaders), sky and mood of the hour, nature models, `drawMesh`, and `drawScene(cam, env)` which draws the map itself |
 
+`spB`, `bkMod`, `segX` and `segsX` (with caches `SPB`, `BKM`) now live in `interiors.js` (0.94.1); a host no longer provides them.
+
 Still inside `play.html`: the player and camera, held items, people, aliens, vehicles, effects, loot, traders, scenarios, saves, multiplayer, regions and UI. The engine files may only rely on names from the host page at run time, never at load time.
 
 To add an engine file: create it here, add its name to the list in `play.html` (after the art scripts) and to `SCRIPTS` in `sw.js`.
@@ -31,6 +33,7 @@ Both pages (the game, the Maps Builder's `builder-host.js`) load the engine afte
 | State flags | `inRun`, `running`, `keys`, `gait`, `LAYDBG`, `ROOMAUD`, `dist` | `inRun`: a world is running (a builder: `true` once a map is shown). The others are game input and debug values; empty stand-ins are fine |
 | Messages and sound | `toast`, `feed`, `updateHud`, `sfx`, `makeNoise`, `emit` | `toast`, `feed`: show a message. `updateHud`, `sfx`, `makeNoise`, `emit` (multiplayer): do nothing in a builder |
 | Game rules (stand-ins) | `inv`, `allBeds`, `doEdit`, `breachApply`, `rubbleAt` | The player's items, beds, the edit log, broken walls and rubble. A builder gives empty or no-op versions |
-| Art helpers | `spB`, `bkMod`, `segsX`, `loadCreatures`, `loadPeople` | `spB(path)`: a shaped model by name or null. `bkMod`: a building kit model. `segsX(list, ax, ay, bx, by)`: does a line cross any wall segment. `loadCreatures` and `loadPeople` are optional; `initGL` calls them only if they exist |
+| Weather and light | `wx`, `lamps`, `fires`, `dark` | `wx`: `{w, until, tor, flash}` weather now (`w` 0 clear to 4). `lamps`: placed lanterns, `[]` if none. `fires`: campfires, `[]` if none. `dark`: 0 to 1, how dark the hour is (the game sets it each frame; a builder sets it from its hour). The engine reads them in `buildings.js`, `collision.js`, `interiors.js` and `render.js` |
+| Optional | `loadCreatures`, `loadPeople` | Optional; `initGL` calls them only if they exist |
 
 `drawScene(cam, env)` needs no game state: its camera and its light of the moment are passed in (see the comment above it in `render.js`). A host draws its own moving things after it with its own `Mesh`.

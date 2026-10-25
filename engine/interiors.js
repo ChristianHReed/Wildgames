@@ -763,4 +763,17 @@ function manageInteriors(budget){
   if (P.inside && P.inside.int && P.inside.int.lv.length < Math.min(P.inside.int.nl, (P.lvl || 0) + 3)) growInterior(P.inside, P.inside.int);   /* one more floor above you, a floor at a time */
   for (i = loaded.length - 1; i >= 0; i--) if (bdist(loaded[i], P.x, P.y) > QS.intR + 37){ freeInt(loaded[i]); loaded[i].int = null; loaded.splice(i, 1); }
 }
-
+/* 0.94.1: moved here from play.html so the Maps Builder uses the same code */
+function segX(ax, ay, bx, by, cx, cy, dx, dy){ var rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy, den = rx*sy - ry*sx; if (Math.abs(den) < 1e-9) return false; var t = ((cx - ax)*sy - (cy - ay)*sx)/den, u = ((cx - ax)*ry - (cy - ay)*rx)/den; return t > 0.001 && t < 0.999 && u >= 0 && u <= 1; }
+function segsX(L, ax, ay, bx, by){ for (var i = 0; i < L.length; i += 4) if (segX(ax, ay, bx, by, L[i], L[i+1], L[i+2], L[i+3])) return true; return false; }
+var SPB = {};
+function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(SHAPED.props.palette)); } catch (er){} return SPB[path]; }
+/* the art chat's torn, cracked and boarded wall pieces (buildings.breach), and the house number plaque */
+var BKM = {};
+function bkMod(grp, fin, name){
+  var key = grp + '.' + fin + '.' + name; if (BKM[key] !== undefined) return BKM[key]; BKM[key] = null;
+  try { var BK = SHAPED.buildings, pcs = grp === 'breach' ? BK.models.breach[fin][name] : BK.models.house[name]; if (!pcs) return null; var out = [];
+    pcs.forEach(function(q){ var o = SHAPED.build([q], function(){ return [0, 0, 0]; }, null, {}), P0 = o.pos, glass = /^glass/.test(q.c);
+      for (var t = 0; t < P0.length; t += 9) out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, f:false}); }); BKM[key] = out; } catch (e){}
+  return BKM[key];
+}
