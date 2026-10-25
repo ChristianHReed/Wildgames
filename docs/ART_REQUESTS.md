@@ -276,3 +276,19 @@ Footsteps, impacts, glass, doors, cloth and metal. Gunfire, alien calls, rain, w
 
 ### 12.5 Not third party (no work needed)
 Survivors move on the skeleton and clips of Quaternius's Universal Base Characters and Animation Libraries (CC0, `assets/rig.js`). The bodies are ours; if the design chat wants its own skeleton and clips, that is a separate request.
+
+## 12 delivered (25 October 2026, for game 0.94.1)
+
+All four jobs in `docs/CONTENT_REQUEST_REPLACE_PACKS.md` are done. Every piece is shaped, flat-coloured, in metres, with the origin at the centre of the base and the front facing +Z. Previews are in the album (scenes "Trees and plants", "Pickup truck parts", "Furniture set 2").
+
+| Third-party file | Replacement | Where | The game can now remove |
+| --- | --- | --- | --- |
+| Kenney Nature Kit trees, bushes, grass | `assets/shaped/flora.js`: oak, maple, sycamore, poplar, cedar, pine (summer and, for the first four, `_fall`), each with three shape variants (`_b`, `_c`) and a far version of 60 triangles or fewer; `bush`, `bush_small`, `shrub`, `grass_tuft`, `grass_tall` (also three variants). Heights are the game's real heights. | `info[name]` gives h, variants and far model | the tree, bush and grass models in `assets/nature.js` and their CREDITS.md line, once the old plants below are also wired (flowers, fern, mushrooms, rock, log and stump are in `props.plants` already) |
+| Kenney Car Kit pickup | `props.vehicles.pickup` (already ours, 5.5 m by 1.9 m) now also has `door_l` (the driver's door), `door_gap` (what shows when it is gone), `pickup_wreck` and `pickup_burnt` versions of both, and `vehicleRig.pickup.doorHinge/steerRule/looseTyre`; `items.tyre_loose` and `items.tyre_loose_flat` are the loose tyre | `assets/shaped/props.js` | `assets/vehicles.js` and its CREDITS.md line |
+| Kenney Furniture Kit (13 pieces) | `assets/shaped/furniture2.js`, `models.furniture.<name>` with the game's own names, each inside its footprint from `tools/out/models.txt` | `furniture2.js` | those 13 entries in `assets/models.js` and the credit |
+| Kenney Impact Sounds, RPG Audio | `assets/audio/sounds_content.js`: `step_grass/road/wood/tile/carpet/water`, `hit_fist/bat/blade`, `glass_smash`, `door_open/close/smash`, `cloth_rustle`, `metal_clang`; 3 to 4 variations each, mono, 0.16 to 1.3 s | `window.ART.sounds` (load after `sounds_design.js`) | `assets/sounds.js` and `tools/build_sounds.py`, once the game's sound names are pointed at the new keys |
+
+Notes for the game side:
+- Trees: pick the variant by hashing the tree's position; use `plants.<name>` inside about 60 m and `far.<name>` beyond (same names, same size). For autumn swap to `<kind>_fall`.
+- The pickup's front wheels steer about y (up to 30 degrees); all four spin about x.
+- Sounds are new key names, so nothing existing is overwritten; `glass_break` stays, `glass_smash` is a second, bigger set.

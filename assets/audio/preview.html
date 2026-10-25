@@ -4,12 +4,13 @@
 .g{display:flex;flex-wrap:wrap;gap:6px}button{background:#f4ecd8;border:1.5px solid #3d3029;border-radius:8px;padding:6px 10px;font:inherit;cursor:pointer}button:active{background:#e0a040}</style></head>
 <body><h1>Afterstreet sounds and music (made in code)</h1><p>Tap to play. Loops (generator, rain, fire, music) play once here; in the game they repeat seamlessly.</p><div id="out"></div>
 <script src="sounds_design.js"></script>
+<script src="sounds_content.js"></script>
 <script>
 var MUS=['day','night','horde','base','chase'];
 MUS.forEach(function(k){ var s=document.createElement('script'); s.src='music_'+k+'.js'; document.head.appendChild(s); });
 var cur=null; function play(b64){ if (cur){ cur.pause(); } cur=new Audio('data:audio/mpeg;base64,'+b64); cur.play(); }
 var S=window.ART.sounds, groups={}, out=document.getElementById('out');
-Object.keys(S).forEach(function(k){ var g=k.startsWith('alien_')?'Aliens':/^(gun_|dry_|reload|mag_|bolt|shell|arrow|crossbow|flare|swing|hit_|pan_|umbrella)/.test(k)?'Weapons':/^(jump|land|step)/.test(k)?'Body':/^(wood_crack|brick|concrete|steel|glass_break|car_crash|plug|breaker|klaxon|plant|power)/.test(k)?'Breaking and power':/^sting/.test(k)?'Stings':'House and weather'; (groups[g]=groups[g]||[]).push(k); });
+Object.keys(S).forEach(function(k){ var g=k.startsWith('alien_')?'Aliens':/^(gun_|dry_|reload|mag_|bolt|shell|arrow|crossbow|flare|swing|hit_|pan_|umbrella)/.test(k)?'Weapons':/^(jump|land|step|hit_fist|hit_bat|hit_blade|cloth)/.test(k)?'Body':/^(glass_smash|metal_clang|door_open|door_close|door_smash|wood_crack|brick|concrete|steel|glass_break|car_crash|plug|breaker|klaxon|plant|power)/.test(k)?'Breaking and power':/^sting/.test(k)?'Stings':'House and weather'; (groups[g]=groups[g]||[]).push(k); });
 function section(t, items, fn){ var h=document.createElement('h2'); h.textContent=t; out.appendChild(h); var d=document.createElement('div'); d.className='g'; items.forEach(function(k){ var b=document.createElement('button'); b.textContent=k.replace(/_/g,' '); b.onclick=function(){ fn(k); }; d.appendChild(b); }); out.appendChild(d); }
 Object.keys(groups).forEach(function(g){ section(g, groups[g], function(k){ var L=S[k]; play(L[Math.floor(Math.random()*L.length)]); }); });
 window.addEventListener('load', function(){ section('Music', MUS, function(k){ play(window.ART.music[k]); }); });

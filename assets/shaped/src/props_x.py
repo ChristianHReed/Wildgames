@@ -226,6 +226,31 @@ DMG_RULE = ('vehicles[name].damage (sedan, hatchback, pickup, van): body_crumple
             'drawn on top of the body; smoke is a scorch mark and a few puffs over the bonnet for a smoking engine (or start fx.smoke_column at vehicleRig[name].smokeAt). '
             'Order a crash goes through: bumper_bent and windscreen_cracked (light knock), crumple_light, crumple_heavy with bonnet_buckled, smoke, windscreen_missing.')
 
+# ---- pickup truck, game 0.94.1: a driver's door that comes off, steering and a loose tyre (replaces the Kenney Car Kit pickup) ----
+def _pickup_parts():
+    W, y0, y1, z0, z1 = 0.95, 0.38, 1.72, -0.56, 0.22; x = -W - 0.02; hh = z1 - z0
+    door = [box([x, (y0 + 1.04)/2, (z0 + z1)/2], [0.07, 1.04 - y0, hh], 'paint2'),                       # lower panel, hinged at the front edge
+            hull([(x - 0.01, 1.04, z0 + 0.03), (x - 0.01, 1.04, z1 - 0.03), (x - 0.01, y1 - 0.04, z1 - 0.08), (x - 0.01, y1 - 0.04, z0 + 0.1),
+                  (x + 0.035, 1.04, z0 + 0.03), (x + 0.035, 1.04, z1 - 0.03), (x + 0.035, y1 - 0.04, z1 - 0.08), (x + 0.035, y1 - 0.04, z0 + 0.1)], 'glass'),
+            box([x - 0.045, 0.98, z0 + 0.1], [0.04, 0.05, 0.16], 'chrome'),                              # handle
+            box([x - 0.05, 0.62, (z0 + z1)/2], [0.03, 0.03, hh - 0.06], 'paintD' if 'paintD' in PALETTE else 'paint2')]
+    opening = [box([-W + 0.01, 0.75, (z0 + z1)/2], [0.04, 0.6, hh - 0.1], 'black'),                      # what shows where the door was: a dark cab with a seat edge
+               box([-0.55, 0.62, (z0 + z1)/2 - 0.05], [0.5, 0.18, 0.5], 'woodD')]
+    return door, opening
+_door, _open = _pickup_parts()
+M['vehicles']['pickup']['door_l'] = _door; M['vehicles']['pickup']['door_gap'] = _open
+VRIG['pickup'].update({'doorHinge': [-0.97, 0, 0.22], 'doorAxis': 'y', 'doorOpenDeg': 70,
+    'doorRule': 'door_l is the driver\'s door (left, -x), drawn just proud of the body; hinge it at doorHinge about y, swing the back edge out (about 70 degrees). To remove it, delete door_l and draw door_gap on top of body, then spawn the door as a loose item.',
+    'steerRule': 'The wheel model is one tyre and hub. The front two are at z = wheels[1][2]; turn them about y up to 30 degrees to steer, spin all four about x. The rear two never steer.',
+    'looseTyre': 'items.tyre_loose: one tyre with its hub, 0.72 m across, standing; also lying flat as items.tyre_loose_flat.'})
+model('items', 'tyre_loose', [loft([[0, 0.36, -0.12, 0.36, 0.36], [0, 0.36, 0.12, 0.36, 0.36]], 'tyre', ax='z', n=10), loft([[0, 0.36, -0.125, 0.2, 0.2], [0, 0.36, 0.125, 0.2, 0.2]], 'hub', ax='z', n=8),
+                              loft([[0, 0.36, -0.13, 0.08, 0.08], [0, 0.36, 0.13, 0.08, 0.08]], 'tyre', ax='z', n=6)])
+model('items', 'tyre_loose_flat', [loft([[0, 0.0, 0, 0.36, 0.36], [0, 0.24, 0, 0.36, 0.36]], 'tyre', n=10), loft([[0, 0.0, 0, 0.2, 0.2], [0, 0.25, 0, 0.2, 0.2]], 'hub', n=8)])
+for _k in ('wreck', 'burnt'):   # the door in the same states as the body
+    _V = M['vehicles']['pickup_' + _k]; _map = {'paint2': 'rustBody' if _k == 'wreck' else 'burnt', 'glass': 'glassBroken' if _k == 'wreck' else 'burntD', 'chrome': 'rustD' if _k == 'wreck' else 'burntD'}
+    VRIG['pickup_' + _k].update({k: v for k, v in VRIG['pickup'].items() if k.startswith(('door', 'steer', 'looseTyre'))})
+    _V['door_l'] = [dict(q, c=_map.get(q['c'], q['c'])) for q in _door]; _V['door_gap'] = _open
+
 # ================= section 11 (20 October 2026) =================
 PALETTE.update({'gunMetal': '#2e3034', 'gunWood': '#8a6a46', 'targetW': '#e8e0cc', 'targetR': '#b8322a', 'glassCase': '#9cc4d0', 'hose': '#3a5a3a', 'fuelRed': '#b8322a', 'flameX': '#ffb04a', 'flameXC': '#fff0b8', 'flameXR': '#e0602a', 'cardG': '#3f6a3a', 'cardR': '#a8322a', 'cardB': '#2e5a7a'})
 def long_gun(x, y, z, L=1.0, wood=True, ry=0):

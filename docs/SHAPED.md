@@ -335,6 +335,8 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | items | `glass_sheet` | 14 / 30 / 14 |
 | items | `wire_coil` | 82 / 164 / 64 |
 | items | `plasterboard_scrap` | 14 / 28 / 12 |
+| items | `tyre_loose` | 84 / 144 / 48 |
+| items | `tyre_loose_flat` | 64 / 108 / 36 |
 | items | `fuel_siphon` | 60 / 120 / 44 |
 | items | `paper_map` | 17 / 35 / 19 |
 | furniture | `chair` | 72 / 144 / 46 |
@@ -502,6 +504,8 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `pickup.damage.windscreen_missing` | 7 / 19 / 19 |
 | vehicles | `pickup.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `pickup.damage.fire` | 104 / 272 / 68 |
+| vehicles | `pickup.door_l` | 48 / 96 / 32 |
+| vehicles | `pickup.door_gap` | 24 / 48 / 16 |
 | vehicles | `van.body` | 72 / 144 / 62 |
 | vehicles | `van.bonnet` | 12 / 24 / 8 |
 | vehicles | `van.wheel` | 48 / 84 / 28 |
@@ -530,9 +534,13 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | vehicles | `pickup_wreck.body` | 190 / 380 / 130 |
 | vehicles | `pickup_wreck.bonnet` | 12 / 24 / 8 |
 | vehicles | `pickup_wreck.wheel` | 48 / 84 / 28 |
+| vehicles | `pickup_wreck.door_l` | 48 / 96 / 32 |
+| vehicles | `pickup_wreck.door_gap` | 24 / 48 / 16 |
 | vehicles | `pickup_burnt.body` | 190 / 380 / 130 |
 | vehicles | `pickup_burnt.bonnet` | 12 / 24 / 8 |
 | vehicles | `pickup_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `pickup_burnt.door_l` | 48 / 96 / 32 |
+| vehicles | `pickup_burnt.door_gap` | 24 / 48 / 16 |
 | vehicles | `van_wreck.body` | 72 / 144 / 62 |
 | vehicles | `van_wreck.bonnet` | 12 / 24 / 8 |
 | vehicles | `van_wreck.wheel` | 48 / 84 / 28 |
@@ -1112,12 +1120,38 @@ Colour names are in the palette; nothing uses slots, so a building's interior lo
 A generator and a checker, not a model pack: `FLOORPLAN.gen(kind, w, d, {seed, storeys})` returns walls, doors, rooms and keep-clear walkways for a building of that footprint; `FLOORPLAN.check(plan)` walks a 0.6 m agent through every door and fails if any room on any storey cannot be reached. Rules and how to plug it into `genInterior` are in `docs/FLOORPLANS.md`; `node assets/shaped/src/floorplan_test.js` runs it over thousands of footprints.
 
 
+## flora (`assets/shaped/flora.js`, version 1)
+
+Everything stands on the ground at the origin, metres, true to the height the game scales it to (info[name].h), so scale 1 is right.
+models.plants.<name>    near version. Deciduous trees come in summer (<kind>) and autumn (<kind>_fall); every tree has three shape
+                        variants: <kind>, <kind>_b, <kind>_c (different lean, branching and crown, same height class) so woods are not cloned.
+models.far.<name>       a far version of 60 triangles or fewer for the distance (a trunk and two or three blobs). Same names as plants.
+info[name]              {h, variants, far} the height it is drawn at, the variant names, and the far model.
+Kinds: oak, maple, sycamore, poplar, cedar, pine (trees); bush, bush_small, shrub; grass_tuft, grass_tall.
+Colour names are in the palette (nothing uses slots).
+
+Use plants.<name> within about 60 m and far.<name> beyond; both have the same name and stand at the same size, so switching does not pop. Pick a variant by hashing the tree's position into info[name].variants. For the autumn season swap <kind> for <kind>_fall (oak, maple, sycamore, poplar); cedar, pine and the shrubs stay green. The existing props.plants names (oak, autumn_oak, pine, bush, grass_tuft...) still work; these replace them one for one.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `plants` | 45 | 42 to 246 |
+| `far` | 30 | 24 to 50 |
+
+## furniture, set 2 (`assets/shaped/furniture2.js`, version 1)
+
+The thirteen furniture pieces that replace the Furniture Kit, with the same names as the game uses (chair_stool, cabinet_medium_decorated, cabinet_medium, cabinet_small_decorated, cactus_medium_A, k_basin, k_night, k_bunk, k_plant, k_rug, k_washer, k_coat, k_stool). Each fits inside its footprint in tools/out/models.txt.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `furniture` | 13 | 84 to 264 |
+
 ## audio (`assets/audio/`, made in code)
 
 Sound effects and music for sections 9, 10.6 and 11.11, synthesised by `assets/audio/src/make_audio.py` (numpy, scipy and ffmpeg; no samples, nothing to license). Same form as `assets/sounds.js`: small mono MP3s stored as text so they load from a drive.
 
 - `assets/audio/sounds_design.js` adds keys to `window.ART.sounds` (each a list of 1 to 4 variations), so `sfx(name, ...)` plays them once the file is loaded after `assets/sounds.js`. Loops (`generator_hum`, `rain_roof`, `rain_outside`, `fire_crackle`) are cut to repeat seamlessly: play them with `loop = true`.
 - `assets/audio/music_<name>.js` sets `window.ART.music[name]` (one MP3) and `window.ART.musicLoop[name]` (its length in seconds). `day` (calm, 84 bpm), `night` (a low drone with sparse bells), `horde` (drums and a minor riff, 132 bpm) and `base` (warm and slow) are two-minute seamless loops: decode, set `loop = true`, `loopStart = 0`, `loopEnd = musicLoop[name]` (that skips the MP3 padding). `chase` is a five-second sting. Load each file only when it is needed.
+- `assets/audio/sounds_content.js` (made by `assets/audio/src/make_sounds_content.py`) adds the content-request set: `step_grass`, `step_road`, `step_wood`, `step_tile`, `step_carpet`, `step_water`, `hit_fist`, `hit_bat`, `hit_blade`, `glass_smash`, `door_open`, `door_close`, `door_smash`, `cloth_rustle` and `metal_clang`, each a list of 3 or 4 variations, 0.16 to 1.3 s, mono. Load it after `sounds_design.js`.
 - `assets/audio/preview.html` plays everything.
 
 Sound keys: `jump_grunt`, `land_grass`, `land_road`, `land_wood`, `land_metal`, `step_gravel`, `swing_wood`, `swing_metal`, `hit_wood`, `hit_metal`, `pan_clang`, `umbrella_flap`, `gun_pistol`, `gun_rifle`, `gun_shotgun`, `dry_click`, `reload_click`, `mag_in`, `gun_rack`, `bolt_cycle`, `shell_insert`, `arrow_release`, `arrow_thunk`, `crossbow_shot`, `flare_pop`, `alien_swarmer_idle`, `alien_swarmer_notice`, `alien_swarmer_attack`, `alien_swarmer_die`, `alien_stalker_idle`, `alien_stalker_notice`, `alien_stalker_attack`, `alien_stalker_die`, `alien_giant_idle`, `alien_giant_notice`, `alien_giant_attack`, `alien_giant_die`, `alien_spitter_idle`, `alien_spitter_notice`, `alien_spitter_attack`, `alien_spitter_die`, `alien_clinger_idle`, `alien_clinger_notice`, `alien_clinger_attack`, `alien_clinger_die`, `door_slam`, `door_creak`, `drawer`, `lid`, `furniture_drag`, `generator_hum`, `rain_roof`, `rain_outside`, `fire_crackle`, `wood_crack`, `brick_crumble`, `concrete_crack`, `steel_bend`, `glass_break`, `car_crash_light`, `car_crash_heavy`, `plug_in`, `breaker_trip`, `klaxon`, `plant_start`, `power_on_hum`, `sting_night`, `sting_dawn`.

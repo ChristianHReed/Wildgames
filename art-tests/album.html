@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -473,6 +473,33 @@ const SCENES={
       G.forEach(g=>{ const k=g.split('.')[1], sz=IN.sizes[g]||[1,1,1]; const w=Math.max(sz[0],1.0)+0.5, d=Math.max(sz[1],0.6)+0.4; if (x+w>W){ x=0; z-=rowH; rowH=0; } at(mesh(IN.models[g.split('.')[0]][k],c),x+w/2-W/2,0,z); x+=w; rowH=Math.max(rowH,d+0.8); });
       cam.position.set(0,9,12); ctl.target.set(0,0.8,-2); }},
 
+  flora:{t:'Trees and plants (replacing Nature Kit)',d:'Back row, left to right: oak, maple, sycamore and poplar in summer, then cedar and pine; next row the same in autumn (cedar and pine stay green); each with its three shape variants side by side. Front: bush, small bush, shrub (with berries), grass tuft and tall grass, and the far (distance) versions of oak, maple, sycamore, poplar, cedar and pine on the right.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; ground(160,120,0x7a8a58); const col=colourer(FL.palette,{});
+      const put=(cat,n,x,z)=>{ const g=mesh(FL.models[cat][n],col); g.position.set(x,0,z); scene.add(g); };
+      const kinds=['oak','maple','sycamore','poplar','cedar','pine']; let x=-44;
+      kinds.forEach((k,i)=>{ ['','_b','_c'].forEach((s,j)=>{ put('plants',k+s,x+j*5.5,0); if(k!=='cedar'&&k!=='pine') put('plants',k+'_fall'+s,x+j*5.5,-14); }); x+=18; });
+      ['bush','bush_small','shrub'].forEach((k,i)=>['','_b','_c'].forEach((s,j)=>put('plants',k+s,-40+i*7+j*2,12)));
+      ['grass_tuft','grass_tall'].forEach((k,i)=>['','_b','_c'].forEach((s,j)=>put('plants',k+s,-12+i*4+j*1.2,12)));
+      kinds.forEach((k,i)=>put('far',k,6+i*6,12));
+      cam.position.set(0,24,80); ctl.target.set(0,5,-2); }},
+  pickup2:{t:'Pickup truck parts (replacing Car Kit)',d:'Left to right: whole pickup with the driver\'s door shut, bonnet and door open with the front wheels steered, door off with the opening showing and the loose tyre beside it, the wreck, and the burnt shell. Seen from the driver\'s side.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,40,0xd8d2c6); const col=colourer(PR.palette,{}); const V=PR.models.vehicles, R=PR.vehicleRig;
+      const build=(name,o,x)=>{ const m=V[name], r=R[name], g=new THREE.Group(); g.add(mesh(m.body,col));
+        const bn=mesh(m.bonnet,col), h=r.bonnetHinge, pv=new THREE.Group(); pv.position.set(h[0],h[1],h[2]); bn.position.set(-h[0],-h[1],-h[2]); pv.add(bn); pv.rotation.x=o.bonnet?-1.0:0; g.add(pv);
+        r.wheels.forEach(w=>{ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); const fw=w[2]>0, e=new THREE.Group(); e.position.copy(wm.position); wm.position.set(0,0,0); if(w[0]<0) wm.rotation.y=Math.PI; e.add(wm); if(fw&&o.steer) e.rotation.y=o.steer; g.add(e); });
+        if(o.doorOff) g.add(mesh(m.door_gap,col)); else { const d=mesh(m.door_l,col), hg=r.doorHinge, pv2=new THREE.Group(); pv2.position.set(hg[0],hg[1],hg[2]); d.position.set(-hg[0],-hg[1],-hg[2]); pv2.add(d); pv2.rotation.y=o.door?1.2:0; g.add(pv2); }
+        g.position.set(x,(r.sitDrop?-r.sitDrop:0),0); g.rotation.y=Math.PI/2*0+o.ry||0; scene.add(g); return g; };
+      build('pickup',{},-14); build('pickup',{bonnet:true,door:true,steer:0.5},-5); build('pickup',{doorOff:true},4);
+      const t=mesh(PR.models.items.tyre_loose,col); t.position.set(4,0,-3.4); t.rotation.y=0.4; scene.add(t); const t2=mesh(PR.models.items.tyre_loose_flat,col); t2.position.set(5.2,0,-3.4); scene.add(t2);
+      const d=mesh(V.pickup.door_l,col); d.position.set(4+3.2,0.0,-2.2); d.rotation.set(0,0,Math.PI/2.4); d.position.y=0.15; scene.add(d);
+      build('pickup_wreck',{},12); build('pickup_burnt',{},20);
+      cam.position.set(-6,7,-26); ctl.target.set(3,1,0); }},
+  furn2:{t:'Furniture set 2 (replacing Furniture Kit)',d:'The thirteen pieces, each inside its footprint: stool, kitchen stool, medium cabinet, medium and small decorated cabinets, potted cactus, house plant, kitchen basin unit, night table, bunk bed, washing machine, coat stand and a rug.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,30,0xd8d2c6); const col=colourer(F2.palette,{});
+      const K=['chair_stool','k_stool','cabinet_medium','cabinet_medium_decorated','cabinet_small_decorated','cactus_medium_A','k_plant','k_basin','k_night','k_bunk','k_washer','k_coat'];
+      K.forEach((k,i)=>{ const g=mesh(F2.models.furniture[k],col); g.position.set((i%6-2.5)*2.1,0,-Math.floor(i/6)*3); scene.add(g); });
+      const r=mesh(F2.models.furniture.k_rug,col); r.position.set(0,0,5); scene.add(r);
+      cam.position.set(0,6,11); ctl.target.set(0,0.8,-1); }},
   plans:{t:'Floor plans',d:'Generated plans, floor 0 (and the first floor beside it where there is one): a two-storey house, a grocery, a church, an office, a hospital wing, a fire station and a pumping station. Colour by room, white strips are the walkways that stay clear of furniture, every door is a 1.0 m gap, and the checker has walked an agent through all of them.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const F=window.FLOORPLAN;
       const COL={hall:'#e6e0d0',stairs:'#c8b08a',bedroom:'#c8a0a0',bath:'#a0c0d0',wc:'#a0c0d0',store:'#b0a890',kitchen:'#d0c080',living:'#c0b080',living_k:'#c8b878',studio:'#c0a890',office:'#98a8c0',market:'#a0c090',stock:'#b0a890',nave:'#c8b0d0',vestry:'#b098b8',boardroom:'#90a0b8',openplan:'#a0b0c8',breakroom:'#c0b898',waiting:'#98c0b8',exam:'#a8d0c8',ward:'#b0d0d8',pharmacy:'#a0d0a8',firebay:'#d09080',bunkroom:'#c0a090',pumphouse:'#90b0c8',control:'#a0a8b0',plantroom:'#90a0b0',substation:'#a8a890',boilerhouse:'#c0a090',libhall:'#b0a088',classroom:'#d0c090',cafeteria:'#c8b080'};

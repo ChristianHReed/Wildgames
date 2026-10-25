@@ -7,6 +7,7 @@ def load(n):
     return json.loads(s[s.index(k) + len(k):].rstrip().rstrip(';'))
 SV, AL, BU, PR, HE, FX, GR, WA, PW = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held'), load('fx'), load('ground'), load('walls'), load('power')
 WD, MC, AN, IN = load('world'), load('machines'), load('animals'), load('interiors')
+FL, F2 = load('flora'), load('furniture2')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -223,6 +224,18 @@ L.append(f'''
 
 A generator and a checker, not a model pack: `FLOORPLAN.gen(kind, w, d, {seed, storeys})` returns walls, doors, rooms and keep-clear walkways for a building of that footprint; `FLOORPLAN.check(plan)` walks a 0.6 m agent through every door and fails if any room on any storey cannot be reached. Rules and how to plug it into `genInterior` are in `docs/FLOORPLANS.md`; `node assets/shaped/src/floorplan_test.js` runs it over thousands of footprints.
 ''')
+L.append(f'''
+## flora (`assets/shaped/flora.js`, version {FL['version']})
+
+{FL['about'].strip()}
+
+{FL['rule']}
+''' + tri_table(FL))
+L.append(f'''
+## furniture, set 2 (`assets/shaped/furniture2.js`, version {F2['version']})
+
+{F2['about'].strip()}
+''' + tri_table(F2))
 _snd = open(os.path.join(ROOT, 'assets', 'audio', 'sounds_design.js')).read(); _keys = _re.findall(r'"([a-z0-9_]+)":\[', _snd)
 L.append("""
 ## audio (`assets/audio/`, made in code)
@@ -231,6 +244,7 @@ Sound effects and music for sections 9, 10.6 and 11.11, synthesised by `assets/a
 
 - `assets/audio/sounds_design.js` adds keys to `window.ART.sounds` (each a list of 1 to 4 variations), so `sfx(name, ...)` plays them once the file is loaded after `assets/sounds.js`. Loops (`generator_hum`, `rain_roof`, `rain_outside`, `fire_crackle`) are cut to repeat seamlessly: play them with `loop = true`.
 - `assets/audio/music_<name>.js` sets `window.ART.music[name]` (one MP3) and `window.ART.musicLoop[name]` (its length in seconds). `day` (calm, 84 bpm), `night` (a low drone with sparse bells), `horde` (drums and a minor riff, 132 bpm) and `base` (warm and slow) are two-minute seamless loops: decode, set `loop = true`, `loopStart = 0`, `loopEnd = musicLoop[name]` (that skips the MP3 padding). `chase` is a five-second sting. Load each file only when it is needed.
+- `assets/audio/sounds_content.js` (made by `assets/audio/src/make_sounds_content.py`) adds the content-request set: `step_grass`, `step_road`, `step_wood`, `step_tile`, `step_carpet`, `step_water`, `hit_fist`, `hit_bat`, `hit_blade`, `glass_smash`, `door_open`, `door_close`, `door_smash`, `cloth_rustle` and `metal_clang`, each a list of 3 or 4 variations, 0.16 to 1.3 s, mono. Load it after `sounds_design.js`.
 - `assets/audio/preview.html` plays everything.
 
 Sound keys: """ + ', '.join('`' + k + '`' for k in _keys) + '.')

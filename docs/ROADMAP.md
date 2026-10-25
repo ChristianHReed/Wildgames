@@ -177,6 +177,7 @@ The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/S
 | Service and construction vehicles with rigs and clips (`machines.js`) | Parked as wrecks on roads (0.87); rigs, clips and driving not used | After vehicles on roads |
 | Animals with clips and hunting yields (`animals.js`) | Not used | Hunting and food |
 | Street signs, lamps (off and on), traffic and walk signals (`props.street`) | Not used | Streets, with power (0.59) |
+| Replacement art for the last third-party packs: trees and plants (`flora.js`), pickup door and loose tyre (`props.js`), thirteen furniture pieces (`furniture2.js`), content sounds (`sounds_content.js`) | Not used | Wire in, then remove Kenney Nature Kit, Car Kit, Furniture Kit and the Impact/RPG sounds and their CREDITS.md lines (0.94.1) |
 | Shop signs, business fixtures per room type (`interiors.js`, `roomFixtures`) | Not used | Next interiors pass |
 | Floor plans with checked walkways (`floorplan.js`, docs/FLOORPLANS.md) | Not used | Next interiors pass: replace the room splitter |
 | Cars: sedan, hatchback, pickup, van, taxi and police paint | In the game | 0.45 |
