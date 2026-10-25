@@ -8,16 +8,16 @@ The map chat searched GitHub on 25 October 2026 for open-source code the Maps Bu
 - **Copied in** as a single classic-script file under `builder/lib/`, with its licence kept beside it. Code written as ES modules gets a small wrapper.
 - **Used as a guide:** its rules are rewritten in our own code, with credit.
 
-## The game itself has no licence yet
+## The game's licence
 
-The repository has no `LICENSE` file. Until it has one, nobody else may legally reuse, change or share the game, which works against the plan for an open-source game that players add to. Everything recommended below is under permissive licences (MIT, ISC, BSD, Apache-2.0), which work with any licence the user picks.
+The user chose **MIT** on 25 October 2026 (`LICENSE`, and a Licence section in `README.md`). Everything recommended below is under permissive licences (MIT, ISC, BSD, Apache-2.0) that work with it.
 
-**MIT** is the simplest choice and matches most of what is used. Copied or ported code then needs only:
+Copied or ported code needs:
 - its licence text kept;
 - a line in `CREDITS.md`;
 - for Apache-2.0 code, its NOTICE file as well.
 
-Map data keeps its own licence (ODbL for OpenStreetMap and Overture) whatever the code licence is.
+Map data keeps its own licence (ODbL).
 
 ## 1. Copy in
 
