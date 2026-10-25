@@ -1,5 +1,7 @@
 # What the design chat still needs to build
 
+**Update, version 0.94.0:** the old Quaternius creatures and people (and their texture) and the unused Kenney furniture, car and box models are gone from the game; all aliens and survivors are now our own shaped art. What is still on third-party art is listed in section 12.
+
 **Update, version 0.45.9:** sections 4 to 8 have arrived; the effects and UI icons are wired in, the rest waits for its game step (see the roadmap).
 
 **Update, version 0.45.8:** batch 1 (sections 1 to 3) has arrived and is wired in for weapons, arms, clips, barricades, fires, generators, dropped packs and outdoor crates. Still waiting on game code, not art: loose items on the ground, searched container variants inside buildings, hinged doors, plants, street props, car wrecks and burnt cars. Sections 4 onward are still to do.
@@ -250,3 +252,25 @@ Roads, sidewalks, water and edges, rocks, service vehicles, animals, street sign
 | Street signs and lights | `props.street`: 24 new signs (no parking, no entry, all-way stop, warnings, road work, detour, hospital, evacuation, speed limits, route shield, railroad crossing off and on, overhead gantry), five lamp types each `_off` and `_on`, traffic signals on a mast arm and a span wire in five states, walk signals, flasher |
 | Shop signs, interiors per building type and use | `interiors.js`: a wall board and a blade sign for each of 49 business kinds, window stickers, fuel pylon; about 110 fixtures grouped retail, food, security, medical, school, faith, office, industrial, utility, home; `roomFixtures` maps each room type to its fixtures in the form `ROOMS` uses |
 | Floor plans with an unobstructed walkway to every room: residential, commercial, religious, utility | `floorplan.js` (generator and checker; 45 building kinds and aliases, one to four storeys); see `docs/FLOORPLANS.md` |
+
+## 12. Still on third-party art (new, version 0.94.0)
+
+Everything below is still in the game and is not ours. Each line says what it is, where it is used and what the game needs back. Same rules as every pack (shaped pieces, metres, origin at the centre of the base, front facing +Z).
+
+### 12.1 Trees and plants (Kenney Nature Kit, `assets/nature.js`, built by `tools/build_nature.py`)
+The biggest one: it is every tree, bush, grass tuft, flower, fern, rock, mushroom and log in the world, plus the far-away tree pictures.
+- Trees: oak, maple, sycamore, poplar, pine, cedar (each in a few sizes and a bare/autumn colour variant; the game recolours by season).
+- Bushes, tall grass, flowers (the game lets you gather from them), ferns, mushrooms, rocks, logs and stumps.
+- The shaped plants already in `assets/shaped/` (oak, pine, birch, willow, stump and so on) are not wired in yet; the game side can swap them in as soon as the set covers the list above.
+
+### 12.2 The pickup truck (Kenney Car Kit, `assets/vehicles.js`)
+The truck body, its four wheels, bonnet, a loose door and a tire. Town cars are already ours. Need: a shaped pickup truck with wheels that spin and steer, a hood that opens, a door that comes off and a loose tyre.
+
+### 12.3 A few furniture pieces (Kenney Furniture Kit, `assets/models.js`)
+Still old: a stool, two medium and one small decorated cabinets, a potted cactus, and the kitchen basin, night table, bunk bed, house plant, rug, washing machine, coat stand and kitchen stool. Need shaped versions of those thirteen (the other furniture is already ours).
+
+### 12.4 Sounds (Kenney Impact Sounds and RPG Audio, `assets/sounds.js`, built by `tools/build_sounds.py`)
+Footsteps, impacts, glass, doors, cloth and metal. Gunfire, alien calls, rain, wind and thunder are made by the game. Need recorded or synthesised replacements for footsteps by surface, impacts, glass breaking, door open/close/smash, cloth and metal.
+
+### 12.5 Not third party (no work needed)
+Survivors move on the skeleton and clips of Quaternius's Universal Base Characters and Animation Libraries (CC0, `assets/rig.js`). The bodies are ours; if the design chat wants its own skeleton and clips, that is a separate request.

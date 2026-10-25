@@ -240,6 +240,10 @@ Road cars come from a grid of cells laid over the real world (cell size = the ro
 
 An `.asmap` is a zip: `manifest.json` (`region` like a game region record, `squares`, `places`, `attribution`, `format`, `required`) and `squares/I_J.json`. Open map file writes each square to IndexedDB `zones` as `regionId:i:j` and adds the region (with `attribution` and `places`) to `lastblock:regions`, so it plays like a downloaded region. A non-empty `required` list stops the open with a message. Map format 2 keys the engine reads: `holes` (kept, used to take courtyard area off a building's floor area), `format`, `attribution`; tags `height` / `min_height` (storeys = height / 3.2 m) and `roof:shape` (`b.rs`: flat, gabled, hipped).
 
+## Art packs in the game (0.94)
+
+The Quaternius creatures and people models and their texture, the unused Kenney furniture and car models and the old wheels of replaced cars are removed. The old models remain only as size templates for the shaped replacements (`spInstall`). What is still third party is listed in `docs/ART_REQUESTS.md` section 12.
+
 ## The renderer in the engine (0.93)
 
 `drawScene(cam, env)` in `engine/render.js` draws everything that belongs to the map. The host passes the camera (eye, forward, side, up, view and projection matrices, the map point to draw around, field of view) and the light of the moment (hour, weather, darkness, season, street lights on, up to eight nearby lights); the game's `render()` builds those from the player, then adds its own meshes. `engine/README.md` has the full list of names a host page must supply.

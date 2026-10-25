@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.93.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.94.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,10 +454,10 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.93.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.94.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+  ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
   return set;
 })();
 /* shared engine files (also loaded by the Maps Builder): same ?v=BUILD rule as the art */
@@ -2269,26 +2269,8 @@ function eyeOf(pos){
   var best = null, bx = -1e9; for (i = 0; i < pos.length; i += 3){ if (pos[i+1] < ymax*0.8 || Math.abs(pos[i+2]) > zmax*0.3 + 0.03) continue; if (pos[i] > bx){ bx = pos[i]; best = [pos[i], pos[i+1], pos[i+2]]; } }
   return best ? [best[0] - 0.015, best[1] - Math.min(0.06, ymax*0.03), best[2], ymax] : null;
 }
-function loadCreatures(){
-  var t = (ART.creatures || '').replace(/<!--.*?-->/g, '').trim(), nl = t.indexOf('\n'); if (nl < 0) return;
-  try {
-    var idx = JSON.parse(t.slice(0, nl)), bin = atob(t.slice(nl + 1)), buf = new Uint8Array(bin.length), i, k; for (i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-    var dv = new DataView(buf.buffer);
-    for (var n in idx){
-      var e = idx[n], nv3 = e.nt*3, col = new Uint8Array(nv3*4), tc = new Float32Array(nv3*3), np = 0, c0 = e.o + e.nt*6, p0 = c0 + e.nt*3, o = {n:nv3, clips:e.clips, h:e.h, poses:[]};
-      for (k in e.clips) np = Math.max(np, e.clips[k][0] + e.clips[k][1]);
-      for (i = 0; i < e.nt; i++) for (k = 0; k < 3; k++){ var q = (i*3 + k)*4; col[q] = buf[c0 + i*3]; col[q+1] = buf[c0 + i*3 + 1]; col[q+2] = buf[c0 + i*3 + 2]; col[q+3] = 255; tc[(i*3 + k)*3 + 2] = -1; }
-      o.cb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, o.cb); gl.bufferData(gl.ARRAY_BUFFER, col, gl.STATIC_DRAW);
-      o.tb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, o.tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW);
-      for (var ps = 0; ps < np; ps++){
-        var pos = new Float32Array(nv3*3), base = p0 + ps*e.nv*6;
-        for (i = 0; i < nv3; i++){ var vi = dv.getUint16(e.o + i*2, true); pos[i*3] = dv.getInt16(base + vi*6, true)/1000; pos[i*3+1] = dv.getInt16(base + vi*6 + 2, true)/1000; pos[i*3+2] = dv.getInt16(base + vi*6 + 4, true)/1000; }
-        var vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW); o.poses.push({vb:vb, cb:o.cb, tb:o.tb, n:nv3, eye:eyeOf(pos)});
-      }
-      CRE[n] = o;
-    }
-  } catch (er){ CRE = {}; }
-  if (SPON && SHAPED.aliens && !/[?&]oldaliens/.test(location.search)) CNAME.forEach(function(n){ try { var o = shapedCreature(n); if (o) CRE[n] = o; } catch (er){ console.log('shaped alien', n, er); } });
+function loadCreatures(){   /* 0.94: the old Bestiary models are gone; every alien kind is the art chat's shaped model (assets/shaped/aliens.js) */
+  if (SPON && SHAPED.aliens) CNAME.forEach(function(n){ try { var o = shapedCreature(n); if (o) CRE[n] = o; } catch (er){ console.log('shaped alien', n, er); } });
 }
 /* Art 2 (0.44): the art chat's own aliens and rigs (assets/shaped/aliens.js) in place of the Bestiary stand-ins. Each bone's pieces are built once in the rest pose;
    every key frame turns each bone about its pivot (as three.js does: angles X, Y, Z, children carried along), in-between frames are blended so walking is smooth,
@@ -2420,7 +2402,7 @@ function svClips(){
     var M2 = new Float32Array(R.M.length + out.length); M2.set(R.M); M2.set(out, R.M.length); R.M = M2; for (var cn in clips){ R.clips[cn] = clips[cn]; SVNEW[cn] = 1; }
   });
 }
-function shapedOn(){ return !!(RIG && window.SHAPED && SHAPED.survivor && SHAPED.build && !/[?&]oldppl/.test(location.search)); }
+function shapedOn(){ return !!(RIG && window.SHAPED && SHAPED.survivor && SHAPED.build); }
 /* the game's look (and, for you, what you are wearing) as the pack's choices */
 function svLook(l, o){
   var K = SHAPED.survivor.choices, w = o.worn || {}, hat = ['none', 'cap', 'beanie', 'helmet'][l.hat], shoe = K.shoes[l.shoe];
@@ -5024,7 +5006,7 @@ function drawPrevShaped(){
   tris.forEach(function(t){ var q = t[1]; c.fillStyle = c.strokeStyle = t[2]; c.lineWidth = 0.6; c.beginPath(); for (var k = 0; k < 3; k++){ var X = W2/2 + q[k][0]*sc, Y = H2 - 4 - q[k][1]*sc; if (k) c.lineTo(X, Y); else c.moveTo(X, Y); } c.closePath(); c.fill(); c.stroke(); });
 }
 function drawPrev(){
-  if (window.SHAPED && SHAPED.survivor && !/[?&]oldppl/.test(location.search)){ try { drawPrevShaped(); return; } catch (er){} }
+  if (window.SHAPED && SHAPED.survivor){ try { drawPrevShaped(); return; } catch (er){} }
   var cv2 = el('cPrev'), c = cv2.getContext('2d'), l = readLook(), W2 = cv2.width, H2 = cv2.height, B = pplRaw(l.body ? 'female' : 'male');
   c.clearRect(0, 0, W2, H2);
   if (!B){ var w = [18, 22, 27][l.build]*W2/64, k = W2/64; c.fillStyle = l.pants; c.fillRect(W2/2 - w/2, 62*k, w - 2*k, 36*k); c.fillStyle = l.shirt; c.fillRect(W2/2 - w/2, 30*k, w, 34*k); c.fillStyle = SKIN[l.skin]; c.fillRect(24*k, 12*k, 16*k, 17*k); return; }

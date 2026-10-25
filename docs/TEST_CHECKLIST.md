@@ -134,3 +134,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.92.0) Offline from the website copy: builder.html opens and works without a connection after one visit.
 - [ ] (0.93.0) Looks the same as 0.92: day, night, rain, snow, fog, street lights, trees, terrain. **PHONE** too (the renderer moved files).
 - [ ] (0.93.1) After one visit to the website copy, the Maps Builder page opens and builds with the connection off.
+- [ ] (0.94.0) Aliens (all five kinds), survivors and your own character look the same as before; town cars, the pickup truck, the 13 old furniture pieces and trees still show; the game loads with no red errors in the console.
