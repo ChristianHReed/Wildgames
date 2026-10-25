@@ -37,3 +37,7 @@ Road cars are now placed by real-world cells, not by road order, so the same roa
 ## Update, 0.92.0: the first handoff list is done
 
 `sw.js` lists `builder.html`, `builder.webmanifest` and `builder/*.js`; the game's Maps page has a Maps Builder button; Open map file reads `.asmap` (stored and deflated); credits are shown; `height`, `min_height` and `roof:shape` are used; `holes` only reduce a building's floor area for now (open courtyards need shell and roof work). `building:material` is not used yet. The renderer split is next (0.93).
+
+## Update, 0.93.0: the renderer is in `engine/render.js`
+
+`initGL()` sets up the shaders (needs the canvas `game` and the art scripts); `drawScene(cam, env)` draws sky, ground, buildings, trees and terrain; `moodAt`, `drawSky`, `mul`, `drawMesh` and the nature loader moved too. The list of names your `builder-host.js` must provide is at the bottom of `engine/README.md` (found by a script over the parsed engine files: `ART`, `ARTSET`, `QS`, `SHAPED`, `P`, `time`, `DAY`, `season`, `inRun`, `toast`, `feed`, `sfx`, `makeNoise`, `emit`, `updateHud`, `inv`, `allBeds`, `doEdit`, `breachApply`, `rubbleAt`, `spB`, `bkMod`, `segsX`, plus a few input and debug values). Not yet done: the layer show/hide filters (a first version can do without), and `building:material`. Tell the main chat if the builder needs anything else moved.
