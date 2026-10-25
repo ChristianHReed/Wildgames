@@ -111,7 +111,7 @@ function toCompact(raw, name){
 }
 function fromCompact(j){
   return {ways:(j.ways || []).map(function(w){ var c = []; for (var i = 0; i < w[1].length; i += 2) c.push([w[1][i], w[1][i+1]]); return {c:c, tags:w[0]}; }),
-    pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; }), name:j.name ? String(j.name).replace(/[<>&"]/g, '').slice(0, 60) : '', spawn:Array.isArray(j.spawn) ? j.spawn : null, elev:j.elev && typeof j.elev === 'object' ? j.elev : null, tclass:j.tclass && typeof j.tclass === 'object' ? j.tclass : null, zone:j.zone && j.zone.n > j.zone.s && j.zone.e > j.zone.w ? {s:+j.zone.s, n:+j.zone.n, w:+j.zone.w, e:+j.zone.e} : null};
+    pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; }), name:j.name ? String(j.name).replace(/[<>&"]/g, '').slice(0, 60) : '', spawn:Array.isArray(j.spawn) ? j.spawn : null, elev:j.elev && typeof j.elev === 'object' ? j.elev : null, tclass:j.tclass && typeof j.tclass === 'object' ? j.tclass : null, holes:Array.isArray(j.holes) ? j.holes : null, format:j.format | 0, attribution:j.attribution ? String(j.attribution).slice(0, 600) : '', zone:j.zone && j.zone.n > j.zone.s && j.zone.e > j.zone.w ? {s:+j.zone.s, n:+j.zone.n, w:+j.zone.w, e:+j.zone.e} : null};
 }
 function parseText(text){
   var t = text.replace(/^﻿/, '').trim();

@@ -235,3 +235,7 @@ Road cars come from a grid of cells laid over the real world (cell size = the ro
 ## Shared engine (0.91)
 
 `engine/` holds the code both the game and the Maps Builder load: core, map parsing, world building, meshes, building shells, interiors and collision (see `engine/README.md`). `play.html` loads them after the art scripts with the same `?v=BUILD` rule, and `sw.js` lists them for offline use.
+
+## Map files from the Maps Builder (0.92)
+
+An `.asmap` is a zip: `manifest.json` (`region` like a game region record, `squares`, `places`, `attribution`, `format`, `required`) and `squares/I_J.json`. Open map file writes each square to IndexedDB `zones` as `regionId:i:j` and adds the region (with `attribution` and `places`) to `lastblock:regions`, so it plays like a downloaded region. A non-empty `required` list stops the open with a message. Map format 2 keys the engine reads: `holes` (kept, used to take courtyard area off a building's floor area), `format`, `attribution`; tags `height` / `min_height` (storeys = height / 3.2 m) and `roof:shape` (`b.rs`: flat, gabled, hipped).

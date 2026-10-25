@@ -261,10 +261,10 @@ function shell(b, m, lm){
     [-1.3, 1.3].forEach(function(sd){ m.ybox(pd.x, pd.y, pya, 1.82, sd, 1.28, 0.06, 1.28, 0.06, TRIM); });
     m.ybox(pd.x, pd.y, pya, 0.75, 0, 0.07, 0.75, 0.07, 1.2, [176,168,156]);
   }
-  var tr = b.tri = earclip(p), cxr = b.cx, czr = b.cy, hip = K.roof === 'hip' && n <= 24 && b.area < 900 && pip(p, cxr, czr), q, r;
+  var tr = b.tri = earclip(p), cxr = b.cx, czr = b.cy, hip = (K.roof === 'hip' ? b.rs !== 'flat' : b.rs === 'gabled' || b.rs === 'hipped') && n <= 24 && b.area < 900 && pip(p, cxr, czr), q, r;   /* b.rs: the roof shape the map says (0.92) */
   /* the top: a roof that reaches past the walls. A plain box of a house (four square corners) gets a gable roof about half the time */
   var gab = null;
-  if (hip && n === 8 && b.kind !== 'church' && hash(b.id, 21, 4) < 0.55){ var sq = true; for (i = 0; i < 8; i += 2){ var i1 = (i + 2) % 8, i2 = (i + 4) % 8, e1x = p[i1] - p[i], e1z = p[i1+1] - p[i+1], e2x = p[i2] - p[i1], e2z = p[i2+1] - p[i1+1]; if (Math.abs(e1x*e2x + e1z*e2z)/(Math.hypot(e1x, e1z)*Math.hypot(e2x, e2z) || 1) > 0.12) sq = false; }
+  if (hip && n === 8 && b.kind !== 'church' && b.rs !== 'hipped' && (b.rs === 'gabled' || hash(b.id, 21, 4) < 0.55)){ var sq = true; for (i = 0; i < 8; i += 2){ var i1 = (i + 2) % 8, i2 = (i + 4) % 8, e1x = p[i1] - p[i], e1z = p[i1+1] - p[i+1], e2x = p[i2] - p[i1], e2z = p[i2+1] - p[i1+1]; if (Math.abs(e1x*e2x + e1z*e2z)/(Math.hypot(e1x, e1z)*Math.hypot(e2x, e2z) || 1) > 0.12) sq = false; }
     if (sq){ var L0 = Math.hypot(p[2] - p[0], p[3] - p[1]), L1 = Math.hypot(p[4] - p[2], p[5] - p[3]), s0g = L0 >= L1 ? 0 : 2; gab = [0, 1, 2, 3].map(function(k){ var ii = ((s0g/2 + k) % 4)*2; return [p[ii], p[ii+1]]; }); } }
   var EV = 0.45, eaveRing = function(y){ var out = []; for (var k = 0; k < n; k += 2){ var kp = (k - 2 + n) % n, kn = (k + 2) % n, ax1 = p[k] - p[kp], az1 = p[k+1] - p[kp+1], ax2 = p[kn] - p[k], az2 = p[kn+1] - p[k+1], l1 = Math.hypot(ax1, az1) || 1, l2 = Math.hypot(ax2, az2) || 1;
       var o1x = az1/l1, o1z = -ax1/l1, o2x = az2/l2, o2z = -ax2/l2, mx = o1x + o2x, mz = o1z + o2z, dd = 1 + o1x*o2x + o1z*o2z, f = dd > 0.3 ? EV/dd : EV/0.3; out.push(p[k] + mx*f, p[k+1] + mz*f); } return out; };

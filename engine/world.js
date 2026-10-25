@@ -208,16 +208,18 @@ function buildWorld(raw, name){
     start:raw.spawn ? {x:(raw.spawn[0]-lon0)*kx, y:-(raw.spawn[1]-lat0)*ky} : {x:0, y:0}, pin:!!raw.pin};
   w.geo = {lon0:lon0, lat0:lat0, kx:kx, ky:ky}; w.core = Z ? {x0:(Z.w - lon0)*kx, x1:(Z.e - lon0)*kx, y0:-(Z.n - lat0)*ky, y1:-(Z.s - lat0)*ky} : null;
   buildHeights(w, raw, lon0, lat0, kx, ky); w.tcls = decodeCls(raw.tclass, lon0, lat0, kx, ky);
-  raw.ways.forEach(function(way){
+  var holesOf = {}; (raw.holes || []).forEach(function(h){ if (h && h.length === 2 && h[1] && h[1].length >= 6){ var hp = []; for (var hq = 0; hq + 1 < h[1].length; hq += 2) hp.push((h[1][hq] - lon0)*kx, -(h[1][hq+1] - lat0)*ky); (holesOf[h[0]] = holesOf[h[0]] || []).push(hp); } });
+  raw.ways.forEach(function(way, wayIx){
     var t = way.tags || {}, cs = way.c; if (!cs || cs.length < 2) return;
     var closed = cs.length >= 4 && same(cs[0], cs[cs.length-1]), pts = proj(cs);
     if (closed && t.building && t.building !== 'no'){
       pts.length -= 2; var ar = 0, cx = 0, cy = 0, n = pts.length;
       for (i = 0; i < n; i += 2){ var j = (i+2) % n; ar += pts[i]*pts[j+1] - pts[j]*pts[i+1]; cx += pts[i]; cy += pts[i+1]; }
       ar = Math.abs(ar)/2; if (ar < 6) return;
+      var hls = holesOf[wayIx]; if (hls) hls.forEach(function(hp){ var ha = 0; for (var hi = 0; hi < hp.length; hi += 2){ var hj = (hi + 2) % hp.length; ha += hp[hi]*hp[hj+1] - hp[hj]*hp[hi+1]; } ar = Math.max(6, ar - Math.abs(ha)/2); });   /* courtyards and light wells (map format 2) do not count as floor */
       var id = w.buildings.length, kind = kindOf(t), kg = !kind; if (kg){ var hk = hash(id, 17, 4); kind = ar < 280 ? 'house' : hk < 0.45 ? 'office' : hk < 0.7 ? 'shop' : 'apartments'; }
       var cat = KIND[kind].cat;
-      w.buildings.push(bbox({pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', hn:t['addr:housenumber'] || '', st:t['addr:street'] || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels'])||0, civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
+      w.buildings.push(bbox({pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', hn:t['addr:housenumber'] || '', st:t['addr:street'] || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels']) || levelsOfHeight(t), rs:roofShape(t), civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
         col:CAT[cat].cols[Math.floor(hash(id, 3, 5)*CAT[cat].cols.length)], rolls:Math.max(1, Math.min(6, Math.round(1 + ar/160))), time:Math.min(4, 1.2 + ar/400), id:id}));
       return;
     }
@@ -629,6 +631,10 @@ var SPECIES = {street:[0, 1, 1, 0], yard:[1, 0, 5, 3, 1], park:[0, 2, 1, 0], riv
 function addTree(x, y, n, h){ var L = SPECIES[h || 'poi'] || SPECIES.poi; world.trees.push({x:x, y:y, h:h || 'poi', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:L[Math.floor(hash(n, 4, 9)*L.length)], yw:hash(n, 5, 9)*6.283, sc:0.75 + hash(n, 6, 9)*0.4}); }
 /* the model and picture for a tree: deciduous trees turn in autumn */
 function treeKey(tr){ var nm = TREES[tr.sp] || 'oak'; return season() === 2 && tr.sp < 4 ? nm + '_fall' : nm; }
+/* 0.92.0: real heights and roof shapes from map format 2. "12", "12 m" and "40 ft" all work; a building mapped by height only gets the storeys that fit */
+function metres(v){ if (v === undefined || v === null) return 0; var m = String(v).match(/^\s*(-?[\d.]+)\s*(m|ft|feet|')?/i); if (!m) return 0; var n = +m[1]; if (!isFinite(n)) return 0; return m[2] && /^(ft|feet|')$/i.test(m[2]) ? n*0.3048 : n; }
+function levelsOfHeight(t){ var h = metres(t.height) - metres(t.min_height); return h >= 2.5 ? Math.max(1, Math.min(15, Math.round(h/3.2))) : 0; }
+function roofShape(t){ var r = String(t['roof:shape'] || '').toLowerCase(); return r === 'flat' ? 'flat' : r === 'gabled' || r === 'gable' ? 'gabled' : r === 'hipped' || r === 'half-hipped' || r === 'pyramidal' || r === 'hip' ? 'hipped' : ''; }
 function buildingAt(x, y){
   var cell = world.grid.get(gk(Math.floor(x/G), Math.floor(y/G))); if (!cell) return null;
   for (var i = 0; i < cell.length; i++){ var b = cell[i]; if (!b.gone && x >= b.minx && x <= b.maxx && y >= b.miny && y <= b.maxy && pip(b.pts, x, y)) return b; }

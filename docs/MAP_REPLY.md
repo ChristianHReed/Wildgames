@@ -33,3 +33,7 @@ Road cars are now placed by real-world cells, not by road order, so the same roa
 ## Update, 0.91.0: the engine split is done
 
 `engine/` exists with `core`, `mapparse`, `world`, `meshes`, `buildings`, `interiors`, `collision` (see `engine/README.md` for load order and what each holds). The builder can load these same files. The renderer (WebGL setup, draw loop, models) is still in `play.html`; ask for it when the builder needs it. Edits to map parsing and world building now go in `engine/`, and the game's own rules stay in `play.html`.
+
+## Update, 0.92.0: the first handoff list is done
+
+`sw.js` lists `builder.html`, `builder.webmanifest` and `builder/*.js`; the game's Maps page has a Maps Builder button; Open map file reads `.asmap` (stored and deflated); credits are shown; `height`, `min_height` and `roof:shape` are used; `holes` only reduce a building's floor area for now (open courtyards need shell and roof work). `building:material` is not used yet. The renderer split is next (0.93).
