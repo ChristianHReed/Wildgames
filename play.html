@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.91.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.91.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.91.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.91.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3482,7 +3482,7 @@ function carryUse(){
   if (P.carry){
     if (P.lvl){ toast('Take it down to the ground floor first.', 2.5); return; }
     var x = P.x + Math.cos(P.yaw)*(1.1 + pfSize(P.carry)[0]), y = P.y + Math.sin(P.yaw)*(1.1 + pfSize(P.carry)[0]), q = {id:Date.now() + '-' + Math.floor(Math.random()*1e6), k:P.carry, x:x, y:y, yaw:P.yaw, hp:40};
-    var ok = true; pfRect(q).forEach(function(c){ if (hitWall(c[0], c[1]) || buildingAt(c[0], c[1]) !== P.inside) ok = false; }); if (!ok || circ(x, y, 0.4)){ toast('There is no room to put it down there.', 2.5); return; }
+    var ok = true, psz = pfSize(P.carry); if (P.inside) ok = roomFor(x, y, P.yaw, psz[0], psz[1]); else { pfRect(q).forEach(function(c){ if (hitWall(c[0], c[1]) || buildingAt(c[0], c[1]) !== P.inside) ok = false; }); if (circ(x, y, 0.4)) ok = false; } if (!ok){ toast('There is no room to put it down there.', 2.5); return; }
     doEdit({a:'place', q:q}); sfx('wood_hit', x, y, 0.8, 0.7); makeNoise(x, y, 8); feed('Put it down', ITEMS.wood[1]); P.carry = null; return; }
   var o = carryTarget(); if (!o){ return false; }
   if (o.pf){ P.carry = o.k; doEdit({a:'unplace', id:o.id}); feed('Picked up: ' + (FURN[o.k] && FURN[o.k].name || o.k) + '. Y puts it down. You move slowly.', ITEMS.wood[1]); return; }
@@ -3900,17 +3900,35 @@ function wallRule(x, y, yaw){
     if (Math.abs(s1) < 1.38 && Math.abs(s2) < 1.38) bad = 'Cuts across another wall: end it against the wall instead'; });
   return bad;
 }
+/* 0.91.1: is there room indoors for a rectangle (half sizes hx, hz) at x, y turned by yaw? Not through walls, furniture, the front door, a chest, a bed or something already put down. (circ() answers "touching a building", which is always yes indoors, so beds, chests and carried furniture could never be placed inside.) */
+function roomFor(x, y, yaw, hx, hz){
+  var b = P.inside; if (!b) return true; var I = b.int, c = I ? lvCircs(b, 0) : [], s0 = I ? lvSegs(b, 0) : [], cs = Math.cos(yaw), sn = Math.sin(yaw), nx = Math.max(1, Math.ceil(hx*2/0.4)), nz = Math.max(1, Math.ceil(hz*2/0.4)), i, j, q, E = world.edits, ws2 = world.wallSegs;
+  for (i = 0; i <= nx; i++) for (j = 0; j <= nz; j++){
+    var u = -hx + 2*hx*i/nx, v = -hz + 2*hz*j/nz, px = x + u*cs - v*sn, py = y + u*sn + v*cs;
+    if (buildingAt(px, py) !== b) return false;
+    for (q = 0; q < b.segs.length; q += 4) if (segDist(px, py, b.segs[q], b.segs[q+1], b.segs[q+2], b.segs[q+3]) < 0.14) return false;
+    for (q = 0; q < s0.length; q += 4) if (segDist(px, py, s0[q], s0[q+1], s0[q+2], s0[q+3]) < 0.14) return false;
+    for (q = 0; q < ws2.length; q += 4) if (segDist(px, py, ws2[q], ws2[q+1], ws2[q+2], ws2[q+3]) < 0.16) return false;
+    for (q = 0; q < c.length; q += 3) if (Math.hypot(px - c[q], py - c[q+1]) < c[q+2] + 0.05) return false;
+    if (b.door && Math.hypot(px - b.door.x, py - b.door.y) < 1.1) return false;
+  }
+  var rr = Math.max(hx, hz) + 0.35;
+  for (i = 0; i < E.chests.length; i++) if (Math.hypot(E.chests[i].x - x, E.chests[i].y - y) < rr) return false;
+  for (var k in E.beds) if (Math.hypot(E.beds[k].x - x, E.beds[k].y - y) < rr + 0.4) return false;
+  (E.placed || []).forEach(function(o){ if (Math.hypot(o.x - x, o.y - y) < rr) i = -1; }); if (i === -1) return false;
+  return true;
+}
 function plCheck(a, x, y, yaw){
   var wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3, cw = me.bg === 'mechanic' ? 1 : 2, fw = me.bg === 'mechanic' ? 3 : 4;
   if (Math.hypot(x - P.x, y - P.y) < 0.7 && a !== 'plot') return 'Too close to you';
   if (a === 'wall'){ if (WMAT === 'steel'){ if (inv.wood < 2 || inv.scrap < (me.bg === 'builder' || me.bg === 'mechanic' ? 3 : 4)) return 'Needs 2 wood and ' + (me.bg === 'builder' || me.bg === 'mechanic' ? 3 : 4) + ' scrap'; } else if (inv.wood < wc) return 'Needs ' + wc + ' wood'; if (hitWall(x, y) || buildingAt(x, y) !== P.inside) return 'No room there'; var wr = wallRule(x, y, yaw); if (wr) return wr; }
   else if (a === 'cade'){ if (inv.wood < cw || inv.scrap < 1) return 'Needs ' + cw + ' wood and 1 scrap'; if (hitWall(x, y)) return 'No room there'; }
   else if (a === 'fire'){ if (inv.wood < fw) return 'Needs ' + fw + ' wood'; if (hitWall(x, y)) return 'No room there'; }
-  else if (a === 'bed'){ if (!P.inside) return 'Beds go inside a building'; if (world.nests[P.inside.id]) return 'Not in a nest'; if (inv.wood < 5) return 'Needs 5 wood'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.5)) return 'No room there'; }
-  else if (a === 'chest'){ if (!P.inside) return 'Chests go inside a building'; if (inv.wood < 3 || inv.scrap < 2) return 'Needs 3 wood and 2 scrap'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.4)) return 'No room there'; }
-  else if (a === 'cbox'){ if (!P.inside) return 'A cable box goes inside a building'; if (inv.scrap < 4 || inv.nails < 3) return 'Needs 4 scrap and 3 nails'; if (boxOf(P.inside)) return 'This building already has one'; if (buildingAt(x, y) !== P.inside || hitWall(x, y) || circ(x, y, 0.35)) return 'No room there'; }
+  else if (a === 'bed'){ if (!P.inside) return 'Beds go inside a building'; if (world.nests[P.inside.id]) return 'Not in a nest'; if (inv.wood < 5) return 'Needs 5 wood'; if (P.lvl) return 'Beds go on the ground floor'; if (!roomFor(x, y, yaw, 1.0, 0.5)) return 'No room there'; }
+  else if (a === 'chest'){ if (!P.inside) return 'Chests go inside a building'; if (inv.wood < 3 || inv.scrap < 2) return 'Needs 3 wood and 2 scrap'; if (P.lvl) return 'Chests go on the ground floor'; if (!roomFor(x, y, yaw, 0.5, 0.3)) return 'No room there'; }
+  else if (a === 'cbox'){ if (!P.inside) return 'A cable box goes inside a building'; if (inv.scrap < 4 || inv.nails < 3) return 'Needs 4 scrap and 3 nails'; if (boxOf(P.inside)) return 'This building already has one'; if (P.lvl) return 'The cable box goes on the ground floor'; if (!roomFor(x, y, yaw, 0.3, 0.25)) return 'No room there'; }
   else if (a === 'solar'){ if (P.inside || buildingAt(x, y)) return 'Solar panels go outside, in the sun'; if (inv.scrap < 6 || inv.sheet < 2) return 'Needs 6 scrap and 2 sheet metal'; if (hitWall(x, y) || circ(x, y, 0.7) || inWater(x, y, 0.5)) return 'No room there'; }
-  else if (a === 'bench'){ if (inv.wood < 6 || inv.scrap < 3) return 'Needs 6 wood and 3 scrap'; if (hitWall(x, y) || circ(x, y, 0.6) || inWater(x, y, 0.5)) return 'No room there'; }
+  else if (a === 'bench'){ if (inv.wood < 6 || inv.scrap < 3) return 'Needs 6 wood and 3 scrap'; if (inWater(x, y, 0.5) || (P.inside ? (P.lvl || !roomFor(x, y, yaw, 0.7, 0.4)) : (hitWall(x, y) || circ(x, y, 0.6)))) return 'No room there'; }
   else if (a === 'coll' || a === 'plot'){ if (P.inside || buildingAt(x, y)) return 'This goes outside'; if (a === 'coll' ? (inv.wood < 2 || inv.scrap < 2) : inv.wood < 3) return 'Not enough materials'; if (inWater(x, y, 1) || (world.roadAt && world.roadAt(x, y)) || hitWall(x, y) || circ(x, y, a === 'plot' ? 1 : 0.5)) return 'Open ground only: off the road'; }
   return '';
 }
