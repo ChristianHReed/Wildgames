@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.90.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.90.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.90.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.90.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', set + '/creatures', set + '/people', 'sounds', 'audio/sounds_design'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -6565,26 +6565,34 @@ function makeVehicles(saved){
   /* 0.50.3: a working bicycle leans on the safe house's front porch */
   var sh = w.safe >= 0 ? w.buildings[w.safe] : null; if (sh && sh.door){ var sd = sh.door, stx = -sd.ny, sty = sd.nx; list.push({veh:true, id:'bsafe', t:0, name:'the bicycle', x:sd.x + sd.nx*1.6 + stx*1.8, y:sd.y + sd.ny*1.6 + sty*1.8, yaw:Math.atan2(sty, stx), fuel:0}); }
   /* abandoned traffic (0.49.1): cars left on the roads, thickest on the highways, mostly wrecked or burnt out */
-  var RD = {motorway:[14, 0.85], trunk:[18, 0.85], primary:[30, 0.75], secondary:[55, 0.55], tertiary:[110, 0.4], unclassified:[200, 0.3], residential:[260, 0.25]}, rc = 0, RMAX = 1100;
+  var RD = {motorway:[14, 0.85], trunk:[18, 0.85], primary:[30, 0.75], secondary:[55, 0.55], tertiary:[110, 0.4], unclassified:[200, 0.3], residential:[260, 0.25]}, rc = 0, RMAX = 1800;
+  /* 0.90.1: road cars are placed by real-world position (cells of the road class's spacing), not by this zone's road numbers, so the same road shows the same cars from either map square */
+  var GK = 111320*Math.cos(37.2*Math.PI/180), GL = 110574, GG = w.geo, cells = {}, cellL = [];
   w.roads.map(function(r, ri){ return [r, ri]; }).sort(function(a, b){ return b[0].w - a[0].w; }).forEach(function(e){
-    var r = e[0], ri = e[1];
-    var cfg = r.kind === 'road' && RD[r.hw]; if (!cfg || rc >= RMAX) return; var p = r.pts, acc = 0, nxt = hash(ri, 21, 4)*cfg[0], k = 0;
+    var r = e[0], cfg = r.kind === 'road' && RD[r.hw]; if (!cfg) return; var cs = cfg[0], p = r.pts, acc = 0;
     for (var q = 0; q + 3 < p.length; q += 2){
-      var ax = p[q], ay = p[q+1], dx = p[q+2] - ax, dy = p[q+3] - ay, L = Math.hypot(dx, dy); if (L < 0.5) continue; var ux = dx/L, uy = dy/L;
-      while (nxt < acc + L && rc < RMAX){
-        var u = nxt - acc, hh = hash(ri, k, 22); nxt += cfg[0]*(0.6 + hash(ri, k, 23)*0.8); k++;
-        if (hh > cfg[1]) continue;
-        var side = hash(ri, k, 24) < 0.5 ? -1 : 1, off = side*r.w*(0.12 + hash(ri, k, 25)*0.22), x = ax + ux*u - uy*off, y = ay + uy*u + ux*off;
-        var dkH = r.br ? deckOfRoad(r, acc + u, x, y) : null;
-        if ((dkH === null && inWater(x, y, 2)) || buildingAt(x, y) || zoneAt(x, y, 10) || circ(x, y, 1.6)) continue;
-        var dd = hash(ri, k, 26), dead = dd < 0.3 ? 'wreck' : dd < 0.42 ? 'burnt' : 0, tilt = dead ? (hash(ri, k, 27) - 0.5)*1.1 : (hash(ri, k, 28) - 0.5)*0.2, yaw = Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + tilt;
-        var bk = ['sedan', 'sedan', 'suv', 'hatch', 'hatch', 'van'][Math.floor(hash(ri, k, 29)*6)];
-        if (MACH.length && hash(ri, k, 31) < (r.hw === 'motorway' || r.hw === 'trunk' ? 0.16 : r.hw === 'primary' ? 0.1 : 0.05)){ var mk = MACH[Math.floor(hash(ri, k, 32)*MACH.length)];
-          if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:'x' + ri + '_' + k, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(ri, k, 33) - 0.5)*0.5, fuel:0}); rc++; } continue; }
-        list.push({veh:true, gh:dkH === null ? undefined : dkH, id:'x' + ri + '_' + k, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(ri, k, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, ri, k)}); rc++;
+      var ax = p[q], ay = p[q+1], dx = p[q+2] - ax, dy = p[q+3] - ay, L = Math.hypot(dx, dy); if (L < 0.5) continue; var ux = dx/L, uy = dy/L, ns = Math.ceil(L/2);
+      for (var si = 0; si < ns; si++){
+        var u = si*L/ns, x = ax + ux*u, y = ay + uy*u, gx = (GG.lon0 + x/GG.kx)*GK, gy = (GG.lat0 - y/GG.ky)*GL, cx = Math.floor(gx/cs), cy = Math.floor(gy/cs), key = cs + ':' + cx + ':' + cy, c = cells[key];
+        if (!c){ c = cells[key] = {cx:cx, cy:cy, cfg:cfg, tx:(cx + hash(cx, cy, 41))*cs, ty:(cy + hash(cx, cy, 42))*cs, bd:1e18}; cellL.push(c); }
+        var dd2 = (gx - c.tx)*(gx - c.tx) + (gy - c.ty)*(gy - c.ty);
+        if (dd2 < c.bd){ c.bd = dd2; c.r = r; c.x = x; c.y = y; c.ux = ux; c.uy = uy; c.u = acc + u; }
       }
       acc += L;
     }
+  });
+  cellL.sort(function(a, b){ return (b.r.w - a.r.w) || (a.cx - b.cx) || (a.cy - b.cy); });
+  cellL.forEach(function(c){
+    if (rc >= RMAX) return; var r = c.r, cfg = c.cfg, cx = c.cx, cy = c.cy, k = cy, ri = cx, ux = c.ux, uy = c.uy;
+    if (hash(cx, cy, 22) > cfg[1]) return;
+    var side = hash(cx, cy, 24) < 0.5 ? -1 : 1, off = side*r.w*(0.12 + hash(cx, cy, 25)*0.22), x = c.x - uy*off, y = c.y + ux*off, cid = 'x' + cfg[0] + '_' + cx + '_' + cy;
+    var dkH = r.br ? deckOfRoad(r, c.u, x, y) : null;
+    if ((dkH === null && inWater(x, y, 2)) || buildingAt(x, y) || zoneAt(x, y, 10) || circ(x, y, 1.6)) return;
+    var dd = hash(cx, cy, 26), dead = dd < 0.3 ? 'wreck' : dd < 0.42 ? 'burnt' : 0, tilt = dead ? (hash(cx, cy, 27) - 0.5)*1.1 : (hash(cx, cy, 28) - 0.5)*0.2, yaw = Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + tilt;
+    var bk = ['sedan', 'sedan', 'suv', 'hatch', 'hatch', 'van'][Math.floor(hash(cx, cy, 29)*6)];
+    if (MACH.length && hash(cx, cy, 31) < (r.hw === 'motorway' || r.hw === 'trunk' ? 0.16 : r.hw === 'primary' ? 0.1 : 0.05)){ var mk = MACH[Math.floor(hash(cx, cy, 32)*MACH.length)];
+      if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(cx, cy, 33) - 0.5)*0.5, fuel:0}); rc++; } return; }
+    list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(cx, cy, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, cx, cy)}); rc++;
   });
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck', sck = typeof saved[sid][5] === 'string' && !tk ? saved[sid][5] : undefined; list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : sck, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }

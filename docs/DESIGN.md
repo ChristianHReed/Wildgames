@@ -227,3 +227,7 @@ Car types (0.89.1): top speed in mph is hatchback 76, police 80, sedan 69, taxi 
 
 ## Car shop (0.90)
 Shops are garages over 140 square metres, hardware stores and petrol stations. A car holds a name, a body colour, a trim colour where the model has one (hatchback, pickup, van, police), an engine level and a frame level. Engine: +8% top speed a level. Frame: 12% less crash damage a level. The shop also repairs fully for car parts and scrap. Customisation is saved with the car and follows it between map squares. Not yet shared with other players.
+
+## Road cars across map squares (0.90.1)
+
+Road cars come from a grid of cells laid over the real world (cell size = the road class's spacing, from 14 m on motorways to 260 m on residential streets). Each cell picks its car from a hash of its own coordinates and puts it on the road point nearest a hashed target in the cell, so any map square covering that road builds the same car. Vehicle ids are `x<spacing>_<cellx>_<celly>`. The 1,800 car cap drops the narrowest roads first.
