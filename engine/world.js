@@ -315,7 +315,7 @@ function decodeElev(e){
 }
 function buildHeights(w, raw, lon0, lat0, kx, ky){
   w.hg = null; var E = decodeElev(raw.elev); if (!E) return;
-  var M = 400, wd = w.maxx - w.minx + 2*M, ht = w.maxy - w.miny + 2*M, cell = Math.max(20, Math.ceil(Math.max(wd, ht)/1400)), cols = Math.ceil(wd/cell) + 1, rows = Math.ceil(ht/cell) + 1, d = new Float32Array(cols*rows);
+  var M = 400, wd = w.maxx - w.minx + 2*M, ht = w.maxy - w.miny + 2*M, cell = Math.max((window.QS && QS.hgCell) || 10, Math.ceil(Math.max(wd, ht)/1400)), cols = Math.ceil(wd/cell) + 1, rows = Math.ceil(ht/cell) + 1, d = new Float32Array(cols*rows);
   var samp = function(x, y){
     var u = ((lon0 + x/kx) - E.w)/(E.e - E.w)*(E.cols - 1), v = (E.n - (lat0 - y/ky))/(E.n - E.s)*(E.rows - 1);
     u = Math.max(0, Math.min(E.cols - 1.001, u)); v = Math.max(0, Math.min(E.rows - 1.001, v)); var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*E.cols + i;
@@ -479,7 +479,7 @@ function blur(d, cols, rows, r){
 }
 function buildCover(w){
   var hg = w.hg, sub = 1, cell, x0, y0, cols, rows;
-  if (hg){ sub = hg.cols*hg.rows*4 <= 2400000 ? 2 : 1; cell = hg.cell/sub; x0 = hg.x0; y0 = hg.y0; cols = (hg.cols - 1)*sub + 1; rows = (hg.rows - 1)*sub + 1; }
+  if (hg){ sub = hg.cell >= 12 && hg.cols*hg.rows*4 <= 2400000 ? 2 : 1;   /* 0.95.1: ground already finer than 12 m is not halved again */ cell = hg.cell/sub; x0 = hg.x0; y0 = hg.y0; cols = (hg.cols - 1)*sub + 1; rows = (hg.rows - 1)*sub + 1; }
   else { var M = 300; cell = 10; x0 = w.minx - M; y0 = w.miny - M; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1;
     while (cols*rows > 2400000){ cell *= 1.5; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1; } }
   var n = cols*rows, BIG = 1e6, dev = new Float32Array(n).fill(BIG), wat = new Float32Array(n).fill(BIG), fm = new Float32Array(n), pk = new Uint8Array(n), fd = new Uint8Array(n);

@@ -49,3 +49,7 @@ Done: `builder/host.js` and `builder/view3d.js` are in `STATIC`; `spB`, `bkMod`,
 ## Note for the map chat (game 0.95.0)
 
 The game's art changed under the builder: `assets/nature.js` is rebuilt from the content chat's flora (three shapes per tree, nothing for you to do), and the thirteen old furniture pieces are now `assets/shaped/furniture2.js` (add `shaped/furniture2` to the builder's art list, or its interiors show those pieces empty). Sound files are not used by the builder. `treeVarKey` (in `engine/world.js`) picks a tree's shape; `drawScene` already uses it.
+
+## Reply to the seventh note (game 0.95.1)
+
+Done. `buildHeights` now takes its cell from the quality setting `QS.hgCell` (20 m on Low, 10 m on the others, 10 m for a host that has no such setting, such as the builder's 3D view), never coarser than the 1,400-cell limit. A 10 m map keeps its 10 m ground on Medium and High; a 5 m grid is resampled to 10 m for now (say if you want a 5 m option in the game's quality menu: the mesh would be four times larger).
