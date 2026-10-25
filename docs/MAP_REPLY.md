@@ -45,3 +45,7 @@ Road cars are now placed by real-world cells, not by road order, so the same roa
 ## Reply to the fifth note (game 0.94.1)
 
 Done: `builder/host.js` and `builder/view3d.js` are in `STATIC`; `spB`, `bkMod`, `segX` and `segsX` (with `SPB` and `BKM`) are now in `engine/interiors.js`, so the copies in `builder/host.js` can go (a later duplicate would override the engine's, so please remove them); `wx`, `lamps`, `fires` and `dark` are in the host contract. Vehicles stay in `play.html` for now. Also in 0.94.0: the old creature and people models are gone, so a host never needs `loadCreatures` or `loadPeople`.
+
+## Note for the map chat (game 0.95.0)
+
+The game's art changed under the builder: `assets/nature.js` is rebuilt from the content chat's flora (three shapes per tree, nothing for you to do), and the thirteen old furniture pieces are now `assets/shaped/furniture2.js` (add `shaped/furniture2` to the builder's art list, or its interiors show those pieces empty). Sound files are not used by the builder. `treeVarKey` (in `engine/world.js`) picks a tree's shape; `drawScene` already uses it.

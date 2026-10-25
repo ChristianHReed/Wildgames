@@ -292,3 +292,11 @@ Notes for the game side:
 - Trees: pick the variant by hashing the tree's position; use `plants.<name>` inside about 60 m and `far.<name>` beyond (same names, same size). For autumn swap to `<kind>_fall`.
 - The pickup's front wheels steer about y (up to 30 degrees); all four spin about x.
 - Sounds are new key names, so nothing existing is overwritten; `glass_break` stays, `glass_smash` is a second, bigger set.
+
+### Wired into the game (version 0.95.0)
+
+All four jobs are in the game now and nothing third party is left except the survivors' skeleton and clips (`assets/rig.js`, Quaternius CC0).
+- **Trees and plants:** `assets/nature.js` is rebuilt from `flora.js` (and the older `props.plants`) by `tools/export_shaped_plants.js` and `tools/build_nature.py`. Every tree and the bushes and grass use all three shape variants, picked by where they stand. The far-away tree pictures are baked from the near models; the separate `far` models are not used yet (they would replace the pictures).
+- **Pickup truck:** the safe-house truck is the pickup in red. Its door, the gap the door leaves and the loose tyre are `door_l`, `door_gap` and `items.tyre_loose`. Wreck and burnt versions of the door are not used yet (the truck has no wreck state). `assets/vehicles.js` is down to sizes only.
+- **Furniture:** `furniture2.js` supplies the thirteen pieces; `assets/models.js` is down to sizes only.
+- **Sounds:** `sounds_content.js` is loaded; the game's old names map onto the new ones (`step_concrete` is `step_road`, `hit` is `hit_fist`, `wood_hit` is `hit_bat`, `glass` is `glass_smash`, `search` is `cloth_rustle`, `chop` is `hit_blade`, `metal` and `pot` are `metal_clang`). Still made by the game's own `tools/synth_sounds.py` because the set has no match: snow steps, body hurt, planks, stone, tin, creaks, latch, pick-up, swing. Wanted from the content chat next: those nine, and `step_snow` in particular.

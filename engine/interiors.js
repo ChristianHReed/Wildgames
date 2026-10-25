@@ -27,7 +27,7 @@ FURN.dresser = {name:'dresser', models:['cabinet_medium_decorated', 'cabinet_sma
 /* furniture, cars and street props: KayKit Furniture Bits and City Builder Bits by Kay Lousberg (CC0), converted by tools/build_models.py */
 var MODELS = {}, MS = 1;
 (function(){
-  var t = (ART.models || '').replace(/<!--.*?-->/g, '').trim(), nl = t.indexOf('\n'); if (nl < 0) return;
+  var t = (ART.models || '').replace(/<!--.*?-->/g, '').replace(/^\s+/, ''), nl = t.indexOf('\n'); if (nl < 0) return;
   try {
     var idx = JSON.parse(t.slice(0, nl)), bin = atob(t.slice(nl + 1)), buf = new Uint8Array(bin.length), i; for (i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
     var dv = new DataView(buf.buffer);
@@ -52,7 +52,7 @@ Mesh.prototype.model = function(M, x, z, yaw, y0){
    In a car's own frame x runs forward, y up, z to the right; wheels sit at w = [x, y, z, front?, model] */
 var VMOD = {};
 (function(){
-  var t = (ART.vehicles || '').trim(), nl = t.indexOf('\n'); if (nl < 0) return;
+  var t = (ART.vehicles || '').replace(/^\s+/, ''), nl = t.indexOf('\n'); if (nl < 0) return;
   try {
     var idx = JSON.parse(t.slice(0, nl)), bin = atob(t.slice(nl + 1)), buf = new Uint8Array(bin.length), i; for (i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
     var dv = new DataView(buf.buffer);
@@ -86,23 +86,33 @@ var SP_OLD = {bed_single_A:'furniture.bed', bed_double_A:'furniture.bed', bed_do
   table_medium:'furniture.table', table_small:'furniture.table', table_low:'furniture.table', table_medium_long:'furniture.desk', k_desk:'furniture.desk', chair_A:'furniture.chair', chair_B_wood:'furniture.chair', chair_C:'furniture.chair',
   lamp_standing:'furniture.floor_lamp', k_lamp:'furniture.floor_lamp', k_stove:'furniture.stove', k_sink:'furniture.kitchen_counter', k_cab:'furniture.kitchen_counter', k_fridge:'furniture.fridge', k_toilet:'furniture.toilet',
   k_tub:'furniture.bathtub', k_tv:'furniture.tv', k_closet:'furniture.wardrobe', k_books:'furniture.bookshelf', k_trash:'street.trash_bin', k_box:'items.cardboard_box',
-  streetlight:'street.street_lamp', firehydrant:'street.hydrant', bench:'street.bench', dumpster:'street.dumpster', bush:'plants.bush'};
+  streetlight:'street.street_lamp', firehydrant:'street.hydrant', bench:'street.bench', dumpster:'street.dumpster', bush:'plants.bush',
+  chair_stool:'f2.chair_stool', cabinet_medium_decorated:'f2.cabinet_medium_decorated', cabinet_small_decorated:'f2.cabinet_small_decorated', cabinet_medium:'f2.cabinet_medium', cactus_medium_A:'f2.cactus_medium_A', k_basin:'f2.k_basin', k_night:'f2.k_night', k_bunk:'f2.k_bunk', k_plant:'f2.k_plant', k_rug:'f2.k_rug', k_washer:'f2.k_washer', k_coat:'f2.k_coat', k_stool:'f2.k_stool'};   /* 0.95.0: the last thirteen Kenney pieces, now the content chat's furniture set 2 (assets/shaped/furniture2.js) */
 /* furniture that was plain boxes before and now has a model; its size comes from its floor space and its tallest box */
 var SP_NEW = {locker:'furniture.locker', pew:'furniture.pew', crate:'furniture.crate', wardrobe:'furniture.bookshelf', shelf:'furniture.shop_shelf'};
-function spPieces(path){ var a = path.split('.'), m = SHAPED.props.models[a[0]]; return m && m[a[1]]; }
+function spPieces(path){ var a = path.split('.'), m; if (a[0] === 'f2'){ m = window.SHAPED && SHAPED.furniture2 && SHAPED.furniture2.models.furniture; return m && m[a[1]]; } m = SHAPED.props.models[a[0]]; return m && m[a[1]]; }
 function spFitQ(pcs, hx, hz){ var M = spModel(pcs, function(){ return [0, 0, 0]; }); return (hx > hz*1.4 && M.hz > M.hx*1.4) || (hz > hx*1.4 && M.hx > M.hz*1.4) ? 1 : 0; }
 var SPCAR = {}, MACH = [];
 function spInstall(){ if (SPON) (function(){
   try {
     var PR = SHAPED.props, col = spColour(PR.palette), nm, pcs;
-    for (nm in SP_OLD){ var O = MODELS[nm]; pcs = spPieces(SP_OLD[nm]); if (!O || !pcs) continue; MODELS[nm] = spModel(pcs, col, {q:nm === 'streetlight' ? 3 : spFitQ(pcs, O.hx, O.hz), fit:{hx:O.hx, hz:O.hz, h:O.h}}); }   /* the lamp's arm reaches over the road */
+    for (nm in SP_OLD){ var O = MODELS[nm]; pcs = spPieces(SP_OLD[nm]); if (!O || !pcs) continue; MODELS[nm] = spModel(pcs, SP_OLD[nm].slice(0, 3) === 'f2.' ? spColour(SHAPED.furniture2.palette) : col, {q:nm === 'streetlight' ? 3 : spFitQ(pcs, O.hx, O.hz), fit:{hx:O.hx, hz:O.hz, h:O.h}}); }   /* the lamp's arm reaches over the road */
     for (nm in SP_NEW){ var F = FURN[nm]; pcs = spPieces(SP_NEW[nm]); if (!F || !pcs) continue; var s0 = F.s || [F.boxes[0][3], F.boxes[0][5]], hh = 0; F.boxes.forEach(function(b){ hh = Math.max(hh, b[1] + b[4]); });
       MODELS['sp_' + nm] = spModel(pcs, col, {q:spFitQ(pcs, s0[0], s0[1]), fit:{hx:s0[0]*0.96, hz:s0[1]*0.96, h:hh}}); F.models = ['sp_' + nm]; }
     /* cars: the body and bonnet as one model, and a wheel placed at each of the rig's wheel positions; taxis and police cars repaint the sedan */
-    var CK = {sedan:['sedan'], hatch:['hatchback'], suv:['pickup'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]};
+    var CK = {sedan:['sedan'], hatch:['hatchback'], suv:['pickup'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}], truck:['pickup', {paint2:'#963e30'}]};
     for (nm in CK){ var V = PR.models.vehicles[CK[nm][0]], R = PR.vehicleRig[CK[nm][0]]; if (!V || !R || !VMOD[nm]) continue;
       var vc = spColour(PR.palette, CK[nm][1]), B = spModel(V.body.concat(V.bonnet || []), vc, {car:true}), Wm = spModel(V.wheel, vc, {car:true});
       VMOD['sp_' + nm + '_w'] = Wm; B.w = R.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + nm + '_w']; }); B.h = VMOD[nm].h; SPCAR[nm] = VMOD[nm]; VMOD[nm] = B; }
+    /* 0.95.0: the safe-house truck is the pickup in its own red; its bonnet (copied, hinged at its back edge), driver's door, the gap the door leaves
+       and the loose tyre are the content chat's pieces (vehicles.pickup.door_l / door_gap, items.tyre_loose) */
+    try { var TV = PR.models.vehicles.pickup, TR = PR.vehicleRig.pickup, tcol = spColour(PR.palette, {paint2:'#963e30'}), TH = spModel(TV.bonnet, tcol, {car:true}), hpx = TR.bonnetHinge[2], hpy = TR.bonnetHinge[1], ti, tb = {};
+      for (ti = 0; ti < TH.n*3; ti++){ TH.p[ti*3] -= hpx; TH.p[ti*3+1] -= hpy; }
+      TH.px = hpx; TH.py = hpy; TH.x1 = TH.hx; TH.y1 = hpy; TH.hw = TH.hz; VMOD.truck_hood = TH;   /* hx and hz are the bonnet's farthest reach forward and across */
+      var dh = TR.doorHinge;   /* the door, with its origin at its hinge, in the car's frame (x forward, z across) */
+      VMOD.door = spModel(TV.door_l, tcol, {car:true}); for (ti = 0; ti < VMOD.door.n*3; ti++){ VMOD.door.p[ti*3] -= dh[2]; VMOD.door.p[ti*3+2] -= -dh[0]; }
+      VMOD.truck_gap = spModel(TV.door_gap, tcol, {car:true});
+      var tt = PR.models.items.tyre_loose; if (tt) VMOD.tire = spModel(tt, tcol); } catch (er3){ console.log('truck bits', er3); }
     /* wrecks and burnt-out shells of every car: the same parts with their own wheels, sunk by sitDrop */
     var WB = {sedan:'sedan', hatch:'hatchback', suv:'pickup', van:'van'};
     for (nm in WB) ['wreck', 'burnt'].forEach(function(st){ var pn = WB[nm] + '_' + st, V2 = PR.models.vehicles[pn], R2 = PR.vehicleRig[pn], key = nm + '_' + st; if (!V2 || !R2 || !VMOD[nm] && !SPCAR[nm]) return;

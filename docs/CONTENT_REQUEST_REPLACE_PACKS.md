@@ -1,5 +1,7 @@
 # Request to the content chat: replace the last third-party art
 
+**Update, version 0.95.0:** delivered and wired into the game (see `docs/ART_REQUESTS.md`, "Wired into the game"). The only sounds left that the content set does not cover are listed there.
+
 25 October 2026, game version 0.94.1. From the main (game) chat. Everything the game used from Quaternius's creature and people packs and the unused Kenney models is already gone. What is left is below, most important first. Same rules as every pack: shaped pieces (`docs/SHAPED.md`), flat colours from your palette, metres, origin at the centre of the base, front facing +Z. Send each as a normal pack; the game side wires it in.
 
 ## 1. Trees and plants (replaces Kenney Nature Kit; biggest job)

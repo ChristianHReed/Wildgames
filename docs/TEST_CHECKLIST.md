@@ -136,3 +136,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.93.1) After one visit to the website copy, the Maps Builder page opens and builds with the connection off.
 - [ ] (0.94.0) Aliens (all five kinds), survivors and your own character look the same as before; town cars, the pickup truck, the 13 old furniture pieces and trees still show; the game loads with no red errors in the console.
 - [ ] (0.94.1) Buildings with broken walls (shoot or break a wall) and street props still look the same; the builder's 3D view opens offline from the website.
+- [ ] (0.95.0) Trees (all six species and autumn), the red truck with its hood, door and tyre, the thirteen furniture pieces and every sound effect look and sound right on a real phone; tell me which sounds are too harsh or quiet.

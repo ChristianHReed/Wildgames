@@ -7,10 +7,10 @@
 Then writes assets/models.js and assets/vehicles.js. See docs/ART_REQUESTS.md ("Still on third-party art") for what remains."""
 import base64, json, os
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); O = os.path.join(R, 'tools', 'out'); A = os.path.join(R, 'assets')
-MODELS_KEEP = set('chair_stool cabinet_medium_decorated cabinet_small_decorated cabinet_medium cactus_medium_A k_basin k_night k_bunk k_plant k_rug k_washer k_coat k_stool'.split())
+MODELS_KEEP = set()   # 0.95.0: every old furniture model has a shaped replacement now; the entries stay as size templates
 MODELS_DROP = set('car_sedan car_hatchback car_stationwagon car_taxi car_police box k_bar k_doorway'.split())
-VEH_KEEP = set('truck truck_w0 truck_w1 truck_w2 truck_w3 truck_hood tire door'.split())
-VEH_REPL = set('sedan suv van police taxi hatch'.split())   # replaced by the shaped cars: keep size only
+VEH_KEEP = set()   # 0.95.0: the truck, its hood, door and tyre are shaped now; the entries stay as size templates
+VEH_REPL = set('sedan suv van police taxi hatch truck'.split())   # replaced by the shaped cars: keep size only
 def slim(name, keep, drop, size_only=None):
     t = open(os.path.join(O, name)).read(); nl = t.index('\n'); idx = json.loads(t[:nl]); raw = base64.b64decode(t[nl+1:]); out = {}; buf = bytearray()
     for k, e in idx.items():

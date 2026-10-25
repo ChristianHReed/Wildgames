@@ -192,7 +192,7 @@ function manageNature(){
     var kind = coverKind(x, y);
     if (!kind || blocked(x, y) || inWater(x, y, 0.3) || (world.roadOk && !world.roadOk(x, y, 0.8))) continue;
     var pkk = cx + ':' + cy + ':' + i, pkt = world.edits.picked[pkk]; if (pkt !== undefined && time - pkt < REGROW) continue;
-    var nm = pick[kind][Math.floor(hash(cx, cy, 90 + i)*5)]; clutter.push({plant:true, key:pkk, nm:nm, name:PNAME[nm], d:d, m:NAT[nm], x:x, y:y, gy:hAt(x, y), yw:hash(cx, cy, 95 + i)*6.283, sc:(SC[nm] || 1)*(0.75 + hash(cx, cy, 99 + i)*0.5)});
+    var nm = pick[kind][Math.floor(hash(cx, cy, 90 + i)*5)], vr = Math.floor(hash(cx, cy, 97 + i)*3); var vn = vr && NAT[nm + (vr === 1 ? '_b' : '_c')] ? nm + (vr === 1 ? '_b' : '_c') : nm; clutter.push({plant:true, key:pkk, nm:nm, name:PNAME[nm], d:d, m:NAT[vn], x:x, y:y, gy:hAt(x, y), yw:hash(cx, cy, 95 + i)*6.283, sc:(SC[nm] || 1)*(0.75 + hash(cx, cy, 99 + i)*0.5)});
   }
   clutter.sort(function(a, b){ return a.d - b.d; }); clutter.length = Math.min(clutter.length, QS.clutN);
 }
@@ -203,7 +203,7 @@ function coverKind(x, y){
 }
 function drawNature(){
   if (!NAT.pine || !natTex) return; var i;
-  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[treeKey(tr)]); }
+  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[treeVarKey(tr)] || NAT[treeKey(tr)]); }
   for (i = 0; i < clutter.length; i++){ var c = clutter[i]; gl.uniform4f(U.inst, c.x, c.gy, c.y, c.yw); gl.uniform1f(U.iscl, c.sc); drawMesh(c.m); }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1);
 }
