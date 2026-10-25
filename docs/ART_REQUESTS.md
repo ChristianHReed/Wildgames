@@ -255,6 +255,8 @@ Roads, sidewalks, water and edges, rocks, service vehicles, animals, street sign
 
 ## 12. Still on third-party art (new, version 0.94.0)
 
+The ready-to-send request, with what already exists and what is missing, is `docs/CONTENT_REQUEST_REPLACE_PACKS.md`.
+
 Everything below is still in the game and is not ours. Each line says what it is, where it is used and what the game needs back. Same rules as every pack (shaped pieces, metres, origin at the centre of the base, front facing +Z).
 
 ### 12.1 Trees and plants (Kenney Nature Kit, `assets/nature.js`, built by `tools/build_nature.py`)
