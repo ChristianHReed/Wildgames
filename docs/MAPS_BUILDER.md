@@ -197,6 +197,8 @@ What testing showed:
 - **Tested** (Chromium): a lake and a river were saved, replayed on reload and listed as marked ways in the square; the earlier raise, undo and redo tests still pass.
 - **Not yet:** flood levels, dams, weirs and culverts, editing or removing mapped water, cliffs, painting the ground.
 
+**Builder 1.4.1, 25 October 2026: file pickers accept any file.** The upload buttons had a file-type filter (`accept=".pbf,..."`). Some browsers, notably Safari on iPhone and iPad and some Android pickers, grey out a file whose type they do not know, and `.pbf` is one of them, so the user's Missouri file could not be chosen. The filter is gone; the builder reads the file by its name and contents. Tested with the real `missouri-261024_osm.pbf` (199.8 MB): a 2-mile Springfield build finished in 43 s with 10,401 real buildings.
+
 ## Versions
 
 | Version | Contents |

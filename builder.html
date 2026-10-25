@@ -86,7 +86,7 @@
   <h1>AfterStreet Maps Builder</h1>
   <span class="stamp clay" id="ver">v1.0</span>
   <span class="sp"></span>
-  <label class="btn alt sm">Open map file<input id="openAsmap" type="file" accept=".asmap,.zip" hidden></label>
+  <label class="btn alt sm">Open map file<input id="openAsmap" type="file" hidden></label>
   <a class="btn alt sm" href="play.html">Game</a>
 </header>
 <main>
@@ -118,7 +118,7 @@
           <li><b>Big areas:</b> your state from <a href="https://download.geofabrik.de/north-america/us.html" target="_blank" rel="noopener">Geofabrik (US states)</a> or <a href="https://download.geofabrik.de/" target="_blank" rel="noopener">Geofabrik (world)</a>. Pick the <code>.osm.pbf</code> file.</li>
           <li><b>Small areas:</b> <a href="https://www.openstreetmap.org/export" target="_blank" rel="noopener">openstreetmap.org Export</a> (<code>.osm</code>), or the Download button here.</li>
         </ul>
-        <div class="row"><label class="btn sm">Upload file<input id="fOsm" type="file" accept=".pbf,.osm,.xml,.json,.geojson" hidden></label><button id="dlOsm" class="alt sm">Download for this area</button></div>
+        <div class="row"><label class="btn sm">Upload file<input id="fOsm" type="file" hidden></label><button id="dlOsm" class="alt sm">Download for this area</button></div>
         <div class="st" id="stOsm">No file yet.</div>
       </div>
 
@@ -129,7 +129,7 @@
           <li><b>Best (US):</b> <a href="https://apps.nationalmap.gov/downloader/" target="_blank" rel="noopener">USGS National Map Downloader</a>: choose Elevation Products (3DEP), then <i>1 meter DEM</i> (or <i>1/3 arc-second DEM</i> where 1 m is missing), draw your area, download the GeoTIFF files.</li>
           <li><b>No files:</b> tick the box and the builder fetches free terrain tiles (about 15 m detail) while it builds.</li>
         </ul>
-        <div class="row"><label class="btn sm">Upload GeoTIFFs<input id="fTif" type="file" accept=".tif,.tiff" multiple hidden></label><label class="muted"><input id="useTiles" type="checkbox" checked>Fetch free terrain tiles (online)</label></div>
+        <div class="row"><label class="btn sm">Upload GeoTIFFs<input id="fTif" type="file" multiple hidden></label><label class="muted"><input id="useTiles" type="checkbox" checked>Fetch free terrain tiles (online)</label></div>
         <div class="st" id="stElev">No files yet.</div>
       </div>
 
@@ -138,7 +138,7 @@
         <p class="muted">Buildings OpenStreetMap is missing, from Microsoft, Google and Esri footprints. Only added where OpenStreetMap has no building.</p>
         <ul><li><a href="https://explore.overturemaps.org/#14/37.2089/-93.2923" target="_blank" rel="noopener">Overture Maps Explorer</a>: turn on Buildings, move to your area, download (<b>GeoParquet</b> or <b>GeoJSON</b>).</li>
           <li>Or the <a href="https://docs.overturemaps.org/getting-data/" target="_blank" rel="noopener">Overture download tool</a> for a box (<code>.parquet</code>, smaller and faster to read).</li></ul>
-        <div class="row"><label class="btn sm">Upload buildings<input id="fOvt" type="file" accept=".parquet,.geoparquet,.geojson,.json" multiple hidden></label></div>
+        <div class="row"><label class="btn sm">Upload buildings<input id="fOvt" type="file" multiple hidden></label></div>
         <div class="st" id="stOvt">No files yet.</div>
       </div>
 
