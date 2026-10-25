@@ -32,7 +32,7 @@ A map builder that runs on any device, from the same drive as the game. A player
 | The game's own map maker | Replaced: all map making moves to the builder, and the game only loads maps |
 | Version 1 | Import, generate, walk, export; editing tools follow in later versions |
 | Map file | Self-contained: the map plus every custom or pack model it uses |
-| Saving | Autosave to the device every few minutes and on close |
+| Saving | Autosave to the device every few minutes and on close, plus undo and redo for edits (added 25 October); no named snapshots or edit log |
 | Starter map | Springfield (50 miles) comes pre-built as the sample |
 
 ## How it runs
@@ -138,6 +138,27 @@ Rules agreed with the main chat:
 - **Keyboard and mouse:** WASD flying, mouse look, shortcuts for tools.
 - **Game controller:** fly with the sticks, pick and place with the buttons, radial tool menu.
 
+## Progress
+
+**Builder 1.0.0, 25 October 2026: the data side of version 1.** The map chat started it after the main chat's engine split (game 0.91.0). It needs no renderer. How it works and the file format are in `builder/README.md`.
+
+| Part of version 1 | State |
+| --- | --- |
+| Area: search, presets, my location, tap the map, radius, device advice | Done |
+| Source cards with links and uploads | Done: OpenStreetMap (`.pbf`, `.osm`, Overpass JSON, GeoJSON, or download for areas up to 3 miles), elevation GeoTIFFs plus free terrain tiles, Overture GeoJSON. Lidar and aerial photos show their links, with "later version" |
+| Merge, fill gaps, cut into the game's squares, ground grids | Done, in a background worker; squares are saved as they are made |
+| Accuracy report | Done: real against made-up buildings, mapped heights, storeys, roofs, addresses, named roads, lanes and widths, where the ground came from |
+| Export | Done: `.asmap` map file, the single `.json` map for areas up to 2 miles (today's game opens it), and Send to the game on this device (the game lists and plays it) |
+| Autosave | Done: the last map and its preview come back when the builder opens. Uploaded files must be added again to rebuild, since browsers do not keep access to them |
+| Flat preview map | Done, a stand-in until the 3D view |
+| 3D fly view, walk mode | Waiting for `engine/render.js` |
+| The game opening `.asmap` | Main chat, with builder version 1 |
+| Springfield rebuilt as the sample | Waiting for the user's Missouri OpenStreetMap file (and ideally Overture and USGS 1 m files) |
+
+What testing showed:
+- **The map pack's Springfield is short of houses.** Outside downtown, the streets of central Springfield have few buildings. The builder's lot-by-lot gap filling puts marked made-up homes on the empty lots (about 5 made-up for every real building in the test). Overture buildings should replace most of them with real footprints.
+- **Whole 50-mile regions need a computer.** At city density everywhere the stress test used about 1.3 GB. The builder suggests up to 8 miles on phones and 25 miles on tablets.
+
 ## Versions
 
 | Version | Contents |
@@ -163,11 +184,10 @@ Sent as `docs/MAP_HANDOFF.md`; the main chat answered in `docs/MAP_REPLY.md` and
 
 ## Open questions
 
-1. **Undo.** Only autosave was chosen. Undo and redo are standard in editors and cheap once edits are recorded anyway; recommended to add back. Named snapshots and the edit log could stay out.
-2. **File name and extension:** `.asmap` is a working name.
-3. **Lidar size on phones:** lidar may need to be limited to computers and iPads, or to a small core area.
-4. **Countries beyond the US**, and when.
-5. **Asset licensing in shared maps:** packs and imported models inside a map file should carry their licence and author.
+1. **File name and extension:** `.asmap` is a working name.
+2. **Lidar size on phones:** lidar may need to be limited to computers and iPads, or to a small core area.
+3. **Countries beyond the US**, and when.
+4. **Asset licensing in shared maps:** packs and imported models inside a map file should carry their licence and author.
 
 ## Sources
 The engine research and data sources are listed in `docs/MAP.md`. Still to be checked before building:

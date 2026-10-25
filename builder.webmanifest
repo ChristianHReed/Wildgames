@@ -1,0 +1,9 @@
+{
+  "name": "AfterStreet Maps Builder",
+  "short_name": "Maps Builder",
+  "start_url": "builder.html",
+  "display": "standalone",
+  "background_color": "#f5ead8",
+  "theme_color": "#f5ead8",
+  "icons": [{"src": "icon.png", "sizes": "512x512", "type": "image/png"}, {"src": "icon-180.png", "sizes": "180x180", "type": "image/png"}]
+}

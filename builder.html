@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AfterStreet Maps Builder</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="builder.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Maps Builder">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f5ead8">
+<style>
+  /* the game's "field journal" look (play.html, design/afterstreet_handoff/design_tokens.json) */
+  :root{--cream:#f5ead8;--paper:#fbf3e4;--paper2:#fff8ee;--sand:#ebddc5;--sandDeep:#e0cfb2;--edge:#d9c7a8;--ink:#201e1d;--inkSoft:#3d3833;--muted:#6b5e50;--outline:#3d3029;
+    --clay:#c67139;--clayHover:#ad5d29;--clayDeep:#9a5226;--sage:#7a8a5e;--sageDeep:#56643f;--label:#5c6a43;--ochre:#d9a845;--river:#5f8a9a;--plum:#8a6a8a;
+    --disp:Caprasimo,"Cooper Black","Rockwell Extra Bold",Georgia,serif;--ui:Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"Special Elite","Courier New",Courier,monospace;
+    --shadow:2px 3px 0 rgba(61,48,41,.16),0 10px 22px rgba(70,40,15,.14)}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--cream);font-family:var(--ui);color:var(--ink)}
+  body{display:flex;flex-direction:column;overflow:hidden}
+  a{color:var(--clayDeep)}
+  .hidden{display:none !important}
+  .panel{position:relative;background:var(--paper);border:1px solid var(--edge);border-radius:6px;box-shadow:var(--shadow);padding:16px 14px 14px;margin:0 0 18px}
+  .panel::before{content:"";position:absolute;top:-9px;left:50%;width:64px;height:18px;margin-left:-32px;background:rgba(217,168,69,.5);transform:rotate(-3deg);pointer-events:none}
+  .stamp,.panel>h2{display:inline-block;font-family:var(--mono);font-size:13px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--label);border:1.5px solid currentColor;border-radius:3px;padding:2px 8px 1px;transform:rotate(-1.5deg);margin:0 0 10px}
+  .stamp.clay{color:var(--clayDeep)}
+  button,.btn{font-family:var(--ui);font-size:15px;font-weight:700;background:var(--clay);color:#fff;border:0;border-radius:4px;box-shadow:0 3px 0 var(--clayDeep);padding:9px 16px;cursor:pointer;display:inline-block;text-decoration:none;line-height:1.2}
+  button:hover,.btn:hover{background:var(--clayHover)}
+  button.alt,.btn.alt{background:var(--sand);color:var(--ink);box-shadow:0 3px 0 #cdb895}
+  button.alt:hover,.btn.alt:hover{background:#e0c6a4}
+  button.on{background:var(--sage);box-shadow:0 3px 0 var(--sageDeep);color:#fff}
+  button:disabled,.btn.dis{background:var(--sandDeep);color:#a39684;box-shadow:0 3px 0 #cdb895;cursor:default}
+  button.sm,.btn.sm{font-size:13px;padding:6px 10px}
+  input,select{font-family:var(--ui);font-size:15px;color:var(--ink);background:var(--paper2);border:2px solid var(--edge);border-radius:4px;padding:7px;min-width:0}
+  input:focus,select:focus{outline:none;border-color:var(--clay)}
+  input[type=range]{padding:0;border:0;background:none;accent-color:var(--clay)}
+  input[type=checkbox]{width:20px;height:20px;accent-color:var(--clay);vertical-align:-4px;margin:0 6px 0 0}
+  p,li{font-size:14px;line-height:1.45;color:var(--inkSoft);margin:6px 0}
+  .muted{color:var(--muted);font-size:13px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  .row>input[type=text],.row>input[type=search]{flex:1}
+  /* layout: steps on the left, map on the right; stacked on phones */
+  header{display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top));border-bottom:1px solid var(--edge);background:var(--paper);flex:none}
+  header h1{font-family:var(--disp);font-size:22px;font-weight:400;margin:0;color:var(--outline);letter-spacing:.01em}
+  header .sp{flex:1}
+  main{flex:1;display:flex;min-height:0}
+  #steps{width:430px;max-width:100%;overflow-y:auto;padding:22px 16px 40px;flex:none;-webkit-overflow-scrolling:touch}
+  #mapwrap{flex:1;position:relative;min-width:0;background:#e9dcc5;border-left:1px solid var(--edge)}
+  #map2d{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  #mapTools{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  #legend{position:absolute;left:12px;bottom:12px;background:rgba(251,243,228,.94);border:1px solid var(--edge);border-radius:6px;padding:8px 10px;font-size:12px;box-shadow:var(--shadow);max-width:calc(100% - 24px)}
+  #legend span{display:inline-flex;align-items:center;gap:5px;margin-right:10px;white-space:nowrap}
+  #legend i{display:inline-block;width:12px;height:12px;border-radius:2px}
+  #mapNote{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(32,30,29,.72);color:#f5ead8;font-size:13px;border-radius:999px;padding:5px 12px;pointer-events:none;white-space:nowrap}
+  #credit{position:absolute;right:8px;bottom:6px;font-size:10px;color:var(--muted)}
+  @media (max-width:820px){
+    main{flex-direction:column;overflow-y:auto}
+    #mapwrap{flex:none;height:56vh;border-left:0;border-bottom:1px solid var(--edge);order:-1}
+    #steps{width:auto;overflow:visible}
+    header h1{font-size:18px}
+  }
+  /* source cards */
+  .src{border:1.5px dashed var(--edge);border-radius:6px;padding:10px 10px 8px;margin:10px 0;background:var(--paper2)}
+  .src.ok{border-style:solid;border-color:var(--sage);background:#f3f2e2}
+  .src.need{border-color:var(--clay)}
+  .src h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .src h3 .tag{font-family:var(--mono);font-size:11px;font-weight:400;color:var(--muted);border:1px solid var(--edge);border-radius:3px;padding:0 5px}
+  .src .st{font-size:13px;margin-top:6px;color:var(--inkSoft)}
+  .src .st b{color:var(--sageDeep)}
+  .src ul{margin:4px 0 0 18px;padding:0}
+  .src.later{opacity:.75}
+  .bar{height:12px;background:var(--sand);border-radius:999px;overflow:hidden;margin:10px 0 6px}
+  .bar i{display:block;height:100%;width:0;background:var(--clay);transition:width .3s}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}
+  td,th{text-align:left;padding:4px 6px;border-bottom:1px solid var(--edge);vertical-align:top}
+  th{font-weight:600;color:var(--muted)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--cream);padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
+  #toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>AfterStreet Maps Builder</h1>
+  <span class="stamp clay" id="ver">v1.0</span>
+  <span class="sp"></span>
+  <label class="btn alt sm">Open map file<input id="openAsmap" type="file" accept=".asmap,.zip" hidden></label>
+  <a class="btn alt sm" href="play.html">Game</a>
+</header>
+<main>
+  <div id="steps">
+    <section class="panel" id="s1">
+      <h2>1 &middot; Area</h2>
+      <p>Pick the centre of your map and how far it reaches.</p>
+      <div class="row"><input id="q" type="search" placeholder="Search a place (needs internet)"><button id="qGo" class="sm">Find</button></div>
+      <div class="row">
+        <button id="presetSgf" class="alt sm">Springfield, MO</button>
+        <button id="locMe" class="alt sm">My location</button>
+        <button id="tapSet" class="alt sm">Tap map to set centre</button>
+      </div>
+      <div class="row"><label class="muted" style="width:70px">Latitude</label><input id="lat" type="text" inputmode="decimal" style="width:120px"><label class="muted">Longitude</label><input id="lon" type="text" inputmode="decimal" style="width:120px"></div>
+      <div class="row"><label class="muted" style="width:70px">Radius</label><input id="miles" type="range" min="0.5" max="50" step="0.5" style="flex:1"><b id="milesV" style="width:72px;text-align:right"></b></div>
+      <div class="row"><label class="muted" style="width:70px">Name</label><input id="mapName" type="text" maxlength="40"></div>
+      <p class="muted" id="areaInfo"></p>
+      <p class="muted" id="devInfo"></p>
+    </section>
+
+    <section class="panel" id="s2">
+      <h2>2 &middot; Map data</h2>
+      <p>Each source has a link to where you get it. The builder downloads what it can by itself when you are online.</p>
+
+      <div class="src need" id="cOsm">
+        <h3>OpenStreetMap <span class="tag">needed</span></h3>
+        <p class="muted">Streets, buildings, names, addresses, shops, water, power lines, rail, fences and trees.</p>
+        <ul>
+          <li><b>Big areas:</b> your state from <a href="https://download.geofabrik.de/north-america/us.html" target="_blank" rel="noopener">Geofabrik (US states)</a> or <a href="https://download.geofabrik.de/" target="_blank" rel="noopener">Geofabrik (world)</a>. Pick the <code>.osm.pbf</code> file.</li>
+          <li><b>Small areas:</b> <a href="https://www.openstreetmap.org/export" target="_blank" rel="noopener">openstreetmap.org Export</a> (<code>.osm</code>), or the Download button here.</li>
+        </ul>
+        <div class="row"><label class="btn sm">Upload file<input id="fOsm" type="file" accept=".pbf,.osm,.xml,.json,.geojson" hidden></label><button id="dlOsm" class="alt sm">Download for this area</button></div>
+        <div class="st" id="stOsm">No file yet.</div>
+      </div>
+
+      <div class="src" id="cElev">
+        <h3>Elevation <span class="tag">recommended</span></h3>
+        <p class="muted">Real ground: hills, valleys, creek banks.</p>
+        <ul>
+          <li><b>Best (US):</b> <a href="https://apps.nationalmap.gov/downloader/" target="_blank" rel="noopener">USGS National Map Downloader</a>: choose Elevation Products (3DEP), then <i>1 meter DEM</i> (or <i>1/3 arc-second DEM</i> where 1 m is missing), draw your area, download the GeoTIFF files.</li>
+          <li><b>No files:</b> tick the box and the builder fetches free terrain tiles (about 15 m detail) while it builds.</li>
+        </ul>
+        <div class="row"><label class="btn sm">Upload GeoTIFFs<input id="fTif" type="file" accept=".tif,.tiff" multiple hidden></label><label class="muted"><input id="useTiles" type="checkbox" checked>Fetch free terrain tiles (online)</label></div>
+        <div class="st" id="stElev">No files yet.</div>
+      </div>
+
+      <div class="src" id="cOvt">
+        <h3>Overture buildings <span class="tag">fills gaps</span></h3>
+        <p class="muted">Buildings OpenStreetMap is missing, from Microsoft, Google and Esri footprints. Only added where OpenStreetMap has no building.</p>
+        <ul><li><a href="https://explore.overturemaps.org/#14/37.2089/-93.2923" target="_blank" rel="noopener">Overture Maps Explorer</a>: turn on Buildings, move to your area, download as <b>GeoJSON</b>. (More ways: <a href="https://docs.overturemaps.org/getting-data/" target="_blank" rel="noopener">Overture docs</a>.)</li></ul>
+        <div class="row"><label class="btn sm">Upload GeoJSON<input id="fOvt" type="file" accept=".geojson,.json" multiple hidden></label></div>
+        <div class="st" id="stOvt">No files yet.</div>
+      </div>
+
+      <div class="src later" id="cLidar">
+        <h3>Lidar <span class="tag">later version</span></h3>
+        <p class="muted">Laser scans: real building heights and roof shapes, and every tree. Reading lidar comes in a later version of the builder.</p>
+        <ul><li><a href="https://apps.nationalmap.gov/lidar-explorer/" target="_blank" rel="noopener">USGS Lidar Explorer</a> (<code>.laz</code> tiles).</li></ul>
+      </div>
+
+      <div class="src later" id="cAir">
+        <h3>Aerial photos <span class="tag">later version</span></h3>
+        <p class="muted">Laid under the map to trace and check things by eye. Comes in a later version.</p>
+        <ul><li><a href="https://apps.nationalmap.gov/downloader/" target="_blank" rel="noopener">USGS National Map Downloader</a>: Imagery, NAIP (<code>.tif</code>).</li></ul>
+      </div>
+    </section>
+
+    <section class="panel" id="s3">
+      <h2>3 &middot; Build</h2>
+      <div class="row"><label><input id="optFill" type="checkbox" checked>Fill gaps with made-up homes and farms (marked, so real data can replace them)</label></div>
+      <div class="row"><label class="muted" style="width:110px">Ground detail</label><select id="optStep"><option value="10">Fine (10 m)</option><option value="20" selected>Standard (20 m)</option><option value="40">Light (40 m)</option></select></div>
+      <div class="row"><button id="build">Build the map</button><button id="stop" class="alt hidden">Stop</button></div>
+      <div class="bar"><i id="barI"></i></div>
+      <div class="muted" id="stage">Waiting for map data.</div>
+    </section>
+
+    <section class="panel hidden" id="s4">
+      <h2>4 &middot; Report and export</h2>
+      <div id="report"></div>
+      <h3 style="font-size:15px;margin:14px 0 4px">Get it into the game</h3>
+      <div class="row"><button id="exAsmap">Save map file (.asmap)</button></div>
+      <p class="muted">One file with the whole map, to copy to your drive or send to friends. The game opens these files from builder version 1.</p>
+      <div class="row"><button id="exSingle" class="alt">Save single map file (.json)</button></div>
+      <p class="muted" id="exSingleNote">For areas up to 2 miles: opens in today's game with <i>Load map file</i>.</p>
+      <div class="row"><button id="exGame" class="alt">Send to the game on this device</button></div>
+      <p class="muted">Puts the map in the game's own list of regions. Works when the builder and the game are opened from the same place (the same website or the same drive) in the same browser.</p>
+    </section>
+    <p class="muted" style="text-align:center">The 3D view, walk mode and the editing tools come in the next versions. The map on the right is a flat preview of what was built.</p>
+  </div>
+  <div id="mapwrap">
+    <canvas id="map2d"></canvas>
+    <div id="mapNote" class="hidden"></div>
+    <div id="mapTools">
+      <button id="zIn" class="alt sm" title="Zoom in">+</button>
+      <button id="zOut" class="alt sm" title="Zoom out">&minus;</button>
+      <button id="fit" class="alt sm">Fit area</button>
+      <button id="tilesBtn" class="alt sm">Street map underlay</button>
+    </div>
+    <div id="legend" class="hidden">
+      <span><i style="background:#3d3833"></i>OpenStreetMap buildings</span>
+      <span><i style="background:#5f8a9a"></i>Overture buildings</span>
+      <span><i style="background:#c8452c"></i>Made-up buildings</span>
+      <span><i style="background:#8fb0bd"></i>Water</span>
+      <span><i style="background:#b9c49a"></i>Woods and parks</span>
+    </div>
+    <div id="credit">Map data &copy; OpenStreetMap contributors</div>
+  </div>
+</main>
+<div id="toast"></div>
+<script src="builder/inflate.js"></script>
+<script src="builder/geo.js"></script>
+<script src="builder/pbf.js"></script>
+<script src="builder/tiff.js"></script>
+<script src="builder/gen.js"></script>
+<script src="builder/build.js"></script>
+<script src="builder/worker.js"></script>
+<script src="builder/app.js"></script>
+</body>
+</html>

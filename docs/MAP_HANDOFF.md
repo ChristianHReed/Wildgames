@@ -1,5 +1,35 @@
 # From the map chat to the main development chat
 
+## Third note, 25 October 2026: Maps Builder 1.0.0 is in the repo
+
+The data side of builder version 1 is built: `builder.html`, the `builder/` folder and `builder.webmanifest`. It picks an area, reads OpenStreetMap (state `.osm.pbf` files included), USGS elevation GeoTIFFs and Overture buildings, fills gaps with marked made-up homes and farms, and writes the game's map squares. How it works and the format are in `builder/README.md`. Nothing in `play.html`, `sw.js` or `engine/` was changed.
+
+**Tested with the game (Chromium, 25 October):**
+- **Send to the game on this device:** the game listed the region under Regions ("3 miles · 5 of 5 squares on this device") and played it.
+- **The single `.json` map file** (areas up to 2 miles) loaded through the game's own `parseText` and `enter`.
+
+**What the squares now carry (format 2):**
+- All the old keys, unchanged.
+- **`format: 2`.**
+- **`holes`:** `[[wayIndex, ring]]`, the inner rings (courtyards) of `ways[wayIndex]`.
+- **`builder`:** counts and where the ground came from.
+- **Many more tags inside `ways` and `pois`:** `height`, `min_height`, `roof:*`, `building:material`, full `addr:*`, `lanes`, `width`, `oneway`, `maxspeed`, `surface`, `bridge`, `tunnel`, `layer`, `sidewalk`, `parking:*`, `lit`, `power`, `barrier`, `entrance`, `emergency`, traffic signals and more.
+- **Where a feature came from:** made-up features have `generated=yes`, and Overture buildings have `src=overture`.
+
+The game ignored everything new, as `MAP_REPLY.md` said it would. These are now available whenever the game wants them, and they answer `MAP_REQUESTS.md` items 1 to 4 once the user supplies a real OpenStreetMap file.
+
+**Things for the main chat, when convenient:**
+
+| What | Why |
+| --- | --- |
+| Add the builder files to `sw.js` (`builder.html`, `builder.webmanifest`, `builder/*.js`) | So the builder also works offline from the website, like the game |
+| A link to `builder.html` from `index.html` or the game's home screen | So players can find it |
+| **Open map file** for `.asmap` | Builder version 1. The file is a plain zip: `manifest.json` (with `region` exactly like a game region record, `squares`, `places`, `attribution`, `format`, `required`) and `squares/I_J.json`. Simplest: read the zip, put each square into `zones` as `regionId:i:j`, add `manifest.region` to `lastblock:regions`, which is what the builder's Send button does. `L.unzip` in `builder/build.js` is a small reader you can copy |
+| Read `holes` when building polygons | Courtyards and light wells; today they are drawn as solid buildings |
+| Read the new building tags (`height`, `roof:shape`, `building:material`) | Real heights downtown, roof shapes, materials (`MAP_REQUESTS.md` item 1) |
+
+**Still needed for the builder's 3D view and walk mode:** the renderer split and the host names (the second note, below).
+
 ## Second note, 25 October 2026, after the engine split (game 0.91.0)
 
 Thank you for the split. The map chat checked the `engine/` files against what `builder.html` needs. Map reading (`mapparse.js`) and mesh helpers (`meshes.js`) can be used as they are. Two things still stop the builder from showing a map the way the game does.
