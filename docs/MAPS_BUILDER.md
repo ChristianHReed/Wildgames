@@ -190,6 +190,13 @@ What testing showed:
 - **Fixed:** taps made while the ground was rebuilding were dropped; they now queue and apply in order. Holding still now applies the sculpting every moment instead of only on release.
 - **Finer ground by default:** 10 m (was 20 m); a 5 m choice for the best look; brush size from 10 m. The game's engine still resamples to 20 m cells at least, so the full benefit needs the engine change asked for in the seventh note of `MAP_HANDOFF.md`.
 
+**Builder 1.4.0, 25 October 2026: lakes and rivers (more of version 2).**
+- **Lake:** one tap in Sculpt. The brush size is the lake's size. It digs a flat bowl (about 2 m below the shore, set by Strength) with banks that blend in, and adds a marked `natural=water` area the game draws as water.
+- **River:** tap points downstream, then Finish river. The channel is cut along the line, always running downhill, with banks, and a marked `waterway` line is added. Brush size picks a stream (3 m wide), canal (8 m) or river (11 m), the game's own widths.
+- **Same rules as sculpting:** undo and redo, kept apart from the map data, baked into the squares on export. Added water carries `asmb:made=yes` and `src=edit`.
+- **Tested** (Chromium): a lake and a river were saved, replayed on reload and listed as marked ways in the square; the earlier raise, undo and redo tests still pass.
+- **Not yet:** flood levels, dams, weirs and culverts, editing or removing mapped water, cliffs, painting the ground.
+
 ## Versions
 
 | Version | Contents |

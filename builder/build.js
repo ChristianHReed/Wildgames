@@ -29,7 +29,36 @@ L.terrainApply = function(text, ops){
   for (var i = 0; i < n; i++){ var v = bin.charCodeAt(i*2) | (bin.charCodeAt(i*2 + 1) << 8); h[i] = v > 32767 ? v - 65536 : v; }
   var cosL = Math.cos((E.s + E.n)/2*Math.PI/180), mx = 111320*cosL, my = 110540, cw = (E.e - E.w)/(E.cols - 1)*mx, ch = (E.n - E.s)/(E.rows - 1)*my;
   var at = function(c, r){ return h[Math.max(0, Math.min(E.rows - 1, r))*E.cols + Math.max(0, Math.min(E.cols - 1, c))]; };
+  /* a river: a channel along the drawn line, always running down (never uphill), as deep as k metres, with banks */
+  var river = function(o){
+    var P = [], i, sx = 1/(cw), sy = 1/(ch);
+    for (i = 0; i + 3 < o.c.length; i += 2){
+      var ax = (o.c[i] - E.w)/(E.e - E.w)*(E.cols - 1), ay = (E.n - o.c[i + 1])/(E.n - E.s)*(E.rows - 1), bx = (o.c[i + 2] - E.w)/(E.e - E.w)*(E.cols - 1), by = (E.n - o.c[i + 3])/(E.n - E.s)*(E.rows - 1);
+      var ln = Math.hypot((bx - ax)*cw, (by - ay)*ch), nn = Math.max(1, Math.ceil(ln/(Math.min(cw, ch)*0.5)));
+      for (var q = (i ? 1 : 0); q <= nn; q++) P.push([ax + (bx - ax)*q/nn, ay + (by - ay)*q/nn]);
+    }
+    if (P.length < 2) return;
+    var z = P.map(function(p){ return at(Math.round(p[0]), Math.round(p[1])); }), sm = z.map(function(v, n){ var a = 0, c = 0; for (var d = -4; d <= 4; d++){ var m = n + d; if (m >= 0 && m < z.length){ a += z[m]; c++; } } return a/c; });
+    for (i = 1; i < sm.length; i++) if (sm[i] > sm[i - 1]) sm[i] = sm[i - 1];
+    var dep = (o.k || 1.5)*10, hw = (o.w || 8)/2 + 1.5, bank = hw*2.2, rc2 = bank/cw + 2, rr2 = bank/ch + 2, x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    P.forEach(function(p){ x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
+    var cx0 = Math.max(0, Math.floor(x0 - rc2)), cx1 = Math.min(E.cols - 1, Math.ceil(x1 + rc2)), cy0 = Math.max(0, Math.floor(y0 - rr2)), cy1 = Math.min(E.rows - 1, Math.ceil(y1 + rr2)), out = [];
+    /* each point along the line marks the cells near it with its distance; a cell keeps the nearest point (so the work follows the line, not its whole box) */
+    var bw = cx1 - cx0 + 1, bd = new Float32Array(bw*(cy1 - cy0 + 1)).fill(1e9), bn = new Int32Array(bd.length);
+    P.forEach(function(p, n){
+      var ca = Math.max(cx0, Math.floor(p[0] - rc2)), cb = Math.min(cx1, Math.ceil(p[0] + rc2)), ra = Math.max(cy0, Math.floor(p[1] - rr2)), rb = Math.min(cy1, Math.ceil(p[1] + rr2));
+      for (var r = ra; r <= rb; r++) for (var c = ca; c <= cb; c++){ var dx = (c - p[0])*cw, dy = (r - p[1])*ch, dd = Math.sqrt(dx*dx + dy*dy), k3 = (r - cy0)*bw + (c - cx0); if (dd < bd[k3]){ bd[k3] = dd; bn[k3] = n; } }
+    });
+    for (var r = cy0; r <= cy1; r++) for (var c = cx0; c <= cx1; c++){
+      var k3 = (r - cy0)*bw + (c - cx0), best = bd[k3], bi = bn[k3];
+      if (best >= bank) continue; var f = best <= hw ? 1 : 1 - (best - hw)/(bank - hw), tgt; f = f*f*(3 - 2*f); tgt = sm[bi] - (best <= hw ? dep : dep*(best <= hw*1.2 ? 0.5 : 0));
+      var k2 = r*E.cols + c; if (best <= hw || h[k2] > tgt) out.push([k2, Math.round(h[k2] + (tgt - h[k2])*f)]);
+    }
+    out.forEach(function(q){ h[q[0]] = q[1]; });
+  };
+  var ptH = function(lon, lat){ return at(Math.round((lon - E.w)/(E.e - E.w)*(E.cols - 1)), Math.round((E.n - lat)/(E.n - E.s)*(E.rows - 1))); };
   ops.forEach(function(o){
+    if (o.t === 'river'){ river(o); return; }
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
@@ -48,6 +77,11 @@ L.terrainApply = function(text, ops){
     }
   });
   E.d = L.b64 ? L.b64(new Uint8Array(h.buffer)) : (function(){ var u = new Uint8Array(h.buffer), st = '', CH = 0x8000; for (var i = 0; i < u.length; i += CH) st += String.fromCharCode.apply(null, u.subarray(i, i + CH)); return btoa(st); })();
+  ops.forEach(function(o){
+    if (o.t === 'basin'){ var ring = [], cl = Math.cos(o.lat*Math.PI/180); for (var a = 0; a <= 28; a++){ var ang = a/28*Math.PI*2; ring.push(+(o.lon + Math.cos(ang)*o.r*0.72/(111320*cl)).toFixed(6), +(o.lat + Math.sin(ang)*o.r*0.72/110540).toFixed(6)); }
+      sq.ways.push([{natural:'water', water:'lake', 'asmb:made':'yes', src:'edit'}, ring]); }
+    else if (o.t === 'river') sq.ways.push([{waterway:o.w >= 10 ? 'river' : o.w >= 6 ? 'canal' : 'stream', 'asmb:made':'yes', src:'edit'}, o.c]);
+  });
   sq.builder = sq.builder || {}; sq.builder.edits = (sq.builder.edits || 0) + ops.length;
   return JSON.stringify(sq);
 };
@@ -57,11 +91,16 @@ L.squareText = async function(proj, i, j){
   var ops = await L.dbGet('edits', key); return ops && ops.length ? L.terrainApply(text, ops) : text;
 };
 /* add dabs to the squares they touch. region is the project's region record; returns the squares changed */
+/* the box (lon0, lat0, lon1, lat1) an edit can change; a river's reaches 3 widths beyond its line */
+L.opBox = function(o){
+  var cl = Math.cos((o.lat || (o.c ? o.c[1] : 0))*Math.PI/180);
+  if (o.c){ var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (var i = 0; i < o.c.length; i += 2){ x0 = Math.min(x0, o.c[i]); x1 = Math.max(x1, o.c[i]); y0 = Math.min(y0, o.c[i + 1]); y1 = Math.max(y1, o.c[i + 1]); } var m = (o.w || 10)*3; return [x0 - m/(111320*cl), y0 - m/110540, x1 + m/(111320*cl), y1 + m/110540]; }
+  return [o.lon - o.r/(111320*cl), o.lat - o.r/110540, o.lon + o.r/(111320*cl), o.lat + o.r/110540];
+};
 L.editAdd = async function(proj, region, dabs){
   var touched = {};
   dabs.forEach(function(o){
-    var dLat = o.r/110540, dLon = o.r/(111320*Math.cos(o.lat*Math.PI/180));
-    var i0 = Math.floor((o.lon - dLon - region.lon)/region.dLon + 0.5 - 0.0), i1 = Math.floor((o.lon + dLon - region.lon)/region.dLon + 0.5), j0 = Math.floor((o.lat - dLat - region.lat)/region.dLat + 0.5), j1 = Math.floor((o.lat + dLat - region.lat)/region.dLat + 0.5);
+    var bb = L.opBox(o), i0 = Math.floor((bb[0] - region.lon)/region.dLon + 0.5), i1 = Math.floor((bb[2] - region.lon)/region.dLon + 0.5), j0 = Math.floor((bb[1] - region.lat)/region.dLat + 0.5), j1 = Math.floor((bb[3] - region.lat)/region.dLat + 0.5);
     for (var i = i0 - 0; i <= i1; i++) for (var j = j0; j <= j1; j++) (touched[i + ':' + j] = touched[i + ':' + j] || []).push(o);
   });
   var keys = Object.keys(touched);

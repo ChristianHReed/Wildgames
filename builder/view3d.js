@@ -7,7 +7,7 @@
 var V3 = window.View3D = {env:{hour:10, season:1}, open:open, close:close, isOpen:function(){ return on; }};
 var L3 = {}; window.BLIB.build(L3);   /* only for reading squares from the builder's storage */
 var on = false, ready = null, cur = null, mode = 'fly', flyH = 60, last = 0, intT = 0, dynB = null, busy = false, noteT = 0, onClose = null;
-var sculpt = false, tool = 'raise', brushR = 60, brushK = 0.5, undoSt = [], redoSt = [], pend = [], working = false, holdT = null, lastCam = null;
+var riv = [], sculpt = false, tool = 'raise', brushR = 60, brushK = 0.5, undoSt = [], redoSt = [], pend = [], working = false, holdT = null, lastCam = null;
 var keysDown = {}, look = null, stick = {x:0, y:0}, upDown = 0;
 var $ = function(id){ return document.getElementById(id); };
 V3.note = function(msg, secs){ var n = $('v3note'); if (!n) return; n.textContent = msg; n.style.opacity = msg ? 1 : 0; clearTimeout(noteT); if (msg) noteT = setTimeout(function(){ n.style.opacity = 0; }, (secs || 3)*1000); };
@@ -23,11 +23,12 @@ function makeOverlay(){
     '<select id="v3sea"><option value="0">Spring</option><option value="1" selected>Summer</option><option value="2">Autumn</option><option value="3">Winter</option></select>' +
     '<button id="v3sculpt" class="sm alt">Sculpt</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3tools" class="hidden"><b>Sculpt the ground</b><div class="v3row" id="v3tt">' +
-    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button></div>' +
+    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="river" class="sm alt">River</button></div>' +
+    '<div class="v3row hidden" id="v3riv"><button id="v3rdone" class="sm">Finish river</button><button id="v3rcancel" class="sm alt">Cancel</button><span id="v3rn"></span></div>' +
     '<label>Brush size <input id="v3r" type="range" min="10" max="250" step="5" value="60"><b id="v3rV">60 m</b></label>' +
     '<label>Strength <input id="v3k" type="range" min="0.1" max="1" step="0.05" value="0.5"><b id="v3kV">0.5</b></label>' +
     '<div class="v3row"><button id="v3undo" class="sm alt">Undo</button><button id="v3redo" class="sm alt">Redo</button><span id="v3cnt"></span></div>' +
-    '<small>Tap or click the ground to sculpt; hold still to keep going. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
+    '<small>Tap or click the ground to sculpt; hold still to keep going. Lake: one tap, brush size is the size of the lake. River: tap points downstream, then Finish; brush size picks stream, canal or river. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
     '<div id="v3where"></div><div id="v3note"></div>' +
     '<div id="v3helpBox" class="hidden"><b>Moving around</b><br>' +
     '<b>Keyboard:</b> W A S D or arrows to move, E up and Q down (flying), Shift to go faster, F to switch Fly and Walk, drag the mouse to look, wheel to change height.<br>' +
@@ -59,9 +60,9 @@ function makeOverlay(){
   $('v3sea').onchange = function(){ V3.env.season = +this.value; };
   $('v3help').onclick = function(){ $('v3helpBox').classList.toggle('hidden'); };
   $('v3sculpt').onclick = function(){ sculpt = !sculpt; $('v3tools').classList.toggle('hidden', !sculpt); this.className = 'sm ' + (sculpt ? 'on' : 'alt'); if (sculpt){ if (mode !== 'fly') setMode('fly'); V3.note('Sculpt: tap the ground.', 3); refreshCount(); } };
-  Array.prototype.forEach.call($('v3tt').children, function(b){ b.onclick = function(){ tool = b.getAttribute('data-t'); Array.prototype.forEach.call($('v3tt').children, function(o){ o.className = 'sm ' + (o === b ? 'on' : 'alt'); }); }; });
+  Array.prototype.forEach.call($('v3tt').children, function(b){ b.onclick = function(){ tool = b.getAttribute('data-t'); riv = []; toolUI(); Array.prototype.forEach.call($('v3tt').children, function(o){ o.className = 'sm ' + (o === b ? 'on' : 'alt'); }); }; });
   $('v3r').oninput = function(){ brushR = +this.value; $('v3rV').textContent = brushR + ' m'; }; $('v3k').oninput = function(){ brushK = +this.value; $('v3kV').textContent = brushK; };
-  $('v3undo').onclick = undo; $('v3redo').onclick = redo;
+  $('v3rdone').onclick = finishRiver; $('v3rcancel').onclick = function(){ riv = []; toolUI(); }; $('v3undo').onclick = undo; $('v3redo').onclick = redo;
   /* look: drag with mouse, finger or pencil on the view */
   var cvs = $('game');
   cvs.addEventListener('pointerdown', function(e){ cvs.setPointerCapture(e.pointerId); look = {id:e.pointerId, x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY, moved:false, t:performance.now()}; cvs.style.cursor = 'grabbing';
@@ -161,6 +162,8 @@ function groundHit(px, py){
 function dabAt(px, py, again){
   var h = groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
   var ll = llOf(h[0], h[1]);
+  if (tool === 'river'){ riv.push(+ll[0].toFixed(6), +ll[1].toFixed(6)); toolUI(); return; }
+  if (tool === 'basin'){ pend.push({id:uid(), t:'basin', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:+(brushK*4).toFixed(1)}); V3.note('Lake', 1.5); return; }
   pend.push({id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t:tool, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:brushK});
   V3.note(pend.length + (pend.length > 1 ? ' dabs' : ' dab') + '', 1.5);
 }
@@ -179,6 +182,19 @@ async function redraw(msg){
   V3.note(msg || '', 2);
 }
 async function refreshCount(){ try { var n = await L3.editCount(cur.proj); $('v3cnt').textContent = n + (n === 1 ? ' dab' : ' dabs') + ' saved'; $('v3undo').disabled = !undoSt.length; $('v3redo').disabled = !redoSt.length; } catch (er){} }
+
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function riverWidth(){ return brushR < 30 ? 3 : brushR < 60 ? 8 : 11; }   /* the game's stream, canal and river widths */
+function toolUI(){
+  var isR = tool === 'river'; $('v3riv').classList.toggle('hidden', !isR);
+  if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : 'tap along the river, downstream';
+}
+async function finishRiver(){
+  if (riv.length < 4){ V3.note('A river needs at least two points.', 3); return; }
+  var c = riv; riv = []; toolUI();
+  pend.push({id:uid(), t:'river', c:c, w:riverWidth(), k:+(1 + brushK*1.5).toFixed(1), lat:c[1], lon:c[0]}); endStroke();
+}
 
 /* ---------------- each frame ---------------- */
 function frame(ts){
