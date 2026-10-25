@@ -1,6 +1,6 @@
 # AfterStreet Maps Builder: scope
 
-The companion app that turns real map data into Afterstreet worlds and lets players edit them. Written by the map chat on 25 October 2026 (game version 0.90.0), from the user's answers to a round of scoping questions. **No code yet**: this page is what the builder must be, do and look like. Update it when a decision changes. The engine notes in `docs/MAP.md` still apply; this page is the product built on them.
+The companion app that turns real map data into Afterstreet worlds and lets players edit them. Written by the map chat on 25 October 2026 (game version 0.90.0), updated the same day with the main chat's answers (0.90.1), from the user's answers to a round of scoping questions. **No code yet**: this page is what the builder must be, do and look like. Update it when a decision changes. The engine notes in `docs/MAP.md` still apply; this page is the product built on them.
 
 ## What it is
 
@@ -37,7 +37,10 @@ A map builder that runs on any device, from the same drive as the game. A player
 
 ## How it runs
 
-- **One engine, two apps.** The world generator, terrain, building and rendering code is shared with the game (one copy on the drive), so a map looks the same in the builder and in the game. Moving the game's map maker into the builder is part of this.
+- **One engine, two apps.** The world generator, terrain, building and rendering code is shared with the game (one copy on the drive), so a map looks the same in the builder and in the game. Agreed with the main chat (`docs/MAP_REPLY.md`):
+  - The main chat first splits `play.html` into an `engine/` folder, as a game version of its own: `engine/geo.js` (projection, OSM parsing, the compact format), `engine/world.js` (world building: heights, roads, bridges, buildings, trees) and `engine/render.js` (WebGL, chunks, models).
+  - The builder loads exactly those files and adds builder-only files beside them.
+  - All files are **classic scripts** (`<script src>`, no ES modules), so both apps still open from a USB drive with `file://`. This also applies to the builder's background workers and WebAssembly readers.
 - **Offline first.** Everything works from the drive with no internet; downloads are a convenience.
 - **Background work.** Imports and generation run in background workers, in pieces (one map square at a time), so the screen never freezes and a phone never holds the whole region in memory. A big build can be paused and resumed, and survives the app closing.
 - **Fast file readers.** Compiled readers (WebAssembly) for the big formats: OpenStreetMap `.osm.pbf`, lidar `.laz`, elevation GeoTIFF, Overture GeoParquet.
@@ -45,7 +48,8 @@ A map builder that runs on any device, from the same drive as the game. A player
 - **Storage limits to know.**
   - Computers in Chrome or Edge can read and write the drive directly.
   - Safari on iPad and iPhone cannot write to a USB or SSD from a home-screen app. Maps live in the app's own storage, and Export hands the file to the share sheet or the Files app, which can save it to the drive. Firefox and desktop Safari work the same way.
-  - The same holds for the game; the main chat should confirm the two apps can share storage, since they come from the same site.
+  - **Sharing with the game (confirmed by the main chat).** The game keeps maps in IndexedDB (database `afterstreet`). The two apps share it only when both are served from one address (the GitHub Pages site or one local server) and opened in the same browser or home-screen app. Separate home-screen icons on iOS keep separate storage, and from `file://` Safari gives every file its own storage.
+  - So the **sure route is Export to Files, then Open map file in the game**, which the game adds with builder version 1. Shared IndexedDB is an extra for when both apps share an address and app: a "Send to game" button that works only when it can.
 
 ## Data sources and upload points
 
@@ -115,9 +119,16 @@ One self-contained file (working name `.asmap`, a zip inside) holding:
 - the edit layer;
 - the game layer (safe zones, nests, loot, jobs, scenarios);
 - every custom or pack model the map uses;
-- a manifest: name, centre, radius, source list with dates, credits and licences, builder version, a thumbnail.
+- a manifest: name, centre, radius, source list with dates, credits and licences, builder version, a **`format` number**, a thumbnail.
 
 The game opens this file directly. Friends get everything in one file.
+
+Rules agreed with the main chat:
+- **Squares stay compatible.** Each square keeps the game's current keys unchanged (`ways`, `pois`, `name`, `spawn`, `elev`, `zone`, `tclass`), and new layers (street widths, building heights and roofs, props, the game layer) go in new keys beside them. Older games ignore keys they don't know.
+- **Format number.** Each file says which format it uses and marks any layer the game can't do without as required, so an old game can say "this map needs a newer game" instead of loading it wrong.
+- **Buildings by position.** The game numbers buildings per square, and the numbers change, so the edit layer and the game layer refer to a building by the lon/lat of its door. The game looks up the nearest building.
+- **Game layer names** match the game's own: `start`, `safe` (door position), `zones`, `nests` (door positions), `loot` (building kind to item weights, using the game's item keys such as `scrap`, `water`, `fuel`, `battery`, `medkit`), `traders` (door positions) and `scenarios` (the game's scenario shape: id, name, type `endless`, `reclaim` or `escape`, and parts). Danger by area and power jobs have no table in the game today. The builder adds them as new keys, and the game keeps its current rules wherever a map has none.
+- Vehicle ids already come from real-world cells (from game 0.90.1), so they stay stable whatever the builder does to roads.
 
 ## Look and controls
 
@@ -141,21 +152,25 @@ The game opens this file directly. Friends get everything in one file.
 
 ## What this means for the game (hand-off to the main chat)
 
-- The game's built-in map maker is retired; the game loads `.asmap` files (and the built-in Springfield).
-- The generator, terrain and building code becomes shared between the two apps; the main chat and this chat need one agreed place for it.
-- The game layer in the map file becomes the source of safe zones, nests, loot and scenarios for that map, with the game's rules as defaults.
+Sent as `docs/MAP_HANDOFF.md`; the main chat answered in `docs/MAP_REPLY.md` and added a "Maps Builder lead-in" row to the roadmap. Its plan:
+
+| When | Main chat's change |
+| --- | --- |
+| Next agreed step (the map chat says when) | Split `play.html` into the `engine/` folder, as a game version of its own |
+| With builder version 1 | Open, list and delete `.asmap` on the home screen; show source credits; read the format number; keep new square keys in its cache; retire the in-game map maker; Springfield rebuilt as the sample |
+| With builder version 4 | Load models carried in a map like content packs |
+| Before builder version 6 | Read `start`, `safe`, `zones`, `nests`, `loot`, `traders` and `scenarios` from the map, with the current rules as defaults |
 
 ## Open questions
 
 1. **Undo.** Only autosave was chosen. Undo and redo are standard in editors and cheap once edits are recorded anyway; recommended to add back. Named snapshots and the edit log could stay out.
 2. **File name and extension:** `.asmap` is a working name.
-3. **Shared code location:** a shared `engine` folder both apps load, or the builder loading code from `play.html`.
-4. **Lidar size on phones:** lidar may need to be limited to computers and iPads, or to a small core area.
-5. **Countries beyond the US**, and when.
-6. **Asset licensing in shared maps:** packs and imported models inside a map file should carry their licence and author.
+3. **Lidar size on phones:** lidar may need to be limited to computers and iPads, or to a small core area.
+4. **Countries beyond the US**, and when.
+5. **Asset licensing in shared maps:** packs and imported models inside a map file should carry their licence and author.
 
 ## Sources
 The engine research and data sources are listed in `docs/MAP.md`. Still to be checked before building:
 - which data sites allow downloads straight from a browser;
-- Safari's storage limits for home-screen apps;
+- Safari's storage size limits for home-screen apps (sharing between apps is answered above);
 - browser readers for `.osm.pbf`, `.laz`, GeoTIFF and GeoParquet.
