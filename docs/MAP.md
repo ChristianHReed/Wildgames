@@ -1,6 +1,6 @@
 # Afterstreet map generator guide
 
-Reference for the **map chat** in this Project. Read it first, follow it, and update it when a decision changes. Started 19 October 2026, at game version 0.49.4. The main development chat's wish list is `docs/MAP_REQUESTS.md`.
+Reference for the **map chat** in this Project. Read it first, follow it, and update it when a decision changes. Started 19 October 2026, at game version 0.49.4. The main development chat's wish list is `docs/MAP_REQUESTS.md`. The companion app built on this engine is scoped in `docs/MAPS_BUILDER.md`.
 
 ## The role
 
