@@ -179,6 +179,13 @@ What testing showed:
 - **The map pack's Springfield is short of houses.** Outside downtown, the streets of central Springfield have few buildings. The builder's lot-by-lot gap filling puts marked made-up homes on the empty lots (about 5 made-up for every real building in the test). Overture buildings should replace most of them with real footprints.
 - **Whole 50-mile regions need a computer.** At city density everywhere the stress test used about 1.3 GB. The builder suggests up to 8 miles on phones and 25 miles on tablets.
 
+**Builder 1.3.0, 25 October 2026: terrain sculpting (the first part of version 2).**
+- **Where:** the Sculpt button in the 3D view. Tools: Raise, Lower, Smooth, Level; brush size 15 to 250 m; strength.
+- **How:** tap or click the ground (hold still to keep going). The ground is rebuilt with the change on top. Undo and Redo work for each tap or hold.
+- **Edits stay on top:** dabs are saved apart from the map data (IndexedDB store `edits`, one list per square). Building the map again from new data keeps them. Open map file (`.asmap`) and the exports bake them into each square's height grid, so the game sees the changed ground with no new format.
+- **Limits:** the ground grid is 20 m cells within 15 km, so small features need the finer elevation detail setting. Water, cliffs and ground painting are next. The single `.json` file made at build time does not include edits; use the `.asmap` export.
+- **Tested** (Chromium, 25 October): three full-strength raises gave +3.0 m at the middle over 84 cells; undo and redo restored and replayed them; the baked squares carry the edit count in `builder.edits`.
+
 ## Versions
 
 | Version | Contents |

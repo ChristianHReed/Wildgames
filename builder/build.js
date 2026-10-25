@@ -6,8 +6,8 @@
 /* ---- the builder's storage (IndexedDB 'afterstreet-builder'): projects, squares, previews ---- */
 L.db = function(){
   return new Promise(function(res, rej){
-    var q; try { q = indexedDB.open('afterstreet-builder', 1); } catch (e){ rej(e); return; }
-    q.onupgradeneeded = function(){ var d = q.result; ['projects', 'squares', 'preview'].forEach(function(s){ if (!d.objectStoreNames.contains(s)) d.createObjectStore(s); }); };
+    var q; try { q = indexedDB.open('afterstreet-builder', 2); } catch (e){ rej(e); return; }
+    q.onupgradeneeded = function(){ var d = q.result; ['projects', 'squares', 'preview', 'edits'].forEach(function(s){ if (!d.objectStoreNames.contains(s)) d.createObjectStore(s); }); };
     q.onsuccess = function(){ res(q.result); }; q.onerror = function(){ rej(q.error || new Error('this browser has no storage for the builder')); };
   });
 };
@@ -16,6 +16,66 @@ L.dbPut = function(store, key, val){ return L.dbDo(store, 'readwrite', function(
 L.dbGet = function(store, key){ return L.dbDo(store, 'readonly', function(s){ return s.get(key); }); };
 L.dbKeys = function(store, prefix){ return L.dbDo(store, 'readonly', function(s){ return prefix ? s.getAllKeys(IDBKeyRange.bound(prefix, prefix + '￿')) : s.getAllKeys(); }); };
 L.dbDel = function(store, prefix){ return L.dbDo(store, 'readwrite', function(s){ return s.delete(IDBKeyRange.bound(prefix, prefix + '￿')); }); };
+
+
+/* ---- terrain edits (builder version 2) ----
+   The player's changes are kept apart from the map data, as a list of brush dabs per square in the 'edits' store (key 'project:i:j'), so building the
+   map again from new data keeps them. A dab: {t:'raise'|'lower'|'smooth'|'level', lat, lon, r (metres), k (strength 0.1-1)}. Each dab is stored in every
+   square whose ground it touches, so neighbouring squares agree. Replaying the list in order on a square's height grid always gives the same ground. */
+L.terrainApply = function(text, ops){
+  if (!ops || !ops.length) return text;
+  var sq = JSON.parse(text), E = sq.elev; if (!E || !E.d) return text;
+  var bin = atob(E.d), n = E.cols*E.rows, h = new Int16Array(n);
+  for (var i = 0; i < n; i++){ var v = bin.charCodeAt(i*2) | (bin.charCodeAt(i*2 + 1) << 8); h[i] = v > 32767 ? v - 65536 : v; }
+  var cosL = Math.cos((E.s + E.n)/2*Math.PI/180), mx = 111320*cosL, my = 110540, cw = (E.e - E.w)/(E.cols - 1)*mx, ch = (E.n - E.s)/(E.rows - 1)*my;
+  var at = function(c, r){ return h[Math.max(0, Math.min(E.rows - 1, r))*E.cols + Math.max(0, Math.min(E.cols - 1, c))]; };
+  ops.forEach(function(o){
+    var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
+    var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
+    if (c0 > c1 || r0 > r1) return;
+    var cells = [];   /* [index, weight] of the cells under the brush: a smooth fall-off from full strength at the middle to nothing at the edge */
+    for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++){
+      var d = Math.hypot((c - cx)*cw, (r - cy)*ch)/o.r; if (d >= 1) continue; var f = 1 - d; f = f*f*(3 - 2*f); cells.push([r*E.cols + c, f]);
+    }
+    if (!cells.length) return;
+    var k = o.k || 0.5, t = o.t;
+    if (t === 'raise' || t === 'lower'){ var dm = (t === 'raise' ? 1 : -1)*k*10; cells.forEach(function(q){ h[q[0]] = Math.max(-32000, Math.min(32000, Math.round(h[q[0]] + dm*q[1]))); }); }
+    else if (t === 'smooth'){
+      var nh = cells.map(function(q){ var x = q[0] % E.cols, y = (q[0] - x)/E.cols, sum = 0; for (var b = -1; b <= 1; b++) for (var a = -1; a <= 1; a++) sum += at(x + a, y + b); return sum/9; });
+      cells.forEach(function(q, m){ h[q[0]] = Math.round(h[q[0]] + (nh[m] - h[q[0]])*Math.min(1, q[1]*k*1.6)); });
+    } else if (t === 'level'){
+      var tg = at(Math.round(cx), Math.round(cy)); cells.forEach(function(q){ h[q[0]] = Math.round(h[q[0]] + (tg - h[q[0]])*Math.min(1, q[1]*(0.35 + k*0.65)*1.4)); });
+    }
+  });
+  E.d = L.b64 ? L.b64(new Uint8Array(h.buffer)) : (function(){ var u = new Uint8Array(h.buffer), st = '', CH = 0x8000; for (var i = 0; i < u.length; i += CH) st += String.fromCharCode.apply(null, u.subarray(i, i + CH)); return btoa(st); })();
+  sq.builder = sq.builder || {}; sq.builder.edits = (sq.builder.edits || 0) + ops.length;
+  return JSON.stringify(sq);
+};
+/* a square as the player sees it: the built data with their edits on top */
+L.squareText = async function(proj, i, j){
+  var key = proj + ':' + i + ':' + j, text = await L.dbGet('squares', key); if (!text) return text;
+  var ops = await L.dbGet('edits', key); return ops && ops.length ? L.terrainApply(text, ops) : text;
+};
+/* add dabs to the squares they touch. region is the project's region record; returns the squares changed */
+L.editAdd = async function(proj, region, dabs){
+  var touched = {};
+  dabs.forEach(function(o){
+    var dLat = o.r/110540, dLon = o.r/(111320*Math.cos(o.lat*Math.PI/180));
+    var i0 = Math.floor((o.lon - dLon - region.lon)/region.dLon + 0.5 - 0.0), i1 = Math.floor((o.lon + dLon - region.lon)/region.dLon + 0.5), j0 = Math.floor((o.lat - dLat - region.lat)/region.dLat + 0.5), j1 = Math.floor((o.lat + dLat - region.lat)/region.dLat + 0.5);
+    for (var i = i0 - 0; i <= i1; i++) for (var j = j0; j <= j1; j++) (touched[i + ':' + j] = touched[i + ':' + j] || []).push(o);
+  });
+  var keys = Object.keys(touched);
+  for (var k = 0; k < keys.length; k++){ var key = proj + ':' + keys[k], cur = (await L.dbGet('edits', key)) || []; await L.dbPut('edits', key, cur.concat(touched[keys[k]])); }
+  return keys;
+};
+/* take back the last n dabs (the same dabs, from every square that holds them) */
+L.editRemove = async function(proj, dabs){
+  var keys = await L.dbKeys('edits', proj + ':'), set = new Set(dabs.map(function(o){ return o.id; }));
+  for (var k = 0; k < keys.length; k++){ var cur = await L.dbGet('edits', keys[k]) || [], nx = cur.filter(function(o){ return !set.has(o.id); }); if (nx.length !== cur.length) await L.dbPut('edits', keys[k], nx); }
+  return keys;
+};
+L.editCount = async function(proj){ var keys = await L.dbKeys('edits', proj + ':'), ids = new Set(); for (var k = 0; k < keys.length; k++) ((await L.dbGet('edits', keys[k])) || []).forEach(function(o){ ids.add(o.id); }); return ids.size; };
+L.editClear = function(proj){ return L.dbDel('edits', proj + ':'); };
 
 /* what the free map server is asked for when the builder downloads a small area itself */
 L.overpassQuery = function(b){

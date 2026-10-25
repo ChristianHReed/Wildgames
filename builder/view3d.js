@@ -7,6 +7,7 @@
 var V3 = window.View3D = {env:{hour:10, season:1}, open:open, close:close, isOpen:function(){ return on; }};
 var L3 = {}; window.BLIB.build(L3);   /* only for reading squares from the builder's storage */
 var on = false, ready = null, cur = null, mode = 'fly', flyH = 60, last = 0, intT = 0, dynB = null, busy = false, noteT = 0, onClose = null;
+var sculpt = false, tool = 'raise', brushR = 60, brushK = 0.5, undoSt = [], redoSt = [], pend = [], working = false, holdT = null, lastCam = null;
 var keysDown = {}, look = null, stick = {x:0, y:0}, upDown = 0;
 var $ = function(id){ return document.getElementById(id); };
 V3.note = function(msg, secs){ var n = $('v3note'); if (!n) return; n.textContent = msg; n.style.opacity = msg ? 1 : 0; clearTimeout(noteT); if (msg) noteT = setTimeout(function(){ n.style.opacity = 0; }, (secs || 3)*1000); };
@@ -20,7 +21,13 @@ function makeOverlay(){
     '<button id="v3fly" class="sm on">Fly</button><button id="v3walk" class="sm alt">Walk</button>' +
     '<label class="v3lab">Time <input id="v3hour" type="range" min="0" max="24" step="0.25" value="10"><b id="v3hourV"></b></label>' +
     '<select id="v3sea"><option value="0">Spring</option><option value="1" selected>Summer</option><option value="2">Autumn</option><option value="3">Winter</option></select>' +
-    '<button id="v3help" class="sm alt">?</button></div>' +
+    '<button id="v3sculpt" class="sm alt">Sculpt</button><button id="v3help" class="sm alt">?</button></div>' +
+    '<div id="v3tools" class="hidden"><b>Sculpt the ground</b><div class="v3row" id="v3tt">' +
+    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button></div>' +
+    '<label>Brush size <input id="v3r" type="range" min="15" max="250" step="5" value="60"><b id="v3rV">60 m</b></label>' +
+    '<label>Strength <input id="v3k" type="range" min="0.1" max="1" step="0.05" value="0.5"><b id="v3kV">0.5</b></label>' +
+    '<div class="v3row"><button id="v3undo" class="sm alt">Undo</button><button id="v3redo" class="sm alt">Redo</button><span id="v3cnt"></span></div>' +
+    '<small>Tap or click the ground to sculpt; hold still to keep going. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
     '<div id="v3where"></div><div id="v3note"></div>' +
     '<div id="v3helpBox" class="hidden"><b>Moving around</b><br>' +
     '<b>Keyboard:</b> W A S D or arrows to move, E up and Q down (flying), Shift to go faster, F to switch Fly and Walk, drag the mouse to look, wheel to change height.<br>' +
@@ -41,6 +48,8 @@ function makeOverlay(){
     '#v3stick{position:absolute;left:24px;bottom:44px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.5);display:none;touch-action:none}' +
     '#v3stick i{position:absolute;left:40px;top:40px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.75)}' +
     '#v3ud{position:absolute;right:20px;bottom:44px;display:none;flex-direction:column;gap:12px}#v3ud button{width:56px;height:56px;font-size:20px;padding:0}' +
+    '#v3tools{position:absolute;left:12px;top:64px;width:250px;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:6px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}' +
+    '#v3tools.hidden{display:none}#v3tools label{display:flex;gap:6px;align-items:center}#v3tools label input{flex:1;min-width:0}.v3row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#v3tools small{color:#6b5f52;line-height:1.35}' +
     '.touch #v3stick{display:block}.touch #v3ud{display:flex}.touch.walk #v3ud{display:none}';
   document.head.appendChild(st);
   if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) d.classList.add('touch');
@@ -49,11 +58,20 @@ function makeOverlay(){
   $('v3hour').oninput = function(){ V3.env.hour = +this.value; hourTxt(); }; hourTxt();
   $('v3sea').onchange = function(){ V3.env.season = +this.value; };
   $('v3help').onclick = function(){ $('v3helpBox').classList.toggle('hidden'); };
+  $('v3sculpt').onclick = function(){ sculpt = !sculpt; $('v3tools').classList.toggle('hidden', !sculpt); this.className = 'sm ' + (sculpt ? 'on' : 'alt'); if (sculpt){ if (mode !== 'fly') setMode('fly'); V3.note('Sculpt: tap the ground.', 3); refreshCount(); } };
+  Array.prototype.forEach.call($('v3tt').children, function(b){ b.onclick = function(){ tool = b.getAttribute('data-t'); Array.prototype.forEach.call($('v3tt').children, function(o){ o.className = 'sm ' + (o === b ? 'on' : 'alt'); }); }; });
+  $('v3r').oninput = function(){ brushR = +this.value; $('v3rV').textContent = brushR + ' m'; }; $('v3k').oninput = function(){ brushK = +this.value; $('v3kV').textContent = brushK; };
+  $('v3undo').onclick = undo; $('v3redo').onclick = redo;
   /* look: drag with mouse, finger or pencil on the view */
   var cvs = $('game');
-  cvs.addEventListener('pointerdown', function(e){ cvs.setPointerCapture(e.pointerId); look = {id:e.pointerId, x:e.clientX, y:e.clientY}; cvs.style.cursor = 'grabbing'; });
-  cvs.addEventListener('pointermove', function(e){ if (!look || look.id !== e.pointerId) return; var k = e.pointerType === 'mouse' ? 0.004 : 0.006; P.yaw += (e.clientX - look.x)*k; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - (e.clientY - look.y)*k)); look.x = e.clientX; look.y = e.clientY; });
-  var lookEnd = function(e){ if (look && look.id === e.pointerId){ look = null; cvs.style.cursor = 'grab'; } }; cvs.addEventListener('pointerup', lookEnd); cvs.addEventListener('pointercancel', lookEnd);
+  cvs.addEventListener('pointerdown', function(e){ cvs.setPointerCapture(e.pointerId); look = {id:e.pointerId, x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY, moved:false, t:performance.now()}; cvs.style.cursor = 'grabbing';
+    if (sculpt){ var lk = look; holdT = setTimeout(function(){ if (look !== lk || lk.moved) return; lk.held = true; dabAt(lk.x, lk.y, true); holdT = setInterval(function(){ if (look === lk && !lk.moved) dabAt(lk.x, lk.y, true); }, 400); }, 450); } });
+  cvs.addEventListener('pointermove', function(e){ if (!look || look.id !== e.pointerId) return; if (Math.hypot(e.clientX - look.x0, e.clientY - look.y0) > 7) look.moved = true; var k = e.pointerType === 'mouse' ? 0.004 : 0.006; P.yaw += (e.clientX - look.x)*k; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - (e.clientY - look.y)*k)); look.x = e.clientX; look.y = e.clientY; });
+  var lookEnd = function(e){ if (look && look.id === e.pointerId){
+      var tap = sculpt && !look.moved && !look.held && e.type === 'pointerup'; clearTimeout(holdT); clearInterval(holdT); holdT = null;
+      if (tap) dabAt(look.x, look.y, false); if (sculpt && (tap || look.held)) endStroke();
+      look = null; cvs.style.cursor = 'grab'; } };
+  cvs.addEventListener('pointerup', lookEnd); cvs.addEventListener('pointercancel', lookEnd);
   cvs.addEventListener('wheel', function(e){ e.preventDefault(); if (mode === 'fly') flyH = Math.max(2, Math.min(1500, flyH*Math.pow(1.0012, e.deltaY))); }, {passive:false});
   /* touch stick */
   var sk = $('v3stick'), knob = sk.firstChild, sid = null;
@@ -91,7 +109,7 @@ async function boot(){
 
 /* ---------------- opening a square of the built map ---------------- */
 async function open(o){   /* o: {proj, region:{id,name,lat,lon,dLat,dLon}, lat, lon, yaw}; onClose: called when going back */
-  cur = {proj:o.proj, region:o.region}; onClose = o.onClose || null;
+  cur = {proj:o.proj, region:o.region}; undoSt = []; redoSt = []; pend = []; onClose = o.onClose || null;
   makeOverlay(); $('v3').classList.remove('hidden'); on = true; document.body.style.overflow = 'hidden';
   try {
     if (!ready) ready = boot(); await ready;
@@ -105,7 +123,7 @@ function close(){ on = false; $('v3').classList.add('hidden'); document.body.sty
 function llOf(x, y){ var g = world.geo; return [g.lon0 + x/g.kx, g.lat0 - y/g.ky]; }
 async function enterAt(lat, lon, yaw, first){
   var R = cur.region, i = Math.floor((lon - R.lon)/R.dLon + 0.5), j = Math.floor((lat - R.lat)/R.dLat + 0.5);
-  var text = await L3.dbGet('squares', cur.proj + ':' + i + ':' + j);
+  var text = await L3.squareText(cur.proj, i, j);
   if (!text){ V3.note('That part of the map has not been built (outside your area).', 4); return false; }
   if (first) V3.note('Building the 3D world for this square...', 30);
   await new Promise(function(r){ setTimeout(r, 30); });   /* let the note show before the heavy work */
@@ -124,6 +142,43 @@ async function enterAt(lat, lon, yaw, first){
   if (first) V3.note('', 0);
   return true;
 }
+
+
+/* ---------------- sculpting (builder version 2) ---------------- */
+/* where a screen point meets the bare ground: step along the ray, then narrow down */
+function groundHit(px, py){
+  var c = lastCam; if (!c) return null; var cv = $('game').getBoundingClientRect(), nx = ((px - cv.left)/cv.width)*2 - 1, ny = 1 - ((py - cv.top)/cv.height)*2;
+  var d = [c.f[0] + c.s[0]*nx*c.tv*c.asp + c.u[0]*ny*c.tv, c.f[1] + c.s[1]*nx*c.tv*c.asp + c.u[1]*ny*c.tv, c.f[2] + c.s[2]*nx*c.tv*c.asp + c.u[2]*ny*c.tv], l = Math.hypot(d[0], d[1], d[2]); d = [d[0]/l, d[1]/l, d[2]/l];
+  if (d[1] >= -0.0005) return null;
+  var t = 0, step = Math.max(2, flyH*0.04), prev = 0, e = c.e;
+  for (var n = 0; n < 4000 && t < 6000; n++){
+    var x = e[0] + d[0]*t, y = e[1] + d[1]*t, z = e[2] + d[2]*t;
+    if (y <= hAt(x, z)){ var a = prev, b = t; for (var k = 0; k < 24; k++){ var m = (a + b)/2; if (e[1] + d[1]*m <= hAt(e[0] + d[0]*m, e[2] + d[2]*m)) b = m; else a = m; } return [e[0] + d[0]*b, e[2] + d[2]*b]; }
+    prev = t; t += step; step *= 1.012;
+  }
+  return null;
+}
+function dabAt(px, py, again){
+  if (busy || working) return; var h = groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
+  var ll = llOf(h[0], h[1]);
+  pend.push({id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t:tool, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:brushK});
+  V3.note(pend.length + (pend.length > 1 ? ' dabs' : ' dab') + (again ? ' (let go to apply)' : ''), 1.5);
+}
+async function endStroke(){
+  if (!pend.length || working) return; var dabs = pend; pend = []; working = true;
+  try { await L3.editAdd(cur.proj, cur.region, dabs); undoSt.push(dabs); redoSt = []; await redraw('Ground changed.'); }
+  catch (er){ V3.note('Could not save the change: ' + er.message, 6); }
+  working = false; refreshCount();
+}
+async function undo(){ if (working || !undoSt.length) return; working = true; var d = undoSt.pop(); try { await L3.editRemove(cur.proj, d); redoSt.push(d); await redraw('Undone.'); } catch (er){ V3.note('Could not undo: ' + er.message, 5); } working = false; refreshCount(); }
+async function redo(){ if (working || !redoSt.length) return; working = true; var d = redoSt.pop(); try { await L3.editAdd(cur.proj, cur.region, d); undoSt.push(d); await redraw('Redone.'); } catch (er){ V3.note('Could not redo: ' + er.message, 5); } working = false; refreshCount(); }
+/* build the current square again with the edits on top, staying where we are */
+async function redraw(msg){
+  busy = true; V3.note('Rebuilding the ground...', 30); var ll = llOf(P.x, P.y), pitch = P.pitch, yaw = P.yaw;
+  try { await enterAt(ll[1], ll[0], yaw); } finally { P.pitch = pitch; busy = false; }
+  V3.note(msg || '', 2);
+}
+async function refreshCount(){ try { var n = await L3.editCount(cur.proj); $('v3cnt').textContent = n + (n === 1 ? ' dab' : ' dabs') + ' saved'; $('v3undo').disabled = !undoSt.length; $('v3redo').disabled = !redoSt.length; } catch (er){} }
 
 /* ---------------- each frame ---------------- */
 function frame(ts){
@@ -187,6 +242,7 @@ function draw(){
   var Pm = [t/asp,0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   /* street lights near you after dark, as the game shows them while the power is on */
   var near = dk > 0.3 && world.slights ? world.slights.filter(function(l){ return Math.abs(l.x - P.x) < 70 && Math.abs(l.y - P.y) < 70; }).sort(function(a, b2){ return Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b2.x - P.x, b2.y - P.y); }) : [];
+  lastCam = {e:e, f:f, s:s, u:u, tv:tv, asp:asp};
   drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:tv}, {hour:hour0, wd:1, fl:0, wtype:0, dark:dk, grid:true, season:V3.env.season, lightOn:false, lights:near, now:performance.now()/1000});
   /* the far ground under the horizon, as the game draws it */
   var m = new Mesh(), far = world.tg ? world.tg.min - 3 : 0, bq = QS.far*1.4 + 400 + (mode === 'fly' ? flyH*3 : 0);

@@ -163,7 +163,7 @@ function download(name, blob){
 }
 async function squaresOf(proj){
   var keys = await L.dbKeys('squares', proj + ':'), out = [];
-  for (var i = 0; i < keys.length; i++){ var p = keys[i].split(':'); out.push({i:+p[p.length - 2], j:+p[p.length - 1], text:await L.dbGet('squares', keys[i])}); }
+  for (var i = 0; i < keys.length; i++){ var p = keys[i].split(':'); out.push({i:+p[p.length - 2], j:+p[p.length - 1], text:await L.squareText(proj, +p[p.length - 2], +p[p.length - 1])}); }
   return out;
 }
 $('exAsmap').addEventListener('click', async function(){
