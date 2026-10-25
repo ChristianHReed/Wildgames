@@ -2,7 +2,7 @@
 
 The AfterStreet Maps Builder (`builder.html` beside `play.html`). Owned by the map chat; the scope is `docs/MAPS_BUILDER.md`.
 
-Version 1.1.0 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
+Version 1.2.1 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
 - choose the area;
 - give it map data (upload or download);
 - build the map squares;
@@ -26,7 +26,7 @@ All are plain classic scripts, so the builder opens from a USB drive (`file://`)
 | `worker.js` | Starts the worker (or runs on the page if workers are not allowed) |
 | `app.js` | The page: area, source cards, build, report, export, the flat preview map |
 | `view3d.js` | The 3D view (1.2.0): fly over the built map or walk it, drawn by the game's own engine (`engine/render.js`); loads the art and engine files the first time it opens |
-| `host.js` | What the engine expects from its page (`engine/README.md`, "Host contract"): a fly camera as the viewer, the game's quality settings, empty stand-ins for game rules, sound and multiplayer, and copies of three art helpers until they move into the engine |
+| `host.js` | What the engine expects from its page (`engine/README.md`, "Host contract"): a fly camera as the viewer, the game's quality settings, empty stand-ins for game rules, sound and multiplayer (the art helpers `spB`, `bkMod` and `segsX` come from the engine since game 0.94.1) |
 | `lib/*.js` | Open-source libraries, each packed into one classic script by `tools/bundle_lib.mjs`; licences in `lib/LICENSES.md` |
 
 ### Libraries (1.1.0)

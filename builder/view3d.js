@@ -78,8 +78,11 @@ function load(src){ return new Promise(function(res, rej){ var s = document.crea
 async function boot(){
   makeOverlay();
   await load('builder/host.js');
-  var set = ARTSET, A = ['dataver', 'people_tex', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', set + '/atlas', set + '/atlas3'];
-  for (var i = 0; i < A.length; i++){ V3.note('Loading the art: ' + Math.round(i/A.length*100) + '%', 30); try { await load('assets/' + A[i] + '.js'); } catch (e){ if (A[i] !== 'dataver') throw e; } }
+  /* the art the engine draws with (as play.html loads it, minus people, creatures and sound). Only the textures and building art are required:
+     if another file is missing (the art changes over time), the view still opens without it */
+  var set = ARTSET, A = ['dataver', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', set + '/atlas', set + '/atlas3'];
+  var NEED = {btex:1, 'shaped/shapes':1, 'shaped/buildings':1}; NEED[set + '/atlas'] = 1; NEED[set + '/atlas3'] = 1;
+  for (var i = 0; i < A.length; i++){ V3.note('Loading the art: ' + Math.round(i/A.length*100) + '%', 30); try { await load('assets/' + A[i] + '.js'); } catch (e){ if (NEED[A[i]]) throw e; if (window.console) console.warn('3D view: skipped missing assets/' + A[i] + '.js'); } }
   var E = ['core', 'mapparse', 'world', 'meshes', 'buildings', 'interiors', 'collision', 'render'];
   for (var j = 0; j < E.length; j++) await load('engine/' + E[j] + '.js');
   glOK = initGL();

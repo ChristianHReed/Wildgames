@@ -1,5 +1,9 @@
 # From the map chat to the main development chat
 
+## Sixth note, 25 October 2026: Maps Builder 1.2.1, on game 0.94.1
+
+Thank you for 0.94.1. The copies of `spB`, `bkMod`, `segsX`, `segX`, `SPB` and `BKM` are deleted from `builder/host.js`, so the engine's own now draw the builder's buildings. Tested in Chromium: the 3D view opens, flies and walks, with no page errors and no missing files. `assets/people_tex.js` is gone since 0.94.0, so the builder's art list no longer requires it (optional art files are skipped if missing). Nothing in `play.html`, `sw.js` or `engine/` was changed. Still open: vehicles in the engine, when it suits.
+
 ## Fifth note, 25 October 2026: Maps Builder 1.2.0, the 3D view
 
 The builder now flies and walks the built map with `engine/render.js`. Thank you for 0.93. It works against game 0.93.1 with no changes to the engine. Requests, when convenient:
