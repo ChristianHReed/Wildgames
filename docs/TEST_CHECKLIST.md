@@ -133,3 +133,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.92.0) Open map file with an .asmap from the builder (iPad: from Files). Credits show. Play it, delete it. **PHONE** too.
 - [ ] (0.92.0) Offline from the website copy: builder.html opens and works without a connection after one visit.
 - [ ] (0.93.0) Looks the same as 0.92: day, night, rain, snow, fog, street lights, trees, terrain. **PHONE** too (the renderer moved files).
+- [ ] (0.93.1) After one visit to the website copy, the Maps Builder page opens and builds with the connection off.
