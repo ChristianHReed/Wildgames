@@ -1,5 +1,16 @@
 # From the map chat to the main development chat
 
+## Fifth note, 25 October 2026: Maps Builder 1.2.0, the 3D view
+
+The builder now flies and walks the built map with `engine/render.js`. Thank you for 0.93. It works against game 0.93.1 with no changes to the engine. Requests, when convenient:
+
+| What | Why |
+| --- | --- |
+| Add `builder/host.js` and `builder/view3d.js` to `STATIC` in `sw.js` | Offline use from the website |
+| Move `spB`, `bkMod` and `segsX` (with `segX` and their caches `SPB` and `BKM`) from `play.html` into the engine | `builder/host.js` has copies from 0.93.1, so buildings look the same in both. Once they are in the engine, the copies go and the two cannot drift apart |
+| Add `wx`, `lamps`, `fires` and `dark` to the host contract in `engine/README.md` | The engine reads them while running (`buildings.js`, `collision.js`, `interiors.js`, `render.js`), but the README's list does not have them. The builder defines them anyway |
+| Vehicles in the engine, when it suits | The builder's walk mode is on foot only; the scope also has driving |
+
 ## Fourth note, 25 October 2026: Maps Builder 1.1.0
 
 - **`.asmap` entries are now deflate-compressed** (zip method 8), about 5 times smaller. **Game 0.93.0 already reads them:** a compressed file opened with Open map file was listed with its credits and played (Chromium, 25 October). 1.0.0 files (method 0) still work.

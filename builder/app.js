@@ -235,7 +235,7 @@ var cv = $('map2d'), cx = cv.getContext('2d'), DPR = 1, V = {x:0, y:0, s:0.05}, 
 /* view origin: the built map's centre if there is one, else the area centre. x east, y north, metres */
 function origin(){ return PV ? PV.region : S.area; }
 function O(){ var o = origin(); return L.local(o.lat, o.lon); }
-function setPreview(p, region){ PV = {p:p, region:{lat:region.lat, lon:region.lon}}; $('legend').classList.remove('hidden'); drawSoon(); }
+function setPreview(p, region){ PV = {p:p, region:{lat:region.lat, lon:region.lon}}; $('legend').classList.remove('hidden'); $('go3d').classList.remove('hidden'); drawSoon(); }
 function resize(){ DPR = Math.min(2, window.devicePixelRatio || 1); var r = cv.getBoundingClientRect(); cv.width = Math.max(1, r.width*DPR); cv.height = Math.max(1, r.height*DPR); drawSoon(); }
 window.addEventListener('resize', resize);
 function fitArea(){ var o = O(), c = o.m(S.area.lon, S.area.lat), r = S.area.miles*1609*1.1, w = cv.width/DPR, h = cv.height/DPR; V.x = c[0]; V.y = c[1]; V.s = Math.min(w, h)/(2*r); drawSoon(); }
@@ -309,6 +309,14 @@ $('tilesBtn').addEventListener('click', function(){ useTiles = !useTiles; this.c
 $('zIn').addEventListener('click', function(){ V.s *= 1.6; drawSoon(); });
 $('zOut').addEventListener('click', function(){ V.s /= 1.6; drawSoon(); });
 $('fit').addEventListener('click', fitArea);
+/* the 3D view (view3d.js): opens where the flat map is centred if that is inside the built map, else at the map's centre */
+function open3D(){
+  if (!S.man || !window.View3D) return;
+  var R = S.man.region, o = O(), ll = o.ll(V.x, V.y), loc = L.local(R.lat, R.lon), c = loc.m(ll[0], ll[1]);
+  if (Math.hypot(c[0], c[1]) > R.miles*1609){ ll = [R.lon, R.lat]; }
+  View3D.open({proj:S.proj, region:R, lat:ll[1], lon:ll[0], yaw:0, onClose:function(at){ if (at){ var p = O().m(at[0], at[1]); V.x = p[0]; V.y = p[1]; if (V.s < 0.5) V.s = 0.5; } resize(); drawSoon(); }});
+}
+$('go3d').addEventListener('click', open3D); $('go3d2').addEventListener('click', open3D);
 /* touch, pen and mouse: drag to move, pinch or wheel to zoom, tap to set the centre when that is on */
 var ptrs = new Map(), downAt = null, pinch = null;
 cv.addEventListener('pointerdown', function(e){ cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.offsetX, e.offsetY]); downAt = ptrs.size === 1 ? [e.offsetX, e.offsetY, Date.now()] : null; if (ptrs.size === 2){ var p = Array.from(ptrs.values()); pinch = {d:Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]), s:V.s}; } });

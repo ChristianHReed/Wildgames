@@ -168,6 +168,7 @@
       <h2>4 &middot; Report and export</h2>
       <div id="report"></div>
       <h3 style="font-size:15px;margin:14px 0 4px">Get it into the game</h3>
+      <div class="row"><button id="go3d2" class="alt">Fly through it in 3D</button></div>
       <div class="row"><button id="exAsmap">Save map file (.asmap)</button></div>
       <p class="muted">One file with the whole map, to copy to your drive or send to friends. The game opens these files from builder version 1.</p>
       <div class="row"><button id="exSingle" class="alt">Save single map file (.json)</button></div>
@@ -175,12 +176,13 @@
       <div class="row"><button id="exGame" class="alt">Send to the game on this device</button></div>
       <p class="muted">Puts the map in the game's own list of regions. Works when the builder and the game are opened from the same place (the same website or the same drive) in the same browser.</p>
     </section>
-    <p class="muted" style="text-align:center">The 3D view, walk mode and the editing tools come in the next versions. The map on the right is a flat preview of what was built.</p>
+    <p class="muted" style="text-align:center">After a build, <b>3D view</b> (on the map) flies you over the map or lets you walk it, drawn by the game's own engine. The editing tools come in the next versions.</p>
   </div>
   <div id="mapwrap">
     <canvas id="map2d"></canvas>
     <div id="mapNote" class="hidden"></div>
     <div id="mapTools">
+      <button id="go3d" class="sm hidden">3D view</button>
       <button id="zIn" class="alt sm" title="Zoom in">+</button>
       <button id="zOut" class="alt sm" title="Zoom out">&minus;</button>
       <button id="fit" class="alt sm">Fit area</button>
@@ -210,5 +212,6 @@
 <script src="builder/build.js"></script>
 <script src="builder/worker.js"></script>
 <script src="builder/app.js"></script>
+<script src="builder/view3d.js"></script>
 </body>
 </html>

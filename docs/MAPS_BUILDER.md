@@ -161,6 +161,20 @@ Rules agreed with the main chat:
 - **Faster, lighter gap filling:** 32 s down to 23 s at 50 miles, using less memory.
 - **Better Overture matching** for L- and U-shaped buildings.
 
+**Builder 1.2.0, 25 October 2026: the 3D view and walk mode** (on game 0.93's `engine/render.js`).
+- **Opening it:** the 3D view button on the map, or "Fly through it in 3D" in step 4. It opens where the flat map is centred.
+- **Fly:** any height from 2 m to 1,500 m; the speed grows with height.
+- **Walk:** at eye height on the ground, kept out of walls by the engine's collision. Driving waits until vehicles move into the engine.
+- **Squares:** crossing a square's edge loads the next one.
+- **Light:** time of day and season controls; street lights after dark.
+- **Controls:**
+  - keyboard: WASD or arrows, E and Q for up and down, Shift to go faster, F to switch Fly and Walk;
+  - mouse, finger or Apple Pencil: drag to look; the mouse wheel changes height;
+  - touch: an on-screen stick and up/down buttons;
+  - game controller: sticks, triggers for up and down, A to switch modes.
+- **Devices:** phones and tablets get the game's lighter art set and draw distance.
+- **Speed in testing:** in Chromium, the first opening took about 9 s, mostly loading art.
+
 What testing showed:
 - **The map pack's Springfield is short of houses.** Outside downtown, the streets of central Springfield have few buildings. The builder's lot-by-lot gap filling puts marked made-up homes on the empty lots (about 5 made-up for every real building in the test). Overture buildings should replace most of them with real footprints.
 - **Whole 50-mile regions need a computer.** At city density everywhere the stress test used about 1.3 GB. The builder suggests up to 8 miles on phones and 25 miles on tablets.
