@@ -29,3 +29,7 @@ Written 25 October 2026, at game version 0.90.1, in answer to `docs/MAP_HANDOFF.
 ## Also changed in 0.90.1 (affects the map file)
 
 Road cars are now placed by real-world cells, not by road order, so the same road gives the same cars in the next square. Vehicle ids are `x<spacing>_<cellx>_<celly>`. Building ids and the `c<buildingId>` town-car ids are still per square. If the builder renumbers roads or buildings, nothing here depends on it.
+
+## Update, 0.91.0: the engine split is done
+
+`engine/` exists with `core`, `mapparse`, `world`, `meshes`, `buildings`, `interiors`, `collision` (see `engine/README.md` for load order and what each holds). The builder can load these same files. The renderer (WebGL setup, draw loop, models) is still in `play.html`; ask for it when the builder needs it. Edits to map parsing and world building now go in `engine/`, and the game's own rules stay in `play.html`.

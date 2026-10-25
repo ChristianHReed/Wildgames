@@ -128,3 +128,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] **PHONE** Car shop: button reachable, the shop panel fits the screen, swatches tappable, cost shown on every button.
 - [ ] Named car shows on the big map with its name; blue S marks car shops on the big map when zoomed in.
 - [ ] (0.90.1) Cars seen in the distance near a map-square edge are the same after crossing into the next square.
+- [ ] (0.91.0) Fresh install and an update over an older install both start the game (no blank screen); airplane-mode start works from the home-screen copy; the USB drive copy opens with file://.

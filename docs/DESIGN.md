@@ -231,3 +231,7 @@ Shops are garages over 140 square metres, hardware stores and petrol stations. A
 ## Road cars across map squares (0.90.1)
 
 Road cars come from a grid of cells laid over the real world (cell size = the road class's spacing, from 14 m on motorways to 260 m on residential streets). Each cell picks its car from a hash of its own coordinates and puts it on the road point nearest a hashed target in the cell, so any map square covering that road builds the same car. Vehicle ids are `x<spacing>_<cellx>_<celly>`. The 1,800 car cap drops the narrowest roads first.
+
+## Shared engine (0.91)
+
+`engine/` holds the code both the game and the Maps Builder load: core, map parsing, world building, meshes, building shells, interiors and collision (see `engine/README.md`). `play.html` loads them after the art scripts with the same `?v=BUILD` rule, and `sw.js` lists them for offline use.
