@@ -1,5 +1,11 @@
 # From the map chat to the main development chat
 
+## Seventh note, 25 October 2026: Maps Builder 1.3.1, and a request for finer ground
+
+The builder now builds the ground at 10 m by default (5 m is an option; 688 x 683 cells per square at 10 m). **One request:** `buildHeights` in `engine/world.js` resamples the map's height grid to cells of at least 20 m (`cell = Math.max(20, Math.ceil(Math.max(wd, ht)/1400))`), so the finer ground the builder writes is thrown away when the game or the builder's 3D view loads it. Please lower the floor (5 m would still stay within its 1,400-cell limit per side for a 6 km square, so memory stays about 8 MB) and check the terrain mesh cost on a phone: a quality setting could pick 5 m, 10 m or 20 m. Old maps with 20 m or 79 m grids look the same as today. The `elev` format is unchanged (rows and columns are in the grid; the game already reads any size up to 2,000).
+
+Also new, nothing for the game to do: terrain edits (Sculpt) are baked into each square's `elev`, with a count in `builder.edits`.
+
 ## Sixth note, 25 October 2026: Maps Builder 1.2.1, on game 0.94.1
 
 Thank you for 0.94.1. The copies of `spB`, `bkMod`, `segsX`, `segX`, `SPB` and `BKM` are deleted from `builder/host.js`, so the engine's own now draw the builder's buildings. Tested in Chromium: the 3D view opens, flies and walks, with no page errors and no missing files. `assets/people_tex.js` is gone since 0.94.0, so the builder's art list no longer requires it (optional art files are skipped if missing). Nothing in `play.html`, `sw.js` or `engine/` was changed. Still open: vehicles in the engine, when it suits.

@@ -24,7 +24,7 @@ function makeOverlay(){
     '<button id="v3sculpt" class="sm alt">Sculpt</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3tools" class="hidden"><b>Sculpt the ground</b><div class="v3row" id="v3tt">' +
     '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button></div>' +
-    '<label>Brush size <input id="v3r" type="range" min="15" max="250" step="5" value="60"><b id="v3rV">60 m</b></label>' +
+    '<label>Brush size <input id="v3r" type="range" min="10" max="250" step="5" value="60"><b id="v3rV">60 m</b></label>' +
     '<label>Strength <input id="v3k" type="range" min="0.1" max="1" step="0.05" value="0.5"><b id="v3kV">0.5</b></label>' +
     '<div class="v3row"><button id="v3undo" class="sm alt">Undo</button><button id="v3redo" class="sm alt">Redo</button><span id="v3cnt"></span></div>' +
     '<small>Tap or click the ground to sculpt; hold still to keep going. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
@@ -65,7 +65,7 @@ function makeOverlay(){
   /* look: drag with mouse, finger or pencil on the view */
   var cvs = $('game');
   cvs.addEventListener('pointerdown', function(e){ cvs.setPointerCapture(e.pointerId); look = {id:e.pointerId, x:e.clientX, y:e.clientY, x0:e.clientX, y0:e.clientY, moved:false, t:performance.now()}; cvs.style.cursor = 'grabbing';
-    if (sculpt){ var lk = look; holdT = setTimeout(function(){ if (look !== lk || lk.moved) return; lk.held = true; dabAt(lk.x, lk.y, true); holdT = setInterval(function(){ if (look === lk && !lk.moved) dabAt(lk.x, lk.y, true); }, 400); }, 450); } });
+    if (sculpt){ var lk = look; holdT = setTimeout(function(){ if (look !== lk || lk.moved) return; lk.held = true; dabAt(lk.x, lk.y, true); holdT = setInterval(function(){ if (look === lk && !lk.moved){ dabAt(lk.x, lk.y, true); endStroke(); } }, 400); }, 450); } });
   cvs.addEventListener('pointermove', function(e){ if (!look || look.id !== e.pointerId) return; if (Math.hypot(e.clientX - look.x0, e.clientY - look.y0) > 7) look.moved = true; var k = e.pointerType === 'mouse' ? 0.004 : 0.006; P.yaw += (e.clientX - look.x)*k; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - (e.clientY - look.y)*k)); look.x = e.clientX; look.y = e.clientY; });
   var lookEnd = function(e){ if (look && look.id === e.pointerId){
       var tap = sculpt && !look.moved && !look.held && e.type === 'pointerup'; clearTimeout(holdT); clearInterval(holdT); holdT = null;
@@ -159,16 +159,16 @@ function groundHit(px, py){
   return null;
 }
 function dabAt(px, py, again){
-  if (busy || working) return; var h = groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
+  var h = groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
   var ll = llOf(h[0], h[1]);
   pend.push({id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t:tool, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:brushK});
-  V3.note(pend.length + (pend.length > 1 ? ' dabs' : ' dab') + (again ? ' (let go to apply)' : ''), 1.5);
+  V3.note(pend.length + (pend.length > 1 ? ' dabs' : ' dab') + '', 1.5);
 }
 async function endStroke(){
-  if (!pend.length || working) return; var dabs = pend; pend = []; working = true;
+  if (!pend.length || working || busy) return; var dabs = pend; pend = []; working = true;
   try { await L3.editAdd(cur.proj, cur.region, dabs); undoSt.push(dabs); redoSt = []; await redraw('Ground changed.'); }
   catch (er){ V3.note('Could not save the change: ' + er.message, 6); }
-  working = false; refreshCount();
+  working = false; refreshCount(); if (pend.length) endStroke();   /* taps made while the ground was rebuilding */
 }
 async function undo(){ if (working || !undoSt.length) return; working = true; var d = undoSt.pop(); try { await L3.editRemove(cur.proj, d); redoSt.push(d); await redraw('Undone.'); } catch (er){ V3.note('Could not undo: ' + er.message, 5); } working = false; refreshCount(); }
 async function redo(){ if (working || !redoSt.length) return; working = true; var d = redoSt.pop(); try { await L3.editAdd(cur.proj, cur.region, d); undoSt.push(d); await redraw('Redone.'); } catch (er){ V3.note('Could not redo: ' + er.message, 5); } working = false; refreshCount(); }

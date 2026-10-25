@@ -15,7 +15,7 @@ $('ver').textContent = 'v' + L.VERSION;
 
 /* ---------------- state ---------------- */
 var SGF = {lat:37.2089, lon:-93.2923, name:'Springfield, MO'};
-var S = {area:{lat:SGF.lat, lon:SGF.lon, miles:5, name:SGF.name}, opts:{fill:true, step:20, tiles:true}, proj:null, osm:null, tiffs:[], tiffInfo:[], overture:[], man:null, single:null, preview:null, building:false};
+var S = {area:{lat:SGF.lat, lon:SGF.lon, miles:5, name:SGF.name}, opts:{fill:true, step:10, tiles:true}, proj:null, osm:null, tiffs:[], tiffInfo:[], overture:[], man:null, single:null, preview:null, building:false};
 try { var saved = JSON.parse(lsGet('asmb:state') || 'null'); if (saved && saved.area && isFinite(saved.area.lat)){ S.area = saved.area; S.opts = saved.opts || S.opts; S.proj = saved.proj || null; } } catch (e){}
 function saveState(){ lsSet('asmb:state', JSON.stringify({area:S.area, opts:S.opts, proj:S.proj})); }
 

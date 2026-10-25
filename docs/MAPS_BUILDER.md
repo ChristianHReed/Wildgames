@@ -186,6 +186,10 @@ What testing showed:
 - **Limits:** the ground grid is 20 m cells within 15 km, so small features need the finer elevation detail setting. Water, cliffs and ground painting are next. The single `.json` file made at build time does not include edits; use the `.asmap` export.
 - **Tested** (Chromium, 25 October): three full-strength raises gave +3.0 m at the middle over 84 cells; undo and redo restored and replayed them; the baked squares carry the edit count in `builder.edits`.
 
+**Builder 1.3.1, 25 October 2026: bug fixes and finer ground.**
+- **Fixed:** taps made while the ground was rebuilding were dropped; they now queue and apply in order. Holding still now applies the sculpting every moment instead of only on release.
+- **Finer ground by default:** 10 m (was 20 m); a 5 m choice for the best look; brush size from 10 m. The game's engine still resamples to 20 m cells at least, so the full benefit needs the engine change asked for in the seventh note of `MAP_HANDOFF.md`.
+
 ## Versions
 
 | Version | Contents |

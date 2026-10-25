@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.3.0';
+L.VERSION = '1.3.1';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp'];

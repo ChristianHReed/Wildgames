@@ -2,7 +2,7 @@
 
 The AfterStreet Maps Builder (`builder.html` beside `play.html`). Owned by the map chat; the scope is `docs/MAPS_BUILDER.md`.
 
-Version 1.3.0 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
+Version 1.3.1 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
 - choose the area;
 - give it map data (upload or download);
 - build the map squares;
@@ -56,7 +56,7 @@ To update a library: clone it from GitHub, run `node tools/bundle_lib.mjs <name>
    - **Never inside:** woods, water, parks, schools, cemeteries, industry and similar areas.
 5. **Squares.** Polygons go whole into every square they touch; lines are cut into the runs inside each square plus its margin (as `build_region.py` does). Each square is saved to storage as soon as it is done.
 6. **Ground.** Each square gets a height grid:
-   - 20 m within 15 km of the centre (or the chosen detail), at least 60 m beyond;
+   - 10 m by default within 15 km of the centre (choose 5, 10, 20 or 40 m), at least 60 m beyond;
    - from the finest uploaded GeoTIFF that has data, then Terrarium tiles, then filled in from the neighbours.
 7. **Small areas** (2 miles or less) also get a single map file that today's game opens with *Load map file*.
 
