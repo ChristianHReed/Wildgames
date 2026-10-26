@@ -1516,6 +1516,38 @@ Towers: a cell tower stands in a fenced compound (fence_security_4 from the barr
 | --- | --- | --- |
 | `towers` | 21 | 76 to 2172 |
 
+## pitworks (`assets/shaped/pitworks.js`, version 1)
+
+models.pitworks.<name>, metres, Y up, front +Z, origin at the centre of the base (for tiles, the water surface).
+Water: pit_water_shallow, pit_water_knee, pit_water_deep, pit_water_mud (0.5 m tiles; depth in info), seep_wall (a wet streak decal for a pit wall, on its front face).
+Collapse: cave_in_pile_s, cave_in_pile_m, cave_in_pile_l, slump_scar (the bare scar on the wall the soil fell from), pit_rim_crumble (a 2 m edge strip with cracks and loose clods), warning_flag (a stake with a red and white flag).
+Wall openings: hole_in_wall_brick, hole_in_wall_concrete, hole_in_wall_timber (1 m by 2 m ragged frames, 0.3 m deep: the opening is clear).
+Colour names are in the palette.
+
+Pieces: `pit_water_shallow`, `pit_water_knee`, `pit_water_deep`, `pit_water_mud`, `seep_wall`, `cave_in_pile_s`, `cave_in_pile_m`, `cave_in_pile_l`, `slump_scar`, `pit_rim_crumble`, `warning_flag`, `hole_in_wall_brick`, `hole_in_wall_concrete`, `hole_in_wall_timber`
+
+Water: fill the bottom of a pit up to the water line with 0.5 m tiles (the depth in info: 0.15, 0.5, 1.4 m); a pit under the water table fills over time (a seep_wall on its walls shows it). Cave-ins: the game picks the pile by how much soil fell (s under 1, m under 3, l over 3 cubic metres), sets the pile on the pit floor against the wall and the slump_scar on the wall above it. A pit rim marked unstable gets pit_rim_crumble along the edge and a warning_flag at each corner. Wall holes: place the hole_in_wall frame in the wall where the player dug.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `pitworks` | 14 | 36 to 240 |
+
+## solar (`assets/shaped/solar.js`, version 1)
+
+models.solar.<name>, metres, Y up, front (the sun side) +Z, origin at the centre of the base.
+Panels: panel_roof_array (3 by 2 panels flat on a roof, 5.2 by 3.4 m), panel_ground_array (a 4-panel tilted rack, 4 m wide), panel_small_rack (one panel on a post, 1 by 1.7 m), panel_street_lamp (a lamp pole with a panel and battery box).
+Equipment: charge_controller (wall box with lit LEDs), battery_bank (six lead-acid batteries on a shelf, in a rack), inverter (a wall box with a cooling fin), power_cabinet (a lockable cabinet with the three in one box).
+Generator: generator_house (a 3 by 3 m shed with louvres and an exhaust pipe), fuel_tank_stand (a 1.5 m steel tank on a stand with a hose).
+Colour names are in the palette.
+
+Pieces: `panel_roof_array`, `panel_ground_array`, `panel_small_rack`, `panel_street_lamp`, `charge_controller`, `battery_bank`, `inverter`, `power_cabinet`, `generator_house`, `fuel_tank_stand`
+
+Solar: put arrays where the sun is (roof or open ground) with +z south; one controller and one inverter on the wall near the bank; each panel adds about 250 W by day, nothing at night. Batteries feed the base at night until empty. Generators burn fuel from fuel_tank_stand (siphoned or filled by hand) and are loud: they draw zombies and aliens. LEDs and the lamp are lit pieces.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `solar` | 10 | 72 to 300 |
+
 ## bikes (`assets/shaped/bikes.js`, version 1)
 
 Same form as the machines pack (read its header): parts[name] pieces at rest in bike space; rig[name] how each part moves; wheels[name] positions of the one `wheel` part; steer[name] which wheels steer; clips; BODY is the paint colour slot (paint[name]).
