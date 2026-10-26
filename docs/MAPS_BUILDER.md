@@ -211,6 +211,13 @@ What testing showed:
 - **Tested** on the real Missouri file: Springfield (206 bridges, 487 culverts, 304 overpasses), downtown St. Louis (986 bridges, 1,956 overpasses), Table Rock Dam (10 dam ways); and on a made-up square with one case for each rule.
 - **The game's engine** does not read these yet, so decks, tunnels and dams are not drawn from them; see the requests in the ninth hand-off note.
 
+**Builder 1.7.0, 25 October 2026: placing and removing buildings and trees (the start of version 4).** The Sculpt button is now **Edit**.
+- **Building:** pick one of 21 kinds (home, apartment block, shops, grocery, restaurant, gas station, clinic, hospital, police, fire station, school, church, office, hotel, warehouse, barn, shed, ...), set the size and the turn, and tap the ground. By default it lines up with the nearest street. It is a marked building (`asmb:made=yes`, `src=edit`) with the map tags the game turns into that kind, so the game draws, furnishes and loots it like any other.
+- **Tree:** one tap. **Remove:** takes away the building under the tap (mapped, Overture or made-up) or else the tree there.
+- **Same rules as the other edits:** undo and redo, kept apart from the map data (so building the map again keeps them), baked into the squares on export. Removing a building also fixes the indexes of its courtyards and structures.
+- **Tested** (Chromium): a hospital was placed (16,864 to 16,865 buildings, one more `hospital`), removed (back to 16,864) and brought back by undo.
+- **Not yet:** an asset list from the design chat's models (props and furniture), editing a building's floors or walls (versions 4 and 5), importing models.
+
 ## Versions
 
 | Version | Contents |

@@ -24,6 +24,16 @@ L.dbDel = function(store, prefix){ return L.dbDo(store, 'readwrite', function(s)
    square whose ground it touches, so neighbouring squares agree. Replaying the list in order on a square's height grid always gives the same ground. */
 /* ground painting: what each paint is called and the map tags it adds, as areas the game already draws */
 L.PAINT = {woods:['Woods', {natural:'wood'}], park:['Park lawn', {leisure:'park'}], grass:['Grass', {landuse:'grass'}], field:['Field', {landuse:'meadow'}], scrub:['Scrub', {natural:'scrub'}], sand:['Sand', {natural:'sand'}], parking:['Parking lot', {amenity:'parking'}]};
+/* buildings the player can place: what each is called, a first footprint (metres wide, deep) and floors, and the map tags the game turns into that kind of building */
+L.BUILD = {
+  house:['Home', 11, 9, 1, {building:'house'}], apartments:['Apartment block', 32, 14, 4, {building:'apartments'}], garage:['Garage', 7, 6, 1, {building:'garage'}],
+  shop:['Shop', 14, 10, 1, {building:'retail', shop:'general'}], clothes:['Clothes shop', 14, 10, 1, {building:'retail', shop:'clothes'}], grocery:['Grocery store', 32, 22, 1, {building:'retail', shop:'supermarket'}],
+  hardware:['Hardware store', 30, 20, 1, {building:'retail', shop:'hardware'}], restaurant:['Restaurant', 18, 13, 1, {building:'commercial', amenity:'restaurant'}], bar:['Bar', 15, 11, 1, {building:'commercial', amenity:'bar'}],
+  fuel:['Gas station', 14, 9, 1, {building:'yes', amenity:'fuel'}], clinic:['Clinic', 20, 14, 2, {building:'yes', amenity:'clinic'}], hospital:['Hospital', 55, 32, 4, {building:'hospital', amenity:'hospital'}],
+  police:['Police station', 26, 16, 2, {building:'yes', amenity:'police'}], fire:['Fire station', 26, 18, 2, {building:'yes', amenity:'fire_station'}], school:['School', 62, 24, 2, {building:'school', amenity:'school'}],
+  church:['Church', 14, 30, 1, {building:'church', amenity:'place_of_worship'}], office:['Office building', 26, 20, 5, {building:'office'}], hotel:['Hotel', 38, 16, 5, {building:'hotel', tourism:'hotel'}],
+  warehouse:['Warehouse', 44, 28, 1, {building:'warehouse'}], barn:['Barn', 24, 14, 1, {building:'barn'}], shed:['Shed', 5, 4, 1, {building:'shed'}]
+};
 L.terrainApply = function(text, ops){
   if (!ops || !ops.length) return text;
   var sq = JSON.parse(text), E = sq.elev; if (!E || !E.d) return text;
@@ -61,7 +71,7 @@ L.terrainApply = function(text, ops){
   var ptH = function(lon, lat){ return at(Math.round((lon - E.w)/(E.e - E.w)*(E.cols - 1)), Math.round((E.n - lat)/(E.n - E.s)*(E.rows - 1))); };
   ops.forEach(function(o){
     if (o.t === 'river'){ river(o); return; }
-    if (o.t === 'paint') return;   /* paint only adds an area, below */
+    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove') return;   /* these only add or take away map features, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
@@ -85,6 +95,16 @@ L.terrainApply = function(text, ops){
       sq.ways.push([{natural:'water', water:'lake', 'asmb:made':'yes', src:'edit'}, ring]); }
     else if (o.t === 'paint' && L.PAINT[o.p]){ var rg = [], cl2 = Math.cos(o.lat*Math.PI/180); for (var a2 = 0; a2 <= 24; a2++){ var an = a2/24*Math.PI*2; rg.push(+(o.lon + Math.cos(an)*o.r/(111320*cl2)).toFixed(6), +(o.lat + Math.sin(an)*o.r/110540).toFixed(6)); }
       var tg = {'asmb:made':'yes', src:'edit'}; for (var kk in L.PAINT[o.p][1]) tg[kk] = L.PAINT[o.p][1][kk]; sq.ways.push([tg, rg]); }
+    else if (o.t === 'place' && L.BUILD[o.b]){
+      var B = L.BUILD[o.b], cl3 = Math.cos(o.lat*Math.PI/180), ca = Math.cos(o.a || 0), sa = Math.sin(o.a || 0), hw2 = (o.w || B[1])/2, hd2 = (o.d || B[2])/2, ring2 = [[-hw2, -hd2], [hw2, -hd2], [hw2, hd2], [-hw2, hd2], [-hw2, -hd2]], rc3 = [];
+      ring2.forEach(function(q){ var X = q[0]*ca - q[1]*sa, Y = q[0]*sa + q[1]*ca; rc3.push(+(o.lon + X/(111320*cl3)).toFixed(6), +(o.lat + Y/110540).toFixed(6)); });
+      var tg2 = {'asmb:made':'yes', src:'edit'}; for (var k4 in B[4]) tg2[k4] = B[4][k4]; if ((o.lv || B[3]) > 1 || o.lv) tg2['building:levels'] = String(o.lv || B[3]); sq.ways.push([tg2, rc3]); }
+    else if (o.t === 'tree'){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {natural:'tree', 'asmb:made':'yes'}]); }
+    else if (o.t === 'remove'){
+      var gone = -1; for (var wi = sq.ways.length - 1; wi >= 0; wi--){ var wt = sq.ways[wi]; if (wt[0].building && wt[1].length >= 8 && L.pip(wt[1], o.lon, o.lat)){ gone = wi; break; } }
+      if (gone >= 0){ sq.ways.splice(gone, 1); if (sq.holes) sq.holes = sq.holes.filter(function(hh){ return hh[0] !== gone; }).map(function(hh){ return hh[0] > gone ? [hh[0] - 1, hh[1]] : hh; }); if (sq.structures) sq.structures = sq.structures.filter(function(st){ return st.w !== gone; }).map(function(st){ if (st.w > gone) st.w--; if (st.u > gone) st.u--; return st; }); }
+      else { var cl5 = Math.cos(o.lat*Math.PI/180); sq.pois = sq.pois.filter(function(pp){ return !(Math.abs(pp[0] - o.lon)*111320*cl5 < 4 && Math.abs(pp[1] - o.lat)*110540 < 4); }); }
+    }
     else if (o.t === 'river') sq.ways.push([{waterway:o.w >= 10 ? 'river' : o.w >= 6 ? 'canal' : 'stream', 'asmb:made':'yes', src:'edit'}, o.c]);
   });
   sq.builder = sq.builder || {}; sq.builder.edits = (sq.builder.edits || 0) + ops.length;
