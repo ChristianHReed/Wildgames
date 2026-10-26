@@ -269,8 +269,8 @@ function buildGrid(list, cols, dx, dz, camH, camBack, ry){ lights('day'); scene.
   list.forEach((p,i)=>{ const g=dress(p.vehicle,p); g.position.set((i%cols-(cols-1)/2)*dx,0,(Math.floor(i/cols)-(rows-1)/2)*dz); g.rotation.y=ry==null?0.55:ry; scene.add(g); });
   cam.position.set(0,camH,(rows-1)/2*dz+camBack); ctl.target.set(0,0.9,0); }
 function partSheet(names, cols, dx, dz, h0){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const col=colourer(KT.palette,{BODY:'#a8843c'}), rows=Math.ceil(names.length/cols);
-  names.forEach((n,i)=>{ const g=mesh(KT.models.parts[n],col); g.position.set((i%cols-(cols-1)/2)*dx,0.3,(Math.floor(i/cols)-(rows-1)/2)*dz); g.rotation.y=0.6; scene.add(g);
-    const st=new THREE.Mesh(new THREE.BoxGeometry(dx*0.8,0.3,dz*0.8),new THREE.MeshLambertMaterial({color:0xc4bdb0})); st.position.set(g.position.x,0.15,g.position.z); scene.add(st); });
+  names.forEach((n,i)=>{ const g=mesh(KT.models.parts[n],col); g.position.set((i%cols-(cols-1)/2)*dx,0.7,(Math.floor(i/cols)-(rows-1)/2)*dz); g.rotation.y=0.6; scene.add(g);
+    const st=new THREE.Mesh(new THREE.BoxGeometry(dx*0.8,0.1,dz*0.8),new THREE.MeshLambertMaterial({color:0xc4bdb0})); st.position.set(g.position.x,0.05,g.position.z); scene.add(st); });
   cam.position.set(0,(h0||1)*cols*dx*0.75,(rows)*dz*0.9+cols*dx*0.4); ctl.target.set(0,0.4,0); }
 const PRE=()=>KT.presets;
 const PN=(re)=>Object.keys(KT.partInfo).filter(n=>re.test(n));
