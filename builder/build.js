@@ -75,7 +75,7 @@ L.terrainApply = function(text, ops){
   var ptH = function(lon, lat){ return at(Math.round((lon - E.w)/(E.e - E.w)*(E.cols - 1)), Math.round((E.n - lat)/(E.n - E.s)*(E.rows - 1))); };
   ops.forEach(function(o){
     if (o.t === 'river'){ river(o); return; }
-    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road' || o.t === 'bset' || o.t === 'prop') return;   /* these only add or take away map features, below */
+    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road' || o.t === 'bset' || o.t === 'prop' || o.t === 'flood' || o.t === 'basin') return;   /* these only add or take away map features, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
@@ -97,6 +97,7 @@ L.terrainApply = function(text, ops){
   ops.forEach(function(o){
     if (o.t === 'basin'){ var ring = [], cl = Math.cos(o.lat*Math.PI/180); for (var a = 0; a <= 28; a++){ var ang = a/28*Math.PI*2; ring.push(+(o.lon + Math.cos(ang)*o.r*0.72/(111320*cl)).toFixed(6), +(o.lat + Math.sin(ang)*o.r*0.72/110540).toFixed(6)); }
       sq.ways.push([{natural:'water', water:'lake', 'asmb:made':'yes', src:'edit'}, ring]); }
+    else if (o.t === 'flood' && o.lv > 0){ var fp = L.floodRing(E, h, o); if (fp) sq.ways.push([{natural:'water', water:'flood', 'asmb:made':'yes', 'asmb:level':String(o.lv), src:'edit'}, fp]); }
     else if (o.t === 'paint' && L.PAINT[o.p]){ var rg = [], cl2 = Math.cos(o.lat*Math.PI/180); for (var a2 = 0; a2 <= 24; a2++){ var an = a2/24*Math.PI*2; rg.push(+(o.lon + Math.cos(an)*o.r/(111320*cl2)).toFixed(6), +(o.lat + Math.sin(an)*o.r/110540).toFixed(6)); }
       var tg = {'asmb:made':'yes', src:'edit'}; for (var kk in L.PAINT[o.p][1]) tg[kk] = L.PAINT[o.p][1][kk]; sq.ways.push([tg, rg]); }
     else if (o.t === 'place' && L.BUILD[o.b]){
@@ -146,6 +147,36 @@ L.squareText = async function(proj, i, j){
 };
 /* add dabs to the squares they touch. region is the project's region record; returns the squares changed */
 /* the box (lon0, lat0, lon1, lat1) an edit can change; a river's reaches 3 widths beyond its line */
+/* Flood: water rises lv metres above the ground where the player tapped, inside a brush circle, and covers every connected cell at or below that level
+   (a flood fill over the elevation grid, so it fills the low ground and stops at the banks). Returns the outline of the largest wet patch as a flat
+   [lon, lat, ...] ring, edges squared off to the grid and thinned so a pond does not carry hundreds of points. */
+L.floodRing = function(E, h, o){
+  var cols = E.cols, rows = E.rows, cw = (E.e - E.w)/(cols - 1), chh = (E.n - E.s)/(rows - 1), cl = Math.cos(o.lat*Math.PI/180);
+  var mw = (E.e - E.w)*111320*cl/(cols - 1), mh = (E.n - E.s)*110540/(rows - 1);
+  var cx = Math.round((o.lon - E.w)/cw), cy = Math.round((E.n - o.lat)/chh); if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) return null;
+  var lvl = h[cy*cols + cx] + o.lv*10, R = o.r, wet = new Uint8Array(cols*rows), st = [cy*cols + cx], n = 0; wet[st[0]] = 1;
+  while (st.length){ var k = st.pop(), x = k % cols, y = (k - x)/cols; n++; if (n > 60000) break;
+    for (var d = 0; d < 4; d++){ var nx = x + (d === 0 ? 1 : d === 1 ? -1 : 0), ny = y + (d === 2 ? 1 : d === 3 ? -1 : 0); if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue; var k2 = ny*cols + nx;
+      if (wet[k2] || h[k2] > lvl || Math.hypot((nx - cx)*mw, (ny - cy)*mh) > R) continue; wet[k2] = 1; st.push(k2); } }
+  if (n < 4) return null;
+  /* outline: walk the edges between wet and dry cells (each cell is a square of the grid), joining them into one loop, and keep the longest */
+  var seg = {}, key = function(a, b){ return a + ',' + b; };
+  for (var y2 = 0; y2 < rows; y2++) for (var x2 = 0; x2 < cols; x2++){ if (!wet[y2*cols + x2]) continue;
+    var isW = function(xx, yy){ return xx >= 0 && yy >= 0 && xx < cols && yy < rows && wet[yy*cols + xx]; };
+    if (!isW(x2, y2 - 1)) seg[key(x2, y2)] = [x2 + 1, y2];            /* top edge, left to right */
+    if (!isW(x2 + 1, y2)) seg[key(x2 + 1, y2)] = [x2 + 1, y2 + 1];    /* right edge, down */
+    if (!isW(x2, y2 + 1)) seg[key(x2 + 1, y2 + 1)] = [x2, y2 + 1];    /* bottom edge, right to left */
+    if (!isW(x2 - 1, y2)) seg[key(x2, y2 + 1)] = [x2, y2]; }         /* left edge, up */
+  var best = null, seen = {};
+  Object.keys(seg).forEach(function(k0){ if (seen[k0]) return; var ring = [], cur = k0, guard = 0;
+    while (cur && !seen[cur] && guard++ < 200000){ seen[cur] = 1; var p = cur.split(','); ring.push([+p[0], +p[1]]); var nx2 = seg[cur]; cur = nx2 ? key(nx2[0], nx2[1]) : null; }
+    if (!best || ring.length > best.length) best = ring; });
+  if (!best || best.length < 4) return null;
+  var out = [], step = Math.max(1, Math.floor(best.length/90));   /* thin to about 90 points */
+  for (var i = 0; i < best.length; i += step) out.push(+(E.w + (best[i][0] - 0.5)*cw).toFixed(6), +(E.n - (best[i][1] - 0.5)*chh).toFixed(6));
+  out.push(out[0], out[1]); return out;
+};
+
 L.opBox = function(o){
   var cl = Math.cos((o.lat || (o.c ? o.c[1] : 0))*Math.PI/180);
   if (o.c){ var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (var i = 0; i < o.c.length; i += 2){ x0 = Math.min(x0, o.c[i]); x1 = Math.max(x1, o.c[i]); y0 = Math.min(y0, o.c[i + 1]); y1 = Math.max(y1, o.c[i + 1]); } var m = (o.w || 10)*3; return [x0 - m/(111320*cl), y0 - m/110540, x1 + m/(111320*cl), y1 + m/110540]; }
