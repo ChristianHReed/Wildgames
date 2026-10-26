@@ -23,6 +23,14 @@ Where a chain or a name shows the OpenStreetMap tags are missing or wrong, the b
 
 Tested on the Springfield, Missouri sample (five squares): 6 Walmart Supercenters, 2 wholesale clubs, 11 home-improvement stores, 3 police and 7 fire stations, 12 gyms, 90 schools, 129 churches, 22 supermarkets, 194 fast-food places.
 
+## 1a. Size, floors and whether it is open (builder 1.17.0)
+
+Asked for by the content chat (`docs/BUSINESSES.md`) so each business can be sized and shown alive or dead. On every real building that is not a plain home, shed, garage, barn or greenhouse:
+
+- `asmb:area` is the footprint in square metres, rounded to 5; `asmb:floors` the number of storeys (from `building:levels`, else height divided by 3.4 m; left out when unknown). Multiply the two for floor area.
+- `asmb:state` is written only when a business is **not** open: `disused` (closed, from `disused=yes` or a `disused:shop=*`, `disused:amenity=*`, `was:shop=*` tag) or `abandoned` (`abandoned=yes`, `ruins=yes`, `building=ruins`, `abandoned:shop=*`, `abandoned:amenity=*`, `abandoned:building=*`, `demolished:*`, `razed:*`). A building with a current `shop` or `amenity` tag is open even if it also has an old `disused:*` tag. For a closed business the use (`asmb:use`, `asmb:label`) is what it **was**, so the game can show the old sign on a dark building.
+- The map's own tags are all there is: a shop that closed and was not updated in OpenStreetMap still reads as open.
+
 ## 1b. Framed structure (builder 1.16.0)
 
 Every building also gets its **structure**, from the content chat's walls pack (`assets/shaped/walls.js`, `docs/SHAPED.md` section "walls"): `asmb:wall` is the wall kind and `asmb:frame` the frame family. A real building is a frame with skins on it, so the kind follows from use, floors, size and facing:

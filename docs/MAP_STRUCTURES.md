@@ -124,3 +124,7 @@ The pieces for every kind in section 4 are in `assets/shaped/structures.js`, wit
 ## 9. Creek bends (builder 1.12.0)
 
 `bend` entries: `{k:"bend", w, lon, lat, s, a, src:"inferred", len:0, l:0}` on streams, brooks and rivers (ground level, not culverts). The heading is compared over 20 m either side of each 10 m sample; a turn of 30 degrees or more that is the sharpest within 30 m, and at least 60 m from the last bend on that way, is listed. `s` is the **outside** of the bend, `left` or `right` looking in the direction the way is drawn (downstream for most mapped waterways), `a` the turn in degrees. Put pools, undercut banks and logjams on side `s`, bars and riffles on the other.
+
+## 10. Docks, ramps and ferry crossings (builder 1.17.0)
+
+Asked for by the content chat (`docs/BIKES_BOATS_PARKS.md`). (1) `pier` entries, and new `ramp` entries (`waterway=boat_ramp`, `leisure=slipway`, `man_made=slipway`), carry `mar:1` when a marina (`leisure=marina`, `harbour=yes`, `man_made=harbour`, as a polygon or a point) is within about 60 m of the polygon's edge, so the game can put pontoons and houseboats there and only small boats at a lone jetty. (2) `check` entries for a long wet crossing (a road of rank 4 or more that runs 160 m or more through water, with no bridge mapped) carry `fe:1`: a candidate for the ferry barge. (3) Sport pitches, parks and camps are ordinary ways with the tags `leisure`, `sport`, `tourism=camp_site` already kept, so their extent is the way's own polygon.

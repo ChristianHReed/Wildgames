@@ -244,6 +244,8 @@ What testing showed:
 
 **Builder 1.16.2:** the 3D view loads `shaped/waterside` (game 0.98.1 draws docks, reeds, boats and the rest from it on ponds, lakes and creeks). Woodland trees (0.98.2) are baked into `nature.js`, which was already loaded. The content chat's new business packs (`foodservice`, `autotrade`, `services`, `shopfit`, `businesses`) are not used by the game yet; they will be added to the art list when the main chat wires them in.
 
+**Builder 1.17.0:** data the content chat asked for in its business and boats notes. (1) Buildings keep `asmb:area` (m2, rounded to 5), `asmb:floors`, and `asmb:state` (`disused` or `abandoned`, only when not open) from `disused:*`, `abandoned:*`, `was:*` and similar prefixed tags, which the build now keeps (they were dropped before); a closed business keeps the use it had. (2) `pier` and new `ramp` structures carry `mar:1` near a marina. (3) Long wet road crossings carry `fe:1` (ferry candidate). Tested in Node on synthetic buildings; the Springfield core sample has no `disused:` tags, so it is not tested on real data, and the Missouri file is where to check it. Size cost: five squares came to 25 MB of square text (about 4,900 buildings carry area and floors).
+
 ## Versions
 
 | Version | Contents |

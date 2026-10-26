@@ -83,7 +83,20 @@ var SH = {supermarket:['supermarket', 'Supermarket'], convenience:['convenience'
 var LE = {fitness_centre:['gym', 'Fitness centre'], sports_centre:['gym', 'Sports centre'], ice_rink:['gym', 'Ice rink'], stadium:['stadium', 'Stadium']};
 
 /* the use of a set of tags: {use, label, brand, set, chain, byName, plain} or null. `set` is the tags to write where the map's own are missing or wrong. */
+/* has the business closed? 'open', 'disused' (closed, building in use or empty) or 'abandoned' (left to fall down). A closed shop keeps its old tag
+   under a prefix (disused:shop=bakery); that gives what it was. Returns {state, as} where `as` is a tag set standing for what it was. */
+function lifeOf(t){
+  var st = 'open', as = null, k, m, cur = t.shop || t.amenity || t.office || t.leisure || t.tourism || t.craft || t.healthcare;
+  if (t.abandoned === 'yes' || t.ruins === 'yes' || t.building === 'ruins' || t['abandoned:building']) st = 'abandoned'; else if (t.disused === 'yes') st = 'disused';
+  for (k in t){ m = /^(disused|abandoned|was|ruins|demolished|razed):(shop|amenity|office|leisure|tourism|craft|healthcare)$/.exec(k); if (m){ (as = as || {})[m[2]] = t[k]; if (st === 'open' && !cur) st = m[1] === 'abandoned' || m[1] === 'ruins' || m[1] === 'demolished' || m[1] === 'razed' ? 'abandoned' : 'disused'; } }
+  return {state:st, as:as};
+}
+L.lifeOf = lifeOf;
 L.useOf = function(t){
+  var life = lifeOf(t); if (life.as && !(t.shop || t.amenity || t.office || t.leisure || t.tourism || t.craft || t.healthcare)){ var t2 = {}, kk; for (kk in t) t2[kk] = t[kk]; for (kk in life.as) t2[kk] = life.as[kk]; var r = L.useOf(t2); if (r){ r.state = life.state; delete r.set; } return r; }
+  var out = L.useOf0(t); if (out && life.state !== 'open') out.state = life.state; return out;
+};
+L.useOf0 = function(t){
   var home = HOMES.test(t.building || '') && !(t.shop || t.amenity || t.office || t.leisure || t.tourism), nm = ((t.brand || '') + ' | ' + (t.name || '') + ' | ' + (t.operator || '')), i, c;
   var nameOk = !home && !(t.name && STREETY.test(t.name));
   var soft = !t.brand && (t.amenity || (t.shop && !/^(department_store|variety_store|supermarket|general|wholesale|yes)$/.test(t.shop)));   /* a name alone does not overrule a shop or amenity tag */
@@ -152,6 +165,11 @@ L.uses = function(sq){
     if (use.set && (use.chain || use.byName || use === pu)){ for (var k2 in use.set) if (use.chain || !(tags.shop || tags.amenity || tags.leisure || tags.tourism || tags.office)) tags[k2] = use.set[k2]; }
     if (!tags['asmb:wall'] && tags.generated !== 'yes'){ var wk = L.frameOf(tags, use.use, L.ringArea(ways[i][1])); tags['asmb:wall'] = wk; tags['asmb:frame'] = L.WALLS[wk][1]; }
     else if (!tags['asmb:wall']){ var wg = L.frameOf(tags, use.use, 0); tags['asmb:wall'] = wg; tags['asmb:frame'] = L.WALLS[wg][1]; }
+    if (tags.generated !== 'yes'){
+      var bl = L.lifeOf(tags), st0 = use.state || bl.state; if (st0 && st0 !== 'open') tags['asmb:state'] = st0;
+      if (!/^(house|shed|garage|barn|greenhouse)$/.test(use.use)){ var ar = L.ringArea(ways[i][1]); tags['asmb:area'] = String(Math.round(ar/5)*5);
+        var lvv = parseInt(tags['building:levels'], 10) || (parseFloat(tags.height) ? Math.max(1, Math.round(parseFloat(tags.height)/3.4)) : 0); if (lvv) tags['asmb:floors'] = String(lvv); }
+    }
     tags['asmb:use'] = use.use; if (use.label) tags['asmb:label'] = use.label; if (use.brand) tags['asmb:brand'] = use.brand;
     counts[use.use] = (counts[use.use] || 0) + 1;
   }

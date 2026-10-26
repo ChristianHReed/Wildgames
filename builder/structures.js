@@ -4,7 +4,7 @@
    The rules and where they come from are in docs/MAP_STRUCTURES.md. Classic script, installs into L (see inflate.js).
 
    Each entry of `structures`:  {k, w, lon, lat, len, l, src, ...}
-     k    what: bridge, tunnel, culvert, passage, ford, overpass, underpass (a tunnel below a road at ground level), dam, weir, lock, gate, fall, pier, breakwater, dyke, wall, bank, support, bend, check
+     k    what: bridge, tunnel, culvert, passage, ford, overpass, underpass (a tunnel below a road at ground level), dam, weir, lock, gate, fall, pier, ramp, breakwater, dyke, wall, bank, support, bend, check
      w    index of the way in this square's `ways` (for an overpass, the way that goes over; `u` is the way that goes under)
      lon, lat  the middle of it;  len  metres along the way;  l  level (layer): 1 and up over, -1 and down under, 0 on the ground
      src  'osm' (mapped) or 'inferred' (worked out by these rules);  cl  metres of clearance the deck should have over what is under it
@@ -51,6 +51,10 @@ L.structures = function(box, sq, elev){
   var half = function(m){ var tot = 0, i; for (i = 0; i + 3 < m.length; i += 2) tot += Math.hypot(m[i + 2] - m[i], m[i + 3] - m[i + 1]); var h = tot/2, acc = 0;
     for (i = 0; i + 3 < m.length; i += 2){ var l = Math.hypot(m[i + 2] - m[i], m[i + 3] - m[i + 1]); if (acc + l >= h && l > 0){ var u = (h - acc)/l; return {len:tot, x:m[i] + (m[i + 2] - m[i])*u, y:m[i + 1] + (m[i + 3] - m[i + 1])*u}; } acc += l; }
     return {len:tot, x:m[0], y:m[1]}; };
+  var marinas = [];   /* where marinas are (leisure=marina or harbour), so piers and ramps near one can be told from a lone jetty */
+  for (var mi = 0; mi < n; mi++){ var mt = ways[mi][0]; if ((mt.leisure === 'marina' || mt.harbour === 'yes' || mt.man_made === 'harbour') && ways[mi][1] && ways[mi][1].length >= 2){ var mc = ways[mi][1], mmx = 0, mmy = 0, mn2 = mc.length/2; for (var mk = 0; mk < mc.length; mk += 2){ mmx += mc[mk]; mmy += mc[mk + 1]; } marinas.push([(mmx/mn2 - lon0)*kx, (mmy/mn2 - lat0)*ky, mc.length >= 8 ? Math.sqrt(Math.abs(mc[0] - mc[mc.length - 4]) * kx * Math.abs(mc[1] - mc[mc.length - 3]) * ky) + 60 : 80]); } }
+  (sq.pois || []).forEach(function(p){ var pt = p[2] || {}; if (pt.leisure === 'marina' || pt.harbour === 'yes') marinas.push([(p[0] - lon0)*kx, (p[1] - lat0)*ky, 120]); });
+  var nearMarina = function(x, y){ for (var q = 0; q < marinas.length; q++) if (Math.hypot(marinas[q][0] - x, marinas[q][1] - y) < marinas[q][2] + 60) return 1; return undefined; };
   var info = new Array(n), lines = [], areas = [], i;
   for (i = 0; i < n; i++){
     var t = ways[i][0], c = ways[i][1]; if (!c || c.length < 4) continue;
@@ -71,7 +75,8 @@ L.structures = function(box, sq, elev){
     else if (t.waterway === 'weir') push({k:'weir', w:i, len:h.len, l:0, src:'osm', n:t.name}, h.x, h.y);
     else if (t.waterway === 'lock_gate') push({k:'gate', w:i, len:h.len, l:0, src:'osm'}, h.x, h.y);
     else if (t.waterway === 'lock' || t.lock === 'yes') push({k:'lock', w:i, len:h.len, l:0, src:'osm', n:t.name}, h.x, h.y);
-    else if (t.man_made === 'pier') push({k:'pier', w:i, len:h.len, l:0, src:'osm', n:t.name}, h.x, h.y);
+    else if (t.man_made === 'pier') push({k:'pier', w:i, len:h.len, l:0, src:'osm', n:t.name, mar:nearMarina(h.x, h.y)}, h.x, h.y);
+    else if (t.waterway === 'boat_ramp' || t.leisure === 'slipway' || t.man_made === 'slipway') push({k:'ramp', w:i, len:h.len, l:0, src:'osm', n:t.name, mar:nearMarina(h.x, h.y)}, h.x, h.y);
     else if (t.man_made === 'breakwater' || t.man_made === 'groyne') push({k:'breakwater', w:i, len:h.len, l:0, src:'osm'}, h.x, h.y);
     else if (t.man_made === 'dyke') push({k:'dyke', w:i, len:h.len, l:0, src:'osm', h:t.height ? parseFloat(t.height) || undefined : undefined}, h.x, h.y);
     else if (t.barrier === 'retaining_wall') push({k:'wall', w:i, len:h.len, l:0, src:'osm', h:t.height ? parseFloat(t.height) || undefined : undefined}, h.x, h.y);
@@ -120,7 +125,7 @@ L.structures = function(box, sq, elev){
   }
   function endRun(w, run, pos, x, y){
     var len = pos - run.a; if (len < 7) return; var I = info[w], cx = (run.x0 + x)/2, cy = (run.y0 + y)/2;
-    if (len >= 160){ push({k:'check', w:w, len:len, l:0, src:'inferred', t:'long wet crossing'}, cx, cy); return; }
+    if (len >= 160){ push({k:'check', w:w, len:len, l:0, src:'inferred', t:'long wet crossing', fe:I.cls === 'road' && rankOf(I.t) >= 4 ? 1 : undefined}, cx, cy); return; }
     wetRuns.push({w:w, x:cx, y:cy, r:len/2 + 12});
     push({k:'bridge', w:w, len:len + 12, l:1, src:'inferred', o:'water', st:'beam', cl:CLEAR.river, n:I.t.name}, cx, cy);
   }

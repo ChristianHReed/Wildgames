@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.16.2';
+L.VERSION = '1.17.0';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp', 'waterway', 'bridge:support'];
@@ -16,12 +16,14 @@ var KEEP = {};
  'highway lanes lanes:forward lanes:backward oneway maxspeed surface smoothness bridge bridge:structure tunnel layer level junction sidewalk sidewalk:left sidewalk:right sidewalk:both cycleway cycleway:left cycleway:right footway crossing crossing:markings ' +
  'parking:lane:left parking:lane:right parking:lane:both parking:left parking:right parking:both parking lit width est_width service access motor_vehicle foot bicycle hgv toll covered ' +
  'embankment cutting ford maxheight lock bridge:support railway usage gauge electrified tracks waterway intermittent seasonal water natural landuse leisure sport golf barrier fence_type wall material colour entrance door emergency fire_hydrant:type traffic_sign traffic_signals traffic_calming ' +
- 'leaf_type leaf_cycle genus species crop produce trees orchard karst geological boat sac_scale trail_visibility '+
+ 'leaf_type leaf_cycle genus species crop produce trees orchard karst geological boat sac_scale trail_visibility harbour ruins opening_hours '+
  'place population ele religion denomination cuisine brand operator military aeroway public_transport historic ruins abandoned disused ' +
  'addr:housenumber addr:street addr:unit addr:city addr:postcode addr:state addr:place addr:interpolation location area area:highway tower:type height:hub pipeline substance capacity fuel content tank').split(' ').forEach(function(k){ KEEP[k] = 1; });
+/* a business that has closed keeps its old tag under a prefix (disused:shop=bakery, abandoned:amenity=restaurant, was:shop=...) */
+var LIFE = /^(disused|abandoned|was|ruins|demolished|razed):(shop|amenity|office|leisure|tourism|craft|healthcare|building|name|brand)$/;
 L.keepTags = function(t, extra){
   var o = null; if (!t) return null;
-  for (var k in t){ if (KEEP[k] || (extra && extra[k])){ (o = o || {})[k] = String(t[k]).slice(0, 80); } }
+  for (var k in t){ if (KEEP[k] || (extra && extra[k]) || (k.length > 8 && LIFE.test(k))){ (o = o || {})[k] = String(t[k]).slice(0, 80); } }
   return o;
 };
 function anyKey(t, list){ if (!t) return false; for (var i = 0; i < list.length; i++) if (t[list[i]] !== undefined) return true; return false; }
@@ -29,7 +31,9 @@ L.wayWanted = function(t){ return anyKey(t, WAYK); };
 L.nodeWanted = function(t){
   if (!t) return false;
   if (t.natural) return !!NODE_NAT[t.natural]; if (t.highway) return !!NODE_HWY[t.highway];
-  return anyKey(t, NODEK);
+  if (anyKey(t, NODEK)) return true;
+  for (var k in t) if (k.length > 8 && LIFE.test(k)) return true;
+  return false;
 };
 var LINEONLY = function(t){
   if (t.area === 'yes' || t['area:highway']) return false;
