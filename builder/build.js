@@ -220,7 +220,7 @@ L.runBuild = async function(job, post, stop){
   tiffs.sort(function(a, b){ return a.res - b.res; });
   var terr = job.opts.tiles ? L.Terrarium() : null;
   await L.dbDel('squares', job.proj + ':');
-  var index = [], rep = {struct:{}, squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
+  var index = [], rep = {struct:{}, uses:{}, squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
   var credit = '© OpenStreetMap contributors (ODbL)' + (stats.overture && stats.overture.added ? '; buildings also from Overture Maps (ODbL)' : '') + (tiffs.length ? '; elevation: ' + tiffs.map(function(t){ return t.name; }).join(', ') : '') + (terr ? '; elevation: AWS Terrain Tiles (SRTM/3DEP)' : '');
   for (var s = 0; s < R.squares.length; s++){
     if (stop()) throw new Error('stopped');
@@ -229,6 +229,7 @@ L.runBuild = async function(job, post, stop){
     var eg = await L.elevGrid(R, i, jj, tiffs, terr, step);
     var m = {lastblockMap:1, format:L.FORMAT, name:A.name, attribution:credit, zone:{s:+b.s.toFixed(6), n:+b.n.toFixed(6), w:+b.w.toFixed(6), e:+b.e.toFixed(6)}, ways:sq.ways, pois:sq.pois, elev:eg.grid};
     if (sq.holes.length) m.holes = sq.holes;
+    var uc = L.uses ? L.uses(sq) : null; if (uc){ for (var uk in uc) rep.uses[uk] = (rep.uses[uk] || 0) + uc[uk]; }
     var stc = L.structures ? L.structures(b, sq, eg.grid) : null; if (stc && stc.list.length) m.structures = stc.list;
     m.builder = {v:L.VERSION, counts:sq.n, elev:eg.src, step:step}; if (stc) m.builder.structures = stc.counts;
     var text2 = JSON.stringify(m); bytes += text2.length;

@@ -2,7 +2,7 @@
    Classic script. The heavy work runs in the background worker (worker.js); this file only drives the page. */
 (function(){
 'use strict';
-var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
+var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'uses', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
 var $ = function(id){ return document.getElementById(id); };
 var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]; }); };
 var fmtN = function(n){ return Math.round(n).toLocaleString('en-US'); };
@@ -165,6 +165,13 @@ function report(){
     h += '<tr><td>Overpasses and underpasses</td><td class="n">' + fmtN(sn('overpass') + sn('underpass')) + '</td></tr>';
     h += '<tr><td>Tunnels, culverts, building passages</td><td class="n">' + fmtN(sn('tunnel')) + ', ' + fmtN(sn('culvert')) + ', ' + fmtN(sn('passage')) + '</td></tr>';
     h += '<tr><td>Dams, weirs, locks, piers, retaining walls</td><td class="n">' + fmtN(sn('dam')) + ', ' + fmtN(sn('weir')) + ', ' + fmtN(sn('lock') + sn('gate')) + ', ' + fmtN(sn('pier')) + ', ' + fmtN(sn('wall')) + '</td></tr>';
+  }
+  var ux = M.report.uses || {}, un = function(){ var n = 0; for (var i = 0; i < arguments.length; i++) n += ux[arguments[i]] || 0; return n; };
+  if (Object.keys(ux).length){
+    h += '<tr><td>Big stores, clubs, home centres</td><td class="n">' + fmtN(un('bigbox', 'club', 'home_improvement', 'bigbox_special')) + '</td></tr>';
+    h += '<tr><td>Supermarkets, markets, corner shops</td><td class="n">' + fmtN(un('supermarket', 'grocery_small', 'convenience', 'market', 'dollar_store')) + '</td></tr>';
+    h += '<tr><td>Police, fire, hospitals and clinics</td><td class="n">' + fmtN(un('police')) + ', ' + fmtN(un('fire')) + ', ' + fmtN(un('hospital')) + ', ' + fmtN(un('clinic', 'pharmacy_store')) + '</td></tr>';
+    h += '<tr><td>Gyms, schools, churches, hotels</td><td class="n">' + fmtN(un('gym')) + ', ' + fmtN(un('school', 'college')) + ', ' + fmtN(un('church')) + ', ' + fmtN(un('hotel')) + '</td></tr>';
   }
   h += '<tr><td>Places named</td><td class="n">' + fmtN(M.places.length) + '</td></tr>';
   h += '</table>';

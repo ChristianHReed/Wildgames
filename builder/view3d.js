@@ -5,7 +5,7 @@
 (function(){
 'use strict';
 var V3 = window.View3D = {env:{hour:10, season:1}, open:open, close:close, isOpen:function(){ return on; }};
-var L3 = {}; ['lib_flatbush', 'geo', 'gen', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L3); });   /* only for reading squares from the builder's storage */
+var L3 = {}; ['lib_flatbush', 'geo', 'gen', 'uses', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L3); });   /* only for reading squares from the builder's storage */
 var on = false, ready = null, cur = null, mode = 'fly', flyH = 60, last = 0, intT = 0, dynB = null, busy = false, noteT = 0, onClose = null;
 var bldKind = 'house', bldSize = 1, bldTurn = 0, strB = null, showS = false, sList = null, paintKind = 'woods', riv = [], sculpt = false, tool = 'raise', brushR = 60, brushK = 0.5, undoSt = [], redoSt = [], pend = [], working = false, holdT = null, lastCam = null;
 var keysDown = {}, look = null, stick = {x:0, y:0}, upDown = 0;
@@ -24,7 +24,7 @@ function makeOverlay(){
     '<button id="v3lay" class="sm alt">Layers</button><button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Edit</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3lays" class="hidden"><b>Show</b><div class="v3row" id="v3lt"></div><small>Hiding is for looking only: nothing is deleted from your map.</small></div>' +
     '<div id="v3tools" class="hidden"><b>Edit the map</b><div class="v3row" id="v3tt">' +
-    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="remove" class="sm alt">Remove</button></div>' +
+    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="info" class="sm alt">What is it?</button><button data-t="remove" class="sm alt">Remove</button></div>' +
     '<div class="v3row hidden" id="v3bs"><label>Floors <select id="v3bf"><option value="">keep</option></select></label><label>Roof <select id="v3br"><option value="">keep</option><option>flat</option><option>gabled</option><option>hipped</option><option>pyramidal</option><option>skillion</option><option>half-hipped</option><option>gambrel</option><option>mansard</option><option>dome</option></select></label><label>Walls <select id="v3bw"><option value="">keep</option><option>brick</option><option>concrete</option><option>wood</option><option>glass</option><option>stone</option><option>plaster</option><option>metal</option></select></label><small style="width:100%">Tap a building to change it. Only the boxes you set are changed.</small></div>' +
     '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select></div>' +
     '<div class="v3row hidden" id="v3bld"><select id="v3bk"></select><label>Size <input id="v3sz" type="range" min="0.6" max="2" step="0.1" value="1"><b id="v3szV">1.0</b></label><label>Turn <input id="v3rot" type="range" min="0" max="345" step="15" value="0"><b id="v3rotV">0&deg;</b></label><label style="width:100%"><input id="v3al" type="checkbox" checked> Line up with the nearest street</label></div>' +
@@ -33,7 +33,7 @@ function makeOverlay(){
     '<label>Brush size <input id="v3r" type="range" min="10" max="250" step="5" value="60"><b id="v3rV">60 m</b></label>' +
     '<label>Strength <input id="v3k" type="range" min="0.1" max="1" step="0.05" value="0.5"><b id="v3kV">0.5</b></label>' +
     '<div class="v3row"><button id="v3undo" class="sm alt">Undo</button><button id="v3redo" class="sm alt">Redo</button><span id="v3cnt"></span></div>' +
-    '<small>Tap or click the ground to sculpt; hold still to keep going. Building: pick one, tap the ground, and it is placed (Remove takes a building, tree or road away; Road: tap along it, then Finish, and choose bridge or tunnel; the same tool draws dams, weirs, piers, breakwaters and retaining walls). Lake: one tap, brush size is the size of the lake. River: tap points downstream, then Finish; brush size picks stream, canal or river. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
+    '<small>Tap or click the ground to sculpt; hold still to keep going. Building: pick one, tap the ground, and it is placed (What is it? shows the name, use, floors and roof of a building; Remove takes a building, tree or road away; Road: tap along it, then Finish, and choose bridge or tunnel; the same tool draws dams, weirs, piers, breakwaters and retaining walls). Lake: one tap, brush size is the size of the lake. River: tap points downstream, then Finish; brush size picks stream, canal or river. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
     '<div id="v3where"></div><div id="v3note"></div>' +
     '<div id="v3helpBox" class="hidden"><b>Moving around</b><br>' +
     '<b>Keyboard:</b> W A S D or arrows to move, E up and Q down (flying), Shift to go faster, F to switch Fly and Walk, drag the mouse to look, wheel to change height.<br>' +
@@ -153,7 +153,7 @@ function layerFilter(raw){
 }
 async function enterAt(lat, lon, yaw, first){
   var R = cur.region, i = Math.floor((lon - R.lon)/R.dLon + 0.5), j = Math.floor((lat - R.lat)/R.dLat + 0.5);
-  var text = await L3.squareText(cur.proj, i, j); cur.text = text; sList = null;
+  var text = await L3.squareText(cur.proj, i, j); cur.text = text; cur.json = null; sList = null;
   if (!text){ V3.note('That part of the map has not been built (outside your area).', 4); return false; }
   if (first) V3.note('Building the 3D world for this square...', 30);
   await new Promise(function(r){ setTimeout(r, 30); });   /* let the note show before the heavy work */
@@ -196,6 +196,10 @@ function dabAt(px, py, again){
   if (tool === 'place'){ if (again) return; var B = L3.BUILD[bldKind], ang = bldTurn*Math.PI/180; if ($('v3al').checked){ var ra = nearRoadAngle(h[0], h[1]); if (ra !== null) ang = ra + bldTurn*Math.PI/180; }
     pend.push({id:uid(), t:'place', b:bldKind, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), a:+ang.toFixed(3), w:Math.round(B[1]*bldSize), d:Math.round(B[2]*bldSize), r:Math.max(B[1], B[2])*bldSize}); V3.note(B[0], 1.5); return; }
   if (tool === 'tree'){ if (again) return; pend.push({id:uid(), t:'tree', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:3}); return; }
+  if (tool === 'info'){ if (again) return; try { var J = cur.json || (cur.json = JSON.parse(cur.text)), hit = null; for (var wi2 = J.ways.length - 1; wi2 >= 0 && !hit; wi2--){ var wy = J.ways[wi2]; if ((wy[0].building || wy[0]['building:part']) && wy[1].length >= 8 && L3.pip(wy[1], ll[0], ll[1])) hit = wy[0]; }
+      if (!hit){ V3.note('No building here.', 2); return; }
+      var tx = [hit.name || 'Unnamed', hit['asmb:label'] || hit['asmb:use'] || hit.building, hit['asmb:brand'], hit['building:levels'] ? hit['building:levels'] + ' floors' : '', hit['roof:shape'] ? hit['roof:shape'] + ' roof' : '', hit['addr:housenumber'] ? hit['addr:housenumber'] + ' ' + (hit['addr:street'] || '') : ''].filter(Boolean).join(' · ');
+      V3.note(tx, 8); } catch (e) { V3.note('Could not read this building.', 3); } return; }
   if (tool === 'bset'){ if (again) return; var fl = +$('v3bf').value || 0, rf = $('v3br').value, wl = $('v3bw').value;
     if (!fl && !rf && !wl){ V3.note('Pick floors, roof or walls first.', 3); return; }
     pend.push({id:uid(), t:'bset', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:3, fl:fl, rf:rf, wl:wl}); V3.note('Changing the building...', 1.5); return; }

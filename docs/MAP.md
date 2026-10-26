@@ -56,6 +56,10 @@ The lidar is the biggest accuracy gain available: subtracting the ground from th
 
 Note: the cloud workspace cannot reach Overpass or most data sites (only package registries). Downloads go through the user, or through a tool the user runs, then get attached here.
 
+## Building uses and real layouts (added 26 October 2026, builder 1.14.0)
+
+The generator labels every building by what it is used for and the game lays it out as that kind of building is built in real life. **Labels:** `builder/uses.js` reads the brand, the name, the shop, amenity, leisure and office tags and the shop points inside each building, and writes `asmb:use` (for example `bigbox`, `club`, `home_improvement`, `supermarket`, `police`, `fire`, `gym`, `church`), `asmb:label` ("Walmart Supercenter") and `asmb:brand`; chains also correct the map's tags so the game's building kinds come out right (a Walmart is a grocery, not a clothes shop). **Layouts:** `docs/MAP_BUILDING_USES.md` gives, for each use, the real footprint, height and the way it is planned (public front and secure back, checkout row and perimeter departments in a supermarket or big-box, garden centre and lumber in a home centre, bays and quarters in a fire station, cells and sally port in a police station, locker rooms and weights floor in a gym) and what the floor-plan and engine chats must add. The made-up buildings the generator fills gaps with stay plain (`house`, `retail`, `barn`) until a real use is known; anchor stores for made-up commercial strips are a later step.
+
 ## The engine, stage by stage
 
 Each stage writes its own intermediate file, so a stage can be redone without the rest (the Arnis split).
