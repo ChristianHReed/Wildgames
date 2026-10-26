@@ -531,7 +531,8 @@ function placeDress(g){
         var xm = ax + dx*run + dy*1.8, ym = ay + dy*run - dx*1.8; if (h < 0.35 && !blocked(xm, ym)) add('street.manhole', xm, ym, h*6.28, 500);
         if (main){ var xs = ax + dx*run - dy*(r.w/2 + 2.2)*sd, ys = ay + dy*run + dx*(r.w/2 + 2.2)*sd;
           if (h > 0.9 && ok(xs, ys)) add('street.sign_speed', xs, ys, yaw + (sd > 0 ? 0 : 3.14159), 120);
-          else if (h > 0.8 && ok(xs, ys) && bldNear(xs, ys, 25)) add('street.bus_stop', xs, ys, yaw + (sd > 0 ? 1.5708 : -1.5708), 90);
+          else if (h > 0.8 && ok(xs, ys) && bldNear(xs, ys, 25)) add(h > 0.86 && spB('rs.bus_shelter') ? 'rs.bus_shelter' : 'street.bus_stop', xs, ys, yaw + (sd > 0 ? 1.5708 : -1.5708), 90);
+          else if (h > 0.66 && h < 0.7 && hash(ri, k, 99) < 0.5 && spB('rs.billboard') && !bldNear(xs, ys, 40)){ var bx = ax + dx*run - dy*(r.w/2 + 9)*sd, by = ay + dy*run + dx*(r.w/2 + 9)*sd; if (ok(bx, by, 2.5)) add('rs.billboard', bx, by, Math.atan2(dy*sd, -dx*sd), 60); }
           else if (h < 0.3 && ok(xs, ys) && bldNear(xs, ys, 12)) add('street.parking_meter', xs, ys, yaw, 200);
           else if (h > 0.7 && ok(xs, ys) && bldNear(xs, ys, 12)) add('street.bollard', xs, ys, 0, 150); }
       }
