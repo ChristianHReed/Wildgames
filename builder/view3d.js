@@ -31,7 +31,7 @@ function makeOverlay(){
     '<label>Brush size <input id="v3r" type="range" min="10" max="250" step="5" value="60"><b id="v3rV">60 m</b></label>' +
     '<label>Strength <input id="v3k" type="range" min="0.1" max="1" step="0.05" value="0.5"><b id="v3kV">0.5</b></label>' +
     '<div class="v3row"><button id="v3undo" class="sm alt">Undo</button><button id="v3redo" class="sm alt">Redo</button><span id="v3cnt"></span></div>' +
-    '<small>Tap or click the ground to sculpt; hold still to keep going. Building: pick one, tap the ground, and it is placed (Remove takes a building, tree or road away; Road: tap along it, then Finish, and choose bridge or tunnel). Lake: one tap, brush size is the size of the lake. River: tap points downstream, then Finish; brush size picks stream, canal or river. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
+    '<small>Tap or click the ground to sculpt; hold still to keep going. Building: pick one, tap the ground, and it is placed (Remove takes a building, tree or road away; Road: tap along it, then Finish, and choose bridge or tunnel; the same tool draws dams, weirs, piers, breakwaters and retaining walls). Lake: one tap, brush size is the size of the lake. River: tap points downstream, then Finish; brush size picks stream, canal or river. Drag to look around. Your changes are kept apart from the map data, so building the map again keeps them.</small></div>' +
     '<div id="v3where"></div><div id="v3note"></div>' +
     '<div id="v3helpBox" class="hidden"><b>Moving around</b><br>' +
     '<b>Keyboard:</b> W A S D or arrows to move, E up and Q down (flying), Shift to go faster, F to switch Fly and Walk, drag the mouse to look, wheel to change height.<br>' +
@@ -69,7 +69,7 @@ function makeOverlay(){
   Object.keys(L3.PAINT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.PAINT[k][0]; $('v3pk').appendChild(o); }); $('v3pk').onchange = function(){ paintKind = this.value; };
   Object.keys(L3.BUILD).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.BUILD[k][0]; $('v3bk').appendChild(o); }); $('v3bk').onchange = function(){ bldKind = this.value; };
   $('v3sz').oninput = function(){ bldSize = +this.value; $('v3szV').textContent = bldSize.toFixed(1); }; $('v3rot').oninput = function(){ bldTurn = +this.value; $('v3rotV').innerHTML = bldTurn + '&deg;'; };
-  Object.keys(L3.ROADT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.ROADT[k][0]; $('v3rt').appendChild(o); }); $('v3rt').value = 'residential';
+  Object.keys(L3.ROADT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.ROADT[k][0]; $('v3rt').appendChild(o); }); $('v3rt').value = 'residential'; $('v3rt').onchange = function(){ var t = L3.ROADT[this.value]; $('v3rl').style.display = (t[1] === 'highway' || t[1] === 'railway') ? '' : 'none'; };
   Object.keys(L3.ROADT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.ROADT[k][0]; $('v3rt').appendChild(o); }); $('v3rt').value = 'residential';
   $('v3rdone').onclick = finishRiver; $('v3rcancel').onclick = function(){ riv = []; toolUI(); }; $('v3undo').onclick = undo; $('v3redo').onclick = redo;
   /* look: drag with mouse, finger or pencil on the view */

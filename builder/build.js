@@ -36,7 +36,8 @@ L.BUILD = {
 };
 /* roads the player can draw: name, the map tag the game reads, its value, and any extra tags */
 L.ROADT = {motorway:['Motorway', 'highway', 'motorway', {lanes:'4', oneway:'yes'}], primary:['Main road', 'highway', 'primary', {lanes:'2'}], secondary:['Secondary road', 'highway', 'secondary'], tertiary:['Side road', 'highway', 'tertiary'],
-  residential:['Street', 'highway', 'residential'], service:['Service road or drive', 'highway', 'service'], track:['Dirt track', 'highway', 'track'], footway:['Footpath', 'highway', 'footway'], cycleway:['Bike path', 'highway', 'cycleway'], rail:['Railway', 'railway', 'rail']};
+  residential:['Street', 'highway', 'residential'], service:['Service road or drive', 'highway', 'service'], track:['Dirt track', 'highway', 'track'], footway:['Footpath', 'highway', 'footway'], cycleway:['Bike path', 'highway', 'cycleway'], rail:['Railway', 'railway', 'rail'],
+  dam:['Dam', 'waterway', 'dam', {height:'8'}], weir:['Weir', 'waterway', 'weir'], pier:['Pier', 'man_made', 'pier'], breakwater:['Breakwater', 'man_made', 'breakwater'], wall:['Retaining wall', 'barrier', 'retaining_wall', {height:'3'}]};
 L.terrainApply = function(text, ops){
   if (!ops || !ops.length) return text;
   var sq = JSON.parse(text), E = sq.elev; if (!E || !E.d) return text;
@@ -104,7 +105,7 @@ L.terrainApply = function(text, ops){
       var tg2 = {'asmb:made':'yes', src:'edit'}; for (var k4 in B[4]) tg2[k4] = B[4][k4]; if ((o.lv || B[3]) > 1 || o.lv) tg2['building:levels'] = String(o.lv || B[3]); sq.ways.push([tg2, rc3]); }
     else if (o.t === 'road' && L.ROADT[o.h]){
       var rt = L.ROADT[o.h], tg3 = {'asmb:made':'yes', src:'edit'}; tg3[rt[1]] = rt[2]; if (rt[3]) for (var k5 in rt[3]) tg3[k5] = rt[3][k5];
-      if (o.lv > 0){ tg3.bridge = 'yes'; tg3.layer = String(o.lv); } else if (o.lv < 0){ tg3.tunnel = 'yes'; tg3.layer = String(o.lv); }
+      if (rt[1] === 'highway' || rt[1] === 'railway'){ if (o.lv > 0){ tg3.bridge = 'yes'; tg3.layer = String(o.lv); } else if (o.lv < 0){ tg3.tunnel = 'yes'; tg3.layer = String(o.lv); } }
       sq.ways.push([tg3, o.c.slice()]); }
     else if (o.t === 'tree'){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {natural:'tree', 'asmb:made':'yes'}]); }
     else if (o.t === 'remove'){
@@ -113,7 +114,7 @@ L.terrainApply = function(text, ops){
       else {
         var cl5 = Math.cos(o.lat*Math.PI/180), np = sq.pois.length; sq.pois = sq.pois.filter(function(pp){ return !(Math.abs(pp[0] - o.lon)*111320*cl5 < 4 && Math.abs(pp[1] - o.lat)*110540 < 4); });
         if (sq.pois.length === np){   /* nothing else here: take away the road or railway line nearest the tap (within 7 m) */
-          var bd = 7, bi = -1; sq.ways.forEach(function(wy, wi2){ var t4 = wy[0], c4 = wy[1]; if (!(t4.highway || t4.railway) || t4.building || c4.length < 4) return;
+          var bd = 7, bi = -1; sq.ways.forEach(function(wy, wi2){ var t4 = wy[0], c4 = wy[1]; if (!(t4.highway || t4.railway || t4['asmb:made'] === 'yes' && (t4.waterway || t4.man_made || t4.barrier)) || t4.building || c4.length < 4) return;
             for (var q = 0; q + 3 < c4.length; q += 2){ var ax = (c4[q] - o.lon)*111320*cl5, ay = (c4[q + 1] - o.lat)*110540, bx = (c4[q + 2] - o.lon)*111320*cl5, by = (c4[q + 3] - o.lat)*110540, dx = bx - ax, dy = by - ay, l2 = dx*dx + dy*dy || 1, tt = Math.max(0, Math.min(1, -(ax*dx + ay*dy)/l2)), dd = Math.hypot(ax + dx*tt, ay + dy*tt); if (dd < bd){ bd = dd; bi = wi2; } } });
           if (bi >= 0){ sq.ways.splice(bi, 1); if (sq.holes) sq.holes = sq.holes.filter(function(hh){ return hh[0] !== bi; }).map(function(hh){ return hh[0] > bi ? [hh[0] - 1, hh[1]] : hh; }); if (sq.structures) sq.structures = sq.structures.filter(function(st){ return st.w !== bi && st.u !== bi; }).map(function(st){ if (st.w > bi) st.w--; if (st.u > bi) st.u--; return st; }); }
         }

@@ -224,6 +224,8 @@ What testing showed:
 
 **Builder 1.8.1:** the 3D view loads the game's `shaped/structures` art (game 0.97.0 draws bridges, overpasses, dams and the rest from the map's `structures` list), so structures show with their real pieces in the builder too.
 
+**Builder 1.9.0:** the line tool also draws **dams, weirs, piers, breakwaters and retaining walls** (tags `waterway=dam` with height 8, `waterway=weir`, `man_made=pier`, `man_made=breakwater`, `barrier=retaining_wall` height 3). They enter the square's `structures` list, so the game (0.97.x) draws them with the content chat's pieces; the bridge/tunnel choice hides for these types. Remove also takes away a line the player drew of these kinds. Tested in Node (dam and wall entries) and Chromium.
+
 ## Versions
 
 | Version | Contents |
