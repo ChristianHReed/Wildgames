@@ -173,3 +173,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.112.0) Open a Builder map (.asmap). Playgrounds have swings, slides, climbing frames and sandpits; basketball courts have hoops at each end, soccer pitches goals, tennis courts a net, baseball fields a plate, backstop and mound. Buildings marked disused on the map are dark and half empty.
 - [ ] (0.113.0) On a Builder map, houses are all siding, steel-framed shops and halls have metal sheet walls, concrete-brick buildings show brick.
 - [ ] (0.113.1) Fuel stations have a canopy with two pump islands in front of the shop (not all: those against a road get none).
+- [ ] (0.114.0) On a Builder map, farm fields near the start show crops (corn, wheat, soy, bare rows, stubble with bales).
