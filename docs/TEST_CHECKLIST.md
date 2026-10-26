@@ -153,3 +153,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.99.3) On a phone with a shovel: look down, tap the prompt to dig; crouch and tap to fill.
 - [ ] (0.100.0) Parked bicycles look like real bikes (different kinds). Ride one: wheels spin, handlebars turn with the front wheel, pedals turn.
 - [ ] (0.101.0) In a car near a garage or petrol station press the shop button: pick mud tyres, alloy rims and a bull bar, roof bars, running boards. The car shows them, sits higher, and still drives. Reload: they stay. Mud tyres go a little slower on tarmac, faster in rain on grass.
+- [ ] (0.101.1) In the car shop take the bull bar off one car (choose none): it shows (in stock) in the list. Fit it to another car for free. Reload: the stock is still there.
