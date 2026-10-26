@@ -797,6 +797,24 @@ function spBikeDraw(m, v){
   K.wh.forEach(function(w){ m.part(K.W, v.x, v.y, v.yaw, 0, w[0], w[1], w[2], sp*ws, w[3] ? st : 0); });
   return true;
 }
+/* 0.101.0: the vehicle kit (assets/shaped/vehiclekit.js, vehiclefit.js): tyres, rims and bolt-on parts fitted to a car. carFit(kind, cu) works out the plan once per loadout */
+var KITV = {sedan:'sedan', hatch:'hatchback', suv:'pickup', van:'van', taxi:'sedan', police:'sedan'}, KWM = {}, KFIT = {};
+function kitModel(grp, name, sx, sy, sz, mir, ov, okey){
+  var key = grp + '|' + name + '|' + [sx, sy, sz].map(function(n){ return n.toFixed(3); }).join(',') + '|' + (mir ? 1 : 0) + '|' + okey; if (KWM[key] !== undefined) return KWM[key]; KWM[key] = null;
+  try { var K = SHAPED.vehiclekit, pcs = K.models[grp][name]; if (!pcs) return null; var M = spModel(pcs, spColour(K.palette, ov), {car:true, s:[sx, sy, sz]});
+    if (mir){ for (var i = 0; i < M.n; i++){ for (var j = 0; j < 3; j++) M.p[(i*3 + j)*3 + 2] *= -1; for (var c = 0; c < 3; c++){ var a = M.p[(i*3 + 1)*3 + c]; M.p[(i*3 + 1)*3 + c] = M.p[(i*3 + 2)*3 + c]; M.p[(i*3 + 2)*3 + c] = a; } } }
+    KWM[key] = M; } catch (er){}
+  return KWM[key];
+}
+function carFit(k, cu){
+  var K = window.SHAPED && SHAPED.vehiclekit, F = window.VEHICLEFIT; if (!K || !F || !SPON || !KITV[k] || !cu || !(cu.ty || cu.rm || (cu.p && cu.p.length))) return null;
+  var key = k + '|' + (cu.ty || '') + '|' + (cu.rm || '') + '|' + (cu.p || []).join(',') + '|' + (cu.c || ''); if (KFIT[key] !== undefined) return KFIT[key]; KFIT[key] = null;
+  try { var pl = F.plan(K, KITV[k], {tyre:cu.ty, rim:cu.rm, parts:cu.p || []}), col = cu.c || '#8a9199', ov = {BODY:col, paint1:col, paint2:col, paint3:col}, out = {lift:pl.lift, stats:pl.stats, rejected:pl.rejected, wheels:[], parts:[]};
+    pl.wheels.forEach(function(w){ var T = kitModel('tyres', w.tyre, w.r, w.r, w.w, 0, ov, col), R = kitModel('rims', w.rim, w.r*w.rimFrac, w.r*w.rimFrac, w.w, 0, ov, col); if (T) out.wheels.push({T:T, R:R, x:w.pos[2], y:w.pos[1], z:-w.pos[0], front:w.pos[2] > 0, flip:w.flip}); });
+    pl.parts.forEach(function(q){ var M = kitModel('parts', q.name, 1, 1, 1, q.mirror, ov, col); if (M) out.parts.push({M:M, x:q.pos[2], y:q.pos[1], z:-q.pos[0]}); });
+    KFIT[key] = out; } catch (er){ console.log('carFit', er); }
+  return KFIT[key];
+}
 function hashStr(t){ var h = 0, i; for (i = 0; i < t.length; i++) h = (h*31 + t.charCodeAt(i)) | 0; return h; }
 var SPB = {};
 function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(path.slice(0, 3) === 'ws.' ? SHAPED.waterside.palette : SHAPED.props.palette)); } catch (er){} return SPB[path]; }

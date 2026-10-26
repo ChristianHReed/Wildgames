@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.100.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.101.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,10 +454,10 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.100.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.101.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+  ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
   return set;
 })();
 /* shared engine files (also loaded by the Maps Builder): same ?v=BUILD rule as the art */
@@ -3950,7 +3950,7 @@ var VMASS = {car:1.3, truck:3};
 /* the game speaks in inches, feet and miles; the map and physics stay in metres */
 function dist(m, rough){ var ft = m/0.3048; if (ft < 3) return Math.max(1, Math.round(ft*12)) + ' in'; if (m < 800) return (rough ? Math.round(ft/10)*10 : Math.round(ft)) + ' ft'; var mi = m/1609.34; return (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + ' mi'; }
 var MILE = 1609.34, CAN_M = 100*MILE, TANK = {sedan:380, hatch:400, suv:330, van:300, taxi:360, police:340, truck:350}, TOPSPD = {hatch:34, sedan:31, taxi:30, police:36, suv:26, van:22, truck:20}, WEAK = {hatch:1.4, sedan:1, taxi:1, police:0.9, suv:0.75, van:0.65, truck:0.55}, ACCEL = {hatch:12.5, sedan:11, taxi:11, police:13, suv:9.5, van:8, truck:7};   /* small cars are quicker and faster but give way sooner (WEAK scales crash damage) */
-function vWeak(V){ return (WEAK[V.kind === 'truck' ? 'truck' : baseKind(carKind(V))] || 1)*(1 - 0.12*((V.cu && V.cu.a) | 0)); }
+function vWeak(V){ var kf = V.cu && V.kind !== 'truck' && (V.cu.ty || V.cu.rm || V.cu.p) ? carFit(carKind(V), V.cu) : null; return (WEAK[V.kind === 'truck' ? 'truck' : baseKind(carKind(V))] || 1)*(1 - 0.12*((V.cu && V.cu.a) | 0))*(1 - Math.min(0.35, ((kf && kf.stats && kf.stats.armor) || 0)/100)); }
 function baseKind(k){ return String(k || 'sedan').replace(/_(wreck|burnt)$/, ''); }
 function tankM(v){ return (TANK[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 350)*MILE; }
 function fuelRoll(kind, a, b){ var u = hash(a, b, 41), f = u < 0.14 ? hash(a, b, 42)*0.03 : u < 0.96 ? 0.04 + Math.pow(hash(a, b, 43), 1.6)*0.7 : 0.9 + hash(a, b, 44)*0.1; return Math.round((TANK[kind] || 350)*MILE*f*(0.92 + hash(a, b, 45)*0.16)); }
@@ -3986,7 +3986,7 @@ function carStyled(k, cu){
     var B = spModel(V.body.concat(V.bonnet || []), spColour(PR.palette, ov), {car:true}); B.w = VMOD[k].w; B.h = VMOD[k].h; B.drop = VMOD[k].drop; CSM[key] = B; } catch (er){}
   return CSM[key];
 }
-function cleanCu(c){ if (!c || typeof c !== 'object') return undefined; var o = {}, hx = /^#[0-9a-fA-F]{6}$/; if (hx.test(c.c)) o.c = c.c; if (hx.test(c.t)) o.t = c.t; if (c.n) o.n = String(c.n).replace(/[<>&"]/g, '').slice(0, 20); o.e = Math.max(0, Math.min(3, c.e | 0)); o.a = Math.max(0, Math.min(3, c.a | 0)); return o; }
+function cleanCu(c){ if (!c || typeof c !== 'object') return undefined; var o = {}, hx = /^#[0-9a-fA-F]{6}$/; if (hx.test(c.c)) o.c = c.c; if (hx.test(c.t)) o.t = c.t; if (c.n) o.n = String(c.n).replace(/[<>&"]/g, '').slice(0, 20); if (typeof c.ty === 'string' && /^[a-z_]{2,20}$/.test(c.ty)) o.ty = c.ty; if (typeof c.rm === 'string' && /^[a-z0-9_]{2,20}$/.test(c.rm)) o.rm = c.rm; if (Array.isArray(c.p)) o.p = c.p.filter(function(n){ return typeof n === 'string' && /^[a-zA-Z0-9_]{2,30}$/.test(n); }).slice(0, 14); o.e = Math.max(0, Math.min(3, c.e | 0)); o.a = Math.max(0, Math.min(3, c.a | 0)); return o; }
 function shopList(){ var w = world; if (w.shops) return w.shops; return w.shops = w.buildings.filter(function(b){ return !b.gone && (b.kind === 'fuel' || b.kind === 'hardware' || (b.kind === 'garage' && b.area >= 140)); }); }
 function shopNear(){ var L = shopList(), i; for (i = 0; i < L.length; i++){ var b = L[i]; if (P.x > b.minx - 20 && P.x < b.maxx + 20 && P.y > b.miny - 20 && P.y < b.maxy + 20) return b; } return null; }
 var ENG = [[0, 0], [3, 4], [5, 8], [8, 12]], FRM2 = [[0, 0], [2, 4], [4, 8], [6, 12]];
@@ -4000,8 +4000,24 @@ function shopRender(){
     (paint ? '<h3>Body colour</h3>' + sw('body') + (sl[1] ? '<h3>Trim colour</h3>' + sw('trim') : '') + '<div style="font-size:12px;opacity:.8">Each repaint costs 1 scrap.</div>' : '') +
     '<h3>Engine ' + (cu.e | 0) + ' of 3 &middot; top speed ' + Math.round(top) + ' mph</h3>' + (en ? '<button data-act="eng">Fit a bigger engine: ' + need(en, 1) + '</button>' : 'Fully tuned.') +
     '<h3>Frame ' + (cu.a | 0) + ' of 3 &middot; crashes do ' + Math.round((1 - 0.12*(cu.a | 0))*100) + '% as much damage</h3>' + (fr ? '<button data-act="frame">Reinforce the frame: ' + need(fr, 1) + '</button>' : 'Fully reinforced.') +
+    fitHtml(v, cu, k) +
     '<h3>Repair &middot; condition ' + hp + '%</h3>' + (hp >= 100 ? 'Sound.' : '<button data-act="fix">Repair fully: ' + rp + ' car parts and ' + rp + ' scrap</button>') +
     '<div style="margin-top:12px;font-size:12px">You have ' + (inv.scrap | 0) + ' scrap and ' + (inv.parts | 0) + ' car parts. <button data-act="close" style="float:right">Done</button></div>';
+}
+/* 0.101.0: tyres, rims and bolt-on parts from the vehicle kit, fitted for scrap. Each part is one item that fits the slot it names; the plan (vehiclefit.js) lifts the body for bigger tyres and refuses what does not fit. */
+var FITNM = {tyre:'tyre', rim:'rim'}, FITSLOT = ['roof', 'front', 'rear', 'hood', 'side', 'arch', 'flap', 'pillar', 'roof_decal', 'decal_side', 'rear_door'];
+function fitName(n){ return n.replace(/_/g, ' '); }
+function fitOn(k, v){ return !!(KITV[k] && v.kind !== 'truck' && window.SHAPED && SHAPED.vehiclekit && window.VEHICLEFIT && CKD[k]); }
+function fitHtml(v, cu, k){
+  if (!fitOn(k, v)) return ''; var K = SHAPED.vehiclekit, kv = KITV[k], h = '<h3>Tyres, rims and parts</h3>', opt = function(a, sel, label){ return '<option value="' + a + '"' + (sel ? ' selected' : '') + '>' + label + '</option>'; };
+  h += 'Tyres <select data-fit="ty">' + opt('', !cu.ty, 'stock road tyre') + Object.keys(K.tyreInfo).filter(function(n){ return n !== 'road'; }).map(function(n){ var g = K.tyreInfo[n].grip; return opt(n, cu.ty === n, fitName(n) + ' (road ' + g.road + ', mud ' + g.mud + ', snow ' + g.snow + ') 3 scrap'); }).join('') + '</select><br>';
+  h += 'Rims <select data-fit="rm">' + opt('', !cu.rm, 'stock steel') + Object.keys(K.rimInfo).filter(function(n){ return n !== 'steel' && n !== 'steel_rust'; }).map(function(n){ return opt(n, cu.rm === n, fitName(n) + ' 1 scrap'); }).join('') + '</select>';
+  var comp = VEHICLEFIT.compatible(K, kv), by = {}; comp.forEach(function(n){ n = n.name || n; var sl = K.partInfo[n].slot; (by[sl] = by[sl] || []).push(n); });
+  FITSLOT.forEach(function(sl){ if (!by[sl]) return; var cur = (cu.p || []).filter(function(n){ return K.partInfo[n] && K.partInfo[n].slot === sl; })[0];
+    h += '<br>' + fitName(sl) + ' <select data-fit="p" data-slot="' + sl + '">' + opt('', !cur, 'none') + by[sl].map(function(n){ return opt(n, cur === n, fitName(n) + ' 2 scrap'); }).join('') + '</select>'; });
+  var kf = carFit(k, cu); if (kf && kf.rejected && kf.rejected.length) h += '<div style="font-size:12px;opacity:.8">Will not fit: ' + kf.rejected.map(function(r){ return fitName(r.part) + ' (' + r.why + ')'; }).join(', ') + '</div>';
+  var st = kf && kf.stats; if (st) h += '<div style="font-size:12px;opacity:.8">' + (st.armor ? 'Armour +' + st.armor + '% ' : '') + (st.mass ? 'Adds ' + st.mass + ' kg ' : '') + '</div>';
+  return h;
 }
 function shopPay(parts, scrap){ if ((inv.parts | 0) < parts || (inv.scrap | 0) < scrap){ toast('You need ' + scrap + ' scrap' + (parts ? ' and ' + parts + ' car parts' : '') + '.', 3); return false; } inv.parts -= parts; inv.scrap -= scrap; sfx('metal', P.x, P.y, 0.8); updateHud(); return true; }
 function carName(v){ v.name = v.cu && v.cu.n ? v.cu.n : (v.kind === 'truck' ? 'the truck' : 'the car'); }
@@ -4014,6 +4030,12 @@ el('carMod').addEventListener('click', function(e){
   else if (a === 'frame'){ var fr = FRM2[(cu.a | 0) + 1]; if (fr && shopPay(fr[0], fr[1])){ cu.a = (cu.a | 0) + 1; toast('The frame is reinforced.', 3); } }
   else if (a === 'fix'){ var rp = Math.ceil((100 - vhp(v))/30); if (rp > 0 && shopPay(rp, rp)){ v.hp = 100; v.warnHp = false; v.fireT = 0; v.burnt = 0; toast('Repaired. Good as new.', 3); } }
   shopRender();
+});
+el('carMod').addEventListener('change', function(e){
+  var t = e.target, f = t && t.dataset && t.dataset.fit; if (!f || !P.veh) return; var v = P.veh, cu = v.cu = v.cu || {e:0, a:0}, val = t.value, K = SHAPED.vehiclekit;
+  if (f === 'ty' || f === 'rm'){ if ((cu[f] || '') === val) return; if (!shopPay(0, val ? (f === 'ty' ? 3 : 1) : 0)){ shopRender(); return; } if (val) cu[f] = val; else delete cu[f]; }
+  else { var sl = t.dataset.slot, p = (cu.p || []).filter(function(n){ return !K.partInfo[n] || K.partInfo[n].slot !== sl; }); if (val){ if (!shopPay(0, 2)){ shopRender(); return; } p.push(val); } cu.p = p; }
+  sfx('metal', P.x, P.y, 0.8); shopRender();
 });
 el('chShop').addEventListener('click', shopOpen);
 /* 0.89: what a car hits: trees (trunks), lamp posts, signs, hydrants, benches, dumpsters, other vehicles, and the parapet of a bridge. Each is a circle; the car is three circles along its length. Returns how deep it was pushed. */
@@ -4070,7 +4092,13 @@ function carHudTick(V){
 function vehSpeed(dt){
   var v = P.veh; if (P.swim) return 1.2; if (!v.t) return 10.5; if (vhp(v) <= 0) return 0;
   if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = Math.min(CAN_M, tankM(v)); feed('Poured a can of fuel into the ' + (v.kind === 'truck' ? 'truck' : 'car'), ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. Find fuel in workshops or buy it from a trader.', 4); } return 0; } }
-  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(1 + 0.08*((v.cu && v.cu.e) | 0))*(vhp(v) < 35 ? 0.4 : 1);
+  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(1 + 0.08*((v.cu && v.cu.e) | 0))*(vhp(v) < 35 ? 0.4 : 1)*tyreGrip(v);
+}
+/* 0.101.0: what the fitted tyres do on this ground. A stock road tyre is 1; a mud tyre on mud, or a snow tyre in snow, is a little faster, and a slick off the road is much slower */
+function tyreGrip(v){
+  var cu = v.cu; if (!cu || !cu.ty || !v.t || v.kind === 'truck' || !window.SHAPED || !SHAPED.vehiclekit) return 1; var TI = SHAPED.vehiclekit.tyreInfo, T = TI[cu.ty]; if (!T) return 1;
+  var rk = world.roadAt ? world.roadAt(P.x, P.y) : null, snow = season() === 3, wet = raining(), g = rk && rk !== 'gravel' ? (snow ? 'snow' : wet ? 'wet' : 'road') : rk ? (snow ? 'snow' : wet ? 'mud' : 'dirt') : (snow ? 'snow' : wet ? 'mud' : 'dirt');
+  if (inWater(P.x, P.y, 0)) return 1; return 0.7 + 0.3*Math.min(1.3, T.grip[g]/TI.road.grip[g]);
 }
 function vehMoved(v, dx, dy, dt){
   var d = Math.hypot(dx, dy); v.x = P.x; v.y = P.y; v.rd = time; if (d < 0.002) return; if (!v.t) v.yaw = Math.atan2(dy, dx);
@@ -4107,7 +4135,13 @@ function drawCar(m, v, now){
   if (v.cu && !v.dead && !v.burnt){ var SB = carStyled(k, v.cu); if (SB) B = SB; }
   if (v.t && v.kind !== 'truck' && !v.dead && CKD[k]){ if (v.burnt) B = VMOD[k + '_burnt'] || B; else { var hv = vhp(v), lv = hv > 70 ? 0 : hv > 40 ? 1 : hv > 15 ? 2 : hv > 0 ? 3 : 4; if (lv || v.fireT > 0){ var DB = carDmgModel(k, v.fireT > 0 ? 4 : lv, v.fireT > 0, v.cu); if (DB) B = DB; } } }
   var tr = v.id === 'truck' ? truckP() : null, fit = tr ? fitting() : null, y0 = -(B.drop || 0);
-  m.part(B, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0);
+  var KF = v.cu && !v.dead && !v.burnt && v.kind !== 'truck' ? carFit(k, v.cu) : null;
+  m.part(B, v.x, v.y, v.yaw, y0, 0, KF ? KF.lift : 0, 0, 0, 0);
+  if (KF){
+    KF.wheels.forEach(function(w){ var rz = w.flip ? -(v.spin || 0) : (v.spin || 0), ry = (w.flip ? Math.PI : 0) + (w.front ? (v.steer || 0) : 0); m.part(w.T, v.x, v.y, v.yaw, y0, w.x, w.y, w.z, rz, ry); if (w.R) m.part(w.R, v.x, v.y, v.yaw, y0, w.x, w.y, w.z, rz, ry); });
+    KF.parts.forEach(function(q){ m.part(q.M, v.x, v.y, v.yaw, y0, q.x, q.y, q.z, 0, 0); });
+    return true;
+  }
   B.w.forEach(function(w){
     var W = VMOD[w[4]]; if (!W) return;
     if (tr && !tr.tire && w[3] && w[2] < 0){   /* the truck's missing front wheel: the hub rests on two concrete blocks */
