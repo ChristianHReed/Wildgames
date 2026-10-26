@@ -156,3 +156,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.101.1) In the car shop take the bull bar off one car (choose none): it shows (in stock) in the list. Fit it to another car for free. Reload: the stock is still there.
 - [ ] (0.102.0) Swim to a boat on a lake or pond and press E. Move to steer: the boat follows your view, stays on the water, bobs, and a fast one leaves a wake. Press E to get out.
 - [ ] (0.102.1) Find a motorbike, moped or quad by a house door and press E. It is much faster than a bicycle, uses fuel (the toast shows the percent) and a fuel can refills it. Empty, it only crawls.
+- [ ] (0.103.0) Walk into a restaurant (open door): the kitchen at the back has a flat-top grill, fryer, fridges, a sink and wire racks along the walls, and you can search the fridges.
