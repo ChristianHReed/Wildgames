@@ -144,3 +144,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.97.0) On a builder 1.6+ map: tunnels show a dark portal at each end; culverts a headwall each end; dams, weirs, piers, breakwaters, walls and fords appear along their ways. Look from both sides of a portal: the dark face should face outward.
 - [ ] (0.97.1) You cannot walk through a dam (unless it carries a road), a retaining wall or a breakwater.
 - [ ] (0.97.2) Look under a bridge over water: grey piers with a cap under the deck, no floating or sunken ones.
+- [ ] (0.98.0) Walk into a wood: ferns, thickets, logs, stumps and the odd dead tree stand among the trees; searching a log or a thicket gives wood or berries. Check the frame rate has not dropped.

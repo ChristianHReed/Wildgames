@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.97.2</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.98.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.97.2', ART = {}, ARTSET = (function(){
+var BUILD = '0.98.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2530,7 +2530,7 @@ function eyeLights(){
     .map(function(z){ var q = z.eyeW; return {x:q.x + Math.cos(z.ang)*0.3, y:q.y + Math.sin(z.ang)*0.3, eye:true, ey:q.h}; });
 }
 /* what each kind of plant gives when gathered: [least, most] of each thing */
-var DROPS = {bush:{berry:[1,3], wood:[0,1]}, bush_small:{berry:[0,2]}, shrub:{berry:[0,1], fiber:[1,1]}, flowers_y:{herb:[1,2]}, flowers_p:{herb:[1,2]}, flowers_r:{herb:[0,1]}, grass:{fiber:[0,1]}, grass_tall:{fiber:[1,2]}, fern:{fiber:[1,2]}, rock:{stone:[1,3]}, mushrooms:{herb:[0,1], berry:[0,1]}, log:{wood:[1,2]}, stump:{wood:[0,1]}};
+var DROPS = {w_fern_a:{fiber:[0,1]}, w_fern_b:{fiber:[0,1]}, w_mayapple:{herb:[0,1]}, w_wildflower_a:{herb:[1,2]}, w_wildflower_b:{herb:[1,2]}, w_wildflower_c:{herb:[1,2]}, w_berry_bush:{berry:[1,3], wood:[0,1]}, w_thicket_a:{berry:[0,2], wood:[0,1]}, w_thicket_b:{berry:[0,2], wood:[0,1]}, w_sumac:{wood:[0,1]}, w_sapling:{wood:[1,1]}, w_log_hollow:{wood:[1,3]}, w_log_mossy:{wood:[1,3]}, w_stump_big:{wood:[1,2]}, w_brush_pile:{wood:[1,3], fiber:[0,1]}, w_root_ball:{wood:[1,2]}, w_snag_a:{wood:[1,3]}, w_snag_b:{wood:[1,3]}, bush:{berry:[1,3], wood:[0,1]}, bush_small:{berry:[0,2]}, shrub:{berry:[0,1], fiber:[1,1]}, flowers_y:{herb:[1,2]}, flowers_p:{herb:[1,2]}, flowers_r:{herb:[0,1]}, grass:{fiber:[0,1]}, grass_tall:{fiber:[1,2]}, fern:{fiber:[1,2]}, rock:{stone:[1,3]}, mushrooms:{herb:[0,1], berry:[0,1]}, log:{wood:[1,2]}, stump:{wood:[0,1]}};
 function gather(o){
   sfx('pick', o.x, o.y, 0.7);
   var d = DROPS[o.nm] || {}, any = false, k; for (k in d){ var n = d[k][0] + Math.floor(Math.random()*(d[k][1] - d[k][0] + 1)); if (n > 0){ inv[k] += n; feed('+' + n + ' ' + ITEMS[k][0], ITEMS[k][1]); any = true; } }

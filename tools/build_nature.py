@@ -21,10 +21,14 @@ FALL = set(FALLM)
 PLANTS = {'bush': ('bush', 1.3), 'bush_small': ('bush_small', 0.8), 'shrub': ('shrub', 1.1), 'flowers_y': ('flowers_yellow', 0.35),
           'flowers_p': ('flowers_purple', 0.35), 'flowers_r': ('flowers_red', 0.35), 'grass': ('grass_tuft', 0.35), 'grass_tall': ('grass_tall', 0.6),
           'fern': ('fern', 0.6), 'rock': ('rock', 0.45), 'mushrooms': ('mushrooms', 0.2), 'log': ('fallen_log', 0.45), 'stump': ('stump', 0.5)}
+# 0.98.0: the woods pack's forest floor, at the size the pack made them (height 0 = keep it)
+for _n in ('fern_a', 'fern_b', 'mayapple', 'wildflower_a', 'wildflower_b', 'wildflower_c', 'mushrooms', 'toadstool_ring', 'bracket_fungus', 'thicket_a', 'thicket_b', 'berry_bush',
+           'sumac', 'sapling', 'log_hollow', 'log_mossy', 'stump_big', 'root_ball', 'brush_pile', 'snag_a', 'snag_b', 'boulder_moss', 'boulder_cluster'):
+    PLANTS['w_' + _n] = ('w_' + _n, 0)
 def model(name, height, sp=None, fall=False, var=''):
     """the shaped model's triangles, scaled so its top is `height` metres, standing on y = 0"""
     rows = SH[(FALLM[sp] if fall else name) + var]; tris = [(np.array(r[:9], float).reshape(3, 3), tuple(r[9:12])) for r in rows]
-    y0 = min(p[:, 1].min() for p, _ in tris); k = height/(max(p[:, 1].max() for p, _ in tris) - y0)
+    y0 = min(p[:, 1].min() for p, _ in tris); k = height/(max(p[:, 1].max() for p, _ in tris) - y0) if height else 1
     return [((p - np.array([0, y0, 0]))*k, c) for p, c in tris]
 def pack(tris):
     vd, td = [], []

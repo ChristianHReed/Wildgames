@@ -158,6 +158,8 @@ function drawSky(md, f, sv, u, hour, dk, tz){
 }
 function mul(a, b){ var o = new Float32Array(16); for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++){ var s = 0; for (var k = 0; k < 4; k++) s += a[k*4+r]*b[c*4+k]; o[c*4+r] = s; } return o; }
 /* ---- nature models: Quaternius "Stylized Nature MegaKit" (CC0), converted by tools/build_nature.py. Each is one ready mesh, drawn wherever needed. ---- */
+/* 0.98.0: the forest floor, from the content chat's woods pack: ferns, flowers, thickets and fungus, with one dead piece (log, stump, brush, root ball, snag) in five */
+var FOREST_FLOOR = ['fern', 'w_fern_a', 'w_fern_b', 'w_mayapple', 'shrub', 'w_thicket_a', 'w_thicket_b', 'w_berry_bush', 'w_sumac', 'w_sapling', 'mushrooms', 'w_mushrooms', 'w_wildflower_a', 'w_wildflower_b', 'w_toadstool_ring', 'w_boulder_moss', 'rock', 'fern', 'w_fern_a', 'w_mayapple', 'w_wildflower_c', 'w_thicket_a', 'w_berry_bush', 'w_fern_b', 'mushrooms', 'shrub', 'w_log_mossy', 'w_log_hollow', 'w_stump_big', 'w_brush_pile', 'w_root_ball', 'w_snag_a', 'w_snag_b', 'fern', 'w_boulder_cluster', 'log'];
 var IMPR = null, IMPT = {}, NAT = {}, TREES = ['oak', 'maple', 'sycamore', 'poplar', 'pine', 'cedar'], hiTrees = [], clutter = [], clutKey = '', natT = 0;
 function loadNature(){
   var t = (ART.nature || '').trim(), nl = t.indexOf('\n'); if (nl < 0) return;
@@ -176,7 +178,7 @@ function loadNature(){
 }
 /* choose which trees are close enough to draw in full, and scatter small plants on the mapped green areas around you */
 /* plant regrow time (s) and names */
-var REGROW = 1500, PNAME = {bush:'the bush', bush_small:'the bush', shrub:'the shrub', flowers_y:'the flowers', flowers_p:'the flowers', flowers_r:'the flowers', grass:'the grass', grass_tall:'the tall grass', fern:'the fern', rock:'the rock', mushrooms:'the mushrooms', log:'the fallen log', stump:'the stump'};
+var REGROW = 1500, PNAME = {bush:'the bush', bush_small:'the bush', shrub:'the shrub', flowers_y:'the flowers', flowers_p:'the flowers', flowers_r:'the flowers', grass:'the grass', grass_tall:'the tall grass', fern:'the fern', rock:'the rock', mushrooms:'the mushrooms', log:'the fallen log', stump:'the stump', w_fern_a:'the fern', w_fern_b:'the fern', w_mayapple:'the mayapple', w_wildflower_a:'the flowers', w_wildflower_b:'the flowers', w_wildflower_c:'the flowers', w_mushrooms:'the mushrooms', w_toadstool_ring:'the toadstools', w_thicket_a:'the thicket', w_thicket_b:'the thicket', w_berry_bush:'the berry bush', w_sumac:'the sumac', w_sapling:'the sapling', w_log_hollow:'the hollow log', w_log_mossy:'the mossy log', w_stump_big:'the stump', w_root_ball:'the root ball', w_brush_pile:'the brush pile', w_snag_a:'the dead tree', w_snag_b:'the dead tree', w_boulder_moss:'the mossy rock', w_boulder_cluster:'the rocks'};
 function manageNature(){
   if (!NAT.pine || !world.gl.trees) return;
   var R = QS.treeR, cand = [], dirty = {}, i, k;
@@ -186,13 +188,13 @@ function manageNature(){
   hiTrees.concat(next).forEach(function(tr){ if (!!tr.hi !== !!tr.hi2){ tr.hi = tr.hi2; dirty[tr.tk] = 1; } });
   hiTrees = next; for (k in dirty) treeTile(+k);
   var cs = 12, cx0 = Math.floor(P.x/cs), cy0 = Math.floor(P.y/cs), key = cx0 + ',' + cy0 + ',' + world.name; if (key === clutKey) return; clutKey = key; clutter = [];
-  var rc = Math.ceil(QS.clutR/cs), A = world.areas, pick = {grass:['grass', 'grass_tall', 'flowers_y', 'flowers_p', 'grass'], park:['flowers_r', 'bush_small', 'grass', 'bush', 'flowers_y'], forest:['fern', 'shrub', 'rock', 'mushrooms', 'log']}, SC = {};
+  var rc = Math.ceil(QS.clutR/cs), A = world.areas, pick = {grass:['grass', 'grass_tall', 'flowers_y', 'flowers_p', 'grass'], park:['flowers_r', 'bush_small', 'grass', 'bush', 'flowers_y'], forest:FOREST_FLOOR}, SC = {};
   for (var cy = cy0 - rc; cy <= cy0 + rc; cy++) for (var cx = cx0 - rc; cx <= cx0 + rc; cx++) for (i = 0; i < 4; i++){
     var x = (cx + hash(cx, cy, 70 + i))*cs, y = (cy + hash(cx, cy, 80 + i))*cs, d = Math.hypot(x - P.x, y - P.y); if (d > QS.clutR) continue;
     var kind = coverKind(x, y);
     if (!kind || blocked(x, y) || inWater(x, y, 0.3) || (world.roadOk && !world.roadOk(x, y, 0.8))) continue;
     var pkk = cx + ':' + cy + ':' + i, pkt = world.edits.picked[pkk]; if (pkt !== undefined && time - pkt < REGROW) continue;
-    var nm = pick[kind][Math.floor(hash(cx, cy, 90 + i)*5)], vr = Math.floor(hash(cx, cy, 97 + i)*3); var vn = vr && NAT[nm + (vr === 1 ? '_b' : '_c')] ? nm + (vr === 1 ? '_b' : '_c') : nm; clutter.push({plant:true, key:pkk, nm:nm, name:PNAME[nm], d:d, m:NAT[vn], x:x, y:y, gy:hAt(x, y), yw:hash(cx, cy, 95 + i)*6.283, sc:(SC[nm] || 1)*(0.75 + hash(cx, cy, 99 + i)*0.5)});
+    var nm = pick[kind][Math.floor(hash(cx, cy, 90 + i)*pick[kind].length)], vr = Math.floor(hash(cx, cy, 97 + i)*3); var vn = vr && NAT[nm + (vr === 1 ? '_b' : '_c')] ? nm + (vr === 1 ? '_b' : '_c') : nm; clutter.push({plant:true, key:pkk, nm:nm, name:PNAME[nm], d:d, m:NAT[vn], x:x, y:y, gy:hAt(x, y), yw:hash(cx, cy, 95 + i)*6.283, sc:(SC[nm] || 1)*(0.75 + hash(cx, cy, 99 + i)*0.5)});
   }
   clutter.sort(function(a, b){ return a.d - b.d; }); clutter.length = Math.min(clutter.length, QS.clutN);
 }
