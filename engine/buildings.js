@@ -547,16 +547,21 @@ function placeDress(g){
   });
   /* 0.114.0: farmland (landuse=farmland) is laid with the farm pack's crop tiles in 4 m squares, one crop to a field with the rows running the same way, and round bales on the bare ones.
      The tiles nearest the start are kept (1800 in all), so the fields you meet are full rather than thinly spread over the whole map. */
-  if (spB('fm.crop_corn')){ var fmT = [], sp0 = w.spawn || {x:0, y:0};
+  if (spB('fm.crop_corn')){ var fmT = [], sp0 = w.spawn || w.start || {x:0, y:0};
     w.areas.forEach(function(ar, ai){
       if (ar.lu !== 'farmland' || ar.pts.length < 6) return; var bw = ar.maxx - ar.minx, bh = ar.maxy - ar.miny; if (bw*bh > 4e6 || bw*bh < 400) return;
       var h = hash(ai, 71, 9), cr = h < 0.3 ? 'crop_corn' : h < 0.52 ? 'crop_wheat' : h < 0.74 ? 'crop_soy' : h < 0.84 ? 'crop_ploughed' : h < 0.92 ? 'crop_stubble' : 'crop_harvested', ya = hash(ai, 72, 9) < 0.5 ? 0 : Math.PI/2, x, y;
       for (x = ar.minx + 2; x < ar.maxx; x += 4) for (y = ar.miny + 2; y < ar.maxy; y += 4){
         if (!pip(ar.pts, x, y) || !pip(ar.pts, x + 2.1, y) || !pip(ar.pts, x - 2.1, y) || !pip(ar.pts, x, y + 2.1) || !pip(ar.pts, x, y - 2.1)) continue;
-        fmT.push([Math.hypot(x - sp0.x, y - sp0.y), cr, x, y, ya]); } });
+        fmT.push([Math.hypot(x - sp0.x, y - sp0.y), cr, x, y, ya, ai]); } });
     fmT.sort(function(a, b){ return a[0] - b[0]; });
-    for (var fi = 0, fk = 0; fi < fmT.length && fk < 1800; fi++){ var ft = fmT[fi]; if (!ok(ft[2], ft[3], 0.5)) continue; add('fm.' + ft[1], ft[2], ft[3], ft[4], 1e6); fk++;
+    var fmF = {}; for (var fi = 0, fk = 0; fi < fmT.length && fk < 1800; fi++){ var ft = fmT[fi]; if (!ok(ft[2], ft[3], 0.5)) continue; add('fm.' + ft[1], ft[2], ft[3], ft[4], 1e6); fk++; fmF[ft[5]] = (fmF[ft[5]] || 0) + 1;
       if ((ft[1] === 'crop_stubble' || ft[1] === 'crop_harvested') && hash(Math.round(ft[2]), Math.round(ft[3]), 73) < 0.03) add('fm.bale_round', ft[2], ft[3], hash(Math.round(ft[2]), Math.round(ft[3]), 74)*6.28, 1e6); } }
+    /* 0.114.1: fields with enough crop get a wire fence round the edge (4 m a piece, left open where a road or building is) and a scarecrow in the middle of a few */
+    if (spB('fm.fence_wire_4')){ var fnc = 0; w.areas.forEach(function(ar, ai){ if (!fmF[ai] || fmF[ai] < 12 || fnc > 700) return; var pt = ar.pts, np = pt.length/2, q;
+      for (q = 0; q < np; q++){ var p0 = {x:pt[q*2], y:pt[q*2+1]}, p1 = {x:pt[((q + 1) % np)*2], y:pt[((q + 1) % np)*2+1]}, ex = p1.x - p0.x, ey = p1.y - p0.y, L = Math.hypot(ex, ey), n = Math.floor(L/4), m; if (L < 4) continue; ex /= L; ey /= L;
+        for (m = 0; m < n; m++){ var fx = p0.x + ex*(m*4 + 2), fy = p0.y + ey*(m*4 + 2); if (!ok(fx, fy, 0.4)) continue; add(hash(ai, q*50 + m, 75) < 0.04 ? 'fm.fence_rail_gap' : 'fm.fence_wire_4', fx, fy, Math.atan2(-ey, ex), 1e6); fnc++; } }
+      if (hash(ai, 76, 9) < 0.35){ var sx = (ar.minx + ar.maxx)/2, sy = (ar.miny + ar.maxy)/2; if (pip(ar.pts, sx, sy) && ok(sx, sy, 0.5)) add('fm.scarecrow', sx, sy, hash(ai, 77, 9)*6.28, 1e6); } }); }
   /* 0.114.0: the content chat's roadside pack: a fuel station's pumps stand under a canopy in front of the shop, and bus stops get a shelter */
   if (spB('rs.canopy_flat')) w.buildings.forEach(function(b, bi){
     if (b.kind !== 'fuel' || !b.door || b.gone) return; var d = b.door, tx = -d.ny, ty = d.nx, o = 8, cx = d.x - d.nx*o, cy = d.y - d.ny*o, ya = Math.atan2(-d.nx, -d.ny), cn = hash(bi, 41, 8) < 0.3 ? 'rs.canopy_vee' : 'rs.canopy_flat';
