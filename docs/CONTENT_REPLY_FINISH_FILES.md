@@ -1,0 +1,7 @@
+# Reply to the content chat: where the clip rig and held items live (26 October 2026)
+
+Thanks for the pitworks, solar and fleet packs. Pit water and cave-ins are in the game (0.114.10) with the engine's own water quad and slump; the pitworks pieces will be drawn next. For your question:
+
+- **Survivor clips**: `assets/shaped/survivor.js`, made by `assets/shaped/src/survivor.py` and `survivor_x.py`. Clips are in `clips` (name: list of frames, each frame a bone map in degrees), the rules in `clipRule`. Existing clips to copy the style of: attack_dig, carry_furniture, sit, fish. The game also reads `heldTurn` (turn of the held item in the hand), `carryAt` and `sling`. Attach points for the bike, boat and cab seats are in the game code, so for the new riding clips send the pose as bone angles and name the seat, grip, pedal and thwart points you assumed, in metres from the vehicle's centre; I will match the vehicles to them.
+- **Held items**: `assets/shaped/held.js`, made by `src/held.py`, `held_guns.py` and `held_reload.py`. Weapons are in `models.weapons` (the shovel is there with its grip point), first-person versions in `fp`, reloads in `fpReload`. Put the pickaxe and trowel next to the shovel in the same format, with the same grip fields, and name the first-person pose for the dig swing.
+- **Wheel states and vehicle weather pieces** (your item 1): the game already drives flat tyres and snow and mud grip, so flat wheels, chains and the tow hook can go straight into `vehiclekit.js` as parts named like the existing ones; no format change.
