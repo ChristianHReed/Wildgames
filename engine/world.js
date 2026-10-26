@@ -212,6 +212,7 @@ function buildWorld(raw, name){
   raw.ways.forEach(function(way, wayIx){
     var t = way.tags || {}, cs = way.c; if (!cs || cs.length < 2) return;
     var closed = cs.length >= 4 && same(cs[0], cs[cs.length-1]), pts = proj(cs);
+    (w.wpts = w.wpts || {})[wayIx] = pts; w.ll = [lon0, lat0, kx, ky];
     if (closed && t.building && t.building !== 'no'){
       pts.length -= 2; var ar = 0, cx = 0, cy = 0, n = pts.length;
       for (i = 0; i < n; i += 2){ var j = (i+2) % n; ar += pts[i]*pts[j+1] - pts[j]*pts[i+1]; cx += pts[i]; cy += pts[i+1]; }
@@ -412,6 +413,41 @@ function bridgeBuild(g){
   g.pl = null; DK = segs; DKG = new Map();
   segs.forEach(function(sg, i){ var x0 = Math.floor((Math.min(sg.x0, sg.x1) - sg.hw)/16), x1 = Math.floor((Math.max(sg.x0, sg.x1) + sg.hw)/16), y0 = Math.floor((Math.min(sg.y0, sg.y1) - sg.hw)/16), y1 = Math.floor((Math.max(sg.y0, sg.y1) + sg.hw)/16);
     for (var cy = y0; cy <= y1; cy++) for (var cx = x0; cx <= x1; cx++){ var k = gk(cx, cy), l = DKG.get(k); if (!l) DKG.set(k, l = []); l.push(i); } });
+}
+/* 0.97.0: the structures pack (assets/shaped/structures.js) drawn where the map's `structures` list says: tunnel portals, culvert headwalls, dams,
+   weirs, locks, piers, breakwaters, retaining walls and fords. Bridges keep the engine's own deck. Pieces run along +z and are laid by the way's bearing */
+var STM = null;
+function structModels(){
+  if (STM) return STM; STM = {}; var S = window.SHAPED && SHAPED.structures; if (!S || typeof spModel !== 'function') return STM;
+  var col = spColour(S.palette), m = S.models.structures; for (var k in m) STM[k] = spModel(m[k], col); return STM;
+}
+function structBuild(g){
+  var w = world, L = w.structures, M = structModels(); if (!L || !L.length || !M.dam_end_wall) return; var n = 0;
+  var put = function(nm, x, z, dx, dz, sy){ var m = M[nm]; if (!m) return; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), y0 = hAt(x, z), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
+    for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3], lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sy; q[j*3 + 2] = z + sn*lx + cs*lz; }
+      g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } n++; };
+  g.pl = null;
+  L.forEach(function(e){ try {
+    var P = w.wpts && w.wpts[e.w]; if (!P || P.length < 4) return;
+    var LL = w.ll, cx = (e.lon - LL[0])*LL[2], cy = -(e.lat - LL[1])*LL[3], best = 1e9, bq = 0, q;
+    for (q = 0; q + 3 < P.length; q += 2){ var sx = P[q+2] - P[q], sy2 = P[q+3] - P[q+1], sl = sx*sx + sy2*sy2 || 1, tt = Math.max(0, Math.min(1, ((cx - P[q])*sx + (cy - P[q+1])*sy2)/sl)), d = Math.hypot(P[q] + sx*tt - cx, P[q+1] + sy2*tt - cy); if (d < best){ best = d; bq = q; } }
+    if (best > 40) return;
+    var ux = P[bq+2] - P[bq], uy = P[bq+3] - P[bq+1], ul = Math.hypot(ux, uy) || 1; ux /= ul; uy /= ul;
+    var len = Math.max(4, Math.min(240, e.len || 12)), k = e.k, road = null, ri;
+    for (ri = 0; ri < w.roads.length; ri++) if (w.roads[ri].wi === e.w){ road = w.roads[ri]; break; }
+    var row = function(nm, sy, span, nx, ny, off){ var cnt = Math.min(60, Math.max(1, Math.ceil(span/4))); for (var i = 0; i < cnt; i++){ var o = (i - (cnt - 1)/2)*4; put(nm, cx + nx*o + (off ? -ny*off : 0), cy + ny*o + (off ? nx*off : 0), nx, ny, sy); } };
+    if (k === 'tunnel'){ var pk = road && road.kind === 'rail' ? 'portal_rail' : road && road.kind === 'path' ? 'portal_path' : 'portal_road';
+      put(pk, cx - ux*len/2, cy - uy*len/2, ux, uy, 1); put(pk, cx + ux*len/2, cy + uy*len/2, -ux, -uy, 1); }
+    else if (k === 'culvert'){ var hb = road && road.w > 3 ? 'culvert_headwall_box' : 'culvert_headwall_pipe', hl = Math.max(4, len/2 + 2);
+      put(hb, cx - ux*hl, cy - uy*hl, ux, uy, 1); put(hb, cx + ux*hl, cy + uy*hl, -ux, -uy, 1); }
+    else if (k === 'dam'){ var hh = Math.max(2, Math.min(20, e.h || 8)), nm = (e.mat === 'concrete' || (e.t && /concrete/.test(e.t)) ? 'dam_concrete' : 'dam_earth') + (e.road ? '_road_h8' : '_h8');
+      if (!M[nm]) nm = 'dam_earth_h8'; row(nm, hh/8, len, ux, uy); put('dam_end_wall', cx - ux*len/2, cy - uy*len/2, ux, uy, hh/8); put('dam_end_wall', cx + ux*len/2, cy + uy*len/2, ux, uy, hh/8); }
+    else if (k === 'weir' || k === 'lock' || k === 'gate'){ var rw = road ? road.w : 6; row(k === 'weir' ? 'weir_step' : 'lock_gate_open', 1, rw + 2, -uy, ux); }
+    else if (k === 'pier'){ row('pier_deck', 1, len, ux, uy); put('pier_end', cx + ux*len/2, cy + uy*len/2, ux, uy, 1); }
+    else if (k === 'breakwater'){ row('breakwater_mound_h3', Math.max(0.5, (e.h || 3)/3), len, ux, uy); }
+    else if (k === 'wall'){ row('retaining_wall_unit', Math.max(0.4, Math.min(8, e.h || 1.5)), len, ux, uy); }
+    else if (k === 'ford'){ row('ford_slab', 1, len, ux, uy); }
+  } catch (er){ console.log('structure', er); } });
 }
 /* the deck under (x, y) nearest the height hint (within 2.6 m), or the highest raised one for hint 'hi'; null when none */
 function deckHit(x, y, hint){

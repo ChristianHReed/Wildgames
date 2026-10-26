@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 26 October 2026, at version 0.96.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 26 October 2026, at version 0.97.0. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -138,6 +138,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.93.1 | Offline list: the five open-source libraries the Maps Builder 1.1.0 loads (`builder/lib/*.js`) are saved with the rest, so the builder works offline from the website. |
 | 0.94.0 | Unused art packs removed: the Quaternius creatures and people models, the people texture, the unused Kenney furniture, car and box models and the old wheels of the replaced cars (several MB smaller; `?oldppl` is gone and `?oldart` now only affects held items). What is left on third-party art is listed for the content chat in `docs/ART_REQUESTS.md` section 12. |
 | 0.94.1 | For Maps Builder 1.2.0: `spB`, `bkMod`, `segX` and `segsX` (with their caches) moved from `play.html` into `engine/interiors.js`; `wx`, `lamps`, `fires` and `dark` added to the host contract in `engine/README.md`; `builder/host.js` and `builder/view3d.js` added to `STATIC` in `sw.js`. |
+| 0.97.0 | The content chat's structures pack is in the game. Entries from the map's `structures` list now draw: tunnel portals at both ends, culvert headwalls, dams (earth or concrete, with end walls, scaled to `h`), weirs, locks and gates, piers, breakwaters, retaining walls and fords. Bridges keep the engine's own deck for now. Nothing here blocks walking yet. |
 | 0.96.2 | Tunnels. A `tunnel` entry on a road, path or rail removes the surface (and kerb) near its point for its length, so the ground carries on overhead. No portal faces yet. |
 | 0.96.1 | Culverts. A `culvert` entry (builder 1.6) removes the water ribbon over its stretch of stream and the water from the walk grid, so a stream that runs under a road or building has no stream drawn on top and you can cross it. Culvert and structure data are found by the entry's point and length on the waterway. |
 | 0.96.0 | Bridges follow the map. `structures` (Maps Builder 1.6) are carried through `fromCompact` into `world.structures`, roads remember their way number (`wi`), and an `overpass` entry decides which road goes over which, with its clearance `cl` (6 to 24 m): an interstate mapped as the bridge over a street no longer gets the street raised. Pairs with no entry keep the old rule. `builder/structures.js` is in the offline list. Not yet: tunnels, culverts, dams, weirs, piers, deck heights by level (see docs/MAP_STRUCTURES.md section 5). |
@@ -155,7 +156,7 @@ Rewritten at 0.95.1: almost every step in the old list shipped (see "Done so far
 | What | Detail | Needs |
 | --- | --- | --- |
 | Real-device testing | Everything since 0.4 has been tested in a desktop browser only. USB and SSD drive, iPhone and iPad, offline play and the offline website copy | You, and bug reports |
-| Structures | Tunnel portals, dams and weirs, piers and breakwaters, retaining walls, fords, deck heights by level and per-bridge piers, from `world.structures` | None |
+| Structures | Bridge decks and piers from the pack, blocking for dams and walls, spillways, suspension cables; was: dams and weirs, piers and breakwaters, retaining walls, fords, deck heights by level and per-bridge piers, from `world.structures` | None |
 | Courtyards | `holes` in map squares (format 2) are read but drawn as solid buildings: cut them from roofs, floors and wall rings, and let you walk in | None |
 | Maps Builder, game side | Read the game layer from a map (start, safe house, zones, nests, loot, traders, scenarios); load models carried in a map; retire the in-game map maker once builder v1 is trusted; use `building:material` for walls; a 5 m ground option in the quality menu; vehicles in the engine so the builder's walk mode can drive | Map chat agrees the formats |
 | Multiplayer gaps | Guests see the host's alien awareness and the stalker trail; car customisations and flags sync to other players; seeing other players' survivors | None |

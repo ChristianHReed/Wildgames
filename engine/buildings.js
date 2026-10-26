@@ -594,6 +594,7 @@ function prep3D(){
   });
   g.pl = null; if (w.hg) drape(g, 0.05);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
+  try { structBuild(g); } catch (er){ console.log('structures', er); }
   w.buildings.forEach(function(b){
     b.base = 0; b.low = 0;
     if (w.hg){ var hi = hAt(b.cx, b.cy), lo = hi; for (var q = 0; q < b.pts.length; q += 2){ var hq = hAt(b.pts[q], b.pts[q+1]); if (hq > hi) hi = hq; if (hq < lo) lo = hq; } b.base = hi + 0.04; b.low = lo; }

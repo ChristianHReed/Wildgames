@@ -65,3 +65,7 @@ Done: `builder/structures.js` is in `STATIC`; `structures` is carried through `f
 ## Tunnels (game 0.96.2)
 
 `tunnel` entries on roads, paths and rails now draw no surface along their `len` around `lon`/`lat`. Portal faces are not drawn yet. Next: dams and weirs.
+
+## Structures art in the game (0.97.0)
+
+The game now loads `assets/shaped/structures.js` and draws tunnel portals, culvert headwalls, dams, weirs, locks, piers, breakwaters, walls and fords from the `structures` list (placed on the way `w` nearest the entry's `lon`/`lat`, along its `len`). To see them in the builder's 3D view, add `shaped/structures` to the art list in `builder/view3d.js` (your file). Not yet: bridge decks from the pack, collision for dams and walls, spillways.
