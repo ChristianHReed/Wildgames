@@ -433,7 +433,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.7</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.8</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -456,7 +456,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.7', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.8', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3935,7 +3935,7 @@ function makeVehicles(saved){
         list.push({veh:true, id:'o' + ai + '_' + q2, t:0, boat:bk2, name:'the ' + bk2.replace(/_/g, ' '), x:bx, y:by, yaw:hash(ai, q2, 73)*6.28, fuel:0}); nbo++; } });
   } catch (eb){ console.log('boats', eb); }
   /* 0.108.0: a bicycle dropped by a door, a motorbike crashed at the kerb: scenery from the bikes pack */
-  try { w.bscen = []; w.buildings.forEach(function(b){ if (!b.door || b.gone) return; var h2 = hash(b.id, 23, 6); if (h2 > 0.09) return; var d = b.door, tx = -d.ny, ty = d.nx, k2 = h2 < 0.05 ? 'fallen_bicycle' : 'wrecked_motorbike', x = d.x + d.nx*(k2 === 'fallen_bicycle' ? 3.2 : 8) + tx*(1.5 + hash(b.id, 24, 6)*3), y = d.y + d.ny*(k2 === 'fallen_bicycle' ? 3.2 : 8) + ty*(1.5 + hash(b.id, 24, 6)*3); if (!circ(x, y, 1)) w.bscen.push({k:k2, x:x, y:y, yaw:hash(b.id, 25, 6)*6.28}); });
+  try { w.bscen = []; w.buildings.forEach(function(b){ if (!b.door || b.gone) return; var h2 = hash(b.id, 23, 6); if (h2 > 0.09) return; var d = b.door, tx = -d.ny, ty = d.nx, k2 = h2 < 0.05 ? 'fallen_bicycle' : 'wrecked_motorbike', x = d.x + d.nx*(k2 === 'fallen_bicycle' ? 3.2 : 8) + tx*(1.5 + hash(b.id, 24, 6)*3), y = d.y + d.ny*(k2 === 'fallen_bicycle' ? 3.2 : 8) + ty*(1.5 + hash(b.id, 24, 6)*3); if (!circ(x, y, 1)) w.bscen.push({k:k2, x:x, y:y, yaw:hash(b.id, 25, 6)*6.28}); if (k2 === 'fallen_bicycle' && hash(b.id, 26, 6) < 0.5) w.crates.push({x:x, y:y, cat:'house', name:'the bag on a fallen bicycle', looted:false, rolls:1, time:0.8}); });
   } catch (es){ console.log('scen', es); }
   /* 0.105.0: working diggers parked beside some industrial buildings */
   try { var nm2 = 0; w.buildings.forEach(function(b){ if (nm2 >= 14 || !b.door || b.gone || b.cat !== 'industrial' || hash(b.id, 21, 6) > 0.12) return; var d = b.door, tx = -d.ny, ty = d.nx, x = d.x + d.nx*7 + tx*3, y = d.y + d.ny*7 + ty*3, mk = hash(b.id, 22, 6) < 0.5 ? 'mini_excavator' : 'excavator';
