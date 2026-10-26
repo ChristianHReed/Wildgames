@@ -585,12 +585,12 @@ function prep3D(){
     }
     if (hw >= 1.5){ g.pl = [lanes ? TX.asphalt : tile, 0.25]; for (q = 2; q < p.length - 2; q += 2) if (!inGap(q) && !inGap(q - 2)) for (var k = 0; k < 6; k++){ var a0 = k*1.0472, a1 = a0 + 1.0472; g.tri(p[q], y - 0.004, p[q+1], p[q] + Math.cos(a0)*hw, y - 0.004, p[q+1] + Math.sin(a0)*hw, p[q] + Math.cos(a1)*hw, y - 0.004, p[q+1] + Math.sin(a1)*hw, col, 255); } }
   };
-  w.roads.forEach(function(r){ if (r.kind === 'road' && r.w >= 6) ribbon(r.pts, r.w/2 + 2, 0.062, TX.sidewalk, WHITE, false, r.gap); });
+  w.roads.forEach(function(r){ if (r.kind === 'road' && r.w >= 6) ribbon(r.pts, r.w/2 + 2, 0.062, TX.sidewalk, WHITE, false, r.tun ? (r.gap || []).concat(r.tun) : r.gap); });
   w.roads.forEach(function(r){
     if (r.kind === 'water') ribbon(r.pts, r.w/2, 0.05, TX.water, WHITE, false, r.cul);
-    else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false);
-    else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false); }
-    else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8, r.gap);
+    else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false, r.tun);
+    else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false, r.tun); }
+    else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap);
   });
   g.pl = null; if (w.hg) drape(g, 0.05);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }

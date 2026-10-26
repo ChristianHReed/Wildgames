@@ -226,7 +226,7 @@ function buildWorld(raw, name){
     if (closed && (t.place === 'square' || (t.highway === 'pedestrian' && pts.length >= 8) || (t.name && /\b(square|plaza)\b/i.test(t.name) && !t.building))){ var sq = bbox({pts:pts}); (w.squares = w.squares || []).push({x:(sq.minx + sq.maxx)/2, y:(sq.miny + sq.maxy)/2, r:Math.hypot(sq.maxx - sq.minx, sq.maxy - sq.miny)/2, name:t.name || ''}); }
     if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx})); return; }
     if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water', wi:wayIx})); return; }
-    if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail'})); return; }
+    if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail', wi:wayIx})); return; }
     if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k})); } }
   });
   if (!w.buildings.length && !w.roads.length) throw new Error('This file has no buildings or roads. Try exporting a built-up area.');
@@ -239,6 +239,11 @@ function buildWorld(raw, name){
     var cx = (e.lon - lon0)*kx, cy = -(e.lat - lat0)*ky, hl = Math.max(4, (e.len || 12)/2 + 2), i0 = -1, i1 = -1;
     for (var q = 0; q + 3 < r.pts.length; q += 2){ var sx = r.pts[q+2] - r.pts[q], sy = r.pts[q+3] - r.pts[q+1], sl = sx*sx + sy*sy || 1, tt = Math.max(0, Math.min(1, ((cx - r.pts[q])*sx + (cy - r.pts[q+1])*sy)/sl)); if (Math.hypot(r.pts[q] + sx*tt - cx, r.pts[q+1] + sy*tt - cy) <= hl){ if (i0 < 0) i0 = q; i1 = q; } }
     if (i0 >= 0) (r.cul = r.cul || []).push([i0, i1]); });
+  /* 0.96.2: a `tunnel` entry on a road or rail: the stretch near its point draws no surface (the ground carries on overhead) */
+  (w.structures || []).forEach(function(e){ if (e.k !== 'tunnel') return; var r = null; for (var ri = 0; ri < w.roads.length; ri++) if (w.roads[ri].kind !== 'water' && w.roads[ri].wi === e.w){ r = w.roads[ri]; break; } if (!r) return;
+    var cx = (e.lon - lon0)*kx, cy = -(e.lat - lat0)*ky, hl = Math.max(6, (e.len || 20)/2), i0 = -1, i1 = -1;
+    for (var q = 0; q + 3 < r.pts.length; q += 2){ var sx = r.pts[q+2] - r.pts[q], sy = r.pts[q+3] - r.pts[q+1], sl = sx*sx + sy*sy || 1, tt = Math.max(0, Math.min(1, ((cx - r.pts[q])*sx + (cy - r.pts[q+1])*sy)/sl)); if (Math.hypot(r.pts[q] + sx*tt - cx, r.pts[q+1] + sy*tt - cy) <= hl){ if (i0 < 0) i0 = q; i1 = q; } }
+    if (i0 >= 0) (r.tun = r.tun || []).push([i0, i1]); });
   /* street names (0.49.1): the map pack names no roads, so each road takes the street its addressed neighbours say they are on */
   (function(){
     var rs = w.roads.filter(function(r){ return r.kind === 'road' && r.w >= 6; }), votes = new Map();

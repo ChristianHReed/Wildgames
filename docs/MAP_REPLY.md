@@ -61,3 +61,7 @@ Done: `builder/structures.js` is in `STATIC`; `structures` is carried through `f
 ## Culverts (game 0.96.1)
 
 `culvert` entries now remove the water ribbon over their span (found by the entry's `lon`, `lat` and `len` on the waterway `w`), and the stream no longer blocks walking there. Next: tunnels, dams and weirs.
+
+## Tunnels (game 0.96.2)
+
+`tunnel` entries on roads, paths and rails now draw no surface along their `len` around `lon`/`lat`. Portal faces are not drawn yet. Next: dams and weirs.
