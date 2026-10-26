@@ -207,7 +207,7 @@ function buildWorld(raw, name){
     minx:(a-lon0)*kx, maxx:(b-lon0)*kx, miny:-(d-lat0)*ky, maxy:-(c-lat0)*ky,
     start:raw.spawn ? {x:(raw.spawn[0]-lon0)*kx, y:-(raw.spawn[1]-lat0)*ky} : {x:0, y:0}, pin:!!raw.pin};
   w.geo = {lon0:lon0, lat0:lat0, kx:kx, ky:ky}; w.core = Z ? {x0:(Z.w - lon0)*kx, x1:(Z.e - lon0)*kx, y0:-(Z.n - lat0)*ky, y1:-(Z.s - lat0)*ky} : null;
-  buildHeights(w, raw, lon0, lat0, kx, ky); w.tcls = decodeCls(raw.tclass, lon0, lat0, kx, ky);
+  w.structures = raw.structures || []; buildHeights(w, raw, lon0, lat0, kx, ky); w.tcls = decodeCls(raw.tclass, lon0, lat0, kx, ky);
   var holesOf = {}; (raw.holes || []).forEach(function(h){ if (h && h.length === 2 && h[1] && h[1].length >= 6){ var hp = []; for (var hq = 0; hq + 1 < h[1].length; hq += 2) hp.push((h[1][hq] - lon0)*kx, -(h[1][hq+1] - lat0)*ky); (holesOf[h[0]] = holesOf[h[0]] || []).push(hp); } });
   raw.ways.forEach(function(way, wayIx){
     var t = way.tags || {}, cs = way.c; if (!cs || cs.length < 2) return;
@@ -224,7 +224,7 @@ function buildWorld(raw, name){
       return;
     }
     if (closed && (t.place === 'square' || (t.highway === 'pedestrian' && pts.length >= 8) || (t.name && /\b(square|plaza)\b/i.test(t.name) && !t.building))){ var sq = bbox({pts:pts}); (w.squares = w.squares || []).push({x:(sq.minx + sq.maxx)/2, y:(sq.miny + sq.maxy)/2, r:Math.hypot(sq.maxx - sq.minx, sq.maxy - sq.miny)/2, name:t.name || ''}); }
-    if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || ''})); return; }
+    if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx})); return; }
     if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water'})); return; }
     if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail'})); return; }
     if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k})); } }
@@ -346,8 +346,18 @@ function bridgeScan(w){
     for (s = 0; s <= L + 3; s += 3){ var pt = roadPt(r, Math.min(s, L)), wet = s <= L && inWater(pt[0], pt[1], 0.4);
       if (wet && run < 0) run = s;
       if (!wet && run >= 0){ var e = s - 3; if (e - run >= 7 && e - run < 160){ var a = Math.max(0, run - 6), b = Math.min(L, e + 6), pa = roadPt(r, a), pb = roadPt(r, b); add(ri, a, b, hAt(pa[0], pa[1]) + 0.45, hAt(pb[0], pb[1]) + 0.45, 22, 1); } run = -1; } } });
+  /* 0.96.0: the map says which way goes over (builder 1.6 `structures`): an `overpass` entry has `w` over `u`, with the clearance `cl`. Pairs that have an entry are decided by it, not by the road class */
+  var byWay = {}, told = {}; w.roads.forEach(function(r, ri){ if (r.wi !== undefined) byWay[r.wi] = ri; });
+  (w.structures || []).forEach(function(e){ if (e.k !== 'overpass' && e.k !== 'underpass') return; var a = byWay[e.w], b = byWay[e.u]; if (a === undefined || b === undefined) return; told[a + ':' + b] = told[b + ':' + a] = 1;
+    if (e.k !== 'overpass') return; var O = w.roads[a], U = w.roads[b]; if (O.kind !== 'road' || U.kind !== 'road' || O.pts.length < 4 || U.pts.length < 4 || O.w < 6 && U.w < 6) return;
+    if (O.maxx < U.minx || O.minx > U.maxx || O.maxy < U.miny || O.miny > U.maxy) return; var co = roadLen(O);
+    for (var q = 0; q + 3 < O.pts.length; q += 2) for (var t = 0; t + 3 < U.pts.length; t += 2){
+      var ax = O.pts[q], ay = O.pts[q+1], bx = O.pts[q+2], by = O.pts[q+3], cx = U.pts[t], cy = U.pts[t+1], dx = U.pts[t+2], dy = U.pts[t+3], d = (bx - ax)*(dy - cy) - (by - ay)*(dx - cx); if (Math.abs(d) < 1e-9) continue;
+      var u = ((cx - ax)*(dy - cy) - (cy - ay)*(dx - cx))/d, v = ((cx - ax)*(by - ay) - (cy - ay)*(bx - ax))/d; if (u <= 0.002 || u >= 0.998 || v <= 0.002 || v >= 0.998) continue;
+      var x = ax + u*(bx - ax), y = ay + u*(by - ay), hh = hAt(x, y) + Math.max(5.6, Math.min(24, e.cl || 5.6)), half = U.w/2 + 12, at = co[q/2] + u*Math.hypot(bx - ax, by - ay);
+      add(a, at - half, at + half, hh, hh, 75, 0); q = O.pts.length; break; } });
   mws.forEach(function(mi){ var A = w.roads[mi], ca = roadLen(A);
-    cand.forEach(function(bi){ if (bi === mi) return; var B = w.roads[bi]; if (BRHW[B.hw] && bi < mi) return; if (A.maxx < B.minx || A.minx > B.maxx || A.maxy < B.miny || A.miny > B.maxy) return; var cb = roadLen(B);
+    cand.forEach(function(bi){ if (bi === mi) return; var B = w.roads[bi]; if (BRHW[B.hw] && bi < mi) return; if (told[mi + ':' + bi]) return; if (A.maxx < B.minx || A.minx > B.maxx || A.maxy < B.miny || A.miny > B.maxy) return; var cb = roadLen(B);
       for (var q = 0; q + 3 < A.pts.length; q += 2) for (var t = 0; t + 3 < B.pts.length; t += 2){
         var ax = A.pts[q], ay = A.pts[q+1], bx = A.pts[q+2], by = A.pts[q+3], cx = B.pts[t], cy = B.pts[t+1], dx = B.pts[t+2], dy = B.pts[t+3], d = (bx - ax)*(dy - cy) - (by - ay)*(dx - cx); if (Math.abs(d) < 1e-9) continue;
         var u = ((cx - ax)*(dy - cy) - (cy - ay)*(dx - cx))/d, v = ((cx - ax)*(by - ay) - (cy - ay)*(bx - ax))/d; if (u <= 0.002 || u >= 0.998 || v <= 0.002 || v >= 0.998) continue;

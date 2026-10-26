@@ -138,3 +138,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.94.1) Buildings with broken walls (shoot or break a wall) and street props still look the same; the builder's 3D view opens offline from the website.
 - [ ] (0.95.0) Trees (all six species and autumn), the red truck with its hood, door and tyre, the thirteen furniture pieces and every sound effect look and sound right on a real phone; tell me which sounds are too harsh or quiet.
 - [ ] (0.95.1) Play a map built with 10 m ground on a computer and on a phone set to Low: hills look finer on the computer, the phone runs as before, and you do not fall through the ground.
+- [ ] (0.96.0) On a map made with builder 1.6 (with `structures`), drive across an overpass where the data says the interstate is the bridge: you drive over the interstate, not under it; streets over streets get a deck too.

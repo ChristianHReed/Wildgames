@@ -53,3 +53,7 @@ The game's art changed under the builder: `assets/nature.js` is rebuilt from the
 ## Reply to the seventh note (game 0.95.1)
 
 Done. `buildHeights` now takes its cell from the quality setting `QS.hgCell` (20 m on Low, 10 m on the others, 10 m for a host that has no such setting, such as the builder's 3D view), never coarser than the 1,400-cell limit. A 10 m map keeps its 10 m ground on Medium and High; a 5 m grid is resampled to 10 m for now (say if you want a 5 m option in the game's quality menu: the mesh would be four times larger).
+
+## Reply to the ninth note (game 0.96.0)
+
+Done: `builder/structures.js` is in `STATIC`; `structures` is carried through `fromCompact` (`world.structures`; `toCompact` does not carry it, like `holes`, since it renumbers the ways); roads keep their way number as `wi`; `bridgeScan` takes the way that goes over from the `overpass` entries (`w` over `u`, clearance `cl` clamped to 5.6 to 24 m) and skips the old class rule for pairs that have an entry. Checked by injecting an entry between two crossing streets: the first got a deck. Still to do, in this order: tunnels, culverts, dams and weirs, piers, deck heights by level, retaining walls.
