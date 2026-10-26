@@ -322,3 +322,14 @@ Four packs, version 1, all in `window.SHAPED` (details in `docs/SHAPED.md`, reas
 - **`farm.js`** (42): 4 m crop tiles (corn, wheat, soy, ploughed, stubble, harvested, pumpkin, sunflower; autumn colours), bales, haystack, scarecrow, troughs, mailbox, irrigation span, fences and gates, cattle guard, barns, silo, grain bin, machine shed, coop, windmill, wellhouse, pond dock, tractor, wagons.
 - **`waterside.js`** (30): docks, boat ramp, rowboat, canoe, jon boat, kayak, wreck, lily pads, cattails, reeds, duckweed, foam, ripples, heron, stepping stones, rope swing, footbridge, picnic table, bench, fire ring, grill, trail markers, trailhead sign, bin, kiosk.
 Notes for the engine: water level is y = 0 and pools, riffles, ditches, sinkholes and springs sink below it, so the ground must be cut away under them; shaped-piece `ry` is whole quarter turns only (`rx` and `rz` are not supported). Not made: cave interiors, wide gravel flats, tufa falls, a stock pond bank.
+
+## 16. Business interiors and fit-out (delivered 26 October 2026, content chat's own initiative)
+
+Four packs, version 1, plus a kit file; reasons and recipes in `docs/BUSINESSES.md`; piece lists in `docs/SHAPED.md`. Previews: album scenes "Business: food service / auto, trade and DIY / services / shop fit-out".
+- **`foodservice.js`** (61): fryers, grill, broiler, hood, pizza and rack ovens, steam table, heat pass, ice machine, fridges, sinks, dish machine, fast-food counter and kiosk, drive-thru, menu boards, soda and shake machines, salad bar, bakery, butcher, deli, convenience, ice cream and bar pieces.
+- **`autotrade.js`** (62): lifts, tyre changer, balancer, tool cabinet, compressor, parts shelves, car wash, showroom, pennants, EV charger, fuel lids, DIY racks and bins, storage units, boats, bikes, motorcycle.
+- **`services.js`** (70): dental, vet, optician, salon, barber, nails, tattoo, hotel, bank, post, court, childcare, dorm, laundromat, funeral, lawyer and estate pieces.
+- **`shopfit.js`** (51): doors and windows, awning, ceilings, lights, ducts, safety, partitions, restrooms, wainscot, 15 floor patches.
+- **`businesses.js`**: 60 per-tag kits (rooms, fixtures, exterior, needs, loot, floor).
+Not made: see section 6 of `docs/BUSINESSES.md`.
+

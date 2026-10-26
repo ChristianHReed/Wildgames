@@ -9,6 +9,7 @@ SV, AL, BU, PR, HE, FX, GR, WA, PW = load('survivor'), load('aliens'), load('bui
 WD, MC, AN, IN = load('world'), load('machines'), load('animals'), load('interiors')
 FL, F2, ST = load('flora'), load('furniture2'), load('structures')
 LA, WO, FA, WS = load('land'), load('woods'), load('farm'), load('waterside')
+FS_, AT_, SV_, SF_ = load('foodservice'), load('autotrade'), load('services'), load('shopfit')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -245,7 +246,7 @@ L.append(f'''
 {ST['rule']}
 ''' + tri_table(ST))
 
-for _t, _P, _g in (('land', LA, 'land'), ('woods', WO, 'woods'), ('farm', FA, 'farm'), ('waterside', WS, 'waterside')):
+for _t, _P, _g in (('land', LA, 'land'), ('woods', WO, 'woods'), ('farm', FA, 'farm'), ('waterside', WS, 'waterside'), ('foodservice', FS_, 'foodservice'), ('autotrade', AT_, 'autotrade'), ('services', SV_, 'services'), ('shopfit', SF_, 'shopfit')):
     L.append(f"""
 ## {_t} (`assets/shaped/{_t}.js`, version {_P['version']})
 
