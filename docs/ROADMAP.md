@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 26 October 2026, at version 0.104.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 26 October 2026, at version 0.104.3 (rebuilt from the content chat's and map chat's deliveries). This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -12,15 +12,15 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 
 | Design area | In the game now | Next |
 | --- | --- | --- |
-| World and map | OpenStreetMap city, loaded in pieces, hills, weather and seasons, journal map with memory and flags | Found, held paper map (0.53); ground tiles (Art 4) |
-| Aliens | Swarmer, stalker, giant, spitter, nests, roaming packs, horde nights | Base defence tuning, clinger, hives (0.50); alien memory (0.54) |
-| Survival | Injuries, food, sleep, clothing, farming, weapons with wear, tool bench | Carry weight (0.52) |
-| Bases and building | Grid placement with snapping, walls, fences, beds, chests, benches, salvage | Carry furniture whole (0.52); voxel walls, materials, harvest (0.56, 0.57); any building a base (0.58); vehicles through walls (0.60); broken building states (Art 6) |
-| Power | Power fails on a set day; generators | City power plants and cable box to the breaker panel (0.59) |
-| Vehicles | Town cars, the safe-house truck, repair, sleeping in the cab | Siphon, boots, headlights, wrecks and burnt cars (0.51) |
-| People | Your survivor with creator, skills, other players over direct connection, traders, recruitable survivors with jobs | More survivor jobs and dangers (0.49) |
-| Look and sound | Faceted pieces, framed buildings, effects, UI icons, held weapons | Moon phases, aurora, explosions and flames (0.55); remaining props and ground (Art 3, 4); music |
-| Hosting and saves | Direct play, passports, saves on the drive | Real-device testing of everything |
+| World and map | OpenStreetMap city in pieces, hills, weather and seasons, journal map, maps from the Maps Builder, structures (culverts, tunnels, dams, piers, walls), woods, waterside plants, digging with soil layers | Roads through hills (0.114), creeks and karst (0.115), farms (0.116), parks (0.117), docks (0.118), bridge styles (0.119), builder props (0.120) |
+| Aliens | Swarmer, stalker, giant, spitter, clinger, nests, hives, packs, horde nights, alien memory, pits and fall damage | Hive world feature, base defence tuning, animals and hunting |
+| Survival | Injuries, food, sleep, clothing, farming, guns and bows with wear, skills, carry weight, digging, traps (plank covers, stake boards), ladders | Pickaxe and trowel, cave-ins, water in pits (0.109) |
+| Bases and building | Grid walls in four materials, fences, beds, chests, benches, several bases, salvage, door braces, board-up, ladders and pits | Walls from the map's frame data (0.113), shoring and sandbags (0.105) |
+| Power | Power plant, four substations, cable boxes, breaker panels, generators, solar | Dead and live businesses (0.111) |
+| Vehicles | Cars, motorbikes, mopeds, quads, bicycles, boats, the safe-house truck; car shop with tyres, rims and parts that swap between cars | Six new cars, parts that do something (0.106); boats and bikes second and third parts (0.107, 0.108); digging machines (0.105) |
+| People | Your survivor with creator, skills, other players over direct connection, traders, recruitable survivors with jobs, portraits | Boat and bike passengers, more jobs |
+| Look and sound | Faceted pieces, framed buildings, restaurant kitchens, held weapons and shovel, effects, UI icons, music and sound | Business interiors (0.110 to 0.112), world kit and street props, boat and engine sounds |
+| Hosting and saves | Direct play, passports, saves on the drive, maps from files | Real-device testing of everything, sharing edits (`.asedit`) |
 
 ## Done so far
 
@@ -169,71 +169,94 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 
 ## Next versions
 
-Rewritten at 0.95.1: almost every step in the old list shipped (see "Done so far"), so this is what is really left. Each is small enough to try on the iPhone before the next one starts.
+Rebuilt 26 October 2026, at 0.104.2, from three sources: the content chat's deliveries (`docs/CONTENT_REPLY_*.md`, `docs/SHAPED.md`), the map chat's notes (`docs/MAP_HANDOFF.md`, notes 1 to 17, Maps Builder up to 1.22) and what you have asked for in this chat. The list is ordered by what a player sees or feels per unit of work, and each row is a version small enough to try before the next one starts. "Done so far" has what shipped. The table after it, "Design chat art not yet in the game", is the per-pack checklist.
 
-| What | Detail | Needs |
+### A. Finish what is half done (assets already in the game)
+
+| Step | What | Source | Needs |
+| --- | --- | --- | --- |
+| 0.105 Digging machines | Excavator, mini excavator, wheel loader, bulldozer and dump truck that really dig: the arm follows `dig.poses`, each scoop takes `scoopBlocks` blocks out of the ground (`dgApply`), the bucket shows `bucket_load`, a truck bed fills (`load_half`, `load_full`), tipped soil becomes `spoil_heap_s/m/l`; drive and work them from the cab; fuel. Also shoring panels, edge markers, sandbag walls, graves (`grave_mound`, `grave_cross`), bigger plank covers (1.5 and 2 m), wheelbarrow and soil bucket | Content: `docs/DIGGING.md`, `machines.js`, `machinedig.js` | None |
+| 0.106 Vehicles, second part | Spawn the six new cars (wagon, SUV, offroader, crew pickup, flatbed, box truck) with wrecks and burnt shells; let the truck take the kit too; parts do something: roof box and bed cap add boot space, light bars light the road, plough clears snow, winch tows, bull bar rams; tyres puncture (military and solid resist); snow and mud tyres matter where the map says snow or mud | Content: `docs/VEHICLES.md`; map: which roads are snowy or muddy | Map chat for the data, not blocking |
+| 0.107 Boats, second part | Oars and paddles move (`clips`), motor and prop sound, wake and bow wave, docks and ramps from `pier` and `ramp` structures, marinas (`mar:1`) get pontoons and houseboats, rivers (not only lakes), seats and `buoy` capacity so survivors ride with you, craft rafts, ferry barge where `fe:1` marks a wet crossing | Content: `docs/BIKES_BOATS_PARKS.md`; map: `mar`, `fe` | None |
+| 0.108 Bikes, third part | Fallen bicycles and wrecked motorbikes as scenery, bike trailer and cargo capacity, riders in pose on the `saddle`, `grips` and `pedals` points, engine sound, baskets and panniers from the kit, tandem and tricycle with a second rider | Content | None |
+| 0.109 Digging polish | Third-person dig pose (`attack_dig`), pick and trowel, harder layers by tool (`soil[].seconds`), soil items by layer (clay, chert, limestone), cave-in of deep unshored pits in rain or beside a heavy vehicle, water in pits near creeks, holes in dug walls and rock | Content: `docs/DIGGING.md` | None |
+
+### B. Make the town feel alive and used (business interiors, floor plans)
+
+| Step | What | Source | Needs |
+| --- | --- | --- | --- |
+| 0.110 Business interiors, round one | Kits for the next biggest groups: fast food and bars (counter, menu board, drive-thru), convenience and supermarkets (hot case, roller grill, freezers), banks, post offices, clinics and dentists, car repair bays and dealer showrooms, fuel canopies and pylons, hotels and motels. Floor patches, drop ceilings and lights, glass doors and mats from `shopfit`; exteriors (awning, neon sign, pennants, bollards) | Content: `docs/BUSINESSES.md`, `businesses.js` | Map: `asmb:use`, `asmb:area`, `asmb:floors` (done, builder 1.13 to 1.17) |
+| 0.111 Business state | `needs` (power, water, gas) so a closed or dead business is dark and dry; `asmb:state` disused or abandoned shows empty shelves and dust; staff and loot per kit; check which items the kits name that the game does not have yet and ask for the rest | Content kits; map `asmb:state` | None |
+| 0.112 Floor plans | Replace the room splitter with the content chat's checked floor plans (`floorplan.js`, `docs/FLOORPLANS.md`), picking the kind from `asmb:use` (big box, club, home improvement, supermarket, mall, post) and taking storey height and floors from the building | Content; map `asmb:use` | None |
+| 0.113 Buildings from their frame | Walls from `asmb:wall` and `asmb:frame` (timber, light steel, steel, concrete) with the storey height of the kind; opening spacing agreed with the builder (1.5 m module) | Map: note 14 and 17 | Map chat agrees spacing |
+
+### C. The world outdoors (landscape, parks, structures)
+
+| Step | What | Source | Needs |
+| --- | --- | --- | --- |
+| 0.114 Roads through hills | `bank` entries (cut and fill, depth, length) place `cut_*` and `fill_*` pieces from `land` along the road, and cut the ground under them; ditches and ledges | Content: `docs/LANDSCAPE.md`; map: `bank` (done, builder 1.8 to 1.11) | The ground has to be cut: the digging engine can now do it |
+| 0.115 Creeks and karst | Creek bend pools and undercut banks from `bend` entries, riffles, logjams and bars; sinkholes, swallets, springs and caves on `karst` areas (sinkholes can reuse the pit engine) | Content `land`; map `bend`, `karst` (builder 1.12) | None |
+| 0.116 Farms | Crop tiles on farmland, bales, fences and gates, barns, silo, tractor, windmill; `crop`, `produce`, `orchard`, `trees` tags choose the stand | Content `farm`; map note 12 | A map with farmland (Springfield has little; needs a rural square) |
+| 0.117 Parks and pitches | Playgrounds, courts and tracks by `sport`, skate park, bike park, pools (cut into the ground), golf, camps | Content `parks`; map: `leisure`, `sport` tags | A map with parks, pitches and pools |
+| 0.118 Waterside, second part | Docks, boat ramps, footbridges, picnic and trail furniture on paths in parks; boats tied at docks | Content `waterside`; map `pier`, `ramp` | None |
+| 0.119 Structures, remainder | Bridge abutments and ramps, truss, arch, suspension and cable-stayed styles (cables drawn as lines from the tower tops), spillways, tunnel lining where the ground is cut, trestles | Content `structures` | None |
+| 0.120 Builder props in the game | Read `asmb:prop` points from the map (street, plants, garden, shop, vehicles, containers, building bits, waterside, furniture) and place them as props with the piece's collision, skipping `kindOf`; honour removed props | Map: note 16 | None |
+
+### D. Systems and the long game
+
+| Step | What | Source | Needs |
+| --- | --- | --- | --- |
+| Real-device testing | Everything since 0.4 has been tried in a desktop browser. Test on the iPhone and iPad, from a USB or SSD drive, offline from the website copy; check frame rate with digging, boats and the vehicle kit; check digging saves, multiplayer sync of digs, covers and stock | You, and bug reports | You |
+| Sharing content | Let the game list and apply `.asedit` files (terrain, roads, props, flood changes) to the open region so players can share changes without the builder; open `.asmap` already works. The map chat leaves this decision to the engine | Map: note 17 | Your call: (a) list and apply, (b) leave it to the builder |
+| Maps Builder, game side | Read the game layer from a map (start, safe house, zones, nests, loot, traders, scenarios); load models carried in a map; retire the in-game map maker once the builder is trusted; `building:material` for walls; a 5 m ground option; vehicles in the engine so the builder's walk mode can drive; flood level over time | Map: notes 1 to 17 | Map chat agrees the formats |
+| Courtyards | `holes` in map squares (format 2) are read but drawn as solid buildings: cut them from roofs, floors and wall rings and let you walk in | Map | None |
+| Aliens | Hives as a world feature, base defence tuning against packs, remembering which door or hiding place you used; clinger blood and trail decals; the carry-crate clip; animals and hunting (`animals.js`, not used at all yet) | Design and content | None |
+| Multiplayer gaps | Guests see the host's alien awareness and stalker trail; car customisations, boats, bikes and stock sync; other players' survivors | None | None |
+| World kit and street props | Street signs and traffic signals by the junction data, the world kit (`world.js`: road markings, kerbs, banks, waterfalls, ore), loose items on the ground, ground tiles and kerb strips (`ground.js` partly in) | Content | None |
+| Music and sound | The base, day, night, chase and horde tracks are in; mixing and when each plays; boat and bike engines; machine sounds; replace the nine synthesised sounds | You listening; content | None |
+
+### What each chat has waiting for the others
+
+- **Content chat has delivered and is waiting for the game**: `parks`, `farm`, `land` (placement), `autotrade`, `services`, `shopfit`, `businesses.js` kits (rest), `machinedig.js` and the digging machines, `floorplan.js`, `animals.js`, `world.js`, the rest of `vehiclekit`, `props.street` signs and signals.
+- **Map chat has delivered and is waiting for the game**: `bank`, `bend`, `karst`, `mar`, `fe`, `asmb:state`, `asmb:area`, `asmb:floors`, `asmb:wall`, `asmb:frame`, `asmb:prop`, `asmb:use` and `asmb:label`, `.asedit` files, flood polygons.
+- **Game is waiting for the map chat**: tree stand type by landuse where untagged, snowy and muddy roads, farmland and park squares for testing (Springfield has almost none), the data wishes in `docs/MAP_REQUESTS.md` that are still open.
+- **Game is waiting for the content chat**: nothing blocking. Likely asks as the steps above land: item list for kit loot that does not exist yet, a rope ladder and mine props for caves, a held pickaxe and trowel, engine and boat sounds, and the pieces `docs/ART_REQUESTS.md` collects.
+
+## Content and design chat art: what the game uses
+
+Rebuilt 26 October 2026, at 0.104.2. The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/SHAPED.md`) are wired in piece by piece. This table is the checklist, so nothing the content chat delivers is forgotten. "In" means drawn or used in the game; "Partly" says what is left; "Not used" is waiting for a step in "Next versions".
+
+| Pack or art | State | Step |
 | --- | --- | --- |
-| Real-device testing | Everything since 0.4 has been tested in a desktop browser only. USB and SSD drive, iPhone and iPad, offline play and the offline website copy | You, and bug reports |
-| Structures | Bridge decks and piers from the pack, spillways, suspension cables; was: dams and weirs, piers and breakwaters, retaining walls, fords, deck heights by level and per-bridge piers, from `world.structures` | None |
-| Courtyards | `holes` in map squares (format 2) are read but drawn as solid buildings: cut them from roofs, floors and wall rings, and let you walk in | None |
-| Maps Builder, game side | Read the game layer from a map (start, safe house, zones, nests, loot, traders, scenarios); load models carried in a map; retire the in-game map maker once builder v1 is trusted; use `building:material` for walls; a 5 m ground option in the quality menu; vehicles in the engine so the builder's walk mode can drive | Map chat agrees the formats |
-| Multiplayer gaps | Guests see the host's alien awareness and the stalker trail; car customisations and flags sync to other players; seeing other players' survivors | None |
-| Aliens | Hives (small, grown, burst) as a world feature, not only nests; base defence tuning against packs; remembering which door or hiding place you used, for single aliens | None |
-| The clinger's blood and trail decals; the carry-crate clip | Art already delivered, not yet used | None |
-| Landscape packs | Use `land`, `woods`, `farm` and `waterside` (docs/LANDSCAPE.md has the placement rules): cut and fill beside roads that run through hills, creek riffles and pools, sinkholes, caves and springs on limestone, layered woods with dead wood, farm fields, fences and buildings, docks, boats, reeds and trail furniture. Ground has to be cut under the sunken pieces | Main chat, map chat |
-| Business interiors | Use `businesses.js` kits with the `foodservice`, `autotrade`, `services` and `shopfit` packs (docs/BUSINESSES.md): fit every mapped business with the rooms, fixtures and exterior pieces its kind needs; `needs` says what is dead without power, water or gas | Main chat, map chat |
-| Bikes, boats and parks | Use `bikes` and `boats` (rigged like machines: seats, helm, `buoy` capacity, water at y = 0) as rideables and drivable boats, and `parks` for parks, pitches, pools, skate and bike parks and camps (docs/BIKES_BOATS_PARKS.md has the rules and recipes). The pool and the skate bowl need the ground cut away | Main chat, map chat |
-| Vehicle kit | Use `vehiclefit.js` and `vehiclekit.js` for loadouts: tyres, rims, roof racks, bull bars, ploughs, bed caps, outboards, bike baskets, paint. Each tyre, rim and part is an item; moving it between vehicles is changing a loadout (docs/VEHICLES.md). Wire grip, armor, storage, light, plough, winch and tow stats into the driving rules | Main chat |
-| Content chat's new pieces | Use the flora pack's separate far-away tree models in place of the baked pictures; wreck and burnt door versions for the truck; replace the nine synthesised sounds when the content chat has its own | Content chat |
-| Art 3, 4 and 6 | Loose items, ground tiles and broken building states, as far as not yet used (see the table below) | In the game |
-| Music | The base, day, night, chase and horde tracks are in; mixing and when each plays | You listening |
+| `props` (street, furniture, cars, plants, items, build pieces) | In: furniture, street props, stop signs, street name posts, traffic lights, power poles, cars, plants. Partly: loose items on the ground, a few street props | 0.112, World kit and street props |
+| `furniture2`, `flora` (near trees and plants), pickup door and loose tyre, `sounds_content` | In (0.95.0); Kenney packs removed | None |
+| `buildings` (framed buildings, breaches, house numbers) | In | None |
+| `walls` | In (player walls, inner walls, carHoles); loaded when needed | 0.113 for map-driven frames |
+| `power` | In (plant, substations, cable boxes, breaker panels, solar), loaded when needed | None |
+| `held`, `survivor`, `aliens`, `fx` | In: guns, bows, shovel in first person, clips, hive stages, effects. Partly: clinger blood and trail decals, carry-crate clip, third-person dig pose (`attack_dig`), moon phases and aurora | 0.109, Aliens |
+| `machines` | Partly: parked as wrecks on roads. Rigs, clips and driving not used | 0.105 |
+| `machinedig`, `digging` | Partly: ladders, plank covers, stake boards and soil colours are in. Edge markers, shoring, sandbags, graves, wheelbarrow, rope ladder, pick and trowel not used | 0.105, 0.109 |
+| `vehiclekit`, `vehiclefit` | Partly: tyres, rims and about forty parts fit cars in the car shop and swap between cars. Not used: the truck, bikes, boats, loads, stats beyond armour and tyre grip, presets | 0.106 |
+| `props.vehicles` (sedan, hatchback, pickup, van, wagon, SUV, offroader, crew pickup, flatbed, box truck) | Partly: the first four drive. The rest not spawned | 0.106 |
+| `bikes` | Partly: bicycles, motorbikes, mopeds and quads ride. Not used: fallen bicycle, wrecked motorbike, trailer, tandem, tricycle, rider points | 0.108 |
+| `boats` | Partly: rowboats to jet skis float on ponds and lakes and can be ridden. Not used: oars and paddles moving, wake, splash, seats, rafts, ferry barge, houseboat | 0.107 |
+| `structures` | Partly: culverts, tunnels, dams, weirs, locks, piers, breakwaters, walls, fords, bridge piers. Not used: abutments, truss, arch, suspension, stay, trestle, spillways, tunnel lining | 0.119 |
+| `waterside` | Partly: reeds, cattails, lily pads, herons on shores. Not used: docks, ramp, footbridge, trail furniture | 0.118 |
+| `woods` | In: forest floor, woodland trees, dead wood. Partly: thickets, flowers and mushrooms by stand type | 0.115 |
+| `land` | Not used | 0.114, 0.115 |
+| `farm` | Not used | 0.116 |
+| `parks` | Not used | 0.117 |
+| `foodservice` | Partly: restaurant kitchens. Everything else not used | 0.110 |
+| `autotrade`, `services`, `shopfit`, `businesses.js` | Not used | 0.110, 0.111 |
+| `floorplan.js` | Not used | 0.112 |
+| `animals` | Not used | Aliens (animals and hunting) |
+| `world.js` (road markings, kerbs, banks, waterfalls, ore, rocks) | Not used | World kit and street props |
+| `ground` (tiles and kerb strips, edges) | Partly loaded | World kit and street props |
+| Paper map models (folded, open) | Not used | None scheduled |
+| Sound and music made in code (`assets/audio/`) | In: sounds, five music tracks. Partly: mixing, boat and engine sounds | Music and sound |
+| UI icons (`assets/ui/*.svg`), portraits | In. Not used: shovel and soil lump icons (render from `ui_icons.py`) | 0.109 |
 
-## Design chat art not yet in the game
-
-The art chat's packs (`assets/shaped/*.js`, `assets/ui/*.svg`, listed in `docs/SHAPED.md`) are wired in piece by piece. This table is the checklist, so nothing the design chat delivers is forgotten. Checked 19 October 2026.
-
-| Art | State | Planned in |
-| --- | --- | --- |
-| World kit (`world.js`): roads, markings, kerbs, sidewalks, water, river and lake banks, waterfalls, rocks and ore | Not used | Map generator (next) |
-| Service and construction vehicles with rigs and clips (`machines.js`) | Parked as wrecks on roads (0.87); rigs, clips and driving not used | After vehicles on roads |
-| Animals with clips and hunting yields (`animals.js`) | Not used | Hunting and food |
-| Street signs, lamps (off and on), traffic and walk signals (`props.street`) | Not used | Streets, with power (0.59) |
-| Replacement art for the last third-party packs: trees and plants (`flora.js`), pickup door and loose tyre (`props.js`), thirteen furniture pieces (`furniture2.js`), content sounds (`sounds_content.js`) | Not used | Wire in, then remove Kenney Nature Kit, Car Kit, Furniture Kit and the Impact/RPG sounds and their CREDITS.md lines (0.94.1) |
-| Structures pack (`structures.js`): bridges (deck, piers, abutments, truss, arch, suspension, trestle), tunnel portals and lining, culverts, fords, dams, weirs, locks, piers, breakwaters, walls | Not used | After the engine reads the map's `structures` (docs/MAP_STRUCTURES.md section 5) |
-| Shop signs, business fixtures per room type (`interiors.js`, `roomFixtures`) | Not used | Next interiors pass |
-| Floor plans with checked walkways (`floorplan.js`, docs/FLOORPLANS.md) | Not used | Next interiors pass: replace the room splitter |
-| Cars: sedan, hatchback, pickup, van, taxi and police paint | In the game | 0.45 |
-| Cars: wrecks and burnt-out versions of every car (`*_wreck`, `*_burnt`, rule in `wreckRule`) | In the game (0.48.2), beside buildings; on the roads too since 0.49.1 | 0.49.1 |
-| Cars: boot lid on sedan and hatchback, pickup battery, fuel cap and hub | Not used | 0.51 (search boots, siphon fuel, truck repair) |
-| Weapons in hand, arms, new survivor clips | In the game | 0.45.8 |
-| Effects (dust, splashes, goo) and UI icons | In the game | 0.45.9 |
-| Sky: clouds, rain, snow and lightning | In the game (0.48.4) | 0.48.4 |
-| Effects: muzzle flash, tracer, hit spark on walls, campfire flame and smoke, flare glow | In the game (0.50.4) | 0.50.4 |
-| Effects and sky still unused: explosions, flame on burning cars, hit sparks on aliens, moon phases, aurora | Not used | 0.55 |
-| Aliens: swarmer, stalker, giant, spitter | In the game | 0.45, 0.47 |
-| Aliens: hive stages (small, grown, burst) and the fade clip | In the game (0.48.3) | 0.48.3 |
-| Aliens: clinger (climbs fences and walls) | In the game (0.50.0); blood and trail decals still unused | 0.50 |
-| Survivors: six NPC looks, NPC pieces, clips lean on wall and wave | In the game (0.49.0) | 0.49.0 |
-| Survivors: clips sit and carry crate | Sit in the game (0.49.2); carry crate not used | 0.49 |
-| Paper map models (folded, open) | Not used | 0.53 |
-| Props: loose items on the ground, searched container variants, hinged doors, plants, street props | Partly used | Art 3 (0.60) |
-| Ground tiles and kerb strips (`ground.js`) | Not loaded | Art 4 (0.57) |
-| Broken building states: damaged infill, holes, snapped frames, rubble, boarded door | Not used | Art 6 (0.58, with base defence work in 0.50) |
-| Guns, bows and ammo (`held.js` version 2): revolver, hunting rifle, pump and double-barrel shotguns, carbine, flare gun, recurve bow, crossbow, each new and worn with a reload pose and muzzle flash; ammo boxes, magazines, ammo can, arrows, bolts, quiver; casings; first-person carry and aim poses; inventory icons | Not used (delivered 19 October 2026) | 0.61 |
-| Walls pack (`walls.js`): eight kinds of wall in layers, cells and frame sticks in four states, sections, doors and windows, joints, floors, stair openings | Timber sections used for player walls since 0.56.0; the rest not used | 0.56 |
-| Material bursts: concrete dust, brick bits, metal sparks (`fx.js`) | Not used | 0.56 |
-| Harvest materials on the ground (`props.items`: scrap wood, lumber, nails, steel beam, rebar, sheet metal, concrete chunk, brick, glass sheet, wire coil, plasterboard) and their icons | Not used | 0.57 |
-| Bases: claim sign and flag, custom bed, wall reinforcement (planks, sheet, mesh in three stages) | Not used | 0.58 |
-| Power pack (`power.js`): power plant dead and running, control panel, substation, pole transformer, pylon, breaker panel, outlets, lights, cable box, cables, batteries, solar | Not loaded | 0.59 |
-| Vehicle damage (`vehicles[name].damage`), crash burst, skid marks, car holes in every kind of wall (`walls.carHoles`) | Not used | 0.60 |
-| Section 11 (20 October 2026): torn wall edges, rubble, boarded and cracked states per finish (`buildings.breach`), house number plaque and digits, street name blade (`buildings.house`), gun shop front and inside (`modules.gunshop_front`, `props.shop`) | Not used | 11.1 |
-| Section 11: door brace and window boards for bays (`props.build`), fuel siphon, paper map pickup (`props.items`), fire on the bonnet (`damage.fire`), furniture size classes (`furnitureSize`) | Not used | 11.2, 11.5, 11.6, 11.8 |
-| Section 11: first-person reloads (`held.fpReload`), pistol empty and flare gun open states, flare shell, arrows and bolts stuck in targets | Not used | 11.4 |
-| Section 11: survivor clips carry_long, aim_long, carry_furniture, work_chop, fish, keep_watch; quiver and fishing rod pieces; sling point; portraits (`assets/ui/portraits/`) | Not used | 11.4, 11.6, 11.10 |
-| Section 11: ground edges (`ground.edges`), roof splash (`fx`) | Not used | 11.7, 11.9 |
-| Sound effects and music made in code (`assets/audio/`: 68 sound keys, day, night, horde, base and chase music) | Not loaded | 11.11 |
-
-How a new art delivery gets in: the design chat pushes the pack to main and lists it in `docs/SHAPED.md` and `docs/ART_REQUESTS.md`; this chat reads those, adds each new piece to the table above in the same version it is wired, and ticks it off here when it ships.
+How a new delivery gets in: a content or art chat pushes the pack to main and lists it in `docs/SHAPED.md` and `docs/ART_REQUESTS.md` and writes a reply note into the Project; this chat reads those, adds each new piece to the table above in the same version it is wired, and ticks it off here when it ships.
 
 ## The new look (art track)
 
