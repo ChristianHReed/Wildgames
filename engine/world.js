@@ -228,7 +228,7 @@ function buildWorld(raw, name){
     if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx})); return; }
     if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water', wi:wayIx})); return; }
     if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail', wi:wayIx})); return; }
-    if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k, lei:t.leisure || '', sport:t.sport || ''})); } }
+    if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k, lei:t.leisure || '', sport:t.sport || '', lu:t.landuse || ''})); } }
   });
   if (!w.buildings.length && !w.roads.length) throw new Error('This file has no buildings or roads. Try exporting a built-up area.');
   w.areas.sort(function(p, q){ return AREA_RANK[p.kind] - AREA_RANK[q.kind]; });

@@ -545,6 +545,15 @@ function placeDress(g){
       else if (h > 0.72){ x = d.x - d.nx*2.2 - tx*4; y = d.y - d.ny*2.2 - ty*4; if (ok(x, y, 0.3)) add('street.phone_box', x, y, Math.atan2(-d.nx, -d.ny), 40); }
     }
   });
+  /* 0.114.0: farmland (landuse=farmland) is laid with the farm pack's crop tiles in 4 m squares, one crop to a field with the rows running the same way, and round bales on the bare ones */
+  if (spB('fm.crop_corn')) w.areas.forEach(function(ar, ai){
+    if (ar.lu !== 'farmland' || ar.pts.length < 6) return; var bw = ar.maxx - ar.minx, bh = ar.maxy - ar.miny; if (bw*bh > 4e6 || bw*bh < 400) return;
+    var h = hash(ai, 71, 9), cr = h < 0.3 ? 'crop_corn' : h < 0.52 ? 'crop_wheat' : h < 0.74 ? 'crop_soy' : h < 0.84 ? 'crop_ploughed' : h < 0.92 ? 'crop_stubble' : 'crop_harvested', ya = hash(ai, 72, 9) < 0.5 ? 0 : Math.PI/2, x, y;
+    for (x = ar.minx + 2; x < ar.maxx; x += 4) for (y = ar.miny + 2; y < ar.maxy; y += 4){
+      if (!pip(ar.pts, x, y) || !pip(ar.pts, x + 2.1, y) || !pip(ar.pts, x - 2.1, y) || !pip(ar.pts, x, y + 2.1) || !pip(ar.pts, x, y - 2.1) || !ok(x, y, 0.5)) continue;
+      add('fm.' + cr, x, y, ya, 600);
+      if ((cr === 'crop_stubble' || cr === 'crop_harvested') && hash(Math.round(x), Math.round(y), 73) < 0.012) add('fm.bale_round', x, y, hash(Math.round(x), Math.round(y), 74)*6.28, 300); }
+  });
   /* 0.114.0: the content chat's roadside pack: a fuel station's pumps stand under a canopy in front of the shop, and bus stops get a shelter */
   if (spB('rs.canopy_flat')) w.buildings.forEach(function(b, bi){
     if (b.kind !== 'fuel' || !b.door || b.gone) return; var d = b.door, tx = -d.ny, ty = d.nx, o = 8, cx = d.x - d.nx*o, cy = d.y - d.ny*o, ya = Math.atan2(-d.nx, -d.ny), cn = hash(bi, 41, 8) < 0.3 ? 'rs.canopy_vee' : 'rs.canopy_flat';
