@@ -178,3 +178,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.114.2) Barns have a silo or grain bin, hay and a trough beside them.
 - [ ] (0.114.3) Some barns have a tractor out front and a windmill behind; fields have gates in the fence.
 - [ ] (0.114.4) Some bus stops have a glass shelter; billboards stand beside main roads away from buildings, facing the road.
+- [ ] (0.114.5) Riding a motorbike, driving a motor boat or a digger plays an engine note that rises with speed (not rowboats, bicycles or kayaks).
