@@ -182,7 +182,10 @@ function stepMove(e, dx, dy, r){
   for (var i = 0; i < n; i++){
     var ox = e.x, oy = e.y; e.x += dx/n; e.y += dy/n; collide(e, r);
     /* 0.99.0: next to a dug or filled column, a step up of more than 0.9 m stops you (2.1 m with a jump); going down is free, so a pit holds what walks into it */
-    if (DIGN && !e.cl && (digCol(ox, oy) || digCol(e.x, e.y)) && hAt(e.x, e.y) - hAt(ox, oy) > 0.9 + ((e.jy || 0) > 0.1 ? 1.2 : 0)){ e.x = ox; e.y = oy; break; }
+    if (DIGN && !e.cl && (digCol(ox, oy) || digCol(e.x, e.y)) && hAt(e.x, e.y) - hAt(ox, oy) > 0.9 + ((e.jy || 0) > 0.1 ? 1.2 : 0) && !(e === P && ladderNear(e.x, e.y))){ e.x = ox; e.y = oy; break; }
   }
 }
 
+
+/* 0.99.2: a ladder stood against a pit wall: within 0.9 m of one you can climb out of any depth */
+function ladderNear(x, y){ var L = world.edits && world.edits.ladders; if (!L) return false; for (var i = 0; i < L.length; i++) if (Math.hypot(L[i].x - x, L[i].y - y) < 0.9) return true; return false; }

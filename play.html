@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.99.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.99.2</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.99.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.99.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3372,6 +3372,7 @@ function loadEdits(ed){
   E.cboxes = []; (Array.isArray(ed.cboxes) ? ed.cboxes : []).slice(0, 40).forEach(function(c){ if (c && isFinite(c.x) && isFinite(c.y)) E.cboxes.push({cboxC:true, id:String(c.id).slice(0, 30), x:+c.x, y:+c.y, b:c.b | 0, bat:Math.max(0, Math.min(24, +c.bat || 0)), trip:c.trip ? 1 : 0}); });
   E.solars = []; (Array.isArray(ed.solars) ? ed.solars : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.solars.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.plant = {s:ed.plant && ed.plant.s >= 0 ? Math.min(3, ed.plant.s | 0) : 0};
+  E.ladders = []; (Array.isArray(ed.ladders) ? ed.ladders : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.ladders.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.dig = {}; for (k in (ed.dig || {})){ var dv0 = ed.dig[k] | 0; if (/^-?\d{1,5},-?\d{1,5}$/.test(k) && dv0) E.dig[k] = Math.max(DG_MIN, Math.min(DG_MAX, dv0)); } if (typeof dgLoad === 'function') dgLoad(E.dig);
   E.bases = E.bases || {}; for (k in (ed.beds || {})) E.beds[slug(k)] = {b:ed.beds[k].b | 0, x:+ed.beds[k].x, y:+ed.beds[k].y};
   for (k in (ed.bases || {})) (Array.isArray(ed.bases[k]) ? ed.bases[k] : []).slice(0, 6).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) addBase(k, q.b | 0, +q.x, +q.y); });
@@ -3393,6 +3394,7 @@ function loadEdits(ed){
 function applyEdit(e){
   if (!e || !world) return; var E = world.edits, b = world.buildings[e.b], i;
   if (e.a === 'col' && b && okCol(e.c, '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[b.id] = e.c; dirtyChunk(b); }
+  else if (e.a === 'ladder' && e.l && isFinite(e.l.x) && isFinite(e.l.y)){ E.ladders = E.ladders || []; if (E.ladders.length < 40) E.ladders.push({id:String(e.l.id).slice(0, 30), x:+e.l.x, y:+e.l.y, yaw:+e.l.yaw || 0}); }
   else if (e.a === 'dig' && Array.isArray(e.c) && e.c.length % 3 === 0 && e.c.length <= 24 && typeof dgApply === 'function'){ var dc = e.c.map(function(v){ return v | 0; }); dgApply(dc); E.dig = E.dig || {}; for (i = 0; i + 2 < dc.length; i += 3){ var dk = dc[i] + ',' + dc[i+1], dv = Math.max(DG_MIN, Math.min(DG_MAX, dc[i+2])); if (dv) E.dig[dk] = dv; else delete E.dig[dk]; } }
   else if (e.a === 'gone' && b){ E.gone[b.id] = 1; setGone(b, true); }
   else if (e.a === 'wall' && e.w && E.walls.length < 400){ E.walls.push({id:String(e.w.id), x:+e.w.x, y:+e.w.y, yaw:+e.w.yaw || 0, m:WMATS[e.w.m] ? e.w.m : 'wood'}); rebuildWalls(); }
@@ -3441,6 +3443,13 @@ function buildAct(a, pos){
   var x = pos ? pos.x : P.x + Math.cos(P.yaw)*1.8, y = pos ? pos.y : P.y + Math.sin(P.yaw)*1.8, yaw = pos ? pos.yaw : P.yaw, id = Date.now() + '-' + Math.floor(Math.random()*1e6), b = nearBuilding(), cheap = me.bg === 'builder' || me.bg === 'mechanic';
   if (/^sj\d+$/.test(a)){ var sv0 = (world.surv || [])[+a.slice(2)]; if (sv0 && !sv0.gone && sv0.st !== 'wait' && !sv0.away){ survTalk(sv0); renderBuild(); } return; }
   if (a === 'cade'){ place('cade'); } else if (a === 'fire'){ place('fire'); }
+  else if (a === 'ladder'){
+    if (inv.wood < 3 || inv.scrap < 1){ toast('A ladder takes 3 wood and 1 scrap.', 3); return; }
+    var lx = P.x + Math.cos(P.yaw)*1.2, ly = P.y + Math.sin(P.yaw)*1.2, bw = -1, by2 = 0, q2, near = 0;
+    for (q2 = 0; q2 < 4; q2++){ var ldx = Math.cos(q2*1.5708), ldy = Math.sin(q2*1.5708), up = hAt(lx + ldx*0.7, ly + ldy*0.7) - hAt(lx, ly); if (up > bw){ bw = up; by2 = q2*1.5708; } }
+    if (typeof digCol !== 'function' || bw < 1.0){ toast('Stand in or at the edge of a hole and face into it: a ladder goes against a wall that is higher than 1 m.', 4); return; }
+    if ((world.edits.ladders || []).length >= 40){ toast('That is enough ladders.', 2); return; }
+    inv.wood -= 3; inv.scrap -= 1; doEdit({a:'ladder', l:{id:id, x:lx, y:ly, yaw:by2}}); sfx('wood_hit', lx, ly, 0.7, 0.8); updateHud(); renderBuild(); }
   else if (a === 'wall'){
     var wcc = WMAT === 'concrete' ? (cheap ? 5 : 6) : 0; if (wcc && inv.chunk < wcc){ toast('A concrete wall needs ' + wcc + ' concrete chunks. Industrial buildings have them, and so do broken concrete walls.', 3.5); return; }
     var wc = cheap ? 2 : 3, ws0 = WMAT === 'steel' ? (cheap ? 3 : 4) : 0, wc2 = WMAT === 'steel' ? 2 : WMAT === 'concrete' ? 0 : wc;
@@ -3732,7 +3741,7 @@ function renderBuild(){
     survPanel() +
     '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('boardall', 'Board up all windows', '2 wood each. Every window of the building you stand in; broken ones cannot be boarded') + row('brace', 'Door brace', '3 wood, 2 scrap. A bar across the inside of the front door; aliens have to break it. Build from inside') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close torn-open walls of the nearest building', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 50 ft of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
-    '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
+    '<h3>Holes</h3>' + row('ladder', 'Ladder', '3 wood, 1 scrap. Put it against the wall of a pit (face the wall): you climb out of any depth beside it') + '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
     (net.role === 'guest' ? '<h3>Sharing</h3>' + row('ask', 'Ask for the host\'s building changes', 'If they agree, their repaints, walls and demolitions are saved for your own copy of this map') : '') +
     '<div style="margin-top:8px"><i>N closes this</i></div>';
@@ -3747,6 +3756,8 @@ function drawBuilt(m){
       for (var wk = 0; wk < 6; wk++){ var wmm = wallModel(bayState(wby[wk], wallMat(w).hp), w.m); if (wmm){ var wof = -1.25 + wk*0.5; m.modelS(wmm, w.x + wsx*wof, w.y + wsy*wof, w.yaw + 1.5708, wg, 1); } }
       continue; } var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
+  (E.ladders || []).forEach(function(ld){ if (Math.abs(ld.x - P.x) > 80 || Math.abs(ld.y - P.y) > 80) return; var g0 = hAt(ld.x, ld.y), top = Math.max(g0 + 1, hAt0(ld.x, ld.y) + 0.8), hh = (top - g0)/2, c0 = C('#8a6a48'), c1 = C('#6b4a30'), k;
+    m.yo = 0; m.ybox(ld.x, ld.y, ld.yaw, 0.12, -0.26, g0 + hh, 0.03, hh, 0.03, c0); m.ybox(ld.x, ld.y, ld.yaw, 0.12, 0.26, g0 + hh, 0.03, hh, 0.03, c0); for (k = 0.3; k < top - g0; k += 0.35) m.ybox(ld.x, ld.y, ld.yaw, 0.12, 0, g0 + k, 0.025, 0.025, 0.26, c1); });
   subSites().forEach(function(so){ if (Math.abs(so.x - P.x) > 120 || Math.abs(so.y - P.y) > 120 || !POWER_ON || !powerModel('pole_transformer')) return; m.modelS(powerModel('pole_transformer'), so.x, so.y, 0, groundAt(so.x, so.y), 1); });
   (E.cboxes || []).forEach(function(c){ if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60 || !POWER_ON) return; var b = world.buildings[c.b], on = b && boxSupply(c) >= boxLoad(b) && !c.trip, nm = c.trip ? 'cable_box_overload' : on ? 'cable_box_on' : 'cable_box_off', pm = powerModel(nm); if (pm) m.modelS(pm, c.x, c.y, 0, groundAt(c.x, c.y) + (b && b.base ? b.base : 0), 1);
     var bp = b && b.segs0 && b.segs0.length ? breakerSpot(b, c) : null, pn2 = bp && powerModel(c.trip ? 'breaker_panel_tripped' : on ? 'breaker_panel_open' : 'breaker_panel_closed'); if (pn2) m.modelS(pn2, bp.x, bp.y, bp.yaw, groundAt(bp.x, bp.y) + (b.base || 0), 1); });
