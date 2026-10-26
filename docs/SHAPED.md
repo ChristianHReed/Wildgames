@@ -1452,6 +1452,54 @@ Pits: a hole needs a way out: give any hole deeper than 1 m a ladder (ladder_s u
 | --- | --- | --- |
 | `digging` | 32 | 6 to 240 |
 
+## rail (`assets/shaped/rail.js`, version 1)
+
+models.rail.<name>, metres. Track pieces are 4 m long along z, centred, gauge 1.435 m, rail head top at y 0.62. Rolling stock sits with its wheels on y 0.62 (put it straight on a track piece), long axis along z, +z the front of the engine.
+Track: track_4, track_worn_4, track_crossing_4 (road planks), track_switch_l/r, track_bumper, track_curve_unit (a 10 degree kink for building curves), platform_4. Signals: signal_mast, crossing_gate_up, crossing_gate_down, switch_stand, mile_post.
+Buildings: depot_small, freight_house, signal_tower, section_house, loading_dock_4. Rolling stock: locomotive_orange, locomotive_blue, boxcar_brown, boxcar_green, boxcar_open, tank_car, hopper_car, flatcar, flatcar_logs, flatcar_container, gondola_scrap, caboose_red, handcar.
+Colour names are in the palette.
+
+Pieces: `track_4`, `track_worn_4`, `track_crossing_4`, `track_switch_l`, `track_switch_r`, `track_bumper`, `platform_4`, `loading_dock_4`, `signal_mast`, `crossing_gate_up`, `crossing_gate_down`, `switch_stand`, `mile_post`, `depot_small`, `freight_house`, `signal_tower`, `section_house`, `boxcar_brown`, `boxcar_green`, `boxcar_open`, `tank_car`, `hopper_car`, `flatcar`, `flatcar_logs`, `flatcar_container`, `gondola_scrap`, `caboose_red`, `locomotive_orange`, `locomotive_blue`, `handcar`
+
+Track: lay track_4 end to end along each rail way (it is 4 m, along z): at a bend, turn each piece a few degrees or keep it straight and let the rails run slightly off, as low-poly games do. Put crossings where a road meets the line. Sidings can be track_worn_4 ending in track_bumper. Trains: a locomotive then 3 to 10 cars (about 14.4 m each with couplers); wheels sit on y 0.62, so place each car at the track piece height. Move a train by sliding its models along z; wheels have no turn (they are part of the body). Abandoned trains (boxcar_open, caboose_red, tank_car, gondola_scrap) on dead sidings are search spots and shelters. The yard by Springfield (the BNSF Springfield yard and the Frisco history) is where many cars should stand: put 3 to 6 tracks side by side 4.5 m apart with a switch at each end.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `rail` | 30 | 24 to 924 |
+
+## civic (`assets/shaped/civic.js`, version 1)
+
+models.civic.<name>, metres, origin at the centre of the footprint on the ground, front facing +Z.
+Churches: church_country (white, 7 x 12 m, steeple), church_large (brick, 14 x 28 m, tower and spire), steeple_white and steeple_brick (add a tower to a building you already have), bell_tower_open, church_sign.
+Civic: courthouse (columns and dome), town_hall_small, clock_tower, hose_tower, flagpole_civic, memorial_wall.
+Schools and university: school_front, school_sign, university_hall. Health: hospital_wing, er_canopy, helipad. Sport: stadium_light, grandstand_small. Hotels: porte_cochere.
+Cemetery: headstone_arch, headstone_flat, headstone_cross, headstone_obelisk, headstone_row (six), mausoleum, cemetery_gate, flag_marker.
+Colour names are in the palette.
+
+Pieces: `steeple_white`, `steeple_brick`, `church_country`, `church_large`, `bell_tower_open`, `church_sign`, `courthouse`, `town_hall_small`, `clock_tower`, `hose_tower`, `flagpole_civic`, `memorial_wall`, `school_front`, `school_sign`, `university_hall`, `hospital_wing`, `er_canopy`, `helipad`, `stadium_light`, `grandstand_small`, `porte_cochere`, `headstone_arch`, `headstone_flat`, `headstone_cross`, `headstone_obelisk`, `headstone_row`, `mausoleum`, `cemetery_gate`, `flag_marker`
+
+Place a church, courthouse, school, university or hospital on the map building of that tag: pick by footprint, and add the small pieces beside it (flagpole_civic, school_sign, er_canopy). A cemetery is a grass area filled with headstone_row (3 to 5 rows 3 m apart) plus a few headstone_obelisk and one mausoleum near the gate. Mausoleums and church cellars are shelters and loot spots.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `civic` | 29 | 24 to 1038 |
+
+## barriers (`assets/shaped/barriers.js`, version 1)
+
+models.barriers.<name>, metres, Y up, front +Z. Fence pieces are 4 m long along x, centred, so they tile end to end; turn them to follow a way.
+Fences and walls: fence_privacy_4, fence_gate_4, fence_brick_wall_4, fence_stone_wall_4, fence_cinder_wall_4, fence_sound_wall_4, fence_cable_barrier_4, fence_security_4 (razor top), gate_security_4, gate_chain_4.
+Survival works: hesco_4, razor_wire_4, scrap_barricade_4, cart_barricade_4, sandbag_wall_4, checkpoint_booth, checkpoint_arm, watchtower_scrap, quarantine_tent, tarp_shelter, burn_barrel.
+Signs and traps: airdrop_crate, evac_board, missing_board, tripwire_cans, spike_strip, snare, deadfall.
+Colour names are in the palette.
+
+Pieces: `fence_privacy_4`, `fence_gate_4`, `fence_brick_wall_4`, `fence_stone_wall_4`, `fence_cinder_wall_4`, `fence_sound_wall_4`, `fence_cable_barrier_4`, `fence_security_4`, `gate_security_4`, `gate_chain_4`, `hesco_4`, `razor_wire_4`, `scrap_barricade_4`, `cart_barricade_4`, `sandbag_wall_4`, `checkpoint_booth`, `checkpoint_arm`, `watchtower_scrap`, `quarantine_tent`, `tarp_shelter`, `burn_barrel`, `airdrop_crate`, `evac_board`, `missing_board`, `tripwire_cans`, `spike_strip`, `snare`, `deadfall`
+
+Fences: lay a fence piece every 4 m along the barrier way (turn each to follow it); use fence_security_4 around industry and the airport, brick and stone walls round yards and old cemeteries, sound wall beside the interstate. Survival works are for the game: a hesco_4 or sandbag_wall_4 line with a checkpoint_booth makes a defended crossing; scrap_barricade_4 and cart_barricade_4 block alleys; tripwire_cans, spike_strip, snare and deadfall are the player-set traps. quarantine_tent and watchtower_scrap make an NPC camp. Boards (evac_board, missing_board) take text decals for the lore.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `barriers` | 28 | 60 to 420 |
+
 ## bikes (`assets/shaped/bikes.js`, version 1)
 
 Same form as the machines pack (read its header): parts[name] pieces at rest in bike space; rig[name] how each part moves; wheels[name] positions of the one `wheel` part; steer[name] which wheels steer; clips; BODY is the paint colour slot (paint[name]).

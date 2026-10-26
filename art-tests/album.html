@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -692,6 +692,22 @@ const SCENES={
     make(){ packGrid(S.roadside,'roadside',['quonset_hut','water_tower','grain_elevator','mobile_home_single','mobile_home_double','container_shop','a_frame_cabin','dome_house','fire_tower'],90,6,0,[0,34,90],[0,9,-18]); }},
   roadside_ozark:{t:'Roadside: Ozark vernacular',d:'Stone cottage, log cabin, springhouse, root cellar, smokehouse, corn crib, outhouse, cave mouth, stone gate.',
     make(){ packGrid(S.roadside,'roadside',['stone_cottage','log_cabin','springhouse','root_cellar','smokehouse','corn_crib','outhouse','cave_mouth','stone_gate'],45,3,0,[0,24,44],[0,2,-8]); }},
+  rail_track:{t:'Rail: track and signals',d:'Plain, worn and crossing track, switches, bumper, platform, dock, signal mast, crossing gates, switch stand, mile post.',
+    make(){ packGrid(S.rail,'rail',['track_4', 'track_worn_4', 'track_crossing_4', 'track_switch_l', 'track_switch_r', 'track_bumper', 'platform_4', 'loading_dock_4', 'signal_mast', 'crossing_gate_up', 'crossing_gate_down', 'switch_stand', 'mile_post'],34,1.5,0,[0, 24, 40],[0, 1, -8]); }},
+  rail_stock:{t:'Rail: locomotives and cars',d:'Two diesels, boxcars, tank, hopper, flat cars with logs and a container, scrap gondola, caboose and handcar.',
+    make(){ packGrid(S.rail,'rail',['locomotive_orange', 'locomotive_blue', 'boxcar_brown', 'boxcar_green', 'boxcar_open', 'tank_car', 'hopper_car', 'flatcar', 'flatcar_logs', 'flatcar_container', 'gondola_scrap', 'caboose_red', 'handcar'],60,2,0,[40, 30, 70],[0, 2, -30]); }},
+  rail_bldg:{t:'Rail: depot and yard buildings',d:'Depot, freight house, signal tower and section house.',
+    make(){ packGrid(S.rail,'rail',['depot_small', 'freight_house', 'signal_tower', 'section_house'],50,4,0,[0, 16, 30],[0, 3, -6]); }},
+  civic_church:{t:'Civic: churches and towers',d:'Country church, large brick church, the two steeples, open bell tower, sign.',
+    make(){ packGrid(S.civic,'civic',['church_country', 'church_large', 'steeple_white', 'steeple_brick', 'bell_tower_open', 'church_sign'],70,5,0,[0, 34, 60],[0, 6, -14]); }},
+  civic_public:{t:'Civic: courthouse, school, hospital',d:'Courthouse, town hall, clock and hose towers, school, university, hospital, canopy, helipad, field lights, grandstand.',
+    make(){ packGrid(S.civic,'civic',['courthouse', 'town_hall_small', 'clock_tower', 'hose_tower', 'flagpole_civic', 'memorial_wall', 'school_front', 'school_sign', 'university_hall', 'hospital_wing', 'er_canopy', 'helipad', 'stadium_light', 'grandstand_small', 'porte_cochere'],110,6,0,[0, 60, 90],[0, 6, -22]); }},
+  civic_cem:{t:'Civic: cemetery',d:'Headstones, a row, mausoleum, gate and flag.',
+    make(){ packGrid(S.civic,'civic',['headstone_arch', 'headstone_flat', 'headstone_cross', 'headstone_obelisk', 'headstone_row', 'mausoleum', 'cemetery_gate', 'flag_marker'],26,1.5,0,[0, 10, 16],[0, 1, -3]); }},
+  barr_fences:{t:'Barriers: fences and walls',d:'Privacy, brick, dry stone, cinder, sound wall, cable, security and gates.',
+    make(){ packGrid(S.barriers,'barriers',['fence_privacy_4', 'fence_gate_4', 'fence_brick_wall_4', 'fence_stone_wall_4', 'fence_cinder_wall_4', 'fence_sound_wall_4', 'fence_cable_barrier_4', 'fence_security_4', 'gate_security_4', 'gate_chain_4'],30,1.2,0,[0, 12, 16],[0, 1, -2]); }},
+  barr_survival:{t:'Barriers: survival works',d:'Hesco, razor wire, scrap and cart barricades, sandbags, checkpoint, tower, tents, traps, boards, crate.',
+    make(){ packGrid(S.barriers,'barriers',['hesco_4', 'razor_wire_4', 'scrap_barricade_4', 'cart_barricade_4', 'sandbag_wall_4', 'checkpoint_booth', 'checkpoint_arm', 'watchtower_scrap', 'quarantine_tent', 'tarp_shelter', 'burn_barrel', 'airdrop_crate', 'evac_board', 'missing_board', 'tripwire_cans', 'spike_strip', 'snare', 'deadfall'],46,1.5,0,[0, 22, 40],[0, 1.5, -6]); }},
   dig_props:{t:'Digging: pit pieces and tools',d:'Ladders, plank covers, stake traps, shoring, sandbags, wheelbarrow, loose tools and soil lumps.',
     make(){ packGrid(S.digging,'digging',['ladder_s','ladder_m','ladder_l','rope_ladder','plank_cover_s','plank_cover_m','plank_cover_m_broken','stake_pit_s','stake_pit_m','edge_marker','sandbag_wall','sandbag_pile','shoring_panel','grave_cross','grave_mound','wheelbarrow','wheelbarrow_loaded','bucket_soil','shovel_ground','pickaxe_ground','hand_trowel','soil_clod','sod_square','clay_lump','chert_gravel','limestone_chunk'],24,0.8,0,[0,12,22],[0,1,-5]); }},
   farm_fields:{t:'Farm: crop tiles',d:'Four-metre tiles of rows: corn, wheat, soybeans, ploughed, stubble, harvested, pumpkins, sunflowers, summer on the top row and autumn colours beside them.',
