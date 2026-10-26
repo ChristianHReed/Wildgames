@@ -43,7 +43,7 @@ def handles(W, y, zs):
     return [flat([(sx*(W + 0.003), y, z - 0.07), (sx*(W + 0.003), y, z + 0.07), (sx*(W + 0.003), y + 0.025, z + 0.07), (sx*(W + 0.003), y + 0.025, z - 0.07)], 'chrome', (sx, 0, 0)) for sx in (1, -1) for z in zs]
 def mirrors(W, y, z, big=False):
     s = 1.5 if big else 1.0
-    return [box([sx*(W + 0.07), y + 0.04, z], [0.12, 0.1*s, 0.1*s], 'black') for sx in (1, -1)]
+    return [p for sx in (1, -1) for p in (box([sx*(W + 0.07), y + 0.04, z], [0.12, 0.1*s, 0.1*s], 'black'), box([sx*(W - 0.02), y - 0.06, z], [0.14, 0.2, 0.05], 'black'))]
 
 def car(body='paint1', length=4.2, width=1.7, cab_back=-1.1, cab_front=0.7, hood=0.95, roof=1.42, rusty=True, panel=None, r=0.32, tw=0.2, ww=0.75, gc=0.3, slope=0.35, name=None, nose=0.0):
     L, W = length/2, width/2; wz = L - ww; ya = round(2*r + 0.12, 3); oc = 0.1
