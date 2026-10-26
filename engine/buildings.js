@@ -423,7 +423,7 @@ function grdTile(o){
   var m = new Mesh(), sea = season(), x0 = o.kx*DT, y0 = o.ky*DT, a, b;
   for (a = 0; a < DT/2; a++) for (b = 0; b < DT/2; b++){
     var x = x0 + a*2 + 1, y = y0 + b*2 + 1, h = hash(Math.round(x), Math.round(y), 301); if (h > 0.3) continue;
-    var kd = grdKind(x, y, sea); if (!kd) continue; var M = grdModel(kd, sea); if (!M) continue; if (buildingAt(x, y)) continue;
+    var kd = grdKind(x, y, sea); if (!kd) continue; var M = grdModel(kd, sea); if (!M) continue; if (buildingAt(x, y) || (DIGN && digCol(x, y))) continue;
     x += (hash(Math.round(x), Math.round(y), 302) - 0.5)*0.8; y += (hash(Math.round(x), Math.round(y), 303) - 0.5)*0.8;
     m.model(M, x, y, Math.floor(h*8)*1.5708, hAt(x, y) + 0.015);
   }

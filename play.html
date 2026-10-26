@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.98.2</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.99.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,14 +454,14 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.98.2', ART = {}, ARTSET = (function(){
+var BUILD = '0.99.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
   return set;
 })();
 /* shared engine files (also loaded by the Maps Builder): same ?v=BUILD rule as the art */
-['core', 'mapparse', 'world', 'meshes', 'buildings', 'interiors', 'collision', 'render'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+['core', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'collision', 'render'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
 </script>
 <script>
 'use strict';
@@ -508,6 +508,7 @@ function startRun(ws, cs){
   }
   w.edits = {breach:{}, col:{}, gone:{}, walls:[], beds:{}, bases:{}, plant:{s:0}, chests:[], ports:{}, picked:{}, taps:{}, moved:{}, junkv:{}, blocks:{}, gens:[], truck:{p:{}, away:0}, colls:[], plots:[], benches:[], boots:{}}; w.wallSegs = [];
   w.buildings.forEach(function(b){ if (b.col0) b.col = b.col0; b.gone = false; });
+  w.edits.dig = {}; if (typeof dgLoad === 'function') dgLoad(null);
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
   pickSafe(!resumed && net.role !== 'guest', toSafe || !(resumed && worldPlayers[charSlug()]));
   if (toSafe){ toSafe = false; P.lvl = 0; P.roof = null; P.climbL = null; P.gy = undefined; P.fall = 0; P.hide = null; el('hideMask').classList.remove('on'); P.veh = null; if (world.safe >= 0) setTimeout(function(){ toast('Back at your safe house.', 4); }, 50); }
@@ -877,6 +878,31 @@ function gridTick(){
   if ((P.gridWas & 2) && !(gs & 2)){ feed('The water mains have failed.', '#ff8f7a'); toast('The taps have run dry for good. Toilet cisterns, rivers, ponds and rain are what is left.', 7); }
   P.gridWas = gs;
 }
+/* ---- 0.99.0 digging: with a shovel, look down at open ground and hold E to dig a 1 m square half a metre deeper (it gives soil, and stone deeper down);
+   hold Shift and E to put soil back, 1 soil per half metre. Holes hold what walks in: a step up of more than 0.9 m stops you (2.1 m while jumping), so dig steps to get out ---- */
+var DIGT = {dig:true, name:'ground', x:0, y:0};
+function digTarget(){
+  if (!(inv.shovel > 0) || P.inside || P.roof || P.veh || P.swim || P.hide || P.sleep || P.pitch > -0.3 || typeof dgOk !== 'function') return null;
+  var d = Math.max(0.9, Math.min(2.6, 1.5/Math.tan(-P.pitch))); DIGT.x = P.x + Math.cos(P.yaw)*d; DIGT.y = P.y + Math.sin(P.yaw)*d;
+  return dgOk(DIGT.x, DIGT.y) ? DIGT : null;
+}
+function digFill(){ return !!(keys.ShiftLeft || keys.ShiftRight); }
+function digText(){
+  var tch = document.body.classList.contains('touchmode'), c = dgSquare(DIGT.x, DIGT.y), lo = 0, hi = 0, i; for (i = 0; i < 8; i += 2){ var v = dgVal(c[i], c[i+1]); lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  var dep = lo < 0 ? ' \u00b7 ' + (-lo*0.5) + ' m deep' : hi > 0 ? ' \u00b7 ' + (hi*0.5) + ' m of fill' : '';
+  return (tch ? 'Hold to dig' : 'Hold E to dig \u00b7 Shift+E to fill (' + inv.soil + ' soil)') + dep;
+}
+function digHold(dt){
+  var fill = digFill(); prog += dt/(fill ? 0.7 : 1.1); if (prog < 1) return; prog = 0;
+  var c = dgSquare(DIGT.x, DIGT.y), out = [], i, v;
+  if (fill){ if (!(inv.soil > 0)){ toast('You have no soil. Dig some first.', 2.5); return; }
+    for (i = 0; i < 8; i += 2){ v = dgVal(c[i], c[i+1]); if (v >= DG_MAX){ toast('That is as high as it goes.', 2); return; } out.push(c[i], c[i+1], v + 1); }
+    inv.soil--; doEdit({a:'dig', c:out}); sfx('pick', DIGT.x, DIGT.y, 0.5, 0.6); makeNoise(P.x, P.y, 4); }
+  else { var deep = 0;
+    for (i = 0; i < 8; i += 2){ v = dgVal(c[i], c[i+1]); if (v <= DG_MIN){ toast('That is as deep as you can dig here. The ground below is solid.', 2.5); return; } deep = Math.min(deep, v - 1); out.push(c[i], c[i+1], v - 1); }
+    doEdit({a:'dig', c:out}); sfx('pick', DIGT.x, DIGT.y, 0.6, 0.5); makeNoise(P.x, P.y, 5); P.stam = Math.max(0, P.stam - 2.5);
+    var got = [['soil', 1]]; if (deep <= -6 && Math.random() < 0.4) got.push(['stone', 1]); got.forEach(function(g){ inv[g[0]] += g[1]; feed('+' + g[1] + ' ' + ITEMS[g[0]][0], ITEMS[g[0]][1]); }); updateHud(); }
+}
 function findTarget(){
   if (P.veh || P.climbL) return null;
   if (P.roof){ var HT0 = hatchOf(P.roof); if (HT0 && Math.hypot(HT0.x - P.x, HT0.y - P.y) < 1.5) return ladTarget(HT0, false); var LR = P.roof.lad; return LR && Math.hypot(LR.tx - P.x, LR.ty - P.y) < 1.7 ? ladTarget(LR, false) : null; }
@@ -917,7 +943,7 @@ function findTarget(){
   for (i = 0; i < loaded.length; i++) if (world.nests[loaded[i].id]){ var co = nestCore(loaded[i]); d = Math.hypot(co.x - P.x, co.y - P.y); if (d < 2.6){ bd = 0; best = co; } }
   if (best) return best;
   if (!P.roof && inWater(P.x, P.y, 1.5) && (P.thirst < 99 || inv.dirty < 8)) return 'water';
-  return null;
+  return digTarget();
 }
 /* ---- looting: searching something opens a window with what it holds ---- */
 var corpses = [], corpseN = 1, curLoot = null;
@@ -981,7 +1007,7 @@ function takeLoot(key){
 el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id === 'ltClose'){ closeLoot(); return; } var k = t.getAttribute && t.getAttribute('data-k'); if (k) takeLoot(k); });
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
-var CATS = [['Food and drink', ['meal', 'fresh', 'food', 'water', 'dirty', 'berry', 'rotten']], ['Medical', ['medkit', 'bandage', 'antibio', 'splint', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'tape', 'fuel', 'fiber', 'stone']], ['Power and light', ['generator', 'flashlight', 'radio', 'lantern', 'battery']], ['Clothes', ['coat', 'raincoat', 'leather', 'sweater', 'beanie', 'cap', 'helmet', 'gloves', 'trousers', 'thermals', 'boots']], ['Gear', ['key', 'seeds']], ['Truck parts', ['toolkit', 'tire', 'carbat', 'parts']]];
+var CATS = [['Food and drink', ['meal', 'fresh', 'food', 'water', 'dirty', 'berry', 'rotten']], ['Medical', ['medkit', 'bandage', 'antibio', 'splint', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'tape', 'fuel', 'fiber', 'stone', 'soil']], ['Power and light', ['generator', 'flashlight', 'radio', 'lantern', 'battery']], ['Clothes', ['coat', 'raincoat', 'leather', 'sweater', 'beanie', 'cap', 'helmet', 'gloves', 'trousers', 'thermals', 'boots']], ['Gear', ['key', 'seeds', 'shovel']], ['Truck parts', ['toolkit', 'tire', 'carbat', 'parts']]];
 var USE = {coat:'Wear', raincoat:'Wear', leather:'Wear', sweater:'Wear', beanie:'Wear', cap:'Wear', helmet:'Wear', gloves:'Wear', trousers:'Wear', thermals:'Wear', boots:'Wear', generator:'Set it up here', fresh:'Eat', rotten:'Eat (risky)', dirty:function(){ return nearFire() ? 'Boil it all (fire)' : 'Drink (risky)'; }, bandage:'Use', antibio:'Take', splint:'Use', tape:'Patch weapon', fiber:'Make a bandage', wood:'Make a splint', meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
 var NOTE = {fresh:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.freshT || FRESH_S)/60)) + ' min'; }, meal:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.mealT || MEAL_S)/60)) + ' min'; },
   rotten:function(){ return 'half the time it makes you sick'; }, dirty:function(){ return 'boil it at a stove (1 wood) or beside a campfire'; }, bandage:function(){ return 'stops bleeding and keeps a wound clean'; },
@@ -1615,7 +1641,7 @@ function pickSafe(fresh, move){
   w.edits.chests.forEach(function(ch){ if (ch.id === 'safe' && Math.hypot(ch.x - cx, ch.y - cy) > 4){ ch.x = cx; ch.y = cy; } });   /* an older save: the supply chest moves with the house */
   if (fresh){
     if (isHome(w)){
-      w.edits.chests.push({chest:true, name:'the supply chest', id:'safe', x:cx, y:cy, inv:{food:8, water:8, medkit:2, bandage:4, antibio:1, battery:4, ammo:24, wood:14, scrap:10, lantern:1, flashlight:1, coat:1, boots:1, gloves:1, raincoat:1, fuel:3, tape:2, fiber:3, seeds:4, toolkit:1, tire:1, carbat:1, parts:1}, items:{}, designs:[]}); }
+      w.edits.chests.push({chest:true, name:'the supply chest', id:'safe', x:cx, y:cy, inv:{shovel:1, food:8, water:8, medkit:2, bandage:4, antibio:1, battery:4, ammo:24, wood:14, scrap:10, lantern:1, flashlight:1, coat:1, boots:1, gloves:1, raincoat:1, fuel:3, tape:2, fiber:3, seeds:4, toolkit:1, tire:1, carbat:1, parts:1}, items:{}, designs:[]}); }
     /* the survivor starts with a map of the neighbourhood: about 500 m round the house is already on the journal map */
     var mx0 = Math.floor(cx/SQ), my0 = Math.floor(cy/SQ), mq, mr; for (mq = -17; mq <= 17; mq++) for (mr = -17; mr <= 17; mr++) if (mq*mq + mr*mr <= 17*17) seen[(mx0 + mq) + ',' + (my0 + mr)] = 1;
   }
@@ -1958,6 +1984,7 @@ function update(dt){
     else if (target.gen){ if (ePress || tapped) genE(target); autoUse = null; }
     else if (target.coll){ if (ePress || tapped) collE(target); autoUse = null; }
     else if (target.plot){ if (ePress || tapped) plotE(target); autoUse = null; }
+    else if (target.dig){ digHold(dt); }
     else if (target.hideSpot || target.shove){ if ((ePress || tapped) && target.hideSpot) enterHide(target.c); autoUse = null; }
     else if (target.fix){ if (ePress || tapped) useFix(target); autoUse = null; }
     else if (target.port && target.k < 0 && doorState(target.b) === 0 && lockedOf(target.b) && !(inv.key > 0)){ prog += dt/6; if (prog >= 1){ prog = 0; setPort(target.b, -2, 0); setPort(target.b, -1, 1); feed('You pried the door open', '#c0c6cc'); makeNoise(P.x, P.y, 6); autoUse = null; keys.KeyE = false; } }
@@ -1977,6 +2004,7 @@ function update(dt){
     else if (target.gen) el('ptxt').textContent = genText(target);
     else if (target.coll) el('ptxt').textContent = collText(target);
     else if (target.plot) el('ptxt').textContent = plotText(target);
+    else if (target.dig) el('ptxt').textContent = digText();
     else if (target.hideSpot || target.shove){ var tch2 = document.body.classList.contains('touchmode'); el('ptxt').textContent = (target.hideSpot ? (tch2 ? 'Tap to hide in the ' : 'Press E to hide in the ') + target.name + ' \u00b7 ' : 'Empty ' + target.name + ' \u00b7 ') + (tch2 ? 'Wall' : 'B') + ' shoves it against the door'; }
     else if (target.truckSpot) el('ptxt').textContent = truckText(target);
     else if (target.fix) el('ptxt').textContent = fixText(target);
@@ -3342,6 +3370,7 @@ function loadEdits(ed){
   E.cboxes = []; (Array.isArray(ed.cboxes) ? ed.cboxes : []).slice(0, 40).forEach(function(c){ if (c && isFinite(c.x) && isFinite(c.y)) E.cboxes.push({cboxC:true, id:String(c.id).slice(0, 30), x:+c.x, y:+c.y, b:c.b | 0, bat:Math.max(0, Math.min(24, +c.bat || 0)), trip:c.trip ? 1 : 0}); });
   E.solars = []; (Array.isArray(ed.solars) ? ed.solars : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.solars.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.plant = {s:ed.plant && ed.plant.s >= 0 ? Math.min(3, ed.plant.s | 0) : 0};
+  E.dig = {}; for (k in (ed.dig || {})){ var dv0 = ed.dig[k] | 0; if (/^-?\d{1,5},-?\d{1,5}$/.test(k) && dv0) E.dig[k] = Math.max(DG_MIN, Math.min(DG_MAX, dv0)); } if (typeof dgLoad === 'function') dgLoad(E.dig);
   E.bases = E.bases || {}; for (k in (ed.beds || {})) E.beds[slug(k)] = {b:ed.beds[k].b | 0, x:+ed.beds[k].x, y:+ed.beds[k].y};
   for (k in (ed.bases || {})) (Array.isArray(ed.bases[k]) ? ed.bases[k] : []).slice(0, 6).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) addBase(k, q.b | 0, +q.x, +q.y); });
   for (k in E.beds) addBase(k, E.beds[k].b, E.beds[k].x, E.beds[k].y);
@@ -3362,6 +3391,7 @@ function loadEdits(ed){
 function applyEdit(e){
   if (!e || !world) return; var E = world.edits, b = world.buildings[e.b], i;
   if (e.a === 'col' && b && okCol(e.c, '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[b.id] = e.c; dirtyChunk(b); }
+  else if (e.a === 'dig' && Array.isArray(e.c) && e.c.length % 3 === 0 && e.c.length <= 24 && typeof dgApply === 'function'){ var dc = e.c.map(function(v){ return v | 0; }); dgApply(dc); E.dig = E.dig || {}; for (i = 0; i + 2 < dc.length; i += 3){ var dk = dc[i] + ',' + dc[i+1], dv = Math.max(DG_MIN, Math.min(DG_MAX, dc[i+2])); if (dv) E.dig[dk] = dv; else delete E.dig[dk]; } }
   else if (e.a === 'gone' && b){ E.gone[b.id] = 1; setGone(b, true); }
   else if (e.a === 'wall' && e.w && E.walls.length < 400){ E.walls.push({id:String(e.w.id), x:+e.w.x, y:+e.w.y, yaw:+e.w.yaw || 0, m:WMATS[e.w.m] ? e.w.m : 'wood'}); rebuildWalls(); }
   else if (e.a === 'breach' && b){ breachSet(b, e.i | 0, !!e.on); }

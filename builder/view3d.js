@@ -119,7 +119,7 @@ async function boot(){
   var set = ARTSET, A = ['dataver', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', 'shaped/furniture2', 'shaped/structures', set + '/atlas', set + '/atlas3'];
   var NEED = {btex:1, 'shaped/shapes':1, 'shaped/buildings':1}; NEED[set + '/atlas'] = 1; NEED[set + '/atlas3'] = 1;
   for (var i = 0; i < A.length; i++){ V3.note('Loading the art: ' + Math.round(i/A.length*100) + '%', 30); try { await load('assets/' + A[i] + '.js'); } catch (e){ if (NEED[A[i]]) throw e; if (window.console) console.warn('3D view: skipped missing assets/' + A[i] + '.js'); } }
-  var E = ['core', 'mapparse', 'world', 'meshes', 'buildings', 'interiors', 'collision', 'render'];
+  var E = ['core', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'collision', 'render'];
   for (var j = 0; j < E.length; j++) await load('engine/' + E[j] + '.js');
   glOK = initGL();
   if (!glOK) throw new Error('this device could not start 3D drawing (WebGL)');

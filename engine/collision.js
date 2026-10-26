@@ -178,6 +178,10 @@ function hitWall(x, y){
 }
 function stepMove(e, dx, dy, r){
   var l = Math.hypot(dx, dy), n = Math.max(1, Math.ceil(l/0.25));
-  for (var i = 0; i < n; i++){ e.x += dx/n; e.y += dy/n; collide(e, r); }
+  for (var i = 0; i < n; i++){
+    var ox = e.x, oy = e.y; e.x += dx/n; e.y += dy/n; collide(e, r);
+    /* 0.99.0: next to a dug or filled column, a step up of more than 0.9 m stops you (2.1 m with a jump); going down is free, so a pit holds what walks into it */
+    if (DIGN && !e.cl && (digCol(ox, oy) || digCol(e.x, e.y)) && hAt(e.x, e.y) - hAt(ox, oy) > 0.9 + ((e.jy || 0) > 0.1 ? 1.2 : 0)){ e.x = ox; e.y = oy; break; }
+  }
 }
 

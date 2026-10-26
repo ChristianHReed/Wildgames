@@ -333,3 +333,12 @@ Four packs, version 1, plus a kit file; reasons and recipes in `docs/BUSINESSES.
 - **`businesses.js`**: 60 per-tag kits (rooms, fixtures, exterior, needs, loot, floor).
 Not made: see section 6 of `docs/BUSINESSES.md`.
 
+## 17. Digging (new, version 0.99.0)
+
+The game now has digging (`engine/dig.js`): the ground has soil in 0.5 m blocks, drawn in layers where it is cut. What would help from the content chat:
+
+- A **held shovel** (and a swing/dig pose, `attack_dig`): the player holds E looking down; today nothing is drawn in the hand.
+- **Dig and fill sounds** (soil, then stone and gravel for deeper): the game uses the pick-up sound for now.
+- **Soil layer look**: tell us what the Springfield Plateau's soil really looks like under the grass (thin topsoil, red-brown cherty clay, then limestone and chert); the game uses topsoil (dark brown), subsoil, clay (orange brown), then grey limestone with bands.
+- **Soil and shovel icons** for the pack.
+- Later: a **ladder**, **plank cover** for a pit, and **spikes or stakes** for traps.

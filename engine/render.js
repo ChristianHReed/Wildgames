@@ -10,7 +10,7 @@ function initGL(){
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c;vt=t;vec3 q=p*iscl;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;uniform sampler2D dmask;uniform float dmOn;uniform vec2 dmo;uniform float dmS;' +
     'vec3 ppl(vec2 uv,float j){vec2 a4=(vec2(mod(j,8.0)*256.0,floor(j/8.0+0.01)*256.0)+1.0+fract(uv)*254.0)/2048.0;vec4 tp=texture2D(atlas4,a4);float idx=floor(tp.g*8.0);vec3 pc=pp[0];for(int i=1;i<8;i++){if(float(i)==idx)pc=pp[i];}return pc*tp.r*1.99;}' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>199.5){float j5=k-200.0;vec2 s5=vec2(252.0/2048.0);vec2 a5=(vec2(mod(j5,8.0)*256.0,floor(j5/8.0+0.01)*256.0)+2.0)/2048.0+fract(uv)*s5;' + (lod ? 'return texture2DGradEXT(atlas5,a5,dFdx(uv)*s5,dFdy(uv)*s5);}' : 'return texture2D(atlas5,a5);}') +
@@ -38,7 +38,7 @@ function initGL(){
     'else if(k>189.5&&k<190.5){float wh=vt.x;float wc=fract(wh*71.37);float cold=winF>0.2?step(0.8,wc):1.0;float fk=cold>0.5?0.45+0.55*step(0.25,fract(sin(floor(tm*7.0+wh*60.0)*12.9898)*43758.5453)):1.0;glow=step(1.0-winF,wh)*1.7*fk;winc=mix(winc,vec3(0.55,0.75,1.0),cold);col=mix(col,col*0.5,dark);}' +
     'else if(k>199.5){if(texOn>0.5&&bldOn>0.5){vec4 tb=samp(k,vt.xy);if(tb.a>0.75)col=tb.rgb*vc.rgb;else{col=tb.rgb;if(tb.a>0.25){float wh=fract(sin(dot(floor(vec2(wp.x+wp.z,wp.y)*vec2(0.25,0.3125)),vec2(12.9898,78.233)))*43758.5453);float wc=fract(wh*71.37);float cold=winF>0.2?step(0.8,wc):1.0;float fk=cold>0.5?0.45+0.55*step(0.25,fract(sin(floor(tm*7.0+wh*60.0)*12.9898)*43758.5453)):1.0;glow=step(1.0-winF,wh)*1.7*fk;winc=mix(winc,vec3(0.55,0.75,1.0),cold);col=mix(col,col*0.5,dark);}}}}' +
     'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
-    'else if(k>44.5&&k<46.5){vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
+    'else if(k>44.5&&k<46.5){if(dmOn>0.5){vec2 du=(wp.xz-dmo)/dmS;if(du.x>0.0&&du.y>0.0&&du.x<1.0&&du.y<1.0&&texture2D(dmask,du).r>0.5)discard;}vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
     'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){vec2 u1=vt.xy+vec2(tm*0.035,tm*0.02);vec2 u2=vt.xy*1.9+vec2(-tm*0.03,tm*0.045);vec3 ww=(samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5;float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
     /* light from the upper left and a little behind, at an uneven angle so the four sides of a house each get their own tone and a corner always shows */
@@ -56,7 +56,7 @@ function initGL(){
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea','gridU','fogN','sunc','shd','winF'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0);
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); (typeof loadCreatures === 'function' && loadCreatures()); (typeof loadPeople === 'function' && loadPeople());
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
@@ -249,7 +249,9 @@ function drawScene(cam, env){
   if (world.fence && Math.abs(world.fence.x - cx) < 400 && Math.abs(world.fence.y - cy) < 400) drawMesh(world.fence.g);
   for (i = 0; i < loaded.length; i++){ var gsI = loaded[i].int.gs; for (var gq = 0; gq < gsI.length; gq++) drawMesh(gsI[gq]); }
   for (i = 0; i < facs.length; i++) if (facs[i].fac) drawMesh(facs[i].fac);
+  if (typeof dgPrep === 'function') dgPrep(cx, cy, U);
   var TR = world.gl.terr, trR = QS.far + (world.tg ? TT*world.tg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - cx) < trR && Math.abs(o.y - cy) < trR) drawMesh(o.g); });
+  if (typeof drawDig === 'function') drawDig(cx, cy);
 
   return {md:md, sky:sky};
 }

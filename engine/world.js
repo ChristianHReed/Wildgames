@@ -130,7 +130,7 @@ var LOOT = {
 var ITEMS = {food:['Food','#e8a04a','1'], water:['Water','#58b8f0','2'], medkit:['Medkit','#f06a6a','3'], ammo:['Ammo','#f2d14a','F'], wood:['Wood','#a8743e',''], scrap:['Scrap','#a9b0ba',''], nails:['Nails','#8c8f94',''], sheet:['Sheet metal','#9fb0bd',''], chunk:['Concrete chunk','#9a9890',''], map:['Paper map','#d9c9a0',''], rifle:['Rifle rounds','#d9b34a',''], shell:['Shotgun shells','#c8553d',''], arrow:['Arrows','#c9a56a',''], bolt:['Crossbow bolts','#9fa6ad',''],
   revolver:['Revolver','#8d949c',''], hunting_rifle:['Hunting rifle','#7a5a3c',''], pump_shotgun:['Pump shotgun','#6b6f75',''], double_barrel:['Double-barrel shotgun','#6b5a48',''], carbine:['Carbine','#4f565e',''], crossbow:['Crossbow','#7a6a4a',''], recurve_bow:['Recurve bow','#a8743e',''], flare_gun:['Flare gun','#c8553d',''], flareshell:['Flare shells','#e8632a',''], quiver:['Quiver','#8a6a44','']};
 ITEMS.coat = ['Coat','#8a6f5a','']; ITEMS.key = ['Keys','#d9a845','']; ITEMS.meal = ['Hot meal','#d9873a','']; ITEMS.fuel = ['Fuel','#c8553a','']; ITEMS.radio = ['Radio','#7fd6c2','']; ITEMS.flashlight = ['Flashlight','#e8d27a','']; ITEMS.lantern = ['Lantern','#f6de96','']; ITEMS.battery = ['Batteries','#b9c46a','']; ITEMS.berry = ['Berries','#b3476a','']; ITEMS.herb = ['Herbs','#7fae6a','']; ITEMS.fiber = ['Plant fibre','#c9b98a','']; ITEMS.stone = ['Stones','#a8a096','']; ITEMS.bandage = ['Bandages','#e9e2d0','4']; ITEMS.antibio = ['Antibiotics','#9ad0a0','']; ITEMS.splint = ['Splint','#b08a5a','']; ITEMS.fresh = ['Fresh food','#e07a4a','']; ITEMS.rotten = ['Rotten food','#9a9a62','']; ITEMS.dirty = ['Unboiled water','#7aa0b0','']; ITEMS.tape = ['Duct tape','#9aa3aa',''];
-ITEMS.generator = ['Generator','#d9a845',''];
+ITEMS.generator = ['Generator','#d9a845','']; ITEMS.shovel = ['Shovel','#8a8f96','']; ITEMS.soil = ['Soil','#7a5a3a',''];
 /* 0.40: clothes, worn in six slots. warm = degrees F of warmth when cold; rain = how much rain it keeps off (outer and head);
    armor = how much of an alien's hit it takes; glass = no cuts climbing through broken windows; sun = shade on hot days */
 var CLOTHES = {
@@ -164,7 +164,7 @@ ITEMS.toolkit = ['Toolkit','#c64834','']; ITEMS.book = ['Skill book','#b0804a','
 })();
 (function(){   /* 0.29: medical supplies, fresh food and tape join the loot */
   var add = function(t, o){ for (var k in o) t[k] = (t[k] || 0) + o[k]; };
-  add(LOOT.house, {bandage:.6, fresh:1, tape:.3}); add(LOOT.food, {fresh:3}); add(LOOT.medical, {bandage:3, antibio:1.5, splint:1}); add(LOOT.industrial, {tape:1.2, generator:0.35}); add(LOOT.house, {generator:0.04}); add(LOOT.shop, {bandage:.6, tape:.5, fresh:.6});
+  add(LOOT.house, {bandage:.6, fresh:1, tape:.3}); add(LOOT.food, {fresh:3}); add(LOOT.medical, {bandage:3, antibio:1.5, splint:1}); add(LOOT.industrial, {tape:1.2, generator:0.35}); add(LOOT.house, {generator:0.04, shovel:0.07}); add(LOOT.industrial, {shovel:0.5}); add(LOOT.shop, {bandage:.6, tape:.5, fresh:.6});
   add(LOOTK.grocery, {fresh:4}); add(LOOTK.restaurant, {fresh:4}); add(LOOTK.clinic, {bandage:4, antibio:2, splint:1.5}); add(LOOTK.hospital, {bandage:4, antibio:3, splint:2}); add(LOOTK.fire, {bandage:2, splint:1}); add(LOOTK.police, {bandage:1});
   add(LOOTK.outdoors, {bandage:1, tape:1}); add(LOOTK.hardware, {tape:3}); add(LOOTK.garage, {tape:1.5}); add(LOOTK.warehouse, {tape:1}); add(LOOTK.school, {bandage:1}); add(LOOTK.gym, {bandage:1}); add(LOOTK.apartments, {fresh:1, bandage:.5}); add(LOOTK.hotel, {fresh:1, bandage:.5});
 })();
@@ -337,8 +337,10 @@ function buildHeights(w, raw, lon0, lat0, kx, ky){
   if (mx - mn < 0.3) return;
   w.hg = {x0:w.minx - M, y0:w.miny - M, cell:cell, cols:cols, rows:rows, d:d, min:mn, max:mx};
 }
-/* height of the bare ground; each grid square is two flat triangles, the same ones that are drawn */
-function hAt(x, y){
+/* height of the ground: the bare ground (hAt0, each grid square two flat triangles, the same ones that are drawn) plus what has been dug or filled (dig.js; DIGN is 0 until something has) */
+var DIGN = 0;
+function hAt(x, y){ return DIGN ? hAt0(x, y) + digOff(x, y) : hAt0(x, y); }
+function hAt0(x, y){
   var g = world.hg; if (!g) return 0;
   var u = (x - g.x0)/g.cell, v = (y - g.y0)/g.cell; u = u < 0 ? 0 : u > g.cols - 1.001 ? g.cols - 1.001 : u; v = v < 0 ? 0 : v > g.rows - 1.001 ? g.rows - 1.001 : v;
   var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*g.cols + i, d = g.d, a = d[k], b = d[k + 1], c = d[k + g.cols], e = d[k + g.cols + 1];
@@ -498,7 +500,7 @@ function drape(m, lift){
           if (Math.abs((vs[2] - vs[0])*(vs[5] - vs[1]) - (vs[4] - vs[0])*(vs[3] - vs[1])) < 1e-4) continue;
           for (var k = 0; k < 6; k += 2){
             var x = vs[k], z = vs[k+1], w0 = ((bz - cz)*(x - cx) + (cx - bx)*(z - cz))/den, w1 = ((cz - az)*(x - cx) + (ax - cx)*(z - cz))/den, w2 = 1 - w0 - w1;
-            p.push(x, y0*w0 + y1*w1 + y2*w2 + hAt(x, z) + lift, z); c.push(C0[co], C0[co+1], C0[co+2], C0[co+3]);
+            p.push(x, y0*w0 + y1*w1 + y2*w2 + hAt0(x, z) + lift, z); c.push(C0[co], C0[co+1], C0[co+2], C0[co+3]);
             t.push(T0[to]*w0 + T0[to+3]*w1 + T0[to+6]*w2, T0[to+1]*w0 + T0[to+4]*w1 + T0[to+7]*w2, T0[to+2]);
           }
         }
@@ -596,7 +598,7 @@ function terrTile(ti, tj, lod){
   var g = world.tg, m = new Mesh(), P = m.p, C = m.c, Tt = m.t, fl = !world.hg, st = lod;
   var vx = function(i, j){
     var x = g.x0 + i*g.cell, y = g.y0 + j*g.cell, o = (j*g.cols + i)*6, c = g.c;
-    P.push(x, (fl ? 0 : hAt(x, y)) - 0.03, y); C.push(c[o+3], c[o+4], c[o+5], 255); Tt.push(c[o+1]/255, c[o+2]/255, 45 + c[o]/255*1.2);
+    P.push(x, (fl ? 0 : hAt0(x, y)) - 0.03, y); C.push(c[o+3], c[o+4], c[o+5], 255); Tt.push(c[o+1]/255, c[o+2]/255, 45 + c[o]/255*1.2);
   };
   for (var j = tj*TT; j < (tj + 1)*TT && j + st < g.rows; j += st) for (var i = ti*TT; i < (ti + 1)*TT && i + st < g.cols; i += st){
     vx(i, j); vx(i + st, j); vx(i, j + st); vx(i + st, j + st); vx(i, j + st); vx(i + st, j);

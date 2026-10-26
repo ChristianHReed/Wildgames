@@ -9,6 +9,7 @@ Load order matters (top-level code runs as the files load):
 | `core.js` | canvas and GL handles, resize, `hash` |
 | `mapparse.js` | OSM XML, Overpass, GeoJSON and compact map file parsing (`parseText`, `fromCompact`, `toCompact`) |
 | `world.js` | `buildWorld`: roads, water, buildings, trees, terrain heights, bridges |
+| `dig.js` | digging: soil in 0.5 m blocks under the smooth ground (`dgLoad`, `dgApply`, `digOff`, drawn by `dgPrep`/`drawDig`); a host that never calls these sees no change |
 | `meshes.js` | mesh helpers |
 | `buildings.js` | building shells (walls, roofs, windows) |
 | `interiors.js` | building interiors |
