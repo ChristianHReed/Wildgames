@@ -328,7 +328,7 @@ Notes for the engine: water level is y = 0 and pools, riffles, ditches, sinkhole
 Four packs, version 1, plus a kit file; reasons and recipes in `docs/BUSINESSES.md`; piece lists in `docs/SHAPED.md`. Previews: album scenes "Business: food service / auto, trade and DIY / services / shop fit-out".
 - **`foodservice.js`** (61): fryers, grill, broiler, hood, pizza and rack ovens, steam table, heat pass, ice machine, fridges, sinks, dish machine, fast-food counter and kiosk, drive-thru, menu boards, soda and shake machines, salad bar, bakery, butcher, deli, convenience, ice cream and bar pieces.
 - **`autotrade.js`** (62): lifts, tyre changer, balancer, tool cabinet, compressor, parts shelves, car wash, showroom, pennants, EV charger, fuel lids, DIY racks and bins, storage units, boats, bikes, motorcycle.
-- **`services.js`** (70): dental, vet, optician, salon, barber, nails, tattoo, hotel, bank, post, court, childcare, dorm, laundromat, funeral, lawyer and estate pieces.
+- **`services.js`** (91): dental, vet, optician, salon, barber, nails, tattoo, hotel, bank, post, court, childcare, dorm, laundromat, funeral, lawyer and estate pieces.
 - **`shopfit.js`** (51): doors and windows, awning, ceilings, lights, ducts, safety, partitions, restrooms, wainscot, 15 floor patches.
 - **`businesses.js`**: 60 per-tag kits (rooms, fixtures, exterior, needs, loot, floor).
 Not made: see section 6 of `docs/BUSINESSES.md`.

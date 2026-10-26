@@ -37,7 +37,7 @@ Fit-out: every business has a glass door, a window and an entrance mat in the fr
 | --- | --- | --- |
 | `foodservice` | 61 | Kitchen line, front of house, bakery, butcher, convenience, ice cream and bar, cleaning |
 | `autotrade` | 62 | Workshop, dealer, car wash, fuel, DIY and garden, storage, boats and bikes |
-| `services` | 70 | Health, vet, hair and nails, tattoo, hotel, bank, post, civic and court, childcare, dorm, laundry, funeral, office |
+| `services` | 91 | Health, vet, hair and nails, tattoo, hotel, bank, post, civic and court, childcare, dorm, laundry, funeral, office |
 | `shopfit` | 51 | Doors, windows, awning, ceilings and lights, ducts, safety, partitions, restrooms, wainscot and tile, 15 floor patches |
 
 All version 1, flat colours from each pack's palette, metres, origin at the centre of the base, front facing +Z (a piece you use from one side is noted in its `info[name].use`). Each piece's `info` also has `note`, `use`, `powered`, `water` and `holds` (what loot it can hold). Ceiling pieces hang from y = 3.0 and floor patches are 2 m decals at y = 0.02.
@@ -61,4 +61,4 @@ A dead town is told by what people left half-done: the fryers with oil in them, 
 
 ## 6. Not made yet
 
-Cinema seat rows, projector, stage, DJ booth and disco ball; mall fountain, directory and kiosks; spinner racks, pawn guitar wall, charity bins, florist buckets, a bird cage and aquarium; a car-hoist for buses; restaurant kitchen vents on the roof. Ask in `docs/ART_REQUESTS.md`.
+A car-hoist for buses; restaurant kitchen vents on the roof. Ask in `docs/ART_REQUESTS.md`.
