@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.105.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.106.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.105.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.106.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2813,7 +2813,7 @@ function render(){
   var cAsp = W/H, tvB = Math.max(Math.tan(22.5*Math.PI/180), Math.min(Math.tan(50*Math.PI/180), Math.tan(CAMS.fov*Math.PI/360)/cAsp)), tvK = Math.min(Math.tan(50*Math.PI/180), tvB*(1 + 0.07*CAM.sprint*CAMS.fx*cVeh)); FOVT = tvK;
   var t = 1/tvK, nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   var near = fires.concat(flares, lamps.filter(function(l){ return l.life > 0; }), (world.edits.gens || []).filter(function(g){ return g.on && g.fuel > 0; }).map(function(g){ return {lamp:true, x:g.x, y:g.y, gen:true}; }), gridOn() && dark > 0.3 && world.slights ? world.slights.filter(function(l){ return Math.abs(l.x - P.x) < 70 && Math.abs(l.y - P.y) < 70; }) : [], dark > 0.3 ? eyeLights() : []).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
-  var sc = drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:FOVT}, {hour:hour0, wd:wd, fl:fl, wtype:wx.w, dark:dark, grid:gridOn(), season:season(), lightOn:lightOn(), lights:near, now:now}), md = sc.md, sky = sc.sky;
+  var sc = drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:FOVT}, {hour:hour0, wd:wd, fl:fl, wtype:wx.w, dark:dark, grid:gridOn(), season:season(), lightOn:lightOn() || !!(P.veh && P.veh.t && (carSt(P.veh).light || 0) >= 15 && dark > 0.3 && P.veh.fuel > 0), lights:near, now:now}), md = sc.md, sky = sc.sky;
   var vg = el('vig'); if (vg){ var vo = (md.vig*(P.inside ? 0.7 : 1)).toFixed(2); if (vg.style.opacity !== vo) vg.style.opacity = vo; }
   var m = new Mesh(), x, y, far = world.tg ? world.tg.min - 3 : 0;
   m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
@@ -3917,7 +3917,7 @@ function makeVehicles(saved){
     if (!b.door || b.gone) return; var h1 = hash(b.id, 11, 2), d = b.door, tx = -d.ny, ty = d.nx, x, y;
     if (h1 >= 0.06 && h1 < 0.072 && nb < 300){ x = d.x - d.nx*1.3 + tx*2.4; y = d.y - d.ny*1.3 + ty*2.4; if (!circ(x, y, 0.9)){ var mn0 = ['motorbike_road', 'motorbike_dirt', 'moped', 'quad_bike'][Math.floor(hash(b.id, 18, 2)*4)]; list.push({veh:true, id:'m' + b.id, t:0, moto:mn0, name:'the ' + mn0.replace(/_/g, ' ').replace(' road', '').replace(' dirt', ' (dirt)'), x:x, y:y, yaw:Math.atan2(ty, tx), fuel:Math.round(CAN_M*(0.05 + hash(b.id, 19, 2)*0.7))}); nb++; } }
     else if (h1 < 0.06 && nb < 300){ x = d.x - d.nx*1.3 + tx*2.2; y = d.y - d.ny*1.3 + ty*2.2; if (!circ(x, y, 0.7)){ list.push({veh:true, id:'b' + b.id, t:0, name:'the bicycle', x:x, y:y, yaw:Math.atan2(ty, tx), fuel:0}); nb++; } }
-    else if (h1 > 0.9 && nc < 380 && b.id !== w.safe){ x = d.x - d.nx*5 - tx*2.5; y = d.y - d.ny*5 - ty*2.5; if (!circ(x, y, 1.6)){ var dh = hash(b.id, 14, 3), dd0 = dh < 0.14 ? 'wreck' : dh < 0.22 ? 'burnt' : 0, tk0 = b.kind === 'police' ? 'police' : ['sedan', 'sedan', 'sedan', 'suv', 'suv', 'hatch', 'hatch', 'van', 'van', 'taxi'][Math.floor(hash(b.id, 3, 8)*10)]; list.push({veh:true, id:'c' + b.id, t:1, kind:dd0 ? undefined : tk0, hp:dd0 ? undefined : Math.round(65 + hash(b.id, 18, 3)*35), name:dd0 ? 'the ' + (dd0 === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the car', dead:dd0, x:x, y:y, yaw:Math.atan2(ty, tx) + (dd0 ? (hash(b.id, 15, 3) - 0.5)*0.9 : 0), fuel:dd0 ? 0 : fuelRoll(tk0, b.id, 12)}); nc++; } }
+    else if (h1 > 0.9 && nc < 380 && b.id !== w.safe){ x = d.x - d.nx*5 - tx*2.5; y = d.y - d.ny*5 - ty*2.5; if (!circ(x, y, 1.6)){ var dh = hash(b.id, 14, 3), dd0 = dh < 0.14 ? 'wreck' : dh < 0.22 ? 'burnt' : 0, tk0 = b.kind === 'police' ? 'police' : ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'taxi', 'sedan', 'wagon', 'suv', 'van'][Math.floor(hash(b.id, 3, 8)*16)]; list.push({veh:true, id:'c' + b.id, t:1, kind:dd0 ? undefined : tk0, hp:dd0 ? undefined : Math.round(65 + hash(b.id, 18, 3)*35), name:dd0 ? 'the ' + (dd0 === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the car', dead:dd0, x:x, y:y, yaw:Math.atan2(ty, tx) + (dd0 ? (hash(b.id, 15, 3) - 0.5)*0.9 : 0), fuel:dd0 ? 0 : fuelRoll(tk0, b.id, 12)}); nc++; } }
     else if (h1 > 0.86 && h1 <= 0.9 && nc < 460 && b.id !== w.safe){ x = d.x - d.nx*7 + tx*3.5; y = d.y - d.ny*7 + ty*3.5; if (!circ(x, y, 1.6)){ var d2 = hash(b.id, 16, 3) < 0.6 ? 'wreck' : 'burnt'; list.push({veh:true, id:'c' + b.id, t:1, name:'the ' + (d2 === 'burnt' ? 'burnt-out car' : 'wrecked car'), dead:d2, x:x, y:y, yaw:hash(b.id, 17, 3)*6.28, fuel:0}); nc++; } }
   });
   /* 0.102.0: rowing and motor boats floating just off the shore of the larger ponds and lakes (the boats pack) */
@@ -3960,7 +3960,7 @@ function makeVehicles(saved){
     var dkH = r.br ? deckOfRoad(r, c.u, x, y) : null;
     if ((dkH === null && inWater(x, y, 2)) || buildingAt(x, y) || zoneAt(x, y, 10) || circ(x, y, 1.6)) return;
     var dd = hash(cx, cy, 26), dead = dd < 0.3 ? 'wreck' : dd < 0.42 ? 'burnt' : 0, tilt = dead ? (hash(cx, cy, 27) - 0.5)*1.1 : (hash(cx, cy, 28) - 0.5)*0.2, yaw = Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + tilt;
-    var bk = ['sedan', 'sedan', 'suv', 'hatch', 'hatch', 'van'][Math.floor(hash(cx, cy, 29)*6)];
+    var bk = ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'sedan'][Math.floor(hash(cx, cy, 29)*12)];
     if (MACH.length && hash(cx, cy, 31) < (r.hw === 'motorway' || r.hw === 'trunk' ? 0.16 : r.hw === 'primary' ? 0.1 : 0.05)){ var mk = MACH[Math.floor(hash(cx, cy, 32)*MACH.length)];
       if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(cx, cy, 33) - 0.5)*0.5, fuel:0}); rc++; } return; }
     list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(cx, cy, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, cx, cy)}); rc++;
@@ -4006,8 +4006,10 @@ var VMASS = {car:1.3, truck:3};
 /* 0.88: fuel is metres of range. A tank holds 300 to 400 miles; a fuel can is 100 miles. Cars lying around hold a random amount: a few empty, most a fifth to three quarters, very few full */
 /* the game speaks in inches, feet and miles; the map and physics stay in metres */
 function dist(m, rough){ var ft = m/0.3048; if (ft < 3) return Math.max(1, Math.round(ft*12)) + ' in'; if (m < 800) return (rough ? Math.round(ft/10)*10 : Math.round(ft)) + ' ft'; var mi = m/1609.34; return (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + ' mi'; }
-var MILE = 1609.34, CAN_M = 100*MILE, TANK = {sedan:380, hatch:400, suv:330, van:300, taxi:360, police:340, truck:350}, TOPSPD = {hatch:34, sedan:31, taxi:30, police:36, suv:26, van:22, truck:20}, WEAK = {hatch:1.4, sedan:1, taxi:1, police:0.9, suv:0.75, van:0.65, truck:0.55}, ACCEL = {hatch:12.5, sedan:11, taxi:11, police:13, suv:9.5, van:8, truck:7};   /* small cars are quicker and faster but give way sooner (WEAK scales crash damage) */
+var MILE = 1609.34, CAN_M = 100*MILE, TANK = {wagon:390, offroad:340, crew:300, flatbed:280, boxtruck:260, sedan:380, hatch:400, suv:330, van:300, taxi:360, police:340, truck:350}, TOPSPD = {wagon:30, offroad:28, crew:25, flatbed:21, boxtruck:20, hatch:34, sedan:31, taxi:30, police:36, suv:26, van:22, truck:20}, WEAK = {wagon:0.95, offroad:0.7, crew:0.65, flatbed:0.55, boxtruck:0.5, hatch:1.4, sedan:1, taxi:1, police:0.9, suv:0.75, van:0.65, truck:0.55}, ACCEL = {wagon:10.5, offroad:10, crew:8.5, flatbed:6.5, boxtruck:6, hatch:12.5, sedan:11, taxi:11, police:13, suv:9.5, van:8, truck:7};   /* small cars are quicker and faster but give way sooner (WEAK scales crash damage) */
 function vWeak(V){ var kf = V.cu && V.kind !== 'truck' && (V.cu.ty || V.cu.rm || V.cu.p) ? carFit(carKind(V), V.cu) : null; return (WEAK[V.kind === 'truck' ? 'truck' : baseKind(carKind(V))] || 1)*(1 - 0.12*((V.cu && V.cu.a) | 0))*(1 - Math.min(0.35, ((kf && kf.stats && kf.stats.armor) || 0)/100)); }
+/* 0.106.0: what the bolt-on parts add up to: speed, light, ramDamage, armor, storage, mass */
+function carSt(v){ var kf = v && v.t && v.kind !== 'truck' && v.cu && (v.cu.ty || v.cu.rm || v.cu.p) ? carFit(carKind(v), v.cu) : null; return (kf && kf.stats) || {}; }
 function baseKind(k){ return String(k || 'sedan').replace(/_(wreck|burnt)$/, ''); }
 function tankM(v){ return (TANK[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 350)*MILE; }
 function fuelRoll(kind, a, b){ var u = hash(a, b, 41), f = u < 0.14 ? hash(a, b, 42)*0.03 : u < 0.96 ? 0.04 + Math.pow(hash(a, b, 43), 1.6)*0.7 : 0.9 + hash(a, b, 44)*0.1; return Math.round((TANK[kind] || 350)*MILE*f*(0.92 + hash(a, b, 45)*0.16)); }
@@ -4034,7 +4036,7 @@ function vehBash(V, mx, my, dt){
 }
 /* 0.88: driving. W gas, S brake then reverse, A D steer (less at speed), Space handbrake. The car keeps its own heading and speed; the view follows the heading. */
 /* ---- 0.90 car shop: at a garage, hardware store or petrol station you can name your car, paint it, fit a bigger engine (top speed), reinforce the frame (tougher), and repair it. A named or customised car shows on the maps. ---- */
-var SLOT = {sedan:['paint3'], hatch:['paint1', 'paint2'], suv:['paint2', 'paint1'], van:['white', 'blue'], taxi:['paint3'], police:['paint3', 'paint2']}, CSM = {};
+var SLOT = {sedan:['paint3'], hatch:['paint1', 'paint2'], suv:['paint1', 'paint2'], wagon:['paint2'], offroad:['paint3'], crew:['paint2', 'paint1'], flatbed:['paint2', 'paint1'], boxtruck:['paint1', 'white'], van:['white', 'blue'], taxi:['paint3'], police:['paint3', 'paint2']}, CSM = {};
 var SWATCH = ['#c0392b', '#e67e22', '#e8c53a', '#3f8f4a', '#2c7da0', '#2b4a8a', '#6c3f8f', '#d65f9e', '#f2efe6', '#8a9199', '#2a2d33', '#7a4a2a'];
 function carStyled(k, cu){
   if (!cu || (!cu.c && !cu.t)) return null; var key = k + '|' + (cu.c || '') + '|' + (cu.t || ''); if (CSM[key] !== undefined) return CSM[key]; CSM[key] = null;
@@ -4160,7 +4162,7 @@ function vehSpeed(dt){
   if (v.moto){ if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = CAN_M*0.8; feed('Poured a can of fuel into the ' + v.moto.replace(/_/g, ' '), ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. You can only push it.', 3); } return 1.4; } } v.dry = false; return MOTOSPD[v.moto] || 16; }
   if (!v.t) return 10.5; if (vhp(v) <= 0) return 0;
   if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = Math.min(CAN_M, tankM(v)); feed('Poured a can of fuel into the ' + (v.kind === 'truck' ? 'truck' : 'car'), ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. Find fuel in workshops or buy it from a trader.', 4); } return 0; } }
-  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(1 + 0.08*((v.cu && v.cu.e) | 0))*(vhp(v) < 35 ? 0.4 : 1)*tyreGrip(v);
+  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(1 + 0.08*((v.cu && v.cu.e) | 0))*(vhp(v) < 35 ? 0.4 : 1)*tyreGrip(v)*(1 + Math.max(-0.3, Math.min(0.3, (carSt(v).speed || 0)/100)));
 }
 /* 0.105.0: driving a digger. The house follows where you look (slewing at most 120 degrees a second), look down to dig close and up to reach out, click for one scoop:
    reach, plunge, curl, lift, swing to the side, dump, come back. A scoop takes the pack's `scoopBlocks` blocks off the ground under the teeth (a mini excavator one, an excavator four) and you get the soil. */
@@ -4202,13 +4204,13 @@ function tyreGrip(v){
 function vehMoved(v, dx, dy, dt){
   var d = Math.hypot(dx, dy); v.x = P.x; v.y = P.y; v.rd = time; if (d < 0.002) return; if (!v.t) v.yaw = Math.atan2(dy, dx);
   if (v.moto){ v.fuel = Math.max(0, v.fuel - d*0.6); if (v.fuel > 0) P.noise = Math.max(P.noise, 1); }
-  if (v.t){ v.fuel = Math.max(0, v.fuel - d); P.noise = Math.max(P.noise, 1); for (var i = 0; i < zombies.length; i++){ var z = zombies[i], zx = z.x - P.x, zy = z.y - P.y, zd = Math.hypot(zx, zy) || 0.001; if (zd < 1.3 + AK[z.k].r && z.hurt <= 0) hitZombie(z, 6, zx/zd*12, zy/zd*12); } }
+  if (v.t){ v.fuel = Math.max(0, v.fuel - d); P.noise = Math.max(P.noise, 1); for (var i = 0; i < zombies.length; i++){ var z = zombies[i], zx = z.x - P.x, zy = z.y - P.y, zd = Math.hypot(zx, zy) || 0.001; if (zd < 1.3 + AK[z.k].r && z.hurt <= 0){ var rmk = carSt(v).ramDamage || 1; hitZombie(z, 6*rmk, zx/zd*12*rmk, zy/zd*12*rmk); } } }
 }
 /* ---- cars on screen (0.39): the Kenney Car Kit models, with wheels that roll with the ground covered and front wheels that steer ---- */
 function carKind(v){
   if (v.kind) return v.kind; var b = v.id[0] === 'c' ? world.buildings[+v.id.slice(1)] : null;
-  if (v.dead){ var bk = ['sedan', 'sedan', 'suv', 'hatch', 'hatch', 'van'][Math.floor(hash(b ? b.id : 1, 3, 8)*6)]; return v.kind = bk + '_' + v.dead; }
-  return v.kind = b && b.kind === 'police' ? 'police' : ['sedan', 'sedan', 'sedan', 'suv', 'suv', 'hatch', 'hatch', 'van', 'van', 'taxi'][Math.floor(hash(b ? b.id : v.id.length, 3, 8)*10)];
+  if (v.dead){ var bk = ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'sedan'][Math.floor(hash(b ? b.id : 1, 3, 8)*12)]; return v.kind = bk + '_' + v.dead; }
+  return v.kind = b && b.kind === 'police' ? 'police' : ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'taxi', 'sedan', 'wagon', 'suv', 'van'][Math.floor(hash(b ? b.id : v.id.length, 3, 8)*16)];
 }
 function vehAnim(v, now){
   var dtf = Math.max(0, Math.min(0.1, now - (v.at === undefined ? now : v.at))); v.at = now;
@@ -4220,7 +4222,7 @@ function vehAnim(v, now){
   v.ax = v.x; v.ay = v.y; v.ayaw = v.yaw;
 }
 /* 0.75: car damage looks (props.vehicles[name].damage) by vehicle health: whole above 70; 70 to 40 bent bumper and cracked windscreen; 40 to 15 light crumple; under 15 heavy crumple with the bonnet buckled and smoke; wrecked at 0 with the windscreen gone; then burning, then the burnt shell */
-var CKD = {sedan:['sedan'], hatch:['hatchback'], suv:['pickup'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]}, CDM = {};
+var CKD = {sedan:['sedan'], hatch:['hatchback'], suv:['suv'], wagon:['wagon'], offroad:['offroader'], crew:['crew_pickup'], flatbed:['flatbed'], boxtruck:['box_truck'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]}, CDM = {};
 function carDmgModel(k, lv, fire, cu){
   var key = k + '|' + lv + (fire ? 'f' : '') + (cu && (cu.c || cu.t) ? '|' + (cu.c || '') + (cu.t || '') : ''); if (CDM[key] !== undefined) return CDM[key]; CDM[key] = null;
   try { var C0 = CKD[k]; if (!C0 || !SPON || !VMOD[k] || !VMOD[k].w) return null; var PR = SHAPED.props, V = PR.models.vehicles[C0[0]], D = V && V.damage; if (!D) return null;

@@ -100,7 +100,9 @@ function spInstall(){ if (SPON) (function(){
     for (nm in SP_NEW){ var F = FURN[nm]; pcs = spPieces(SP_NEW[nm]); if (!F || !pcs) continue; var s0 = F.s || [F.boxes[0][3], F.boxes[0][5]], hh = 0; F.boxes.forEach(function(b){ hh = Math.max(hh, b[1] + b[4]); });
       MODELS['sp_' + nm] = spModel(pcs, col, {q:spFitQ(pcs, s0[0], s0[1]), fit:{hx:s0[0]*0.96, hz:s0[1]*0.96, h:hh}}); F.models = ['sp_' + nm]; }
     /* cars: the body and bonnet as one model, and a wheel placed at each of the rig's wheel positions; taxis and police cars repaint the sedan */
-    var CK = {sedan:['sedan'], hatch:['hatchback'], suv:['pickup'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}], truck:['pickup', {paint2:'#963e30'}]};
+    var NEWC = {wagon:'wagon', suv:'suv', offroad:'offroader', crew:'crew_pickup', flatbed:'flatbed', boxtruck:'box_truck'};   /* 0.106.0: the content chat's six other cars */
+    for (nm in NEWC){ var sp0 = PR.vehicleSpec[NEWC[nm]]; if (!sp0) continue; VMOD[nm] = VMOD[nm] || {n:0, p:new Float32Array(0), c:new Uint8Array(0)}; VMOD[nm].hx = sp0.length/2; VMOD[nm].hz = sp0.width/2; VMOD[nm].h = sp0.roof.y; VMOD[nm].drop = 0; }
+    var CK = {sedan:['sedan'], hatch:['hatchback'], wagon:['wagon'], suv:['suv'], offroad:['offroader'], crew:['crew_pickup'], flatbed:['flatbed'], boxtruck:['box_truck'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}], truck:['pickup', {paint2:'#963e30'}]};
     for (nm in CK){ var V = PR.models.vehicles[CK[nm][0]], R = PR.vehicleRig[CK[nm][0]]; if (!V || !R || !VMOD[nm]) continue;
       var vc = spColour(PR.palette, CK[nm][1]), B = spModel(V.body.concat(V.bonnet || []), vc, {car:true}), Wm = spModel(V.wheel, vc, {car:true});
       VMOD['sp_' + nm + '_w'] = Wm; B.w = R.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + nm + '_w']; }); B.h = VMOD[nm].h; SPCAR[nm] = VMOD[nm]; VMOD[nm] = B; }
@@ -114,7 +116,7 @@ function spInstall(){ if (SPON) (function(){
       VMOD.truck_gap = spModel(TV.door_gap, tcol, {car:true});
       var tt = PR.models.items.tyre_loose; if (tt) VMOD.tire = spModel(tt, tcol); } catch (er3){ console.log('truck bits', er3); }
     /* wrecks and burnt-out shells of every car: the same parts with their own wheels, sunk by sitDrop */
-    var WB = {sedan:'sedan', hatch:'hatchback', suv:'pickup', van:'van'};
+    var WB = {sedan:'sedan', hatch:'hatchback', suv:'suv', wagon:'wagon', offroad:'offroader', crew:'crew_pickup', flatbed:'flatbed', boxtruck:'box_truck', van:'van'};
     for (nm in WB) ['wreck', 'burnt'].forEach(function(st){ var pn = WB[nm] + '_' + st, V2 = PR.models.vehicles[pn], R2 = PR.vehicleRig[pn], key = nm + '_' + st; if (!V2 || !R2 || !VMOD[nm] && !SPCAR[nm]) return;
       var vc2 = spColour(PR.palette), B2 = spModel(V2.body.concat(V2.bonnet || []), vc2, {car:true}), W2 = spModel(V2.wheel, vc2, {car:true}); VMOD['sp_' + key + '_w'] = W2; B2.w = R2.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + key + '_w']; }); B2.h = (SPCAR[nm] || VMOD[nm]).h; B2.drop = R2.sitDrop || 0; VMOD[key] = B2; });
     /* 0.87: the art chat's service and construction vehicles (assets/shaped/machines.js), parked at rest as abandoned wrecks on the roads */
@@ -807,7 +809,7 @@ function spBikeDraw(m, v){
   return true;
 }
 /* 0.101.0: the vehicle kit (assets/shaped/vehiclekit.js, vehiclefit.js): tyres, rims and bolt-on parts fitted to a car. carFit(kind, cu) works out the plan once per loadout */
-var KITV = {sedan:'sedan', hatch:'hatchback', suv:'pickup', van:'van', taxi:'sedan', police:'sedan'}, KWM = {}, KFIT = {};
+var KITV = {wagon:'wagon', offroad:'offroader', crew:'crew_pickup', flatbed:'flatbed', boxtruck:'box_truck', sedan:'sedan', hatch:'hatchback', suv:'suv', van:'van', taxi:'sedan', police:'sedan'}, KWM = {}, KFIT = {};
 function kitModel(grp, name, sx, sy, sz, mir, ov, okey){
   var key = grp + '|' + name + '|' + [sx, sy, sz].map(function(n){ return n.toFixed(3); }).join(',') + '|' + (mir ? 1 : 0) + '|' + okey; if (KWM[key] !== undefined) return KWM[key]; KWM[key] = null;
   try { var K = SHAPED.vehiclekit, pcs = K.models[grp][name]; if (!pcs) return null; var M = spModel(pcs, spColour(K.palette, ov), {car:true, s:[sx, sy, sz]});

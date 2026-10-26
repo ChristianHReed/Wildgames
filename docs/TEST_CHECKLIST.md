@@ -162,3 +162,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.104.2) A ladder in a 1.5, 2.5 and 4 m pit is a short, medium and long wooden ladder leaning on the wall, and you still climb out beside it.
 - [ ] (0.105.0) Find a yellow excavator or mini excavator by an industrial building (E to get in). W drives slowly, looking left or right swings the arm, looking down digs closer. Click: the arm reaches, plunges, curls, lifts, swings, dumps and returns, a hole appears and you get soil. At 4 m (2 m mini) it says it is as deep as it goes.
 - [ ] (0.105.1) Press P for third-person view and get on a bicycle, a motorbike and a boat: your character sits on it and stays visible.
+- [ ] (0.106.0) Town cars now include wagons, SUVs, offroaders, crew pickups, flatbeds and box trucks (and their wrecks). Fit a bull bar with lights: it hits aliens harder and lights the road ahead at night.
