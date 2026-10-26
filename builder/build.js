@@ -145,8 +145,6 @@ L.squareText = async function(proj, i, j){
   var key = proj + ':' + i + ':' + j, text = await L.dbGet('squares', key); if (!text) return text;
   var ops = await L.dbGet('edits', key); return ops && ops.length ? L.terrainApply(text, ops) : text;
 };
-/* add dabs to the squares they touch. region is the project's region record; returns the squares changed */
-/* the box (lon0, lat0, lon1, lat1) an edit can change; a river's reaches 3 widths beyond its line */
 /* Flood: water rises lv metres above the ground where the player tapped, inside a brush circle, and covers every connected cell at or below that level
    (a flood fill over the elevation grid, so it fills the low ground and stops at the banks). Returns the outline of the largest wet patch as a flat
    [lon, lat, ...] ring, edges squared off to the grid and thinned so a pond does not carry hundreds of points. */
@@ -177,6 +175,8 @@ L.floodRing = function(E, h, o){
   out.push(out[0], out[1]); return out;
 };
 
+/* add dabs to the squares they touch. region is the project's region record; returns the squares changed */
+/* the box (lon0, lat0, lon1, lat1) an edit can change; a river's reaches 3 widths beyond its line */
 L.opBox = function(o){
   var cl = Math.cos((o.lat || (o.c ? o.c[1] : 0))*Math.PI/180);
   if (o.c){ var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (var i = 0; i < o.c.length; i += 2){ x0 = Math.min(x0, o.c[i]); x1 = Math.max(x1, o.c[i]); y0 = Math.min(y0, o.c[i + 1]); y1 = Math.max(y1, o.c[i + 1]); } var m = (o.w || 10)*3; return [x0 - m/(111320*cl), y0 - m/110540, x1 + m/(111320*cl), y1 + m/110540]; }
