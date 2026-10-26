@@ -69,6 +69,12 @@ def add(pack):
         V[n] = {'pack': 'props', 'group': 'car', 'kind': 'car', 'wheel': {'r': s['wheelR'], 'w': s['wheelW'], 'points': wp, 'archClear': s['archClear'], 'maxR': round(s['wheelR']*1.4, 3), 'stock': {'tyre': st[0], 'rim': st[1]}},
                 'paintSlots': ['paint1', 'paint2', 'paint3'], 'mounts': m}
     for n, s in Mc['spec'].items():
+        if 'roof' in s and 'wheelR' not in s:
+            ro = s['roof']; g = 'house' if n == 'excavator' else 'body'
+            V[n] = {'pack': 'machines', 'group': 'machine', 'kind': 'machine', 'paintSlots': ['BODY'], 'tracked': True,
+                    'mounts': {'roof': {'pos': [0, ro['y'], ro['z']], 'w': ro['w'] + 0.1, 'd': ro['d'] + 0.3, 'group': g},
+                               'roof_decal': {'pos': [0, ro['y'], ro['z']], 'w': ro['w'], 'd': ro['d'] + 0.3, 'group': g}}}
+            continue
         if 'wheelR' not in s or 'roof' not in s: continue
         m, wp = car_mounts(s, machine=True)
         V[n] = {'pack': 'machines', 'group': 'machine', 'kind': 'machine', 'wheel': {'r': s['wheelR'], 'w': s['wheelW'], 'points': wp, 'archClear': s['archClear'], 'maxR': round(s['wheelR']*1.15, 3), 'stock': {'tyre': 'heavy', 'rim': 'steel'}},

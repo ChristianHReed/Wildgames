@@ -149,7 +149,7 @@ hatchback 57, sedan 57, wagon 70, suv 71, offroader 62, pickup 78, crew_pickup 7
 
 - Parts do not yet change a vehicle's physics: `stats` on each part and `grip` on each tyre are numbers for the game to use (armor, storage, light, mass, speed, plough, winch, tow, fuelBonus, wade, sleep, loot).
 - The plough part has a rig (`rig`: pivot, turn about x, 0 to 25 degrees) to raise the blade; the outboards have a steer rig and a separate spinning prop (`outboard_<n>_prop`).
-- Roof, hood, front and rear parts on machines are only offered where the machine has a roof spec (excavator and bulldozer have no mounts).
+- The excavator and bulldozer only have roof mounts (the excavator's belongs to the swinging `house` group, so draw parts with it); they have no wheels, so tyres do not apply. Other machines have the full set.
 - Colour: parts use fixed flat colours except `BODY`. A second paint slot for parts would be a small addition if wanted.
 - Idea: loot parts (`loot` stat on loads and spares) can be searched with the normal container rules; `carries: 'kayak'` marks roof carriers a boat can be loaded onto.
 
