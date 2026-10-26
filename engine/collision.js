@@ -177,6 +177,7 @@ function hitWall(x, y){
   return false;
 }
 function stepMove(e, dx, dy, r){
+  if (DIGN && e !== P && e.hp !== undefined){ var gh = hAt(e.x, e.y); if (e.pgh !== undefined && e.pgh - gh > 1.4) e.hp -= (e.pgh - gh)*5; e.pgh = gh; }   /* 0.99.1: whatever drops into a pit is hurt */
   var l = Math.hypot(dx, dy), n = Math.max(1, Math.ceil(l/0.25));
   for (var i = 0; i < n; i++){
     var ox = e.x, oy = e.y; e.x += dx/n; e.y += dy/n; collide(e, r);

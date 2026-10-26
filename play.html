@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.99.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.99.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.99.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.99.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1931,7 +1931,9 @@ function update(dt){
   var wasSwim = P.swim; P.swim = !P.roof && !P.climbL && inWater(P.x, P.y, 0) && !(DK && P.gy !== undefined && deckHit(P.x, P.y, P.gy)); if (P.swim && !wasSwim) fxAdd('effects.water_splash', P.x, P.y, P.gy || 0, {life:0.5, s0:0.8, s1:1, up:0.1}); P.inside = P.roof || P.climbL ? null : buildingAt(P.x, P.y);
   setLvl(P); if (!P.inside) P.lvl = 0;
   var tgy = P.climbL ? climbH() : P.roof ? roofY(P.roof) : (world.hg ? (P.inside ? P.inside.base : baseAt(P.x, P.y, P.gy)) : 0) + (P.inside ? lvlY(P.inside, P) : 0); if (P.veh) P.veh.gh = !P.inside && LASTDECK ? tgy : undefined;
-  if (P.fall){ P.fall += 9.8*dt; P.gy -= P.fall*dt; if (P.gy <= tgy){ P.gy = tgy; P.fall = 0; } } else P.gy = P.gy === undefined || P.climbL || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
+  /* 0.99.1: stepping off the edge of a hole drops you: a fall of more than 2 m hurts (and from 3.5 m can break a leg) */
+  if (!P.fall && DIGN && !P.inside && !P.climbL && !P.roof && !P.veh && !P.swim && P.gy !== undefined && P.gy - tgy > 0.9 && P.gy - tgy < 12){ P.fall = 0.1; P.fy0 = P.gy; }
+  if (P.fall){ P.fall += 9.8*dt; P.gy -= P.fall*dt; if (P.gy <= tgy){ P.gy = tgy; P.fall = 0; if (P.fy0 !== undefined){ var fd = P.fy0 - tgy; P.fy0 = undefined; if (fd > 2.1){ P.hp -= (fd - 2)*11; P.cause = 'a fall'; P.hurt = 0.3; sfx('stone', P.x, P.y, 0.8, 0.6); P.noise = Math.max(P.noise || 0, 4); if (fd > 3.4 && !P.leg && Math.random() < 0.55) breakLeg(); } } } } else P.gy = P.gy === undefined || P.climbL || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
   /* jumping: a hop of about 0.7 m outdoors and half that under a ceiling; not while swimming, driving, hiding, climbing, falling or out of breath */
   if (wantJump){ wantJump = false; if (!P.jy && !P.jv && !P.fall && !P.swim && !P.veh && !P.hide && !P.climbL && !P.sleep && !P.cop && !P.tired && P.stam >= 10){ P.jv = P.inside ? 3.6 : 4.6; P.stam -= 8; P.noise = Math.max(P.noise || 0, 2); P.jy = 0.001; P.jumpT = time; } }
   if (P.jy > 0 || P.jv){ if (P.fall || P.swim || P.climbL || P.hide || P.veh){ P.jy = 0; P.jv = 0; } else { P.jv -= 14*dt; P.jy += P.jv*dt; if (P.jy <= 0){ P.landT = time; if (!P.inside) fxAdd('effects.dust_puff', P.x, P.y, P.gy || 0, {life:0.6, s0:0.5, s1:1.4, rise:0.1, up:0.02}); CAM.landV = -Math.min(7, -P.jv)*0.5; P.jy = 0; P.jv = 0; P.noise = Math.max(P.noise || 0, 2.5); } } }
