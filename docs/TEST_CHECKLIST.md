@@ -151,3 +151,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.99.1) Walk into a 3 m hole: you fall and lose health; a 4 m fall may break your leg. Lure an alien into a pit: it takes damage and stays in it.
 - [ ] (0.99.2) Dig a 2 m pit, stand in it facing a wall, Build, Ladder: the ladder stands against the wall and you can walk up out of the pit beside it. Without it you cannot.
 - [ ] (0.99.3) On a phone with a shovel: look down, tap the prompt to dig; crouch and tap to fill.
+- [ ] (0.100.0) Parked bicycles look like real bikes (different kinds). Ride one: wheels spin, handlebars turn with the front wheel, pedals turn.
