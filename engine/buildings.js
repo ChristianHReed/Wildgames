@@ -561,7 +561,7 @@ function placeDress(g){
     /* 0.114.1: fields with enough crop get a wire fence round the edge (4 m a piece, left open where a road or building is) and a scarecrow in the middle of a few */
     if (spB('fm.fence_wire_4')){ var fnc = 0; w.areas.forEach(function(ar, ai){ if (!fmF[ai] || fmF[ai] < 12 || fnc > 700) return; var pt = ar.pts, np = pt.length/2, q;
       for (q = 0; q < np; q++){ var p0 = {x:pt[q*2], y:pt[q*2+1]}, p1 = {x:pt[((q + 1) % np)*2], y:pt[((q + 1) % np)*2+1]}, ex = p1.x - p0.x, ey = p1.y - p0.y, L = Math.hypot(ex, ey), n = Math.floor(L/4), m; if (L < 4) continue; ex /= L; ey /= L;
-        for (m = 0; m < n; m++){ var fx = p0.x + ex*(m*4 + 2), fy = p0.y + ey*(m*4 + 2); if (!ok(fx, fy, 0.4)) continue; add(hash(ai, q*50 + m, 75) < 0.04 ? 'fm.fence_rail_gap' : 'fm.fence_wire_4', fx, fy, Math.atan2(-ey, ex), 1e6); fnc++; } }
+        for (m = 0; m < n; m++){ var fx = p0.x + ex*(m*4 + 2), fy = p0.y + ey*(m*4 + 2); if (!ok(fx, fy, 0.4)) continue; add(hash(ai, q*50 + m, 75) < 0.04 ? 'fm.fence_rail_gap' : (m === 1 && q % 2 === 0) ? 'fm.gate_field' : 'fm.fence_wire_4', fx, fy, Math.atan2(-ey, ex), 1e6); fnc++; } }
       if (hash(ai, 76, 9) < 0.35){ var sx = (ar.minx + ar.maxx)/2, sy = (ar.miny + ar.maxy)/2; if (pip(ar.pts, sx, sy) && ok(sx, sy, 0.5)) add('fm.scarecrow', sx, sy, hash(ai, 77, 9)*6.28, 1e6); } }); }
   /* 0.114.2: farm buildings (building=barn, farm, farm_auxiliary, stable, cowshed, silo, greenhouse is left alone): a silo or grain bin and hay beside a barn, a trough and a mailbox out by the door of a farmhouse */
   if (spB('fm.silo')) w.buildings.forEach(function(b, bi){
@@ -570,6 +570,9 @@ function placeDress(g){
       var tx = -d.ny, ty = d.nx, side = hash(bi, 81, 9) < 0.5 ? 1 : -1, w2 = Math.max(b.maxx - b.minx, b.maxy - b.miny)/2 + 5, x = b.cx + tx*side*w2, y = b.cy + ty*side*w2;
       if (ok(x, y, 3.5)) add(hash(bi, 82, 9) < 0.6 ? 'fm.silo' : 'fm.grain_bin', x, y, hash(bi, 83, 9)*6.28, 1e6);
       var hx = b.cx - tx*side*w2, hy = b.cy - ty*side*w2; if (ok(hx, hy, 2.5)) add(hash(bi, 84, 9) < 0.5 ? 'fm.bale_stack' : 'fm.haystack', hx, hy, hash(bi, 85, 9)*6.28, 1e6);
+      var vx = d.x - d.nx*9 + tx*side*3, vy = d.y - d.ny*9 + ty*side*3, vh = hash(bi, 87, 9);
+      if (vh < 0.45 && ok(vx, vy, 2.5)){ add('fm.tractor', vx, vy, Math.atan2(-d.nx, -d.ny) + (hash(bi, 88, 9) - 0.5), 1e6); if (vh < 0.2 && ok(vx + tx*side*5, vy + ty*side*5, 2.5)) add('fm.hay_wagon', vx + tx*side*5, vy + ty*side*5, Math.atan2(-d.nx, -d.ny), 1e6); }
+      var wx = b.cx - d.nx*(w2 + 8), wy = b.cy - d.ny*(w2 + 8); if (hash(bi, 89, 9) < 0.4 && ok(wx, wy, 2)) add('fm.windmill', wx, wy, hash(bi, 90, 9)*6.28, 1e6);
       var tq = d.x - d.nx*4, tr = d.y - d.ny*4; if (bt !== 'farm_auxiliary' && ok(tq, tr, 1)) add('fm.water_trough', tq, tr, Math.atan2(-d.nx, -d.ny) + Math.PI/2, 1e6);
     } else if (bt === 'farm' || (b.kind === 'house' && b.area > 80 && b.cat === 'house' && hash(bi, 86, 9) < 0.02 && inFarmland(b.cx, b.cy))){
       var mx = d.x - d.nx*7 + d.ny*3, my = d.y - d.ny*7 - d.nx*3; if (ok(mx, my, 0.5)) add('fm.mailbox', mx, my, Math.atan2(-d.nx, -d.ny), 1e6);
