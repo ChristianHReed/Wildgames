@@ -433,7 +433,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.5</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.6</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -456,7 +456,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.5', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.6', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4536,6 +4536,8 @@ function checkScenario(){
 function engHum(){
   if (!SND.ctx || !SND.out) return; var V0 = P.veh, mb = V0 && V0.boat && /jon|bass|runabout|pontoon|jet|fishing/.test(String(V0.boat)), kd = !V0 ? 0 : V0.mach ? 3 : mb ? 2 : V0.moto ? 1 : 0,
     on = !!(V0 && running && !P.sleep && (V0.t ? V0.fuel > 0 : kd === 1 ? !(V0.fuel <= 0) : kd > 1)), sp = on ? Math.min(1, (V0.spd || 0)/(kd === 1 ? 24 : kd === 2 ? 14 : kd === 3 ? 6 : 28)) : 0, bf = [36, 62, 48, 26][kd], bs = [58, 70, 40, 14][kd];
+  /* 0.114.6: oars, paddles and poles dip with a splash while a human-powered boat moves */
+  if (V0 && V0.boat && !mb && running && (V0.spd || 0) > 0.8){ var tn = performance.now(), per = 1500/Math.min(3, V0.spd); if (!V0.sp0 || tn - V0.sp0 > per){ V0.sp0 = tn; sfx('step_water_run', V0.x, V0.y, 0.45, 0.8, 30); } }
   if (!SND.eng){ if (!on) return; try { var o = SND.ctx.createOscillator(), f = SND.ctx.createBiquadFilter(), g = SND.ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = 40; f.type = 'lowpass'; f.frequency.value = 240; g.gain.value = 0; o.connect(f); f.connect(g); g.connect(SND.out); o.start(); SND.eng = {o:o, g:g, f:f}; } catch (e){ SND.eng = {dead:1}; } }
   if (SND.eng.dead) return; var t = SND.ctx.currentTime; SND.eng.g.gain.setTargetAtTime(on ? 0.05 + sp*0.08 : 0, t, 0.15); SND.eng.o.frequency.setTargetAtTime(bf + sp*bs, t, 0.25); SND.eng.f.frequency.setTargetAtTime(200 + sp*300, t, 0.25);
 }
