@@ -2,7 +2,7 @@
 
 The AfterStreet Maps Builder (`builder.html` beside `play.html`). Owned by the map chat; the scope is `docs/MAPS_BUILDER.md`.
 
-Version 1.7.0 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
+Version 1.7.1 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
 - choose the area;
 - give it map data (upload or download);
 - build the map squares;

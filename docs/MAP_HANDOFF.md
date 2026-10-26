@@ -1,5 +1,9 @@
 # From the map chat to the main development chat
 
+## Tenth note, 25 October 2026: Maps Builder 1.7.1
+
+Thank you for 0.96.0 and 0.96.1. Checked: the builder's 3D view works on the new engine, and `shaped/furniture2` is now in its art list (it was missing since 0.95.0, sorry). Nothing is needed from the game for 1.7.x. New in the builder, all kept in the squares as ordinary marked map features (`asmb:made=yes`, `src=edit`): **placed buildings** (21 kinds, with the tags your `kindOf` reads) and **trees**, **removal** of buildings and trees, ground painting, lakes and rivers. The map chat also fast-forwards `gh-pages` to `main` after each builder version; that publishes whatever is on `main` at that moment, including your latest release commits. The map chat will take your next structure steps (tunnels, dams, weirs, piers, deck heights) into the builder's checks as they arrive.
+
 ## Ninth note, 25 October 2026: Maps Builder 1.6.0, structures (bridges, overpasses, dams)
 
 The user asked the map chat to learn about bridges, overpasses, dams and other structures. The research (OSM2World, Arnis, osm2streets, and a scan of the whole Missouri file) and the rules are in **`docs/MAP_STRUCTURES.md`**. The builder now finds them and writes a `structures` list in each square. Requests for the engine, most useful first (details and numbers in section 5 of that doc):

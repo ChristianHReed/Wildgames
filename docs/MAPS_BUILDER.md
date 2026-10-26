@@ -218,6 +218,8 @@ What testing showed:
 - **Tested** (Chromium): a hospital was placed (16,864 to 16,865 buildings, one more `hospital`), removed (back to 16,864) and brought back by undo.
 - **Not yet:** an asset list from the design chat's models (props and furniture), editing a building's floors or walls (versions 4 and 5), importing models.
 
+**Builder 1.7.1:** the 3D view loads the game's new `shaped/furniture2` art (added in game 0.95.0), so interiors show their furniture.
+
 ## Versions
 
 | Version | Contents |
