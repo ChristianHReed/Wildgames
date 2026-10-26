@@ -246,6 +246,8 @@ What testing showed:
 
 **Builder 1.17.0:** data the content chat asked for in its business and boats notes. (1) Buildings keep `asmb:area` (m2, rounded to 5), `asmb:floors`, and `asmb:state` (`disused` or `abandoned`, only when not open) from `disused:*`, `abandoned:*`, `was:*` and similar prefixed tags, which the build now keeps (they were dropped before); a closed business keeps the use it had. (2) `pier` and new `ramp` structures carry `mar:1` near a marina. (3) Long wet road crossings carry `fe:1` (ferry candidate). Tested in Node on synthetic buildings; the Springfield core sample has no `disused:` tags, so it is not tested on real data, and the Missouri file is where to check it. Size cost: five squares came to 25 MB of square text (about 4,900 buildings carry area and floors).
 
+**Builder 1.18.0:** **Props tool** (first piece of version 4, the asset list). In the 3D Edit panel, pick a category (street, plants, garden, shop, vehicles, containers, building bits, waterside, furniture) and a piece from the design and content chats' art packs, a turn, and tap the ground. The prop is saved as a map point `[lon, lat, {"asmb:prop":"street.bench", "asmb:ry":"1", "asmb:made":"yes"}]`, kept with the other edits, baked into the square and drawn in the builder's 3D view (`propMesh`, `spB`, `Mesh.modelS`). The game does not place them yet: the hand-off note (sixteenth) says how. Remove takes the nearest prop away.
+
 ## Versions
 
 | Version | Contents |
