@@ -838,6 +838,41 @@ function spBoatDraw(m, v, now){
   if (K.W && (v.spd || 0) > 1.5) m.part(K.W, v.x, v.y, v.yaw, 0.02, 0, 0, 0, 0, 0);
   return true;
 }
+/* 0.105.0: working diggers (machines pack, `excavator` and `mini_excavator`): a chain of turns applied child first, each about its rest pivot, then the machine is set down at (x, z) and turned by yaw.
+   steps: {z:rz, px, py} turns about the sideways axis through (px, py) (the cars' rz), {y:ry} slews about the upright axis through the origin */
+Mesh.prototype.chain = function(M, x, z, yaw, y0, steps){
+  var cs = Math.cos(yaw), sn = Math.sin(yaw), p = M.p, c = M.c, q = [0,0,0,0,0,0,0,0,0], yb = y0 + this.yo, n = steps.length, i, j, k, st;
+  var T = steps.map(function(s2){ var a = s2.z !== undefined ? s2.z : s2.y; return {z:s2.z !== undefined, px:s2.px || 0, py:s2.py || 0, c:Math.cos(a), s:Math.sin(a)}; });
+  for (i = 0; i < M.n; i++){
+    for (j = 0; j < 3; j++){ var o = i*9 + j*3, lx = p[o], ly = p[o + 1], lz = p[o + 2];
+      for (k = 0; k < n; k++){ st = T[k]; if (st.z){ var dx = lx - st.px, dy = ly - st.py; lx = st.px + dx*st.c + dy*st.s; ly = st.py - dx*st.s + dy*st.c; } else { var bx = lx*st.c - lz*st.s; lz = lx*st.s + lz*st.c; lx = bx; } }
+      q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = yb + ly; q[j*3 + 2] = z + sn*lx + cs*lz; }
+    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
+  }
+};
+var DIGM2 = {};
+function spDigger(name){
+  if (DIGM2[name] !== undefined) return DIGM2[name]; DIGM2[name] = null;
+  try { var S = window.SHAPED && SHAPED.machines; if (!S || !S.models[name] || !S.rig[name] || !SPON) return null; var col = spColour(S.palette, {BODY:S.paint[name]}, S.darker), R = S.rig[name], K = {R:R}, pn;
+    for (pn in S.models[name]) K[pn] = spModel(S.models[name][pn], col, {car:true});
+    var pv = function(n2){ return [R[n2].pivot[2], R[n2].pivot[1]]; }; K.pv = {boom:pv('boom'), stick:pv('stick'), bucket:pv('bucket'), blade:R.blade ? pv('blade') : null, house:R.house.pivot[1]};
+    DIGM2[name] = K; } catch (er){ console.log('spDigger', er); }
+  return DIGM2[name];
+}
+/* v.rg = {sl: slew of the house (radians, the same turn as a yaw), boom, stick, bucket, blade (degrees, as the pack's rig), load} */
+function spDiggerDraw(m, v){
+  var K = spDigger(v.mach); if (!K) return false; var g = v.rg || {}, d2r = Math.PI/180, X = v.x, Z = v.y, Y = v.yaw, sl = g.sl || 0;
+  var zs = function(n2, ang, tr){ return {z:ang*d2r*tr, px:K.pv[n2][0], py:K.pv[n2][1]}; }, R = K.R, hs = {y:sl};
+  var bo = zs('boom', g.boom || 0, R.boom.turn[0]), st = zs('stick', g.stick || 0, R.stick.turn[0]), bu = zs('bucket', g.bucket || 0, R.bucket.turn[0]);
+  m.part(K.tracks, X, Z, Y, 0, 0, 0, 0, 0, 0);
+  if (K.blade && K.pv.blade) m.chain(K.blade, X, Z, Y, 0, [zs('blade', g.blade || 0, R.blade.turn[0])]);
+  m.chain(K.house, X, Z, Y, 0, [hs]);
+  m.chain(K.boom, X, Z, Y, 0, [bo, hs]);
+  m.chain(K.stick, X, Z, Y, 0, [st, bo, hs]);
+  m.chain(K.bucket, X, Z, Y, 0, [bu, st, bo, hs]);
+  if (g.load && K.bucket_load) m.chain(K.bucket_load, X, Z, Y, 0, [bu, st, bo, hs]);
+  return true;
+}
 function hashStr(t){ var h = 0, i; for (i = 0; i < t.length; i++) h = (h*31 + t.charCodeAt(i)) | 0; return h; }
 var SPB = {};
 function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(path.slice(0, 3) === 'ws.' ? SHAPED.waterside.palette : SHAPED.props.palette)); } catch (er){} return SPB[path]; }
