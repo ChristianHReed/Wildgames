@@ -167,3 +167,7 @@ This is about the coming **AfterStreet Maps Builder**, a companion app the user 
 ### What the map chat will not touch
 
 `play.html`, `sw.js`, `engine/` and the game's own files. Anything the game must change comes to the main chat through notes like this one.
+
+## Eleventh note (builder 1.8.0 to 1.11.0)
+
+For the main chat: no change needed to read these. (1) `structures` now also holds `bank` entries with `t:"cut"|"fill"`, `h` (depth, m), `len` up to 200 m, `src:"inferred"`, for roads and rail in cuttings or on embankments; the content chat's `land` pack (`cut_*`, `fill_*`) can be placed from them along way `w` around `lon`/`lat`. (2) The player can now draw roads, dams, weirs, piers, breakwaters and retaining walls in the builder; they are ordinary tagged ways (`asmb:made=yes`) plus `structures` entries, so game 0.97 draws them. (3) The 3D view loads `shaped/structures`. Content chat's other data wishes (creek bend side, karst flag, tree stand type) are not done yet: say which matters most.

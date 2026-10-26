@@ -228,6 +228,8 @@ What testing showed:
 
 **Builder 1.10.0:** a **Layers** button in the 3D view shows or hides buildings, roads and rail, water, and trees. It only changes what is drawn (the way list is filtered before the world is built, and the structures and holes lists are left out while a filter is on); nothing is deleted from the map or the edits, and the choice is remembered in the browser. Hiding buildings also leaves the game's own tree planting (which follows built-up land) with more trees; hiding trees removes only mapped trees. Aerial photo and props filters wait for those layers. Tested in Chromium: 16,864 buildings and 7,382 roads on the Springfield sample drop to 0 and 72 and come back.
 
+**Builder 1.11.0:** road and rail **cuts and fills**, asked for by the content chat (`docs/LANDSCAPE.md`). `builder/structures.js` samples the ground every 20 m along roads (rank 4 and up) and railways on the ground, 8 m (rail 6 m) to each side of the centre line. Where both sides are at least 1.5 m higher it is a `cut`, where both are at least 1.5 m lower it is a `fill`. Runs of three samples or more (40 m) become `bank` entries `{k:"bank", t:"cut"|"fill", h:<mean depth, m>, len, w, src:"inferred"}`, split every 200 m. Ways already tagged `embankment` or `cutting` keep their mapped entry. Needs the elevation grid, so it is also worked out again after sculpting. Tested on a synthetic valley (cut and fill runs found, 200 m pieces); the Springfield core sample (gentle 10 m ground) produced none. Still not done from that note: creek bend side, karst flag, tree stand type.
+
 ## Versions
 
 | Version | Contents |

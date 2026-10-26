@@ -124,7 +124,7 @@ L.terrainApply = function(text, ops){
   });
   /* the structures list belongs to the ways: worked out again when the edits changed ways */
   if (L.structures && sq.zone && ops.some(function(o){ return o.t !== 'raise' && o.t !== 'lower' && o.t !== 'smooth' && o.t !== 'level' && o.t !== 'tree'; })){
-    var stc = L.structures(sq.zone, sq); if (stc.list.length) sq.structures = stc.list; else delete sq.structures; sq.builder = sq.builder || {}; sq.builder.structures = stc.counts; }
+    var stc = L.structures(sq.zone, sq, sq.elev); if (stc.list.length) sq.structures = stc.list; else delete sq.structures; sq.builder = sq.builder || {}; sq.builder.structures = stc.counts; }
   sq.builder = sq.builder || {}; sq.builder.edits = (sq.builder.edits || 0) + ops.length;
   return JSON.stringify(sq);
 };
@@ -222,7 +222,7 @@ L.runBuild = async function(job, post, stop){
     var eg = await L.elevGrid(R, i, jj, tiffs, terr, step);
     var m = {lastblockMap:1, format:L.FORMAT, name:A.name, attribution:credit, zone:{s:+b.s.toFixed(6), n:+b.n.toFixed(6), w:+b.w.toFixed(6), e:+b.e.toFixed(6)}, ways:sq.ways, pois:sq.pois, elev:eg.grid};
     if (sq.holes.length) m.holes = sq.holes;
-    var stc = L.structures ? L.structures(b, sq) : null; if (stc && stc.list.length) m.structures = stc.list;
+    var stc = L.structures ? L.structures(b, sq, eg.grid) : null; if (stc && stc.list.length) m.structures = stc.list;
     m.builder = {v:L.VERSION, counts:sq.n, elev:eg.src, step:step}; if (stc) m.builder.structures = stc.counts;
     var text2 = JSON.stringify(m); bytes += text2.length;
     await L.dbPut('squares', job.proj + ':' + i + ':' + jj, text2);

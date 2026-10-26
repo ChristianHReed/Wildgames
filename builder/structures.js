@@ -37,7 +37,7 @@ function rankOf(t){ return t.highway ? (ROADS[t.highway] || 1) : 0; }
 function clearOver(cls, t){ return cls === 'rail' ? CLEAR.rail : cls === 'path' ? CLEAR.path : cls === 'water' ? (BIGWATER[t.waterway] ? CLEAR.river : CLEAR.stream) : CLEAR.road; }
 
 /* box: {w, e, s, n} of the square itself; sq: {ways:[[tags, [lon,lat,...]]], pois:[[lon,lat,tags]]}. Returns {list, counts} */
-L.structures = function(box, sq){
+L.structures = function(box, sq, elev){
   var lon0 = (box.w + box.e)/2, lat0 = (box.s + box.n)/2, kx = 111320*Math.cos(lat0*Math.PI/180), ky = 110540, ways = sq.ways, n = ways.length;
   var list = [], counts = {};
   var toM = function(c){ var m = new Array(c.length); for (var i = 0; i < c.length; i += 2){ m[i] = (c[i] - lon0)*kx; m[i + 1] = (c[i + 1] - lat0)*ky; } return m; };
@@ -185,6 +185,32 @@ L.structures = function(box, sq){
   /* the deepest rule about piers: a mapped bridge:support node near a bridge says it stands on piers */
   list.forEach(function(r){ if (r.k === 'support'){ for (var q = 0; q < list.length; q++){ var b = list[q]; if (b.k === 'bridge' && b.src === 'osm' && Math.hypot((b.lon - r.lon)*kx, (b.lat - r.lat)*ky) < 60){ b.piers = (b.piers || 0) + 1; break; } } } });
   list.forEach(function(r){ for (var k in r) if (r[k] === undefined) delete r[k]; });
+  /* ---- cuts and fills: where a road or railway on the ground sits in a cutting (ground higher on both sides) or on an embankment (lower on both sides),
+     read from the ground heights every 20 m. Asked for by the content chat (docs/LANDSCAPE.md) so the game can place cut_* and fill_* pieces. ---- */
+  if (elev && elev.d && elev.cols > 1 && elev.rows > 1){
+    var bin = atob(elev.d), EH = new Int16Array(elev.cols*elev.rows); for (var q = 0; q < EH.length; q++){ var vv = bin.charCodeAt(q*2) | (bin.charCodeAt(q*2 + 1) << 8); EH[q] = vv > 32767 ? vv - 65536 : vv; }
+    var gh = function(x, y){   /* metres from the square's middle -> height in metres, bilinear */
+      var u = ((lon0 + x/kx) - elev.w)/(elev.e - elev.w)*(elev.cols - 1), v = (elev.n - (lat0 + y/ky))/(elev.n - elev.s)*(elev.rows - 1);
+      u = Math.max(0, Math.min(elev.cols - 1.001, u)); v = Math.max(0, Math.min(elev.rows - 1.001, v)); var a = Math.floor(u), b = Math.floor(v), fu = u - a, fv = v - b, I = b*elev.cols + a;
+      return (EH[I]*(1 - fu)*(1 - fv) + EH[I + 1]*fu*(1 - fv) + EH[I + elev.cols]*(1 - fu)*fv + EH[I + elev.cols + 1]*fu*fv)/10; };
+    lines.forEach(function(wi){
+      var D = info[wi]; if ((D.cls !== "road" && D.cls !== 'rail') || D.lv !== 0 || D.t.tunnel || D.t.bridge || D.t.embankment || D.t.cutting || (D.cls === 'road' && rankOf(D.t) < 4)) return;
+      var m = D.m, off = D.cls === 'rail' ? 6 : 8, run = null, runs = [], acc = 0, nextS = 0;
+      for (var a2 = 0; a2 + 3 < m.length; a2 += 2){
+        var dx = m[a2 + 2] - m[a2], dy = m[a2 + 3] - m[a2 + 1], sl = Math.hypot(dx, dy); if (!sl) continue;
+        for (; nextS <= acc + sl; nextS += 20){
+          var u2 = (nextS - acc)/sl, px = m[a2] + dx*u2, py = m[a2 + 1] + dy*u2, nx = -dy/sl, ny = dx/sl, c0 = gh(px, py), hl = gh(px + nx*off, py + ny*off), hr = gh(px - nx*off, py - ny*off);
+          var cut = Math.min(hl, hr) - c0, fill = c0 - Math.max(hl, hr), kd = cut >= 1.5 ? 'cut' : fill >= 1.5 ? 'fill' : null, dep = kd === 'cut' ? cut : fill;
+          if (kd && run && run.t === kd && run.n >= 10){ runs.push(run); run = {t:kd, n:1, sum:dep, x:[px], y:[py]}; }
+          else if (kd && run && run.t === kd){ run.n++; run.sum += dep; run.x.push(px); run.y.push(py); }
+          else { if (run && run.n >= 3) runs.push(run); run = kd ? {t:kd, n:1, sum:dep, x:[px], y:[py]} : null; }
+        }
+        acc += sl;
+      }
+      if (run && run.n >= 3) runs.push(run);
+      runs.forEach(function(r){ var mid = Math.floor(r.n/2); push({k:'bank', w:wi, len:(r.n - 1)*20 + 20, l:0, src:'inferred', t:r.t, h:Math.round(r.sum/r.n*10)/10}, r.x[mid], r.y[mid]); });
+    });
+  }
   return {list:list, counts:counts};
 };
 };

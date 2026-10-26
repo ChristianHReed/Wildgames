@@ -116,3 +116,7 @@ The builder's 3D view uses the same engine, so everything the engine learns show
 ## 7. Art for these (content chat, 26 October 2026)
 
 The pieces for every kind in section 4 are in `assets/shaped/structures.js`, with a recipe per `k` (which piece, where, stretched how) in `docs/SHAPED.md` under "structures" and in `docs/ART_REQUESTS.md` section 14. Deck pieces put the road surface at y = 0 so the engine only has to set the height it works out in section 5.
+
+## 8. Cuts and fills (builder 1.11.0)
+
+`bank` entries with `src:"inferred"` and `t` of `cut` or `fill` are worked out from the ground heights, not from tags. Ground 8 m either side of the road (6 m for rail) is compared with the ground at the centre every 20 m: both sides at least 1.5 m higher is a cut, both at least 1.5 m lower is a fill. `h` is the mean depth in metres; each entry covers up to 200 m of the way `w` around `lon`/`lat` (`len`). Mapped `embankment` and `cutting` tags still give `t:"embankment"` or `t:"cutting"` with `src:"osm"`. A road on a hillside with only one side higher is not listed (no piece for it yet).
