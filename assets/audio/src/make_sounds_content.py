@@ -57,6 +57,40 @@ add('cloth_rustle', *var(cloth, 4))
 def clang(i):
     d = 0.7; f = jit(520, 640); return mix(modal([f, f*2.71, f*5.1, f*7.9], [0.35, 0.22, 0.14, 0.08], d, [0.7, 0.55, 0.35, 0.2]), hp(noise(d), 2200)*env(d, 0.0008, 0.02)*0.8, thud(jit(200, 260), 120, d, 0.02)*0.3)
 add('metal_clang', *var(clang, 3))
+# ---- round 2 (26 October 2026): the nine the game still makes itself ----
+def snow(i):
+    d = 0.3; crunch = (RNG.random(int(d*SR)) > 0.992)*RNG.standard_normal(int(d*SR))
+    return mix(lp(noise(d), 1300)*env(d, 0.03, 0.07)*0.55, hp(lp(crunch, 7000), 1800)*env(d, 0.004, 0.11)*2.2, thud(jit(70, 90), 45, d, 0.04)*0.35)
+add('step_snow', *var(snow, 4))
+def hurt(i):
+    d = 0.35; return mix(thud(jit(55, 70), 35, d, 0.1)*1.1, lp(noise(d), 700)*env(d, 0.002, 0.07)*0.8, bp(noise(d), 150, 500)*env(d, 0.004, 0.05)*0.4)
+add('hurt_body', *var(hurt, 3))
+def plank(i):
+    d = 0.35; f = jit(220, 370); return mix(modal([f, f*1.9, f*3.1], [0.07, 0.04, 0.025], d, [0.7, 0.4, 0.2]), bp(noise(d), 800, 3500)*env(d, 0.001, 0.025)*0.7, thud(jit(110, 140), 70, d, 0.03)*0.4)
+add('plank_knock', *var(plank, 3))
+def stone(i):
+    d = 0.25; return mix(hp(noise(d), 1500)*env(d, 0.0005, 0.02)*1.2, modal([jit(900, 1500)], [0.025], d, [0.4]), thud(jit(130, 160), 80, d, 0.02)*0.5)
+add('stone_clack', *var(stone, 3))
+def tin(i):
+    d = 0.45; f = jit(900, 1500); return mix(modal([f*m for m in (1, 2.4, 4.1, 6.7)], [0.12, 0.08, 0.05, 0.03], d, [0.7, 0.45, 0.3, 0.2]), hp(noise(d), 4000)*env(d, 0.0005, 0.008))
+add('tin_ping', *var(tin, 2))
+def creak(i):
+    d = jit(0.7, 1.2); t = t_(d); f0, f1 = jit(120, 180), jit(200, 340); w = jit(4, 9)
+    f = f0 + (f1 - f0)*np.linspace(0, 1, len(t))**0.8 + 10*np.sin(2*np.pi*w*t + jit(0, 6)); ph = 2*np.pi*np.cumsum(f)/SR
+    s = np.sign(np.sin(ph))*0.5 + np.sin(ph)*0.5 + 0.3*np.sin(2.01*ph)
+    return bp(s + 0.4*noise(d), 200, 1800)*np.sin(np.pi*np.linspace(0, 1, len(t)))**0.7
+add('creak_wood', *var(creak, 3))
+def latch(i):
+    def c(f): return mix(hp(noise(0.03), 1800)*env(0.03, 0.0003, 0.006), modal([f], [0.012], 0.06, [0.6]))
+    d = 0.22; return mix(at(c(jit(2200, 2600)), 0, d), at(c(jit(1500, 1800)), jit(0.08, 0.13), d))
+add('latch_click', *var(latch, 2))
+def pick(i):
+    d = 0.22; return mix(bp(noise(d), 300, 2200)*env(d, 0.01, 0.05)*0.8, thud(jit(85, 100), 50, d, 0.03)*0.4)
+add('pick_up_item', *var(pick, 3))
+def swing(i):
+    d = jit(0.3, 0.4); n = noise(d); t = np.linspace(0, 1, len(n)); fc = 700 + 2500*np.sin(np.pi*t)
+    return lp_var(hp(n, 400), fc, 256)*np.sin(np.pi*t)**1.5
+add('swing_air', *var(swing, 3))
 if __name__ == '__main__':
     out = {k: [mp3(v) for v in vs] for k, vs in S.items()}
     P = os.path.join(OUT, 'sounds_content.js')
