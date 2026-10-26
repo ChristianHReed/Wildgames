@@ -433,7 +433,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.8</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.9</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -456,7 +456,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.8', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.9', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -934,7 +934,7 @@ function findTarget(){
   var pt0 = P.lvl ? null : portNear(); if (pt0 && pt0.d < bd + 0.4 && (!best || best.plant || pt0.d < bd)){ best = pt0.o; bd = pt0.d; }
   for (i = 0; i < world.traders.length; i++){ d = Math.hypot(world.traders[i].x - P.x, world.traders[i].y - P.y); if (d < Math.min(bd, 2.6)){ bd = d; best = world.traders[i]; } }
   for (i = 0; i < (world.surv || []).length; i++){ var sv0 = world.surv[i]; if (sv0.gone || sv0.away) continue; d = Math.hypot(sv0.x - P.x, sv0.y - P.y); if (d < Math.min(bd, 2.6)){ bd = d; best = sv0; } }
-  bedFollow(); var tk0 = truckOf(); if (tk0 && !P.veh && time - (tk0.rd || -9) >= 0.6) truckSpots(tk0).forEach(function(o){ d = Math.hypot(o.x - P.x, o.y - P.y); if (d < Math.min(bd, 1.5)){ bd = d; best = o; } });
+  bedFollow(); bootFollow(); var tk0 = truckOf(); if (tk0 && !P.veh && time - (tk0.rd || -9) >= 0.6) truckSpots(tk0).forEach(function(o){ d = Math.hypot(o.x - P.x, o.y - P.y); if (d < Math.min(bd, 1.5)){ bd = d; best = o; } });
   for (i = 0; i < world.vehicles.length; i++){ var vh = world.vehicles[i]; if (vh.kind === 'truck' || time - (vh.rd || -9) < 0.6) continue; d = Math.hypot(vh.x - P.x, vh.y - P.y); if (d < Math.min(bd, 2.3)){ bd = d; best = vh; } }
   (world.edits.colls || []).concat(world.edits.plots || []).forEach(function(o2){ var d2 = Math.hypot(o2.x - P.x, o2.y - P.y); if (d2 < Math.min(bd, o2.plot ? 1.9 : 1.6)){ bd = d2; best = o2; } });
   for (i = 0; i < world.edits.gens.length; i++){ var gg = world.edits.gens[i]; d = Math.hypot(gg.x - P.x, gg.y - P.y); if (d < Math.min(bd, 2)){ bd = d; best = gg; } }
@@ -3527,8 +3527,8 @@ function buildAct(a, pos){
     if (!done2){ toast(lack, 3); return; } sfx('plank', P.x, P.y, 0.9); makeNoise(P.x, P.y, 14); toast(done2 > 1 ? done2 + ' walls closed.' + (lack ? ' Out of materials for the rest.' : '') : 'Wall closed.', 2.5); updateHud();
   } else if (a === 'vrep'){
     var rv = P.veh, rd = 6; if (!rv) world.vehicles.forEach(function(o){ if (!o.t) return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < rd){ rd = d; rv = o; } });
-    if (!rv){ toast('No car or truck within reach.', 2.5); return; } if (vhp(rv) >= 100){ toast('It is already sound.', 2.5); return; }
-    if (!(inv.parts > 0)){ toast('Repairs need a car part. Take them off wrecks with a wrench.', 3); return; } inv.parts--; rv.hp = Math.min(100, vhp(rv) + 55); rv.warnHp = false; if (vhp(rv) > 0) rv.fireT = 0; sfx('metal', rv.x, rv.y, 0.8); makeNoise(rv.x, rv.y, 10); toast('Repaired. The vehicle is at ' + Math.round(vhp(rv)) + '%.', 3); updateHud();
+    if (!rv){ toast('No car or truck within reach.', 2.5); return; } if (vhp(rv) >= 100 && !rv.flat){ toast('It is already sound.', 2.5); return; }
+    if (!(inv.parts > 0)){ toast('Repairs need a car part. Take them off wrecks with a wrench.', 3); return; } inv.parts--; if (rv.flat){ rv.flat = 0; rv.pk = 0; toast('Tyre fixed.', 2); } rv.hp = Math.min(100, vhp(rv) + 55); rv.warnHp = false; if (vhp(rv) > 0) rv.fireT = 0; sfx('metal', rv.x, rv.y, 0.8); makeNoise(rv.x, rv.y, 10); toast('Repaired. The vehicle is at ' + Math.round(vhp(rv)) + '%.', 3); updateHud();
   } else if (a === 'bed'){
     if (!P.inside){ toast('A bed has to be inside a building.', 2.5); return; } if (world.nests[P.inside.id]){ toast('Not in a nest.', 2.5); return; }
     if (inv.wood < 5){ toast('A bed needs 5 wood.', 2.5); return; }
@@ -3821,7 +3821,7 @@ var curChest = null;
 function openChest(c){ curChest = c; el('chest').classList.remove('hidden'); if (document.exitPointerLock) document.exitPointerLock(); renderChest(); }
 function renderChest(){
   var c = curChest, box = el('chest'); if (!c || box.classList.contains('hidden')) return;
-  var h = '<b>' + (c.bed ? 'Truck bed' : 'Storage chest') + '</b> <button id="chClose" class="alt" style="float:right">Close</button><div class="irow"><span class="n"><i>Item</i></span><i>carried / stored</i></div>', k;
+  var h = '<b>' + (c.boot ? 'Boot' : c.bed ? 'Truck bed' : 'Storage chest') + '</b> <button id="chClose" class="alt" style="float:right">Close</button><div class="irow"><span class="n"><i>Item</i></span><i>carried / stored</i></div>', k;
   var row = function(key, name, col, have, st){ return '<div class="irow"><span class="sw" style="background:' + col + '"></span><span class="n">' + name + '</span><i>' + have + ' / ' + st + '</i><button data-a="put" data-id="' + key + '"' + (have ? '' : ' disabled') + '>Store</button><button class="alt" data-a="get" data-id="' + key + '"' + (st ? '' : ' disabled') + '>Take</button></div>'; };
   for (k in ITEMS) if (inv[k] > 0 || c.inv[k] > 0) h += row('b:' + k, ITEMS[k][0], ITEMS[k][1], inv[k], c.inv[k] | 0);
   var ids = {}; for (k in P.items) if (P.items[k] > 0) ids[k] = 1; for (k in c.items) if (c.items[k] > 0) ids[k] = 1;
@@ -4170,7 +4170,7 @@ function vehSpeed(dt){
   if (v.moto){ if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = CAN_M*0.8; feed('Poured a can of fuel into the ' + v.moto.replace(/_/g, ' '), ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. You can only push it.', 3); } return 1.4; } } v.dry = false; return MOTOSPD[v.moto] || 16; }
   if (!v.t) return 10.5; if (vhp(v) <= 0) return 0;
   if (v.fuel <= 0){ if (inv.fuel > 0){ inv.fuel--; v.fuel = Math.min(CAN_M, tankM(v)); feed('Poured a can of fuel into the ' + (v.kind === 'truck' ? 'truck' : 'car'), ITEMS.fuel[1]); updateHud(); } else { if (!v.dry){ v.dry = true; toast('Out of fuel. Find fuel in workshops or buy it from a trader.', 4); } return 0; } }
-  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(1 + 0.08*((v.cu && v.cu.e) | 0))*(vhp(v) < 35 ? 0.4 : 1)*tyreGrip(v)*(1 + Math.max(-0.3, Math.min(0.3, (carSt(v).speed || 0)/100)));
+  v.dry = false; return (TOPSPD[v.kind === 'truck' ? 'truck' : baseKind(carKind(v))] || 26)*(1 + 0.08*((v.cu && v.cu.e) | 0))*(vhp(v) < 35 ? 0.4 : 1)*tyreGrip(v)*(v.flat ? 0.5 : 1)*(1 + Math.max(-0.3, Math.min(0.3, (carSt(v).speed || 0)/100)));
 }
 /* 0.105.0: driving a digger. The house follows where you look (slewing at most 120 degrees a second), look down to dig close and up to reach out, click for one scoop:
    reach, plunge, curl, lift, swing to the side, dump, come back. A scoop takes the pack's `scoopBlocks` blocks off the ground under the teeth (a mini excavator one, an excavator four) and you get the soil. */
@@ -4207,10 +4207,12 @@ function machScoop(v, dig, G){
 function tyreGrip(v){
   var cu = v.cu; if (!cu || !cu.ty || !v.t || v.kind === 'truck' || !window.SHAPED || !SHAPED.vehiclekit) return 1; var TI = SHAPED.vehiclekit.tyreInfo, T = TI[cu.ty]; if (!T) return 1;
   var rk = world.roadAt ? world.roadAt(P.x, P.y) : null, snow = season() === 3, wet = raining(), g = rk && rk !== 'gravel' ? (snow ? 'snow' : wet ? 'wet' : 'road') : rk ? (snow ? 'snow' : wet ? 'mud' : 'dirt') : (snow ? 'snow' : wet ? 'mud' : 'dirt');
-  if (inWater(P.x, P.y, 0)) return 1; return 0.7 + 0.3*Math.min(1.3, T.grip[g]/TI.road.grip[g]);
+  if (inWater(P.x, P.y, 0)) return 1; var gr = T.grip[g]; if (g === 'snow' && carSt(v).plough) gr = Math.max(gr, TI.road.grip.road*0.9); return 0.7 + 0.3*Math.min(1.3, gr/TI.road.grip[g]);
 }
 function vehMoved(v, dx, dy, dt){
   var d = Math.hypot(dx, dy); v.x = P.x; v.y = P.y; v.rd = time; if (d < 0.002) return; if (!v.t) v.yaw = Math.atan2(dy, dx);
+  if (v.t && v.kind !== 'truck' && !v.flat){ v.pk = (v.pk || 0) + d; if (v.pk > 900){ v.pk = 0; var tt0 = v.cu && v.cu.ty;
+    if (tt0 !== 'military' && tt0 !== 'solid' && tt0 !== 'heavy' && hash(Math.round(v.x), Math.round(v.y), 91) < 0.18){ v.flat = 1; toast('A tyre goes flat. You drive slowly until it is fixed (Build menu, repair, one car part).', 4.5); sfx('tin_ping', v.x, v.y, 0.7, 0.6); } } }
   if (v.moto){ v.fuel = Math.max(0, v.fuel - d*0.6); if (v.fuel > 0) P.noise = Math.max(P.noise, 1); }
   if (v.t){ v.fuel = Math.max(0, v.fuel - d); P.noise = Math.max(P.noise, 1); for (var i = 0; i < zombies.length; i++){ var z = zombies[i], zx = z.x - P.x, zy = z.y - P.y, zd = Math.hypot(zx, zy) || 0.001; if (zd < 1.3 + AK[z.k].r && z.hurt <= 0){ var rmk = carSt(v).ramDamage || 1; hitZombie(z, 6*rmk, zx/zd*12*rmk, zy/zd*12*rmk); } } }
 }
@@ -4292,6 +4294,14 @@ function bedChest(){
   var E = world.edits, c = null; E.chests.forEach(function(ch){ if (ch.id === 'truck') c = ch; });
   if (!c && truckOf()){ c = {chest:true, name:'the truck bed', id:'truck', x:0, y:0, inv:{}, items:{}, designs:[]}; E.chests.push(c); }
   if (c){ c.name = 'the truck bed'; c.bed = true; } world.bed = c; bedFollow(); return c;
+}
+/* 0.114.9: a car fitted with a roof box, bed cap or other storage part has a boot chest that rides at its back and holds what you put in it */
+function bootFollow(){
+  var E = world.edits; world.vehicles.forEach(function(v){
+    if (!v.t || v.kind === 'truck' || !v.cu || v.dead) return; var id = 'boot:' + v.id, c = null, i;
+    for (i = 0; i < E.chests.length; i++) if (E.chests[i].id === id){ c = E.chests[i]; break; }
+    if (!c){ if (Math.abs(v.x - P.x) > 8 || Math.abs(v.y - P.y) > 8 || !(carSt(v).storage > 0) || E.chests.length >= 98) return; c = {chest:true, name:'the boot', id:id, x:0, y:0, inv:{}, items:{}, designs:[]}; E.chests.push(c); }
+    c.bed = true; c.boot = true; c.name = 'the boot'; if (v === P.veh){ c.x = c.y = 1e9; return; } var q = tpt(v, -2.3, 0); c.x = q.x; c.y = q.y; });
 }
 function bedFollow(){ var c = world.bed; if (!c) return; var v = truckOf(); if (!v || v === P.veh){ c.x = c.y = 1e9; return; } var q = tpt(v, -2.95, 0); c.x = q.x; c.y = q.y; }
 /* the places to stand: the driver's door (drive), the passenger door (sleep), the front corner (repairs) */
