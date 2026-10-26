@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.104.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.104.2</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.104.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.104.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/digging', 'shaped/foodservice', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3795,7 +3795,8 @@ function drawBuilt(m){
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
   (E.covers || []).forEach(function(cv){ if (Math.abs(cv.x - P.x) > 80 || Math.abs(cv.y - P.y) > 80) return; var cm = digModel(cv.br ? 'plank_cover_s_broken' : 'plank_cover_s'); if (cm) m.modelS(cm, cv.x, cv.y, 0, hAt0(cv.x, cv.y), 1); else if (!cv.br){ m.yo = hAt0(cv.x, cv.y); m.ybox(cv.x, cv.y, 0, 0, 0, 0.03, 0.6, 0.03, 0.6, C('#8a6a48')); } });
   (E.stakes || []).forEach(function(sk){ if (Math.abs(sk.x - P.x) > 80 || Math.abs(sk.y - P.y) > 80) return; var sm = digModel('stake_pit_s'); if (sm) m.modelS(sm, sk.x, sk.y, 0, hAt(sk.x, sk.y), 1); else { m.yo = hAt(sk.x, sk.y); m.ybox(sk.x, sk.y, 0, 0, 0, 0.2, 0.05, 0.2, 0.05, C('#c9a56a')); } });
-  (E.ladders || []).forEach(function(ld){ if (Math.abs(ld.x - P.x) > 80 || Math.abs(ld.y - P.y) > 80) return; var g0 = hAt(ld.x, ld.y), top = Math.max(g0 + 1, hAt0(ld.x, ld.y) + 0.8), hh = (top - g0)/2, c0 = C('#8a6a48'), c1 = C('#6b4a30'), k;
+  (E.ladders || []).forEach(function(ld){ if (Math.abs(ld.x - P.x) > 80 || Math.abs(ld.y - P.y) > 80) return; var g0 = hAt(ld.x, ld.y), dp = hAt0(ld.x, ld.y) - g0, lm = digModel(dp <= 1.9 ? 'ladder_s' : dp <= 2.9 ? 'ladder_m' : 'ladder_l'); if (lm){ m.modelS(lm, ld.x, ld.y, Math.atan2(-Math.cos(ld.yaw), Math.sin(ld.yaw)), g0, 1); return; }
+    var top = Math.max(g0 + 1, hAt0(ld.x, ld.y) + 0.8), hh = (top - g0)/2, c0 = C('#8a6a48'), c1 = C('#6b4a30'), k;
     m.yo = 0; m.ybox(ld.x, ld.y, ld.yaw, 0.12, -0.26, g0 + hh, 0.03, hh, 0.03, c0); m.ybox(ld.x, ld.y, ld.yaw, 0.12, 0.26, g0 + hh, 0.03, hh, 0.03, c0); for (k = 0.3; k < top - g0; k += 0.35) m.ybox(ld.x, ld.y, ld.yaw, 0.12, 0, g0 + k, 0.025, 0.025, 0.26, c1); });
   subSites().forEach(function(so){ if (Math.abs(so.x - P.x) > 120 || Math.abs(so.y - P.y) > 120 || !POWER_ON || !powerModel('pole_transformer')) return; m.modelS(powerModel('pole_transformer'), so.x, so.y, 0, groundAt(so.x, so.y), 1); });
   (E.cboxes || []).forEach(function(c){ if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60 || !POWER_ON) return; var b = world.buildings[c.b], on = b && boxSupply(c) >= boxLoad(b) && !c.trip, nm = c.trip ? 'cable_box_overload' : on ? 'cable_box_on' : 'cable_box_off', pm = powerModel(nm); if (pm) m.modelS(pm, c.x, c.y, 0, groundAt(c.x, c.y) + (b && b.base ? b.base : 0), 1);
