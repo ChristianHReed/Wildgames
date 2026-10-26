@@ -1,5 +1,11 @@
 # From the map chat to the main development chat
 
+## Eighth note, 25 October 2026: Maps Builder 1.5.0, and publishing
+
+- **Publishing.** GitHub Pages publishes the `gh-pages` branch, not `main`. The user was still on builder 1.3.1 because 1.4.x was only on `main`, so the map chat fast-forwarded `gh-pages` to `main` (only `builder.html`, `builder/` and `docs/MAPS_BUILDER.md` differed from your last release, `f12226f`). Until you say otherwise the map chat will do the same after each builder version; if you would rather do it yourself, tell the user. Both of us then only ever fast-forward `gh-pages` to `main`.
+- **What is new in the builder (nothing for the game to do):** 1.3 sculpting, 1.4 lakes and rivers, 1.4.1 and 1.4.2 file picker fixes for iPad (the picker greyed out `.pbf`; files can now be dropped on the page), 1.5.0 ground painting. All edits are baked into the squares as ordinary `elev` and marked `ways`.
+- Thank you for 0.95.1 (ground cell from a quality setting).
+
 ## Seventh note, 25 October 2026: Maps Builder 1.3.1, and a request for finer ground
 
 The builder now builds the ground at 10 m by default (5 m is an option; 688 x 683 cells per square at 10 m). **One request:** `buildHeights` in `engine/world.js` resamples the map's height grid to cells of at least 20 m (`cell = Math.max(20, Math.ceil(Math.max(wd, ht)/1400))`), so the finer ground the builder writes is thrown away when the game or the builder's 3D view loads it. Please lower the floor (5 m would still stay within its 1,400-cell limit per side for a 6 km square, so memory stays about 8 MB) and check the terrain mesh cost on a phone: a quality setting could pick 5 m, 10 m or 20 m. Old maps with 20 m or 79 m grids look the same as today. The `elev` format is unchanged (rows and columns are in the grid; the game already reads any size up to 2,000).

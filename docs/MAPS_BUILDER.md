@@ -201,6 +201,8 @@ What testing showed:
 
 **Builder 1.4.2, 25 October 2026: drop files on the page.** On an iPad in Brave the file picker still greyed out the user's `.pbf` after 1.4.1 removed the type filter (the picker or a saved copy of the page may be to blame). Files can now be dragged onto the page from the Files app (iPad: Split View) and are sent to the right card by their name (`.pbf/.osm/.xml` to OpenStreetMap, `.tif` to elevation, `.parquet` and `.json` to Overture, `.asmap/.zip` to Open map file). The version number at the top of the page shows which copy is running. Tested in Chromium with all three kinds dropped together.
 
+**Builder 1.5.0, 25 October 2026: ground painting.** The Paint tool in Sculpt lays a round patch of woods, park lawn, grass, field, scrub, sand or a parking lot (brush size sets the patch). Each patch is a marked area (`asmb:made=yes`, `src=edit`) with the map tags the game already draws, so the game needs nothing new. Undo, redo and export work as for the other tools. Tested in Chromium: a sand patch was saved, rebuilt and drawn.
+
 ## Versions
 
 | Version | Contents |

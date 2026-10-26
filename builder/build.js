@@ -22,6 +22,8 @@ L.dbDel = function(store, prefix){ return L.dbDo(store, 'readwrite', function(s)
    The player's changes are kept apart from the map data, as a list of brush dabs per square in the 'edits' store (key 'project:i:j'), so building the
    map again from new data keeps them. A dab: {t:'raise'|'lower'|'smooth'|'level', lat, lon, r (metres), k (strength 0.1-1)}. Each dab is stored in every
    square whose ground it touches, so neighbouring squares agree. Replaying the list in order on a square's height grid always gives the same ground. */
+/* ground painting: what each paint is called and the map tags it adds, as areas the game already draws */
+L.PAINT = {woods:['Woods', {natural:'wood'}], park:['Park lawn', {leisure:'park'}], grass:['Grass', {landuse:'grass'}], field:['Field', {landuse:'meadow'}], scrub:['Scrub', {natural:'scrub'}], sand:['Sand', {natural:'sand'}], parking:['Parking lot', {amenity:'parking'}]};
 L.terrainApply = function(text, ops){
   if (!ops || !ops.length) return text;
   var sq = JSON.parse(text), E = sq.elev; if (!E || !E.d) return text;
@@ -59,6 +61,7 @@ L.terrainApply = function(text, ops){
   var ptH = function(lon, lat){ return at(Math.round((lon - E.w)/(E.e - E.w)*(E.cols - 1)), Math.round((E.n - lat)/(E.n - E.s)*(E.rows - 1))); };
   ops.forEach(function(o){
     if (o.t === 'river'){ river(o); return; }
+    if (o.t === 'paint') return;   /* paint only adds an area, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
@@ -80,6 +83,8 @@ L.terrainApply = function(text, ops){
   ops.forEach(function(o){
     if (o.t === 'basin'){ var ring = [], cl = Math.cos(o.lat*Math.PI/180); for (var a = 0; a <= 28; a++){ var ang = a/28*Math.PI*2; ring.push(+(o.lon + Math.cos(ang)*o.r*0.72/(111320*cl)).toFixed(6), +(o.lat + Math.sin(ang)*o.r*0.72/110540).toFixed(6)); }
       sq.ways.push([{natural:'water', water:'lake', 'asmb:made':'yes', src:'edit'}, ring]); }
+    else if (o.t === 'paint' && L.PAINT[o.p]){ var rg = [], cl2 = Math.cos(o.lat*Math.PI/180); for (var a2 = 0; a2 <= 24; a2++){ var an = a2/24*Math.PI*2; rg.push(+(o.lon + Math.cos(an)*o.r/(111320*cl2)).toFixed(6), +(o.lat + Math.sin(an)*o.r/110540).toFixed(6)); }
+      var tg = {'asmb:made':'yes', src:'edit'}; for (var kk in L.PAINT[o.p][1]) tg[kk] = L.PAINT[o.p][1][kk]; sq.ways.push([tg, rg]); }
     else if (o.t === 'river') sq.ways.push([{waterway:o.w >= 10 ? 'river' : o.w >= 6 ? 'canal' : 'stream', 'asmb:made':'yes', src:'edit'}, o.c]);
   });
   sq.builder = sq.builder || {}; sq.builder.edits = (sq.builder.edits || 0) + ops.length;
