@@ -16,7 +16,7 @@ Street furniture, houses, shops, farms, woods, vehicles, interiors and digging a
 Total 108 new models. Each pack has a `use` map and a `rule` text in its file; the album has nine new scenes (`rail_*`, `civic_*`, `barr_*`).
 
 ## Still missing (next candidates, in order of value)
-1. Vehicles: police car, ambulance, fire engine, mail truck, city bus, semi and trailer, school bus, tow truck (the vehicle kit can refit some).
+1. Vehicles: done so far in `fleet`: school bus, city bus, fire engine. Still to do: ambulance, semi tractor and trailer, tow truck, and the livery overlays (police, taxi, mail, tow, chief) over the props sedan, SUV, van and pickup.
 2. Airport: hangar, terminal, control tower, jet bridge, small aircraft, windsock (Springfield-Branson has them).
 3. Industrial: conveyor, gantry or container crane, scrap yard, foundry and warehouse sheds (the cell towers, stacks, tanks and billboards are now done in `towers`).
 4. Small props: cart corral, portable toilet, dumpster enclosure, graffiti and stencil decals, bus-stop ads, tents for camps beyond the quarantine one, ruined (collapsed) versions of buildings.

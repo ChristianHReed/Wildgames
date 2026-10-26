@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -714,6 +714,8 @@ const SCENES={
     make(){ packGrid(S.towers,'towers',['billboard_pole','billboard_vee','billboard_roof','billboard_digital','billboard_small'],60,4,0,[0,14,46],[0,7,-4]); }},
   tower_ind:{t:'Towers: industry',d:'Brick and steel stacks, flare, cooling tower, tanks, tank farm, grain bins, standpipe, reservoir, wind turbine.',
     make(){ packGrid(S.towers,'towers',['smokestack_brick','smokestack_steel','flare_stack','cooling_tower','tank_oil','tank_farm','grain_bins','water_standpipe','water_tank_ground','wind_turbine'],140,8,0,[0,60,150],[0,22,-20]); }},
+  fleet_veh:{t:'Fleet: buses and fire engine',d:'School bus, city bus and fire engine (bodies with tyres in the arches).',
+    make(){ const FL=JSON.parse(JSON.stringify(S.fleet)); FL.models.fleet={}; FL.info={school_bus:{w:3,len:10.5},city_bus:{w:3,len:12.5},fire_engine:{w:3,len:10.2}}; for(const n in FL.models.vehicles) FL.models.fleet[n]=FL.models.vehicles[n].body; packGrid(FL,'fleet',['school_bus','city_bus','fire_engine'],20,2,0,[0,18,30],[0,1.5,-2]); }},
   dig_props:{t:'Digging: pit pieces and tools',d:'Ladders, plank covers, stake traps, shoring, sandbags, wheelbarrow, loose tools and soil lumps.',
     make(){ packGrid(S.digging,'digging',['ladder_s','ladder_m','ladder_l','rope_ladder','plank_cover_s','plank_cover_m','plank_cover_m_broken','stake_pit_s','stake_pit_m','edge_marker','sandbag_wall','sandbag_pile','shoring_panel','grave_cross','grave_mound','wheelbarrow','wheelbarrow_loaded','bucket_soil','shovel_ground','pickaxe_ground','hand_trowel','soil_clod','sod_square','clay_lump','chert_gravel','limestone_chunk'],24,0.8,0,[0,12,22],[0,1,-5]); }},
   farm_fields:{t:'Farm: crop tiles',d:'Four-metre tiles of rows: corn, wheat, soybeans, ploughed, stubble, harvested, pumpkins, sunflowers, summer on the top row and autumn colours beside them.',
