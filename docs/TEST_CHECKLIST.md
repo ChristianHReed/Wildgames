@@ -183,3 +183,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.114.7) Riding a bicycle ticks quietly, quicker when faster.
 - [ ] (0.114.8) Some fallen bicycles outside doors have a bag you can search once (E).
 - [ ] (0.114.9) A car with a roof box has a boot chest at the back (E). Normal tyres sometimes go flat after a few hundred metres (halves speed; repair from the Build menu with a car part). A plough keeps grip in snow.
+- [ ] (0.114.10) Dig a deep hole beside a pond: water shows in the bottom. Stand in a pit 2.5 m or deeper in rain: sometimes the walls slump in and hurt.

@@ -433,7 +433,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.9</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.10</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -456,7 +456,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.9', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.10', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1917,8 +1917,20 @@ function bodyTick(dt, hour){
   } else wx.torWarned = false;
 }
 
+/* 0.114.10: cave-ins. Standing in a pit 2.5 m or deeper is a risk when it rains or a vehicle drives by (checked once a second); the soil round you slumps in, filling the nearby columns by one metre, and hurts */
+var SLUMP_T = 0;
+function pitSlump(dt){
+  if (P.veh || P.inside || typeof DG === 'undefined' || !DG.cols.size) return; var c0 = digCol(P.x, P.y); if (c0 > -5) return;
+  SLUMP_T += dt; if (SLUMP_T < 1) return; SLUMP_T = 0; var heavy = false; world.vehicles.forEach(function(v){ if (v.t && Math.hypot(v.x - P.x, v.y - P.y) < 6 && (v.spd || 0) > 1) heavy = true; });
+  var rate = (raining() ? 0.03 : 0) + (heavy ? 0.12 : 0) + (c0 <= -8 ? 0.004 : 0); if (!rate || Math.random() > rate) return;
+  var ix0 = Math.floor(P.x/DGS), iy0 = Math.floor(P.y/DGS), L = [], dx, dy;
+  for (dy = -3; dy <= 3; dy++) for (dx = -3; dx <= 3; dx++){ var v0 = dgVal(ix0 + dx, iy0 + dy); if (v0 < 0 && Math.hypot(dx, dy) <= 3) L.push([Math.hypot(dx, dy), ix0 + dx, iy0 + dy, v0]); }
+  L.sort(function(a, b){ return a[0] - b[0]; }); var c = []; L.slice(0, 8).forEach(function(q){ c.push(q[1], q[2], Math.min(0, q[3] + 2)); });
+  doEdit({a:'dig', c:c}); sfx('rubble_drop', P.x, P.y, 1, 0.9); makeNoise(P.x, P.y, 20); fxAdd('effects.dust_puff', P.x, P.y, groundAt(P.x, P.y), {life:1.2, s0:1, s1:2.4, rise:0.3, up:0.3});
+  P.hp -= 18; P.cause = 'a cave-in'; toast('The wall of the pit gives way!', 3); updateHud();
+}
 function update(dt){
-  time += dt;
+  time += dt; pitSlump(dt);
   /* the clock follows the chosen day length; how dangerous the world is grows with time played, not with the clock */
   var hour = (8 + time/DAY*24) % 24, day = Math.min(14, Math.floor(time/PACE) + 1), i;
   dark = (hour >= 20 || hour < 5) ? 1 : hour >= 18 ? (hour - 18)/2 : hour < 7 ? 1 - (hour - 5)/2 : 0;

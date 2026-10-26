@@ -34,7 +34,7 @@ function dgApply(list){
 function DGN_ON(){ DIGN = DG.cols.size; }   /* DIGN is world.js's switch: 0 means hAt() skips the lookup */
 /* a saved map {"ix,iy": blocks} back into the world */
 function dgLoad(map){
-  DG.cols.clear(); DG.mesh.forEach(function(o){ if (o.g) freeMesh(o.g); }); DG.mesh.clear(); DG.dirty.clear();
+  DGW.clear(); DG.cols.clear(); DG.mesh.forEach(function(o){ if (o.g) freeMesh(o.g); }); DG.mesh.clear(); DG.dirty.clear();
   var list = [], k; for (k in (map || {})){ var p = k.split(','); if (p.length === 2 && isFinite(p[0]) && isFinite(p[1]) && isFinite(map[k])) list.push(p[0] | 0, p[1] | 0, map[k] | 0); }
   for (var i = 0; i + 2 < list.length; i += 3) DG.cols.set(dgKey(list[i], list[i+1]), Math.max(DG_MIN, Math.min(DG_MAX, list[i+2])));
   DG.cols.forEach(function(v, key){ var cx = Math.floor(dgIx(key)/DGN), cy = Math.floor(dgIy(key)/DGN); for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) DG.dirty.add(dgKey(cx + dx, cy + dy)); });
@@ -47,6 +47,19 @@ function dgLayer(depth, h){
   var j = 1 + (h - 0.5)*0.14; return [Math.min(255, c[0]*j), Math.min(255, c[1]*j), Math.min(255, c[2]*j)];
 }
 var DG_FILL = [118, 90, 60];
+/* 0.115.0: water in pits. Near a creek, pond or lake the ground is wet: the water table lies 0.5 m under the surface at the water's edge and sinks to 2 m at 24 m out, and beyond that the pit stays dry.
+   A dug column deeper than the table has water standing at that level. Returns the table depth in metres below the bare ground (99 = dry). */
+var DGW = new Map();
+function dgWater(ix, iy){
+  var key = dgKey(ix, iy), c = DGW.get(key); if (c !== undefined) return c; var x = (ix + 0.5)*DGS, y = (iy + 0.5)*DGS, r, a, best = 99, RS = [0, 4, 8, 12, 18, 24];
+  if (typeof world !== 'undefined' && world && world.water && world.water.length){
+    for (r = 0; r < RS.length && best === 99; r++){
+      if (r === 0){ if (inWater(x, y, 0)) best = 0.5; continue; }
+      for (a = 0; a < 8; a++){ if (inWater(x + Math.cos(a*0.785)*RS[r], y + Math.sin(a*0.785)*RS[r], 0)){ best = 0.5 + RS[r]/24*1.5; break; } }
+    }
+  }
+  if (DGW.size > 20000) DGW.clear(); DGW.set(key, best); return best;
+}
 function dgBuild(ck){
   var cx = dgIx(ck), cy = dgIy(ck), g = new Mesh(), ix0 = cx*DGN, iy0 = cy*DGN, any = false; g.pl = null;
   var wall = function(ax, az, bx, bz, ya0, ya1, yb0, yb1, col){ g.quad(ax, ya0, az, bx, yb0, bz, bx, yb1, bz, ax, ya1, az, col, 255); };
@@ -55,6 +68,7 @@ function dgBuild(ck){
     var v = DG.cols.get(dgKey(ix, iy)); if (!v) continue; any = true;
     var x0 = ix*DGS, z0 = iy*DGS, x1 = x0 + DGS, z1 = z0 + DGS, b = dgBase(ix, iy), top = b + v*DGS, hh = hash(ix, iy, 611), col = v < 0 ? dgLayer(-v*DGS, hh) : DG_FILL.map(function(q){ return q*(0.93 + hh*0.14); });
     g.quad(x0, top, z0, x1, top, z0, x1, top, z1, x0, top, z1, col, 255);
+    if (v < 0){ var wtd = dgWater(ix, iy); if (-v*DGS > wtd + 0.05){ var wy = b - wtd; g.quad(x0, wy, z0, x1, wy, z0, x1, wy, z1, x0, wy, z1, [56, 98, 116], 255); } }
     for (var n = 0; n < 4; n++){
       var dx = NB[n][0], dy = NB[n][1], vN = DG.cols.get(dgKey(ix + dx, iy + dy)) | 0;
       /* the shared edge's two ends */
