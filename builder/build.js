@@ -175,7 +175,7 @@ L.runBuild = async function(job, post, stop){
   tiffs.sort(function(a, b){ return a.res - b.res; });
   var terr = job.opts.tiles ? L.Terrarium() : null;
   await L.dbDel('squares', job.proj + ':');
-  var index = [], rep = {squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
+  var index = [], rep = {struct:{}, squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
   var credit = '© OpenStreetMap contributors (ODbL)' + (stats.overture && stats.overture.added ? '; buildings also from Overture Maps (ODbL)' : '') + (tiffs.length ? '; elevation: ' + tiffs.map(function(t){ return t.name; }).join(', ') : '') + (terr ? '; elevation: AWS Terrain Tiles (SRTM/3DEP)' : '');
   for (var s = 0; s < R.squares.length; s++){
     if (stop()) throw new Error('stopped');
@@ -184,12 +184,14 @@ L.runBuild = async function(job, post, stop){
     var eg = await L.elevGrid(R, i, jj, tiffs, terr, step);
     var m = {lastblockMap:1, format:L.FORMAT, name:A.name, attribution:credit, zone:{s:+b.s.toFixed(6), n:+b.n.toFixed(6), w:+b.w.toFixed(6), e:+b.e.toFixed(6)}, ways:sq.ways, pois:sq.pois, elev:eg.grid};
     if (sq.holes.length) m.holes = sq.holes;
-    m.builder = {v:L.VERSION, counts:sq.n, elev:eg.src, step:step};
+    var stc = L.structures ? L.structures(b, sq) : null; if (stc && stc.list.length) m.structures = stc.list;
+    m.builder = {v:L.VERSION, counts:sq.n, elev:eg.src, step:step}; if (stc) m.builder.structures = stc.counts;
     var text2 = JSON.stringify(m); bytes += text2.length;
     await L.dbPut('squares', job.proj + ':' + i + ':' + jj, text2);
     var nb = sq.n.osm + sq.n.overture + sq.n.gen; index.push([i, jj, nb]);
     for (var kk in rep.tot) rep.tot[kk] += sq.n[kk];
     rep.squares.push([i, jj, sq.n.osm, sq.n.overture, sq.n.gen, sq.n.height, sq.n.levels, sq.n.roads, sq.n.named, eg.src]);
+    if (stc) for (var sk in stc.counts){ var rc = rep.struct[sk] = rep.struct[sk] || {osm:0, inferred:0}; rc.osm += stc.counts[sk].osm; rc.inferred += stc.counts[sk].inferred; }
     rep.elev.file += eg.share.file; rep.elev.tiles += eg.share.tiles; rep.elev.none += eg.share.none; if (eg.fileRes && (!rep.fileRes || eg.fileRes < rep.fileRes)) rep.fileRes = eg.fileRes;
     done++; say(0.58 + 0.38*done/total, 'Ground and squares: ' + done + ' of ' + total);
   }

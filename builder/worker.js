@@ -3,7 +3,7 @@
 (function(){
 'use strict';
 /* the packed open-source libraries first (builder/lib, see LICENSES.md), then the builder's own; earcut is in builder/lib for the 3D view and roofs, not loaded yet */
-var LIBS = ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'build'];
+var LIBS = ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'structures', 'build'];
 function workerMain(){
   var L = {}; for (var k in BLIB) BLIB[k](L);
   var stopFlag = false;

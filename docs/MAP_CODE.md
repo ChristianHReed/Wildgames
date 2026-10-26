@@ -86,3 +86,13 @@ These are whole map-to-world projects. Their value is in years of decisions abou
 | Lidar | laz-perf and copc.js |
 
 Copying in needs the library source: either from npm, which this workspace could not reach on 25 October, or from GitHub, which works.
+
+## Bridges, tunnels, dams (builder 1.6.0)
+
+Rules only, no code taken. Full write-up: `docs/MAP_STRUCTURES.md`.
+
+| Source | Licence | What the builder learned |
+| --- | --- | --- |
+| [OSM2World](https://github.com/tordanik/OSM2World) `BridgeModule.java`, `BridgeOrTunnel.java`, `TunnelModule.java` | MIT | What counts as a bridge or tunnel, deck and underside thickness, pier spacing and size, `bridge:support`, 10 m clearance |
+| [Arnis](https://github.com/louis-e/arnis) `element_processing/bridges.rs`, `bridge_styles.rs`, `highways.rs`, `waterfront.rs` | Apache-2.0 | Headroom by what is underneath, 6 m per layer, valley spans on the banks, "a layer alone lifts nothing", ramp candidates, bridge structure styles, tunnel portals, piers and breakwaters |
+| [osm2streets](https://github.com/a-b-street/osm2streets) | Apache-2.0 | Ways on different layers never join at a junction |

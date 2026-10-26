@@ -5,17 +5,17 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.5.0';
+L.VERSION = '1.6.0';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
-var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp'];
+var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp', 'waterway', 'bridge:support'];
 var NODE_NAT = {tree:1, peak:1, spring:1, cave_entrance:1, rock:1}, NODE_HWY = {traffic_signals:1, stop:1, give_way:1, crossing:1, street_lamp:1, bus_stop:1, turning_circle:1, mini_roundabout:1, speed_camera:1, milestone:1, motorway_junction:1};
 var KEEP = {};
 ('name alt_name old_name official_name short_name ref int_ref loc_name building height min_height est_height building:levels building:min_level roof:shape roof:levels roof:height roof:angle roof:direction roof:orientation roof:material roof:colour ' +
  'building:material building:colour building:part building:use building:flats amenity shop office tourism healthcare craft man_made power plant:source plant:output:electricity generator:source generator:method generator:output:electricity voltage cables frequency substation ' +
  'highway lanes lanes:forward lanes:backward oneway maxspeed surface smoothness bridge bridge:structure tunnel layer level junction sidewalk sidewalk:left sidewalk:right sidewalk:both cycleway cycleway:left cycleway:right footway crossing crossing:markings ' +
  'parking:lane:left parking:lane:right parking:lane:both parking:left parking:right parking:both parking lit width est_width service access motor_vehicle foot bicycle hgv toll covered ' +
- 'railway usage gauge electrified tracks waterway intermittent seasonal water natural landuse leisure sport golf barrier fence_type wall material colour entrance door emergency fire_hydrant:type traffic_sign traffic_signals traffic_calming ' +
+ 'embankment cutting ford maxheight lock bridge:support railway usage gauge electrified tracks waterway intermittent seasonal water natural landuse leisure sport golf barrier fence_type wall material colour entrance door emergency fire_hydrant:type traffic_sign traffic_signals traffic_calming ' +
  'place population ele religion denomination cuisine brand operator military aeroway public_transport historic ruins abandoned disused ' +
  'addr:housenumber addr:street addr:unit addr:city addr:postcode addr:state addr:place addr:interpolation location area area:highway tower:type height:hub pipeline substance capacity fuel content tank').split(' ').forEach(function(k){ KEEP[k] = 1; });
 L.keepTags = function(t, extra){

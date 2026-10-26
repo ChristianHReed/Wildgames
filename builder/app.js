@@ -2,7 +2,7 @@
    Classic script. The heavy work runs in the background worker (worker.js); this file only drives the page. */
 (function(){
 'use strict';
-var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
+var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
 var $ = function(id){ return document.getElementById(id); };
 var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]; }); };
 var fmtN = function(n){ return Math.round(n).toLocaleString('en-US'); };
@@ -159,11 +159,19 @@ function report(){
   h += '<tr><td>Ground from your files / terrain tiles / guessed</td><td class="n">' + pct(e.file, 1) + ' / ' + pct(e.tiles, 1) + ' / ' + pct(e.none, 1) + '</td></tr>';
   if (M.report.fileRes) h += '<tr><td>Finest ground detail used</td><td class="n">' + (M.report.fileRes < 2 ? M.report.fileRes.toFixed(1) : Math.round(M.report.fileRes)) + ' m</td></tr>';
   if (st.overture) h += '<tr><td>Overture buildings skipped (already mapped)</td><td class="n">' + fmtN(st.overture.skipped) + '</td></tr>';
+  var sx = M.report.struct || {}, sn = function(k){ var o = sx[k]; return o ? o.osm + o.inferred : 0; }, sm = function(k){ var o = sx[k]; return o ? o.inferred : 0; };
+  if (Object.keys(sx).length){
+    h += '<tr><td>Bridges, mapped / worked out</td><td class="n">' + fmtN(sn('bridge') - sm('bridge')) + ' / ' + fmtN(sm('bridge')) + '</td></tr>';
+    h += '<tr><td>Overpasses and underpasses</td><td class="n">' + fmtN(sn('overpass') + sn('underpass')) + '</td></tr>';
+    h += '<tr><td>Tunnels, culverts, building passages</td><td class="n">' + fmtN(sn('tunnel')) + ', ' + fmtN(sn('culvert')) + ', ' + fmtN(sn('passage')) + '</td></tr>';
+    h += '<tr><td>Dams, weirs, locks, piers, retaining walls</td><td class="n">' + fmtN(sn('dam')) + ', ' + fmtN(sn('weir')) + ', ' + fmtN(sn('lock') + sn('gate')) + ', ' + fmtN(sn('pier')) + ', ' + fmtN(sn('wall')) + '</td></tr>';
+  }
   h += '<tr><td>Places named</td><td class="n">' + fmtN(M.places.length) + '</td></tr>';
   h += '</table>';
   var tips = [];
   if (t.gen > t.osm*0.3) tips.push('Many buildings are made up. Adding <b>Overture buildings</b> (step 2) usually replaces most of them with real footprints.');
   if (e.tiles > 0.5 || e.none > 0.05) tips.push('For the real ground (kerbs, creek banks, ditches) add the <b>USGS 1 m elevation</b> files for your area.');
+  if (sn('check')) tips.push(fmtN(sn('check')) + ' places where roads cross with no junction and no bridge or tunnel mapped (or a very long wet crossing): worth a look in OpenStreetMap.');
   if (t.roads && t.lanes/t.roads < 0.2) tips.push('Most roads have no lane count in OpenStreetMap; the game uses its usual widths for those.');
   if (tips.length) h += '<p class="muted">' + tips.join('<br>') + '</p>';
   $('report').innerHTML = h;

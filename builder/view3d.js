@@ -7,7 +7,7 @@
 var V3 = window.View3D = {env:{hour:10, season:1}, open:open, close:close, isOpen:function(){ return on; }};
 var L3 = {}; window.BLIB.build(L3);   /* only for reading squares from the builder's storage */
 var on = false, ready = null, cur = null, mode = 'fly', flyH = 60, last = 0, intT = 0, dynB = null, busy = false, noteT = 0, onClose = null;
-var paintKind = 'woods', riv = [], sculpt = false, tool = 'raise', brushR = 60, brushK = 0.5, undoSt = [], redoSt = [], pend = [], working = false, holdT = null, lastCam = null;
+var strB = null, showS = false, sList = null, paintKind = 'woods', riv = [], sculpt = false, tool = 'raise', brushR = 60, brushK = 0.5, undoSt = [], redoSt = [], pend = [], working = false, holdT = null, lastCam = null;
 var keysDown = {}, look = null, stick = {x:0, y:0}, upDown = 0;
 var $ = function(id){ return document.getElementById(id); };
 V3.note = function(msg, secs){ var n = $('v3note'); if (!n) return; n.textContent = msg; n.style.opacity = msg ? 1 : 0; clearTimeout(noteT); if (msg) noteT = setTimeout(function(){ n.style.opacity = 0; }, (secs || 3)*1000); };
@@ -21,7 +21,7 @@ function makeOverlay(){
     '<button id="v3fly" class="sm on">Fly</button><button id="v3walk" class="sm alt">Walk</button>' +
     '<label class="v3lab">Time <input id="v3hour" type="range" min="0" max="24" step="0.25" value="10"><b id="v3hourV"></b></label>' +
     '<select id="v3sea"><option value="0">Spring</option><option value="1" selected>Summer</option><option value="2">Autumn</option><option value="3">Winter</option></select>' +
-    '<button id="v3sculpt" class="sm alt">Sculpt</button><button id="v3help" class="sm alt">?</button></div>' +
+    '<button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Sculpt</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3tools" class="hidden"><b>Sculpt the ground</b><div class="v3row" id="v3tt">' +
     '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button></div>' +
     '<div class="v3row hidden" id="v3pnt"><select id="v3pk"></select></div>' +
@@ -60,6 +60,7 @@ function makeOverlay(){
   $('v3hour').oninput = function(){ V3.env.hour = +this.value; hourTxt(); }; hourTxt();
   $('v3sea').onchange = function(){ V3.env.season = +this.value; };
   $('v3help').onclick = function(){ $('v3helpBox').classList.toggle('hidden'); };
+  $('v3str').onclick = function(){ showS = !showS; this.className = 'sm ' + (showS ? 'on' : 'alt'); if (showS){ loadStructs(); V3.note('Poles mark what was found: blue bridges, yellow overpasses, purple tunnels and underpasses, teal culverts, red dams, orange weirs, pink places to check. Short poles were worked out, tall ones are mapped.', 9); } };
   $('v3sculpt').onclick = function(){ sculpt = !sculpt; $('v3tools').classList.toggle('hidden', !sculpt); this.className = 'sm ' + (sculpt ? 'on' : 'alt'); if (sculpt){ if (mode !== 'fly') setMode('fly'); V3.note('Sculpt: tap the ground.', 3); refreshCount(); } };
   Array.prototype.forEach.call($('v3tt').children, function(b){ b.onclick = function(){ tool = b.getAttribute('data-t'); riv = []; toolUI(); Array.prototype.forEach.call($('v3tt').children, function(o){ o.className = 'sm ' + (o === b ? 'on' : 'alt'); }); }; });
   $('v3r').oninput = function(){ brushR = +this.value; $('v3rV').textContent = brushR + ' m'; }; $('v3k').oninput = function(){ brushK = +this.value; $('v3kV').textContent = brushK; };
@@ -126,7 +127,7 @@ function close(){ on = false; $('v3').classList.add('hidden'); document.body.sty
 function llOf(x, y){ var g = world.geo; return [g.lon0 + x/g.kx, g.lat0 - y/g.ky]; }
 async function enterAt(lat, lon, yaw, first){
   var R = cur.region, i = Math.floor((lon - R.lon)/R.dLon + 0.5), j = Math.floor((lat - R.lat)/R.dLat + 0.5);
-  var text = await L3.squareText(cur.proj, i, j);
+  var text = await L3.squareText(cur.proj, i, j); cur.text = text; sList = null;
   if (!text){ V3.note('That part of the map has not been built (outside your area).', 4); return false; }
   if (first) V3.note('Building the 3D world for this square...', 30);
   await new Promise(function(r){ setTimeout(r, 30); });   /* let the note show before the heavy work */
@@ -199,6 +200,24 @@ async function finishRiver(){
   pend.push({id:uid(), t:'river', c:c, w:riverWidth(), k:+(1 + brushK*1.5).toFixed(1), lat:c[1], lon:c[0]}); endStroke();
 }
 
+
+/* ---------------- structures: poles over what the builder found (bridges, dams, ...) ---------------- */
+var SCOL = {bridge:[70,140,255], overpass:[255,210,40], underpass:[160,100,210], tunnel:[160,100,210], culvert:[0,205,185], passage:[160,100,210], dam:[235,60,60], weir:[255,140,0], lock:[255,140,0], gate:[255,140,0], fall:[120,200,255], ford:[0,205,185], pier:[200,200,200], breakwater:[200,200,200], dyke:[235,60,60], wall:[170,150,120], bank:[170,150,120], support:[70,140,255], check:[255,0,200]};
+function loadStructs(){
+  sList = []; if (!cur || !cur.text || !world || !world.geo) return; var g = world.geo;
+  try { var j = JSON.parse(cur.text); (j.structures || []).forEach(function(s){ if (s.k === 'wall' || s.k === 'bank') return; sList.push({k:s.k, inf:s.src === 'inferred', x:(s.lon - g.lon0)*g.kx, y:-(s.lat - g.lat0)*g.ky, n:s.n}); }); } catch (er){}
+}
+function structMesh(){
+  if (!sList) loadStructs(); var m = new Mesh(), hw = Math.max(0.8, flyH*0.012), any = false;
+  sList.forEach(function(s){
+    if (Math.abs(s.x - P.x) > 900 || Math.abs(s.y - P.y) > 900) return;
+    var col = SCOL[s.k] || [255, 255, 255], g0 = hAt(s.x, s.y), top = g0 + (mode === 'fly' ? Math.max(14, flyH*0.35) : 9)*(s.inf ? 0.6 : 1), x0 = s.x - hw, x1 = s.x + hw, z0 = s.y - hw, z1 = s.y + hw;
+    m.quad(x0, g0, z0, x1, g0, z0, x1, top, z0, x0, top, z0, col, 255); m.quad(x1, g0, z0, x1, g0, z1, x1, top, z1, x1, top, z0, col, 255);
+    m.quad(x1, g0, z1, x0, g0, z1, x0, top, z1, x1, top, z1, col, 255); m.quad(x0, g0, z1, x0, g0, z0, x0, top, z0, x0, top, z1, col, 255); any = true;
+  });
+  return any ? m : null;
+}
+
 /* ---------------- each frame ---------------- */
 function frame(ts){
   if (!on) return;
@@ -267,6 +286,7 @@ function draw(){
   var m = new Mesh(), far = world.tg ? world.tg.min - 3 : 0, bq = QS.far*1.4 + 400 + (mode === 'fly' ? flyH*3 : 0);
   m.pl = [TERR, 0]; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
   dynB = upload(m, dynB); drawMesh(dynB); drawNature();
+  if (showS){ var sm = structMesh(); if (sm){ sm.pl = null; strB = upload(sm, strB); drawMesh(strB); } }
 }
 function where(){
   var ll = llOf(P.x, P.y), w = $('v3where'); if (!w) return;

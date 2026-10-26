@@ -203,6 +203,14 @@ What testing showed:
 
 **Builder 1.5.0, 25 October 2026: ground painting.** The Paint tool in Sculpt lays a round patch of woods, park lawn, grass, field, scrub, sand or a parking lot (brush size sets the patch). Each patch is a marked area (`asmb:made=yes`, `src=edit`) with the map tags the game already draws, so the game needs nothing new. Undo, redo and export work as for the other tools. Tested in Chromium: a sand patch was saved, rebuilt and drawn.
 
+**Builder 1.6.0, 25 October 2026: structures (bridges, overpasses, tunnels, culverts, dams and more).** Learned from OSM2World and Arnis and from a scan of the whole Missouri file; the rules, the data and the engine requests are in `docs/MAP_STRUCTURES.md`.
+- **Finds them:** `builder/structures.js` reads the tags (`bridge`, `tunnel`, `layer`, `waterway=dam`, `weir`, `man_made=pier`, `retaining_wall`, ...) and works out the rest from the shapes: a road through a river or lake with no bridge mapped, a motorway crossing a street with no junction, a stream crossing a road with no culvert.
+- **Writes them:** a `structures` list in every square (old games ignore it), counts in `builder.structures`, and rows in the accuracy report. Places that look like mapping slips are listed as `check`.
+- **Shows them:** the Structures switch in the 3D view puts a coloured pole on each one (tall for mapped, short for worked out).
+- **Also fixed:** the builder had been dropping the `embankment`, `cutting`, `ford`, `maxheight`, `lock` and `bridge:support` tags and dam, weir and waterfall points; they are kept now.
+- **Tested** on the real Missouri file: Springfield (206 bridges, 487 culverts, 304 overpasses), downtown St. Louis (986 bridges, 1,956 overpasses), Table Rock Dam (10 dam ways); and on a made-up square with one case for each rule.
+- **The game's engine** does not read these yet, so decks, tunnels and dams are not drawn from them; see the requests in the ninth hand-off note.
+
 ## Versions
 
 | Version | Contents |

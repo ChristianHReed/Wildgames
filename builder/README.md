@@ -2,7 +2,7 @@
 
 The AfterStreet Maps Builder (`builder.html` beside `play.html`). Owned by the map chat; the scope is `docs/MAPS_BUILDER.md`.
 
-Version 1.5.0 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
+Version 1.6.0 (25 October 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
 - choose the area;
 - give it map data (upload or download);
 - build the map squares;
@@ -22,6 +22,7 @@ All are plain classic scripts, so the builder opens from a USB drive (`file://`)
 | `pbf.js` | OpenStreetMap `.osm.pbf` reader. It reads the file through an 8 MB window, so a whole state file never sits in memory |
 | `tiff.js` | GeoTIFF elevation reader: classic and BigTIFF, tiles or strips, deflate/LZW/PackBits, predictors 2 and 3, overviews, NoData |
 | `gen.js` | The generator: tag filtering, OSM readers (PBF, `.osm` XML, Overpass JSON, GeoJSON), the Overture merge, gap filling, cutting into squares, ground grids (files first, then Terrarium tiles) |
+| `structures.js` | 1.6.0: finds bridges, overpasses, tunnels, culverts, dams and the like in each square and writes the `structures` list (`docs/MAP_STRUCTURES.md`) |
 | `build.js` | One whole build (run in the worker), the builder's storage (IndexedDB `afterstreet-builder`), the 2D preview data, map-file zip writer and reader |
 | `worker.js` | Starts the worker (or runs on the page if workers are not allowed) |
 | `app.js` | The page: area, source cards, build, report, export, the flat preview map |
@@ -67,6 +68,7 @@ Format 2 is the game's compact map format: `lastblockMap:1, name, attribution, z
 | Key | What |
 | --- | --- |
 | `format` | `2`. The game can use it to say a map needs a newer game |
+| `structures` | 1.6.0: `[{k, w, lon, lat, ...}]`, the bridges, overpasses, tunnels, culverts, dams and so on found in the square (format in `docs/MAP_STRUCTURES.md`) |
 | `holes` | `[[wayIndex, [lon, lat, ...]], ...]`: inner rings (courtyards, light wells) of the polygon at `ways[wayIndex]` |
 | `builder` | `{v, counts, elev, step}`: the builder version, counts for the report, where the ground came from (`file`, `tiles`, `none`), the grid step in metres |
 

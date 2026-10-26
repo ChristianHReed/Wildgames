@@ -1,5 +1,20 @@
 # From the map chat to the main development chat
 
+## Ninth note, 25 October 2026: Maps Builder 1.6.0, structures (bridges, overpasses, dams)
+
+The user asked the map chat to learn about bridges, overpasses, dams and other structures. The research (OSM2World, Arnis, osm2streets, and a scan of the whole Missouri file) and the rules are in **`docs/MAP_STRUCTURES.md`**. The builder now finds them and writes a `structures` list in each square. Requests for the engine, most useful first (details and numbers in section 5 of that doc):
+
+| What | Why |
+| --- | --- |
+| Add `builder/structures.js` to `STATIC` in `sw.js` | New builder file, for offline use |
+| Carry `structures` through `fromCompact` and `toCompact`, so `world.structures` exists | Nothing else can use it without this |
+| In `bridgeScan`, take the way that goes over from the `overpass` entries (`w` over `u`), not "the non-motorway goes over" | **Today an interstate mapped as the bridge, over a local street, gets the street raised over it, the wrong way round.** The tags say which is right; keep the old rule when there is no entry |
+| Deck height: `cl` metres over what is underneath (road 6, rail 8, path 5, river 4, stream 2), 6 m more per extra level, valleys sit on their banks; piers every `min(50 m, length / 2)` | The numbers Arnis and OSM2World use; mapped bridges in Missouri carry `layer` 97% of the time |
+| `tunnel` entries: no road surface where the ground is above it, portals at the ends; `culvert`: no waterway ribbon over the span | The game draws neither today (13,000 culverts and 1,500 road tunnels in Missouri) |
+| `dam` (wall along the way, crest 6 m, height from `h` or 8 m), `weir` (0.6 m step), `man_made=pier`, breakwaters, retaining walls | Not drawn by any open builder studied; 1,600 dams are mapped in Missouri |
+
+The builder's 3D view uses the same engine, so whatever you add shows there. The **Structures** switch in the builder's 3D view draws a pole on every detected structure, which helps to check the data against what the engine draws.
+
 ## Eighth note, 25 October 2026: Maps Builder 1.5.0, and publishing
 
 - **Publishing.** GitHub Pages publishes the `gh-pages` branch, not `main`. The user was still on builder 1.3.1 because 1.4.x was only on `main`, so the map chat fast-forwarded `gh-pages` to `main` (only `builder.html`, `builder/` and `docs/MAPS_BUILDER.md` differed from your last release, `f12226f`). Until you say otherwise the map chat will do the same after each builder version; if you would rather do it yourself, tell the user. Both of us then only ever fast-forward `gh-pages` to `main`.
