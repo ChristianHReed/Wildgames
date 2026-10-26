@@ -220,7 +220,7 @@ function buildWorld(raw, name){
       var hls = holesOf[wayIx]; if (hls) hls.forEach(function(hp){ var ha = 0; for (var hi = 0; hi < hp.length; hi += 2){ var hj = (hi + 2) % hp.length; ha += hp[hi]*hp[hj+1] - hp[hj]*hp[hi+1]; } ar = Math.max(6, ar - Math.abs(ha)/2); });   /* courtyards and light wells (map format 2) do not count as floor */
       var id = w.buildings.length, kind = kindOf(t), kg = !kind; if (kg){ var hk = hash(id, 17, 4); kind = ar < 280 ? 'house' : hk < 0.45 ? 'office' : hk < 0.7 ? 'shop' : 'apartments'; }
       var cat = KIND[kind].cat;
-      w.buildings.push(bbox({pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', hn:t['addr:housenumber'] || '', st:t['addr:street'] || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels']) || levelsOfHeight(t), rs:roofShape(t), civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
+      w.buildings.push(bbox({use:t['asmb:use'] || '', wall:t['asmb:wall'] || '', frame:t['asmb:frame'] || '', bstate:t['asmb:state'] || '', alabel:t['asmb:label'] || '', pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', hn:t['addr:housenumber'] || '', st:t['addr:street'] || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels']) || levelsOfHeight(t), rs:roofShape(t), civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
         col:CAT[cat].cols[Math.floor(hash(id, 3, 5)*CAT[cat].cols.length)], rolls:Math.max(1, Math.min(6, Math.round(1 + ar/160))), time:Math.min(4, 1.2 + ar/400), id:id}));
       return;
     }
@@ -228,7 +228,7 @@ function buildWorld(raw, name){
     if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx})); return; }
     if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water', wi:wayIx})); return; }
     if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail', wi:wayIx})); return; }
-    if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k})); } }
+    if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k, lei:t.leisure || '', sport:t.sport || ''})); } }
   });
   if (!w.buildings.length && !w.roads.length) throw new Error('This file has no buildings or roads. Try exporting a built-up area.');
   w.areas.sort(function(p, q){ return AREA_RANK[p.kind] - AREA_RANK[q.kind]; });

@@ -551,6 +551,21 @@ function placeDress(g){
   w.areas.forEach(function(ar, ai){ if (ar.kind !== 'park') return; var n = Math.min(40, Math.floor((ar.maxx - ar.minx)*(ar.maxy - ar.miny)/900));
     for (var k = 0; k < n; k++){ var x = ar.minx + hash(ai, k, 91)*(ar.maxx - ar.minx), y = ar.miny + hash(ai, k, 92)*(ar.maxy - ar.miny); if (!pip(ar.pts, x, y) || !ok(x, y, 3)) continue;
       var h = hash(ai, k, 93); add(h < 0.34 ? 'plants.flowers_red' : h < 0.67 ? 'plants.flowers_yellow' : 'plants.flowers_purple', x, y, h*60, 300); } });
+  /* 0.112.0: playgrounds and pitches the map names (leisure=playground, leisure=pitch with sport=): the parks pack's equipment placed on them */
+  if (spB('pk.swing_set')) w.areas.forEach(function(ar, ai){
+    if (ar.lei !== 'playground' && ar.lei !== 'pitch') return; var pt = ar.pts, np = pt.length, cx = 0, cy = 0, q, bl = 0, ux = 1, uy = 0, l, u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
+    for (q = 0; q < np; q += 2){ cx += pt[q]; cy += pt[q + 1]; } cx /= np/2; cy /= np/2; if (!pip(pt, cx, cy)){ cx = (ar.minx + ar.maxx)/2; cy = (ar.miny + ar.maxy)/2; }
+    for (q = 0; q < np; q += 2){ var q2 = (q + 2) % np; l = Math.hypot(pt[q2] - pt[q], pt[q2 + 1] - pt[q + 1]); if (l > bl){ bl = l; ux = (pt[q2] - pt[q])/l; uy = (pt[q2 + 1] - pt[q + 1])/l; } }
+    for (q = 0; q < np; q += 2){ var du = (pt[q] - cx)*ux + (pt[q + 1] - cy)*uy, dv = -(pt[q] - cx)*uy + (pt[q + 1] - cy)*ux; u0 = Math.min(u0, du); u1 = Math.max(u1, du); v0 = Math.min(v0, dv); v1 = Math.max(v1, dv); }
+    var ya = Math.atan2(ux, uy), at = function(du, dv){ return [cx + du*ux - dv*uy, cy + du*uy + dv*ux]; }, put = function(nm, du, dv, rot){ var c = at(du, dv); if (ok(c[0], c[1], 0.5)) add('pk.' + nm, c[0], c[1], ya + (rot || 0), 400); };
+    if (ar.lei === 'playground'){ var kit = ['swing_set', 'slide', 'climbing_frame', 'sandpit', 'seesaw', 'merry_go_round', 'monkey_bars', 'spring_rider'], span = Math.max(u1 - u0, v1 - v0), n = Math.min(6, Math.max(2, Math.floor(span/5)));
+      for (q = 0; q < n; q++){ var a2 = q/n*6.283 + hash(ai, q, 61), rr = n > 2 ? Math.min(span*0.28, 6) : 0; put(kit[(q + ai) % kit.length], Math.cos(a2)*rr, Math.sin(a2)*rr, hash(ai, q, 62)*6.28); } return; }
+    var sp = ar.sport || '', L2 = u1 - u0, W2 = v1 - v0;
+    if (sp === 'basketball'){ put('basketball_hoop', u1 - 1.2, 0, Math.PI); put('basketball_hoop', u0 + 1.2, 0, 0); }
+    else if (sp === 'soccer' || sp === 'american_football' || sp === 'football'){ put('soccer_goal', u1 - 0.3, 0, Math.PI/2*3); put('soccer_goal', u0 + 0.3, 0, Math.PI/2); }
+    else if (sp === 'tennis' || sp === 'pickleball' || sp === 'volleyball'){ put(sp === 'volleyball' ? 'volleyball_net' : 'tennis_net', 0, 0, 0); }
+    else if (sp === 'baseball' || sp === 'softball'){ put('home_plate', u0 + 3, 0, 0); put('baseball_backstop', u0 + 0.5, 0, Math.PI/2); put('pitchers_mound', u0 + 3 + Math.min(18, L2*0.35), 0, 0); }
+  });
   w.waterLines.forEach(function(r, n){ var pt = r.pts, hw = r.w/2;
     for (var q = 0; q + 3 < pt.length; q += 2){ var ax = pt[q], ay = pt[q+1], l = Math.hypot(pt[q+2] - ax, pt[q+3] - ay); if (l < 0.5) continue; var dx = (pt[q+2] - ax)/l, dy = (pt[q+3] - ay)/l;
       for (var u = 0; u < l; u += 11){ var sd = hash(n + q, Math.floor(u), 5) < 0.5 ? 1 : -1; if (hash(n + q, Math.floor(u), 6) > 0.45) continue; var o = hw + 0.6 + hash(n, Math.floor(u), 7)*1.5, x = ax + dx*u - dy*o*sd, y = ay + dy*u + dx*o*sd;
