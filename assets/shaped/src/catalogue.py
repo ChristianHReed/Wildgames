@@ -10,6 +10,7 @@ WD, MC, AN, IN = load('world'), load('machines'), load('animals'), load('interio
 FL, F2, ST = load('flora'), load('furniture2'), load('structures')
 LA, WO, FA, WS = load('land'), load('woods'), load('farm'), load('waterside')
 FS_, AT_, SV_, SF_ = load('foodservice'), load('autotrade'), load('services'), load('shopfit')
+BK_, BT_, PK_ = load('bikes'), load('boats'), load('parks')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -246,13 +247,23 @@ L.append(f'''
 {ST['rule']}
 ''' + tri_table(ST))
 
-for _t, _P, _g in (('land', LA, 'land'), ('woods', WO, 'woods'), ('farm', FA, 'farm'), ('waterside', WS, 'waterside'), ('foodservice', FS_, 'foodservice'), ('autotrade', AT_, 'autotrade'), ('services', SV_, 'services'), ('shopfit', SF_, 'shopfit')):
+for _t, _P, _g in (('land', LA, 'land'), ('woods', WO, 'woods'), ('farm', FA, 'farm'), ('waterside', WS, 'waterside'), ('foodservice', FS_, 'foodservice'), ('autotrade', AT_, 'autotrade'), ('services', SV_, 'services'), ('shopfit', SF_, 'shopfit'), ('parks', PK_, 'parks')):
     L.append(f"""
 ## {_t} (`assets/shaped/{_t}.js`, version {_P['version']})
 
 {_P['about'].strip()}
 
 Pieces: """ + ', '.join('`' + k + '`' for k in _P['models'][_g]) + f"""
+
+{_P['rule']}
+""" + tri_table(_P))
+for _t, _P in (('bikes', BK_), ('boats', BT_)):
+    L.append(f"""
+## {_t} (`assets/shaped/{_t}.js`, version {_P['version']})
+
+{_P['about'].strip()}
+
+Models: """ + ', '.join('`' + k + '`' for k in _P['models']) + f"""
 
 {_P['rule']}
 """ + tri_table(_P))

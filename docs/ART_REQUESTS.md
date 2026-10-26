@@ -342,3 +342,11 @@ The game now has digging (`engine/dig.js`): the ground has soil in 0.5 m blocks,
 - **Soil layer look**: tell us what the Springfield Plateau's soil really looks like under the grass (thin topsoil, red-brown cherty clay, then limestone and chert); the game uses topsoil (dark brown), subsoil, clay (orange brown), then grey limestone with bands.
 - **Soil and shovel icons** for the pack.
 - Later: a **ladder**, **plank cover** for a pit, and **spikes or stakes** for traps.
+
+## 17. Bikes, boats and parks (delivered 26 October 2026, content chat's own initiative)
+
+Three packs, version 1; reasons, tables and recipes in `docs/BIKES_BOATS_PARKS.md`; piece lists in `docs/SHAPED.md`. Previews: album scenes "Bikes: ...", "Boats: ...", "Parks and sports (1 to 6)".
+- **`bikes.js`** (16, rigged like machines): city, mountain, road, kids, BMX, cargo, tandem, tricycle, kick scooter, moped, road and dirt motorbikes, quad, trailer, fallen bicycle, wrecked motorbike. `bars`, `crank` and `wheel` move; saddle, grip and pedal points for riders.
+- **`boats.js`** (20, rigged): kayak, canoe, paddleboard, rowboat with oars, jon boat, bass boat, pontoon, runabout, fishing boat, jet ski, houseboat, sailing dinghy, ferry barge, three crafted rafts, and wake, bow wave, prop wash and splash pieces. Water line at y = 0.
+- **`parks.js`** (93): playground, park furniture, ball sports, court and track tiles, skate park, pool, golf, bike park, camp.
+

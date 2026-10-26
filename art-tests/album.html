@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, WO=S.woods, FA=S.farm, WS=S.waterside, FS=S.foodservice, AT=S.autotrade, SV2=S.services, SF=S.shopfit, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, WO=S.woods, FA=S.farm, WS=S.waterside, FS=S.foodservice, BK=S.bikes, BT=S.boats, PK=S.parks, AT=S.autotrade, SV2=S.services, SF=S.shopfit, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -217,6 +217,25 @@ function animal(name, clip, frame){
   if (f.root) root.position.set(f.root[0],f.root[1],f.root[2]);
   const outer=new THREE.Group(); outer.add(root); return outer;
 }
+
+function rigOf(P, name, vals){
+  const Pm=P.models[name], R=P.rig[name], col=colourer(P.palette,{BODY:P.paint[name]}), D=Math.PI/180, groups={}, root=new THREE.Group(); vals=vals||{};
+  for (const k in R){ const r=R[k], par=r.parent?R[r.parent].pivot:[0,0,0], outer=new THREE.Group(), inner=new THREE.Group();
+    outer.position.set(r.pivot[0]-par[0],r.pivot[1]-par[1],r.pivot[2]-par[2]); outer.add(inner);
+    const v=(k in vals)?vals[k]:(r.rest||0);
+    if (r.turn){ const a=r.turn; inner.rotation.set(a[0]*v*D,a[1]*v*D,a[2]*v*D); }
+    if (r.slide){ const a=r.slide; inner.position.set(a[0]*v,a[1]*v,a[2]*v); }
+    const ps=(Pm[k]||[]).map(q=>Object.assign({},q,{p:[q.p[0]-r.pivot[0],q.p[1]-r.pivot[1],q.p[2]-r.pivot[2]]})); if (ps.length) inner.add(mesh(ps,col));
+    groups[k]={outer,inner}; }
+  for (const k in R){ const r=R[k]; (r.parent?groups[r.parent].inner:root).add(groups[k].outer); }
+  const wl=(P.wheels&&P.wheels[name])||[]; for (const w of wl){ const wm=mesh(Pm.wheel,col); wm.position.set(...w); root.add(wm); }
+  return root;
+}
+function rigGrid(P, names, cols, dx, dz, cpos, ctgt, water, rot){
+  lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null;
+  if (water){ const w=new THREE.Mesh(new THREE.PlaneGeometry(400,400), new THREE.MeshLambertMaterial({color:0x4a7a8a})); w.rotation.x=-Math.PI/2; scene.add(w); } else ground(400,400,0xd8d2c6);
+  names.forEach((n,i)=>{ const g=rigOf(P,n); g.position.set((i%cols-(cols-1)/2)*dx,0,-Math.floor(i/cols)*dz); if(rot) g.rotation.y=rot; scene.add(g); });
+  cam.position.set(...cpos); ctl.target.set(...ctgt); }
 /* ---------- scenes ---------- */
 const SCENES={
   survivors:{t:'Survivors',d:'Silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small heads with no eyes. 300 to 820 triangles each.',
@@ -597,6 +616,26 @@ const SCENES={
     make(){ packGrid(SF,'shopfit',["sprinkler_head", "smoke_detector", "dome_camera", "exit_sign", "wall_clock", "partition_wall_3", "partition_glass", "wainscot_panel", "tiled_wall", "brick_pier", "column_cover", "toilet_stall", "urinal_wall", "sink_counter", "hand_dryer", "mop_sink", "fire_ext_cabinet", "first_aid_box"],34,1.5,0,[0,20,22],[0,1,-3]); }},
   biz_shopfit_3:{t:'Business: shop fit-out (3)',d:'coat_hooks … floor_mat_entry',
     make(){ packGrid(SF,'shopfit',["coat_hooks", "floor_checker", "floor_checker_red", "floor_linoleum", "floor_carpet_grey", "floor_carpet_blue", "floor_carpet_red", "floor_carpet_patterned", "floor_hardwood", "floor_concrete", "floor_epoxy", "floor_rubber", "floor_terrazzo", "floor_quarry", "floor_mat_entry"],34,1.5,0,[0,20,22],[0,1,-3]); }},
+  bikes_a:{t:'Bikes: pedal bikes',d:'City, mountain, kids, road, BMX, cargo, tandem, tricycle, kick scooter.',
+    make(){ rigGrid(BK,['bicycle_city','bicycle_mountain','bicycle_kids','bicycle_road','bmx','cargo_bike','tandem','tricycle','kick_scooter'],5,2.6,3.2,[0,5,11],[0,0.5,-1.5],false,Math.PI/2); }},
+  bikes_b:{t:'Bikes: motor bikes and roadside',d:'Moped, road and dirt motorbikes, quad, trailer, fallen bicycle, wrecked motorbike.',
+    make(){ rigGrid(BK,['moped','motorbike_road','motorbike_dirt','quad_bike','bike_trailer','fallen_bicycle','wrecked_motorbike'],4,2.8,3.2,[0,5,11],[0,0.5,-1.5],false,Math.PI/2); }},
+  boats_a:{t:'Boats: paddle and oar',d:'Kayak, canoe, paddleboard, rowboat, jon boat, inflatable, log and barrel rafts, dinghy.',
+    make(){ rigGrid(BT,['kayak','canoe','paddleboard','rowboat','jon_boat','inflatable_raft','log_raft','barrel_raft','sailing_dinghy'],5,5.5,6.5,[0,17,25],[0,0,-3],true); }},
+  boats_b:{t:'Boats: motor boats and big boats',d:'Bass boat, runabout, jet ski, fishing boat, pontoon, houseboat, ferry barge and the wake pieces.',
+    make(){ rigGrid(BT,['bass_boat','runabout','jet_ski','fishing_boat','pontoon_boat','houseboat','ferry_barge','wake_v','bow_wave','prop_wash','splash_ring'],4,10,14,[0,28,38],[0,0,-6],true); }},
+  parks_1:{t:'Parks and sports (1)',d:'swing_set … bandstand',
+    make(){ packGrid(PK,'parks',["swing_set", "slide", "seesaw", "climbing_frame", "monkey_bars", "sandpit", "spring_rider", "merry_go_round", "tire_swing", "balance_beam_set", "playhouse", "playground_chips", "playground_rubber", "gazebo", "pavilion", "bandstand"],34,1.5,0,[0,22,26],[0,1,-4],{sunk:n=>['pool_8x4','skate_bowl'].includes(n)}); }},
+  parks_2:{t:'Parks and sports (2)',d:'statue_plinth … dog_waste_station',
+    make(){ packGrid(PK,'parks',["statue_plinth", "monument_obelisk", "fountain_dry", "fountain_running", "drinking_fountain", "trash_can_lid", "recycling_bin", "park_sign", "park_lamp", "bollard_light", "flower_bed", "planter_box", "hedge_4", "fence_wrought_4", "pergola", "dog_waste_station"],34,1.5,0,[0,22,26],[0,1,-4],{sunk:n=>['pool_8x4','skate_bowl'].includes(n)}); }},
+  parks_3:{t:'Parks and sports (3)',d:'pet_water_bowl … football_goalpost',
+    make(){ packGrid(PK,'parks',["pet_water_bowl", "bbq_pedestal", "park_bench_iron", "baseball_backstop", "home_plate", "base_bag", "pitchers_mound", "dugout", "bleachers_3row", "scoreboard", "outfield_fence_4", "batting_cage", "basketball_hoop", "basketball_hoop_wall", "soccer_goal", "football_goalpost"],34,1.5,0,[0,22,26],[0,1,-4],{sunk:n=>['pool_8x4','skate_bowl'].includes(n)}); }},
+  parks_4:{t:'Parks and sports (4)',d:'tennis_net … track_lane_4',
+    make(){ packGrid(PK,'parks',["tennis_net", "volleyball_net", "horseshoe_pit", "disc_golf_basket", "court_green_plain", "court_green_line", "court_green_corner", "court_blue_plain", "court_blue_line", "court_blue_corner", "court_clay_plain", "court_clay_line", "court_clay_corner", "court_blue_circle", "court_blue_key", "track_lane_4"],34,1.5,0,[0,22,26],[0,1,-4],{sunk:n=>['pool_8x4','skate_bowl'].includes(n)}); }},
+  parks_5:{t:'Parks and sports (5)',d:'field_line_4 … sand_bunker',
+    make(){ packGrid(PK,'parks',["field_line_4", "field_line_corner", "skate_quarterpipe", "skate_box", "skate_rail", "skate_ramp_a", "skate_bowl", "pool_8x4", "diving_board", "pool_ladder", "lifeguard_chair", "pool_fence_4", "pool_lounger", "golf_flag", "golf_tee_box", "sand_bunker"],34,1.5,0,[0,22,26],[0,1,-4],{sunk:n=>['pool_8x4','skate_bowl'].includes(n)}); }},
+  parks_6:{t:'Parks and sports (6)',d:'golf_cart … camp_sign',
+    make(){ packGrid(PK,'parks',["golf_cart", "bmx_jump_dirt", "pump_track_roller_4", "dirt_berm", "bike_skills_ramp", "bike_start_gate", "tent_a_frame", "tent_dome", "tent_big", "camp_stove", "camp_table_fold", "hammock", "camp_sign"],34,1.5,0,[0,22,26],[0,1,-4],{sunk:n=>['pool_8x4','skate_bowl'].includes(n)}); }},
   plans:{t:'Floor plans',d:'Generated plans, floor 0 (and the first floor beside it where there is one): a two-storey house, a grocery, a church, an office, a hospital wing, a fire station and a pumping station. Colour by room, white strips are the walkways that stay clear of furniture, every door is a 1.0 m gap, and the checker has walked an agent through all of them.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const F=window.FLOORPLAN;
       const COL={hall:'#e6e0d0',stairs:'#c8b08a',bedroom:'#c8a0a0',bath:'#a0c0d0',wc:'#a0c0d0',store:'#b0a890',kitchen:'#d0c080',living:'#c0b080',living_k:'#c8b878',studio:'#c0a890',office:'#98a8c0',market:'#a0c090',stock:'#b0a890',nave:'#c8b0d0',vestry:'#b098b8',boardroom:'#90a0b8',openplan:'#a0b0c8',breakroom:'#c0b898',waiting:'#98c0b8',exam:'#a8d0c8',ward:'#b0d0d8',pharmacy:'#a0d0a8',firebay:'#d09080',bunkroom:'#c0a090',pumphouse:'#90b0c8',control:'#a0a8b0',plantroom:'#90a0b0',substation:'#a8a890',boilerhouse:'#c0a090',libhall:'#b0a088',classroom:'#d0c090',cafeteria:'#c8b080'};

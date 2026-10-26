@@ -1286,6 +1286,79 @@ Every shop: a glass_door or glass_door_double in the front wall (the wall that f
 | --- | --- | --- |
 | `shopfit` | 51 | 12 to 324 |
 
+## parks (`assets/shaped/parks.js`, version 1)
+
+models.parks.<name>: metres, origin at the centre of the base, front facing +Z; pieces along a path or edge are 4 m long on z and tile end to end. Court, track and line tiles are 4 m decals at y = 0.02 (`court_*`, `track_*`, `field_line_*`); the pool sinks below y = 0 (its info has `sunk`), so cut the ground under it. `info[name]` has `note`, `use`, `holds` (what a search can find), `powered` and `water` as in the business packs.
+
+Pieces: `swing_set`, `slide`, `seesaw`, `climbing_frame`, `monkey_bars`, `sandpit`, `spring_rider`, `merry_go_round`, `tire_swing`, `balance_beam_set`, `playhouse`, `playground_chips`, `playground_rubber`, `gazebo`, `pavilion`, `bandstand`, `statue_plinth`, `monument_obelisk`, `fountain_dry`, `fountain_running`, `drinking_fountain`, `trash_can_lid`, `recycling_bin`, `park_sign`, `park_lamp`, `bollard_light`, `flower_bed`, `planter_box`, `hedge_4`, `fence_wrought_4`, `pergola`, `dog_waste_station`, `pet_water_bowl`, `bbq_pedestal`, `park_bench_iron`, `baseball_backstop`, `home_plate`, `base_bag`, `pitchers_mound`, `dugout`, `bleachers_3row`, `scoreboard`, `outfield_fence_4`, `batting_cage`, `basketball_hoop`, `basketball_hoop_wall`, `soccer_goal`, `football_goalpost`, `tennis_net`, `volleyball_net`, `horseshoe_pit`, `disc_golf_basket`, `court_green_plain`, `court_green_line`, `court_green_corner`, `court_blue_plain`, `court_blue_line`, `court_blue_corner`, `court_clay_plain`, `court_clay_line`, `court_clay_corner`, `court_blue_circle`, `court_blue_key`, `track_lane_4`, `field_line_4`, `field_line_corner`, `skate_quarterpipe`, `skate_box`, `skate_rail`, `skate_ramp_a`, `skate_bowl`, `pool_8x4`, `diving_board`, `pool_ladder`, `lifeguard_chair`, `pool_fence_4`, `pool_lounger`, `golf_flag`, `golf_tee_box`, `sand_bunker`, `golf_cart`, `bmx_jump_dirt`, `pump_track_roller_4`, `dirt_berm`, `bike_skills_ramp`, `bike_start_gate`, `tent_a_frame`, `tent_dome`, `tent_big`, `camp_stove`, `camp_table_fold`, `hammock`, `camp_sign`
+
+Park (leisure=park, garden): paths with park_lamp every 20 m and park_bench_iron at views; a flower_bed and hedge_4 near entrances, park_sign at the gate, trash_can_lid and recycling_bin by benches, drinking_fountain and dog_waste_station at the trailheads; a statue_plinth, fountain_dry or fountain_running or monument_obelisk as the centrepiece; gazebo and bandstand on the lawn, pavilion with bbq_pedestal for picnics. Playground (leisure=playground): playground_chips or playground_rubber under swing_set, slide, climbing_frame, monkey_bars, merry_go_round, seesaw, spring_rider, balance_beam_set, sandpit, tire_swing and playhouse, with fence_wrought_4 round it and park_bench_iron outside. Baseball and softball: home_plate, base_bag on the three other corners, pitchers_mound, baseball_backstop behind plate, dugout on each side, bleachers_3row, outfield_fence_4 in an arc, scoreboard in centre field, batting_cage nearby. Basketball (court): court_blue_key, court_blue_line and court_blue_circle tiles with a basketball_hoop at each end. Tennis (leisure=pitch, sport=tennis): court_green_* tiles with tennis_net across the middle and fence_wrought_4 round. Soccer and football: field_line_4 and field_line_corner on grass, soccer_goal or football_goalpost at the ends. Volleyball: volleyball_net on a sand patch. Track: track_lane_4 in loops. Skate park: skate_quarterpipe, skate_box, skate_rail, skate_ramp_a and skate_bowl on concrete. Pool (leisure=swimming_pool): pool_8x4 with the ground cut away, diving_board at the deep end, pool_ladder on the edge, lifeguard_chair, pool_fence_4 round it and pool_lounger on the deck. Golf (leisure=golf_course): golf_tee_box, golf_flag, sand_bunker, golf_cart on the path. Bike park: bmx_jump_dirt, pump_track_roller_4 and dirt_berm in a loop, bike_skills_ramp and bike_start_gate. Camp (tourism=camp_site): camp_sign at each plot, tent_a_frame or tent_dome and camp_table_fold, camp_stove, hammock, fire_ring (waterside) and tent_big for a refugee or relief camp.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `parks` | 93 | 12 to 528 |
+
+## bikes (`assets/shaped/bikes.js`, version 1)
+
+Same form as the machines pack (read its header): parts[name] pieces at rest in bike space; rig[name] how each part moves; wheels[name] positions of the one `wheel` part; steer[name] which wheels steer; clips; BODY is the paint colour slot (paint[name]).
+Metres, Y up, the front faces +Z, the origin on the ground under the middle of the wheelbase. A rider sits on `saddle[name]` (a point), with hands at `grips[name]` and feet at `pedals[name]` (about the crank for pedal bikes, on the footpegs for the motor ones).
+Moving parts: `bars` turns about Y with the front wheel (the same angle as the steered wheel, up to 35 degrees); `crank` spins about X (positive drives forward); `wheel` spins about X by distance / wheelSize[0].
+
+Models: `bicycle_city`, `bicycle_mountain`, `bicycle_kids`, `bmx`, `bicycle_road`, `cargo_bike`, `tricycle`, `tandem`, `kick_scooter`, `motorbike_road`, `motorbike_dirt`, `moped`, `quad_bike`, `bike_trailer`, `fallen_bicycle`, `wrecked_motorbike`
+
+Draw as the machines pack: BODY = paint[name]; parts from the body outwards (subtract the part pivot, apply the value), `wheel` at every wheels[name] point (spin about X by distance / wheelSize[name][0]; steer the listed indices about Y up to 35 degrees, and turn `bars` by the same angle). Pedal bikes: spin `crank` by the distance driven (positive forward); a rider sits at saddle[name] with hands at grips[name] and feet at pedals[name] (for the motor bikes the pedals are footpegs, which do not move). Headlight and tail light pieces are glow pieces: show them at night or when the engine is on. Placement: bicycles lean on walls, rails and bike racks (props.street), lie as fallen_bicycle in verges and gutters, and sit in front of shops, schools and parks; motorbikes and quads sit in driveways, garages and car parks; wrecked_motorbike marks crash sites; bike_trailer hitches behind a bicycle or quad.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `bicycle_city` | 1 | 488 to 488 |
+| `bicycle_mountain` | 1 | 408 to 408 |
+| `bicycle_kids` | 1 | 464 to 464 |
+| `bmx` | 1 | 432 to 432 |
+| `bicycle_road` | 1 | 420 to 420 |
+| `cargo_bike` | 1 | 456 to 456 |
+| `tricycle` | 1 | 184 to 184 |
+| `tandem` | 1 | 432 to 432 |
+| `kick_scooter` | 1 | 136 to 136 |
+| `motorbike_road` | 1 | 328 to 328 |
+| `motorbike_dirt` | 1 | 376 to 376 |
+| `moped` | 1 | 364 to 364 |
+| `quad_bike` | 1 | 244 to 244 |
+| `bike_trailer` | 1 | 148 to 148 |
+| `fallen_bicycle` | 1 | 236 to 236 |
+| `wrecked_motorbike` | 1 | 136 to 136 |
+
+## boats (`assets/shaped/boats.js`, version 1)
+
+Same form as the machines pack (read its header): parts[name] at rest, rig[name] (parent, pivot, turn or slide, range, rest), clips, notes, paint[name] for the BODY colour slot. Metres, Y up, the bow faces +Z, the origin is at the water line under the middle of the boat: the hull goes below y = 0 by its draught (info in `draught`), so set the boat's y to the water height.
+`seats[name]` are sitting points [x, y, z] (the first is the helm or the paddler), `helm[name]` is where the wheel or tiller is, and `buoy[name]` is how many survivors it carries before it sinks to the gunwale. No wheels: boats are pushed by `motor` (its `prop` spins about Z), `oar_l` / `oar_r` (sweep about Y), `paddle` (roll about Z), or the wind (`sail`, `boom` turn about Y).
+
+Models: `kayak`, `canoe`, `paddleboard`, `rowboat`, `jon_boat`, `bass_boat`, `pontoon_boat`, `runabout`, `fishing_boat`, `jet_ski`, `sailing_dinghy`, `houseboat`, `ferry_barge`, `inflatable_raft`, `log_raft`, `barrel_raft`, `wake_v`, `bow_wave`, `prop_wash`, `splash_ring`
+
+Draw as the machines pack (BODY = paint[name]; parts outward from the body; subtract each pivot, apply the value), but there are no wheels. Put the water line at y = 0 and the boat's y at the water height under it. The bow is +Z. Drive: motor boats turn `motor` about Y to steer and spin `prop` about Z; row `oar_l` and `oar_r` together; paddle boats sweep or roll `paddle`; the sailing dinghy swings `sail` and `rudder`. Pitch and roll the whole boat a little with the waves (rx and rz are not supported by shaped pieces, so tilt the object, not the piece), and bob it by about 0.04 m. Capacity is buoy[name] survivors; over it the boat sits to the gunwale and ships water. Show wake_v behind a boat above walking pace, bow_wave at the bow above 4 m/s, prop_wash under a running outboard, splash_ring where something falls in. Placement: kayaks, canoes, jon boats and rowboats at docks, boat ramps and on lake and river banks; pontoons, runabouts, bass boats and jet skis at marinas and big-lake docks; the fishing boat and houseboat at the biggest marinas; rafts crafted by the player; the ferry barge on a rope at an unbridged river crossing.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `kayak` | 1 | 156 to 156 |
+| `canoe` | 1 | 440 to 440 |
+| `paddleboard` | 1 | 108 to 108 |
+| `rowboat` | 1 | 460 to 460 |
+| `jon_boat` | 1 | 420 to 420 |
+| `bass_boat` | 1 | 340 to 340 |
+| `pontoon_boat` | 1 | 556 to 556 |
+| `runabout` | 1 | 276 to 276 |
+| `fishing_boat` | 1 | 384 to 384 |
+| `jet_ski` | 1 | 132 to 132 |
+| `sailing_dinghy` | 1 | 378 to 378 |
+| `houseboat` | 1 | 532 to 532 |
+| `ferry_barge` | 1 | 184 to 184 |
+| `inflatable_raft` | 1 | 160 to 160 |
+| `log_raft` | 1 | 292 to 292 |
+| `barrel_raft` | 1 | 308 to 308 |
+| `wake_v` | 1 | 4 to 4 |
+| `bow_wave` | 1 | 14 to 14 |
+| `prop_wash` | 1 | 92 to 92 |
+| `splash_ring` | 1 | 88 to 88 |
+
 ## audio (`assets/audio/`, made in code)
 
 Sound effects and music for sections 9, 10.6 and 11.11, synthesised by `assets/audio/src/make_audio.py` (numpy, scipy and ffmpeg; no samples, nothing to license). Same form as `assets/sounds.js`: small mono MP3s stored as text so they load from a drive.
