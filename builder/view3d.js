@@ -24,7 +24,8 @@ function makeOverlay(){
     '<button id="v3lay" class="sm alt">Layers</button><button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Edit</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3lays" class="hidden"><b>Show</b><div class="v3row" id="v3lt"></div><small>Hiding is for looking only: nothing is deleted from your map.</small></div>' +
     '<div id="v3tools" class="hidden"><b>Edit the map</b><div class="v3row" id="v3tt">' +
-    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="remove" class="sm alt">Remove</button></div>' +
+    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="remove" class="sm alt">Remove</button></div>' +
+    '<div class="v3row hidden" id="v3bs"><label>Floors <select id="v3bf"><option value="">keep</option></select></label><label>Roof <select id="v3br"><option value="">keep</option><option>flat</option><option>gabled</option><option>hipped</option><option>pyramidal</option><option>skillion</option><option>half-hipped</option><option>gambrel</option><option>mansard</option><option>dome</option></select></label><label>Walls <select id="v3bw"><option value="">keep</option><option>brick</option><option>concrete</option><option>wood</option><option>glass</option><option>stone</option><option>plaster</option><option>metal</option></select></label><small style="width:100%">Tap a building to change it. Only the boxes you set are changed.</small></div>' +
     '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select></div>' +
     '<div class="v3row hidden" id="v3bld"><select id="v3bk"></select><label>Size <input id="v3sz" type="range" min="0.6" max="2" step="0.1" value="1"><b id="v3szV">1.0</b></label><label>Turn <input id="v3rot" type="range" min="0" max="345" step="15" value="0"><b id="v3rotV">0&deg;</b></label><label style="width:100%"><input id="v3al" type="checkbox" checked> Line up with the nearest street</label></div>' +
     '<div class="v3row hidden" id="v3pnt"><select id="v3pk"></select></div>' +
@@ -75,6 +76,7 @@ function makeOverlay(){
   Object.keys(L3.PAINT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.PAINT[k][0]; $('v3pk').appendChild(o); }); $('v3pk').onchange = function(){ paintKind = this.value; };
   Object.keys(L3.BUILD).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.BUILD[k][0]; $('v3bk').appendChild(o); }); $('v3bk').onchange = function(){ bldKind = this.value; };
   $('v3sz').oninput = function(){ bldSize = +this.value; $('v3szV').textContent = bldSize.toFixed(1); }; $('v3rot').oninput = function(){ bldTurn = +this.value; $('v3rotV').innerHTML = bldTurn + '&deg;'; };
+  [1,2,3,4,5,6,8,10,12,15,20,30].forEach(function(n){ var o = document.createElement('option'); o.value = n; o.textContent = n; $('v3bf').appendChild(o); });
   Object.keys(L3.ROADT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.ROADT[k][0]; $('v3rt').appendChild(o); }); $('v3rt').value = 'residential'; $('v3rt').onchange = function(){ var t = L3.ROADT[this.value]; $('v3rl').style.display = (t[1] === 'highway' || t[1] === 'railway') ? '' : 'none'; };
   Object.keys(L3.ROADT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.ROADT[k][0]; $('v3rt').appendChild(o); }); $('v3rt').value = 'residential';
   $('v3rdone').onclick = finishRiver; $('v3rcancel').onclick = function(){ riv = []; toolUI(); }; $('v3undo').onclick = undo; $('v3redo').onclick = redo;
@@ -194,6 +196,9 @@ function dabAt(px, py, again){
   if (tool === 'place'){ if (again) return; var B = L3.BUILD[bldKind], ang = bldTurn*Math.PI/180; if ($('v3al').checked){ var ra = nearRoadAngle(h[0], h[1]); if (ra !== null) ang = ra + bldTurn*Math.PI/180; }
     pend.push({id:uid(), t:'place', b:bldKind, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), a:+ang.toFixed(3), w:Math.round(B[1]*bldSize), d:Math.round(B[2]*bldSize), r:Math.max(B[1], B[2])*bldSize}); V3.note(B[0], 1.5); return; }
   if (tool === 'tree'){ if (again) return; pend.push({id:uid(), t:'tree', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:3}); return; }
+  if (tool === 'bset'){ if (again) return; var fl = +$('v3bf').value || 0, rf = $('v3br').value, wl = $('v3bw').value;
+    if (!fl && !rf && !wl){ V3.note('Pick floors, roof or walls first.', 3); return; }
+    pend.push({id:uid(), t:'bset', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:3, fl:fl, rf:rf, wl:wl}); V3.note('Changing the building...', 1.5); return; }
   if (tool === 'remove'){ if (again) return; pend.push({id:uid(), t:'remove', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:3}); V3.note('Removing what is here...', 1.5); return; }
   if (tool === 'paint'){ pend.push({id:uid(), t:'paint', p:paintKind, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:0}); return; }
   pend.push({id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), t:tool, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:brushK});
@@ -229,7 +234,7 @@ function nearRoadAngle(x, y){
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function riverWidth(){ return brushR < 30 ? 3 : brushR < 60 ? 8 : 11; }   /* the game's stream, canal and river widths */
 function toolUI(){
-  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road'; $('v3riv').classList.toggle('hidden', !isR);
+  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road'; $('v3riv').classList.toggle('hidden', !isR);
   if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : tool === 'road' ? 'tap along the road' : 'tap along the river, downstream';
 }
 async function finishRiver(){

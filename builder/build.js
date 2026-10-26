@@ -75,7 +75,7 @@ L.terrainApply = function(text, ops){
   var ptH = function(lon, lat){ return at(Math.round((lon - E.w)/(E.e - E.w)*(E.cols - 1)), Math.round((E.n - lat)/(E.n - E.s)*(E.rows - 1))); };
   ops.forEach(function(o){
     if (o.t === 'river'){ river(o); return; }
-    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road') return;   /* these only add or take away map features, below */
+    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road' || o.t === 'bset') return;   /* these only add or take away map features, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
@@ -108,6 +108,13 @@ L.terrainApply = function(text, ops){
       if (rt[1] === 'highway' || rt[1] === 'railway'){ if (o.lv > 0){ tg3.bridge = 'yes'; tg3.layer = String(o.lv); } else if (o.lv < 0){ tg3.tunnel = 'yes'; tg3.layer = String(o.lv); } }
       sq.ways.push([tg3, o.c.slice()]); }
     else if (o.t === 'tree'){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {natural:'tree', 'asmb:made':'yes'}]); }
+    else if (o.t === 'bset'){
+      for (var wb = sq.ways.length - 1; wb >= 0; wb--){ var wq = sq.ways[wb]; if ((wq[0].building || wq[0]['building:part']) && wq[1].length >= 8 && L.pip(wq[1], o.lon, o.lat)){
+        var tq = wq[0]; if (o.fl){ tq['building:levels'] = String(o.fl); delete tq.height; delete tq.est_height; }
+        if (o.rf){ tq['roof:shape'] = o.rf; delete tq['roof:angle']; delete tq['roof:height']; delete tq['roof:levels']; }
+        if (o.wl){ tq['building:material'] = o.wl; delete tq['building:colour']; }
+        if (o.wc){ tq['building:colour'] = o.wc; }
+        tq['asmb:edited'] = 'yes'; break; } } }
     else if (o.t === 'remove'){
       var gone = -1; for (var wi = sq.ways.length - 1; wi >= 0; wi--){ var wt = sq.ways[wi]; if (wt[0].building && wt[1].length >= 8 && L.pip(wt[1], o.lon, o.lat)){ gone = wi; break; } }
       if (gone >= 0){ sq.ways.splice(gone, 1); if (sq.holes) sq.holes = sq.holes.filter(function(hh){ return hh[0] !== gone; }).map(function(hh){ return hh[0] > gone ? [hh[0] - 1, hh[1]] : hh; }); if (sq.structures) sq.structures = sq.structures.filter(function(st){ return st.w !== gone; }).map(function(st){ if (st.w > gone) st.w--; if (st.u > gone) st.u--; return st; }); }

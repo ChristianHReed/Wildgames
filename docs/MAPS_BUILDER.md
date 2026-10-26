@@ -232,6 +232,8 @@ What testing showed:
 
 **Builder 1.12.0:** more of the content chat's data wishes. (1) **Creek bends:** `structures` gets `bend` entries `{k:"bend", w, s:"left"|"right", a:<degrees>, src:"inferred"}` where a stream, brook or river turns 30 degrees or more over 40 m; `s` is the outside of the bend looking along the line (so a pool goes there and bars on the other side). Tested on a sine-shaped stream and on the Springfield sample (140 bends in five squares). (2) **Tree stand tags** are kept: `leaf_type leaf_cycle genus species crop produce trees orchard karst geological boat sac_scale trail_visibility`, beside the `landuse`, `natural`, `leisure`, `waterway` and `man_made` the squares already carried, so the game can choose wood, scrub, orchard or crop from the polygon. A karst flag from geology data is still not possible (no source loaded).
 
+**Builder 1.13.0:** **Change** tool in the Edit panel: tap a real building and set its **floors** (1 to 30), **roof shape** (flat, gabled, hipped, pyramidal, skillion, half-hipped, gambrel, mansard, dome) and **wall material** (brick, concrete, wood, glass, stone, plaster, metal). Only the boxes you set change. The edit (`t:"bset"`) is stored like the others and baked into the building's tags when the square is read (`building:levels`, `roof:shape`, `building:material`, with `height`, `est_height` and the old roof angle and colour dropped so the new values rule; the way gets `asmb:edited=yes`). Tested: Node (tags rewritten) and Chromium (tap saved the edit, no page errors). Moving or reshaping the walls themselves is not done yet.
+
 ## Versions
 
 | Version | Contents |
