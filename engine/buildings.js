@@ -545,6 +545,12 @@ function placeDress(g){
       else if (h > 0.72){ x = d.x - d.nx*2.2 - tx*4; y = d.y - d.ny*2.2 - ty*4; if (ok(x, y, 0.3)) add('street.phone_box', x, y, Math.atan2(-d.nx, -d.ny), 40); }
     }
   });
+  /* 0.114.0: the content chat's roadside pack: a fuel station's pumps stand under a canopy in front of the shop, and bus stops get a shelter */
+  if (spB('rs.canopy_flat')) w.buildings.forEach(function(b, bi){
+    if (b.kind !== 'fuel' || !b.door || b.gone) return; var d = b.door, tx = -d.ny, ty = d.nx, o = 8, cx = d.x - d.nx*o, cy = d.y - d.ny*o, ya = Math.atan2(-d.nx, -d.ny), cn = hash(bi, 41, 8) < 0.3 ? 'rs.canopy_vee' : 'rs.canopy_flat';
+    if (!ok(cx, cy, 0.3)) return;
+    add(cn, cx, cy, ya, 200); [-1.5, 1.5].forEach(function(dd){ add('rs.pump_island_modern', cx - d.nx*dd, cy - d.ny*dd, ya + Math.PI/2, 400); });
+  });
   /* the wild: round trees in woods and yards */
   w.trees.forEach(function(t, i){
     if (t.h !== 'wood' && t.h !== 'poi' && t.h !== 'river' && t.h !== 'field') return; var h = hash(i, 9, 31), a = hash(i, 10, 31)*6.283, d = 1.8 + hash(i, 11, 31)*2.2, x = t.x + Math.cos(a)*d, y = t.y + Math.sin(a)*d;
