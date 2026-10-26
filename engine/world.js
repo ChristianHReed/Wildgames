@@ -436,16 +436,17 @@ function structBuild(g){
     var len = Math.max(4, Math.min(240, e.len || 12)), k = e.k, road = null, ri;
     for (ri = 0; ri < w.roads.length; ri++) if (w.roads[ri].wi === e.w){ road = w.roads[ri]; break; }
     var row = function(nm, sy, span, nx, ny, off){ var cnt = Math.min(60, Math.max(1, Math.ceil(span/4))); for (var i = 0; i < cnt; i++){ var o = (i - (cnt - 1)/2)*4; put(nm, cx + nx*o + (off ? -ny*off : 0), cy + ny*o + (off ? nx*off : 0), nx, ny, sy); } };
+    var blk = function(span, r, step, nx, ny){ var o = w.obstL = w.obstL || []; for (var t = -span/2; t <= span/2 + 0.01; t += step) o.push([cx + nx*t, cy + ny*t, r]); };
     if (k === 'tunnel'){ var pk = road && road.kind === 'rail' ? 'portal_rail' : road && road.kind === 'path' ? 'portal_path' : 'portal_road';
       put(pk, cx - ux*len/2, cy - uy*len/2, ux, uy, 1); put(pk, cx + ux*len/2, cy + uy*len/2, -ux, -uy, 1); }
     else if (k === 'culvert'){ var hb = road && road.w > 3 ? 'culvert_headwall_box' : 'culvert_headwall_pipe', hl = Math.max(4, len/2 + 2);
       put(hb, cx - ux*hl, cy - uy*hl, ux, uy, 1); put(hb, cx + ux*hl, cy + uy*hl, -ux, -uy, 1); }
     else if (k === 'dam'){ var hh = Math.max(2, Math.min(20, e.h || 8)), nm = (e.mat === 'concrete' || (e.t && /concrete/.test(e.t)) ? 'dam_concrete' : 'dam_earth') + (e.road ? '_road_h8' : '_h8');
-      if (!M[nm]) nm = 'dam_earth_h8'; row(nm, hh/8, len, ux, uy); put('dam_end_wall', cx - ux*len/2, cy - uy*len/2, ux, uy, hh/8); put('dam_end_wall', cx + ux*len/2, cy + uy*len/2, ux, uy, hh/8); }
+      if (!M[nm]) nm = 'dam_earth_h8'; if (!e.road) blk(len, 2.2, 2, ux, uy); row(nm, hh/8, len, ux, uy); put('dam_end_wall', cx - ux*len/2, cy - uy*len/2, ux, uy, hh/8); put('dam_end_wall', cx + ux*len/2, cy + uy*len/2, ux, uy, hh/8); }
     else if (k === 'weir' || k === 'lock' || k === 'gate'){ var rw = road ? road.w : 6; row(k === 'weir' ? 'weir_step' : 'lock_gate_open', 1, rw + 2, -uy, ux); }
     else if (k === 'pier'){ row('pier_deck', 1, len, ux, uy); put('pier_end', cx + ux*len/2, cy + uy*len/2, ux, uy, 1); }
-    else if (k === 'breakwater'){ row('breakwater_mound_h3', Math.max(0.5, (e.h || 3)/3), len, ux, uy); }
-    else if (k === 'wall'){ row('retaining_wall_unit', Math.max(0.4, Math.min(8, e.h || 1.5)), len, ux, uy); }
+    else if (k === 'breakwater'){ blk(len, 1.6, 2, ux, uy); row('breakwater_mound_h3', Math.max(0.5, (e.h || 3)/3), len, ux, uy); }
+    else if (k === 'wall'){ if ((e.h || 1.5) >= 1.2) blk(len, 0.7, 1, ux, uy); row('retaining_wall_unit', Math.max(0.4, Math.min(8, e.h || 1.5)), len, ux, uy); }
     else if (k === 'ford'){ row('ford_slab', 1, len, ux, uy); }
   } catch (er){ console.log('structure', er); } });
 }
