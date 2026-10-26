@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -684,6 +684,16 @@ const SCENES={
     make(){ packGrid(WO,'woods',['spruce','spruce_snow','oak_tall','oak_tall_b','oak_tall_c','oak_bare','oak_snow','pine_dead','pine_bare','pine_snow','redbud','dogwood','sapling','birch','hickory','walnut','sumac'],70,3,0,[0,30,34],[0,5,-8]); }},
   woods_floor:{t:'Woods: floor and undergrowth',d:'Fallen tree over a path, root ball, snags, stump, logs, brush pile, boulders, thickets, berries, vines, ferns, wildflowers, mushrooms and fungus.',
     make(){ packGrid(WO,'woods',['fallen_tree_path','root_ball','snag_a','snag_b','stump_big','log_hollow','log_mossy','brush_pile','boulder_moss','boulder_cluster','thicket_a','thicket_b','berry_bush','vines','fern_a','fern_b','mayapple','wildflower_a','wildflower_b','wildflower_c','mushrooms','toadstool_ring','bracket_fungus'],40,1.5,0,[0,22,22],[0,1,-4]); }},
+  roadside_gas:{t:'Roadside: gas stations',d:'Eight station types from a 1920s tin shed to a modern store, with vintage pumps and the three canopies.',
+    make(){ packGrid(S.roadside,'roadside',['gas_shed','gas_house','gas_cottage','gas_mission','gas_box','gas_vee','gas_modern','gas_lighthouse','canopy_cottage','canopy_flat','canopy_vee','pump_island_modern','vintage_pump_glass','vintage_pump_clock'],95,5,0,[0,38,72],[0,2,-16]); }},
+  roadside_road:{t:'Roadside: diners, motels, drive-in, novelty',d:'Streamline diner and curb canopy, motel row, cabin and sign, drive-in, tepee shop, Muffler Man, billboard, stand, booth, shelter.',
+    make(){ packGrid(S.roadside,'roadside',['diner_streamline','curb_canopy','motor_court_row','motor_cabin','motel_sign','drive_in_screen','drive_in_booth','drive_in_snack','speaker_post','tepee_shop','muffler_man','billboard','fruit_stand','phone_booth','bus_shelter'],100,5,0,[0,40,80],[0,2,-16]); }},
+  roadside_odd:{t:'Roadside: utility and odd',d:'Quonset hut, water tower, grain elevator, mobile homes, container shop, A-frame, dome house, fire tower.',
+    make(){ packGrid(S.roadside,'roadside',['quonset_hut','water_tower','grain_elevator','mobile_home_single','mobile_home_double','container_shop','a_frame_cabin','dome_house','fire_tower'],90,6,0,[0,34,90],[0,9,-18]); }},
+  roadside_ozark:{t:'Roadside: Ozark vernacular',d:'Stone cottage, log cabin, springhouse, root cellar, smokehouse, corn crib, outhouse, cave mouth, stone gate.',
+    make(){ packGrid(S.roadside,'roadside',['stone_cottage','log_cabin','springhouse','root_cellar','smokehouse','corn_crib','outhouse','cave_mouth','stone_gate'],45,3,0,[0,24,44],[0,2,-8]); }},
+  dig_props:{t:'Digging: pit pieces and tools',d:'Ladders, plank covers, stake traps, shoring, sandbags, wheelbarrow, loose tools and soil lumps.',
+    make(){ packGrid(S.digging,'digging',['ladder_s','ladder_m','ladder_l','rope_ladder','plank_cover_s','plank_cover_m','plank_cover_m_broken','stake_pit_s','stake_pit_m','edge_marker','sandbag_wall','sandbag_pile','shoring_panel','grave_cross','grave_mound','wheelbarrow','wheelbarrow_loaded','bucket_soil','shovel_ground','pickaxe_ground','hand_trowel','soil_clod','sod_square','clay_lump','chert_gravel','limestone_chunk'],24,0.8,0,[0,12,22],[0,1,-5]); }},
   farm_fields:{t:'Farm: crop tiles',d:'Four-metre tiles of rows: corn, wheat, soybeans, ploughed, stubble, harvested, pumpkins, sunflowers, summer on the top row and autumn colours beside them.',
     make(){ packGrid(FA,'farm',['crop_corn','crop_corn_fall','crop_wheat','crop_wheat_fall','crop_soy','crop_soy_fall','crop_ploughed','crop_stubble','crop_harvested','crop_pumpkin','crop_sunflower'],32,0.3,0,[0,38,9],[0,0,-4]); }},
   farm_yard:{t:'Farm: hay, fences, yard',d:'Bales, haystack, scarecrow, troughs, mailbox, an irrigation span, grain cart, wire and rail fences, gates, a cattle guard.',

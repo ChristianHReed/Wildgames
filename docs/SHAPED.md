@@ -1422,6 +1422,36 @@ Park (leisure=park, garden): paths with park_lamp every 20 m and park_bench_iron
 | --- | --- | --- |
 | `parks` | 93 | 12 to 528 |
 
+## roadside (`assets/shaped/roadside.js`, version 1)
+
+models.roadside.<name>, metres, origin at the centre of the footprint on the ground, front (the door and the pumps) facing +Z. Each is a whole building or landmark; info[name] has w (x), len (z), h, and a note.
+Gas stations (the types the National Park Service describes, 1910s to 1960s): gas_shed, gas_house, gas_cottage, gas_mission, gas_box, gas_vee, gas_lighthouse, gas_modern; pumps vintage_pump_glass, vintage_pump_clock, pump_island_modern; canopy_cottage, canopy_flat, canopy_vee.
+Roadside: diner_streamline, curb_canopy, motor_cabin, motor_court_row, motel_sign, drive_in_screen, drive_in_booth, drive_in_snack, speaker_post, tepee_shop, muffler_man, billboard, fruit_stand, phone_booth, bus_shelter.
+Utility and odd: quonset_hut, water_tower, grain_elevator, mobile_home_single, mobile_home_double, container_shop, a_frame_cabin, dome_house, fire_tower.
+Ozark vernacular: stone_cottage, log_cabin, springhouse, root_cellar, smokehouse, corn_crib, outhouse, cave_mouth, stone_gate.
+Colour names are in the palette. Windows are dark glass; lit windows would be a game overlay.
+
+Pieces: `vintage_pump_glass`, `vintage_pump_clock`, `pump_island_modern`, `canopy_flat`, `canopy_vee`, `canopy_cottage`, `gas_shed`, `gas_house`, `gas_cottage`, `gas_mission`, `gas_box`, `gas_vee`, `gas_lighthouse`, `gas_modern`, `diner_streamline`, `curb_canopy`, `motor_cabin`, `motor_court_row`, `motel_sign`, `drive_in_screen`, `drive_in_booth`, `drive_in_snack`, `speaker_post`, `tepee_shop`, `muffler_man`, `billboard`, `fruit_stand`, `phone_booth`, `bus_shelter`, `quonset_hut`, `water_tower`, `grain_elevator`, `mobile_home_single`, `mobile_home_double`, `container_shop`, `a_frame_cabin`, `dome_house`, `fire_tower`, `stone_cottage`, `log_cabin`, `springhouse`, `root_cellar`, `smokehouse`, `corn_crib`, `outhouse`, `cave_mouth`, `stone_gate`
+
+Pairing: a station is a building plus a canopy plus a pump island plus a pole sign (autotrade.sign_pylon): gas_house or gas_cottage + canopy_cottage; gas_box or gas_modern + canopy_flat; gas_vee + canopy_vee; gas_shed + two vintage_pump_glass at the kerb. Pick the style by the era of the neighbourhood: 1920s to 1940s on old Route 66 (St Louis Street, Kearney, Glenstone), 1950s to 60s on the main arterials, modern elsewhere. Rare landmarks (gas_lighthouse, tepee_shop, muffler_man, water_tower, grain_elevator, drive_in_screen) at most one or two on the whole map; place them on a known road. Each model's door faces +z: rotate to face the road. Windows are dark: light a lit window as a game overlay at night.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `roadside` | 47 | 36 to 600 |
+
+## digging (`assets/shaped/digging.js`, version 1)
+
+models.digging.<name>, metres, origin at the centre of the base on the ground (ladders: the foot), front facing +Z. Things that go in a hole say so in info.note: place them on the hole floor or lean them on its edge.
+`soil` is the table of layers under Springfield (colour, hardness, tool, sound, what comes out), matching the pack's digging rule. Colour names are in the palette.
+
+Pieces: `ladder_s`, `ladder_m`, `ladder_l`, `rope_ladder`, `plank_cover_s`, `plank_cover_s_broken`, `plank_cover_m`, `plank_cover_m_broken`, `plank_cover_l`, `plank_cover_l_broken`, `stake_pit_s`, `stake_pit_m`, `stake_single`, `edge_marker`, `sandbag`, `sandbag_wall`, `sandbag_pile`, `shoring_panel`, `grave_cross`, `grave_mound`, `wheelbarrow`, `wheelbarrow_loaded`, `bucket_soil`, `shovel_ground`, `pickaxe_ground`, `hand_trowel`, `soil_clod`, `sod_square`, `clay_lump`, `chert_gravel`, `limestone_chunk`, `rock_throw`
+
+Pits: a hole needs a way out: give any hole deeper than 1 m a ladder (ladder_s up to 2 m, ladder_m to 3 m, ladder_l above) or let the player pile soil as steps; without one, jumping out works only up to 1 m. Cover a hole with plank_cover_* to hide it (a person walking over falls in and takes fall damage by depth; the cover breaks if something heavy crosses it: swap to the _broken model); put stake_pit_* on its floor to make a trap. A hole deeper than 1.8 m with soil walls can collapse in rain or beside a heavy vehicle unless shoring_panel stands in it. edge_marker at each side warns. Hand digging: the shovel takes seconds per block by layer (soil[].seconds), a trowel one block slowly and silently; the pickaxe breaks hard layers. Spoil: every block dug is an item (soil_clod, clay_lump, chert_gravel, limestone_chunk by layer) or goes to a heap: machines.js spoil_heap_s/m/l by size. Fill: shovelling soil back (fill_soil sound) raises the ground; a filled grave is 0.8 by 2 m, finish with grave_mound and grave_cross. Machines: see machines.js dig, machinedig.js.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `digging` | 32 | 6 to 240 |
+
 ## bikes (`assets/shaped/bikes.js`, version 1)
 
 Same form as the machines pack (read its header): parts[name] pieces at rest in bike space; rig[name] how each part moves; wheels[name] positions of the one `wheel` part; steer[name] which wheels steer; clips; BODY is the paint colour slot (paint[name]).

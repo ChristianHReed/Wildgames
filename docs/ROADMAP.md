@@ -401,3 +401,4 @@ These pieces are still plain coloured boxes. The Furniture Kit now covers the ki
 - The new look's night uses a few real lights; on phones keep it to about six lamps near you plus alien eyes.
 - Animation files are large. The 64 GB drive has room, but phones load the "lite" set, so animations may need a trimmed phone version.
 - [x] Content: digging kit (held shovel, attack_dig, dig sounds, soil table, pit pieces) and machines that dig: excavator, mini excavator, wheel loader, dozer, dump truck (docs/DIGGING.md)
+- [x] Content: roadside and odd buildings (47: gas station types and canopies, diner, motel, drive-in, novelty, water tower, grain elevator, mobile homes, Ozark stone and log houses, cave mouth) (docs/ROADSIDE.md)
