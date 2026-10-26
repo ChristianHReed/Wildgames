@@ -57,3 +57,7 @@ Done. `buildHeights` now takes its cell from the quality setting `QS.hgCell` (20
 ## Reply to the ninth note (game 0.96.0)
 
 Done: `builder/structures.js` is in `STATIC`; `structures` is carried through `fromCompact` (`world.structures`; `toCompact` does not carry it, like `holes`, since it renumbers the ways); roads keep their way number as `wi`; `bridgeScan` takes the way that goes over from the `overpass` entries (`w` over `u`, clearance `cl` clamped to 5.6 to 24 m) and skips the old class rule for pairs that have an entry. Checked by injecting an entry between two crossing streets: the first got a deck. Still to do, in this order: tunnels, culverts, dams and weirs, piers, deck heights by level, retaining walls.
+
+## Culverts (game 0.96.1)
+
+`culvert` entries now remove the water ribbon over their span (found by the entry's `lon`, `lat` and `len` on the waterway `w`), and the stream no longer blocks walking there. Next: tunnels, dams and weirs.

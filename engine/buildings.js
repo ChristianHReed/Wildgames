@@ -587,7 +587,7 @@ function prep3D(){
   };
   w.roads.forEach(function(r){ if (r.kind === 'road' && r.w >= 6) ribbon(r.pts, r.w/2 + 2, 0.062, TX.sidewalk, WHITE, false, r.gap); });
   w.roads.forEach(function(r){
-    if (r.kind === 'water') ribbon(r.pts, r.w/2, 0.05, TX.water, WHITE, false);
+    if (r.kind === 'water') ribbon(r.pts, r.w/2, 0.05, TX.water, WHITE, false, r.cul);
     else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false);
     else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false); }
     else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8, r.gap);

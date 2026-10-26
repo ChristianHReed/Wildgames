@@ -225,7 +225,7 @@ function buildWorld(raw, name){
     }
     if (closed && (t.place === 'square' || (t.highway === 'pedestrian' && pts.length >= 8) || (t.name && /\b(square|plaza)\b/i.test(t.name) && !t.building))){ var sq = bbox({pts:pts}); (w.squares = w.squares || []).push({x:(sq.minx + sq.maxx)/2, y:(sq.miny + sq.maxy)/2, r:Math.hypot(sq.maxx - sq.minx, sq.maxy - sq.miny)/2, name:t.name || ''}); }
     if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx})); return; }
-    if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water'})); return; }
+    if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water', wi:wayIx})); return; }
     if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail'})); return; }
     if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k})); } }
   });
@@ -234,6 +234,11 @@ function buildWorld(raw, name){
   w.water = w.areas.filter(function(r){ return r.kind === 'water'; });
   w.waterLines = w.roads.filter(function(r){ return r.kind === 'water'; });
   w.roads.sort(function(p, q){ return (p.kind === 'water' ? -1 : p.w) - (q.kind === 'water' ? -1 : q.w); });
+  /* 0.96.1: a `culvert` entry (builder 1.6 structures) is a stretch of stream under a road or building: no water ribbon over its span, and you can walk across it */
+  (w.structures || []).forEach(function(e){ if (e.k !== 'culvert') return; var r = null; for (var ri = 0; ri < w.roads.length; ri++) if (w.roads[ri].kind === 'water' && w.roads[ri].wi === e.w){ r = w.roads[ri]; break; } if (!r) return;
+    var cx = (e.lon - lon0)*kx, cy = -(e.lat - lat0)*ky, hl = Math.max(4, (e.len || 12)/2 + 2), i0 = -1, i1 = -1;
+    for (var q = 0; q + 3 < r.pts.length; q += 2){ var sx = r.pts[q+2] - r.pts[q], sy = r.pts[q+3] - r.pts[q+1], sl = sx*sx + sy*sy || 1, tt = Math.max(0, Math.min(1, ((cx - r.pts[q])*sx + (cy - r.pts[q+1])*sy)/sl)); if (Math.hypot(r.pts[q] + sx*tt - cx, r.pts[q+1] + sy*tt - cy) <= hl){ if (i0 < 0) i0 = q; i1 = q; } }
+    if (i0 >= 0) (r.cul = r.cul || []).push([i0, i1]); });
   /* street names (0.49.1): the map pack names no roads, so each road takes the street its addressed neighbours say they are on */
   (function(){
     var rs = w.roads.filter(function(r){ return r.kind === 'road' && r.w >= 6; }), votes = new Map();
@@ -494,11 +499,11 @@ function buildCover(w){
     while (cols*rows > 2400000){ cell *= 1.5; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1; } }
   var n = cols*rows, BIG = 1e6, dev = new Float32Array(n).fill(BIG), wat = new Float32Array(n).fill(BIG), fm = new Float32Array(n), pk = new Uint8Array(n), fd = new Uint8Array(n);
   var node = function(x, y){ var i = Math.round((x - x0)/cell), j = Math.round((y - y0)/cell); return i < 0 || j < 0 || i >= cols || j >= rows ? -1 : j*cols + i; };
-  var walk = function(p, arr){ for (var q = 0; q + 3 < p.length; q += 2){ var l = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), st = Math.max(1, Math.ceil(l/(cell*0.5)));
+  var walk = function(p, arr, gp){ for (var q = 0; q + 3 < p.length; q += 2){ if (gp && gp.some(function(g){ return q >= g[0] && q <= g[1]; })) continue; var l = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), st = Math.max(1, Math.ceil(l/(cell*0.5)));
     for (var k = 0; k <= st; k++){ var nd = node(p[q] + (p[q+2] - p[q])*k/st, p[q+1] + (p[q+3] - p[q+1])*k/st); if (nd >= 0) arr[nd] = 0; } } };
   var fill = function(a, fn){ var i0 = Math.max(0, Math.ceil((a.minx - x0)/cell)), i1 = Math.min(cols - 1, Math.floor((a.maxx - x0)/cell)), j0 = Math.max(0, Math.ceil((a.miny - y0)/cell)), j1 = Math.min(rows - 1, Math.floor((a.maxy - y0)/cell));
     for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) if (pip(a.pts, x0 + i*cell, y0 + j*cell)) fn(j*cols + i); };
-  w.roads.forEach(function(r){ if (r.kind === 'water') walk(r.pts, wat); else if (r.kind !== 'path') walk(r.pts, dev); });
+  w.roads.forEach(function(r){ if (r.kind === 'water') walk(r.pts, wat, r.cul); else if (r.kind !== 'path') walk(r.pts, dev); });
   w.buildings.forEach(function(b){ var nd = node(b.cx, b.cy); if (nd >= 0) dev[nd] = 0; fill(b, function(k){ dev[k] = 0; }); });
   w.areas.forEach(function(a){
     if (a.kind === 'water'){ walk(a.pts.concat(a.pts.slice(0, 2)), wat); fill(a, function(k){ wat[k] = 0; }); }
