@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.107.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.108.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.107.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.108.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3929,6 +3929,9 @@ function makeVehicles(saved){
         if (!ok) continue; var BL = md > 90 ? BN.l : md > 40 ? BN.m : BN.s, bk2 = BL[Math.floor(hash(ai, q2, 72)*BL.length)];
         list.push({veh:true, id:'o' + ai + '_' + q2, t:0, boat:bk2, name:'the ' + bk2.replace(/_/g, ' '), x:bx, y:by, yaw:hash(ai, q2, 73)*6.28, fuel:0}); nbo++; } });
   } catch (eb){ console.log('boats', eb); }
+  /* 0.108.0: a bicycle dropped by a door, a motorbike crashed at the kerb: scenery from the bikes pack */
+  try { w.bscen = []; w.buildings.forEach(function(b){ if (!b.door || b.gone) return; var h2 = hash(b.id, 23, 6); if (h2 > 0.09) return; var d = b.door, tx = -d.ny, ty = d.nx, k2 = h2 < 0.05 ? 'fallen_bicycle' : 'wrecked_motorbike', x = d.x + d.nx*(k2 === 'fallen_bicycle' ? 3.2 : 8) + tx*(1.5 + hash(b.id, 24, 6)*3), y = d.y + d.ny*(k2 === 'fallen_bicycle' ? 3.2 : 8) + ty*(1.5 + hash(b.id, 24, 6)*3); if (!circ(x, y, 1)) w.bscen.push({k:k2, x:x, y:y, yaw:hash(b.id, 25, 6)*6.28}); });
+  } catch (es){ console.log('scen', es); }
   /* 0.105.0: working diggers parked beside some industrial buildings */
   try { var nm2 = 0; w.buildings.forEach(function(b){ if (nm2 >= 14 || !b.door || b.gone || b.cat !== 'industrial' || hash(b.id, 21, 6) > 0.12) return; var d = b.door, tx = -d.ny, ty = d.nx, x = d.x + d.nx*7 + tx*3, y = d.y + d.ny*7 + ty*3, mk = hash(b.id, 22, 6) < 0.5 ? 'mini_excavator' : 'excavator';
       if (circ(x, y, 3)) return; list.push({veh:true, id:'k' + b.id, t:0, mach:mk, name:'the ' + mk.replace(/_/g, ' '), x:x, y:y, yaw:Math.atan2(ty, tx), fuel:0}); nm2++; });
@@ -4533,6 +4536,7 @@ function engHum(){
 /* vehicles, traders, markers and goal beacons drawn each frame */
 function drawExtras(m, now){
   var i, w = world;
+  if (w.bscen) for (i = 0; i < w.bscen.length; i++){ var sbk = w.bscen[i]; if (Math.abs(sbk.x - P.x) > 90 || Math.abs(sbk.y - P.y) > 90) continue; var sM = spScen(sbk.k); if (sM){ m.yo = groundAt(sbk.x, sbk.y); m.part(sM, sbk.x, sbk.y, sbk.yaw, 0, 0, 0, 0, 0, 0); } }
   for (i = 0; i < w.vehicles.length; i++){
     var v = w.vehicles[i]; vehAnim(v, now); if ((v === P.veh && VIEW !== 1) || Math.abs(v.x - P.x) > 130 || Math.abs(v.y - P.y) > 130) continue; m.yo = baseAt(v.x, v.y, v.gh); if (LASTDECK) v.gh = m.yo; else { v.gh = undefined; m.yo = groundAt(v.x, v.y); }
     if (v.mach){ if (!spDiggerDraw(m, v)) m.ybox(v.x, v.y, v.yaw, 0, 0, 1.2, 1.2, 1.2, 1.2, C('#e0aa28')); }

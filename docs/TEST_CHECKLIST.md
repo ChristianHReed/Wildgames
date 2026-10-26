@@ -164,3 +164,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.105.1) Press P for third-person view and get on a bicycle, a motorbike and a boat: your character sits on it and stays visible.
 - [ ] (0.106.0) Town cars now include wagons, SUVs, offroaders, crew pickups, flatbeds and box trucks (and their wrecks). Fit a bull bar with lights: it hits aliens harder and lights the road ahead at night.
 - [ ] (0.107.0) Ride a rowboat, canoe, jon boat and sailing dinghy: oars or paddle swing while moving, the outboard swings when you steer, the propeller turns, and fast boats show a bow wave.
+- [ ] (0.108.0) Look around doors in town: some have a bicycle lying on its side, and a few a wrecked motorbike a few metres out.

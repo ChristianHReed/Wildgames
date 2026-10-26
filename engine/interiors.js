@@ -799,6 +799,12 @@ function spBike(name){
   return BIKEM[name];
 }
 /* draws one parked or ridden bicycle; false when the pack is not loaded (the caller draws its plain boxes) */
+var SCENM = {};
+function spScen(name){
+  if (SCENM[name] !== undefined) return SCENM[name]; SCENM[name] = null;
+  try { var S = window.SHAPED && SHAPED.bikes; if (S && S.models[name] && SPON) SCENM[name] = spModel(S.models[name].body, spColour(S.palette, {BODY:S.paint[name]}, S.darker), {car:true}); } catch (er){ console.log('scen', er); }
+  return SCENM[name];
+}
 function spBikeDraw(m, v){
   var name = v.moto || BIKEK[Math.abs(hashStr(String(v.id))) % BIKEK.length], K = spBike(name); if (!K) return false;
   var st = v.steer || 0, sp = v.spin || 0, ws = 0.486/K.R;
