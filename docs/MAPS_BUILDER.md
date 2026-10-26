@@ -242,6 +242,8 @@ What testing showed:
 
 **Builder 1.16.1:** the frame outline now follows each wall at any angle (turned boxes, not boxes along the axes) and uses the pack's real stick sizes: studs 0.045 x 0.14 m every 0.5 m, bottom plate, double top plate, blocking at 1.2 m and a 0.24 m rim joist at each floor for wood and light steel; 0.3 m columns on a 6 m grid with 0.4 m beams at each floor, and girts every 1.25 m (cladding) or mullions every 0.5 m (glass curtain wall) for steel; floor slabs and corner edges for concrete. A three-storey light-steel shop makes about 6,800 triangles. Developer helper `View3D.frameInfo()` returns the kind, storeys and triangle count of the framed building.
 
+**Builder 1.16.2:** the 3D view loads `shaped/waterside` (game 0.98.1 draws docks, reeds, boats and the rest from it on ponds, lakes and creeks). Woodland trees (0.98.2) are baked into `nature.js`, which was already loaded. The content chat's new business packs (`foodservice`, `autotrade`, `services`, `shopfit`, `businesses`) are not used by the game yet; they will be added to the art list when the main chat wires them in.
+
 ## Versions
 
 | Version | Contents |
