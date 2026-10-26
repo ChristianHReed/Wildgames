@@ -694,7 +694,9 @@ var SPECIES = {street:[0, 1, 1, 0], yard:[1, 0, 5, 3, 1], park:[0, 2, 1, 0], riv
 function addTree(x, y, n, h){ var L = SPECIES[h || 'poi'] || SPECIES.poi; world.trees.push({x:x, y:y, h:h || 'poi', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:L[Math.floor(hash(n, 4, 9)*L.length)], yw:hash(n, 5, 9)*6.283, sc:0.75 + hash(n, 6, 9)*0.4}); }
 /* the model and picture for a tree: deciduous trees turn in autumn */
 /* 0.95.0: every tree has three shapes (the content chat's flora pack); which one grows where is fixed by the spot */
-function treeVarKey(tr){ var k = treeKey(tr), v = Math.floor(hash(Math.round(tr.x*10), Math.round(tr.y*10), 41)*3); return v ? k + (v === 1 ? '_b' : '_c') : k; }
+/* 0.98.2: trees standing in woods are the woods pack's close-grown, clear-trunked forms (not in autumn: they have no autumn colours yet) */
+var WOODK = {oak:'w_oak_tall', maple:'w_hickory', sycamore:'w_walnut', poplar:'w_birch'};
+function treeVarKey(tr){ if (tr.dn && season() !== 2){ var wk = WOODK[TREES[tr.sp]]; if (wk && NAT[wk]){ var wv = Math.floor(hash(Math.round(tr.x*10), Math.round(tr.y*10), 41)*3); return wv && NAT[wk + (wv === 1 ? '_b' : '_c')] ? wk + (wv === 1 ? '_b' : '_c') : wk; } } var k = treeKey(tr), v = Math.floor(hash(Math.round(tr.x*10), Math.round(tr.y*10), 41)*3); return v ? k + (v === 1 ? '_b' : '_c') : k; }
 function treeKey(tr){ var nm = TREES[tr.sp] || 'oak'; return season() === 2 && tr.sp < 4 ? nm + '_fall' : nm; }
 /* 0.92.0: real heights and roof shapes from map format 2. "12", "12 m" and "40 ft" all work; a building mapped by height only gets the storeys that fit */
 function metres(v){ if (v === undefined || v === null) return 0; var m = String(v).match(/^\s*(-?[\d.]+)\s*(m|ft|feet|')?/i); if (!m) return 0; var n = +m[1]; if (!isFinite(n)) return 0; return m[2] && /^(ft|feet|')$/i.test(m[2]) ? n*0.3048 : n; }

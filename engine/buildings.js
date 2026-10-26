@@ -398,7 +398,7 @@ function wildTrees(o){
     var tx = x + hash(hx, hy, 302)*st*0.8, ty = y + hash(hx, hy, 303)*st*0.8;
     if (g.wd[k] < 6 || tx < world.minx || tx > world.maxx || ty < world.miny || ty > world.maxy || blocked(tx, ty) || (world.roadOk && !world.roadOk(tx, ty, 2.5))) continue;
     var id = 'w' + hx + '_' + hy, pine = hash(hx, hy, 304) < g.tp[k]/255, n = hx*7 + hy*13;
-    list.push({x:tx, y:ty, id:id, h:'wild', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:!world.cut[id], shake:0, sp:pine ? (hash(hx, hy, 305) < 0.75 ? 4 : 5) : [0, 0, 1, 3, 2][Math.floor(hash(hx, hy, 305)*5)], yw:hash(n, 5, 9)*6.283, sc:0.75 + hash(n, 6, 9)*0.4, tk:o.key});
+    list.push({x:tx, y:ty, id:id, h:'wild', dn:td >= 90, r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:!world.cut[id], shake:0, sp:pine ? (hash(hx, hy, 305) < 0.75 ? 4 : 5) : [0, 0, 1, 3, 2][Math.floor(hash(hx, hy, 305)*5)], yw:hash(n, 5, 9)*6.283, sc:0.75 + hash(n, 6, 9)*0.4, tk:o.key});
   }
   return list;
 }

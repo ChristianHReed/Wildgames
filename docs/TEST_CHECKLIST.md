@@ -146,3 +146,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.97.2) Look under a bridge over water: grey piers with a cap under the deck, no floating or sunken ones.
 - [ ] (0.98.0) Walk into a wood: ferns, thickets, logs, stumps and the odd dead tree stand among the trees; searching a log or a thicket gives wood or berries. Check the frame rate has not dropped.
 - [ ] (0.98.1) Round a pond or lake: cattails and reeds at the edge, lily pads on a small pond, now and then a heron. Nothing floats on the road or inside a building.
+- [ ] (0.98.2) In dense woodland in spring or summer: tall slim oaks and pale birches close up; in autumn the trees still turn orange.
