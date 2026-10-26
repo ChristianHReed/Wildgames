@@ -24,7 +24,13 @@ function bstyle(b){
   var h = hash(b.id, 17, 3), h2 = hash(b.id, 18, 3), pick = function(a, x){ return a[Math.floor(x*a.length) % a.length]; }, k = b.kind;
   var FR = {rollup:6, firebay:9, glass_lobby:8, stone_base:10};   /* how far either side of the door the special ground floor runs */
   var S = function(g, gs, u, plain, mat, o){ o = o || {}; return {g:BT[g], gs:BT[gs], u:BT[u], gp:BT[plain], fr:FR[g] || 1e9, mat:mat, wc:pick(WALLC[mat], h2), roof:o.roof || 'flat', rc:pick(ROOFC[o.roof || 'flat'], h), cornice:!!o.cornice, belt:!!o.belt, porch:!!o.porch}; };
-  if (k === 'house'){ if (h < 0.18) return S('brick_house_win', 'brick_house_win', 'brick_house_win', 'plain_brick', 'brick', {roof:'shingle', porch:true});
+  /* 0.113.0: the map's own wall (asmb:wall, set by the builder from the building's use and frame) decides the cladding where it is given */
+  var fw = b.wall || '', big = !/^(house|apartments|church|school|clinic|hospital|police|fire|library|bank)$/.test(k || '');
+  if (big && (fw === 'lightsteel_sheet' || fw === 'steel_cladding')) return S('rollup', 'metal_win', 'metal_high', 'plain_metal', 'metal', {roof:'metal'});
+  if (big && fw === 'wood_siding' && k !== 'garage' && k !== 'warehouse') return S('storefront', 'siding_win', 'siding_win', 'plain_siding', 'siding');
+  if (big && fw === 'concrete_brick') return S('storefront', 'brick_win', 'comm_upper', 'plain_brick', 'brick', {cornice:true});
+  if (big && (fw === 'concrete_block' || fw === 'concrete_poured')) return S('stucco_win', 'stucco_win', 'stucco_win', 'plain_concrete', 'concrete');
+  if (k === 'house'){ if (h < 0.18 && fw !== 'wood_siding') return S('brick_house_win', 'brick_house_win', 'brick_house_win', 'plain_brick', 'brick', {roof:'shingle', porch:true});
     var sw = h < 0.45 ? 'siding_win_green' : h < 0.7 ? 'siding_win_blue' : 'siding_win'; return S(sw, sw, sw, 'plain_siding', 'siding', {roof:'shingle', porch:true}); }
   if (k === 'apartments') return h < 0.6 ? S('apt_pair', 'apt_pair', 'apt_pair', 'plain_brick', h < 0.3 ? 'brick' : 'buff', {cornice:true}) : S('siding_apt', 'siding_apt', 'siding_apt', 'plain_siding', 'siding');
   if (k === 'garage') return S('rollup', 'metal_win', 'metal_win', 'plain_metal', 'metal', {roof:'metal'});

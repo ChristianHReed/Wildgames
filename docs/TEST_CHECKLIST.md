@@ -171,3 +171,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.111.1) In an excavator, a scoop makes the hydraulic whine at the start, a scoop sound as it bites and a dump sound when it empties.
 - [ ] (0.111.2) On the region screen press Add edits file (.asedit) and pick a file from the Maps Builder: it appears under Edits on this device. Start the region: the changes (ground, roads, buildings, props) are there. Remove takes them away again after a restart. Works offline from a drive.
 - [ ] (0.112.0) Open a Builder map (.asmap). Playgrounds have swings, slides, climbing frames and sandpits; basketball courts have hoops at each end, soccer pitches goals, tennis courts a net, baseball fields a plate, backstop and mound. Buildings marked disused on the map are dark and half empty.
+- [ ] (0.113.0) On a Builder map, houses are all siding, steel-framed shops and halls have metal sheet walls, concrete-brick buildings show brick.
