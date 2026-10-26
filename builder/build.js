@@ -34,6 +34,9 @@ L.BUILD = {
   church:['Church', 14, 30, 1, {building:'church', amenity:'place_of_worship'}], office:['Office building', 26, 20, 5, {building:'office'}], hotel:['Hotel', 38, 16, 5, {building:'hotel', tourism:'hotel'}],
   warehouse:['Warehouse', 44, 28, 1, {building:'warehouse'}], barn:['Barn', 24, 14, 1, {building:'barn'}], shed:['Shed', 5, 4, 1, {building:'shed'}]
 };
+/* roads the player can draw: name, the map tag the game reads, its value, and any extra tags */
+L.ROADT = {motorway:['Motorway', 'highway', 'motorway', {lanes:'4', oneway:'yes'}], primary:['Main road', 'highway', 'primary', {lanes:'2'}], secondary:['Secondary road', 'highway', 'secondary'], tertiary:['Side road', 'highway', 'tertiary'],
+  residential:['Street', 'highway', 'residential'], service:['Service road or drive', 'highway', 'service'], track:['Dirt track', 'highway', 'track'], footway:['Footpath', 'highway', 'footway'], cycleway:['Bike path', 'highway', 'cycleway'], rail:['Railway', 'railway', 'rail']};
 L.terrainApply = function(text, ops){
   if (!ops || !ops.length) return text;
   var sq = JSON.parse(text), E = sq.elev; if (!E || !E.d) return text;
@@ -71,7 +74,7 @@ L.terrainApply = function(text, ops){
   var ptH = function(lon, lat){ return at(Math.round((lon - E.w)/(E.e - E.w)*(E.cols - 1)), Math.round((E.n - lat)/(E.n - E.s)*(E.rows - 1))); };
   ops.forEach(function(o){
     if (o.t === 'river'){ river(o); return; }
-    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove') return;   /* these only add or take away map features, below */
+    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road') return;   /* these only add or take away map features, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
@@ -99,14 +102,28 @@ L.terrainApply = function(text, ops){
       var B = L.BUILD[o.b], cl3 = Math.cos(o.lat*Math.PI/180), ca = Math.cos(o.a || 0), sa = Math.sin(o.a || 0), hw2 = (o.w || B[1])/2, hd2 = (o.d || B[2])/2, ring2 = [[-hw2, -hd2], [hw2, -hd2], [hw2, hd2], [-hw2, hd2], [-hw2, -hd2]], rc3 = [];
       ring2.forEach(function(q){ var X = q[0]*ca - q[1]*sa, Y = q[0]*sa + q[1]*ca; rc3.push(+(o.lon + X/(111320*cl3)).toFixed(6), +(o.lat + Y/110540).toFixed(6)); });
       var tg2 = {'asmb:made':'yes', src:'edit'}; for (var k4 in B[4]) tg2[k4] = B[4][k4]; if ((o.lv || B[3]) > 1 || o.lv) tg2['building:levels'] = String(o.lv || B[3]); sq.ways.push([tg2, rc3]); }
+    else if (o.t === 'road' && L.ROADT[o.h]){
+      var rt = L.ROADT[o.h], tg3 = {'asmb:made':'yes', src:'edit'}; tg3[rt[1]] = rt[2]; if (rt[3]) for (var k5 in rt[3]) tg3[k5] = rt[3][k5];
+      if (o.lv > 0){ tg3.bridge = 'yes'; tg3.layer = String(o.lv); } else if (o.lv < 0){ tg3.tunnel = 'yes'; tg3.layer = String(o.lv); }
+      sq.ways.push([tg3, o.c.slice()]); }
     else if (o.t === 'tree'){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {natural:'tree', 'asmb:made':'yes'}]); }
     else if (o.t === 'remove'){
       var gone = -1; for (var wi = sq.ways.length - 1; wi >= 0; wi--){ var wt = sq.ways[wi]; if (wt[0].building && wt[1].length >= 8 && L.pip(wt[1], o.lon, o.lat)){ gone = wi; break; } }
       if (gone >= 0){ sq.ways.splice(gone, 1); if (sq.holes) sq.holes = sq.holes.filter(function(hh){ return hh[0] !== gone; }).map(function(hh){ return hh[0] > gone ? [hh[0] - 1, hh[1]] : hh; }); if (sq.structures) sq.structures = sq.structures.filter(function(st){ return st.w !== gone; }).map(function(st){ if (st.w > gone) st.w--; if (st.u > gone) st.u--; return st; }); }
-      else { var cl5 = Math.cos(o.lat*Math.PI/180); sq.pois = sq.pois.filter(function(pp){ return !(Math.abs(pp[0] - o.lon)*111320*cl5 < 4 && Math.abs(pp[1] - o.lat)*110540 < 4); }); }
+      else {
+        var cl5 = Math.cos(o.lat*Math.PI/180), np = sq.pois.length; sq.pois = sq.pois.filter(function(pp){ return !(Math.abs(pp[0] - o.lon)*111320*cl5 < 4 && Math.abs(pp[1] - o.lat)*110540 < 4); });
+        if (sq.pois.length === np){   /* nothing else here: take away the road or railway line nearest the tap (within 7 m) */
+          var bd = 7, bi = -1; sq.ways.forEach(function(wy, wi2){ var t4 = wy[0], c4 = wy[1]; if (!(t4.highway || t4.railway) || t4.building || c4.length < 4) return;
+            for (var q = 0; q + 3 < c4.length; q += 2){ var ax = (c4[q] - o.lon)*111320*cl5, ay = (c4[q + 1] - o.lat)*110540, bx = (c4[q + 2] - o.lon)*111320*cl5, by = (c4[q + 3] - o.lat)*110540, dx = bx - ax, dy = by - ay, l2 = dx*dx + dy*dy || 1, tt = Math.max(0, Math.min(1, -(ax*dx + ay*dy)/l2)), dd = Math.hypot(ax + dx*tt, ay + dy*tt); if (dd < bd){ bd = dd; bi = wi2; } } });
+          if (bi >= 0){ sq.ways.splice(bi, 1); if (sq.holes) sq.holes = sq.holes.filter(function(hh){ return hh[0] !== bi; }).map(function(hh){ return hh[0] > bi ? [hh[0] - 1, hh[1]] : hh; }); if (sq.structures) sq.structures = sq.structures.filter(function(st){ return st.w !== bi && st.u !== bi; }).map(function(st){ if (st.w > bi) st.w--; if (st.u > bi) st.u--; return st; }); }
+        }
+      }
     }
     else if (o.t === 'river') sq.ways.push([{waterway:o.w >= 10 ? 'river' : o.w >= 6 ? 'canal' : 'stream', 'asmb:made':'yes', src:'edit'}, o.c]);
   });
+  /* the structures list belongs to the ways: worked out again when the edits changed ways */
+  if (L.structures && sq.zone && ops.some(function(o){ return o.t !== 'raise' && o.t !== 'lower' && o.t !== 'smooth' && o.t !== 'level' && o.t !== 'tree'; })){
+    var stc = L.structures(sq.zone, sq); if (stc.list.length) sq.structures = stc.list; else delete sq.structures; sq.builder = sq.builder || {}; sq.builder.structures = stc.counts; }
   sq.builder = sq.builder || {}; sq.builder.edits = (sq.builder.edits || 0) + ops.length;
   return JSON.stringify(sq);
 };
