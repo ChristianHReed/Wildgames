@@ -380,6 +380,8 @@
       </div>
       <div class="row"><button id="rgGo" class="alt">Start region</button> <label class="btn alt">Open map file<input id="asmapFile" type="file" accept=".asmap,.zip" hidden></label> <button id="bldGo" class="alt" type="button">Maps Builder</button></div>
       <div id="rgList"></div>
+      <div class="row" style="margin-top:6px"><label class="btn alt">Add edits file (.asedit)<input id="aseditFile" type="file" accept=".asedit,.json" hidden></label></div>
+      <div id="edList" style="font-size:12px"></div>
       <div id="rgStatus" style="min-height:18px;font-weight:700;color:var(--clayDeep);margin-top:4px"></div>
     </div>
     <label class="chk"><input type="checkbox" id="fresh"> Start a new world (erases saved progress on that map; your survivor is kept)</label>
@@ -431,7 +433,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.111.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.111.2</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +456,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.111.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.111.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4906,6 +4908,7 @@ async function zoneFetch(R, i, j){
 async function enterZone(R, lat, lon, yaw, carry, atSafe){
   var ij = zoneOf(R, lat, lon), text = R.builtin ? await builtinSquare(ij[0], ij[1]) : await zoneGet(R, ij[0], ij[1]);
   if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1]); }
+  text = await edApply(text);
   var raw = parseText(text); if (R.builtin) raw.name = '';   /* each square keeps its own save, named by the square */
   raw.spawn = [lon, lat]; raw.pin = R.id === 'springfield-mo' && Math.abs(lat - SEQUIOTA.lat) < 1e-6 && Math.abs(lon - SEQUIOTA.lon) < 1e-6; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
   mapSrc = {text:text}; inRun = false; region = R; await enter(raw, zoneName(R, ij[0], ij[1])); if (!inRun) throw new Error('that part of the map could not be loaded');
@@ -5038,6 +5041,50 @@ async function openAsmap(file){
     st.textContent = R.name + ' is on this device (' + names.length + ' squares). Press Play.';
   } catch (e){ st.textContent = 'Could not open the map file: ' + (e.message || 'unknown error') + '.'; }
 }
+/* 0.112.0: shared edits (.asedit files from the Maps Builder). The files are kept on this device; as each map square loads, the changes that fall inside it (ground, roads, buildings, props, floods) are laid on top with the builder's own `terrainApply`. Positions are latitude and longitude, so a file works on any build of the same place. */
+var EDITS = null, BLD_L = null, EDIT_LIBS = ['lib_flatbush', 'geo', 'gen', 'uses', 'structures', 'build'], EDIT_FILES = ['builder/lib/flatbush.js', 'builder/geo.js', 'builder/gen.js', 'builder/uses.js', 'builder/structures.js', 'builder/build.js'];
+function edLoad(){
+  if (EDITS) return Promise.resolve(EDITS);
+  return idbDo('readonly', function(st){ return st.get('~asedit'); }).then(function(t){ try { EDITS = t ? JSON.parse(t) : []; } catch (e){ EDITS = []; } return EDITS; }, function(){ EDITS = []; return EDITS; });
+}
+function edSave(){ return idbDo('readwrite', function(st){ return st.put(JSON.stringify(EDITS || []), '~asedit'); }); }
+function edLib(){
+  if (BLD_L) return Promise.resolve(BLD_L);
+  var chain = Promise.resolve(); EDIT_FILES.forEach(function(f){ chain = chain.then(function(){ return new Promise(function(res, rej){ var sc = document.createElement('script'); sc.src = f + '?d=' + (window.DATAV || '0'); sc.onload = res; sc.onerror = function(){ rej(new Error('the edit tools are not available offline')); }; document.head.appendChild(sc); }); }); });
+  return chain.then(function(){ var L = {}; EDIT_LIBS.forEach(function(k){ if (window.BLIB && window.BLIB[k]) window.BLIB[k](L); }); BLD_L = L; return L; });
+}
+async function edApply(text){
+  try {
+    var list = await edLoad(); if (!list.length || !text) return text;
+    var sq = JSON.parse(text), E = sq.elev; if (!E || !E.d) return text;
+    var ops = []; list.forEach(function(f){ (f.ops || []).forEach(function(o){ ops.push(o); }); });
+    if (!ops.length) return text; var L = await edLib();
+    var mine = ops.filter(function(o){ var bb = L.opBox(o); return bb[2] >= E.w && bb[0] <= E.e && bb[3] >= E.s && bb[1] <= E.n; });
+    return mine.length ? L.terrainApply(text, mine) : text;
+  } catch (e){ console.log('asedit', e); return text; }
+}
+function edRender(){
+  edLoad().then(function(list){
+    el('edList').innerHTML = list.length ? '<b>Edits on this device</b>' + list.map(function(f, i){ return '<div>' + f.name.replace(/[<>&"]/g, '') + ' &middot; ' + (f.ops || []).length + ' changes' + (f.where ? ' &middot; ' + f.where.replace(/[<>&"]/g, '') : '') + ' <button class="alt" data-ed="' + i + '" type="button">Remove</button></div>'; }).join('') : '';
+  });
+}
+function edOpen(file){
+  var st = el('rgStatus');
+  file.text().then(function(t){
+    var J = JSON.parse(t); if (!J || J.kind !== 'afterstreet-edits' || !Array.isArray(J.ops)) throw new Error('this is not an AfterStreet edits file');
+    var ops = J.ops.filter(function(o){ return o && typeof o.t === 'string' && (o.c ? Array.isArray(o.c) : isFinite(o.lat) && isFinite(o.lon)); }).slice(0, 20000); if (!ops.length) throw new Error('it holds no changes');
+    return edLoad().then(function(list){
+      var have = {}; list.forEach(function(f){ (f.ops || []).forEach(function(o){ if (o.id) have[o.id] = 1; }); });
+      var fresh = ops.filter(function(o){ return !(o.id && have[o.id]); });
+      if (!fresh.length){ st.textContent = 'Those changes are already on this device.'; return; }
+      list.push({name:String(file.name).slice(0, 60), made:J.made || '', where:J.region && J.region.name ? String(J.region.name).slice(0, 40) : '', ops:fresh});
+      return edSave().then(function(){ edRender(); st.textContent = fresh.length + ' changes added from ' + file.name + '. They show when a part of the map loads: start the region again to see them.'; });
+    });
+  }).catch(function(e){ st.textContent = 'Could not open the edits file: ' + (e.message || 'unknown error') + '.'; });
+}
+el('aseditFile').addEventListener('change', function(e){ var f = e.target.files[0]; e.target.value = ''; if (f) edOpen(f); });
+el('edList').addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('button[data-ed]'); if (!b) return; edLoad().then(function(list){ list.splice(+b.dataset.ed, 1); return edSave(); }).then(function(){ edRender(); el('rgStatus').textContent = 'Removed. Start the region again to see the map without them.'; }); });
+edRender();
 el('asmapFile').addEventListener('change', function(e){ var f = e.target.files[0]; e.target.value = ''; if (f) openAsmap(f); });
 el('rgList').addEventListener('click', function(e){
   var a = e.target.getAttribute && e.target.getAttribute('data-rg'), di = e.target.getAttribute && e.target.getAttribute('data-i'), R = di === 's' ? SPRING : REGIONS[+di]; if (!a || !R) return;
