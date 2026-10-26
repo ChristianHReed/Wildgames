@@ -14,21 +14,7 @@ def trim(x, db=-48):
 def add(name, *xs): S[name] = [fade(trim(norm(x, 0.8)), 0.002, 0.02) for x in xs]
 def var(f, n=4): return [f(i) for i in range(n)]
 def jit(a, b): return float(RNG.uniform(a, b))
-# ---- footsteps: one clip is one step, 0.12 to 0.25 s ----
-def st_grass(i):
-    d = 0.22; return mix(lp(noise(d), jit(700, 1100))*env(d, 0.012, 0.05), bp(noise(d), 2500, 7000)*env(d, 0.02, 0.04)*0.25, thud(jit(80, 100), 50, d, 0.04)*0.35)
-def st_road(i):
-    d = 0.16; return mix(thud(jit(130, 160), 70, d, 0.025)*0.7, bp(noise(d), 800, 4500)*env(d, 0.001, 0.02)*0.7, hp(noise(d), 4500)*env(d, 0.001, 0.008)*0.25)
-def st_wood(i):
-    d = 0.22; return mix(thud(jit(120, 150), 70, d, 0.045)*0.8, modal([jit(190, 240), jit(360, 440), jit(650, 780)], [0.07, 0.05, 0.03], d, [0.6, 0.4, 0.25]), bp(noise(d), 300, 2200)*env(d, 0.001, 0.02)*0.45)
-def st_tile(i):
-    d = 0.2; return mix(bp(noise(d), 1500, 6500)*env(d, 0.0008, 0.012)*0.8, modal([jit(1900, 2300), jit(3100, 3600)], [0.04, 0.025], d, [0.4, 0.25]), thud(jit(160, 190), 90, d, 0.02)*0.45)
-def st_carpet(i):
-    d = 0.2; return mix(lp(noise(d), jit(450, 650))*env(d, 0.015, 0.04), thud(jit(70, 90), 45, d, 0.035)*0.5)
-def st_water(i):
-    d = 0.35; sp = mix(*[at(bp(noise(0.05), jit(900, 2200), jit(2600, 4200))*env(0.05, 0.002, 0.015)*jit(0.25, 0.7), jit(0.0, 0.2), d) for _ in range(9)])
-    return mix(lp(noise(d), 1400)*env(d, 0.015, 0.09)*0.6, sp, thud(jit(110, 140), 60, d, 0.05)*0.4)
-for k, f in (('grass', st_grass), ('road', st_road), ('wood', st_wood), ('tile', st_tile), ('carpet', st_carpet), ('water', st_water)): add('step_' + k, *var(f, 4))
+# ---- footsteps: see round 4 below (rewritten 26 October 2026 after the first set sounded like knocking on a door) ----
 # ---- impacts ----
 def fist(i):
     d = 0.2; return mix(thud(jit(110, 140), 55, d, 0.05)*1.1, lp(noise(d), 1800)*env(d, 0.001, 0.025)*0.7, bp(noise(d), 200, 700)*env(d, 0.001, 0.03)*0.4)
@@ -128,6 +114,63 @@ add('rubble_drop', *var(rubble_drop, 3))
 def blade_push(i):
     d = jit(1.3, 1.6); n = noise(d); t = np.linspace(0, 1, len(n)); return mix(lp(n, 500)*env(d, 0.15, 0.4)*0.9, grains(d, 70, 900, 2800, 0.4, 0.95), thud(jit(40, 55), 28, d, 0.3)*0.5)
 add('blade_push', *var(blade_push, 2))
+# ---- round 4 (26 October 2026): footsteps rebuilt. The first set used a falling sine (a "thud") plus ringing partials, which is what a knock on a door is.
+# A real step has no pitch. It is a foot landing in two parts (heel, then the ball of the foot and toes, 60 to 90 ms later when walking, 35 to 50 ms running),
+# a soft burst of filtered noise each, with a grain texture that belongs to the ground, a little cloth and gear movement, and a very short room. Every step
+# draws new random values, and the four-to-eight variations are all different lengths, so the ear never hears one clip twice in a row. ----
+def _tex(kind, d):
+    """the ground's own texture, a scatter of tiny ticks"""
+    if kind == 'road': return grains(d, 14, 3000, 7500, 0.5, 0.25)
+    if kind == 'grass': return grains(d, 10, 1800, 4200, 0.35, 0.8)
+    if kind == 'wood': return grains(d, 5, 1500, 3500, 0.2, 0.3)
+    if kind == 'tile': return grains(d, 4, 4000, 8000, 0.3, 0.12)
+    if kind == 'carpet': return grains(d, 6, 1200, 2800, 0.12, 0.4)
+    return np.zeros(int(d*SR))
+GROUND = {  # heel cut-off Hz, heel decay s, toe cut-off, toe decay, floor boom (Hz, 0 = none, boom level), room echo level, brightness of grit
+    'road':   dict(hl=2600, hd=0.020, tl=3600, td=0.018, boom=(110, 0.35), echo=0.10, tex=1.0),
+    'grass':  dict(hl=1100, hd=0.045, tl=2400, td=0.060, boom=(90, 0.25), echo=0.0, tex=0.9),
+    'wood':   dict(hl=1500, hd=0.030, tl=2200, td=0.024, boom=(170, 0.85), echo=0.12, tex=0.6),
+    'tile':   dict(hl=5200, hd=0.012, tl=6200, td=0.010, boom=(130, 0.18), echo=0.38, tex=1.0),
+    'carpet': dict(hl=520, hd=0.034, tl=760, td=0.040, boom=(80, 0.18), echo=0.0, tex=0.5)}
+def footstep(kind, run=False, i=0):
+    g = GROUND[kind]; d = 0.34 if not run else 0.26
+    gap = jit(0.040, 0.055) if run else jit(0.066, 0.090)       # heel to toe
+    lv = 1.0 if run else jit(0.75, 0.95)                          # a run lands harder
+    def burst(cut, dec, amp, dur=0.14, att=0.0015):
+        n = noise(dur); n = lp(n, cut*jit(0.85, 1.15), 2) + 0.35*lp(n, cut*0.35, 1)   # body under the bite, no pitch
+        return hp(n, 80)*env(dur, att, dec*jit(0.8, 1.25))*amp
+    heel = burst(g['hl']*(1.25 if run else 1.0), g['hd'], 1.0*lv)
+    toe = burst(g['tl'], g['td'], jit(0.45, 0.65)*lv*(1.1 if run else 1.0))
+    # weight: low noise, not a sine, so it pushes without ringing
+    weight = lp(noise(0.09), 200 if kind != 'wood' else 320, 2)*env(0.09, 0.003, 0.028)*(0.5 if run else 0.35)*lv
+    parts = [at(heel, 0, d), at(toe, gap, d), at(weight, 0.002, d)]
+    fb, fl = g['boom']
+    if fl > 0:    # floors that ring a little under the foot: a broad band of noise, dying fast, never a note
+        hollow = bp(noise(0.16), fb*jit(0.8, 1.25), fb*jit(1.8, 2.6), 2)*env(0.16, 0.004, 0.05 if kind == 'wood' else 0.03)*fl*lv
+        parts.append(at(hollow, 0.001, d))
+    tex = _tex(kind, 0.09)*g['tex']*lv; parts += [at(tex, 0.0, d), at(tex*0.6, gap, d)]
+    # cloth and gear: a slow rustle that swells just after the heel, and a rare small clink
+    cl = bp(noise(0.22), 500, 3200, 2)*(np.sin(np.pi*np.linspace(0, 1, int(0.22*SR)))**2)*(0.06 if kind != 'tile' else 0.04)
+    parts.append(at(cl, jit(0.0, 0.03), d))
+    if RNG.random() < 0.25: parts.append(at(modal([jit(3200, 5200)], [0.02], 0.08, [1])*0.04, jit(0.02, 0.16), d))
+    x = mix(*parts, d=d)
+    if g['echo']:   # a short room: two faint early reflections
+        for dl, a in ((jit(0.011, 0.016), 0.55), (jit(0.024, 0.034), 0.3)):
+            x = x + np.concatenate([np.zeros(int(dl*SR)), lp(x, 3500, 1)[:len(x) - int(dl*SR)]])*g['echo']*a
+    return x
+for k in GROUND:
+    add('step_' + k, *[footstep(k, False, i) for i in range(6)])
+    add('step_%s_run' % k, *[footstep(k, True, i) for i in range(6)])
+def step_wet(run=False):
+    d = 0.4; gap = jit(0.04, 0.07)
+    sp = mix(*[at(bp(noise(0.06), jit(700, 2400), jit(2800, 4500))*env(0.06, 0.002, 0.02)*jit(0.25, 0.8), jit(0.0, 0.2), d) for _ in range(12)], d=d)
+    return mix(at(lp(noise(0.2), 1500, 2)*env(0.2, 0.01, 0.07)*0.7, 0, d), at(lp(noise(0.2), 900, 2)*env(0.2, 0.012, 0.08)*0.45, gap, d), sp*(1.0 if run else 0.8), lp(noise(0.1), 220, 2)*env(0.1, 0.004, 0.03)*0.35)
+add('step_water', *[step_wet(False) for _ in range(5)]); add('step_water_run', *[step_wet(True) for _ in range(5)])
+def step_loose(run=False):   # gravel, dry leaves, broken ground: a scatter that gets crunched, then pushed aside
+    d = 0.4; gap = jit(0.05, 0.08)
+    a = grains(0.12, 26, 1800, 6000, 0.8, 1.0); b = grains(0.12, 18, 1500, 5000, 0.6, 1.0)
+    return mix(at(a, 0, d), at(b, gap, d), at(lp(noise(0.16), 900, 2)*env(0.16, 0.003, 0.04)*0.55, 0, d), at(lp(noise(0.1), 200, 2)*env(0.1, 0.003, 0.03)*0.35, 0.002, d), d=d)
+add('step_gravel', *[step_loose() for _ in range(6)]); add('step_gravel_run', *[step_loose(True) for _ in range(6)])
 if __name__ == '__main__':
     out = {k: [mp3(v) for v in vs] for k, vs in S.items()}
     P = os.path.join(OUT, 'sounds_content.js')
