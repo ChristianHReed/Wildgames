@@ -7,7 +7,7 @@ instead of caps. Every model sits on the ground at its origin (pivot = centre of
 Moving parts (doors, lids, wheels) are separate entries in 'moving' with their hinge or axle so the game can turn them.
 Vehicles are boxy 1970s to 1990s shapes, worn: rust patches, a cracked windscreen, mismatched panels.
 Pieces marked glow:true are lamps and lit screens."""
-import math
+import math, os
 from kit import *
 
 PALETTE = {
@@ -135,80 +135,8 @@ model('plants', 'grass_tuft', [tip([x, 0, z], [x + dx, 0.35, z + dz], 0.03, 0.01
 model('plants', 'rock', [hull([(-0.6, 0, -0.4), (0.5, 0, -0.5), (0.7, 0, 0.3), (-0.4, 0, 0.5), (-0.4, 0.45, -0.2), (0.3, 0.55, -0.3), (0.45, 0.35, 0.2), (-0.2, 0.5, 0.3)], 'rock'),
                          hull([(0.5, 0, 0.3), (0.95, 0, 0.35), (0.9, 0, 0.75), (0.45, 0, 0.7), (0.55, 0.22, 0.4), (0.85, 0.2, 0.45), (0.8, 0.25, 0.65), (0.55, 0.2, 0.62)], 'rockD')])
 
-# ================= vehicles: boxy, worn =================
-def wheels(xs, zs, r=0.32, w=0.2, c='tyre'):
-    o = []
-    for x in xs:
-        for z in zs:
-            o += [loft([[x - w/2, r, z, r, r], [x + w/2, r, z, r, r]], c, ax='x', n=8), loft([[x - w/2 - 0.005, r, z, r*0.5, r*0.5], [x + w/2 + 0.005, r, z, r*0.5, r*0.5]], 'hub', ax='x', n=6)]
-    return o
-def car(body='paint1', length=4.2, width=1.7, cab_back=-1.1, cab_front=0.7, hood=0.95, roof=1.42, rusty=True, panel=None):
-    L, W = length/2, width/2
-    o = [hull([(-W, 0.3, -L), (W, 0.3, -L), (W, 0.3, L), (-W, 0.3, L), (-W, hood - 0.05, -L + 0.05), (W, hood - 0.05, -L + 0.05), (W, hood - 0.1, L), (-W, hood - 0.1, L)], body),
-         hull([(-W + 0.06, hood - 0.06, cab_back), (W - 0.06, hood - 0.06, cab_back), (W - 0.06, hood - 0.06, cab_front), (-W + 0.06, hood - 0.06, cab_front),
-               (-W + 0.14, roof, cab_back + 0.15), (W - 0.14, roof, cab_back + 0.15), (W - 0.14, roof, cab_front - 0.35), (-W + 0.14, roof, cab_front - 0.35)], 'glass'),
-         box([0, roof + 0.03, (cab_back + cab_front - 0.2)/2], [width - 0.26, 0.06, cab_front - cab_back - 0.52], body),
-         *[box([sx*(W - 0.1), (hood + roof)/2, z], [0.08, roof - hood + 0.06, 0.08], body) for sx in (1, -1) for z in (cab_back + 0.16, cab_front - 0.36)],
-         box([0, 0.42, L + 0.03], [width + 0.04, 0.12, 0.08], 'chrome'), box([0, 0.42, -L - 0.03], [width + 0.04, 0.12, 0.08], 'chrome'),
-         *[flat([(sx*0.7 - 0.15, 0.6, L + 0.002), (sx*0.7 + 0.15, 0.6, L + 0.002), (sx*0.7 + 0.15, 0.7, L + 0.002), (sx*0.7 - 0.15, 0.7, L + 0.002)], 'head') for sx in (1, -1)],
-         *[flat([(sx*0.7 - 0.12, 0.62, -L - 0.002), (sx*0.7 + 0.12, 0.62, -L - 0.002), (sx*0.7 + 0.12, 0.72, -L - 0.002), (sx*0.7 - 0.12, 0.72, -L - 0.002)], 'tail', (0, 0, -1)) for sx in (1, -1)],
-         flat([(-W - 0.002, 0.45, cab_back + 0.2), (-W - 0.002, 0.45, cab_front - 0.2), (-W - 0.002, hood - 0.12, cab_front - 0.2), (-W - 0.002, hood - 0.12, cab_back + 0.2)], 'black', (-1, 0, 0))]
-    if rusty: o += [flat([(W + 0.002, 0.38, L - 0.9), (W + 0.002, 0.38, L - 0.4), (W + 0.002, 0.55, L - 0.5), (W + 0.002, 0.6, L - 0.85)], 'rust', (1, 0, 0)),
-                    flat([(-0.3, roof + 0.062, -0.2), (0.1, roof + 0.062, -0.35), (0.25, roof + 0.062, 0.0), (-0.2, roof + 0.062, 0.05)], 'rust', (0, 1, 0))]
-    if panel: o.append(flat([(W + 0.003, 0.36, cab_back + 0.1), (W + 0.003, 0.36, cab_front - 0.3), (W + 0.003, hood - 0.08, cab_front - 0.3), (W + 0.003, hood - 0.08, cab_back + 0.1)], panel, (1, 0, 0)))
-    o += wheels((-W + 0.08, W - 0.08), (-L + 0.75, L - 0.75))
-    return o
-model('vehicles', 'hatchback', car('paint1', 3.9, 1.66, -1.5, 0.75, 0.92, 1.4, panel='paint2'),
-      moving=[{'piece': 'door_l', 'hinge': [0.83, 0, 0.55], 'axis': 'y'}, {'piece': 'bonnet', 'hinge': [0, 0.9, 0.5], 'axis': 'x'}, {'piece': 'hatch', 'hinge': [0, 1.4, -1.35], 'axis': 'x'}])
-model('vehicles', 'sedan', car('paint3', 4.6, 1.76, -0.9, 0.8, 0.95, 1.4),
-      moving=[{'piece': 'door_l', 'hinge': [0.88, 0, 0.6], 'axis': 'y'}, {'piece': 'bonnet', 'hinge': [0, 0.95, 0.6], 'axis': 'x'}, {'piece': 'boot', 'hinge': [0, 0.95, -1.0], 'axis': 'x'}])
-def pickup():
-    L, W = 2.6, 0.95
-    o = [hull([(-W, 0.35, 0.2), (W, 0.35, 0.2), (W, 0.35, L), (-W, 0.35, L), (-W, 1.05, 0.25), (W, 1.05, 0.25), (W, 1.0, L), (-W, 1.0, L)], 'paint2'),
-         hull([(-W + 0.05, 1.04, -0.6), (W - 0.05, 1.04, -0.6), (W - 0.05, 1.04, 0.3), (-W + 0.05, 1.04, 0.3), (-W + 0.1, 1.75, -0.55), (W - 0.1, 1.75, -0.55), (W - 0.1, 1.75, -0.05), (-W + 0.1, 1.75, -0.05)], 'glass'),
-         box([0, 1.78, -0.3], [2*W - 0.2, 0.06, 0.55], 'paint2'), box([0, 0.7, -0.2], [2*W, 0.7, 0.8], 'paint2'),
-         *[box([sx*(W - 0.07), 1.4, z], [0.07, 0.72, 0.07], 'paint2') for sx in (1, -1) for z in (-0.55, 0.22)],
-         box([0, 0.5, -1.7], [2*W, 0.3, 2.2], 'paint2'), *[box([sx*(W - 0.04), 0.85, -1.7], [0.08, 0.4, 2.2], 'paint2') for sx in (1, -1)], box([0, 0.85, -2.78], [2*W, 0.4, 0.06], 'paint2'),
-         box([0, 0.66, -1.7], [2*W - 0.16, 0.02, 2.1], 'woodD'),
-         box([0, 0.45, L + 0.04], [2*W + 0.06, 0.14, 0.1], 'chrome'), box([0, 0.45, -2.84], [2*W + 0.06, 0.14, 0.08], 'chrome'),
-         *[flat([(sx*0.72 - 0.14, 0.72, L + 0.002), (sx*0.72 + 0.14, 0.72, L + 0.002), (sx*0.72 + 0.14, 0.84, L + 0.002), (sx*0.72 - 0.14, 0.84, L + 0.002)], 'head') for sx in (1, -1)],
-         flat([(-W - 0.002, 0.42, 0.9), (-W - 0.002, 0.42, 1.9), (-W - 0.002, 0.7, 1.7), (-W - 0.002, 0.75, 1.0)], 'rust', (-1, 0, 0)),
-         flat([(W + 0.002, 0.5, -0.5), (W + 0.002, 0.5, 0.1), (W + 0.002, 0.95, 0.1), (W + 0.002, 0.95, -0.5)], 'paint1', (1, 0, 0))]
-    return o + wheels((-W + 0.1, W - 0.1), (-1.8, 1.55), r=0.36, w=0.24)
-model('vehicles', 'pickup', pickup(), moving=[{'piece': 'door_l', 'hinge': [0.95, 0, 0.25], 'axis': 'y'}, {'piece': 'bonnet', 'hinge': [0, 1.05, 0.3], 'axis': 'x'}, {'piece': 'tailgate', 'hinge': [0, 0.65, -2.8], 'axis': 'x'}])
-def van():
-    L, W = 2.5, 1.0
-    o = [box([0, 1.25, -0.3], [2*W, 1.9, 4.2], 'white'), hull([(-W, 0.3, 1.8), (W, 0.3, 1.8), (W, 0.3, L), (-W, 0.3, L), (-W, 1.0, 1.8), (W, 1.0, 1.8), (W, 0.95, L), (-W, 0.95, L)], 'white'),
-         hull([(-W + 0.02, 1.0, 1.6), (W - 0.02, 1.0, 1.6), (W - 0.02, 1.0, 1.85), (-W + 0.02, 1.0, 1.85), (-W + 0.02, 2.1, 1.6), (W - 0.02, 2.1, 1.6), (W - 0.02, 2.1, 1.62), (-W + 0.02, 2.1, 1.62)], 'glass'),
-         flat([(W + 0.002, 0.9, -1.8), (W + 0.002, 0.9, 1.0), (W + 0.002, 1.3, 1.0), (W + 0.002, 1.3, -1.8)], 'blue', (1, 0, 0)), flat([(-W - 0.002, 0.9, 1.0), (-W - 0.002, 0.9, -1.8), (-W - 0.002, 1.3, -1.8), (-W - 0.002, 1.3, 1.0)], 'blue', (-1, 0, 0)),
-         flat([(W + 0.003, 1.45, 1.1), (W + 0.003, 1.45, 1.6), (W + 0.003, 1.95, 1.6), (W + 0.003, 1.95, 1.1)], 'glass', (1, 0, 0)), flat([(-W - 0.003, 1.45, 1.6), (-W - 0.003, 1.45, 1.1), (-W - 0.003, 1.95, 1.1), (-W - 0.003, 1.95, 1.6)], 'glass', (-1, 0, 0)),
-         box([0, 0.45, L + 0.04], [2*W + 0.04, 0.14, 0.08], 'black'), box([0, 0.45, -2.42], [2*W + 0.04, 0.14, 0.08], 'black'),
-         flat([(W + 0.004, 0.4, -0.9), (W + 0.004, 0.4, -0.2), (W + 0.004, 0.6, -0.3), (W + 0.004, 0.65, -0.8)], 'rust', (1, 0, 0))]
-    return o + wheels((-W + 0.1, W - 0.1), (-1.6, 1.6), r=0.34, w=0.22)
-model('vehicles', 'van', van(), moving=[{'piece': 'door_l', 'hinge': [1.0, 0, 1.85], 'axis': 'y'}, {'piece': 'back_doors', 'hinge': [1.0, 0, -2.4], 'axis': 'y'}])
-
-# ---- split each vehicle into body, bonnet and one wheel, as the game asked (separate wheels and bonnet) ----
-VRIG = {}
-def rig(name, z0, z1, y0, y1, half, col):
-    """the bonnet: a panel lying on the body from z0 (windscreen, height y0) to z1 (nose, height y1); one wheel model; axle positions"""
-    ps = M['vehicles'][name]
-    wheels_ = [q for q in ps if q['c'] in ('tyre', 'hub') and q.get('ax') == 'x']
-    body = [q for q in ps if q not in wheels_]
-    axles = sorted({tuple(q['p']) for q in wheels_ if q['c'] == 'tyre'})
-    first = [q for q in wheels_ if tuple(q['p']) == axles[0]]
-    wheel = [dict(q, p=[0, 0, 0]) for q in first]
-    lid = hull([(-half, y0 + 0.004, z0), (half, y0 + 0.004, z0), (half, y1 + 0.004, z1), (-half, y1 + 0.004, z1),
-                (-half, y0 + 0.034, z0), (half, y0 + 0.034, z0), (half, y1 + 0.034, z1), (-half, y1 + 0.034, z1)], col)
-    bay = flat([(-half + 0.08, y0 + 0.003, z0 + 0.06), (half - 0.08, y0 + 0.003, z0 + 0.06), (half - 0.08, y1 + 0.003, z1 - 0.06), (-half + 0.08, y1 + 0.003, z1 - 0.06)], 'black', (0, 1, 0))
-    M['vehicles'][name] = {'body': body + [bay], 'bonnet': [lid], 'wheel': wheel}
-    VRIG[name] = {'wheels': [list(a) for a in axles], 'wheelAxis': 'x', 'bonnetHinge': [0, round(y0 + 0.034, 3), z0], 'bonnetAxis': 'x',
-                  'wheelRule': 'Place the wheel model at each position (turned half a turn on the left side), spin it about x; the bonnet opens about its hinge.'}
-def hood_line(L, hood, z):   # the car body's top: hood-0.05 at the back, hood-0.1 at the nose
-    return (hood - 0.05) + (-0.05)*(z - (-L + 0.05))/(L - (-L + 0.05))
-for nm, Lh, hood, cf, Wd, col in (('hatchback', 1.95, 0.92, 0.75, 0.83, 'paint1'), ('sedan', 2.3, 0.95, 0.8, 0.88, 'paint3')):
-    rig(nm, cf + 0.02, Lh - 0.02, hood_line(Lh, hood, cf + 0.02), hood_line(Lh, hood, Lh - 0.02), Wd - 0.04, col)
-rig('pickup', 0.32, 2.58, 1.05 - 0.05*(0.32 - 0.25)/2.35, 1.0, 0.91, 'paint2')
-rig('van', 1.86, 2.48, 0.998, 0.952, 0.96, 'white')
+# ================= vehicles: boxy, worn (version 2 in cars.py: arches, bumpers, mirrors, six new bodies) =================
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cars.py')).read())
 
 # ================= garden and water (0.43) =================
 model('garden', 'rain_barrel', [loft([[0, 0, 0, 0.32, 0.32], [0, 0.45, 0, 0.34, 0.34], [0, 0.9, 0, 0.32, 0.32]], 'blue', n=8), loft([[0, 0.9, 0, 0.3, 0.3], [0, 0.96, 0, 0.18, 0.18]], 'black', n=8, caps=[False, False]),
@@ -239,7 +167,7 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'props_street
 pack = {
   'name': 'props', 'version': 1, 'style': 'rectangular frustums and boxes, flat colour planes, few corners; boxy worn 1970s-1990s vehicles',
   'units': 'metres', 'facing': '+Z', 'pivot': 'centre of the base', 'palette': PALETTE, 'about': __doc__.split('\n', 2)[2],
-  'flatModels': True, 'models': M, 'moving': MOVING, 'vehicleRig': VRIG,
+  'flatModels': True, 'models': M, 'moving': MOVING, 'vehicleRig': VRIG, 'vehicleSpec': SPEC,
   'containerRule': 'containers holds every searchable container twice: <name> closed and <name>_searched (doors open, drawer out, lid up, fewer things inside).',
   'buildRule': 'build holds things players make and place; barricade has three stages (barricade, barricade_damaged, barricade_nearly_gone); campfire and generator have lit/running and out/off versions. glow pieces are flames, embers and lamps.',
   'wreckRule': 'Every vehicle also comes as <name>_wreck (rusted, flat tyres, broken glass) and <name>_burnt (charred shell on bare rims); lower them by vehicleRig[...].sitDrop.',

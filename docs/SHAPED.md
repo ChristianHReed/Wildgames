@@ -460,93 +460,207 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | plants | `reeds` | 78 / 184 / 59 |
 | plants | `mushrooms` | 104 / 216 / 68 |
 | plants | `bramble` | 118 / 272 / 57 |
-| vehicles | `hatchback.body` | 128 / 256 / 112 |
+| vehicles | `hatchback.body` | 222 / 444 / 204 |
 | vehicles | `hatchback.bonnet` | 12 / 24 / 8 |
-| vehicles | `hatchback.wheel` | 48 / 84 / 28 |
+| vehicles | `hatchback.wheel` | 80 / 148 / 44 |
 | vehicles | `hatchback.boot` | 12 / 24 / 8 |
-| vehicles | `hatchback.damage.body_crumple_light` | 128 / 268 / 112 |
-| vehicles | `hatchback.damage.body_crumple_heavy` | 128 / 268 / 112 |
+| vehicles | `hatchback.damage.body_crumple_light` | 222 / 472 / 204 |
+| vehicles | `hatchback.damage.body_crumple_heavy` | 222 / 470 / 204 |
 | vehicles | `hatchback.damage.bonnet_crumple_light` | 12 / 28 / 8 |
 | vehicles | `hatchback.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
-| vehicles | `hatchback.damage.bonnet_buckled` | 26 / 60 / 16 |
-| vehicles | `hatchback.damage.body_bumper_bent` | 140 / 280 / 116 |
+| vehicles | `hatchback.damage.bonnet_buckled` | 26 / 60 / 18 |
+| vehicles | `hatchback.damage.body_bumper_bent` | 234 / 468 / 208 |
 | vehicles | `hatchback.damage.windscreen_cracked` | 16 / 32 / 20 |
 | vehicles | `hatchback.damage.windscreen_missing` | 7 / 19 / 18 |
 | vehicles | `hatchback.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `hatchback.damage.fire` | 104 / 272 / 68 |
-| vehicles | `sedan.body` | 126 / 252 / 108 |
+| vehicles | `sedan.body` | 220 / 440 / 200 |
 | vehicles | `sedan.bonnet` | 12 / 24 / 8 |
-| vehicles | `sedan.wheel` | 48 / 84 / 28 |
+| vehicles | `sedan.wheel` | 80 / 148 / 44 |
 | vehicles | `sedan.boot` | 12 / 24 / 8 |
-| vehicles | `sedan.damage.body_crumple_light` | 126 / 264 / 108 |
-| vehicles | `sedan.damage.body_crumple_heavy` | 126 / 264 / 108 |
+| vehicles | `sedan.damage.body_crumple_light` | 220 / 468 / 200 |
+| vehicles | `sedan.damage.body_crumple_heavy` | 220 / 468 / 200 |
 | vehicles | `sedan.damage.bonnet_crumple_light` | 12 / 28 / 8 |
-| vehicles | `sedan.damage.bonnet_crumple_heavy` | 12 / 26 / 8 |
+| vehicles | `sedan.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
 | vehicles | `sedan.damage.bonnet_buckled` | 26 / 60 / 16 |
-| vehicles | `sedan.damage.body_bumper_bent` | 138 / 276 / 112 |
+| vehicles | `sedan.damage.body_bumper_bent` | 232 / 464 / 204 |
 | vehicles | `sedan.damage.windscreen_cracked` | 16 / 32 / 24 |
 | vehicles | `sedan.damage.windscreen_missing` | 7 / 19 / 18 |
 | vehicles | `sedan.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `sedan.damage.fire` | 104 / 272 / 68 |
-| vehicles | `pickup.body` | 190 / 380 / 130 |
+| vehicles | `wagon.body` | 218 / 436 / 196 |
+| vehicles | `wagon.bonnet` | 12 / 24 / 8 |
+| vehicles | `wagon.wheel` | 80 / 148 / 44 |
+| vehicles | `wagon.damage.body_crumple_light` | 218 / 464 / 196 |
+| vehicles | `wagon.damage.body_crumple_heavy` | 218 / 464 / 196 |
+| vehicles | `wagon.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `wagon.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `wagon.damage.bonnet_buckled` | 26 / 60 / 19 |
+| vehicles | `wagon.damage.body_bumper_bent` | 230 / 460 / 200 |
+| vehicles | `wagon.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `wagon.damage.windscreen_missing` | 7 / 19 / 18 |
+| vehicles | `wagon.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `wagon.damage.fire` | 104 / 272 / 68 |
+| vehicles | `suv.body` | 218 / 436 / 196 |
+| vehicles | `suv.bonnet` | 12 / 24 / 8 |
+| vehicles | `suv.wheel` | 80 / 148 / 44 |
+| vehicles | `suv.damage.body_crumple_light` | 218 / 464 / 196 |
+| vehicles | `suv.damage.body_crumple_heavy` | 218 / 464 / 196 |
+| vehicles | `suv.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `suv.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `suv.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `suv.damage.body_bumper_bent` | 230 / 460 / 200 |
+| vehicles | `suv.damage.windscreen_cracked` | 16 / 32 / 22 |
+| vehicles | `suv.damage.windscreen_missing` | 7 / 19 / 18 |
+| vehicles | `suv.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `suv.damage.fire` | 104 / 272 / 68 |
+| vehicles | `offroader.body` | 218 / 436 / 196 |
+| vehicles | `offroader.bonnet` | 12 / 24 / 8 |
+| vehicles | `offroader.wheel` | 80 / 148 / 44 |
+| vehicles | `offroader.damage.body_crumple_light` | 218 / 464 / 196 |
+| vehicles | `offroader.damage.body_crumple_heavy` | 218 / 462 / 196 |
+| vehicles | `offroader.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `offroader.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `offroader.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `offroader.damage.body_bumper_bent` | 230 / 460 / 200 |
+| vehicles | `offroader.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `offroader.damage.windscreen_missing` | 7 / 19 / 19 |
+| vehicles | `offroader.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `offroader.damage.fire` | 104 / 272 / 68 |
+| vehicles | `pickup.body` | 366 / 732 / 274 |
 | vehicles | `pickup.bonnet` | 12 / 24 / 8 |
-| vehicles | `pickup.wheel` | 48 / 84 / 28 |
+| vehicles | `pickup.wheel` | 80 / 148 / 44 |
 | vehicles | `pickup.battery` | 36 / 72 / 20 |
 | vehicles | `pickup.fuel_cap` | 20 / 36 / 12 |
 | vehicles | `pickup.hub` | 20 / 36 / 12 |
-| vehicles | `pickup.damage.body_crumple_light` | 190 / 392 / 130 |
-| vehicles | `pickup.damage.body_crumple_heavy` | 190 / 392 / 130 |
+| vehicles | `pickup.damage.body_crumple_light` | 366 / 760 / 274 |
+| vehicles | `pickup.damage.body_crumple_heavy` | 366 / 762 / 274 |
 | vehicles | `pickup.damage.bonnet_crumple_light` | 12 / 28 / 8 |
 | vehicles | `pickup.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
 | vehicles | `pickup.damage.bonnet_buckled` | 26 / 60 / 16 |
-| vehicles | `pickup.damage.body_bumper_bent` | 202 / 404 / 134 |
+| vehicles | `pickup.damage.body_bumper_bent` | 390 / 780 / 282 |
 | vehicles | `pickup.damage.windscreen_cracked` | 16 / 32 / 20 |
-| vehicles | `pickup.damage.windscreen_missing` | 7 / 19 / 19 |
+| vehicles | `pickup.damage.windscreen_missing` | 7 / 19 / 18 |
 | vehicles | `pickup.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `pickup.damage.fire` | 104 / 272 / 68 |
 | vehicles | `pickup.door_l` | 48 / 96 / 32 |
 | vehicles | `pickup.door_gap` | 24 / 48 / 16 |
-| vehicles | `van.body` | 72 / 144 / 62 |
+| vehicles | `crew_pickup.body` | 350 / 700 / 274 |
+| vehicles | `crew_pickup.bonnet` | 12 / 24 / 8 |
+| vehicles | `crew_pickup.wheel` | 80 / 148 / 44 |
+| vehicles | `crew_pickup.damage.body_crumple_light` | 350 / 728 / 274 |
+| vehicles | `crew_pickup.damage.body_crumple_heavy` | 350 / 730 / 274 |
+| vehicles | `crew_pickup.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `crew_pickup.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `crew_pickup.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `crew_pickup.damage.body_bumper_bent` | 374 / 748 / 282 |
+| vehicles | `crew_pickup.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `crew_pickup.damage.windscreen_missing` | 7 / 19 / 19 |
+| vehicles | `crew_pickup.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `crew_pickup.damage.fire` | 104 / 272 / 68 |
+| vehicles | `flatbed.body` | 414 / 828 / 314 |
+| vehicles | `flatbed.bonnet` | 12 / 24 / 8 |
+| vehicles | `flatbed.wheel` | 80 / 148 / 44 |
+| vehicles | `flatbed.damage.body_crumple_light` | 414 / 856 / 314 |
+| vehicles | `flatbed.damage.body_crumple_heavy` | 414 / 858 / 314 |
+| vehicles | `flatbed.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `flatbed.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `flatbed.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `flatbed.damage.body_bumper_bent` | 438 / 876 / 322 |
+| vehicles | `flatbed.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `flatbed.damage.windscreen_missing` | 7 / 19 / 18 |
+| vehicles | `flatbed.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `flatbed.damage.fire` | 104 / 272 / 68 |
+| vehicles | `van.body` | 178 / 356 / 164 |
 | vehicles | `van.bonnet` | 12 / 24 / 8 |
-| vehicles | `van.wheel` | 48 / 84 / 28 |
-| vehicles | `van.damage.body_crumple_light` | 72 / 152 / 62 |
-| vehicles | `van.damage.body_crumple_heavy` | 72 / 164 / 62 |
+| vehicles | `van.wheel` | 80 / 148 / 44 |
+| vehicles | `van.damage.body_crumple_light` | 178 / 384 / 164 |
+| vehicles | `van.damage.body_crumple_heavy` | 178 / 406 / 164 |
 | vehicles | `van.damage.bonnet_crumple_light` | 12 / 28 / 8 |
 | vehicles | `van.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
 | vehicles | `van.damage.bonnet_buckled` | 26 / 60 / 17 |
-| vehicles | `van.damage.body_bumper_bent` | 84 / 168 / 66 |
+| vehicles | `van.damage.body_bumper_bent` | 202 / 404 / 172 |
 | vehicles | `van.damage.windscreen_cracked` | 16 / 32 / 20 |
 | vehicles | `van.damage.windscreen_missing` | 7 / 19 / 18 |
 | vehicles | `van.damage.smoke` | 50 / 148 / 36 |
 | vehicles | `van.damage.fire` | 104 / 272 / 68 |
-| vehicles | `hatchback_wreck.body` | 126 / 252 / 108 |
+| vehicles | `box_truck.body` | 270 / 540 / 216 |
+| vehicles | `box_truck.bonnet` | 12 / 24 / 8 |
+| vehicles | `box_truck.wheel` | 80 / 148 / 44 |
+| vehicles | `box_truck.damage.body_crumple_light` | 270 / 566 / 216 |
+| vehicles | `box_truck.damage.body_crumple_heavy` | 270 / 572 / 216 |
+| vehicles | `box_truck.damage.bonnet_crumple_light` | 12 / 28 / 8 |
+| vehicles | `box_truck.damage.bonnet_crumple_heavy` | 12 / 28 / 8 |
+| vehicles | `box_truck.damage.bonnet_buckled` | 26 / 60 / 16 |
+| vehicles | `box_truck.damage.body_bumper_bent` | 294 / 588 / 224 |
+| vehicles | `box_truck.damage.windscreen_cracked` | 16 / 32 / 20 |
+| vehicles | `box_truck.damage.windscreen_missing` | 7 / 19 / 18 |
+| vehicles | `box_truck.damage.smoke` | 50 / 148 / 36 |
+| vehicles | `box_truck.damage.fire` | 104 / 272 / 68 |
+| vehicles | `hatchback_wreck.body` | 220 / 440 / 200 |
 | vehicles | `hatchback_wreck.bonnet` | 12 / 24 / 8 |
-| vehicles | `hatchback_wreck.wheel` | 48 / 84 / 28 |
-| vehicles | `hatchback_burnt.body` | 126 / 252 / 108 |
+| vehicles | `hatchback_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `hatchback_burnt.body` | 220 / 440 / 200 |
 | vehicles | `hatchback_burnt.bonnet` | 12 / 24 / 8 |
 | vehicles | `hatchback_burnt.wheel` | 20 / 36 / 12 |
-| vehicles | `sedan_wreck.body` | 124 / 248 / 104 |
+| vehicles | `sedan_wreck.body` | 218 / 436 / 196 |
 | vehicles | `sedan_wreck.bonnet` | 12 / 24 / 8 |
-| vehicles | `sedan_wreck.wheel` | 48 / 84 / 28 |
-| vehicles | `sedan_burnt.body` | 124 / 248 / 104 |
+| vehicles | `sedan_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `sedan_burnt.body` | 218 / 436 / 196 |
 | vehicles | `sedan_burnt.bonnet` | 12 / 24 / 8 |
 | vehicles | `sedan_burnt.wheel` | 20 / 36 / 12 |
-| vehicles | `pickup_wreck.body` | 190 / 380 / 130 |
+| vehicles | `wagon_wreck.body` | 218 / 436 / 196 |
+| vehicles | `wagon_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `wagon_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `wagon_burnt.body` | 218 / 436 / 196 |
+| vehicles | `wagon_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `wagon_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `suv_wreck.body` | 218 / 436 / 196 |
+| vehicles | `suv_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `suv_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `suv_burnt.body` | 218 / 436 / 196 |
+| vehicles | `suv_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `suv_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `offroader_wreck.body` | 218 / 436 / 196 |
+| vehicles | `offroader_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `offroader_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `offroader_burnt.body` | 218 / 436 / 196 |
+| vehicles | `offroader_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `offroader_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `pickup_wreck.body` | 366 / 732 / 274 |
 | vehicles | `pickup_wreck.bonnet` | 12 / 24 / 8 |
-| vehicles | `pickup_wreck.wheel` | 48 / 84 / 28 |
+| vehicles | `pickup_wreck.wheel` | 80 / 148 / 44 |
 | vehicles | `pickup_wreck.door_l` | 48 / 96 / 32 |
 | vehicles | `pickup_wreck.door_gap` | 24 / 48 / 16 |
-| vehicles | `pickup_burnt.body` | 190 / 380 / 130 |
+| vehicles | `pickup_burnt.body` | 366 / 732 / 274 |
 | vehicles | `pickup_burnt.bonnet` | 12 / 24 / 8 |
 | vehicles | `pickup_burnt.wheel` | 20 / 36 / 12 |
 | vehicles | `pickup_burnt.door_l` | 48 / 96 / 32 |
 | vehicles | `pickup_burnt.door_gap` | 24 / 48 / 16 |
-| vehicles | `van_wreck.body` | 72 / 144 / 62 |
+| vehicles | `crew_pickup_wreck.body` | 350 / 700 / 274 |
+| vehicles | `crew_pickup_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `crew_pickup_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `crew_pickup_burnt.body` | 350 / 700 / 274 |
+| vehicles | `crew_pickup_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `crew_pickup_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `flatbed_wreck.body` | 414 / 828 / 314 |
+| vehicles | `flatbed_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `flatbed_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `flatbed_burnt.body` | 414 / 828 / 314 |
+| vehicles | `flatbed_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `flatbed_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `van_wreck.body` | 178 / 356 / 164 |
 | vehicles | `van_wreck.bonnet` | 12 / 24 / 8 |
-| vehicles | `van_wreck.wheel` | 48 / 84 / 28 |
-| vehicles | `van_burnt.body` | 72 / 144 / 62 |
+| vehicles | `van_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `van_burnt.body` | 178 / 356 / 164 |
 | vehicles | `van_burnt.bonnet` | 12 / 24 / 8 |
 | vehicles | `van_burnt.wheel` | 20 / 36 / 12 |
+| vehicles | `box_truck_wreck.body` | 270 / 540 / 216 |
+| vehicles | `box_truck_wreck.bonnet` | 12 / 24 / 8 |
+| vehicles | `box_truck_wreck.wheel` | 80 / 148 / 44 |
+| vehicles | `box_truck_burnt.body` | 270 / 540 / 216 |
+| vehicles | `box_truck_burnt.bonnet` | 12 / 24 / 8 |
+| vehicles | `box_truck_burnt.wheel` | 20 / 36 / 12 |
 | garden | `rain_barrel` | 120 / 228 / 84 |
 | garden | `garden_plot` | 60 / 120 / 40 |
 | garden | `garden_sprouting` | 108 / 288 / 54 |
@@ -1030,18 +1144,18 @@ Machines: `excavator`, `bulldozer`, `dump_truck`, `cement_mixer`, `garbage_truck
 | --- | --- | --- |
 | `excavator` | 1 | 746 to 746 |
 | `bulldozer` | 1 | 616 to 616 |
-| `dump_truck` | 1 | 436 to 436 |
-| `cement_mixer` | 1 | 418 to 418 |
-| `garbage_truck` | 1 | 402 to 402 |
-| `fire_truck` | 1 | 1064 to 1064 |
-| `ambulance` | 1 | 288 to 288 |
-| `tow_truck` | 1 | 448 to 448 |
-| `mobile_crane` | 1 | 586 to 586 |
-| `bucket_truck` | 1 | 408 to 408 |
-| `forklift` | 1 | 412 to 412 |
-| `road_roller` | 1 | 292 to 292 |
-| `street_sweeper` | 1 | 524 to 524 |
-| `school_bus` | 1 | 318 to 318 |
+| `dump_truck` | 1 | 700 to 700 |
+| `cement_mixer` | 1 | 670 to 670 |
+| `garbage_truck` | 1 | 654 to 654 |
+| `fire_truck` | 1 | 1316 to 1316 |
+| `ambulance` | 1 | 468 to 468 |
+| `tow_truck` | 1 | 664 to 664 |
+| `mobile_crane` | 1 | 790 to 790 |
+| `bucket_truck` | 1 | 612 to 612 |
+| `forklift` | 1 | 580 to 580 |
+| `road_roller` | 1 | 412 to 412 |
+| `street_sweeper` | 1 | 752 to 752 |
+| `school_bus` | 1 | 498 to 498 |
 
 ## animals (`assets/shaped/animals.js`, version 1)
 
@@ -1358,6 +1472,31 @@ Draw as the machines pack (BODY = paint[name]; parts outward from the body; subt
 | `bow_wave` | 1 | 14 to 14 |
 | `prop_wash` | 1 | 92 to 92 |
 | `splash_ring` | 1 | 88 to 88 |
+
+## vehiclekit (`assets/shaped/vehiclekit.js`, version 1, with `assets/shaped/vehiclefit.js`)
+
+What is in it
+  models.tyres / models.rims / models.bike_wheels   wheel sets, each modelled with radius 1 and width 1 (see 'rule')
+  models.parts                                      bolt-on parts: roof racks, bumpers, bed caps, motors, canopies, baskets ...
+  tyreInfo, rimInfo, bikeWheelInfo, partInfo        what each is: size factors, grip on each ground, the mount slot it fits, its size, tags, stats
+  vehicles                                          every vehicle, bike and boat: its wheels, paint colours and mounts (named places a part bolts to)
+  presets                                           ready-made loadouts for spawning variety (and for the album)
+  rule                                              how to draw a customised vehicle (assets/shaped/vehiclefit.js does it for you)
+
+Tyres: `road`, `all_terrain`, `mud_terrain`, `snow`, `snow_chains`, `slick`, `heavy`, `sand`, `military`, `solid`. Rims: `steel`, `steel_rust`, `alloy5`, `alloy_dark`, `chrome_dish`, `beadlock`, `wire`. Bike wheels: `road`, `gravel`, `mtb`, `fat`, `moto_road`, `moto_knobby`.
+
+Parts (191): `roof_bars_S`, `roof_bars_M`, `roof_bars_L`, `roof_bars_XL`, `roof_bars_XXL`, `roof_basket_M`, `roof_basket_L`, `roof_basket_XL`, `roof_box_S`, `roof_box_M`, `roof_box_L`, `roof_box_XL`, `roof_ladder_L`, `roof_ladder_XL`, `roof_ladder_XXL`, `roof_luggage_M`, `roof_luggage_L`, `roof_luggage_XL`, `roof_luggage_XXL`, `roof_tarp_M`, `roof_tarp_L`, `roof_tarp_XL`, `roof_tarp_XXL`, `roof_spare_tyres`, `roof_jerry_cans`, `roof_kayak`, `roof_canoe`, `roof_tent_L`, `roof_tent_XL`, `light_bar_white_S`, `light_bar_amber_S`, `light_bar_white_M`, `light_bar_amber_M`, `light_bar_emergency_M`, `light_bar_white_L`, `light_bar_amber_L`, `light_bar_emergency_L`, `beacon_amber`, `beacon_red`, `beacon_blue`, `taxi_sign`, `roof_spotlights`, `antenna_cb`, `radio_mast`, `stripes_roof_white`, `stripes_roof_black`, `hood_scoop_S`, `hood_scoop_M`, `hood_spare`, `bull_bar_S`, `bull_bar_lights_S`, `bull_bar_M`, `bull_bar_lights_M`, `bull_bar_L`, `bull_bar_lights_L`, `push_bar_S`, `push_bar_M`, `push_bar_L`, `winch_bumper_S`, `winch_bumper_M`, `winch_bumper_L`, `grille_guard_M`, `grille_guard_L`, `snow_plough_M`, `snow_plough_L`, `ram_bumper_M`, `ram_bumper_L`, `brush_guard_S`, `tow_hitch`, `rear_bumper_S`, `rear_bumper_M`, `rear_bumper_L`, `spare_door`, `rear_jerry_rack`, `salt_spreader`, `running_board_S`, `rock_slider_S`, `running_board_M`, `rock_slider_M`, `running_board_L`, `rock_slider_L`, `fender_flare_S`, `fender_flare_M`, `fender_flare_L`, `fender_flare_XL`, `mud_flap`, `snorkel_S`, `snorkel_M`, `snorkel_L`, `stripe_side_white`, `stripe_side_black`, `stripe_side_red`, `bed_cap_S`, `bed_cap_M`, `bed_cap_L`, `bed_cover_S`, `bed_cover_M`, `bed_cover_L`, `bed_rack_S`, `bed_rack_M`, `bed_rack_L`, `bed_rack_XL`, `bed_roll_bar`, `bed_roll_bar_lights`, `bed_toolbox`, `bed_tank`, `load_barrels_S`, `load_barrels_M`, `load_barrels_L`, `load_barrels_XL`, `load_crates_S`, `load_crates_M`, `load_crates_L`, `load_crates_XL`, `load_hay_S`, `load_hay_M`, `load_hay_L`, `load_hay_XL`, `load_firewood_S`, `load_firewood_M`, `load_firewood_L`, `load_firewood_XL`, `load_scrap_S`, `load_scrap_M`, `load_scrap_L`, `load_scrap_XL`, `load_tarp_S`, `load_tarp_M`, `load_tarp_L`, `load_tarp_XL`, `camper_shell`, `exhaust_stacks`, `headache_rack`, `beacon_bar_L`, `floodlight_mast`, `toolbox_side_S`, `toolbox_side_M`, `fuel_tank_side`, `roof_bars_C`, `roof_lights_C`, `outboard_S`, `outboard_S_prop`, `outboard_M`, `outboard_M_prop`, `outboard_L`, `outboard_L_prop`, `outboard_twin`, `outboard_twin_prop`, `trolling_motor`, `bimini_S`, `bimini_M`, `bimini_L`, `t_top`, `windscreen`, `cuddy_hatch`, `seat_helm`, `seat_bench`, `cooler`, `fuel_tank_boat`, `storage_crate`, `tackle_box`, `anchor_bow`, `nav_lights`, `spotlight_boat`, `swim_ladder`, `flag_pole`, `fender_buoys`, `rod_holders`, `life_ring`, `crab_pots`, `net_drum`, `sail_flag`, `bike_basket_front`, `bike_basket_rear`, `bike_rack_rear`, `bike_rack_front`, `panniers`, `bike_trunk`, `child_seat`, `bike_fender`, `bike_light_front`, `bike_light_rear`, `kickstand`, `bike_bottle`, `bike_bell`, `moto_screen`, `saddlebags`, `crash_bars`, `quad_rack_front`, `quad_rack_rear`, `quad_winch`
+
+Vehicles with mounts: 51. Presets: 21.
+
+Draw a vehicle in its own pack, then dress it. (1) Wheels: for each wheel point draw the chosen tyre scaled (w*wMul, r*rMul, r*rMul) and the rim scaled (w*wMul, r*rMul*rimFrac, ...) at the point (the left side turned half a turn about y so the rim face shows outward). If the new tyre radius is bigger than the stock radius, lift the whole body and every body-group part by lift = max(0, 2*(rNew - r) - archClear + 0.02), and put the wheel centres at y = rNew. (2) Parts: each part names a slot; the vehicle's mounts[slot] gives pos, w, d, anchor offsets (anchor front: z + d/2, rear: z - d/2). A part fits if part.w <= mount.w and part.d <= mount.d (pillar: part.hMax <= mount.hMax; arch: part.rCap >= tyre radius). One part per slot. Mirror parts are modelled for the right side: draw with scale.x = -1 for the left. Group 'bonnet' parts open with the bonnet; 'bed' parts tip with the bed. (3) Paint: override the vehicle's paintSlots colours; parts that use BODY take the body colour. assets/shaped/vehiclefit.js does all of this.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `parts` | 191 | 2 to 520 |
+| `tyres` | 10 | 76 to 132 |
+| `rims` | 7 | 86 to 108 |
+| `bike_wheels` | 6 | 168 to 232 |
 
 ## audio (`assets/audio/`, made in code)
 

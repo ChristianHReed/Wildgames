@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, WO=S.woods, FA=S.farm, WS=S.waterside, FS=S.foodservice, BK=S.bikes, BT=S.boats, PK=S.parks, AT=S.autotrade, SV2=S.services, SF=S.shopfit, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, WO=S.woods, FA=S.farm, WS=S.waterside, FS=S.foodservice, BK=S.bikes, BT=S.boats, PK=S.parks, KT=S.vehiclekit, AT=S.autotrade, SV2=S.services, SF=S.shopfit, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -193,7 +193,7 @@ const surf=(k,t)=>{ const c=(t||WD.surfaceColours)[k]; return {BASE:c[0],DETAIL:
 const watc=k=>{ const c=WD.waterColours[k]; return {WATER:c[0],WATER_L:c[1],FOAM:c[2]}; };
 const LANDC={LAND:'#6d7a4f',LAND_D:'#5a6640',BASE:'#3a3a3c'};
 /* ---------- machines: parts posed by their rig ---------- */
-function machineOf(name, vals){
+function machineOf(name, vals, noW){
   const P=MC.models[name], R=MC.rig[name], col=colourer(MC.palette,{BODY:MC.paint[name]}), D=Math.PI/180, groups={}, root=new THREE.Group(); vals=vals||{};
   for (const k in R){ const r=R[k], par=r.parent?R[r.parent].pivot:[0,0,0], outer=new THREE.Group(), inner=new THREE.Group();
     outer.position.set(r.pivot[0]-par[0],r.pivot[1]-par[1],r.pivot[2]-par[2]); if (r.fixed) outer.rotation.set(r.fixed[0]*D,r.fixed[1]*D,r.fixed[2]*D); outer.add(inner);
@@ -203,7 +203,7 @@ function machineOf(name, vals){
     const ps=(P[k]||[]).map(q=>Object.assign({},q,{p:[q.p[0]-r.pivot[0],q.p[1]-r.pivot[1],q.p[2]-r.pivot[2]]})); if (ps.length) inner.add(mesh(ps,col));
     groups[k]={outer,inner}; }
   for (const k in R){ const r=R[k]; (r.parent?groups[r.parent].inner:root).add(groups[k].outer); }
-  for (const [i,w] of (MC.wheels[name]||[]).entries()){ const wm=mesh(P.wheel,col); wm.position.set(...w); root.add(wm); }
+  if(!noW) for (const [i,w] of (MC.wheels[name]||[]).entries()){ const wm=mesh(P.wheel,col); wm.position.set(...w); root.add(wm); }
   return root;
 }
 /* ---------- animals: posed by clip frame ---------- */
@@ -218,7 +218,7 @@ function animal(name, clip, frame){
   const outer=new THREE.Group(); outer.add(root); return outer;
 }
 
-function rigOf(P, name, vals){
+function rigOf(P, name, vals, noW){
   const Pm=P.models[name], R=P.rig[name], col=colourer(P.palette,{BODY:P.paint[name]}), D=Math.PI/180, groups={}, root=new THREE.Group(); vals=vals||{};
   for (const k in R){ const r=R[k], par=r.parent?R[r.parent].pivot:[0,0,0], outer=new THREE.Group(), inner=new THREE.Group();
     outer.position.set(r.pivot[0]-par[0],r.pivot[1]-par[1],r.pivot[2]-par[2]); outer.add(inner);
@@ -228,7 +228,7 @@ function rigOf(P, name, vals){
     const ps=(Pm[k]||[]).map(q=>Object.assign({},q,{p:[q.p[0]-r.pivot[0],q.p[1]-r.pivot[1],q.p[2]-r.pivot[2]]})); if (ps.length) inner.add(mesh(ps,col));
     groups[k]={outer,inner}; }
   for (const k in R){ const r=R[k]; (r.parent?groups[r.parent].inner:root).add(groups[k].outer); }
-  const wl=(P.wheels&&P.wheels[name])||[]; for (const w of wl){ const wm=mesh(Pm.wheel,col); wm.position.set(...w); root.add(wm); }
+  const wl=noW?[]:((P.wheels&&P.wheels[name])||[]); for (const w of wl){ const wm=mesh(Pm.wheel,col); wm.position.set(...w); root.add(wm); }
   return root;
 }
 function rigGrid(P, names, cols, dx, dz, cpos, ctgt, water, rot){
@@ -237,6 +237,44 @@ function rigGrid(P, names, cols, dx, dz, cpos, ctgt, water, rot){
   names.forEach((n,i)=>{ const g=rigOf(P,n); g.position.set((i%cols-(cols-1)/2)*dx,0,-Math.floor(i/cols)*dz); if(rot) g.rotation.y=rot; scene.add(g); });
   cam.position.set(...cpos); ctl.target.set(...ctgt); }
 /* ---------- scenes ---------- */
+
+
+/* ---------- vehicle kit: a wheel is a tyre and a rim, each scaled; a part sits at a mount ---------- */
+function kitWheel(tyre, rim, r, w){ const g=new THREE.Group(), col=colourer(KT.palette,{}), T=KT.tyreInfo[tyre]; if(!T) return g;
+  const tm=mesh(KT.models.tyres[tyre],col); tm.scale.set(w*T.wMul,r*T.rMul,r*T.rMul); g.add(tm);
+  const rm=mesh(KT.models.rims[rim],col), f=r*T.rMul*T.rimFrac; rm.scale.set(w*T.wMul,f,f); g.add(rm); return g; }
+function turn4(make, sp, camH){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,60,0xd8d2c6);
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach((q,i)=>{ const g=make(); g.position.set(q[0]*sp,0,q[1]*sp); g.rotation.y=0.45+i*Math.PI/2; scene.add(g); });
+  cam.position.set(0,camH*1.0,sp*2.6); ctl.target.set(0,0.8,0); }
+
+/* ---------- dressed vehicle: any vehicle + tyres/rims + parts + paint, placed by VEHICLEFIT ---------- */
+function dress(vname, o){ o=o||{}; const V=KT.vehicles[vname], plan=VEHICLEFIT.plan(KT,vname,o), root=new THREE.Group(), base=new THREE.Group();
+  let bodyCol='#a8843c';
+  if (V.pack==='props'){ const m=PR.models.vehicles[vname], pal=Object.assign({},PR.palette,o.paint||{}), col=colourer(pal,{}); bodyCol=pal.paint1||bodyCol;
+    base.add(mesh(m.body,col)); base.add(mesh(m.bonnet,col)); }
+  else if (V.pack==='machines'){ const sl={BODY:(o.paint&&o.paint.BODY)||MC.paint[vname]}; bodyCol=sl.BODY; base.add(machineOf(vname,null,true)); }
+  else if (V.pack==='bikes'){ bodyCol=(o.paint&&o.paint.BODY)||BK.paint[vname]; base.add(rigOf(BK,vname,null,true)); }
+  else { bodyCol=(o.paint&&o.paint.BODY)||(BT.paint[vname]&&BT.paint[vname].BODY)||bodyCol; base.add(rigOf(BT,vname,null,false)); }
+  base.position.y=plan.lift; root.add(base);
+  const pcol=colourer(KT.palette,{BODY:bodyCol});
+  plan.wheels.forEach(w=>{ let g;
+    if (w.bike){ g=new THREE.Group(); const T=KT.bikeWheelInfo[w.bike]; const mm=mesh(KT.models.bike_wheels[w.bike],pcol); mm.scale.set(w.w,w.r,w.r); g.add(mm); }
+    else { g=kitWheel(w.tyre,w.rim,w.r/KT.tyreInfo[w.tyre].rMul,w.w/KT.tyreInfo[w.tyre].wMul); }
+    const o2=new THREE.Group(); o2.add(g); o2.rotation.z=0; g.rotation.y=w.flip?Math.PI:0; o2.position.set(...w.pos); root.add(o2); });
+  plan.parts.forEach(p=>{ const m=KT.models.parts[p.name]; if(!m) return; const g=mesh(m,pcol); g.position.set(...p.pos); if(p.mirror) g.scale.x=-1; root.add(g); });
+  root.userData.plan=plan; return root; }
+
+function buildGrid(list, cols, dx, dz, camH, camBack, ry){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(120,120,0xd8d2c6);
+  const rows=Math.ceil(list.length/cols);
+  list.forEach((p,i)=>{ const g=dress(p.vehicle,p); g.position.set((i%cols-(cols-1)/2)*dx,0,(Math.floor(i/cols)-(rows-1)/2)*dz); g.rotation.y=ry==null?0.55:ry; scene.add(g); });
+  cam.position.set(0,camH,(rows-1)/2*dz+camBack); ctl.target.set(0,0.9,0); }
+function partSheet(names, cols, dx, dz, h0){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const col=colourer(KT.palette,{BODY:'#a8843c'}), rows=Math.ceil(names.length/cols);
+  names.forEach((n,i)=>{ const g=mesh(KT.models.parts[n],col); g.position.set((i%cols-(cols-1)/2)*dx,0.3,(Math.floor(i/cols)-(rows-1)/2)*dz); g.rotation.y=0.6; scene.add(g);
+    const st=new THREE.Mesh(new THREE.BoxGeometry(dx*0.8,0.3,dz*0.8),new THREE.MeshLambertMaterial({color:0xc4bdb0})); st.position.set(g.position.x,0.15,g.position.z); scene.add(st); });
+  cam.position.set(0,(h0||1)*cols*dx*0.75,(rows)*dz*0.9+cols*dx*0.4); ctl.target.set(0,0.4,0); }
+const PRE=()=>KT.presets;
+const PN=(re)=>Object.keys(KT.partInfo).filter(n=>re.test(n));
+const CARS10=['hatchback','sedan','wagon','suv','offroader','pickup','crew_pickup','flatbed','van','box_truck'];
 const SCENES={
   survivors:{t:'Survivors',d:'Silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small heads with no eyes. 300 to 820 triangles each.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xe2ddd2);
@@ -446,6 +484,68 @@ const SCENES={
       ['ore_iron','ore_copper','ore_coal','ore_quartz','ore_gold','flint_nodules'].forEach((k,i)=>at(mesh(R[k],c),2+i*2.2,0,-6)); at(mesh(R.stepping_stones,c),15,0.4,-7);
       Object.keys(WD.models.items).forEach((k,i)=>at(mesh(WD.models.items[k],c),2+i*0.6,0,-3.6));
       cam.position.set(0,16,30); ctl.target.set(0,1,-2); }},
+  veh_c1:{t:'Cars A front',d:'Audit view.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,40,0xd8d2c6);
+      ['hatchback','sedan','wagon','suv','offroader'].forEach((n,i)=>at(prop('vehicles',n),(i-2)*6.2,0,0,0.55)); cam.position.set(-6,4.5,14); ctl.target.set(0,0.9,0); }},
+  veh_c1r:{t:'Cars A rear',d:'Audit view.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,40,0xd8d2c6);
+      ['hatchback','sedan','wagon','suv','offroader'].forEach((n,i)=>at(prop('vehicles',n),(i-2)*6.2,0,0,Math.PI+0.55)); cam.position.set(6,4.5,-14); ctl.target.set(0,0.9,0); }},
+  veh_c2:{t:'Cars B front',d:'Audit view.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,40,0xd8d2c6);
+      ['pickup','crew_pickup','flatbed','van','box_truck'].forEach((n,i)=>at(prop('vehicles',n),(i-2)*7.4,0,0,0.55)); cam.position.set(-7,5,16); ctl.target.set(0,1.1,0); }},
+  veh_c2r:{t:'Cars B rear',d:'Audit view.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,40,0xd8d2c6);
+      ['pickup','crew_pickup','flatbed','van','box_truck'].forEach((n,i)=>at(prop('vehicles',n),(i-2)*7.4,0,0,Math.PI+0.55)); cam.position.set(7,5,-16); ctl.target.set(0,1.1,0); }},
+  kit_builds:{t:'Built vehicles: land',d:'Presets from the kit: overlander, farm truck, plough truck, camper, police, taxi, roof load, courier, survivor SUV, camper van, scrap runner, convoy truck.',
+    make(){ buildGrid(PRE().filter(p=>KT.vehicles[p.vehicle].group==='car'),4,8,8.5,19,15); }},
+  kit_boats_b:{t:'Built vehicles: boats',d:'Outboards, canopies, coolers and fishing gear fitted to hulls.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; const w=new THREE.Mesh(new THREE.PlaneGeometry(200,200), new THREE.MeshLambertMaterial({color:0x4a7a8a})); w.rotation.x=-Math.PI/2; scene.add(w);
+      const L=PRE().filter(p=>KT.vehicles[p.vehicle].group==='boat'); L.forEach((p,i)=>{ const g=dress(p.vehicle,p); g.position.set((i-(L.length-1)/2)*7.5,0,0); g.rotation.y=0.9; scene.add(g); }); cam.position.set(0,10,16); ctl.target.set(0,0.6,0); }},
+  kit_bikes_b:{t:'Built vehicles: bikes',d:'Baskets, racks, saddlebags and lights fitted to bikes.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,80,0xd8d2c6); const L=PRE().filter(p=>KT.vehicles[p.vehicle].group==='bike');
+      L.forEach((p,i)=>{ const g=dress(p.vehicle,p); g.position.set((i-(L.length-1)/2)*2.8,0,0); g.rotation.y=1.0; scene.add(g); }); cam.position.set(0,5,15); ctl.target.set(0,0.7,0); }},
+  kit_swap:{t:'Swap: the same tyres on different vehicles',d:'Mud tyres and snow chains moved between a sedan, an SUV, a pickup, a van and a box truck: bigger tyres lift the body to clear the arch.',
+    make(){ const vs=['sedan','suv','pickup','van','box_truck'], L=[]; ['road','mud_terrain','snow_chains'].forEach(t=>vs.forEach(v=>L.push({vehicle:v,tyre:t,rim:t==='mud_terrain'?'beadlock':'steel'}))); buildGrid(L,5,6,6,17,15,0.7); }},
+  kit_paint:{t:'Paint',d:'One sedan, six paint jobs, with roof bars and a stripe.',
+    make(){ const cs=['#a83a2e','#2e5a8a','#d8b030','#3a6a44','#2a2a30','#e0dcd0']; buildGrid(cs.map(c=>({vehicle:'sedan',paint:{paint1:c},parts:['roof_bars_M','stripe_side_white']})),3,6,6,10,12,0.6); }},
+  kit_parts_roof:{t:'Parts: roof',d:'Racks, baskets, boxes, loads, tents and lights for roofs.',make(){ partSheet(PN(/^(roof|light_bar|beacon|taxi|antenna|radio|stripes_roof)/),8,3.1,3.3,1.15); }},
+  kit_parts_front:{t:'Parts: front, rear, hood',d:'Bull bars, ploughs, bumpers, scoops.',make(){ partSheet(PN(/^(bull|push|winch|grille|snow|ram|brush|tow|rear_b|spare|rear_j|salt|hood)/),7,3.3,2.2,1.1); }},
+  kit_parts_bed:{t:'Parts: bed and truck',d:'Caps, covers, loads, racks, stacks.',make(){ partSheet(PN(/^(bed|load|camper|exhaust|headache|beacon_bar|floodlight|toolbox|fuel_tank_side)/),8,3.1,3.6,1.15); }},
+  kit_parts_side:{t:'Parts: sides and misc',d:'Running boards, sliders, flares, snorkels, stripes.',make(){ partSheet(PN(/^(running|rock|fender_flare|mud|snorkel|stripe_side)/),8,2.4,2.4,1.1); }},
+  kit_parts_boat:{t:'Parts: boats',d:'Outboards, canopies, seats and gear.',make(){ partSheet(PN(/^(outboard|trolling|bimini|t_top|windscreen|cuddy|seat|cooler|fuel_tank_boat|storage|tackle|anchor|nav|spotlight|swim|flag|fender_buoys|rod|life|crab|net|sail)/).filter(n=>!/_prop$/.test(n)),8,2.9,3,1.1); }},
+  kit_parts_bike:{t:'Parts: bikes',d:'Baskets, racks, panniers, lamps.',make(){ partSheet(PN(/^(bike|panniers|child|kickstand|moto|saddle|crash|quad)/),8,1.6,1.6,0.9); }},
+  veh_trucks:{t:'Trucks close up',d:'Audit: dump truck, mixer, garbage, fire.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,50,0xd8d2c6);
+      ['dump_truck','cement_mixer','garbage_truck','fire_truck'].forEach((n,i)=>at(machineOf(n),(i%2)*11-5.5,0,-Math.floor(i/2)*11,0.7)); cam.position.set(14,8,10); ctl.target.set(0,1.2,-5.5); }},
+  vw_hatchback:{t:'View: hatchback',d:'Four angles.',make(){ turn4(()=>prop('vehicles','hatchback'),3.8,6.08); }},
+  vw_sedan:{t:'View: sedan',d:'Four angles.',make(){ turn4(()=>prop('vehicles','sedan'),3.8,6.08); }},
+  vw_wagon:{t:'View: wagon',d:'Four angles.',make(){ turn4(()=>prop('vehicles','wagon'),3.8,6.08); }},
+  vw_suv:{t:'View: suv',d:'Four angles.',make(){ turn4(()=>prop('vehicles','suv'),3.8,6.08); }},
+  vw_offroader:{t:'View: offroader',d:'Four angles.',make(){ turn4(()=>prop('vehicles','offroader'),3.8,6.08); }},
+  vw_pickup:{t:'View: pickup',d:'Four angles.',make(){ turn4(()=>prop('vehicles','pickup'),3.8,6.08); }},
+  vw_crew_pickup:{t:'View: crew_pickup',d:'Four angles.',make(){ turn4(()=>prop('vehicles','crew_pickup'),5.0,8.0); }},
+  vw_flatbed:{t:'View: flatbed',d:'Four angles.',make(){ turn4(()=>prop('vehicles','flatbed'),5.0,8.0); }},
+  vw_van:{t:'View: van',d:'Four angles.',make(){ turn4(()=>prop('vehicles','van'),5.0,8.0); }},
+  vw_box_truck:{t:'View: box_truck',d:'Four angles.',make(){ turn4(()=>prop('vehicles','box_truck'),5.0,8.0); }},
+  vw_dump_truck:{t:'View: dump_truck',d:'Four angles.',make(){ turn4(()=>machineOf('dump_truck'),6,9.0); }},
+  vw_cement_mixer:{t:'View: cement_mixer',d:'Four angles.',make(){ turn4(()=>machineOf('cement_mixer'),6,9.0); }},
+  vw_garbage_truck:{t:'View: garbage_truck',d:'Four angles.',make(){ turn4(()=>machineOf('garbage_truck'),6,9.0); }},
+  vw_fire_truck:{t:'View: fire_truck',d:'Four angles.',make(){ turn4(()=>machineOf('fire_truck'),7,10.5); }},
+  vw_ambulance:{t:'View: ambulance',d:'Four angles.',make(){ turn4(()=>machineOf('ambulance'),5,7.5); }},
+  vw_tow_truck:{t:'View: tow_truck',d:'Four angles.',make(){ turn4(()=>machineOf('tow_truck'),6,9.0); }},
+  vw_mobile_crane:{t:'View: mobile_crane',d:'Four angles.',make(){ turn4(()=>machineOf('mobile_crane'),9,13.5); }},
+  vw_bucket_truck:{t:'View: bucket_truck',d:'Four angles.',make(){ turn4(()=>machineOf('bucket_truck'),6,9.0); }},
+  vw_forklift:{t:'View: forklift',d:'Four angles.',make(){ turn4(()=>machineOf('forklift'),3,4.5); }},
+  vw_road_roller:{t:'View: road_roller',d:'Four angles.',make(){ turn4(()=>machineOf('road_roller'),4,6.0); }},
+  vw_street_sweeper:{t:'View: street_sweeper',d:'Four angles.',make(){ turn4(()=>machineOf('street_sweeper'),5,7.5); }},
+  vw_school_bus:{t:'View: school_bus',d:'Four angles.',make(){ turn4(()=>machineOf('school_bus'),8,12.0); }},
+  vw_excavator:{t:'View: excavator',d:'Four angles.',make(){ turn4(()=>machineOf('excavator'),5,7.5); }},
+  vw_bulldozer:{t:'View: bulldozer',d:'Four angles.',make(){ turn4(()=>machineOf('bulldozer'),5,7.5); }},
+  kit_wheels:{t:'Kit: tyres and rims',d:'Ten tyres (rows) on seven rims (columns), lying flat with the outer face up.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xd8d2c6);
+      const TY=Object.keys(KT.tyreInfo), RM=Object.keys(KT.rims||KT.models.rims);
+      TY.forEach((t,i)=>RM.forEach((m,j)=>{ const g=kitWheel(t,m,0.42,0.3); const o=new THREE.Group(); g.rotation.z=Math.PI/2; o.add(g); g.position.y=0.3; o.position.set((j-(RM.length-1)/2)*1.25,0,(i-(TY.length-1)/2)*1.3); scene.add(o); }));
+      cam.position.set(0,13,9); ctl.target.set(0,0,0.5); }},
   machines:{t:'Construction and service vehicles',d:'Parked: excavator, bulldozer, dump truck, cement mixer, garbage truck, fire truck, ambulance, tow truck, mobile crane, bucket truck, forklift, road roller, street sweeper and school bus, with a survivor for scale.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(140,100,0xd8d2c6); const N=Object.keys(MC.models);
       N.forEach((n,i)=>at(machineOf(n),(i%5-2)*7.2,0,-Math.floor(i/5)*13,0.5)); at(survivor(LOOKS[0]),-17,0,3,0.4);

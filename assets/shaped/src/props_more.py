@@ -231,8 +231,8 @@ VRIG['pickup'].update({'battery': 'sits under the bonnet at (0.45, 0.88, 1.2); f
 def wreck(name, kind):
     """a parking-lot wreck (rusted, flat tyres, broken glass) or a burnt-out shell (charred, no glass, bare rims)"""
     V = M['vehicles'][name]; out = {}
-    rm = {'rust': {'paint1': 'rustBody', 'paint2': 'rustBody', 'paint3': 'rustD', 'white': 'rustBody', 'glass': 'glassBroken', 'chrome': 'rustD', 'head': 'glassBroken', 'tail': 'rustD'},
-          'burnt': {'paint1': 'burnt', 'paint2': 'burnt', 'paint3': 'burnt', 'white': 'burnt', 'glass': 'burntD', 'chrome': 'burntD', 'head': 'burntD', 'tail': 'burntD', 'woodD': 'ash', 'black': 'burntD', 'blue': 'burnt', 'rust': 'ash', 'tyre': 'burntRim', 'hub': 'burntRim'}}[kind]
+    rm = {'rust': {'paint1': 'rustBody', 'paint2': 'rustBody', 'paint3': 'rustD', 'white': 'rustBody', 'plateW': 'rustD', 'glass': 'glassBroken', 'chrome': 'rustD', 'head': 'glassBroken', 'tail': 'rustD'},
+          'burnt': {'paint1': 'burnt', 'paint2': 'burnt', 'paint3': 'burnt', 'white': 'burnt', 'plateW': 'ash', 'glass': 'burntD', 'chrome': 'burntD', 'head': 'burntD', 'tail': 'burntD', 'woodD': 'ash', 'black': 'burntD', 'blue': 'burnt', 'rust': 'ash', 'tyre': 'burntRim', 'hub': 'burntRim'}}[kind]
     for part in ('body', 'bonnet'):
         out[part] = [dict(q, c=rm.get(q['c'], q['c'])) for q in V[part]]
     if kind == 'rust':   # flat tyres: the wheel squashed at the bottom
@@ -241,7 +241,7 @@ def wreck(name, kind):
         out['wheel'] = [dict(q, c='burntRim', r=[r[:3] + [r[3]*0.55, r[4]*0.55] + r[5:] for r in q['r']]) for q in V['wheel'] if q['c'] == 'hub']
     M['vehicles'][name + '_' + ('wreck' if kind == 'rust' else 'burnt')] = out
     VRIG[name + '_' + ('wreck' if kind == 'rust' else 'burnt')] = dict(VRIG[name], sitDrop=0.05 if kind == 'rust' else 0.16)
-for nm in ('hatchback', 'sedan', 'pickup', 'van'):
+for nm in CARS:
     wreck(nm, 'rust'); wreck(nm, 'burnt')
 
 # ================= things players build and place =================

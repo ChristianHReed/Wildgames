@@ -11,6 +11,7 @@ FL, F2, ST = load('flora'), load('furniture2'), load('structures')
 LA, WO, FA, WS = load('land'), load('woods'), load('farm'), load('waterside')
 FS_, AT_, SV_, SF_ = load('foodservice'), load('autotrade'), load('services'), load('shopfit')
 BK_, BT_, PK_ = load('bikes'), load('boats'), load('parks')
+VK_ = load('vehiclekit')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -267,6 +268,20 @@ Models: """ + ', '.join('`' + k + '`' for k in _P['models']) + f"""
 
 {_P['rule']}
 """ + tri_table(_P))
+_g = {k: len(v) for k, v in VK_['models'].items()}
+L.append(f"""
+## vehiclekit (`assets/shaped/vehiclekit.js`, version {VK_['version']}, with `assets/shaped/vehiclefit.js`)
+
+{VK_['about'].strip()}
+
+Tyres: """ + ', '.join('`' + k + '`' for k in VK_['models']['tyres']) + """. Rims: """ + ', '.join('`' + k + '`' for k in VK_['models']['rims']) + """. Bike wheels: """ + ', '.join('`' + k + '`' for k in VK_['models']['bike_wheels']) + f""".
+
+Parts ({_g['parts']}): """ + ', '.join('`' + k + '`' for k in VK_['models']['parts']) + f"""
+
+Vehicles with mounts: {len(VK_['vehicles'])}. Presets: {len(VK_['presets'])}.
+
+{VK_['rule']}
+""" + tri_table(VK_))
 _snd = open(os.path.join(ROOT, 'assets', 'audio', 'sounds_design.js')).read(); _keys = _re.findall(r'"([a-z0-9_]+)":\[', _snd)
 L.append("""
 ## audio (`assets/audio/`, made in code)

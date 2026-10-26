@@ -350,3 +350,9 @@ Three packs, version 1; reasons, tables and recipes in `docs/BIKES_BOATS_PARKS.m
 - **`boats.js`** (20, rigged): kayak, canoe, paddleboard, rowboat with oars, jon boat, bass boat, pontoon, runabout, fishing boat, jet ski, houseboat, sailing dinghy, ferry barge, three crafted rafts, and wake, bow wave, prop wash and splash pieces. Water line at y = 0.
 - **`parks.js`** (93): playground, park furniture, ball sports, court and track tiles, skate park, pool, golf, bike park, camp.
 
+
+## 18. Vehicle refit and customisation kit (delivered 26 October 2026, from the owner's request)
+
+Rules and tables in `docs/VEHICLES.md`; piece lists in `docs/SHAPED.md`. Previews: album scenes "Built vehicles: land, boats, bikes", "Swap", "Paint", "Parts: roof, front, bed, side, boats, bikes", "Tyres and rims".
+- **Cars and trucks rebuilt** (`props` vehicles: 10 bodies; `machines`: chassis and body joins fixed). New: wagon, SUV, offroader, crew-cab pickup, flatbed, box truck.
+- **`vehiclekit.js`**: tyres, rims, bike wheels, parts, per-vehicle mounts, presets. **`vehiclefit.js`**: `plan`, `fits`, `compatible`.

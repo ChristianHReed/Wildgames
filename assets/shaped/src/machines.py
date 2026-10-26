@@ -28,7 +28,8 @@ PALETTE = {
 PAINT = {'excavator': '#e0aa28', 'bulldozer': '#e0aa28', 'dump_truck': '#d8742a', 'cement_mixer': '#e8e4dc', 'garbage_truck': '#4a7a4a', 'fire_truck': '#b8282a', 'ambulance': '#ece8e0',
          'tow_truck': '#3a5a8a', 'mobile_crane': '#e0aa28', 'bucket_truck': '#e8e4dc', 'forklift': '#e0aa28', 'road_roller': '#e0aa28', 'street_sweeper': '#d8742a', 'school_bus': '#e8b020'}
 G = dict(glow=True)
-M, RIG, WHEELS, CLIPS, NOTE, BEACON, STEER, WR = {}, {}, {}, {}, {}, {}, {}, {}
+M, RIG, WHEELS, CLIPS, NOTE, BEACON, STEER, WR, SPEC = {}, {}, {}, {}, {}, {}, {}, {}, {}
+_BUF = {}
 
 def b(x0, y0, z0, x1, y1, z1, c, **k): return box([(x0 + x1)/2, (y0 + y1)/2, (z0 + z1)/2], [abs(x1 - x0), abs(y1 - y0), abs(z1 - z0)], c, **k)
 def wheel(r, w):
@@ -54,6 +55,28 @@ def tails(W, y, z):
     return [flat([(sx*W - 0.15*sx, y, z - 0.003), (sx*W - 0.02*sx, y, z - 0.003), (sx*W - 0.02*sx, y + 0.16, z - 0.003), (sx*W - 0.15*sx, y + 0.16, z - 0.003)], 'tail', (0, 0, -1), **G) for sx in (1, -1)]
 def stripe(W, y0, y1, z0, z1, c):
     return [flat([(sx*(W + 0.003), y0, z0 if sx > 0 else z1), (sx*(W + 0.003), y0, z1 if sx > 0 else z0), (sx*(W + 0.003), y1, z1 if sx > 0 else z0), (sx*(W + 0.003), y1, z0 if sx > 0 else z1)], c, (sx, 0, 0)) for sx in (1, -1)]
+def undercarriage(zs, wx, r, w, top, z0, z1, rail_w=0.5):
+    """chassis rails (top at y = top), and for each axle z in zs: the axle beam out to the hubs, a differential and a leaf spring each side up to the rails"""
+    o = chassis(z0, z1, top, rail_w)
+    for z in zs:
+        xe = wx - w/2 + 0.12
+        o += [b(-xe, r - 0.07, z - 0.07, xe, r + 0.07, z + 0.07, 'steelD'), b(-0.2, r - 0.15, z - 0.2, 0.2, r + 0.15, z + 0.2, 'steelD')]
+        if top - 0.24 > r + 0.06:
+            o += [b(sx*(rail_w - 0.06) - 0.07, r + 0.05, z - 0.4, sx*(rail_w - 0.06) + 0.07, top - 0.24, z + 0.4, 'steelD') for sx in (1, -1)]
+    return o
+def arch_body(x0, x1, y_bot, y_top, z0, z1, wheels, col='BODY', clear=0.1, liner='black'):
+    """a body box with wheel openings: wheels is a list of (z, radius). The box above the tyres is solid, between them it comes down to y_bot,
+    and each opening has a dark liner on its roof. Returns pieces."""
+    ws = sorted(wheels); y_arch = max(2*r for _, r in ws) + clear*1.4
+    o = [b(x0, y_arch, z0, x1, y_top, z1, col)]
+    cur = z0
+    for z, r in ws:
+        ha = r + clear
+        if z - ha - cur > 0.04: o.append(b(x0, y_bot, cur, x1, y_arch + 0.02, z - ha, col))
+        o.append(b(x0, y_arch - 0.03, z - ha, x1, y_arch, z + ha, liner))
+        cur = z + ha
+    if z1 - cur > 0.04: o.append(b(x0, y_bot, cur, x1, y_arch + 0.02, z1, col))
+    return o
 def ram(p0, p1, r=0.07):
     """a hydraulic ram: a fat barrel and a shiny rod"""
     m = mixp(p0, p1, 0.55)
@@ -67,6 +90,7 @@ def track(sx, z0, z1, h, w=0.55, y0=0.0):
     return o
 def machine(name, parts, rig, wheels=None, r=0.5, w=0.3, steer=None, clips=None, note='', beacon=None):
     if wheels: parts['wheel'] = wheel(r, w); WHEELS[name] = wheels; WR[name] = [r, w]
+    SPEC[name] = dict(_BUF); _BUF.clear()
     M[name] = parts; RIG[name] = rig; CLIPS[name] = clips or {}; NOTE[name] = note; STEER[name] = steer or []
     if beacon: BEACON[name] = beacon
 
@@ -113,7 +137,7 @@ def bulldozer():
     piv = [0, 0.75, -0.4]
     P['blade'] = [b(-1.35, 0.02, 2.05, 1.35, 1.35, 2.25, 'BODY'), hull([(-1.35, 0.02, 2.25), (1.35, 0.02, 2.25), (1.35, 0.02, 2.5), (-1.35, 0.02, 2.5), (-1.35, 0.25, 2.25), (1.35, 0.25, 2.25), (1.35, 0.15, 2.3), (-1.35, 0.15, 2.3)], 'steelL'),
                   *[seg([sx*1.15, 0.75, -0.4], [sx*1.15, 0.6, 2.05], 0.08, 0.1, 0.08, 0.1, 'steelD') for sx in (1, -1)]] + [p for sx in (1, -1) for p in ram([sx*0.7, 1.6, 1.0], [sx*0.7, 1.0, 2.05], 0.07)]
-    P['ripper'] = [b(-0.5, 0.6, -2.3, 0.5, 0.8, -1.9, 'steelD'), seg([0, 0.7, -2.2], [0, -0.1, -2.5], 0.06, 0.1, 0.04, 0.08, 'steelD')]
+    P['ripper'] = [b(-0.5, 0.6, -2.3, 0.5, 0.8, -1.75, 'steelD'), seg([0, 0.7, -2.2], [0, -0.1, -2.5], 0.06, 0.1, 0.04, 0.08, 'steelD')]
     rig = {'body': {'pivot': [0, 0, 0], 'note': 'tracks scroll when driving'},
            'blade': {'parent': 'body', 'pivot': piv, 'turn': [-1, 0, 0], 'range': [-6, 18], 'rest': 0, 'note': 'positive lifts the blade, negative digs it in'},
            'ripper': {'parent': 'body', 'pivot': [0, 0.7, -1.9], 'turn': [1, 0, 0], 'range': [-20, 25], 'rest': 0, 'note': 'positive drops the ripper tooth into the ground'}}
@@ -122,13 +146,30 @@ def bulldozer():
 bulldozer()
 
 # ================= trucks (cab over a chassis) =================
-def truck_base(zf=3.6, zb=2.0, W=1.2, axles=(2.7, -1.6, -2.9), r=0.52, roof=3.05, rear=-3.6, col='BODY'):
-    o = cab(zf, zb, W, 0.85, roof, col) + chassis(rear, zb, 1.1, 0.5) + [b(-W, 0.55, zf - 0.2, W, 0.85, zf + 0.05, 'black')]
-    o += [b(sx*1.0, 0.9, z - 0.55, sx*1.25, 1.12, z + 0.55, 'black') for sx in (1, -1) for z in axles]   # mudguards
-    o += tails(1.15, 0.9, rear)
-    return o, [[sx*0.98, r, z] for z in axles for sx in (1, -1)]
+def truck_base(zf=3.6, zb=2.0, W=1.2, axles=(2.7, -1.6, -2.9), r=0.52, roof=3.05, rear=-3.6, col='BODY', w=0.42):
+    """a truck: rails whose top is at y = 2r + 0.16, the cab floor on them, axles, springs, fenders over every wheel (tied to the rails or the cab sill),
+    a front fascia and bumper, a rear cross-bar with the tail lights, and mud flaps behind the last axle. Wheel points are returned."""
+    top = round(2*r + 0.16, 3); wx = round(W - 0.22, 3); fo = round(wx + w/2 + 0.1, 3)
+    o = cab(zf, zb, W, top, roof, col) + undercarriage(axles, wx, r, w, top, rear, zf - 0.3)
+    fz = max(0.12, min(0.3, zf - (max(axles) + r) - 0.03))
+    o += [b(-W + 0.05, top - 0.14, zb, W - 0.05, top, zf - fz, 'steelD'),                                  # the sill under the cab
+          b(-W, top - 0.35, zf - fz, W, top, zf, col), b(-W - 0.05, top - 0.58, zf - fz*0.5, W + 0.05, top - 0.28, zf + 0.18, 'black'),   # fascia and bumper
+          b(-W - 0.02, top - 0.3, rear, W + 0.02, top - 0.05, rear + 0.1, 'steelD')]                      # rear cross-bar
+    for z in axles:
+        o += [b(sx*0.45, top - 0.14, z - r - 0.1, sx*fo, top - 0.05, z + r + 0.1, 'black') for sx in (1, -1)]   # fenders
+    zl = min(axles)
+    o += [b(sx*(wx - 0.2), 0.45, zl - r - 0.12, sx*(wx + 0.2), top - 0.05, zl - r - 0.08, 'black') for sx in (1, -1)]   # mud flaps
+    o += [b(sx*(W - 0.1), top - 0.3, zb + 0.35, sx*(W + 0.22), top - 0.2, zb + 0.95, 'steelD') for sx in (1, -1)]       # cab steps
+    o += [b(sx*(W - 0.1), top - 0.3, zb + 0.35, sx*(W + 0.0), top, zb + 0.95, 'steelD') for sx in (1, -1)]
+    o += tails(W - 0.05, top - 0.3, rear)
+    zs = sorted(axles)
+    _BUF.clear(); _BUF.update({'width': round(2*W + 0.1, 2), 'wheelR': r, 'wheelW': w, 'axles': sorted(axles, reverse=True), 'track': wx, 'archClear': 0.02, 'ground': 0.0,
+        'roof': {'y': roof, 'z': round((zb + zf - 0.35)/2, 3), 'w': round(2*W - 0.1, 2), 'd': round(zf - 0.35 - zb, 2)}, 'nose': round(zf + 0.18, 2), 'tail': rear, 'bumperY': round(top - 0.43, 3), 'rearY': round(top - 0.18, 3),
+        'frameTop': top, 'cabBack': zb, 'cabFront': zf, 'length': round(zf + 0.18 - rear, 2)})
+    if len(zs) > 1: _BUF['side'] = {'y': round(top - 0.1, 3), 'z': round((zs[-1] + zs[-2])/2 + 0.0, 3), 'd': round(zs[-1] - zs[-2] - 2*r - 0.3, 2), 'x': 0.5}
+    return o, [[sx*wx, r, z] for z in axles for sx in (1, -1)]
 def dump_truck():
-    P = {}; base, wh = truck_base(); P['body'] = base
+    P = {}; base, wh = truck_base(); P['body'] = base + [b(-0.9, 1.2, -3.5, 0.9, 1.3, 1.6, 'steelD')]
     hz = -3.5; hy = 1.25
     P['bed'] = [b(-1.25, 1.3, -3.6, 1.25, 1.4, 1.7, 'BODY'), *[b(sx*1.25 - 0.05*sx, 1.4, -3.6, sx*1.25 + 0.05*sx, 2.6, 1.7, 'BODY') for sx in (1, -1)],
                 hull([(-1.25, 1.4, 1.6), (1.25, 1.4, 1.6), (1.25, 1.4, 1.75), (-1.25, 1.4, 1.75), (-1.25, 2.8, 1.75), (1.25, 2.8, 1.75), (1.25, 2.8, 2.5), (-1.25, 2.8, 2.5)], 'BODY'),
@@ -139,7 +180,7 @@ def dump_truck():
             note='A tipper. tip raises the bed and lowers it again; the load slides off between 30 and 52 degrees.')
 dump_truck()
 def cement_mixer():
-    P = {}; base, wh = truck_base(); P['body'] = base + [b(-0.4, 1.1, -3.4, 0.4, 2.0, -3.0, 'steelD'), b(-0.3, 1.1, 1.0, 0.3, 2.4, 1.7, 'steelD'), b(-0.9, 1.1, 0.6, 0.9, 1.4, 1.9, 'steelD')]
+    P = {}; base, wh = truck_base(); P['body'] = base + [b(-0.4, 1.1, -3.55, 0.4, 2.0, -3.0, 'steelD'), b(-0.3, 1.1, 1.0, 0.3, 2.4, 1.7, 'steelD'), b(-0.9, 1.1, 0.6, 0.9, 1.4, 1.9, 'steelD')]
     ax = [0, 2.35, -1.0]
     P['drum'] = [loft([[0, 2.35, 1.6, 0.4, 0.4], [0, 2.35, 0.6, 1.05, 1.05], [0, 2.35, -1.4, 1.15, 1.15], [0, 2.35, -2.9, 0.75, 0.75], [0, 2.35, -3.4, 0.45, 0.45]], 'drum', ax='z', n=10)] + \
                 [flat([(math.cos(a)*1.16, 2.35 + math.sin(a)*1.16, -1.4 - 0.3 + i*0.0), (math.cos(a + 0.4)*1.16, 2.35 + math.sin(a + 0.4)*1.16, -1.4 + 0.3), (math.cos(a + 0.6)*1.0, 2.35 + math.sin(a + 0.6)*1.0, 0.6), (math.cos(a + 0.2)*1.0, 2.35 + math.sin(a + 0.2)*1.0, 0.4)], 'stripeR', (math.cos(a), math.sin(a), 0)) for i, a in enumerate((0.3, 2.4, 4.5))]
@@ -155,19 +196,19 @@ def garbage_truck():
     P['tailgate'] = [hull([(-1.2, 1.0, -2.6), (1.2, 1.0, -2.6), (1.2, 1.0, -4.0), (-1.2, 1.0, -4.0), (-1.2, 3.3, -2.6), (1.2, 3.3, -2.6), (1.2, 2.6, -3.6), (-1.2, 2.6, -3.6)], 'BODY'),
                      flat([(-0.9, 1.02, -3.8), (0.9, 1.02, -3.8), (0.9, 1.6, -3.95), (-0.9, 1.6, -3.95)], 'black', (0, 0.3, -1)), *[b(sx*1.0, 1.2, -3.95, sx*1.15, 1.3, -3.85, 'tail', **G) for sx in (1, -1)],
                      *[flat([(x, 1.7, -3.8), (x + 0.2, 1.7, -3.8), (x + 0.45, 2.3, -3.6), (x + 0.25, 2.3, -3.6)], 'stripeY', (0, 0.3, -1)) for x in (-1.1, -0.5, 0.1, 0.7)]]
-    P['arm'] = [seg([-1.3, 1.3, 0.6], [-2.1, 1.0, 0.6], 0.08, 0.08, 0.06, 0.06, 'steelD'), b(-2.4, 0.4, 0.3, -2.0, 1.2, 0.9, 'bin'), b(-2.42, 1.2, 0.28, -1.98, 1.26, 0.92, 'binD')]
+    P['arm'] = [seg([-1.2, 1.3, 0.6], [-2.1, 1.0, 0.6], 0.08, 0.08, 0.06, 0.06, 'steelD'), b(-2.4, 0.4, 0.3, -2.0, 1.2, 0.9, 'bin'), b(-2.42, 1.2, 0.28, -1.98, 1.26, 0.92, 'binD')]
     rig = {'body': {'pivot': [0, 0, 0]},
            'tailgate': {'parent': 'body', 'pivot': [0, 3.3, -2.6], 'turn': [-1, 0, 0], 'range': [0, 70], 'rest': 0, 'note': 'positive swings the rear hopper up to dump the load'},
-           'arm': {'parent': 'body', 'pivot': [-1.3, 1.3, 0.6], 'turn': [0, 0, -1], 'range': [0, 150], 'rest': 0, 'note': 'the side arm on the right: positive lifts a wheelie bin up and over into the body'}}
+           'arm': {'parent': 'body', 'pivot': [-1.2, 1.3, 0.6], 'turn': [0, 0, -1], 'range': [0, 150], 'rest': 0, 'note': 'the side arm on the right: positive lifts a wheelie bin up and over into the body'}}
     machine('garbage_truck', P, rig, wh, 0.52, 0.42, steer=[0, 1], beacon='body',
             clips={'pick_bin': [{'t': 0, 'arm': 0}, {'t': 1.5, 'arm': 150}, {'t': 2.3, 'arm': 150}, {'t': 3.8, 'arm': 0}], 'unload': [{'t': 0, 'tailgate': 0}, {'t': 3, 'tailgate': 70}, {'t': 6, 'tailgate': 70}, {'t': 9, 'tailgate': 0}]},
             note='A refuse truck with a side-loader arm on the right (holding a bin) and a rear hopper. Bins searched or taken by it are props.street.trash_bin.')
 garbage_truck()
 def fire_truck():
-    P = {}; base, wh = truck_base(zf=3.8, zb=1.6, roof=3.0); P['body'] = base + [b(-1.25, 1.0, -3.6, 1.25, 2.7, 1.5, 'BODY'), *stripe(1.25, 1.3, 1.45, -3.5, 3.7, 'white'),
+    P = {}; base, wh = truck_base(zf=3.8, zb=1.6, roof=3.0); P['body'] = base + [b(-1.25, 1.1, -3.6, 1.25, 2.7, 1.5, 'BODY'), *stripe(1.25, 1.3, 1.45, -3.5, 3.7, 'white'),
         *[flat([(sx*1.252, 1.6, z0 if sx > 0 else z1), (sx*1.252, 1.6, z1 if sx > 0 else z0), (sx*1.252, 2.5, z1 if sx > 0 else z0), (sx*1.252, 2.5, z0 if sx > 0 else z1)], 'chrome', (sx, 0, 0)) for sx in (1, -1) for z0, z1 in ((-3.4, -2.2), (-2.0, -0.8), (-0.6, 0.6))],
         b(-1.25, 2.7, -3.6, 1.25, 2.8, 1.5, 'steelD'), *beacons([1.0, 0.35, -0.35, -1.0], 3.0, 3.1, 'beaconR'), *[b(sx*1.0, 0.9, -3.65, sx*1.2, 1.1, -3.6, 'beaconR', **G) for sx in (1, -1)],
-        *[b(sx*1.5, 0.3, -2.8, sx*1.6, 1.0, -2.6, 'steelD') for sx in (1, -1)]]
+        *[b(sx*1.15, 0.3, -2.8, sx*1.6, 1.1, -2.6, 'steelD') for sx in (1, -1)]]
     P['outrigger_l'] = [b(1.25, 0.5, -3.0, 2.2, 0.7, -2.6, 'steelD'), b(2.05, 0.0, -3.05, 2.35, 0.55, -2.55, 'steelD')]
     P['outrigger_r'] = [b(-2.2, 0.5, -3.0, -1.25, 0.7, -2.6, 'steelD'), b(-2.35, 0.0, -3.05, -2.05, 0.55, -2.55, 'steelD')]
     P['turntable'] = [loft([[0, 2.8, -2.6, 0.6, 0.6], [0, 3.1, -2.6, 0.6, 0.6]], 'steel', n=10), b(-0.4, 3.0, -2.9, 0.4, 3.5, -2.3, 'BODY')]
@@ -189,7 +230,7 @@ def fire_truck():
 fire_truck()
 def ambulance():
     P = {}; W = 1.1
-    P['body'] = cab(3.2, 1.9, 1.0, 0.75, 2.5, 'BODY', 0.5) + [b(-W, 0.55, -3.0, W, 2.95, 1.9, 'BODY'), *stripe(W, 1.05, 1.25, -2.9, 1.8, 'stripeR'), *stripe(W, 1.25, 1.33, -2.9, 1.8, 'stripeY'),
+    P['body'] = cab(3.2, 1.9, 1.0, 0.98, 2.5, 'BODY', 0.5) + undercarriage((2.4, -2.0), 0.84, 0.42, 0.3, 0.98, -3.0, 2.9, 0.45) + [b(-0.95, 0.74, 2.9, 0.95, 0.98, 3.2, 'black'), b(-1.05, 0.55, 3.0, 1.05, 0.8, 3.3, 'black'), *arch_body(-W, W, 0.55, 2.95, -3.0, 1.9, [(-2.0, 0.42)]), *stripe(W, 1.05, 1.25, -2.9, 1.8, 'stripeR'), *stripe(W, 1.25, 1.33, -2.9, 1.8, 'stripeY'),
         *[p for sx in (1, -1) for p in [flat([(sx*(W + 0.004), 1.7, -0.6 + (0.25 if sx > 0 else -0.25)), (sx*(W + 0.004), 1.7, -0.6 - (0.25 if sx > 0 else -0.25)), (sx*(W + 0.004), 2.5, -0.6 - (0.25 if sx > 0 else -0.25)), (sx*(W + 0.004), 2.5, -0.6 + (0.25 if sx > 0 else -0.25))], 'stripeR', (sx, 0, 0)),
                                       flat([(sx*(W + 0.005), 2.0, -0.2 if sx > 0 else -1.0), (sx*(W + 0.005), 2.0, -1.0 if sx > 0 else -0.2), (sx*(W + 0.005), 2.2, -1.0 if sx > 0 else -0.2), (sx*(W + 0.005), 2.2, -0.2 if sx > 0 else -1.0)], 'stripeR', (sx, 0, 0))]],
         b(-W, 2.95, -3.0, W, 3.0, 1.9, 'whiteD'), *beacons([0.85, -0.85], 2.95, 1.75, 'beaconR'), *beacons([0.3, -0.3], 2.95, 1.75, 'beaconB'), *tails(W, 0.8, -3.0), b(-W - 0.02, 0.4, -3.05, W + 0.02, 0.6, -3.0, 'black')]
@@ -198,7 +239,7 @@ def ambulance():
     rig = {'body': {'pivot': [0, 0, 0]},
            'door_rl': {'parent': 'body', 'pivot': [W, 0, -3.02], 'turn': [0, -1, 0], 'range': [0, 170], 'rest': 0, 'note': 'rear doors swing out on their outer hinges'},
            'door_rr': {'parent': 'body', 'pivot': [-W, 0, -3.02], 'turn': [0, 1, 0], 'range': [0, 170], 'rest': 0}}
-    machine('ambulance', P, rig, [[sx*0.95, 0.42, z] for z in (2.4, -2.0) for sx in (1, -1)], 0.42, 0.3, steer=[0, 1], beacon='body',
+    machine('ambulance', P, rig, [[sx*0.84, 0.42, z] for z in (2.4, -2.0) for sx in (1, -1)], 0.42, 0.3, steer=[0, 1], beacon='body',
             clips={'open': [{'t': 0, 'door_rl': 0, 'door_rr': 0}, {'t': 1, 'door_rl': 160, 'door_rr': 160}]}, note='A box ambulance. Its back is a good search: medical supplies.')
 ambulance()
 def tow_truck():
@@ -206,7 +247,7 @@ def tow_truck():
     P['body'] = base + [b(-1.15, 1.0, -2.8, 1.15, 1.1, 1.4, 'BODY'), *[b(sx*1.1, 1.1, -2.8, sx*1.15, 1.6, 1.4, 'BODY') for sx in (1, -1)], b(-0.3, 1.1, -0.8, 0.3, 2.0, -0.4, 'steelD'), *beacons([0.6, 0.0, -0.6], 2.75, 2.3)]
     P['boom'] = [seg([0, 1.9, -0.6], [0, 2.4, -3.0], 0.12, 0.12, 0.1, 0.1, 'BODY'), loft([[0.0, 2.4, -3.0, 0.12, 0.12], [0.0, 2.4, -3.0, 0.12, 0.12]], 'steel', ax='x', n=8)] + ram([0, 1.3, -0.9], [0, 2.0, -2.0], 0.06)
     P['hook'] = [seg([0, 2.3, -3.0], [0, 1.0, -3.0], 0.01, 0.01, 0.01, 0.01, 'cable'), b(-0.06, 0.82, -3.06, 0.06, 1.0, -2.94, 'hook')]
-    P['lift'] = [b(-0.12, 0.45, -2.8, 0.12, 0.6, -4.0, 'steelD'), b(-0.9, 0.35, -4.1, 0.9, 0.5, -3.9, 'steelD'), *[b(sx*0.75, 0.35, -4.4, sx*0.9, 0.5, -3.9, 'warn') for sx in (1, -1)]]
+    P['lift'] = [b(-0.1, 0.6, -3.0, 0.1, 1.0, -2.8, 'steelD'), b(-0.12, 0.45, -2.8, 0.12, 0.6, -4.0, 'steelD'), b(-0.9, 0.35, -4.1, 0.9, 0.5, -3.9, 'steelD'), *[b(sx*0.75, 0.35, -4.4, sx*0.9, 0.5, -3.9, 'warn') for sx in (1, -1)]]
     rig = {'body': {'pivot': [0, 0, 0]},
            'boom': {'parent': 'body', 'pivot': [0, 1.9, -0.6], 'turn': [-1, 0, 0], 'range': [-10, 35], 'rest': 0, 'note': 'positive raises the crane boom'},
            'hook': {'parent': 'boom', 'slide': [0, -1, 0], 'pivot': [0, 2.3, -3.0], 'range': [-1.2, 1.5], 'rest': 0, 'note': 'winches the hook down (keep the cable vertical when the boom moves)'},
@@ -217,8 +258,8 @@ def tow_truck():
 tow_truck()
 def mobile_crane():
     P = {}; W = 1.3; axles = (3.2, 1.9, -1.6, -2.9)
-    P['body'] = [dict(q, p=[R4(q['p'][0] + 0.65), q['p'][1], q['p'][2]]) for q in cab(4.8, 3.6, 0.6, 0.95, 2.9, 'BODY', 0.3)] + \
-        [b(-W, 0.7, -4.0, W, 1.5, 3.6, 'BODY'), b(-W, 1.5, -3.8, W, 1.6, 3.4, 'steelD'), *[b(sx*1.0, 0.9, z - 0.6, sx*1.35, 1.0, z + 0.6, 'black') for sx in (1, -1) for z in axles],
+    P['body'] = [dict(q, p=[R4(q['p'][0] + 0.65), q['p'][1], q['p'][2]]) for q in cab(5.1, 3.9, 0.6, 1.26, 2.9, 'BODY', 0.3)] + \
+        [*arch_body(-W, W, 0.7, 1.5, -4.0, 3.9, [(z, 0.55) for z in axles]), *undercarriage(axles, 1.05, 0.55, 0.45, 1.26, -3.9, 3.8, 0.55), b(-W, 1.5, -3.8, W, 1.6, 3.4, 'steelD'),
          *stripe(W, 0.8, 1.0, -3.9, 3.5, 'warn'), *tails(W, 0.8, -4.0), *beacons([0.25], 2.9, 4.2)]
     P['outriggers'] = [b(sx*W, 0.9, z - 0.2, sx*(W + 1.6), 1.15, z + 0.2, 'steelD') for sx in (1, -1) for z in (-3.4, 2.8)] + [b(sx*(W + 1.4), 0.0, z - 0.3, sx*(W + 1.8), 0.95, z + 0.3, 'warn') for sx in (1, -1) for z in (-3.4, 2.8)]
     P['turntable'] = [loft([[0, 1.6, -1.8, 1.1, 1.1], [0, 1.85, -1.8, 1.1, 1.1]], 'steelD', n=12), b(-1.2, 1.85, -3.4, 1.2, 2.9, -0.4, 'BODY'), b(-1.25, 1.85, -3.8, 1.25, 2.6, -3.3, 'steelD'),
@@ -240,7 +281,7 @@ def mobile_crane():
 mobile_crane()
 def bucket_truck():
     P = {}; base, wh = truck_base(zf=3.0, zb=1.6, axles=(2.2, -1.8), roof=2.8, rear=-3.0)
-    P['body'] = base + [b(-1.15, 1.0, -3.0, 1.15, 1.9, 1.5, 'BODY'), *[b(sx*0.95, 1.9, -2.9, sx*1.15, 2.1, 1.4, 'steelD') for sx in (1, -1)], *beacons([0.6, -0.6], 2.8, 2.3), *stripe(1.15, 1.2, 1.35, -2.9, 1.4, 'warn')]
+    P['body'] = base + [b(-1.15, 1.1, -3.0, 1.15, 1.9, 1.5, 'BODY'), *[b(sx*0.95, 1.9, -2.9, sx*1.15, 2.1, 1.4, 'steelD') for sx in (1, -1)], *beacons([0.6, -0.6], 2.8, 2.3), *stripe(1.15, 1.2, 1.35, -2.9, 1.4, 'warn')]
     P['turret'] = [loft([[0, 1.9, -1.8, 0.45, 0.45], [0, 2.3, -1.8, 0.4, 0.4]], 'steelD', n=8)]
     P['boom_lower'] = [seg([0, 2.3, -1.8], [0, 2.4, 2.4], 0.16, 0.2, 0.14, 0.18, 'white')] + ram([0, 2.0, -1.4], [0, 2.4, -0.2], 0.06)
     P['boom_upper'] = [seg([0, 2.45, 2.4], [0, 2.5, -2.6], 0.12, 0.15, 0.1, 0.12, 'white')]
@@ -256,9 +297,9 @@ def bucket_truck():
 bucket_truck()
 def forklift():
     P = {}
-    P['body'] = [b(-0.55, 0.25, -1.2, 0.55, 1.05, 0.6, 'BODY'), b(-0.6, 0.25, -1.5, 0.6, 1.0, -1.1, 'steelD'), b(-0.3, 1.05, -0.6, 0.3, 1.3, 0.0, 'seat'),
+    P['body'] = [*arch_body(-0.55, 0.55, 0.25, 1.05, -1.2, 0.6, [(0.35, 0.3), (-1.0, 0.26)]), b(-0.45, 0.25, 0.55, 0.45, 0.8, 0.78, 'steelD'), *undercarriage([0.35, -1.0], 0.5, 0.3, 0.22, 0.74, -1.3, 0.6, 0.25), b(-0.6, 0.25, -1.5, 0.6, 1.0, -1.1, 'steelD'), b(-0.3, 1.05, -0.6, 0.3, 1.3, 0.0, 'seat'),
                  *[seg([sx*0.5, 1.05, z], [sx*0.5, 2.15, z], 0.03, 0.03, 0.03, 0.03, 'steelD') for sx in (1, -1) for z in (-1.0, 0.45)], b(-0.55, 2.15, -1.05, 0.55, 2.2, 0.5, 'steelD'),
-                 *beacons([0.0], 2.2, -0.5), seg([0.0, 1.1, 0.3], [0.0, 1.5, 0.2], 0.02, 0.02, 0.02, 0.02, 'black'), loft([[0.0, 1.5, 0.2, 0.15, 0.15], [0.0, 1.53, 0.2, 0.15, 0.15]], 'black', n=8)]
+                 *beacons([0.0], 2.2, -0.5), seg([0.0, 1.0, 0.3], [0.0, 1.5, 0.2], 0.02, 0.02, 0.02, 0.02, 'black'), loft([[0.0, 1.5, 0.2, 0.15, 0.15], [0.0, 1.53, 0.2, 0.15, 0.15]], 'black', n=8)]
     P['mast'] = [b(sx*0.38 - 0.05, 0.2, 0.7, sx*0.38 + 0.05, 2.3, 0.8, 'steelD') for sx in (1, -1)] + [b(-0.38, 2.2, 0.7, 0.38, 2.3, 0.8, 'steelD')] + ram([0, 0.4, 0.62], [0, 1.8, 0.62], 0.05)
     P['carriage'] = [b(-0.45, 0.15, 0.82, 0.45, 0.65, 0.9, 'steel')] + [b(sx*0.25 - 0.05, 0.05, 0.9, sx*0.25 + 0.05, 0.1, 2.0, 'steelD') for sx in (1, -1)] + [b(sx*0.25 - 0.05, 0.05, 0.85, sx*0.25 + 0.05, 0.6, 0.92, 'steelD') for sx in (1, -1)]
     P['pallet'] = [b(-0.6, 0.12, 0.95, 0.6, 0.15, 2.15, 'pallet'), *[b(-0.6, 0.0, z - 0.05, 0.6, 0.12, z + 0.05, 'pallet') for z in (1.0, 1.55, 2.1)], b(-0.55, 0.15, 1.0, 0.55, 0.8, 2.1, 'drum')]
@@ -266,12 +307,12 @@ def forklift():
            'mast': {'parent': 'body', 'pivot': [0, 0.2, 0.75], 'turn': [1, 0, 0], 'range': [-6, 10], 'rest': 0, 'note': 'positive tilts the mast back to cradle a load'},
            'carriage': {'parent': 'mast', 'slide': [0, 1, 0], 'pivot': [0, 0, 0], 'range': [0, 1.6], 'rest': 0, 'note': 'lifts the forks'},
            'pallet': {'parent': 'carriage', 'pivot': [0, 0, 0], 'note': 'optional: a loaded pallet on the forks'}}
-    machine('forklift', P, rig, [[sx*0.5, 0.33, 0.35] for sx in (1, -1)] + [[sx*0.48, 0.26, -1.0] for sx in (1, -1)], 0.3, 0.22, steer=[2, 3],
+    machine('forklift', P, rig, [[sx*0.5, 0.3, 0.35] for sx in (1, -1)] + [[sx*0.48, 0.26, -1.0] for sx in (1, -1)], 0.3, 0.22, steer=[2, 3],
             clips={'lift': [{'t': 0, 'carriage': 0, 'mast': 0}, {'t': 1, 'mast': 6}, {'t': 3, 'carriage': 1.6}]}, note='A warehouse forklift: moves pallets, crates and barricades.')
 forklift()
 def road_roller():
     P = {}
-    P['body'] = [b(-0.8, 0.5, -1.9, 0.8, 1.5, 0.3, 'BODY'), b(-0.4, 1.5, -1.2, 0.4, 1.8, -0.4, 'seat'), *[seg([sx*0.7, 1.5, z], [sx*0.7, 2.6, z], 0.03, 0.03, 0.03, 0.03, 'black') for sx in (1, -1) for z in (-1.7, -0.2)],
+    P['body'] = [*arch_body(-0.8, 0.8, 0.5, 1.5, -1.9, 0.3, [(-1.2, 0.55)]), *undercarriage([-1.2], 0.75, 0.55, 0.45, 1.0, -1.9, 0.3, 0.4), b(-0.5, 0.6, 0.25, 0.5, 1.2, 0.5, 'steelD'), b(-0.4, 1.5, -1.2, 0.4, 1.8, -0.4, 'seat'), *[seg([sx*0.7, 1.5, z], [sx*0.7, 2.6, z], 0.03, 0.03, 0.03, 0.03, 'black') for sx in (1, -1) for z in (-1.7, -0.2)],
                  b(-0.8, 2.6, -1.85, 0.8, 2.66, 0.0, 'BODY'), *beacons([0.0], 2.66, -0.9), *tails(0.8, 0.8, -1.9)]
     P['front'] = [b(-1.0, 0.95, 0.4, 1.0, 1.3, 1.9, 'BODY'), *[b(sx*1.0 - 0.06*sx, 0.4, 0.5, sx*1.0, 1.0, 1.8, 'BODY') for sx in (1, -1)]]
     P['drum'] = [loft([[-0.9, 0.0, 0.0, 0.62, 0.62], [0.9, 0.0, 0.0, 0.62, 0.62]], 'steelL', ax='x', n=12), loft([[-0.91, 0, 0, 0.3, 0.3], [0.91, 0, 0, 0.3, 0.3]], 'steelD', ax='x', n=8)]
@@ -283,7 +324,8 @@ def road_roller():
 road_roller()
 def street_sweeper():
     P = {}; base, wh = truck_base(zf=2.4, zb=1.2, W=1.0, axles=(1.8, -1.6), roof=2.6, rear=-2.6, r=0.42)
-    P['body'] = base + [b(-1.0, 0.8, -2.6, 1.0, 2.3, 1.1, 'BODY'), *stripe(1.0, 1.0, 1.15, -2.5, 1.0, 'white'), *beacons([0.6, -0.6], 2.6, 1.9)]
+    P['body'] = base + [b(-1.0, 0.8, -2.6, 1.0, 2.3, 1.1, 'BODY'), *stripe(1.0, 1.0, 1.15, -2.5, 1.0, 'white'), *beacons([0.6, -0.6], 2.6, 1.9),
+                         *[b(sx*0.45, 0.5, -0.26, sx*0.85, 0.8, -0.14, 'steelD') for sx in (1, -1)]]
     P['hopper'] = [b(-0.95, 1.0, -2.65, 0.95, 2.25, -1.4, 'BODY')]
     for sx, nm in ((1, 'brush_l'), (-1, 'brush_r')):
         c = [sx*0.95, 0.06, 2.5]
@@ -300,7 +342,7 @@ def street_sweeper():
 street_sweeper()
 def school_bus():
     P = {}; W = 1.25; L = 5.6
-    P['body'] = [b(-W, 0.55, -L, W, 2.95, L - 1.4, 'BODY'), hull([(-W, 0.55, L - 1.4), (W, 0.55, L - 1.4), (W, 0.55, L), (-W, 0.55, L), (-W, 1.45, L - 1.4), (W, 1.45, L - 1.4), (W, 1.35, L), (-W, 1.35, L)], 'BODY'),
+    P['body'] = [*arch_body(-W, W, 0.55, 2.95, -L, L - 1.4, [(3.5, 0.5), (-3.6, 0.5)]), *undercarriage((3.5, -3.6), 1.05, 0.5, 0.36, 1.0, -L + 0.2, L - 0.3, 0.55), hull([(-W, 0.55, L - 1.4), (W, 0.55, L - 1.4), (W, 0.55, L), (-W, 0.55, L), (-W, 1.45, L - 1.4), (W, 1.45, L - 1.4), (W, 1.35, L), (-W, 1.35, L)], 'BODY'),
                  flat([(-W + 0.1, 1.5, L - 1.398), (W - 0.1, 1.5, L - 1.398), (W - 0.1, 2.7, L - 1.398), (-W + 0.1, 2.7, L - 1.398)], 'glass'), b(-W, 2.95, -L, W, 3.05, L - 1.4, 'whiteD'),
                  *[flat([(sx*(W + 0.003), 1.75, z0 if sx > 0 else z1), (sx*(W + 0.003), 1.75, z1 if sx > 0 else z0), (sx*(W + 0.003), 2.5, z1 if sx > 0 else z0), (sx*(W + 0.003), 2.5, z0 if sx > 0 else z1)], 'glass', (sx, 0, 0))
                    for sx in (1, -1) for z0, z1 in [(-L + 0.4 + i*1.15, -L + 1.35 + i*1.15) for i in range(8)]],
@@ -318,8 +360,19 @@ def school_bus():
             clips={'stop': [{'t': 0, 'door': 0, 'stop_arm': 0}, {'t': 1, 'door': 0.75, 'stop_arm': 90}]}, note='A school bus (11 m). A shelter for a group or a barricade across a road.')
 school_bus()
 
+
+# ---- measurements the vehicle kit (vehiclekit.py) fits parts and wheels to; the truck_base trucks recorded theirs as they were built ----
+def spec(name, **k): SPEC.setdefault(name, {}).update(k)
+spec('ambulance', width=2.2, length=6.4, wheelR=0.42, wheelW=0.3, axles=[2.4, -2.0], track=0.84, archClear=0.14, ground=0.0, roof={'y': 3.0, 'z': -0.55, 'w': 2.0, 'd': 4.6}, nose=3.3, tail=-3.05, bumperY=0.675, rearY=0.5)
+spec('school_bus', width=2.5, length=11.5, wheelR=0.5, wheelW=0.36, axles=[3.5, -3.6], track=1.05, archClear=0.14, ground=0.0, roof={'y': 3.05, 'z': -0.7, 'w': 2.3, 'd': 9.4}, nose=5.75, tail=-5.75, bumperY=0.5, rearY=0.5)
+spec('mobile_crane', width=2.6, length=9.4, wheelR=0.55, wheelW=0.45, axles=[3.2, 1.9, -1.6, -2.9], track=1.05, archClear=0.14, ground=0.0, roof={'y': 2.9, 'z': 4.35, 'w': 1.0, 'd': 0.8}, nose=5.2, tail=-4.05, bumperY=0.9, rearY=0.9)
+spec('forklift', width=1.2, length=2.9, wheelR=0.3, wheelW=0.22, axles=[0.35, -1.0], track=0.5, archClear=0.14, ground=0.0, roof={'y': 2.2, 'z': -0.28, 'w': 1.0, 'd': 1.5}, nose=0.6, tail=-1.5, bumperY=0.6, rearY=0.6)
+spec('road_roller', width=2.0, length=3.8, wheelR=0.55, wheelW=0.45, axles=[-1.2], track=0.75, archClear=0.14, ground=0.0, roof={'y': 2.66, 'z': -0.9, 'w': 1.5, 'd': 1.8}, nose=1.9, tail=-1.9, bumperY=0.8, rearY=0.8)
+spec('excavator', width=3.0, length=5.0, ground=0.0, roof={'y': 2.25, 'z': -1.45, 'w': 2.3, 'd': 0.9})
+spec('bulldozer', width=2.8, length=4.5, ground=0.0, roof={'y': 3.28, 'z': -0.75, 'w': 1.7, 'd': 1.8})
+
 pack = {'name': 'machines', 'version': 1, 'units': 'metres', 'facing': '+Z', 'palette': PALETTE, 'paint': PAINT, 'darker': 0.78, 'about': __doc__.split('\n', 2)[2],
-        'models': M, 'rig': RIG, 'wheels': WHEELS, 'wheelSize': WR, 'steer': STEER, 'clips': CLIPS, 'beacons': BEACON, 'notes': NOTE,
+        'models': M, 'rig': RIG, 'wheels': WHEELS, 'wheelSize': WR, 'steer': STEER, 'clips': CLIPS, 'beacons': BEACON, 'notes': NOTE, 'spec': SPEC,
         'rule': ('To draw a machine: build each part with BODY = paint[name]; for every part from the body outwards, subtract its pivot, apply fixed then its value (turn about the axis by the '
                  'value in degrees, or slide along the direction by the value in metres), and carry its children. Draw parts.wheel at every wheels[name] position (spin about X by '
                  'distance driven / wheelSize[name][0]; steer the indices in steer[name] about Y up to 35 degrees). Flash the glow pieces of the beacons part (about 2 Hz) and add a light.')}

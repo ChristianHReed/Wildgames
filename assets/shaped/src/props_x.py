@@ -209,7 +209,7 @@ def bent_bumper(pcs, zmax, half):
         out.append(q)
     return out
 DMG_INFO = {}
-for nm in ('hatchback', 'sedan', 'pickup', 'van'):
+for nm in CARS:
     V = M['vehicles'][nm]
     allp = [p for q in V['body'] if 'v' in q for p in abs_pts(q)] + [[q['p'][0], q['p'][1], q['p'][2] + q['d'][2]/2] for q in V['body'] if q['s'] == 'box']
     zmax = max(p[2] for p in allp); half = max(abs(p[0]) for p in allp)
@@ -298,7 +298,7 @@ def bonnet_fire(V):
         o.append(loft([[c[0] + dx, y, c[2] + dz, w, w*0.8], [c[0] + dx*1.1, y + h*0.45, c[2] + dz, w*0.7, w*0.6], [c[0] + dx*1.2, y + h, c[2] + dz, 0, 0]], 'flameX' if i % 2 == 0 else 'flameXR', n=5, glow=True))
         o.append(loft([[c[0] + dx, y, c[2] + dz, w*0.45, w*0.4], [c[0] + dx, y + h*0.5, c[2] + dz, 0, 0]], 'flameXC', n=5, glow=True))
     return o
-for nm in ('hatchback', 'sedan', 'pickup', 'van'):
+for nm in CARS:
     M['vehicles'][nm]['damage']['fire'] = bonnet_fire(M['vehicles'][nm])
 DMG_RULE += (' The game\'s vehicle health maps to the looks: above 70 whole, 70 to 40 body_bumper_bent with windscreen_cracked, 40 to 15 crumple_light, under 15 crumple_heavy with bonnet_buckled and smoke, '
              'wrecked (0) crumple_heavy, bonnet_buckled and windscreen_missing, burning: add fire (flames standing on the bonnet, glow; flicker them and add a warm light) for a minute, then the <name>_burnt shell.')
