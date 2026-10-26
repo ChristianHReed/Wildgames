@@ -1500,6 +1500,22 @@ Fences: lay a fence piece every 4 m along the barrier way (turn each to follow i
 | --- | --- | --- |
 | `barriers` | 28 | 60 to 420 |
 
+## towers (`assets/shaped/towers.js`, version 1)
+
+models.towers.<name>, metres, Y up, front +Z, origin at the centre of the base on the ground.
+Cell and radio: cell_tower_lattice (45 m), cell_tower_monopole (30 m), cell_tower_pine (a 25 m disguised tower), cell_shelter, rooftop_antennas, guyed_mast (60 m).
+Billboards: billboard_pole (14 x 4 m on one steel pole, two faces), billboard_vee, billboard_roof, billboard_digital (lit), billboard_small (two-post, 6 x 3 m).
+Industry: smokestack_brick (48 m), smokestack_steel (35 m), flare_stack, cooling_tower, tank_oil (vertical), tank_farm, grain_bins, water_standpipe, water_tank_ground, wind_turbine (60 m hub).
+Colour names are in the palette. Text goes on billboard faces as decals at z 0.3 (see info).
+
+Pieces: `cell_tower_lattice`, `cell_tower_monopole`, `cell_tower_pine`, `cell_shelter`, `rooftop_antennas`, `guyed_mast`, `billboard_pole`, `billboard_vee`, `billboard_roof`, `billboard_digital`, `billboard_small`, `smokestack_brick`, `smokestack_steel`, `flare_stack`, `cooling_tower`, `tank_oil`, `tank_farm`, `grain_bins`, `water_standpipe`, `water_tank_ground`, `wind_turbine`
+
+Towers: a cell tower stands in a fenced compound (fence_security_4 from the barriers pack) with cell_shelter beside it; put one monopole every 600 to 900 m in towns and a lattice tower on each hill. Billboards: along motorways and arterials every 400 m or so, facing traffic; roof ones on flat roofs in the centre. Stacks, cooling towers and tank farms belong to the power plant and the industrial strip by the rail yard. Beacons (lampR) are lit pieces: switch them off after the grid fails.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `towers` | 21 | 76 to 2172 |
+
 ## bikes (`assets/shaped/bikes.js`, version 1)
 
 Same form as the machines pack (read its header): parts[name] pieces at rest in bike space; rig[name] how each part moves; wheels[name] positions of the one `wheel` part; steer[name] which wheels steer; clips; BODY is the paint colour slot (paint[name]).

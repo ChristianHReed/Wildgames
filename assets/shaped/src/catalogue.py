@@ -12,7 +12,7 @@ LA, WO, FA, WS = load('land'), load('woods'), load('farm'), load('waterside')
 FS_, AT_, SV_, SF_ = load('foodservice'), load('autotrade'), load('services'), load('shopfit')
 BK_, BT_, PK_ = load('bikes'), load('boats'), load('parks')
 VK_ = load('vehiclekit')
-RS_, DG_, RL_, CV_, BR_ = load('roadside'), load('digging'), load('rail'), load('civic'), load('barriers')
+RS_, DG_, RL_, CV_, BR_, TW_ = load('roadside'), load('digging'), load('rail'), load('civic'), load('barriers'), load('towers')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -249,7 +249,7 @@ L.append(f'''
 {ST['rule']}
 ''' + tri_table(ST))
 
-for _t, _P, _g in (('land', LA, 'land'), ('woods', WO, 'woods'), ('farm', FA, 'farm'), ('waterside', WS, 'waterside'), ('foodservice', FS_, 'foodservice'), ('autotrade', AT_, 'autotrade'), ('services', SV_, 'services'), ('shopfit', SF_, 'shopfit'), ('parks', PK_, 'parks'), ('roadside', RS_, 'roadside'), ('digging', DG_, 'digging'), ('rail', RL_, 'rail'), ('civic', CV_, 'civic'), ('barriers', BR_, 'barriers')):
+for _t, _P, _g in (('land', LA, 'land'), ('woods', WO, 'woods'), ('farm', FA, 'farm'), ('waterside', WS, 'waterside'), ('foodservice', FS_, 'foodservice'), ('autotrade', AT_, 'autotrade'), ('services', SV_, 'services'), ('shopfit', SF_, 'shopfit'), ('parks', PK_, 'parks'), ('roadside', RS_, 'roadside'), ('digging', DG_, 'digging'), ('rail', RL_, 'rail'), ('civic', CV_, 'civic'), ('barriers', BR_, 'barriers'), ('towers', TW_, 'towers')):
     L.append(f"""
 ## {_t} (`assets/shaped/{_t}.js`, version {_P['version']})
 
