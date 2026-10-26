@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -193,16 +193,16 @@ const surf=(k,t)=>{ const c=(t||WD.surfaceColours)[k]; return {BASE:c[0],DETAIL:
 const watc=k=>{ const c=WD.waterColours[k]; return {WATER:c[0],WATER_L:c[1],FOAM:c[2]}; };
 const LANDC={LAND:'#6d7a4f',LAND_D:'#5a6640',BASE:'#3a3a3c'};
 /* ---------- machines: parts posed by their rig ---------- */
-function machineOf(name, vals, noW){
+function machineOf(name, vals, noW, hide){
   const P=MC.models[name], R=MC.rig[name], col=colourer(MC.palette,{BODY:MC.paint[name]}), D=Math.PI/180, groups={}, root=new THREE.Group(); vals=vals||{};
-  for (const k in R){ const r=R[k], par=r.parent?R[r.parent].pivot:[0,0,0], outer=new THREE.Group(), inner=new THREE.Group();
+  for (const k in R){ if (hide&&hide.indexOf(k)>=0) continue; const r=R[k], par=r.parent?R[r.parent].pivot:[0,0,0], outer=new THREE.Group(), inner=new THREE.Group();
     outer.position.set(r.pivot[0]-par[0],r.pivot[1]-par[1],r.pivot[2]-par[2]); if (r.fixed) outer.rotation.set(r.fixed[0]*D,r.fixed[1]*D,r.fixed[2]*D); outer.add(inner);
     const v=(k in vals)?vals[k]:(r.rest||0);
     if (r.turn){ const a=r.turn; inner.rotation.set(a[0]*v*D,a[1]*v*D,a[2]*v*D); }
     if (r.slide){ const a=r.slide; inner.position.set(a[0]*v,a[1]*v,a[2]*v); }
     const ps=(P[k]||[]).map(q=>Object.assign({},q,{p:[q.p[0]-r.pivot[0],q.p[1]-r.pivot[1],q.p[2]-r.pivot[2]]})); if (ps.length) inner.add(mesh(ps,col));
     groups[k]={outer,inner}; }
-  for (const k in R){ const r=R[k]; (r.parent?groups[r.parent].inner:root).add(groups[k].outer); }
+  for (const k in R){ if(!groups[k]) continue; const r=R[k]; (r.parent?(groups[r.parent]||{inner:root}).inner:root).add(groups[k].outer); }
   if(!noW) for (const [i,w] of (MC.wheels[name]||[]).entries()){ const wm=mesh(P.wheel,col); wm.position.set(...w); root.add(wm); }
   return root;
 }
@@ -514,6 +514,18 @@ const SCENES={
   kit_parts_side:{t:'Parts: sides and misc',d:'Running boards, sliders, flares, snorkels, stripes.',make(){ partSheet(PN(/^(running|rock|fender_flare|mud|snorkel|stripe_side)/),8,2.4,2.4,1.1); }},
   kit_parts_boat:{t:'Parts: boats',d:'Outboards, canopies, seats and gear.',make(){ partSheet(PN(/^(outboard|trolling|bimini|t_top|windscreen|cuddy|seat|cooler|fuel_tank_boat|storage|tackle|anchor|nav|spotlight|swim|flag|fender_buoys|rod|life|crab|net|sail)/).filter(n=>!/_prop$/.test(n)),8,2.9,3,1.1); }},
   kit_parts_bike:{t:'Parts: bikes',d:'Baskets, racks, panniers, lamps.',make(){ partSheet(PN(/^(bike|panniers|child|kickstand|moto|saddle|crash|quad)/),8,1.6,1.6,0.9); }},
+  dig_machines:{t:'Digging machines',d:'Excavator in its dig pose (solved from the dig table), mini excavator, wheel loader with a heaped bucket, bulldozer pushing a pile, dump truck loaded, spoil heaps and a rubble heap.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(120,120,0xc9b89a);
+      const D=window.MACHINEDIG, cyc=D.cycle(MC,'excavator',{d:7,depth:1}); const f=cyc[2];
+      const pit=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.05,2.6),new THREE.MeshLambertMaterial({color:0x3e2c20})); pit.position.set(-9,0.03,7); scene.add(pit);
+      const ex=machineOf('excavator',{boom:f.boom,stick:f.stick,bucket:f.bucket,house:0},false,['bucket_load']); ex.position.set(-9,0,0); scene.add(ex);
+      const ex2=machineOf('excavator',{boom:cyc[4].boom,stick:cyc[4].stick,bucket:cyc[4].bucket,house:cyc[4].house||0}); ex2.position.set(-1,0,0); ex2.rotation.y=0.0; scene.add(ex2);
+      const mn=machineOf('mini_excavator',{boom:-20,stick:30,bucket:20},false); mn.position.set(8,0,0); scene.add(mn);
+      const wl=machineOf('wheel_loader',{arm:20,bucket:45}); wl.position.set(-8,0,-12); wl.rotation.y=0.6; scene.add(wl);
+      const bd=machineOf('bulldozer',{blade:-4},false,['push_pile_small']); bd.position.set(0,0,-12); bd.rotation.y=0.4; scene.add(bd);
+      const dt=machineOf('dump_truck',{bed:0},false,['load_half']); dt.position.set(9,0,-12); dt.rotation.y=-0.4; scene.add(dt);
+      [['spoil_heap_s',-14,-5],['spoil_heap_m',-11,-17],['spoil_heap_l',-18,-9],['rubble_heap',15,-4]].forEach(a=>{ const g=machineOf(a[0]); g.position.set(a[1],0,a[2]); scene.add(g); });
+      cam.position.set(2,16,30); ctl.target.set(0,1.5,-3); }},
   veh_trucks:{t:'Trucks close up',d:'Audit: dump truck, mixer, garbage, fire.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,50,0xd8d2c6);
       ['dump_truck','cement_mixer','garbage_truck','fire_truck'].forEach((n,i)=>at(machineOf(n),(i%2)*11-5.5,0,-Math.floor(i/2)*11,0.7)); cam.position.set(14,8,10); ctl.target.set(0,1.2,-5.5); }},

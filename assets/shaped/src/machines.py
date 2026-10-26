@@ -14,7 +14,7 @@ under the vehicle. Each machine is
   beacons             the part that holds the flashing lights (glow pieces): flash it, and add a coloured light
 Kinds: excavator, bulldozer, dump_truck, cement_mixer, garbage_truck, fire_truck, ambulance, tow_truck, mobile_crane,
 bucket_truck, forklift, road_roller, street_sweeper, school_bus. BODY is a colour slot (each has a usual colour in 'paint')."""
-import math
+import math, os
 from kit import *
 
 PALETTE = {
@@ -361,6 +361,8 @@ def school_bus():
 school_bus()
 
 
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'machines_dig.py')).read())
+
 # ---- measurements the vehicle kit (vehiclekit.py) fits parts and wheels to; the truck_base trucks recorded theirs as they were built ----
 def spec(name, **k): SPEC.setdefault(name, {}).update(k)
 spec('ambulance', width=2.2, length=6.4, wheelR=0.42, wheelW=0.3, axles=[2.4, -2.0], track=0.84, archClear=0.14, ground=0.0, roof={'y': 3.0, 'z': -0.55, 'w': 2.0, 'd': 4.6}, nose=3.3, tail=-3.05, bumperY=0.675, rearY=0.5)
@@ -371,8 +373,8 @@ spec('road_roller', width=2.0, length=3.8, wheelR=0.55, wheelW=0.45, axles=[-1.2
 spec('excavator', width=3.0, length=5.0, ground=0.0, roof={'y': 2.25, 'z': -1.45, 'w': 2.3, 'd': 0.9})
 spec('bulldozer', width=2.8, length=4.5, ground=0.0, roof={'y': 3.28, 'z': -0.75, 'w': 1.7, 'd': 1.8})
 
-pack = {'name': 'machines', 'version': 1, 'units': 'metres', 'facing': '+Z', 'palette': PALETTE, 'paint': PAINT, 'darker': 0.78, 'about': __doc__.split('\n', 2)[2],
-        'models': M, 'rig': RIG, 'wheels': WHEELS, 'wheelSize': WR, 'steer': STEER, 'clips': CLIPS, 'beacons': BEACON, 'notes': NOTE, 'spec': SPEC,
+pack = {'name': 'machines', 'version': 2, 'units': 'metres', 'facing': '+Z', 'palette': PALETTE, 'paint': PAINT, 'darker': 0.78, 'about': __doc__.split('\n', 2)[2],
+        'models': M, 'rig': RIG, 'wheels': WHEELS, 'wheelSize': WR, 'steer': STEER, 'clips': CLIPS, 'beacons': BEACON, 'notes': NOTE, 'spec': SPEC, 'dig': DIG, 'digRule': DIG_RULE,
         'rule': ('To draw a machine: build each part with BODY = paint[name]; for every part from the body outwards, subtract its pivot, apply fixed then its value (turn about the axis by the '
                  'value in degrees, or slide along the direction by the value in metres), and carry its children. Draw parts.wheel at every wheels[name] position (spin about X by '
                  'distance driven / wheelSize[name][0]; steer the indices in steer[name] about Y up to 35 degrees). Flash the glow pieces of the beacons part (about 2 Hz) and add a light.')}

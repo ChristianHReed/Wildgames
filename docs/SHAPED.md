@@ -739,7 +739,7 @@ Vehicles are split as the game asked: `models.vehicles[name]` has `body`, `bonne
 | shop | `ammo_shelf` | 384 / 768 / 256 |
 | shop | `target_poster` | 204 / 344 / 120 |
 
-## held (`assets/shaped/held.js`, version 2)
+## held (`assets/shaped/held.js`, version 3)
 
 Weapons: the grip is at the origin, the long side runs along +Z with the business end at +Z, +Y is the weapon's "up"
 (the edge or face that leads a swing). Each weapon comes in three states: new, worn (condition under a quarter: bent,
@@ -751,7 +751,7 @@ chipped, taped) and broken (the stub left in the hand when it snaps).
 First-person arms (view space): the eye at the origin looking along +Z, +Y up, the viewer's right is -X (the same
 handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor wears on top: outer, else top).
 
-**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.212, 0.837, 0.026] on `hand_r`. Two-handed: `hockey_stick`, `garden_rake`, `broom_spear`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `crossbow` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`; long guns use `fpLong` with `models.fp.shoulder` when carried and `fpAim` with `models.fp.aim` when aiming.
+**Grip:** Weapon origin goes here (survivor pack model space, rest pose); weapon axes = survivor axes at rest, so it points forward (+Z) out of the fist. Position [-0.212, 0.837, 0.026] on `hand_r`. Two-handed: `shovel`, `hockey_stick`, `garden_rake`, `broom_spear`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `crossbow` (Two-handed weapons (hockey stick, garden rake, broom spear): same grip; the left hand reaches to the weapon at offhandAt metres along +Z when the clip allows.) **States:** new above a quarter condition, worn under a quarter, broken when it snaps (the stub stays in the hand until dropped). **First person:** the weapon goes at `fpWeapon` ([-0.2, -0.26, 0.45], rotation [-38, 10, 0] degrees) with the arms in `models.fp.hold`; long guns use `fpLong` with `models.fp.shoulder` when carried and `fpAim` with `models.fp.aim` when aiming.
 
 **Guns and bows** (version 2): `pistol`, `revolver`, `hunting_rifle`, `pump_shotgun`, `double_barrel`, `carbine`, `flare_gun`, `recurve_bow`, `crossbow`. Guns have new and worn (under a quarter condition: rust and tape) plus one reload state each (revolver open, hunting_rifle bolt_open, pump_shotgun pumped, double_barrel open, carbine empty, crossbow loaded, recurve_bow drawn) and a flash at INFO.muzzle. Long guns: right fist on the grip, left fist at offhandAt; first person uses fpLong when carried and fpAim when aiming. Casings from models.cases go to +X. Each gun's `info` gives its `muzzle`, the `ammo` it takes and how many it `holds`; long guns give `offhandAt`.
 
@@ -791,6 +791,10 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `weapons.axe.new` | 36 / 72 / 24 | overhead chop; blade up (+Y); length 0.75 m; ground: roll 0, lift 0.015 |
 | `weapons.axe.worn` | 63 / 127 / 55 |  |
 | `weapons.axe.broken` | 30 / 72 / 23 |  |
+| `weapons.shovel.new` | 108 / 216 / 68 | two-handed; blade at +Z, flat face up (+Y); for digging turn it blade-down (see heldTurn in the survivor pack and fpDig); length 1.4 m; ground: roll 90, lift 0.015 |
+| `weapons.shovel.worn` | 134 / 268 / 96 |  |
+| `weapons.shovel.broken` | 42 / 96 / 31 |  |
+| `weapons.shovel.loaded` | 132 / 268 / 84 |  |
 | `weapons.slingshot.new` | 82 / 164 / 52 | held upright, forks up (+Y), shot goes along +Z; drawn is the pulled pose; length 0.2 m; ground: roll 90, lift 0.012 |
 | `weapons.slingshot.drawn` | 82 / 164 / 52 |  |
 | `weapons.pistol.new` | 72 / 144 / 48 | barrel along +Z; flash sits at the muzzle (0, 0.03, 0.155), show it one or two frames, scale 0.8 to 1.3 at random; shell is ejected to +X; length 0.2 m; ground: roll 90, lift 0.015 |
@@ -887,7 +891,7 @@ handedness as every model). Colour slots SKIN and SLEEVE (whatever the survivor 
 | `fpReload.crossbow_cock.right` | 58 / 116 / 40 |  |
 | `fpReload.crossbow_cock.left` | 58 / 116 / 40 |  |
 
-**Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3), `sit` (1), `lean_wall` (1), `wave` (3), `carry_crate` (4), `carry_long` (1), `aim_long` (1), `carry_furniture` (4), `work_chop` (2), `fish` (2), `keep_watch` (2). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through). New in section 11: carry_long (a long gun held across the chest) and aim_long (shouldered); carry_furniture (arms out in front, 4 walking frames: put the carried piece at carryAt on spine_03); work_chop (2 frames, axe from held.js in the right hand, 0.9 s, looping, beside a stump or a log), fish (hold, cast; with parts.npc.fishing_rod), keep_watch (2 frames looking left and right with a hand shading the eyes, 3 s each). For carry_long and aim_long the gun sits on the usual grip and is then turned by heldTurn[clip] degrees about the grip (Euler XYZ as three.js: matrix Rx Ry Rz). heldTurn: {'carry_long': [0, 0, -90], 'aim_long': [52, 0, 0], 'work_chop': [0, 0, 0], 'fish': [0, 0, 0]}. carryAt: [0, 1.12, 0.42] on `spine_03` (centre of a carried furniture piece in model space at rest; it rides on spine_03. Scale small pieces 1, medium pieces stay 1 but sit 0.1 m lower.) Sling: a long gun not in use, slung across the back muzzle up over the left shoulder: put its grip here; its +Z (muzzle) points along forward and its +Y (top) along up; rot is the same turn as Euler degrees in the order three.js uses (XYZ: matrix Rx Ry Rz). At [0.0, 1.2, -0.15] on `spine_03`, rot [-90, 32, 0]. New npc pieces: `quiver` (worn on the back) and `fishing_rod`. Portraits of the six ready-made survivors for the survivors panel: `assets/ui/portraits/<look>.png` (256 by 256).
+**Survivor clips** (in `survivor.js`, `clips`): `jump` (3), `airborne` (1), `land` (2), `hurt` (2), `drink` (3), `bandage` (3), `pickup` (3), `attack_chop` (3), `attack_thrust` (3), `attack_swing` (3), `attack_dig` (3), `sit` (1), `lean_wall` (1), `wave` (3), `carry_crate` (4), `carry_long` (1), `aim_long` (1), `carry_furniture` (4), `work_chop` (2), `fish` (2), `keep_watch` (2). Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone's pivot on top of the rest pose, in the order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack's at rest: for a limb hanging down, negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through). attack_dig (new, 0.99): the shovel from held.js, two-handed on the usual grip, turned blade-down by heldTurn.attack_dig; 0.8 s: raise, drive the blade in with the right foot on it, lever up; loop it for a survivor digging, swap the shovel to W.shovel.loaded on the third frame and show a soil mound beside the hole. New in section 11: carry_long (a long gun held across the chest) and aim_long (shouldered); carry_furniture (arms out in front, 4 walking frames: put the carried piece at carryAt on spine_03); work_chop (2 frames, axe from held.js in the right hand, 0.9 s, looping, beside a stump or a log), fish (hold, cast; with parts.npc.fishing_rod), keep_watch (2 frames looking left and right with a hand shading the eyes, 3 s each). For carry_long and aim_long the gun sits on the usual grip and is then turned by heldTurn[clip] degrees about the grip (Euler XYZ as three.js: matrix Rx Ry Rz). heldTurn: {'attack_dig': [78, 0, 0], 'carry_long': [0, 0, -90], 'aim_long': [52, 0, 0], 'work_chop': [0, 0, 0], 'fish': [0, 0, 0]}. carryAt: [0, 1.12, 0.42] on `spine_03` (centre of a carried furniture piece in model space at rest; it rides on spine_03. Scale small pieces 1, medium pieces stay 1 but sit 0.1 m lower.) Sling: a long gun not in use, slung across the back muzzle up over the left shoulder: put its grip here; its +Z (muzzle) points along forward and its +Y (top) along up; rot is the same turn as Euler degrees in the order three.js uses (XYZ: matrix Rx Ry Rz). At [0.0, 1.2, -0.15] on `spine_03`, rot [-90, 32, 0]. New npc pieces: `quiver` (worn on the back) and `fishing_rod`. Portraits of the six ready-made survivors for the survivors panel: `assets/ui/portraits/<look>.png` (256 by 256).
 
 **NPC looks** (in `survivor.js`, `npcLooks`, version 7): `old_ranger` (wide hat, vest and a cane: the tall slow silhouette), `medic` (long pale coat, bun and a bag across the body), `kid_hoodie` (hood up, hands low: small and hunched), `farmer` (broad, dungarees and tall yellow boots), `drifter` (a wide poncho makes a triangle), `mechanic` (leather jacket and a crate carried in front). Six ready-made recruitable survivors. Build each from its creator choices as usual, add parts.worn[body][k] for every k in worn, and parts.npc[k] for every k in npc (wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.
 
@@ -1123,7 +1127,7 @@ Notes for each group are in notes[].
 | `rocks` | 35 | 16 to 288 |
 | `items` | 9 | 8 to 20 |
 
-## machines (`assets/shaped/machines.js`, version 1)
+## machines (`assets/shaped/machines.js`, version 2)
 
 Same rules as every pack: shaped pieces, flat colours, metres, Y up, the front faces +Z, the origin at the centre of the ground
 under the vehicle. Each machine is
@@ -1138,13 +1142,13 @@ under the vehicle. Each machine is
 Kinds: excavator, bulldozer, dump_truck, cement_mixer, garbage_truck, fire_truck, ambulance, tow_truck, mobile_crane,
 bucket_truck, forklift, road_roller, street_sweeper, school_bus. BODY is a colour slot (each has a usual colour in 'paint').
 
-Machines: `excavator`, `bulldozer`, `dump_truck`, `cement_mixer`, `garbage_truck`, `fire_truck`, `ambulance`, `tow_truck`, `mobile_crane`, `bucket_truck`, `forklift`, `road_roller`, `street_sweeper`, `school_bus`.
+Machines: `excavator`, `bulldozer`, `dump_truck`, `cement_mixer`, `garbage_truck`, `fire_truck`, `ambulance`, `tow_truck`, `mobile_crane`, `bucket_truck`, `forklift`, `road_roller`, `street_sweeper`, `school_bus`, `mini_excavator`, `wheel_loader`, `spoil_heap_s`, `spoil_heap_m`, `spoil_heap_l`, `rubble_heap`.
 
 | Group | Models | Triangles (smallest to largest) |
 | --- | --- | --- |
-| `excavator` | 1 | 746 to 746 |
-| `bulldozer` | 1 | 616 to 616 |
-| `dump_truck` | 1 | 700 to 700 |
+| `excavator` | 1 | 770 to 770 |
+| `bulldozer` | 1 | 664 to 664 |
+| `dump_truck` | 1 | 748 to 748 |
 | `cement_mixer` | 1 | 670 to 670 |
 | `garbage_truck` | 1 | 654 to 654 |
 | `fire_truck` | 1 | 1316 to 1316 |
@@ -1156,6 +1160,12 @@ Machines: `excavator`, `bulldozer`, `dump_truck`, `cement_mixer`, `garbage_truck
 | `road_roller` | 1 | 412 to 412 |
 | `street_sweeper` | 1 | 752 to 752 |
 | `school_bus` | 1 | 498 to 498 |
+| `mini_excavator` | 1 | 818 to 818 |
+| `wheel_loader` | 1 | 606 to 606 |
+| `spoil_heap_s` | 1 | 48 to 48 |
+| `spoil_heap_m` | 1 | 48 to 48 |
+| `spoil_heap_l` | 1 | 48 to 48 |
+| `rubble_heap` | 1 | 60 to 60 |
 
 ## animals (`assets/shaped/animals.js`, version 1)
 
@@ -1487,7 +1497,7 @@ Tyres: `road`, `all_terrain`, `mud_terrain`, `snow`, `snow_chains`, `slick`, `he
 
 Parts (191): `roof_bars_S`, `roof_bars_M`, `roof_bars_L`, `roof_bars_XL`, `roof_bars_XXL`, `roof_basket_M`, `roof_basket_L`, `roof_basket_XL`, `roof_box_S`, `roof_box_M`, `roof_box_L`, `roof_box_XL`, `roof_ladder_L`, `roof_ladder_XL`, `roof_ladder_XXL`, `roof_luggage_M`, `roof_luggage_L`, `roof_luggage_XL`, `roof_luggage_XXL`, `roof_tarp_M`, `roof_tarp_L`, `roof_tarp_XL`, `roof_tarp_XXL`, `roof_spare_tyres`, `roof_jerry_cans`, `roof_kayak`, `roof_canoe`, `roof_tent_L`, `roof_tent_XL`, `light_bar_white_S`, `light_bar_amber_S`, `light_bar_white_M`, `light_bar_amber_M`, `light_bar_emergency_M`, `light_bar_white_L`, `light_bar_amber_L`, `light_bar_emergency_L`, `beacon_amber`, `beacon_red`, `beacon_blue`, `taxi_sign`, `roof_spotlights`, `antenna_cb`, `radio_mast`, `stripes_roof_white`, `stripes_roof_black`, `hood_scoop_S`, `hood_scoop_M`, `hood_spare`, `bull_bar_S`, `bull_bar_lights_S`, `bull_bar_M`, `bull_bar_lights_M`, `bull_bar_L`, `bull_bar_lights_L`, `push_bar_S`, `push_bar_M`, `push_bar_L`, `winch_bumper_S`, `winch_bumper_M`, `winch_bumper_L`, `grille_guard_M`, `grille_guard_L`, `snow_plough_M`, `snow_plough_L`, `ram_bumper_M`, `ram_bumper_L`, `brush_guard_S`, `tow_hitch`, `rear_bumper_S`, `rear_bumper_M`, `rear_bumper_L`, `spare_door`, `rear_jerry_rack`, `salt_spreader`, `running_board_S`, `rock_slider_S`, `running_board_M`, `rock_slider_M`, `running_board_L`, `rock_slider_L`, `fender_flare_S`, `fender_flare_M`, `fender_flare_L`, `fender_flare_XL`, `mud_flap`, `snorkel_S`, `snorkel_M`, `snorkel_L`, `stripe_side_white`, `stripe_side_black`, `stripe_side_red`, `bed_cap_S`, `bed_cap_M`, `bed_cap_L`, `bed_cover_S`, `bed_cover_M`, `bed_cover_L`, `bed_rack_S`, `bed_rack_M`, `bed_rack_L`, `bed_rack_XL`, `bed_roll_bar`, `bed_roll_bar_lights`, `bed_toolbox`, `bed_tank`, `load_barrels_S`, `load_barrels_M`, `load_barrels_L`, `load_barrels_XL`, `load_crates_S`, `load_crates_M`, `load_crates_L`, `load_crates_XL`, `load_hay_S`, `load_hay_M`, `load_hay_L`, `load_hay_XL`, `load_firewood_S`, `load_firewood_M`, `load_firewood_L`, `load_firewood_XL`, `load_scrap_S`, `load_scrap_M`, `load_scrap_L`, `load_scrap_XL`, `load_tarp_S`, `load_tarp_M`, `load_tarp_L`, `load_tarp_XL`, `camper_shell`, `exhaust_stacks`, `headache_rack`, `beacon_bar_L`, `floodlight_mast`, `toolbox_side_S`, `toolbox_side_M`, `fuel_tank_side`, `roof_bars_C`, `roof_lights_C`, `outboard_S`, `outboard_S_prop`, `outboard_M`, `outboard_M_prop`, `outboard_L`, `outboard_L_prop`, `outboard_twin`, `outboard_twin_prop`, `trolling_motor`, `bimini_S`, `bimini_M`, `bimini_L`, `t_top`, `windscreen`, `cuddy_hatch`, `seat_helm`, `seat_bench`, `cooler`, `fuel_tank_boat`, `storage_crate`, `tackle_box`, `anchor_bow`, `nav_lights`, `spotlight_boat`, `swim_ladder`, `flag_pole`, `fender_buoys`, `rod_holders`, `life_ring`, `crab_pots`, `net_drum`, `sail_flag`, `bike_basket_front`, `bike_basket_rear`, `bike_rack_rear`, `bike_rack_front`, `panniers`, `bike_trunk`, `child_seat`, `bike_fender`, `bike_light_front`, `bike_light_rear`, `kickstand`, `bike_bottle`, `bike_bell`, `moto_screen`, `saddlebags`, `crash_bars`, `quad_rack_front`, `quad_rack_rear`, `quad_winch`
 
-Vehicles with mounts: 53. Presets: 21.
+Vehicles with mounts: 55. Presets: 21.
 
 Draw a vehicle in its own pack, then dress it. (1) Wheels: for each wheel point draw the chosen tyre scaled (w*wMul, r*rMul, r*rMul) and the rim scaled (w*wMul, r*rMul*rimFrac, ...) at the point (the left side turned half a turn about y so the rim face shows outward). If the new tyre radius is bigger than the stock radius, lift the whole body and every body-group part by lift = max(0, 2*(rNew - r) - archClear + 0.02), and put the wheel centres at y = rNew. (2) Parts: each part names a slot; the vehicle's mounts[slot] gives pos, w, d, anchor offsets (anchor front: z + d/2, rear: z - d/2). A part fits if part.w <= mount.w and part.d <= mount.d (pillar: part.hMax <= mount.hMax; arch: part.rCap >= tyre radius). One part per slot. Mirror parts are modelled for the right side: draw with scale.x = -1 for the left. Group 'bonnet' parts open with the bonnet; 'bed' parts tip with the bed. (3) Paint: override the vehicle's paintSlots colours; parts that use BODY take the body colour. assets/shaped/vehiclefit.js does all of this.
 

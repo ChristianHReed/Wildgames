@@ -27,7 +27,7 @@ CLIPS.update({
   'keep_watch': [F(upperarm_r=[-118, 0, 22], lowerarm_r=[-118, 0, 0], Head=[-6, 22, 0], spine_03=[0, 8, 0]),
                  F(upperarm_r=[-118, 0, 22], lowerarm_r=[-118, 0, 0], Head=[-6, -24, 0], spine_03=[0, -8, 0])],
 })
-HELD_TURN = {'carry_long': [0, 0, -90], 'aim_long': [52, 0, 0], 'work_chop': [0, 0, 0], 'fish': [0, 0, 0]}
+HELD_TURN = {'attack_dig': [78, 0, 0], 'carry_long': [0, 0, -90], 'aim_long': [52, 0, 0], 'work_chop': [0, 0, 0], 'fish': [0, 0, 0]}
 CLIP_RULE += (' New in section 11: carry_long (a long gun held across the chest) and aim_long (shouldered); carry_furniture (arms out in front, 4 walking frames: '
               'put the carried piece at carryAt on spine_03); work_chop (2 frames, axe from held.js in the right hand, 0.9 s, looping, beside a stump or a log), '
               'fish (hold, cast; with parts.npc.fishing_rod), keep_watch (2 frames looking left and right with a hand shading the eyes, 3 s each). '

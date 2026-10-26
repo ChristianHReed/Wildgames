@@ -402,13 +402,16 @@ CLIPS = {
   'attack_swing': [F(spine_03=[0, 58, 0], spine_01=[0, 12, 0], upperarm_r=[-70, 0, -48], lowerarm_r=[-46, 0, 0], upperarm_l=[-50, 0, 0], lowerarm_l=[-70, 0, 0], Head=[0, -40, 0]),
                    F(spine_03=[0, -30, 0], spine_01=[4, -8, 0], upperarm_r=[-84, 0, 6], lowerarm_r=[-10, 0, 0], upperarm_l=[-30, 0, 0], lowerarm_l=[-40, 0, 0], Head=[0, 18, 0], thigh_l=[-14, 0, 0], calf_l=[18, 0, 0]),
                    F(spine_03=[0, -62, 0], spine_01=[2, -14, 0], upperarm_r=[-60, 0, 40], lowerarm_r=[-30, 0, 0], Head=[0, 34, 0])],
+  'attack_dig': [F(upperarm_r=[-58, 0, -6], lowerarm_r=[-44, 0, 0], upperarm_l=[-48, 0, 8], lowerarm_l=[-62, 0, 0], spine_03=[-4, 0, 0], Head=[8, 0, 0]),
+                 F(upperarm_r=[-40, 0, -4], lowerarm_r=[-12, 0, 0], upperarm_l=[-34, 0, 6], lowerarm_l=[-18, 0, 0], spine_01=[20, 0, 0], spine_03=[14, 0, 0], thigh_r=[-30, 0, 0], calf_r=[38, 0, 0], thigh_l=[6, 0, 0], Head=[12, 0, 0]),
+                 F(upperarm_r=[-28, 0, -4], lowerarm_r=[-56, 0, 0], upperarm_l=[-70, 0, 8], lowerarm_l=[-30, 0, 0], spine_01=[26, 0, 0], spine_03=[16, 0, 0], thigh_l=[-10, 0, 0], calf_l=[14, 0, 0], Head=[10, 0, 0])],
 }
 CLIP_RULE = ('Each clip is a list of frames; a frame maps bone to [x, y, z] degrees, turned about that bone\'s pivot on top of the rest pose, in the '
              'order X, then Y, then Z, with children carried along (forward kinematics). Axes are the pack\'s at rest: for a limb hanging down, '
              'negative X swings it forward and positive X back; for the spine, positive X bends forward; positive Z swings the left arm out, '
              'negative Z the right arm out (both are mirrored already). "root" is not a bone: it moves the pelvis by [x, y, z] metres. '
              'Bones not listed stay at rest. Suggested speed: jump 0.25 s for all three frames, land 0.3 s, hurt 0.25 s, drink 1.4 s, '
-             'bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through).')
+             'bandage 2 s looping the middle frames, pickup 0.7 s, attacks 0.45 s (wind-up, strike, follow-through). attack_dig (new, 0.99): the shovel from held.js, two-handed on the usual grip, turned blade-down by heldTurn.attack_dig; 0.8 s: raise, drive the blade in with the right foot on it, lever up; loop it for a survivor digging, swap the shovel to W.shovel.loaded on the third frame and show a soil mound beside the hole.')
 
 # ================= ready-made NPC survivors (recruitable, 0.49): extra pieces and six looks with distinct silhouettes =================
 def npc_parts():

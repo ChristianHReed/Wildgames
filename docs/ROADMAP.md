@@ -364,3 +364,4 @@ These pieces are still plain coloured boxes. The Furniture Kit now covers the ki
 - Breakable buildings (Art 5 and 6): broken bays change pathfinding and sight, and in multiplayer the host has to share the damage with guests. Framed bays are far cheaper than the block plan, so whole streets can keep their detail.
 - The new look's night uses a few real lights; on phones keep it to about six lamps near you plus alien eyes.
 - Animation files are large. The 64 GB drive has room, but phones load the "lite" set, so animations may need a trimmed phone version.
+- [x] Content: digging kit (held shovel, attack_dig, dig sounds, soil table, pit pieces) and machines that dig: excavator, mini excavator, wheel loader, dozer, dump truck (docs/DIGGING.md)

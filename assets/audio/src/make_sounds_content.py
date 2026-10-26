@@ -91,6 +91,43 @@ def swing(i):
     d = jit(0.3, 0.4); n = noise(d); t = np.linspace(0, 1, len(n)); fc = 700 + 2500*np.sin(np.pi*t)
     return lp_var(hp(n, 400), fc, 256)*np.sin(np.pi*t)**1.5
 add('swing_air', *var(swing, 3))
+# ---- round 3 (26 October 2026): digging, by hand and by machine ----
+def grains(d, n, f0, f1, amp=1.0, spread=1.0):
+    """n tiny gritty ticks scattered over d seconds: a scatter of soil, sand or gravel"""
+    return mix(*[at(bp(noise(0.03), jit(f0, f1), jit(f1, f1*1.6))*env(0.03, 0.0004, 0.01)*jit(0.2, 1.0)*amp, jit(0.0, d*spread), d) for _ in range(n)])
+def dig_soil(i):
+    d = 0.45; return mix(thud(jit(70, 95), 45, d, 0.07)*0.7, lp(noise(d), 900)*env(d, 0.01, 0.14)*0.75, grains(d, 24, 1500, 3500, 0.4, 0.8))
+add('dig_soil', *var(dig_soil, 4))
+def dig_gravel(i):
+    d = 0.55; return mix(grains(d, 60, 2000, 5200, 0.55, 0.9), lp(noise(d), 1800)*env(d, 0.02, 0.2)*0.4, thud(jit(90, 120), 55, d, 0.04)*0.35)
+add('dig_gravel', *var(dig_gravel, 3))
+def dig_stone(i):
+    d = 0.4; f = jit(1800, 2600); return mix(modal([f, f*1.52, f*2.3], [0.04, 0.03, 0.02], d, [0.55, 0.35, 0.2]), hp(noise(d), 2500)*env(d, 0.0004, 0.03)*0.9, grains(d, 14, 3000, 6000, 0.4, 0.5), thud(jit(110, 150), 70, d, 0.03)*0.45)
+add('dig_stone', *var(dig_stone, 3))
+def fill_soil(i):
+    d = 0.6; return mix(thud(jit(60, 80), 38, d, 0.12)*0.8, lp(noise(d), 600)*env(d, 0.02, 0.25)*0.65, grains(d, 36, 1200, 3200, 0.35, 0.9))
+add('fill_soil', *var(fill_soil, 3))
+def soil_toss(i):
+    d = 0.5; n = noise(d); t = np.linspace(0, 1, len(n)); sw = lp_var(hp(n, 500), 900 + 1800*np.sin(np.pi*t), 256)*np.sin(np.pi*np.minimum(1, t*2))**1.2*0.35
+    return mix(sw, at(grains(0.3, 28, 1400, 3600, 0.4, 1.0), 0.2, d))
+add('soil_toss', *var(soil_toss, 3))
+def bucket_scoop(i):
+    d = jit(0.9, 1.1); n = noise(d); t = np.linspace(0, 1, len(n)); gr = lp_var(hp(n, 250), 500 + 1500*np.sin(np.pi*t), 256)*np.sin(np.pi*np.minimum(1, t*3))**1.2*0.8
+    return mix(gr, thud(jit(45, 60), 30, d, 0.15)*0.9, grains(d, 50, 1000, 3200, 0.35, 0.95), modal([jit(160, 210)], [0.3], d, [0.25]))
+add('bucket_scoop', *var(bucket_scoop, 3))
+def bucket_dump(i):
+    d = jit(1.1, 1.4); return mix(lp(noise(d), 700)*env(d, 0.05, 0.5)*0.8, grains(d, 80, 900, 3000, 0.4, 0.85), thud(jit(40, 55), 28, d, 0.2)*0.9, at(thud(jit(70, 90), 40, 0.4, 0.06)*0.6, 0.35, d))
+add('bucket_dump', *var(bucket_dump, 3))
+def hydraulic(i):
+    d = 1.0; t = t_(d); f = 130 + 70*np.sin(np.pi*np.linspace(0, 1, len(t))); ph = 2*np.pi*np.cumsum(f)/SR
+    return (0.5*np.sin(ph) + 0.25*np.sin(2*ph) + 0.1*np.sin(3.03*ph))*np.sin(np.pi*np.linspace(0, 1, len(t)))**0.6*0.7 + bp(noise(d), 600, 2200)*0.08
+add('hydraulic_whine', *var(hydraulic, 2))
+def rubble_drop(i):
+    d = jit(1.0, 1.3); return mix(thud(jit(45, 65), 28, d, 0.18)*1.0, hp(noise(d), 1200)*env(d, 0.001, 0.25)*0.5, *[at(modal([jit(500, 1600)], [0.04], 0.15, [0.4]) , jit(0.02, 0.6), d) for _ in range(8)], grains(d, 40, 1500, 5000, 0.5, 0.8))
+add('rubble_drop', *var(rubble_drop, 3))
+def blade_push(i):
+    d = jit(1.3, 1.6); n = noise(d); t = np.linspace(0, 1, len(n)); return mix(lp(n, 500)*env(d, 0.15, 0.4)*0.9, grains(d, 70, 900, 2800, 0.4, 0.95), thud(jit(40, 55), 28, d, 0.3)*0.5)
+add('blade_push', *var(blade_push, 2))
 if __name__ == '__main__':
     out = {k: [mp3(v) for v in vs] for k, vs in S.items()}
     P = os.path.join(OUT, 'sounds_content.js')

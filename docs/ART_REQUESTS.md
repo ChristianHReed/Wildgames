@@ -343,6 +343,9 @@ The game now has digging (`engine/dig.js`): the ground has soil in 0.5 m blocks,
 - **Soil and shovel icons** for the pack.
 - Later: a **ladder**, **plank cover** for a pit, and **spikes or stakes** for traps.
 
+## 17. Digging (delivered 26 October 2026)
+All items done: held shovel and `attack_dig`, dig sounds, soil table, pit pieces (ladders, plank covers, stake traps and more), and machines that dig. See `docs/DIGGING.md`.
+
 ## 17. Bikes, boats and parks (delivered 26 October 2026, content chat's own initiative)
 
 Three packs, version 1; reasons, tables and recipes in `docs/BIKES_BOATS_PARKS.md`; piece lists in `docs/SHAPED.md`. Previews: album scenes "Bikes: ...", "Boats: ...", "Parks and sports (1 to 6)".

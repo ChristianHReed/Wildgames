@@ -19,7 +19,7 @@ PALETTE = {
   'steel': '#8f969e', 'steelD': '#5b6168', 'iron': '#3c4046', 'ironD': '#1c1e22', 'blade': '#c8cdd2', 'red': '#9a3a30', 'blue': '#2e5a7a',
   'canopy': '#2f5d8c', 'canopyD': '#24496e', 'handle': '#6b4526', 'band': '#a8423a', 'leather': '#5a3a26', 'black': '#1f2024', 'polymer': '#2a2c30',
   'paper': '#e8dfc6', 'crease': '#c8bea4', 'road': '#b8a27a', 'water': '#8aa6b8', 'pencil': '#4a4a52', 'ink': '#3a3a46',
-  'brass': '#c8a24a', 'flash': '#ffd68a', 'flashCore': '#fff6d8', 'chip': '#e8dcc0', 'rust': '#8c4a2e', 'splinter': '#d9c09a', 'scuff': '#6a5a48'
+  'brass': '#c8a24a', 'flash': '#ffd68a', 'flashCore': '#fff6d8', 'chip': '#e8dcc0', 'rust': '#8c4a2e', 'splinter': '#d9c09a', 'scuff': '#6a5a48', 'soil': '#5a4030', 'soilD': '#3e2c20'
 }
 G = dict(glow=True)
 W = {}            # weapons[name][state]
@@ -128,6 +128,24 @@ def axe(state):
     return o
 three('axe', axe('new'), axe('worn'), axe('broken'), 0.75, roll=0, lift=0.015, note='overhead chop; blade up (+Y)')
 
+# ---------- shovel (digging, version 0.99): a round-point spade with a D grip; two-handed ----------
+def shovel(state, soil=False):
+    """grip (right fist) at the origin, the handle runs back to -Z (D grip at the end), the blade at +Z with its flat face up (+Y)"""
+    if state == 'broken':
+        return [zfr([[0, 0, -0.45, 0.014, 0.014], [0, 0, 0.08, 0.014, 0.014]], 'wood'), box([0, 0, -0.45], [0.13, 0.026, 0.026], 'wood')] + splinters(0.08, 0.028, 0.028, 'splinter')
+    bc = 'steel' if state == 'new' else 'rust'
+    o = [zfr([[0, 0, -0.45, 0.014, 0.014], [0, 0, 0.56, 0.015, 0.015]], 'wood'), box([0, 0, -0.45], [0.14, 0.026, 0.026], 'wood'),
+         *[box([sg*0.065, -0.02, -0.45], [0.02, 0.05, 0.026], 'wood') for sg in (1, -1)],
+         zfr([[0, 0, 0.46, 0.022, 0.022], [0, 0, 0.62, 0.024, 0.024]], 'steelD'),
+         hull([(-0.1, -0.006, 0.6), (0.1, -0.006, 0.6), (0.1, -0.006, 0.72), (-0.1, -0.006, 0.72), (-0.1, 0.006, 0.6), (0.1, 0.006, 0.6), (0.1, 0.006, 0.72), (-0.1, 0.006, 0.72)], bc),
+         hull([(-0.1, -0.006, 0.72), (0.1, -0.006, 0.72), (0.035, -0.006, 0.93), (-0.035, -0.006, 0.93), (-0.1, 0.006, 0.72), (0.1, 0.006, 0.72), (0.035, 0.006, 0.93), (-0.035, 0.006, 0.93)], bc),
+         box([0, -0.02, 0.6], [0.2, 0.014, 0.04], 'steelD'), box([0, 0.0, 0.76], [0.012, 0.012, 0.3], 'steelD')]
+    if state == 'worn': o += tape_bands((-0.15, 0.2), 0.016) + [flat([(-0.06, 0.0075, 0.7), (0.06, 0.0075, 0.7), (0.02, 0.0075, 0.88), (-0.02, 0.0075, 0.88)], 'scuff', (0, 1, 0))]
+    if soil: o += [hull([(-0.09, 0.006, 0.64), (0.09, 0.006, 0.64), (0.07, 0.006, 0.84), (-0.07, 0.006, 0.84), (-0.06, 0.07, 0.68), (0.06, 0.07, 0.68), (0.04, 0.05, 0.8), (-0.04, 0.05, 0.8)], 'soil'), box([0.03, 0.075, 0.72], [0.04, 0.03, 0.04], 'soilD')]
+    return o
+three('shovel', shovel('new'), shovel('worn'), shovel('broken'), 1.4, roll=90, lift=0.015, note='two-handed; blade at +Z, flat face up (+Y); for digging turn it blade-down (see heldTurn in the survivor pack and fpDig)')
+W['shovel']['loaded'] = shovel('new', True)
+
 # ---------- slingshot and pistol ----------
 def slingshot(drawn=False):
     o = [frustum([[0, -0.08, 0, 0.012, 0.014], [0, 0.0, 0, 0.012, 0.014]], 'wood'), frustum([[0, -0.08, 0, 0.016, 0.018], [0, -0.04, 0, 0.016, 0.018]], 'leather', caps=[True, False]),
@@ -206,12 +224,16 @@ FP['aim'] = {'right': arm([-0.24, -0.36, -0.06], [-0.17, -0.3, 0.08], [-0.05, -0
              'weapon': {'pos': [0.0, -0.112, 0.22], 'rot': [0, 0, 0], 'note': 'aiming down the sights: the carbine front post and rear notch line up just under the eye; the rifle scope line (y 0.086) sits 3 cm low, so raise the hunting rifle by 0.026; pistols and revolvers use the same pose with only the right arm'}}
 models = {'weapons': W, 'ammo': AMMO, 'cases': CASES, 'map': MAP, 'fp': {k: {'right': v['right'], 'left': v['left']} for k, v in FP.items()},
           'fpReload': {k: {'right': v['right'], 'left': v['left']} for k, v in RELOAD.items()}}
+FP_DIG = [  # first-person dig: weapon origin (the right fist) and turn, blade first; hold the swing at 'down' while the soil is lifted
+  {'at': 'raise', 'pos': [-0.18, -0.22, 0.42], 'rot': [-30, 8, 0], 'note': 'blade up and back, ready'},
+  {'at': 'down',  'pos': [-0.14, -0.5, 0.52], 'rot': [72, 4, 0], 'note': 'blade driven into the ground in front of the feet'},
+  {'at': 'lift',  'pos': [-0.2, -0.3, 0.46], 'rot': [38, 14, 0], 'note': 'lever up with a loaded blade (use W.shovel.loaded), then swing aside and drop'}]
 pack = {
-  'name': 'held', 'version': 2, 'style': 'same flat planes and few corners as every pack; worn weapons are taped, chipped, rusty or bent; broken ones end in splinters',
+  'name': 'held', 'version': 3, 'style': 'same flat planes and few corners as every pack; worn weapons are taped, chipped, rusty or bent; broken ones end in splinters',
   'units': 'metres', 'palette': PALETTE, 'slots': {'SKIN': 'survivor skin', 'SLEEVE': 'what the survivor wears on top'}, 'darker': 0.78,
   'about': __doc__.split('\n', 2)[2], 'flatModels': True, 'models': models, 'info': INFO, 'grip': GRIP, 'gripTwoHanded': GRIP_TWO,
-  'twoHanded': ['hockey_stick', 'garden_rake', 'broom_spear', 'hunting_rifle', 'pump_shotgun', 'double_barrel', 'carbine', 'crossbow'],
-  'fpWeapon': FP['hold']['weapon'], 'fpLong': FP['shoulder']['weapon'], 'fpAim': FP['aim']['weapon'],
+  'twoHanded': ['shovel', 'hockey_stick', 'garden_rake', 'broom_spear', 'hunting_rifle', 'pump_shotgun', 'double_barrel', 'carbine', 'crossbow'],
+  'fpWeapon': FP['hold']['weapon'], 'fpDig': FP_DIG, 'fpLong': FP['shoulder']['weapon'], 'fpAim': FP['aim']['weapon'],
   'guns': ['pistol', 'revolver', 'hunting_rifle', 'pump_shotgun', 'double_barrel', 'carbine', 'flare_gun', 'recurve_bow', 'crossbow'],
   'longGuns': ['hunting_rifle', 'pump_shotgun', 'double_barrel', 'carbine', 'crossbow'],
   'ammoInfo': AMMO_INFO, 'fpReload': {k: {kk: vv for kk, vv in v.items() if kk not in ('right', 'left')} for k, v in RELOAD.items()}, 'fpReloadRule': FP_RELOAD_RULE,
