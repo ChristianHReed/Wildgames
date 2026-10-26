@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, WO=S.woods, FA=S.farm, WS=S.waterside, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -549,6 +549,20 @@ const SCENES={
     make(){ packGrid(LD,'land',['riffle_4','pool_4','gravel_bar_s','gravel_bar_l','sand_bar','cut_bank_4','logjam','stream_boulder_s','stream_boulder_m','stream_boulder_l','beaver_dam','beaver_lodge','mudflat'],48,1.5,0,[0,24,22],[0,0,-4],{sunk:n=>['riffle_4','pool_4','beaver_dam','beaver_lodge'].includes(n)}); }},
   land_ground:{t:'Land: ground patches',d:'Flat patches that lie on the ground texture: a leaf pile, leaf litter, moss, pebbles, clover and wildflowers, twigs, an animal path and deer tracks.',
     make(){ packGrid(LD,'land',['patch_leaf_pile','patch_leaf_litter','patch_moss','patch_pebbles','patch_clover','patch_twigs','patch_game_trail','patch_deer_track'],26,1,0,[0,14,12],[0,0,-2]); }},
+  woods_trees:{t:'Woods: trees',d:'Spruce, woodland oaks (three shapes), winter and snow versions, a dead pine, redbud, dogwood, sapling, birch, hickory, walnut and sumac.',
+    make(){ packGrid(WO,'woods',['spruce','spruce_snow','oak_tall','oak_tall_b','oak_tall_c','oak_bare','oak_snow','pine_dead','pine_bare','pine_snow','redbud','dogwood','sapling','birch','hickory','walnut','sumac'],70,3,0,[0,30,34],[0,5,-8]); }},
+  woods_floor:{t:'Woods: floor and undergrowth',d:'Fallen tree over a path, root ball, snags, stump, logs, brush pile, boulders, thickets, berries, vines, ferns, wildflowers, mushrooms and fungus.',
+    make(){ packGrid(WO,'woods',['fallen_tree_path','root_ball','snag_a','snag_b','stump_big','log_hollow','log_mossy','brush_pile','boulder_moss','boulder_cluster','thicket_a','thicket_b','berry_bush','vines','fern_a','fern_b','mayapple','wildflower_a','wildflower_b','wildflower_c','mushrooms','toadstool_ring','bracket_fungus'],40,1.5,0,[0,22,22],[0,1,-4]); }},
+  farm_fields:{t:'Farm: crop tiles',d:'Four-metre tiles of rows: corn, wheat, soybeans, ploughed, stubble, harvested, pumpkins, sunflowers, summer on the top row and autumn colours beside them.',
+    make(){ packGrid(FA,'farm',['crop_corn','crop_corn_fall','crop_wheat','crop_wheat_fall','crop_soy','crop_soy_fall','crop_ploughed','crop_stubble','crop_harvested','crop_pumpkin','crop_sunflower'],32,0.3,0,[0,38,9],[0,0,-4]); }},
+  farm_yard:{t:'Farm: hay, fences, yard',d:'Bales, haystack, scarecrow, troughs, mailbox, an irrigation span, grain cart, wire and rail fences, gates, a cattle guard.',
+    make(){ packGrid(FA,'farm',['bale_round','bale_round_wrapped','bale_square','bale_stack','haystack','scarecrow','feed_trough','water_trough','mailbox','grain_cart','fence_wire_4','fence_wire_post','fence_wire_corner','fence_rail_4','fence_rail_gap','gate_field','gate_farm','cattle_guard'],46,1.5,0,[0,22,22],[0,1,-4]); }},
+  farm_buildings:{t:'Farm: buildings and machines',d:'Red and old barns, silo, grain bin, machine shed, coop, windmill, wellhouse, pond dock, tractor, hay wagon, flatbed.',
+    make(){ packGrid(FA,'farm',['barn_red','barn_old','silo','grain_bin','machine_shed','coop','windmill','well_house','pond_dock','tractor','hay_wagon','flatbed'],70,3,0,[0,36,40],[0,3,-12]); }},
+  water_shore:{t:'Waterside: docks, boats, plants',d:'Docks, ramp, boats, lily pads, cattails, reeds, duckweed, foam, ripples, a heron, stepping stones, a rope swing.',
+    make(){ packGrid(WS,'waterside',['dock_short','dock_long','dock_t','boat_ramp','rowboat','canoe','jon_boat','kayak','boat_wreck','lily_pads','lily_pads_bloom','cattails','cattails_small','reeds','duckweed','shore_foam','ripples','heron','stepping_stones','rope_swing'],44,2,0,[0,24,24],[0,1,-6]); }},
+  water_trail:{t:'Trail and park pieces',d:'Footbridge, picnic table, bench, fire ring, grill, trail markers, trailhead sign, trash bin, information kiosk.',
+    make(){ packGrid(WS,'waterside',['footbridge','picnic_table','bench','fire_ring','grill_post','trail_marker','trail_marker_arrow','trailhead_sign','trash_bin','info_kiosk'],30,1.5,0,[0,14,16],[0,1,-3]); }},
   plans:{t:'Floor plans',d:'Generated plans, floor 0 (and the first floor beside it where there is one): a two-storey house, a grocery, a church, an office, a hospital wing, a fire station and a pumping station. Colour by room, white strips are the walkways that stay clear of furniture, every door is a 1.0 m gap, and the checker has walked an agent through all of them.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const F=window.FLOORPLAN;
       const COL={hall:'#e6e0d0',stairs:'#c8b08a',bedroom:'#c8a0a0',bath:'#a0c0d0',wc:'#a0c0d0',store:'#b0a890',kitchen:'#d0c080',living:'#c0b080',living_k:'#c8b878',studio:'#c0a890',office:'#98a8c0',market:'#a0c090',stock:'#b0a890',nave:'#c8b0d0',vestry:'#b098b8',boardroom:'#90a0b8',openplan:'#a0b0c8',breakroom:'#c0b898',waiting:'#98c0b8',exam:'#a8d0c8',ward:'#b0d0d8',pharmacy:'#a0d0a8',firebay:'#d09080',bunkroom:'#c0a090',pumphouse:'#90b0c8',control:'#a0a8b0',plantroom:'#90a0b0',substation:'#a8a890',boilerhouse:'#c0a090',libhall:'#b0a088',classroom:'#d0c090',cafeteria:'#c8b080'};

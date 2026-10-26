@@ -164,6 +164,7 @@ Rewritten at 0.95.1: almost every step in the old list shipped (see "Done so far
 | Multiplayer gaps | Guests see the host's alien awareness and the stalker trail; car customisations and flags sync to other players; seeing other players' survivors | None |
 | Aliens | Hives (small, grown, burst) as a world feature, not only nests; base defence tuning against packs; remembering which door or hiding place you used, for single aliens | None |
 | The clinger's blood and trail decals; the carry-crate clip | Art already delivered, not yet used | None |
+| Landscape packs | Use `land`, `woods`, `farm` and `waterside` (docs/LANDSCAPE.md has the placement rules): cut and fill beside roads that run through hills, creek riffles and pools, sinkholes, caves and springs on limestone, layered woods with dead wood, farm fields, fences and buildings, docks, boats, reeds and trail furniture. Ground has to be cut under the sunken pieces | Main chat, map chat |
 | Content chat's new pieces | Use the flora pack's separate far-away tree models in place of the baked pictures; wreck and burnt door versions for the truck; replace the nine synthesised sounds when the content chat has its own | Content chat |
 | Art 3, 4 and 6 | Loose items, ground tiles and broken building states, as far as not yet used (see the table below) | In the game |
 | Music | The base, day, night, chase and horde tracks are in; mixing and when each plays | You listening |

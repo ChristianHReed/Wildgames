@@ -1159,6 +1159,73 @@ How the game uses it, per structures[].k from the map file: bridge and overpass:
 | --- | --- | --- |
 | `structures` | 47 | 12 to 456 |
 
+## land (`assets/shaped/land.js`, version 1)
+
+logjams, beaver works) with the loose ground clutter of woods. Writes assets/shaped/land.js. Run: python3 assets/shaped/src/land.py
+
+Reading the pack (docs/LANDSCAPE.md has the reasons and the placement recipes):
+  * Pieces are modular. Anything that follows a road, creek or bluff is 4 m long along z and centred, and says which way it faces.
+  * Road-side pieces (cut_*, fill_*, rip_rap, ditch): the toe (the foot of the slope, next to the road shoulder or ditch) is at x = 0 and the ground rises toward +x;
+    z is along the road. Mirror with scale.x = -1 for the other side of the road. Heights are in the name (h4 = 4 m); scale y to the real height, x with it.
+  * Bluff and creek pieces: the water or the open side is toward -x, the rock or the bank toward +x.
+  * Stand-alone things (sinkholes, caves, springs, boulders, logjams) are centred on their middle and sit on y = 0; sinkholes and springs sink BELOW y = 0 (see h in info).
+  * Flat ground patches (`patch_*`) are decals: thin, lie on y = 0.02 and are for placing under or between things.
+Colour names are in the palette. Rock is limestone and dolomite grey to cream with darker bands, which is what Springfield's hills and bluffs are made of.
+
+Pieces: `cut_rock_h4`, `cut_rock_h8`, `cut_rock_h12`, `cut_soil_h3`, `cut_soil_h6`, `cut_mixed_h8`, `cut_rock_end`, `ditch_4`, `ditch_pipe_4`, `rockfall_fence_4`, `fill_bank_h3`, `fill_bank_h6`, `guardrail_4`, `rip_rap_4`, `ledge_s`, `ledge_m`, `ledge_l`, `outcrop_a`, `outcrop_b`, `boulder_field_a`, `boulder_field_b`, `bluff_h10`, `bluff_h5`, `talus_slope_4`, `overhang_shelter`, `natural_bridge`, `glade_patch`, `cairn`, `sinkhole_s`, `sinkhole_m`, `sinkhole_pond`, `swallet`, `cave_mouth_s`, `cave_mouth_l`, `spring_pool`, `spring_outflow_4`, `dry_hollow_4`, `riffle_4`, `pool_4`, `gravel_bar_s`, `gravel_bar_l`, `sand_bar`, `cut_bank_4`, `logjam`, `stream_boulder_s`, `stream_boulder_m`, `stream_boulder_l`, `beaver_dam`, `beaver_lodge`, `mudflat`, `patch_leaf_pile`, `patch_leaf_litter`, `patch_moss`, `patch_pebbles`, `patch_clover`, `patch_twigs`, `patch_game_trail`, `patch_deer_track`
+
+Roads through hills: where the ground beside a road is higher than the road by more than 1.5 m, lay cut_rock (limestone, where the ground is rocky or steeper than 1:1) or cut_soil along it, with ditch_4 at the toe, rockfall_fence_4 on benches taller than 8 m, and cut_rock_end where the cut dies out; scale y to the real height. Where the road is higher than the ground beside it by more than 1.5 m use fill_bank, with guardrail_4 on the road edge above 3 m. Creeks: on a straight reach alternate riffle_4 and pool_4, each about 6 channel widths long; put pool_4 and cut_bank_4 on the outside of a bend and gravel_bar on the inside; stream_boulder_s/m/l and logjam where the data has shoals; beaver_dam and beaver_lodge on slow lowland creeks. Hills: outcrop_a/b and ledge_* on slopes above about 25 degrees and on ridgelines; glade_patch with ledge_l and cedars on south and west facing hilltops; bluff on the outside of river bends. Karst: sinkhole_s/m (and _pond) in fields and woods on limestone, scattered in groups of a few; swallet where a small stream ends; cave_mouth in bluffs and hillsides; spring_pool with spring_outflow_4 at the head of a creek in a hollow; dry_hollow_4 for valleys with no stream. Ground: patch_* over the ground texture under woods, edges and trails.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `land` | 58 | 12 to 420 |
+
+## woods (`assets/shaped/woods.js`, version 1)
+
+models.woods.<name>  every piece stands on the ground at the origin, metres, true size (info[name].h), scale 1 is right.
+Trees: spruce, oak_tall (a woodland oak: tall, clear trunk, small high crown), sapling, pine_dead, oak_bare and pine_bare (winter), oak_snow and pine_snow (snow-laden), redbud, dogwood, hickory, walnut, sumac, birch.
+Understory and floor: fallen_tree_path (a trunk across a path, 4 m), root_ball, snag_a/b (dead standing trunks), stump_big, log_hollow, log_mossy, brush_pile, boulder_moss, boulder_cluster,
+ thicket_a/b (dense low shrub 2 m), berry_bush, vines (a hanging curtain for tree trunks), fern_a, mayapple, wildflower_a/b/c, mushrooms, toadstool_ring, bracket_fungus.
+Rule of use is in `rule`; the layers are canopy (oak_tall, hickory, walnut), understory (redbud, dogwood, sapling), shrub (thicket, sumac, berry_bush) and herb (ferns, flowers), plus dead wood.
+
+Pieces: `spruce`, `spruce_snow`, `oak_tall`, `oak_tall_b`, `oak_tall_c`, `oak_bare`, `oak_snow`, `pine_dead`, `pine_bare`, `pine_snow`, `redbud`, `dogwood`, `sapling`, `birch`, `hickory`, `walnut`, `sumac`, `fallen_tree_path`, `root_ball`, `snag_a`, `snag_b`, `stump_big`, `log_hollow`, `log_mossy`, `brush_pile`, `boulder_moss`, `boulder_cluster`, `thicket_a`, `thicket_b`, `berry_bush`, `vines`, `fern_a`, `fern_b`, `mayapple`, `wildflower_a`, `wildflower_b`, `wildflower_c`, `mushrooms`, `toadstool_ring`, `bracket_fungus`
+
+A wood is five layers, not one: canopy (oak_tall, hickory, walnut, spruce on cool slopes, pine on dry ridges, about 1 per 60 sq m), understory (redbud, dogwood, sapling, 1 per 25 sq m, in the gaps), shrubs (thicket_a/b, berry_bush, sumac, at clearings and edges), herbs (fern, mayapple, wildflower, mushrooms in damp spots) and dead wood (snag, fallen_tree_path, log_*, root_ball, brush_pile; 1 or 2 per 400 sq m, a log is nearly always near a snag or a root_ball). Cluster the herbs and shrubs; do not spread them evenly. Put vines on trunks at the woods edge. Edges are soft: tall trees, then understory, then shrubs, then field, over 10 to 15 m, with sumac in the fencerow. Pick a variant by hashing the position; use the _bare and _snow versions by season; birch near water and on cool slopes; walnut in bottomland.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `woods` | 40 | 30 to 414 |
+
+## farm (`assets/shaped/farm.js`, version 1)
+
+models.farm.<name>, metres, origin at the centre of the base, front facing +Z.
+Fields: crop_* are 4 x 4 m tiles of rows (corn, wheat, soy, ploughed, stubble, harvested, pumpkin, sunflower; <name>_fall is the autumn colour where it differs). Tile them; rows run along z.
+Hay and yard: bale_round, bale_square, bale_stack, haystack, scarecrow, feed_trough, water_trough, mailbox, pivot_span (an irrigation span), grain_cart.
+Fences: fence_wire_4, fence_wire_post, fence_wire_corner, fence_rail_4, fence_rail_gap, gate_field, gate_farm, cattle_guard. 4 m long along x, centre.
+Buildings: barn_red (open loft door, 12 x 16), barn_old (weathered, leaning), silo, grain_bin, machine_shed, coop, windmill, farmhouse_sign, well_house, pond_dock, tractor, hay_wagon, flatbed.
+Colour names are in the palette.
+
+Pieces: `crop_corn`, `crop_corn_fall`, `crop_wheat`, `crop_wheat_fall`, `crop_soy`, `crop_soy_fall`, `crop_ploughed`, `crop_stubble`, `crop_harvested`, `crop_pumpkin`, `crop_sunflower`, `bale_round`, `bale_round_wrapped`, `bale_square`, `bale_stack`, `haystack`, `scarecrow`, `feed_trough`, `water_trough`, `mailbox`, `pivot_span`, `grain_cart`, `fence_wire_4`, `fence_wire_post`, `fence_wire_corner`, `fence_rail_4`, `fence_rail_gap`, `gate_field`, `gate_farm`, `cattle_guard`, `barn_red`, `barn_old`, `silo`, `grain_bin`, `machine_shed`, `coop`, `windmill`, `well_house`, `pond_dock`, `tractor`, `hay_wagon`, `flatbed`
+
+A farm has a plan: the house and yard first, the barn and sheds beside the drive, the silo or grain bin by the barn, then fields in big blocks behind them with a fence around each and a gate where the drive or a track meets it. Fields: lay crop_* tiles in blocks of at least 4 x 8 tiles with the rows running the same way; mix crops by field, not by tile; use _fall in autumn and crop_stubble or crop_harvested after harvest and crop_ploughed in winter and spring. Scatter bale_round on harvested and stubble fields (2 to 6 per hectare), bale_stack beside the barn, a scarecrow in a garden or crop field. Fences run along field edges with a gate_field at each field corner and gate_farm at the drive; use fence_rail_gap for the broken ones. Water: a windmill or well_house in the yard, a water_trough in each pasture, a pond_dock on a pond. Put a mailbox at the end of the drive, a pivot_span on flat dry fields.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `farm` | 42 | 36 to 604 |
+
+## waterside (`assets/shaped/waterside.js`, version 1)
+
+models.waterside.<name>, metres, origin at the centre of the base, front facing +Z. Water level is y = 0: boats and plants float at it. Shore pieces say which way the water is.
+Colour names are in the palette.
+
+Pieces: `dock_short`, `dock_long`, `dock_t`, `boat_ramp`, `rowboat`, `canoe`, `jon_boat`, `kayak`, `boat_wreck`, `lily_pads`, `lily_pads_bloom`, `cattails`, `cattails_small`, `reeds`, `duckweed`, `shore_foam`, `ripples`, `heron`, `stepping_stones`, `rope_swing`, `footbridge`, `picnic_table`, `bench`, `fire_ring`, `grill_post`, `trail_marker`, `trail_marker_arrow`, `trailhead_sign`, `trash_bin`, `info_kiosk`
+
+Shores: at every shore line lay shore_foam where the water meets the bank, reeds and cattails in the shallows on the slow (inside) side of a bend, lily_pads and duckweed on ponds and slow water only, and a heron or two at the head of a pool. A dock, ramp or boat appears only where the data says so (leisure=marina, man_made=pier, a boat_ramp, a lake edge with a house or a park); rowboats, canoes and kayaks lie on the bank beside a dock or ramp, jon_boat on a lake. Trails (highway=path or footway in a park or woods): trail_marker every 150 to 300 m, trail_marker_arrow at forks, trailhead_sign and picnic_table at the start and at parks, bench at viewpoints and beside water, fire_ring at camps. footbridge where a path crosses a stream or gully; stepping_stones where a trail fords a creek. rope_swing on one big tree on a deep pool.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `waterside` | 30 | 20 to 420 |
+
 ## audio (`assets/audio/`, made in code)
 
 Sound effects and music for sections 9, 10.6 and 11.11, synthesised by `assets/audio/src/make_audio.py` (numpy, scipy and ffmpeg; no samples, nothing to license). Same form as `assets/sounds.js`: small mono MP3s stored as text so they load from a drive.
