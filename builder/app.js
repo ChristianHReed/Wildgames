@@ -238,13 +238,44 @@ $('exGame').addEventListener('click', async function(){
   } catch (e){ toast('Could not send it to the game: ' + e.message, 6); }
   b.disabled = false;
 });
+
+/* edits as their own small file: the ops the player made, by position, so they can be added on top of any build of the same place */
+async function allOps(proj){
+  var keys = await L.dbKeys('edits', proj + ':'), seen = new Set(), ops = [];
+  for (var i = 0; i < keys.length; i++) ((await L.dbGet('edits', keys[i])) || []).forEach(function(o){ if (o && o.id && !seen.has(o.id)){ seen.add(o.id); ops.push(o); } });
+  return ops;
+}
+$('exEdits').addEventListener('click', async function(){
+  if (!S.man) return;
+  try {
+    var ops = await allOps(S.proj); if (!ops.length){ toast('No edits yet. Change the map in 3D first (Edit).', 5); return; }
+    var R = S.man.region, doc = {kind:'afterstreet-edits', builder:L.VERSION, made:new Date().toISOString().slice(0, 10), region:{id:R.id, name:R.name, lat:R.lat, lon:R.lon, miles:R.miles}, ops:ops};
+    download(slug(R.name) + '-edits.asedit', new Blob([JSON.stringify(doc)], {type:'application/json'}));
+    toast('Edits file saved: ' + ops.length + ' changes.', 4);
+  } catch (e){ toast('Could not save the edits: ' + e.message, 6); }
+});
+$('openEdits').addEventListener('change', async function(){
+  var f = this.files[0]; this.value = ''; if (!f) return;
+  try {
+    if (!S.man) throw new Error('build or open a map first');
+    var doc = JSON.parse(await f.text()); if (!doc || doc.kind !== 'afterstreet-edits' || !Array.isArray(doc.ops)) throw new Error('that is not an edits file');
+    var R = S.man.region, have = new Set((await allOps(S.proj)).map(function(o){ return o.id; })), cl = Math.cos(R.lat*Math.PI/180), add = [], out = 0;
+    doc.ops.forEach(function(o){
+      if (!o || !o.id || typeof o.t !== 'string' || have.has(o.id)) return;
+      var lat = o.lat !== undefined ? o.lat : o.c && o.c[1], lon = o.lon !== undefined ? o.lon : o.c && o.c[0];
+      if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat - R.lat) > R.miles*1609/110540 + 0.01 || Math.abs(lon - R.lon) > R.miles*1609/(111320*cl) + 0.01){ out++; return; }
+      add.push(o); });
+    if (add.length) await L.editAdd(S.proj, R, add);
+    toast(add.length + ' changes added' + (out ? ', ' + out + ' fell outside this map and were left out' : '') + (add.length ? '. Open 3D to see them; the map file now includes them.' : '.'), 7);
+  } catch (e){ toast('Could not add the edits: ' + e.message, 6); }
+});
 /* opening a map file back into the builder */
 $('openAsmap').addEventListener('change', async function(){
   var f = this.files[0]; this.value = ''; if (!f) return;
   try {
     var z = await L.unzip(f), man = JSON.parse(await z.text('manifest.json') || 'null'); if (!man || !man.region) throw new Error('it has no map description');
     var proj = man.region.id; S.proj = proj; S.man = man; S.single = null;
-    await L.dbDel('squares', proj + ':');
+    await L.dbDel('squares', proj + ':'); await L.dbDel('edits', proj + ':');   /* the squares in a map file already hold the edits that were made, so none are kept to apply twice */
     var F = {ways:[], pois:[]}, seen = new Set(), names = z.names.filter(function(n){ return /^squares\/-?\d+_-?\d+\.json$/.test(n); });
     for (var i = 0; i < names.length; i++){
       var tx = await z.text(names[i]), ij = names[i].match(/(-?\d+)_(-?\d+)/); await L.dbPut('squares', proj + ':' + ij[1] + ':' + ij[2], tx);
