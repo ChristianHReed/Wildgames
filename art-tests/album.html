@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -134,6 +134,14 @@ function prop(cat, name){
   for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
   return g;
 }
+function packGrid(P, group, names, cols, pad, ground0, cpos, ctgt, opts){ opts=opts||{};
+  lights('day'); scene.background=new THREE.Color(opts.sky||0xdde6ea); scene.fog=null; const col=colourer(P.palette,{}), M=P.models[group], I=P.info||{};
+  const items=names.map(n=>{ const i=I[n]||{w:2,len:2}; return {n,w:Math.max(i.w||2,1)+pad,d:Math.max(i.len||2,1)+pad,iw:i.w||2,id:i.len||2}; });
+  let rows=[],cur=[],cw=0; items.forEach(it=>{ if(cw+it.w>cols&&cur.length){ rows.push(cur); cur=[]; cw=0; } cur.push(it); cw+=it.w; }); if(cur.length) rows.push(cur);
+  const holes=[], put=[]; let zz=0; rows.forEach(r=>{ const rd=Math.max(...r.map(i=>i.d)); const tw=r.reduce((a,i)=>a+i.w,0); let xx=-tw/2; r.forEach(it=>{ const cx=xx+it.w/2, cz=zz-rd/2; put.push([it.n,cx,cz]); if(opts.sunk&&opts.sunk(it.n)) holes.push([it.n,(I[it.n]&&I[it.n].h)||0]); xx+=it.w; }); zz-=rd; });
+  ground(400,400,opts.ground||0x6d7a4f);
+  put.forEach(([n,cx,cz])=>{ const g=mesh(M[n],col); const hh=holes.find(h=>h[0]===n); g.position.set(cx,hh?hh[1]:0,cz); if(opts.rot) g.rotation.y=opts.rot; scene.add(g); });
+  cam.position.set(...cpos); ctl.target.set(...ctgt); }
 function grid(list, cols, dx, dz, cpos, ctgt, gcol){
   lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,60,gcol||0xd8d2c6);
   list.forEach(([c,n],i)=>at(prop(c,n),(i%cols-(cols-1)/2)*dx,0,-Math.floor(i/cols)*dz,0)); cam.position.set(...cpos); ctl.target.set(...ctgt);
@@ -529,6 +537,18 @@ const SCENES={
       for(let i=0;i<3;i++) put('pier_deck',66,0.4,22+i*4,0); put('pier_end',66,0.4,36,0);
       put('breakwater_mound_h3',-48,0,40,0); put('breakwater_mound_h3',-48,0,44,0); put('retaining_wall_unit',-56,0,26,0,1.5); put('retaining_wall_unit',-56,0,30,0,1.5);
       cam.position.set(5,95,175); ctl.target.set(5,2,-15); }},
+  land_cuts:{t:'Land: road cuts',d:'Rock cuts 4, 8 and 12 m high with benches, strata bands, joints, rubble benches and a grass cap; the mixed rock-and-soil cut; soil cuts at 2:1; and a cut dying away at its end. Each is 4 m of road, so they lay end to end. Road side faces left.',
+    make(){ packGrid(LD,'land',['cut_rock_h4','cut_rock_h8','cut_rock_h12','cut_mixed_h8','cut_soil_h3','cut_soil_h6','cut_rock_end'],60,3,0,[0,26,24],[0,3,-6]); }},
+  land_roadside:{t:'Land: banks, ditches, bluffs',d:'Roadside ditches (plain and with a pipe), a rockfall fence, embankments 3 and 6 m, a guardrail, rip-rap; then a river bluff (10 and 5 m), the talus below it and a rock shelter.',
+    make(){ packGrid(LD,'land',['ditch_4','ditch_pipe_4','rockfall_fence_4','guardrail_4','rip_rap_4','fill_bank_h3','fill_bank_h6','bluff_h10','bluff_h5','talus_slope_4','overhang_shelter'],56,3,0,[0,26,24],[0,2,-6],{sunk:n=>n.startsWith('ditch')}); }},
+  land_rock:{t:'Land: ledges, outcrops, glades',d:'Stair-stepped limestone ledges (small, medium, large), outcrop clusters with moss and lichen, boulder fields, the natural bridge, a glade patch with prickly pear and coneflowers, a cairn.',
+    make(){ packGrid(LD,'land',['ledge_s','ledge_m','ledge_l','outcrop_a','outcrop_b','boulder_field_a','boulder_field_b','glade_patch','cairn','natural_bridge'],40,2,0,[0,20,22],[0,1,-3]); }},
+  land_karst:{t:'Land: sinkholes, caves, springs',d:'Karst: sinkholes (small, medium, holding water), a swallet where a stream disappears, two cave mouths with stalactites, a deep blue spring pool with its outflow, a dry hollow with chert cobbles.',
+    make(){ packGrid(LD,'land',['sinkhole_s','sinkhole_m','sinkhole_pond','swallet','cave_mouth_s','cave_mouth_l','spring_pool','spring_outflow_4','dry_hollow_4'],56,2,0,[0,34,26],[0,0,-5],{sunk:n=>/^(sinkhole|swallet|spring_pool|spring_outflow|dry_hollow)/.test(n)}); }},
+  land_creek:{t:'Land: creek details',d:'A riffle over gravel, a deep pool, gravel bars and a sand bar, an undercut bank with roots, a logjam, stream boulders, a beaver dam and lodge, a mud flat. Water sits at y = 0; the creek bed is cut below it.',
+    make(){ packGrid(LD,'land',['riffle_4','pool_4','gravel_bar_s','gravel_bar_l','sand_bar','cut_bank_4','logjam','stream_boulder_s','stream_boulder_m','stream_boulder_l','beaver_dam','beaver_lodge','mudflat'],48,1.5,0,[0,24,22],[0,0,-4],{sunk:n=>['riffle_4','pool_4','beaver_dam','beaver_lodge'].includes(n)}); }},
+  land_ground:{t:'Land: ground patches',d:'Flat patches that lie on the ground texture: a leaf pile, leaf litter, moss, pebbles, clover and wildflowers, twigs, an animal path and deer tracks.',
+    make(){ packGrid(LD,'land',['patch_leaf_pile','patch_leaf_litter','patch_moss','patch_pebbles','patch_clover','patch_twigs','patch_game_trail','patch_deer_track'],26,1,0,[0,14,12],[0,0,-2]); }},
   plans:{t:'Floor plans',d:'Generated plans, floor 0 (and the first floor beside it where there is one): a two-storey house, a grocery, a church, an office, a hospital wing, a fire station and a pumping station. Colour by room, white strips are the walkways that stay clear of furniture, every door is a 1.0 m gap, and the checker has walked an agent through all of them.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const F=window.FLOORPLAN;
       const COL={hall:'#e6e0d0',stairs:'#c8b08a',bedroom:'#c8a0a0',bath:'#a0c0d0',wc:'#a0c0d0',store:'#b0a890',kitchen:'#d0c080',living:'#c0b080',living_k:'#c8b878',studio:'#c0a890',office:'#98a8c0',market:'#a0c090',stock:'#b0a890',nave:'#c8b0d0',vestry:'#b098b8',boardroom:'#90a0b8',openplan:'#a0b0c8',breakroom:'#c0b898',waiting:'#98c0b8',exam:'#a8d0c8',ward:'#b0d0d8',pharmacy:'#a0d0a8',firebay:'#d09080',bunkroom:'#c0a090',pumphouse:'#90b0c8',control:'#a0a8b0',plantroom:'#90a0b0',substation:'#a8a890',boilerhouse:'#c0a090',libhall:'#b0a088',classroom:'#d0c090',cafeteria:'#c8b080'};
