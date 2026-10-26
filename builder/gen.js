@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.20.0';
+L.VERSION = '1.21.0';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp', 'waterway', 'bridge:support'];
@@ -358,38 +358,60 @@ L.fillGaps = function(R, loc, centreR){
   /* anchor stores: along main roads through towns, a store set back behind its car park, as retail strips are built in real life (docs/MAP_BUILDING_USES.md).
      Only where nothing is mapped, like the homes above. A big store every 1.5 to 3 km of town road, supermarkets and variety stores between. */
   var nAnchor = 0;
+  /* one store beside a road at (x, y), road direction (ux, uy): kind 'big', 'sup' or 'var'; true if it fitted on either side */
+  var siteStore = function(x, y, ux, uy, rw, kind, s1, s2, s3, site){
+    var vx = -uy, vy = ux, big = kind === 'big', sup = kind === 'sup', w = big ? 100 + h3(s1, s2, s3, 24)*30 : sup ? 50 + h3(s1, s2, s3, 24)*20 : 26 + h3(s1, s2, s3, 24)*8, d = big ? 60 + h3(s1, s2, s3, 25)*15 : sup ? 34 + h3(s1, s2, s3, 25)*8 : 20 + h3(s1, s2, s3, 25)*4;
+    var park = big ? 34 : sup ? 24 : 15;
+    for (var tr = 0; tr < 2; tr++){
+      var sd = (h3(s1, s2, s3, 26) < 0.5 ? 1 : -1)*(tr ? -1 : 1), off = rw + park + d/2 + 3, cx = x + vx*off*sd, cy = y + vy*off*sd, pc = rw + 3 + park/2, px = x + vx*pc*sd, py = y + vy*pc*sd;
+      if (landAt(cx, cy) === 1) continue;
+      var fp = rect(cx, cy, ux, uy, w, d), pfp = rect(px, py, ux, uy, w + 6, park - 1);
+      if (fits(fp, 3) && free(cx, cy, Math.hypot(w, d)/2, 6) && free(px, py, Math.min(w, park)/2, 1)){
+        var tg = big ? {building:'retail', shop:'supermarket', height:'9', 'building:levels':'1', 'asmb:use':'bigbox', 'asmb:label':'Supercentre'} :
+          sup ? {building:'retail', shop:'supermarket', height:'5', 'building:levels':'1', 'asmb:use':'supermarket', 'asmb:label':'Supermarket'} :
+          {building:'retail', shop:'variety_store', height:'4', 'building:levels':'1', 'asmb:use':'dollar_store', 'asmb:label':'Variety store'};
+        tg['asmb:site'] = site || 'road'; put(fp, tg);
+        var pl = []; for (var q = 0; q < 8; q += 2){ var ll = loc.ll(pfp[q], pfp[q + 1]); pl.push(Math.round(ll[0]*1e6)/1e6, Math.round(ll[1]*1e6)/1e6); } pl.push(pl[0], pl[1]);
+        R.ways.push({t:{amenity:'parking', parking:'surface', generated:'yes'}, c:pl, poly:true, src:'gen'}); occAdd(px, py, Math.min(w, park)/2);
+        nAnchor++; return true;
+      }
+    }
+    return false;
+  };
+  /* big stores and supermarkets sit at junctions of main roads, as in real life (traffic, visibility, room for a car park): find the places two main
+     roads meet (a vertex of one lying within 4 m of a vertex of another) and set the store back along one of the roads, clear of the crossing */
+  var JK = {}, jn = [];
+  roads.forEach(function(rd, ri){ var hw = rd.hw; if (hw !== 'primary' && hw !== 'secondary' && hw !== 'trunk' && hw !== 'tertiary') return;
+    for (var k = 0; k < rd.pts.length; k += 2){ var gx = Math.round(rd.pts[k]/4), gy = Math.round(rd.pts[k + 1]/4), key = gx + ',' + gy, o = JK[key];
+      if (o && o.ri !== ri && (hw !== 'tertiary' || o.hw !== 'tertiary') && (hw === 'primary' || hw === 'secondary' || o.hw === 'primary' || o.hw === 'secondary')){ if (!o.done){ o.done = 1; jn.push({x:rd.pts[k], y:rd.pts[k + 1], ri:ri, k:k}); } }
+      else if (!o) JK[key] = {ri:ri, hw:hw}; } });
+  var nJ = 0;
+  jn.forEach(function(j, n){
+    var rd = roads[j.ri], pts = rd.pts, rw = RW[rd.hw] || 8, tn = town(j.x, j.y); if (tn <= 300 || landAt(j.x, j.y) === 1) return;
+    var r0 = h3(n, 41), kind = tn > 650 && r0 < 0.45 ? 'big' : r0 < 0.8 ? 'sup' : null; if (!kind) return;
+    for (var dir = 0; dir < 2; dir++){
+      var k2 = j.k + (dir ? -2 : 2); if (k2 < 0 || k2 + 1 >= pts.length) continue;
+      var dx = pts[k2] - j.x, dy = pts[k2 + 1] - j.y, L = Math.hypot(dx, dy); if (L < 1) continue; var ux = dx/L, uy = dy/L, back = kind === 'big' ? 85 : 55;
+      if (L < back + 40) continue;   /* the road leaves the junction too soon to fit a store along it */
+      if (siteStore(j.x + ux*back, j.y + uy*back, ux, uy, rw, kind, n, dir, 42, 'junction')){ nJ++; return; }
+    }
+  });
+  /* variety stores (and a few more supermarkets) are still spread along town roads every 450 to 1350 m */
   roads.forEach(function(rd, ri){
     var hw = rd.hw; if (hw !== 'primary' && hw !== 'secondary') return;
     var pts = rd.pts, rw = RW[hw], acc = 0, next = 350 + h3(ri, 21)*700;
     for (var k = 0; k + 3 < pts.length; k += 2){
       var ax = pts[k], ay = pts[k + 1], bx2 = pts[k + 2], by = pts[k + 3], Lg = Math.hypot(bx2 - ax, by - ay); if (Lg < 1) continue;
-      var ux = (bx2 - ax)/Lg, uy = (by - ay)/Lg, vx = -uy, vy = ux, t = Math.max(0, next - acc);
+      var ux = (bx2 - ax)/Lg, uy = (by - ay)/Lg, t = Math.max(0, next - acc);
       while (t < Lg){
         var x = ax + ux*t, y = ay + uy*t, tn = town(x, y), ti = t | 0; next = 450 + h3(ri, k, ti, 22)*900;
-        if (tn > 300 && landAt(x, y) !== 1){
-          var r0 = h3(ri, k, ti, 23), big = tn > 650 && r0 < 0.3, sup = !big && r0 < 0.7, w = big ? 100 + h3(ri, k, ti, 24)*30 : sup ? 50 + h3(ri, k, ti, 24)*20 : 26 + h3(ri, k, ti, 24)*8, d = big ? 60 + h3(ri, k, ti, 25)*15 : sup ? 34 + h3(ri, k, ti, 25)*8 : 20 + h3(ri, k, ti, 25)*4;
-          var park = big ? 34 : sup ? 24 : 15, placed = false;
-          for (var tr = 0; tr < 2 && !placed; tr++){
-            var sd = (h3(ri, k, ti, 26) < 0.5 ? 1 : -1)*(tr ? -1 : 1), off = rw + park + d/2 + 3, cx = x + vx*off*sd, cy = y + vy*off*sd, pc = rw + 3 + park/2, px = x + vx*pc*sd, py = y + vy*pc*sd;
-            if (landAt(cx, cy) === 1) continue;
-            var fp = rect(cx, cy, ux, uy, w, d), pfp = rect(px, py, ux, uy, w + 6, park - 1);
-            if (fits(fp, 3) && free(cx, cy, Math.hypot(w, d)/2, 6) && free(px, py, Math.min(w, park)/2, 1)){
-              var tg = big ? {building:'retail', shop:'supermarket', height:'9', 'building:levels':'1', 'asmb:use':'bigbox', 'asmb:label':'Supercentre'} :
-                sup ? {building:'retail', shop:'supermarket', height:'5', 'building:levels':'1', 'asmb:use':'supermarket', 'asmb:label':'Supermarket'} :
-                {building:'retail', shop:'variety_store', height:'4', 'building:levels':'1', 'asmb:use':'dollar_store', 'asmb:label':'Variety store'};
-              put(fp, tg);
-              var pl = []; for (var q = 0; q < 8; q += 2){ var ll = loc.ll(pfp[q], pfp[q + 1]); pl.push(Math.round(ll[0]*1e6)/1e6, Math.round(ll[1]*1e6)/1e6); } pl.push(pl[0], pl[1]);
-              R.ways.push({t:{amenity:'parking', parking:'surface', generated:'yes'}, c:pl, poly:true, src:'gen'}); occAdd(px, py, Math.min(w, park)/2);
-              nAnchor++; placed = true;
-            }
-          }
-        }
+        if (tn > 300 && landAt(x, y) !== 1){ var r0 = h3(ri, k, ti, 23); siteStore(x, y, ux, uy, rw, r0 < 0.15 ? 'sup' : 'var', ri, k, ti); }
         t += next;
       }
       acc = 0; next = Math.max(0, t - Lg);
     }
   });
-  return {homes:nGap, farms:nFarm, ponds:nPond, anchors:nAnchor};
+  return {homes:nGap, farms:nFarm, ponds:nPond, anchors:nAnchor, junctions:nJ};
 };
 
 /* ---------------- the squares ---------------- */
