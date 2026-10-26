@@ -445,8 +445,14 @@ function clipHalf(poly, ax, val, less){
   var out = [], n = poly.length; for (var i = 0; i < n; i++){ var a = poly[i], b = poly[(i + 1) % n], ia = less ? a[ax] <= val : a[ax] >= val, ib = less ? b[ax] <= val : b[ax] >= val;
     if (ia) out.push(a); if (ia !== ib){ var t = (val - a[ax])/(b[ax] - a[ax]); out.push([a[0] + (b[0] - a[0])*t, a[1] + (b[1] - a[1])*t]); } } return out;
 }
+/* 0.111.0: shops, restaurants, clinics and yards that closed long ago (a stand-in until the map carries asmb:state): the lights stay off even when the town has power, and most shelves and drawers were emptied */
+function disused(b){
+  if (b.dis === undefined) b.dis = !!(b.cat && /^(shop|food|medical|industrial|civic)$/.test(b.cat) && b.id !== (window.world && world.safe) && hash(b.id, 31, 7) < 0.12);
+  return b.dis;
+}
 function genInterior(b){
   var A = genLevel(b, 0, null, 0, nFl(b)); if (A.unreach) A = genLevel(b, 0, null, 0, 1);
+  if (disused(b)) A.conts.forEach(function(c){ if (c.i !== undefined && hash(b.id, c.i, 33) < 0.6) b.got[c.i] = 1; });
   var I = {segs:A.segs, circs:A.circs, conts:A.conts, furn:A.furn, idoors:A.idoors, fixes:A.fixes, rooms:A.rooms, n:A.n, stairs:A.stairs, nl:A.nl, cn:A.cn, lv:[{segs:A.segs, circs:A.circs, iw:A.iw}]};
   if (!(A.stairs && A.stairs.length && A.nl >= 2)) I.nl = 1;
   I.gs = [upload(A.m)]; I.g = I.gs[0];

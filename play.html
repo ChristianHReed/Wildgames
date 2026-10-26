@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.110.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.111.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.110.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.111.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -780,7 +780,7 @@ function gridAt(x, y){ if (dayNum() < POWER_DAY) return true; var pl = world.edi
 function gridOn(){ if (dayNum() < POWER_DAY) return true; var pl = world.edits && world.edits.plant; if (!pl || pl.s < 3) return false; var L = subSites(); return !L.length || L.some(subFixed); }
 function waterOn(){ return dayNum() < WATER_DAY; }
 function genOf(b){ var G0 = world.edits && world.edits.gens; if (!b || !G0) return null; for (var i = 0; i < G0.length; i++) if (G0[i].b === b.id && G0[i].on && G0[i].fuel > 0) return G0[i]; return null; }
-function powered(b){ return !!b && (gridAt(b.cx, b.cy) || !!genOf(b) || cboxPower(b)); }
+function powered(b){ return !!b && !(typeof disused === 'function' && disused(b)) && (gridAt(b.cx, b.cy) || !!genOf(b) || cboxPower(b)); }
 function genText(g){
   var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', B = tch ? 'Wall' : 'B', mins = Math.round(g.fuel/GEN_CAN*60);
   var f = g.fuel > 0 ? ' (fuel for about ' + (mins >= 60 ? Math.round(mins/60*10)/10 + ' h' : mins + ' min') + ')' : ' (empty)';
@@ -2152,6 +2152,7 @@ function updateHud(){
   var cst = curStreet(), pba = addrOf(pb);
   el('wxStamp').textContent = (pba ? pba + ' \u00b7 ' : cst ? cst + ' \u00b7 ' : '') + (dark > 0.5 ? 'Night' : SEASONS[season()]) + ', ' + WNAME[wx.w].toLowerCase() + (gridOn() ? '' : waterOn() ? ' \u00b7 power out' : ' \u00b7 no power or water');
   el('dayLine').textContent = 'Day ' + (Math.floor(hrs/24) + 1) + '  ' + (hour < 10 ? '0' : '') + hour + ':' + (min < 10 ? '0' : '') + min;
+  if (P.inside && !P.inside.disSaid && typeof disused === 'function' && disused(P.inside)){ P.inside.disSaid = true; toast('Shut for a long time: dark, dusty, and most of it already taken.', 3.5); }
   el('stats').textContent = (P.crouch ? 'Crouching \u00b7 ' : '') + (inSafe(P.x, P.y, 0) ? zoneAt(P.x, P.y, 0).name + ': aliens cannot come in here' : pb && P.roof ? 'On the roof of ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) : pb && P.climbL ? 'On a ladder' : pb ? 'Inside ' + (pb.name ? pb.name + ', ' + kindLabel(pb) : kindLabel(pb)) + (world.edits.beds[charSlug()] && world.edits.beds[charSlug()].b === pb.id ? ' (your base)' : '') : '');
   el('tally').innerHTML = 'Searched ' + searched + ' of ' + world.total + '<br>Aliens ' + kills + ' \u00b7 Nests left ' + Object.keys(world.nests).length + (deaths ? ' \u00b7 Deaths ' + deaths : '') +
     (net.role ? '<br>Players ' + (net.role === 'host' ? net.peers.length + 1 : net.others.length + 1) + (net.role === 'guest' ? ' (visiting)' : '') : '');
@@ -2815,7 +2816,7 @@ function render(){
   var cAsp = W/H, tvB = Math.max(Math.tan(22.5*Math.PI/180), Math.min(Math.tan(50*Math.PI/180), Math.tan(CAMS.fov*Math.PI/360)/cAsp)), tvK = Math.min(Math.tan(50*Math.PI/180), tvB*(1 + 0.07*CAM.sprint*CAMS.fx*cVeh)); FOVT = tvK;
   var t = 1/tvK, nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   var near = fires.concat(flares, lamps.filter(function(l){ return l.life > 0; }), (world.edits.gens || []).filter(function(g){ return g.on && g.fuel > 0; }).map(function(g){ return {lamp:true, x:g.x, y:g.y, gen:true}; }), gridOn() && dark > 0.3 && world.slights ? world.slights.filter(function(l){ return Math.abs(l.x - P.x) < 70 && Math.abs(l.y - P.y) < 70; }) : [], dark > 0.3 ? eyeLights() : []).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
-  var sc = drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:FOVT}, {hour:hour0, wd:wd, fl:fl, wtype:wx.w, dark:dark, grid:gridOn(), season:season(), lightOn:lightOn() || !!(P.veh && P.veh.t && (carSt(P.veh).light || 0) >= 15 && dark > 0.3 && P.veh.fuel > 0), lights:near, now:now}), md = sc.md, sky = sc.sky;
+  var sc = drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:FOVT}, {hour:hour0, wd:wd, fl:fl, wtype:wx.w, dark:dark, grid:gridOn() && !(P.inside && typeof disused === 'function' && disused(P.inside)), season:season(), lightOn:lightOn() || !!(P.veh && P.veh.t && (carSt(P.veh).light || 0) >= 15 && dark > 0.3 && P.veh.fuel > 0), lights:near, now:now}), md = sc.md, sky = sc.sky;
   var vg = el('vig'); if (vg){ var vo = (md.vig*(P.inside ? 0.7 : 1)).toFixed(2); if (vg.style.opacity !== vo) vg.style.opacity = vo; }
   var m = new Mesh(), x, y, far = world.tg ? world.tg.min - 3 : 0;
   m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
