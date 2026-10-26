@@ -155,3 +155,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.101.0) In a car near a garage or petrol station press the shop button: pick mud tyres, alloy rims and a bull bar, roof bars, running boards. The car shows them, sits higher, and still drives. Reload: they stay. Mud tyres go a little slower on tarmac, faster in rain on grass.
 - [ ] (0.101.1) In the car shop take the bull bar off one car (choose none): it shows (in stock) in the list. Fit it to another car for free. Reload: the stock is still there.
 - [ ] (0.102.0) Swim to a boat on a lake or pond and press E. Move to steer: the boat follows your view, stays on the water, bobs, and a fast one leaves a wake. Press E to get out.
+- [ ] (0.102.1) Find a motorbike, moped or quad by a house door and press E. It is much faster than a bicycle, uses fuel (the toast shows the percent) and a fuel can refills it. Empty, it only crawls.

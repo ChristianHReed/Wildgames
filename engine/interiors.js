@@ -782,18 +782,18 @@ function spBike(name){
   if (BIKEM[name] !== undefined) return BIKEM[name]; BIKEM[name] = null;
   try { var S = window.SHAPED && SHAPED.bikes; if (!S || !S.models[name] || !SPON) return null; var P3 = S.models[name], col = spColour(S.palette, {BODY:S.paint[name]}, S.darker);
     var shift = function(M, px, py, pz){ for (var i = 0; i < M.n*3; i++){ M.p[i*3] -= pz; M.p[i*3+1] -= py; M.p[i*3+2] -= -px; } return M; };   /* the model's pivot (x right, y up, z forward) to the cars' frame (x forward, z right) */
-    var bp = S.rig[name].bars.pivot, cp = S.rig[name].crank.pivot, W = S.wheels[name], R = S.wheelSize[name][0];
-    BIKEM[name] = {B:spModel(P3.body, col, {car:true}), bars:shift(spModel(P3.bars, col, {car:true}), bp[0], bp[1], bp[2]), bp:[bp[2], bp[1], -bp[0]], crank:shift(spModel(P3.crank, col, {car:true}), cp[0], cp[1], cp[2]), cp:[cp[2], cp[1], -cp[0]], W:spModel(P3.wheel, col, {car:true}), wh:W.map(function(w, i){ return [w[2], w[1], -w[0], S.steer[name].indexOf(i) >= 0 ? 1 : 0]; }), R:R};
+    var bp = S.rig[name].bars.pivot, cp = S.rig[name].crank ? S.rig[name].crank.pivot : null, W = S.wheels[name], R = S.wheelSize[name][0];
+    BIKEM[name] = {B:spModel(P3.body, col, {car:true}), bars:shift(spModel(P3.bars, col, {car:true}), bp[0], bp[1], bp[2]), bp:[bp[2], bp[1], -bp[0]], crank:cp && P3.crank ? shift(spModel(P3.crank, col, {car:true}), cp[0], cp[1], cp[2]) : null, cp:cp ? [cp[2], cp[1], -cp[0]] : null, W:spModel(P3.wheel, col, {car:true}), wh:W.map(function(w, i){ return [w[2], w[1], -w[0], S.steer[name].indexOf(i) >= 0 ? 1 : 0]; }), R:R};
   } catch (er){ BIKEM[name] = null; }
   return BIKEM[name];
 }
 /* draws one parked or ridden bicycle; false when the pack is not loaded (the caller draws its plain boxes) */
 function spBikeDraw(m, v){
-  var name = BIKEK[Math.abs(hashStr(String(v.id))) % BIKEK.length], K = spBike(name); if (!K) return false;
+  var name = v.moto || BIKEK[Math.abs(hashStr(String(v.id))) % BIKEK.length], K = spBike(name); if (!K) return false;
   var st = v.steer || 0, sp = v.spin || 0, ws = 0.486/K.R;
   m.part(K.B, v.x, v.y, v.yaw, 0, 0, 0, 0, 0, 0);
   m.part(K.bars, v.x, v.y, v.yaw, 0, K.bp[0], K.bp[1], K.bp[2], 0, st);
-  m.part(K.crank, v.x, v.y, v.yaw, 0, K.cp[0], K.cp[1], K.cp[2], sp*0.4, 0);
+  if (K.crank) m.part(K.crank, v.x, v.y, v.yaw, 0, K.cp[0], K.cp[1], K.cp[2], sp*0.4, 0);
   K.wh.forEach(function(w){ m.part(K.W, v.x, v.y, v.yaw, 0, w[0], w[1], w[2], sp*ws, w[3] ? st : 0); });
   return true;
 }
