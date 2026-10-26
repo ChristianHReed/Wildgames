@@ -226,6 +226,8 @@ What testing showed:
 
 **Builder 1.9.0:** the line tool also draws **dams, weirs, piers, breakwaters and retaining walls** (tags `waterway=dam` with height 8, `waterway=weir`, `man_made=pier`, `man_made=breakwater`, `barrier=retaining_wall` height 3). They enter the square's `structures` list, so the game (0.97.x) draws them with the content chat's pieces; the bridge/tunnel choice hides for these types. Remove also takes away a line the player drew of these kinds. Tested in Node (dam and wall entries) and Chromium.
 
+**Builder 1.10.0:** a **Layers** button in the 3D view shows or hides buildings, roads and rail, water, and trees. It only changes what is drawn (the way list is filtered before the world is built, and the structures and holes lists are left out while a filter is on); nothing is deleted from the map or the edits, and the choice is remembered in the browser. Hiding buildings also leaves the game's own tree planting (which follows built-up land) with more trees; hiding trees removes only mapped trees. Aerial photo and props filters wait for those layers. Tested in Chromium: 16,864 buildings and 7,382 roads on the Springfield sample drop to 0 and 72 and come back.
+
 ## Versions
 
 | Version | Contents |

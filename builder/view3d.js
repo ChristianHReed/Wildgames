@@ -21,7 +21,8 @@ function makeOverlay(){
     '<button id="v3fly" class="sm on">Fly</button><button id="v3walk" class="sm alt">Walk</button>' +
     '<label class="v3lab">Time <input id="v3hour" type="range" min="0" max="24" step="0.25" value="10"><b id="v3hourV"></b></label>' +
     '<select id="v3sea"><option value="0">Spring</option><option value="1" selected>Summer</option><option value="2">Autumn</option><option value="3">Winter</option></select>' +
-    '<button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Edit</button><button id="v3help" class="sm alt">?</button></div>' +
+    '<button id="v3lay" class="sm alt">Layers</button><button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Edit</button><button id="v3help" class="sm alt">?</button></div>' +
+    '<div id="v3lays" class="hidden"><b>Show</b><div class="v3row" id="v3lt"></div><small>Hiding is for looking only: nothing is deleted from your map.</small></div>' +
     '<div id="v3tools" class="hidden"><b>Edit the map</b><div class="v3row" id="v3tt">' +
     '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="remove" class="sm alt">Remove</button></div>' +
     '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select></div>' +
@@ -52,6 +53,7 @@ function makeOverlay(){
     '#v3stick{position:absolute;left:24px;bottom:44px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.5);display:none;touch-action:none}' +
     '#v3stick i{position:absolute;left:40px;top:40px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.75)}' +
     '#v3ud{position:absolute;right:20px;bottom:44px;display:none;flex-direction:column;gap:12px}#v3ud button{width:56px;height:56px;font-size:20px;padding:0}' +
+    '#v3lays{position:absolute;right:12px;top:64px;width:210px;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:6px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}#v3lays small{font-size:11px;color:var(--soft)}' +
     '#v3tools{position:absolute;left:12px;top:64px;width:250px;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:6px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}' +
     '#v3tools.hidden{display:none}#v3tools label{display:flex;gap:6px;align-items:center}#v3tools label input{flex:1;min-width:0}.v3row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#v3tools small{color:#6b5f52;line-height:1.35}' +
     '.touch #v3stick{display:block}.touch #v3ud{display:flex}.touch.walk #v3ud{display:none}';
@@ -62,6 +64,10 @@ function makeOverlay(){
   $('v3hour').oninput = function(){ V3.env.hour = +this.value; hourTxt(); }; hourTxt();
   $('v3sea').onchange = function(){ V3.env.season = +this.value; };
   $('v3help').onclick = function(){ $('v3helpBox').classList.toggle('hidden'); };
+  LAYS.forEach(function(l){ var b = document.createElement('button'); b.className = 'sm ' + (hideL[l[0]] ? 'alt' : 'on'); b.textContent = l[1];
+    b.onclick = function(){ hideL[l[0]] = !hideL[l[0]]; this.className = 'sm ' + (hideL[l[0]] ? 'alt' : 'on'); try { localStorage.setItem('asmb:hide', JSON.stringify(hideL)); } catch (e) {} if (!busy) redraw(); };
+    $('v3lt').appendChild(b); });
+  $('v3lay').onclick = function(){ var h = $('v3lays').classList.toggle('hidden'); this.className = 'sm ' + (h ? 'alt' : 'on'); };
   $('v3str').onclick = function(){ showS = !showS; this.className = 'sm ' + (showS ? 'on' : 'alt'); if (showS){ loadStructs(); V3.note('Poles mark what was found: blue bridges, yellow overpasses, purple tunnels and underpasses, teal culverts, red dams, orange weirs, pink places to check. Short poles were worked out, tall ones are mapped.', 9); } };
   $('v3sculpt').onclick = function(){ sculpt = !sculpt; $('v3tools').classList.toggle('hidden', !sculpt); this.className = 'sm ' + (sculpt ? 'on' : 'alt'); if (sculpt){ if (mode !== 'fly') setMode('fly'); V3.note('Sculpt: tap the ground.', 3); refreshCount(); } };
   Array.prototype.forEach.call($('v3tt').children, function(b){ b.onclick = function(){ tool = b.getAttribute('data-t'); riv = []; toolUI(); Array.prototype.forEach.call($('v3tt').children, function(o){ o.className = 'sm ' + (o === b ? 'on' : 'alt'); }); }; });
@@ -131,13 +137,25 @@ async function open(o){   /* o: {proj, region:{id,name,lat,lon,dLat,dLon}, lat, 
 }
 function close(){ on = false; $('v3').classList.add('hidden'); document.body.style.overflow = ''; keysDown = {}; if (onClose) onClose(world && world.geo ? llOf(P.x, P.y) : null); }
 function llOf(x, y){ var g = world.geo; return [g.lon0 + x/g.kx, g.lat0 - y/g.ky]; }
+var LAYS = [['buildings', 'Buildings'], ['roads', 'Roads and rail'], ['water', 'Water'], ['trees', 'Trees']], hideL = {};
+try { hideL = JSON.parse(localStorage.getItem('asmb:hide') || '{}') || {}; } catch (e) { hideL = {}; }
+function layerFilter(raw){
+  var any = LAYS.some(function(l){ return hideL[l[0]]; }); if (!any) return;
+  raw.ways = raw.ways.filter(function(w){ var t = w.tags || {};
+    if (t.building || t['building:part']) return !hideL.buildings;
+    if (t.highway || t.railway) return !hideL.roads;
+    if (t.natural === 'water' || t.waterway || t.water || t.landuse === 'reservoir') return !hideL.water;
+    return true; });
+  if (hideL.trees) raw.pois = raw.pois.filter(function(p){ return !(p.tags && p.tags.natural === 'tree'); });
+  raw.structures = []; raw.holes = [];   /* these point at way numbers, which just changed */
+}
 async function enterAt(lat, lon, yaw, first){
   var R = cur.region, i = Math.floor((lon - R.lon)/R.dLon + 0.5), j = Math.floor((lat - R.lat)/R.dLat + 0.5);
   var text = await L3.squareText(cur.proj, i, j); cur.text = text; sList = null;
   if (!text){ V3.note('That part of the map has not been built (outside your area).', 4); return false; }
   if (first) V3.note('Building the 3D world for this square...', 30);
   await new Promise(function(r){ setTimeout(r, 30); });   /* let the note show before the heavy work */
-  var raw = parseText(text); raw.name = ''; raw.spawn = [lon, lat]; if (!raw.zone){ raw.zone = {w:R.lon + (i - 0.5)*R.dLon, e:R.lon + (i + 0.5)*R.dLon, s:R.lat + (j - 0.5)*R.dLat, n:R.lat + (j + 0.5)*R.dLat}; }
+  var raw = parseText(text); raw.name = ''; layerFilter(raw); raw.spawn = [lon, lat]; if (!raw.zone){ raw.zone = {w:R.lon + (i - 0.5)*R.dLon, e:R.lon + (i + 0.5)*R.dLon, s:R.lat + (j - 0.5)*R.dLat, n:R.lat + (j + 0.5)*R.dLat}; }
   inRun = false;
   buildWorld(raw, R.name + ' (' + (i >= 0 ? 'E' + i : 'W' + (-i)) + ' ' + (j >= 0 ? 'N' + j : 'S' + (-j)) + ')'); prep3D();
   /* the parts of the game's start-up that the drawing needs (play.html startRun), with nothing of the game's own rules */
