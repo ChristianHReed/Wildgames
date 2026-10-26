@@ -44,3 +44,10 @@ One zip with the pack folder, a `REFERENCE.md` of every property it contains, a 
 The game reads `assets/springfield/overview.js` for the whole-region big map. After every `tools/build_region.py` run, run `python3 tools/build_overview.py` as well. Wanted later: parks, woods and farmland polygons in the overview, and place names (towns) with their centre points.
 
 - **Bridges and overpasses (0.89).** The game now infers bridges from water crossings and motorway crossings. Real tags would be better: send `bridge`, `tunnel`, `layer` and the bridge's start and end points per road, and keep the road pieces whole across junction-free crossings so overpasses have room for their ramps.
+
+## Added 26 October 2026 (version 0.111.0): what the engine is waiting for
+The game side of roadmap steps 0.112 to 0.120 is ready to read these, but the shipped Springfield squares do not carry them yet. In order of value:
+- **Keep `sport`, `leisure=playground|pitch|swimming_pool|golf_course|track` and `leisure=park|garden` polygons** in `tools/build_region.py` (today only `leisure` of a few kinds survives and `sport` is dropped; the game finds no playgrounds or pitches). Used by 0.117 (playgrounds, courts, pools, golf).
+- **`asmb:use`, `asmb:area`, `asmb:floors`, `asmb:wall`, `asmb:frame`, `asmb:state`** on buildings that the builder has tagged (0.112 floor plans, 0.113 walls from the frame, 0.111 closed businesses; today closed businesses are a random one in eight).
+- **`bank`** entries on roads in hills (0.114), **`bend`** on creeks and **`karst`** areas (0.115), **`pier`**, **`ramp`**, **`mar`**, **`fe`** (0.107 and 0.118), farmland with `crop`, `produce`, `orchard` (0.116), **`asmb:prop`** points (0.120).
+Even a single test square with a few of each would let the engine side be built and checked before the whole region is rebuilt.

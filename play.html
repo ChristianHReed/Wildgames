@@ -431,7 +431,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.111.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.111.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -454,7 +454,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.111.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.111.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4184,14 +4184,14 @@ function machTick(dt, click){
       var depth = Math.min(G.maxDepth, -lo*DGS + 0.25);
       if (-lo*DGS >= G.maxDepth){ toast('That is as deep as this machine goes.', 2.5); return; }
       if (!D.canReach(S, v.mach, reach, depth)){ toast('Out of reach: look further down to dig closer.', 2); return; }
-      v.dg = dig = {t:0, T:v.mach === 'excavator' ? 6.5 : 5, reach:reach, depth:depth, tx:tx, ty:ty, sq:sq, sl0:g.sl, done:0, from:{boom:g.boom, stick:g.stick, bucket:g.bucket}};
+      if (sfxHas('hydraulic_whine')) sfx('hydraulic_whine', v.x, v.y, 0.7, 1); v.dg = dig = {t:0, T:v.mach === 'excavator' ? 6.5 : 5, reach:reach, depth:depth, tx:tx, ty:ty, sq:sq, sl0:g.sl, done:0, from:{boom:g.boom, stick:g.stick, bucket:g.bucket}};
     } else return;
   }
   dig.t += dt; var u = Math.min(1, dig.t/dig.T), lerp = function(a, b, k){ return a + (b - a)*Math.max(0, Math.min(1, k)); }, P0 = dig.from, dp = D.pose(S, v.mach, dig.reach, dig.depth), up = D.pose(S, v.mach, dig.reach, 0) || dp, dump = D.dumpPose(S, v.mach, Math.max(1.6, dig.reach - 0.5), 1.8) || dp, rest = D.dumpPose(S, v.mach, dig.reach, 1.5) || dp, tgt, k;
   if (u < 0.25){ k = u/0.25; tgt = {boom:lerp(P0.boom, dp.boom, k), stick:lerp(P0.stick, dp.stick, k), bucket:lerp(P0.bucket, dp.bucket, k)}; g.load = 0; }
   else if (u < 0.5){ k = (u - 0.25)/0.25; tgt = {boom:lerp(dp.boom, up.boom, k), stick:lerp(dp.stick, up.stick, k), bucket:lerp(dp.bucket, Math.min(60, dp.bucket + 55), k)}; if (u > 0.4 && !dig.done){ machScoop(v, dig, G); dig.done = 1; } }
   else if (u < 0.78){ k = (u - 0.5)/0.28; tgt = {boom:lerp(up.boom, dump.boom, k), stick:lerp(up.stick, dump.stick, k), bucket:lerp(Math.min(60, dp.bucket + 55), dump.bucket + 55, k)}; g.sl = dig.sl0 + 1.4*k; g.load = dig.done ? 1 : 0; }
-  else if (u < 0.88){ k = (u - 0.78)/0.1; tgt = {boom:dump.boom, stick:dump.stick, bucket:lerp(dump.bucket + 55, dump.bucket, k)}; g.load = k < 0.5 ? 1 : 0; if (k > 0.5 && dig.gain){ inv.soil = (inv.soil | 0) + dig.gain; feed('+' + dig.gain + ' soil', ITEMS.soil[1]); sfx(sfxHas('dig_soil') ? 'dig_soil' : 'pick', v.x, v.y, 0.8, 0.7); updateHud(); dig.gain = 0; } }
+  else if (u < 0.88){ k = (u - 0.78)/0.1; tgt = {boom:dump.boom, stick:dump.stick, bucket:lerp(dump.bucket + 55, dump.bucket, k)}; g.load = k < 0.5 ? 1 : 0; if (k > 0.5 && dig.gain){ inv.soil = (inv.soil | 0) + dig.gain; feed('+' + dig.gain + ' soil', ITEMS.soil[1]); sfx(sfxHas('bucket_dump') ? 'bucket_dump' : sfxHas('dig_soil') ? 'dig_soil' : 'pick', v.x, v.y, 0.9, 0.9); updateHud(); dig.gain = 0; } }
   else { k = (u - 0.88)/0.12; tgt = {boom:lerp(dump.boom, rest.boom, k), stick:lerp(dump.stick, rest.stick, k), bucket:lerp(dump.bucket, rest.bucket, k)}; g.sl = lerp(dig.sl0 + 1.4, dig.sl0, k); g.load = 0; }
   g.boom = tgt.boom; g.stick = tgt.stick; g.bucket = tgt.bucket;
   if (u >= 1) v.dg = null;
@@ -4199,7 +4199,7 @@ function machTick(dt, click){
 function machScoop(v, dig, G){
   var sq = dig.sq, out = [], i, n = 0, vv, order = []; for (i = 0; i < 8; i += 2) order.push([sq[i], sq[i + 1]]);
   for (i = 0; i < order.length && n < G.scoopBlocks; i++){ vv = dgVal(order[i][0], order[i][1]); if (vv <= DG_MIN) continue; out.push(order[i][0], order[i][1], vv - 1); n++; }
-  if (!out.length) return; doEdit({a:'dig', c:out}); dig.gain = n; makeNoise(v.x, v.y, 14); sfx(sfxHas('dig_soil') ? 'dig_soil' : 'pick', dig.tx, dig.ty, 0.9, 0.6);
+  if (!out.length) return; doEdit({a:'dig', c:out}); dig.gain = n; makeNoise(v.x, v.y, 14); sfx(sfxHas('bucket_scoop') ? 'bucket_scoop' : sfxHas('dig_soil') ? 'dig_soil' : 'pick', dig.tx, dig.ty, 1, 0.9);
 }
 /* 0.101.0: what the fitted tyres do on this ground. A stock road tyre is 1; a mud tyre on mud, or a snow tyre in snow, is a little faster, and a slick off the road is much slower */
 function tyreGrip(v){
