@@ -4,7 +4,7 @@
    The rules and where they come from are in docs/MAP_STRUCTURES.md. Classic script, installs into L (see inflate.js).
 
    Each entry of `structures`:  {k, w, lon, lat, len, l, src, ...}
-     k    what: bridge, tunnel, culvert, passage, ford, overpass, underpass (a tunnel below a road at ground level), dam, weir, lock, gate, fall, pier, breakwater, dyke, wall, bank, support, check
+     k    what: bridge, tunnel, culvert, passage, ford, overpass, underpass (a tunnel below a road at ground level), dam, weir, lock, gate, fall, pier, breakwater, dyke, wall, bank, support, bend, check
      w    index of the way in this square's `ways` (for an overpass, the way that goes over; `u` is the way that goes under)
      lon, lat  the middle of it;  len  metres along the way;  l  level (layer): 1 and up over, -1 and down under, 0 on the ground
      src  'osm' (mapped) or 'inferred' (worked out by these rules);  cl  metres of clearance the deck should have over what is under it
@@ -185,6 +185,22 @@ L.structures = function(box, sq, elev){
   /* the deepest rule about piers: a mapped bridge:support node near a bridge says it stands on piers */
   list.forEach(function(r){ if (r.k === 'support'){ for (var q = 0; q < list.length; q++){ var b = list[q]; if (b.k === 'bridge' && b.src === 'osm' && Math.hypot((b.lon - r.lon)*kx, (b.lat - r.lat)*ky) < 60){ b.piers = (b.piers || 0) + 1; break; } } } });
   list.forEach(function(r){ for (var k in r) if (r[k] === undefined) delete r[k]; });
+  /* ---- bends: where a stream or river turns sharply (30 degrees or more over 40 m), which side is the outside of the bend ('s':'left'|'right' looking
+     downstream, the way the line is drawn), so the game can put a pool and an undercut bank there and bars on the inside. Asked for by the content chat. ---- */
+  lines.forEach(function(wi){
+    var D = info[wi], wt = D.t.waterway; if (D.cls !== 'water' || D.lv !== 0 || D.t.tunnel || !(wt === 'stream' || wt === 'river' || wt === 'brook')) return;
+    var m = D.m, S = [], acc = 0, nx = 0, a;
+    for (a = 0; a + 3 < m.length; a += 2){ var dx = m[a + 2] - m[a], dy = m[a + 3] - m[a + 1], sl = Math.hypot(dx, dy); if (!sl) continue;
+      for (; nx <= acc + sl; nx += 10){ var u = (nx - acc)/sl; S.push({x:m[a] + dx*u, y:m[a + 1] + dy*u}); } acc += sl; }
+    if (S.length < 9) return;
+    var turn = [], best = null, last = -99;
+    for (var q = 0; q < S.length; q++){ var b0 = S[Math.max(0, q - 2)], c0 = S[q], d0 = S[Math.min(S.length - 1, q + 2)];
+      var h1 = Math.atan2(c0.y - b0.y, c0.x - b0.x), h2 = Math.atan2(d0.y - c0.y, d0.x - c0.x), da = h2 - h1; while (da > Math.PI) da -= 2*Math.PI; while (da < -Math.PI) da += 2*Math.PI;
+      turn.push(da*180/Math.PI); }
+    for (var q2 = 2; q2 < S.length - 2; q2++){ var tq = turn[q2]; if (Math.abs(tq) < 30) continue;
+      var isMax = true; for (var z = -3; z <= 3; z++){ var ti = turn[q2 + z]; if (ti !== undefined && Math.abs(ti) > Math.abs(tq) + 1e-9) isMax = false; }
+      if (isMax && q2 - last >= 6){ last = q2; push({k:'bend', w:wi, len:0, l:0, src:'inferred', s:tq > 0 ? 'right' : 'left', a:Math.round(Math.abs(tq))}, S[q2].x, S[q2].y); } }
+  });
   /* ---- cuts and fills: where a road or railway on the ground sits in a cutting (ground higher on both sides) or on an embankment (lower on both sides),
      read from the ground heights every 20 m. Asked for by the content chat (docs/LANDSCAPE.md) so the game can place cut_* and fill_* pieces. ---- */
   if (elev && elev.d && elev.cols > 1 && elev.rows > 1){

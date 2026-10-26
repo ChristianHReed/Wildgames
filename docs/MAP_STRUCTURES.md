@@ -120,3 +120,7 @@ The pieces for every kind in section 4 are in `assets/shaped/structures.js`, wit
 ## 8. Cuts and fills (builder 1.11.0)
 
 `bank` entries with `src:"inferred"` and `t` of `cut` or `fill` are worked out from the ground heights, not from tags. Ground 8 m either side of the road (6 m for rail) is compared with the ground at the centre every 20 m: both sides at least 1.5 m higher is a cut, both at least 1.5 m lower is a fill. `h` is the mean depth in metres; each entry covers up to 200 m of the way `w` around `lon`/`lat` (`len`). Mapped `embankment` and `cutting` tags still give `t:"embankment"` or `t:"cutting"` with `src:"osm"`. A road on a hillside with only one side higher is not listed (no piece for it yet).
+
+## 9. Creek bends (builder 1.12.0)
+
+`bend` entries: `{k:"bend", w, lon, lat, s, a, src:"inferred", len:0, l:0}` on streams, brooks and rivers (ground level, not culverts). The heading is compared over 20 m either side of each 10 m sample; a turn of 30 degrees or more that is the sharpest within 30 m, and at least 60 m from the last bend on that way, is listed. `s` is the **outside** of the bend, `left` or `right` looking in the direction the way is drawn (downstream for most mapped waterways), `a` the turn in degrees. Put pools, undercut banks and logjams on side `s`, bars and riffles on the other.

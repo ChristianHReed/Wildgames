@@ -171,3 +171,7 @@ This is about the coming **AfterStreet Maps Builder**, a companion app the user 
 ## Eleventh note (builder 1.8.0 to 1.11.0)
 
 For the main chat: no change needed to read these. (1) `structures` now also holds `bank` entries with `t:"cut"|"fill"`, `h` (depth, m), `len` up to 200 m, `src:"inferred"`, for roads and rail in cuttings or on embankments; the content chat's `land` pack (`cut_*`, `fill_*`) can be placed from them along way `w` around `lon`/`lat`. (2) The player can now draw roads, dams, weirs, piers, breakwaters and retaining walls in the builder; they are ordinary tagged ways (`asmb:made=yes`) plus `structures` entries, so game 0.97 draws them. (3) The 3D view loads `shaped/structures`. Content chat's other data wishes (creek bend side, karst flag, tree stand type) are not done yet: say which matters most.
+
+## Twelfth note (builder 1.12.0)
+
+For the main chat: `structures` now has `bend` entries for creeks (outside side `s`, turn `a`; see `docs/MAP_STRUCTURES.md` section 9) for the content chat's pool and undercut pieces. Squares also keep `leaf_type`, `leaf_cycle`, `genus`, `species`, `crop`, `produce`, `trees`, `orchard`, `karst`, `geological` tags when mapped, for choosing tree stands and crops. Nothing to change on the builder side to see these; they ride in the same `structures` list and `ways`.

@@ -230,6 +230,8 @@ What testing showed:
 
 **Builder 1.11.0:** road and rail **cuts and fills**, asked for by the content chat (`docs/LANDSCAPE.md`). `builder/structures.js` samples the ground every 20 m along roads (rank 4 and up) and railways on the ground, 8 m (rail 6 m) to each side of the centre line. Where both sides are at least 1.5 m higher it is a `cut`, where both are at least 1.5 m lower it is a `fill`. Runs of three samples or more (40 m) become `bank` entries `{k:"bank", t:"cut"|"fill", h:<mean depth, m>, len, w, src:"inferred"}`, split every 200 m. Ways already tagged `embankment` or `cutting` keep their mapped entry. Needs the elevation grid, so it is also worked out again after sculpting. Tested on a synthetic valley (cut and fill runs found, 200 m pieces); the Springfield core sample (gentle 10 m ground) produced none. Still not done from that note: creek bend side, karst flag, tree stand type.
 
+**Builder 1.12.0:** more of the content chat's data wishes. (1) **Creek bends:** `structures` gets `bend` entries `{k:"bend", w, s:"left"|"right", a:<degrees>, src:"inferred"}` where a stream, brook or river turns 30 degrees or more over 40 m; `s` is the outside of the bend looking along the line (so a pool goes there and bars on the other side). Tested on a sine-shaped stream and on the Springfield sample (140 bends in five squares). (2) **Tree stand tags** are kept: `leaf_type leaf_cycle genus species crop produce trees orchard karst geological boat sac_scale trail_visibility`, beside the `landuse`, `natural`, `leisure`, `waterway` and `man_made` the squares already carried, so the game can choose wood, scrub, orchard or crop from the polygon. A karst flag from geology data is still not possible (no source loaded).
+
 ## Versions
 
 | Version | Contents |
