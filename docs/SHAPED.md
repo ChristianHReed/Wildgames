@@ -1145,6 +1145,20 @@ The thirteen furniture pieces that replace the Furniture Kit, with the same name
 | --- | --- | --- |
 | `furniture` | 13 | 84 to 264 |
 
+## structures (`assets/shaped/structures.js`, version 1)
+
+Every piece is a modular length of 4 m (unless it says otherwise) that runs along +Z, centred on x = 0 and z = 0, so the game lays them end to end along the
+way and turns each by the way's bearing. DECK PIECES HAVE THEIR WALKING/DRIVING SURFACE AT y = 0: set y to the deck height the engine worked out. Pieces
+whose name ends _unit are one metre tall and are stretched in y only (shafts, walls); dam and mound profiles are modelled at the height in their name and
+may be scaled in y to the real height (their slopes stretch with them, which is right). Widths: path 3 m, road 7 m (two lanes), wide 14 m (a dual carriageway
+or four lanes), rail 4.8 m (one track). Colour names come from the palette (nothing uses slots), so concrete, steel, timber and earth are plain colours.
+
+How the game uses it, per structures[].k from the map file: bridge and overpass: for each 4 m of the way lay deck_<kind> (path, road, wide, rail by the way) at the deck height, with pier_cap_<kind> and pier_shaft_<kind>_unit (stretched down to the ground) every min(50 m, length/2) from the deck rule, abutment_<kind> at both ends where the deck leaves the ground, ramp_embankment_road_unit for an approach ramp; st picks the style: truss -> truss_road, arch -> arch_road_8 chained, suspension -> suspension_tower_road at both ends and suspension_hanger_road between, cable-stayed -> stay_pylon_road with deck_<kind> between, trestle and viaduct -> trestle_bent_unit with deck_<kind>, anything else deck_<kind>. tunnel: portal_<kind> at each end and tunnel_lining_<kind> between while the ground is cut; culvert: culvert_headwall_pipe or _box at each end and culvert_pipe_4m between; passage: passage_frame; ford: ford_slab; dam: dam_earth_h8 or dam_concrete_h8 (the _road variants when road is true) along the way scaled in y to h, dam_end_wall at the valley sides, spillway_h8 where the data says; weir: weir_step across the river; lock and gate: lock_gate_open or _closed; pier: pier_deck with pier_end; breakwater: breakwater_mound_h3; wall: retaining_wall_unit stretched to h.
+
+| Group | Models | Triangles (smallest to largest) |
+| --- | --- | --- |
+| `structures` | 47 | 12 to 456 |
+
 ## audio (`assets/audio/`, made in code)
 
 Sound effects and music for sections 9, 10.6 and 11.11, synthesised by `assets/audio/src/make_audio.py` (numpy, scipy and ffmpeg; no samples, nothing to license). Same form as `assets/sounds.js`: small mono MP3s stored as text so they load from a drive.

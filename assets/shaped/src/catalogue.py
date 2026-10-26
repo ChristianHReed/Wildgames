@@ -7,7 +7,7 @@ def load(n):
     return json.loads(s[s.index(k) + len(k):].rstrip().rstrip(';'))
 SV, AL, BU, PR, HE, FX, GR, WA, PW = load('survivor'), load('aliens'), load('buildings'), load('props'), load('held'), load('fx'), load('ground'), load('walls'), load('power')
 WD, MC, AN, IN = load('world'), load('machines'), load('animals'), load('interiors')
-FL, F2 = load('flora'), load('furniture2')
+FL, F2, ST = load('flora'), load('furniture2'), load('structures')
 f = lambda n: f'{n:,}'
 def row(st, key): t, v, w = st[key]; return f'{f(t)} / {f(v)} / {f(w)}'
 L = []
@@ -236,6 +236,13 @@ L.append(f'''
 
 {F2['about'].strip()}
 ''' + tri_table(F2))
+L.append(f'''
+## structures (`assets/shaped/structures.js`, version {ST['version']})
+
+{ST['about'].strip()}
+
+{ST['rule']}
+''' + tri_table(ST))
 _snd = open(os.path.join(ROOT, 'assets', 'audio', 'sounds_design.js')).read(); _keys = _re.findall(r'"([a-z0-9_]+)":\[', _snd)
 L.append("""
 ## audio (`assets/audio/`, made in code)

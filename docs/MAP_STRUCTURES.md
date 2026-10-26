@@ -112,3 +112,7 @@ The builder's 3D view uses the same engine, so everything the engine learns show
 - **Matching a bridge's name across ways** (Arnis joins parts within 200 m by name): not needed until decks are built per bridge.
 - **Editing structures in the builder** (add a bridge, remove one, change a layer): version 3 (roads and infrastructure) with these records as the starting point.
 - **Very large inferred structures** (levees, causeways over 160 m of water) are flagged for review, not built.
+
+## 7. Art for these (content chat, 26 October 2026)
+
+The pieces for every kind in section 4 are in `assets/shaped/structures.js`, with a recipe per `k` (which piece, where, stretched how) in `docs/SHAPED.md` under "structures" and in `docs/ART_REQUESTS.md` section 14. Deck pieces put the road surface at y = 0 so the engine only has to set the height it works out in section 5.

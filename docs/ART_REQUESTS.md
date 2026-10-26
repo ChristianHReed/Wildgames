@@ -303,3 +303,13 @@ All four jobs are in the game now and nothing third party is left except the sur
 
 ### Sounds, second round (26 October 2026, content chat)
 The nine sounds the game still made itself are now in `assets/audio/sounds_content.js` (same file, load after `sounds_design.js`). New key names, so nothing clashes with the game's own: `step_snow` (4 variations, a soft crunch), `hurt_body` (3), `plank_knock` (3), `stone_clack` (3), `tin_ping` (2), `creak_wood` (3, about 1.1 s), `latch_click` (2), `pick_up_item` (3), `swing_air` (3). Mapping from the game's old names: `step_snow`→`step_snow`, `hurt`→`hurt_body`, `plank`→`plank_knock`, `stone`→`stone_clack`, `tin`→`tin_ping`, `creak`→`creak_wood`, `latch`→`latch_click`, `pick`→`pick_up_item`, `swing`→`swing_air`. With these, `tools/synth_sounds.py` and its output in `assets/sounds.js` can go. Not covered by the request, still open on the game side: the far tree models (`flora.js` `far.*`) are ready to replace the baked tree pictures, and the pickup has no wreck state wired (its `pickup_wreck`/`pickup_burnt` door pieces exist).
+
+## 14. Structures (delivered 26 October 2026, for the map chat's `structures` records)
+
+`assets/shaped/structures.js` (47 pieces, 12 to 456 triangles, version 1; details and the kind-by-kind recipe in `docs/SHAPED.md`, "structures"). Made from `docs/MAP_STRUCTURES.md`, so each `structures[].k` has a piece:
+- **bridge, overpass, underpass:** `deck_path / deck_road / deck_wide / deck_rail` (4 m lengths, surface at y = 0, parapets or guards), `pier_cap_*` and `pier_shaft_*_unit` (stretched in y; 0.7 of the road width as the data says), `abutment_*`, `ramp_embankment_road_unit`; styles `truss_road`, `arch_road_8`, `suspension_tower_road` with `suspension_hanger_road`, `stay_pylon_road`, `trestle_bent_unit`.
+- **tunnel, passage:** `portal_road / rail / path` (dark bore, wing walls, facing +Z), `tunnel_lining_*`, `passage_frame`.
+- **culvert, ford:** `culvert_headwall_pipe`, `culvert_headwall_box`, `culvert_pipe_4m`, `ford_slab`.
+- **dam, weir, lock, gate:** `dam_earth_h8`, `dam_earth_road_h8`, `dam_concrete_h8`, `dam_concrete_road_h8` (scale y to `h`), `dam_end_wall`, `spillway_h8`, `weir_step`, `lock_gate_open / closed`.
+- **pier, breakwater, wall:** `pier_deck`, `pier_end`, `breakwater_mound_h3`, `retaining_wall_unit` (stretch to `h`).
+Conventions: metres, run along +Z, centred, deck surface at y = 0, `_unit` pieces are 1 m tall. Previews: album scene "Structures". Not made: the cables of a suspension bridge between the towers and the stays of a cable-stayed one (the engine draws them as lines from the tower tops; the notes give the heights), water surfaces and the far-away versions.

@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
@@ -37,7 +37,7 @@ window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 try { await window.packsReady; } catch(e){ document.getElementById('status').textContent=e.message; throw e; }
-const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, HE=S.held, FX=S.fx, GR=S.ground;
+const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
 const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
@@ -500,6 +500,35 @@ const SCENES={
       K.forEach((k,i)=>{ const g=mesh(F2.models.furniture[k],col); g.position.set((i%6-2.5)*2.1,0,-Math.floor(i/6)*3); scene.add(g); });
       const r=mesh(F2.models.furniture.k_rug,col); r.position.set(0,0,5); scene.add(r);
       cam.position.set(0,6,11); ctl.target.set(0,0.8,-1); }},
+  structures:{t:'Structures: bridges, tunnels, dams (map chat)',d:'Back: a beam bridge on piers with abutments, a truss, an arch, a suspension span and a trestle. Middle: a path bridge, a rail bridge, tunnel mouths for road, rail and path with a stretch of lining, culverts, a passage frame and a ford. Front: an earth dam, a concrete dam with a road, a spillway, a weir, a lock, a pier, a breakwater and a retaining wall.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; ground(400,260,0x6d7a4f); const col=colourer(ST.palette,{}), M=ST.models.structures;
+      const put=(n,x,y,z,ry,sy)=>{ const g=mesh(M[n],col); g.position.set(x,y||0,z||0); if(ry) g.rotation.y=ry; if(sy) g.scale.y=sy; scene.add(g); return g; };
+      const run=(kind,x,y,z0,n,ry)=>{ for(let i=0;i<n;i++){ const g=mesh(M['deck_'+kind],col); const c=Math.cos(ry||0), s=Math.sin(ry||0), d=z0+i*4+2; g.position.set(x+s*d,y,c*d); g.rotation.y=ry||0; scene.add(g);} };
+      // z runs along the bridge; bridges lie along x here (rotated 90 degrees)
+      const R=-Math.PI/2; const bridge=(zrow,kind,style)=>{ const W=7, y=7; put('abutment_'+kind,-22,y,zrow,R+Math.PI,1); };
+      // beam bridge on piers
+      const beam=(z)=>{ for(let i=0;i<10;i++){ const g=mesh(M.deck_road,col); g.position.set(-20+i*4+2,7,z); g.rotation.y=R; scene.add(g);} put('abutment_road',-23,7,z,R); put('abutment_road',23,7,z,-R);
+        [-10,2,14].forEach(x=>{ put('pier_cap_road',x,7,z,R); put('pier_shaft_road_unit',x,0,z,R,5.8); }); };
+      beam(-70);
+      // truss
+      for(let i=0;i<8;i++) put('truss_road',-16+i*4+2,4,-52,R); put('abutment_road',-18,4,-52,R); put('abutment_road',18,4,-52,-R);
+      // arch: two arch segments
+      put('arch_road_8',-4,7.7,-36,R); put('arch_road_8',4,7.7,-36,R);
+      // suspension: two towers, hangers
+      put('suspension_tower_road',-16,0,-18,R); put('suspension_tower_road',16,0,-18,R); for(let i=0;i<8;i++) put('suspension_hanger_road',-14+i*4,6,-18,R);
+      // trestle
+      for(let i=0;i<6;i++){ put('deck_road',-10+i*4,4,-2,R); if(i%2==0) put('trestle_bent_unit',-10+i*4,0,-2,R,3.5); }
+      // path and rail bridges
+      for(let i=0;i<4;i++){ put('deck_path',30+i*4,3,-60,R); put('deck_rail',30+i*4,3,-48,R); } [32,40].forEach(x=>{ put('pier_cap_path',x,3,-60,R); put('pier_shaft_path_unit',x,0,-60,R,2.4); put('pier_cap_rail',x,3,-48,R); put('pier_shaft_rail_unit',x,0,-48,R,2.4); });
+      // tunnels
+      ['road','rail','path'].forEach((k,i)=>{ const z=-34+i*14; put('portal_'+k,50,0,z,R+Math.PI); put('tunnel_lining_'+k,56,0,z,R); put('tunnel_lining_'+k,60,0,z,R); });
+      put('culvert_headwall_pipe',46,0,2,0); put('culvert_headwall_box',54,0,2,0); put('passage_frame',62,0,2,0); put('ford_slab',70,0,2,R);
+      // dams, water works
+      put('dam_earth_h8',-30,0,26,R); put('dam_concrete_road_h8',-6,0,26,R); put('spillway_h8',16,0,30,R); put('weir_step',30,0,26,R); put('weir_step',34,0,26,R);
+      put('lock_gate_closed',44,0,26,0); put('lock_gate_open',54,0,26,0);
+      for(let i=0;i<3;i++) put('pier_deck',66,0.4,22+i*4,0); put('pier_end',66,0.4,36,0);
+      put('breakwater_mound_h3',-48,0,40,0); put('breakwater_mound_h3',-48,0,44,0); put('retaining_wall_unit',-56,0,26,0,1.5); put('retaining_wall_unit',-56,0,30,0,1.5);
+      cam.position.set(5,95,175); ctl.target.set(5,2,-15); }},
   plans:{t:'Floor plans',d:'Generated plans, floor 0 (and the first floor beside it where there is one): a two-storey house, a grocery, a church, an office, a hospital wing, a fire station and a pumping station. Colour by room, white strips are the walkways that stay clear of furniture, every door is a 1.0 m gap, and the checker has walked an agent through all of them.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(160,160,0xd8d2c6); const F=window.FLOORPLAN;
       const COL={hall:'#e6e0d0',stairs:'#c8b08a',bedroom:'#c8a0a0',bath:'#a0c0d0',wc:'#a0c0d0',store:'#b0a890',kitchen:'#d0c080',living:'#c0b080',living_k:'#c8b878',studio:'#c0a890',office:'#98a8c0',market:'#a0c090',stock:'#b0a890',nave:'#c8b0d0',vestry:'#b098b8',boardroom:'#90a0b8',openplan:'#a0b0c8',breakroom:'#c0b898',waiting:'#98c0b8',exam:'#a8d0c8',ward:'#b0d0d8',pharmacy:'#a0d0a8',firebay:'#d09080',bunkroom:'#c0a090',pumphouse:'#90b0c8',control:'#a0a8b0',plantroom:'#90a0b0',substation:'#a8a890',boilerhouse:'#c0a090',libhall:'#b0a088',classroom:'#d0c090',cafeteria:'#c8b080'};
