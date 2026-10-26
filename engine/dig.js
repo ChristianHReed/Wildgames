@@ -41,7 +41,7 @@ function dgLoad(map){
   DGN_ON(); DG.mdirty = true;
 }
 /* the soil's colours by depth below the ground's own surface (metres): topsoil, subsoil, clay, then limestone with chert bands */
-var DG_LAYERS = [[0.5, [74, 55, 38]], [1.5, [108, 80, 54]], [3, [150, 108, 72]], [4.5, [150, 144, 128]], [99, [124, 120, 108]]];
+var DG_LAYERS = [[0.5, [90, 64, 48]], [1.5, [122, 90, 62]], [3, [154, 90, 58]], [4.5, [184, 122, 70]], [99, [170, 166, 152]]];   /* 0.104.0: the content chat's Pomme-series soil table: topsoil, subsoil, red cherty clay, gravelly clay, limestone */
 function dgLayer(depth, h){
   var c, i; for (i = 0; i < DG_LAYERS.length; i++) if (depth < DG_LAYERS[i][0]){ c = DG_LAYERS[i][1]; break; } if (!c) c = DG_LAYERS[DG_LAYERS.length - 1][1];
   var j = 1 + (h - 0.5)*0.14; return [Math.min(255, c[0]*j), Math.min(255, c[1]*j), Math.min(255, c[2]*j)];
