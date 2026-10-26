@@ -222,6 +222,8 @@ What testing showed:
 
 **Builder 1.8.0:** road drawing and road removal. New **Road** tool in the Edit panel: pick a type (motorway to footpath, bike path, railway), choose on the ground, bridge or tunnel, tap points along the line, then Finish. The road is stored as an edit (`t:"road"`, marked `asmb:made=yes`, `src=edit`) and baked into the square like other edits. **Remove** now also takes away the road or railway nearest the tap (within 7 m) when no tree or POI is there. After road edits the structures list for the square is worked out again, so a bridge drawn over a river appears in `structures` and the Structures overlay. Tested in Node (bridge detected over a river; removal) and in Chromium on the Springfield sample.
 
+**Builder 1.8.1:** the 3D view loads the game's `shaped/structures` art (game 0.97.0 draws bridges, overpasses, dams and the rest from the map's `structures` list), so structures show with their real pieces in the builder too.
+
 ## Versions
 
 | Version | Contents |
