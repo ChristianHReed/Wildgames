@@ -406,7 +406,11 @@ function bridgeBuild(g){
         });
         segs.push({x0:a.x, y0:a.y, x1:b.x, y1:b.y, h0:a.H, h1:b.H, hw:hw, e:e});
       }
-      if (sp.wet) for (i = 2; i < n - 1; i += 4){ var c = P[i], hb = hAt(c.x, c.y) - 1.5, hx = hw*0.92, ux = -c.ny, uy = c.nx, o = 0.55;
+      var SM = structModels(), pw = r.w >= 11 ? 'wide' : 'road';
+      if (sp.wet && SM['pier_cap_' + pw]){ var stp = Math.max(3, Math.round(Math.min(50, (gb - ga)/2)/3)); g.pl = null;
+        for (i = Math.min(stp, 2 + Math.floor((n - 3)/2)); i < n - 1; i += stp){ var c = P[i], hb = hAt(c.x, c.y) - 1.5, tx = c.ny, tz = -c.nx, sxk = r.w/(pw === 'wide' ? 14 : 7);
+          stPut(g, SM, 'pier_shaft_' + pw + '_unit', c.x, c.y, tx, tz, sxk, Math.max(0.5, c.H - 1.0 - hb), hb); stPut(g, SM, 'pier_cap_' + pw, c.x, c.y, tx, tz, sxk, 1, c.H); } }
+      else       if (sp.wet) for (i = 2; i < n - 1; i += 4){ var c = P[i], hb = hAt(c.x, c.y) - 1.5, hx = hw*0.92, ux = -c.ny, uy = c.nx, o = 0.55;
         var pc = function(sx, sy){ return [c.x + c.nx*hx*sx + ux*o*sy, c.y + c.ny*hx*sx + uy*o*sy]; }, p1 = pc(1, 1), p2 = pc(1, -1), p3 = pc(-1, -1), p4 = pc(-1, 1), col = [142, 140, 134];
         wall(p1[0], p1[1], p2[0], p2[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p2[0], p2[1], p3[0], p3[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p3[0], p3[1], p4[0], p4[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p4[0], p4[1], p1[0], p1[1], hb, c.H - 0.7, hb, c.H - 0.7, col); }
     }); });
@@ -421,11 +425,13 @@ function structModels(){
   if (STM) return STM; STM = {}; var S = window.SHAPED && SHAPED.structures; if (!S || typeof spModel !== 'function') return STM;
   var col = spColour(S.palette), m = S.models.structures; for (var k in m) STM[k] = spModel(m[k], col); return STM;
 }
+/* one pack piece into the mesh: along (dx, dz), x scaled by sx, y by sy, standing at height y0 */
+function stPut(g, M, nm, x, z, dx, dz, sx, sy, y0){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
+  for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sy; q[j*3 + 2] = z + sn*lx + cs*lz; }
+    g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } return true; }
 function structBuild(g){
   var w = world, L = w.structures, M = structModels(); if (!L || !L.length || !M.dam_end_wall) return; var n = 0;
-  var put = function(nm, x, z, dx, dz, sy){ var m = M[nm]; if (!m) return; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), y0 = hAt(x, z), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
-    for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3], lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sy; q[j*3 + 2] = z + sn*lx + cs*lz; }
-      g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } n++; };
+  var put = function(nm, x, z, dx, dz, sy){ if (stPut(g, M, nm, x, z, dx, dz, 1, sy, hAt(x, z))) n++; };
   g.pl = null;
   L.forEach(function(e){ try {
     var P = w.wpts && w.wpts[e.w]; if (!P || P.length < 4) return;

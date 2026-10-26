@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 26 October 2026, at version 0.97.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 26 October 2026, at version 0.97.2. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -138,6 +138,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.93.1 | Offline list: the five open-source libraries the Maps Builder 1.1.0 loads (`builder/lib/*.js`) are saved with the rest, so the builder works offline from the website. |
 | 0.94.0 | Unused art packs removed: the Quaternius creatures and people models, the people texture, the unused Kenney furniture, car and box models and the old wheels of the replaced cars (several MB smaller; `?oldppl` is gone and `?oldart` now only affects held items). What is left on third-party art is listed for the content chat in `docs/ART_REQUESTS.md` section 12. |
 | 0.94.1 | For Maps Builder 1.2.0: `spB`, `bkMod`, `segX` and `segsX` (with their caches) moved from `play.html` into `engine/interiors.js`; `wx`, `lamps`, `fires` and `dark` added to the host contract in `engine/README.md`; `builder/host.js` and `builder/view3d.js` added to `STATIC` in `sw.js`. |
+| 0.97.2 | Bridge piers over water are the structures pack's cap and shaft, spaced `min(50 m, length/2)` as the map chat's rule says, and as wide as the road. The deck, parapet and collision are still the engine's own. |
 | 0.97.1 | Dams (without a road), retaining walls of 1.2 m or more and breakwaters now block walking and driving. |
 | 0.97.0 | The content chat's structures pack is in the game. Entries from the map's `structures` list now draw: tunnel portals at both ends, culvert headwalls, dams (earth or concrete, with end walls, scaled to `h`), weirs, locks and gates, piers, breakwaters, retaining walls and fords. Bridges keep the engine's own deck for now. Nothing here blocks walking yet. |
 | 0.96.2 | Tunnels. A `tunnel` entry on a road, path or rail removes the surface (and kerb) near its point for its length, so the ground carries on overhead. No portal faces yet. |

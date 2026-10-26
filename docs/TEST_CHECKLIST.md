@@ -143,3 +143,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.96.2) On a map made with builder 1.6 with a road tunnel, the road vanishes for the tunnel's length and the ground shows over it.
 - [ ] (0.97.0) On a builder 1.6+ map: tunnels show a dark portal at each end; culverts a headwall each end; dams, weirs, piers, breakwaters, walls and fords appear along their ways. Look from both sides of a portal: the dark face should face outward.
 - [ ] (0.97.1) You cannot walk through a dam (unless it carries a road), a retaining wall or a breakwater.
+- [ ] (0.97.2) Look under a bridge over water: grey piers with a cap under the deck, no floating or sunken ones.
