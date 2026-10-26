@@ -21,7 +21,7 @@ Where a chain or a name shows the OpenStreetMap tags are missing or wrong, the b
 4. The building's name, only when the tags say nothing about use ("Springfield Police Department", "Mt Olive Baptist Church", "Joe's Corner Market"). A name never turns a house, apartment block or garage into a shop, and names ending in street words ("Chase Apartments", "Target Range Road") are ignored.
 5. The plain `building=*` value (`house`, `apartments`, `retail`, `warehouse`, `barn`, ...).
 
-Tested on the Springfield, Missouri sample (five squares): 6 Walmart Supercenters, 2 wholesale clubs, 11 home-improvement stores, 3 police and 7 fire stations, 12 gyms, 90 schools, 393 churches, 22 supermarkets, 194 fast-food places.
+Tested on the Springfield, Missouri sample (five squares): 6 Walmart Supercenters, 2 wholesale clubs, 11 home-improvement stores, 3 police and 7 fire stations, 12 gyms, 90 schools, 129 churches, 22 supermarkets, 194 fast-food places.
 
 ## 2. How real buildings are designed (the rules that matter for a floor plan)
 

@@ -117,8 +117,8 @@ L.uses = function(sq){
     for (var k = 0; k < cand.length; k++){ var bb = bbs[cand[k]]; if (p[0] < bb[0] || p[0] > bb[2] || p[1] < bb[1] || p[1] > bb[3]) continue;
       if (L.pip(ways[cand[k]][1], p[0], p[1])){ var ar = (bb[2] - bb[0])*(bb[3] - bb[1]); if (ar < area){ area = ar; best = cand[k]; } } }
     if (best >= 0) (inside[best] = inside[best] || []).push(p); });
-  for (i = 0; i < ways.length; i++){ var tags = ways[i][0]; if (!tags.building) continue;
-    var own = L.useOf(tags), pu = null, shops = 0, pts = inside[i];
+  for (i = 0; i < ways.length; i++){ var tags = ways[i][0]; if (!tags.building) continue; if (tags.generated === 'yes' && tags['asmb:use']){ counts[tags['asmb:use']] = (counts[tags['asmb:use']] || 0) + 1; continue; }
+    var own = L.useOf(tags), pu = null, shops = 0, pts = tags.generated === 'yes' ? null : inside[i];   /* made-up buildings share one tag object per kind: never change it from a point inside one */
     if (pts){ pts.forEach(function(p){ var r = L.useOf(p[2]); if (!r || r.plain) return; if (p[2].shop) shops++; if (!pu || (r.chain && !pu.chain) || (pu.byName && !r.byName && !r.chain)) pu = r;
         if (r.set && (r.chain || r.byName)){ for (var kk in r.set) if (r.chain || !(p[2].shop || p[2].amenity || p[2].leisure || p[2].tourism)) p[2][kk] = r.set[kk]; } });
       if (shops >= 4 && (!own || own.plain || own.use === 'retail' || own.use === 'commercial')) pu = {use:'mall', label:'Shopping mall'}; }
