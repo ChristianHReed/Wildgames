@@ -283,3 +283,5 @@ The engine research and data sources are listed in `docs/MAP.md`. Still to be ch
 - which data sites allow downloads straight from a browser;
 - Safari's storage size limits for home-screen apps (sharing between apps is answered above);
 - browser readers for `.osm.pbf`, `.laz`, GeoTIFF and GeoParquet.
+
+**Builder 1.19.0:** **Frame view shows openings.** For wood and light-steel stud walls the frame overlay now leaves a gap for a window or door about every 3 m (1.5 m module, rule from the walls pack `openingInfo`): no studs inside the opening, king and jack studs either side, a header at 2.25 m, a sill at 1.0 m and cripple studs above and below. The first opening on the ground floor of the first wall is a door (no sill). Positions are worked out from the wall length, not read from the real windows. Steel and concrete frames are unchanged. Broken-wall states (cracked, breached) stay with the game, since the builder shows an untouched building.

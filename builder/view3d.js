@@ -313,7 +313,16 @@ function frameMesh(){
         box(len/2, 0, len/2, 0.07, top - 0.09, top, cB);                                  /* double top plate */
         box(len/2, 0, len/2, 0.0225, top, y0 + sh, cB);                                   /* rim joist: 0.24 m of the floor above */
         box(len/2, 0, len/2, 0.07, y0 + 1.2, y0 + 1.245, cB);                             /* blocking */
-        for (var k = 0; k <= nS && cnt < cap; k++) box(k/nS*len, 0, 0.0225, 0.07, y0 + 0.045, top - 0.09, cA);   /* studs */
+        var ops = [], nO = Math.floor((len - 1.5)/3);   /* openings: one 1.5 m module about every 3 m; the first on the ground floor of the first wall is a door */
+        for (var q = 0; q < nO; q++) ops.push((len - nO*3)/2 + 1.5 + q*3);
+        var inO = function(t){ for (var z = 0; z < ops.length; z++) if (Math.abs(t - ops[z]) < 0.55) return true; return false; };
+        for (var k = 0; k <= nS && cnt < cap; k++){ var tk = k/nS*len; if (inO(tk)) continue; box(tk, 0, 0.0225, 0.07, y0 + 0.045, top - 0.09, cA); }   /* studs, none inside an opening */
+        for (var z2 = 0; z2 < ops.length && cnt < cap; z2++){ var oc = ops[z2], dr = (f === 0 && i === 0 && z2 === 0), sl = dr ? 0.045 : 1.0, hd = Math.min(2.25, sh - 0.8);
+          [-0.6, -0.55, 0.55, 0.6].forEach(function(d){ box(oc + d, 0, 0.0225, 0.07, y0 + 0.045, y0 + hd, cA); });   /* king and jack studs */
+          box(oc, 0, 0.6, 0.07, y0 + hd, y0 + hd + 0.235, cB);                                                      /* header */
+          if (!dr) box(oc, 0, 0.55, 0.07, y0 + sl, y0 + sl + 0.045, cB);                                            /* sill */
+          for (var c2 = -0.4; c2 <= 0.41; c2 += 0.5){ box(oc + c2, 0, 0.0225, 0.07, y0 + hd + 0.235, top - 0.09, cA); if (!dr) box(oc + c2, 0, 0.0225, 0.07, y0 + 0.09, y0 + sl, cA); }   /* cripples */
+        }
       }
     } else if (fam === 'steel'){
       var nC = Math.max(1, Math.round(len/6)), step = curtain ? 0.5 : 1.25;
