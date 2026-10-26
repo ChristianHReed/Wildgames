@@ -7,7 +7,7 @@ def P(vehicle, name, tyre=None, rim=None, parts=(), paint=None, note=''):
     if note: d['note'] = note
     return d
 PRESETS = [
-  P('offroader', 'Overlander', 'mud_terrain', 'beadlock', ['roof_basket_M', 'bull_bar_lights_M', 'snorkel_M', 'fender_flare_XL', 'rock_slider_S', 'spare_door'], note='a loaded expedition 4x4'),
+  P('offroader', 'Overlander', 'mud_terrain', 'beadlock', ['roof_basket_L', 'bull_bar_lights_M', 'snorkel_M', 'fender_flare_XL', 'rock_slider_S', 'spare_door'], note='a loaded expedition 4x4'),
   P('pickup', 'Farm truck', 'all_terrain', 'steel_rust', ['bull_bar_M', 'load_hay_M', 'mud_flap'], note='bales on the back'),
   P('pickup', 'Plough truck', 'snow_chains', 'steel', ['snow_plough_M', 'roof_lights_C', 'salt_spreader'], note='keeps the roads open in winter'),
   P('crew_pickup', 'Camper', 'all_terrain', 'alloy5', ['roof_bars_C', 'bed_cap_S'], note='sleeps three'),

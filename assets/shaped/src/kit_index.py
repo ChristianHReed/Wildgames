@@ -14,7 +14,7 @@ def wheel_points(spec):
 def car_mounts(s, machine=False):
     W, L, r = s['width'], s['length'], s['wheelR']; ro = s['roof']; nose, tail = s['nose'], s['tail']; by = s['bumperY']
     M = {}
-    M['roof'] = {'pos': [0, ro['y'], ro['z']], 'w': ro['w'], 'd': ro['d'], 'group': 'body'}
+    M['roof'] = {'pos': [0, ro['y'], ro['z']], 'w': ro['w'] + 0.1, 'd': ro['d'] + 0.3, 'group': 'body'}
     M['roof_decal'] = {'pos': [0, ro['y'], ro['z']], 'w': ro['w'], 'd': ro['d'] + 0.3, 'group': 'body'}
     M['front'] = {'pos': [0, by, nose], 'w': W + 0.35, 'd': 0, 'group': 'body'}
     M['rear'] = {'pos': [0, by, tail], 'w': W + 0.35, 'd': 0, 'group': 'body'}
