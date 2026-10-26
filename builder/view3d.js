@@ -276,35 +276,53 @@ function frameOfWay(tags, c){
   if (parseFloat(tags.height) && !tags['building:levels']) lv = Math.max(1, Math.round(parseFloat(tags.height)/W[2]));
   return {pts:pts, kind:kind, fam:W[1], sh:W[2], lv:Math.min(lv, 30), name:W[0]};
 }
-/* a box from two corners, all six sides */
-function fbox(m, x0, y0, z0, x1, y1, z1, col){
-  m.quad(x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0, col, 255); m.quad(x1, y0, z1, x0, y0, z1, x0, y1, z1, x1, y1, z1, col, 255);
-  m.quad(x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0, col, 255); m.quad(x0, y0, z1, x0, y0, z0, x0, y1, z0, x0, y1, z1, col, 255);
-  m.quad(x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1, col, 255);
+/* a box turned to follow a wall: centre (x, z), along the wall (tx, tz), half length hl, half depth hd, from y0 to y1; five sides (not the bottom) */
+function obox(m, x, z, tx, tz, hl, hd, y0, y1, col){
+  var nx = -tz, nz = tx, ax = tx*hl, az = tz*hl, bx = nx*hd, bz = nz*hd;
+  var x00 = x - ax - bx, z00 = z - az - bz, x10 = x + ax - bx, z10 = z + az - bz, x11 = x + ax + bx, z11 = z + az + bz, x01 = x - ax + bx, z01 = z - az + bz;
+  m.quad(x00, y0, z00, x10, y0, z10, x10, y1, z10, x00, y1, z00, col, 255); m.quad(x10, y0, z10, x11, y0, z11, x11, y1, z11, x10, y1, z10, col, 255);
+  m.quad(x11, y0, z11, x01, y0, z01, x01, y1, z01, x11, y1, z11, col, 255); m.quad(x01, y0, z01, x00, y0, z00, x00, y1, z00, x01, y1, z01, col, 255);
+  m.quad(x00, y1, z00, x10, y1, z10, x11, y1, z11, x01, y1, z01, col, 255);
 }
+/* the frame of a building as the walls pack builds it (docs/SHAPED.md "walls", sizes from its sticksInfo): wood and light steel stud walls
+   (studs 0.045 x 0.14 every 0.5 m, a bottom plate, a double top plate, blocking at 1.2 m, a rim joist at every floor), steel (columns 0.3 m on a
+   6 m grid, beams 0.4 m deep at every floor, girts every 1.25 m for cladding, mullions every 0.5 m for a glass curtain wall) and concrete (no frame:
+   the floor slabs and the corner edges). Drawn just outside the wall, so it shows on the outside of the building. */
 function frameMesh(){
   var F = frameD; if (!F || F.pts.length < 6) return null;
-  var m = new Mesh(), p = F.pts, n = p.length/2 - 1, fam = F.fam, H = F.lv*F.sh, cnt = 0, out = 0.14, col = fam === 'wood' ? [222, 178, 112] : fam === 'lightsteel' ? [175, 190, 205] : fam === 'steel' ? [235, 120, 60] : [190, 190, 185], col2 = fam === 'wood' ? [190, 140, 80] : fam === 'lightsteel' ? [140, 160, 180] : fam === 'steel' ? [210, 90, 40] : [160, 160, 155];
-  var sg = 0, cx = 0, cy = 0; for (var i = 0; i < n; i++){ sg += p[2*i]*p[2*i + 3] - p[2*i + 2]*p[2*i + 1]; cx += p[2*i]; cy += p[2*i + 1]; } cx /= n; cy /= n; var orient = sg > 0 ? 1 : -1;
-  for (i = 0; i < n && cnt < 3000; i++){
-    var ax = p[2*i], ay = p[2*i + 1], bx = p[2*i + 2], by = p[2*i + 3], L = Math.hypot(bx - ax, by - ay); if (L < 0.5) continue;
-    var ux = (bx - ax)/L, uy = (by - ay)/L, nx = uy*orient, ny = -ux*orient;   /* outward normal */
-    var step = fam === 'wood' || fam === 'lightsteel' ? 0.5 : fam === 'steel' ? 6 : 6, nSt = Math.max(1, Math.round(L/step)), sw = fam === 'steel' ? 0.3 : fam === 'concrete' ? 0.35 : 0.1, g0 = hAt(ax, ay);
-    for (var k = 0; k <= nSt; k++){
-      var t = k/nSt*L, x = ax + ux*t + nx*out, y = ay + uy*t + ny*out, g = hAt(x, y), hw = sw/2;
-      fbox(m, x - hw, g, y - hw, x + hw, g + H, y + hw, col); cnt++;
+  var m = new Mesh(), p = F.pts, n = p.length/2 - 1, fam = F.fam, sh = F.sh, cnt = 0, out = 0.12, cap = 5000, curtain = F.kind === 'steel_curtain', clad = F.kind === 'steel_cladding';
+  var cA = fam === 'wood' ? [222, 178, 112] : fam === 'lightsteel' ? [178, 190, 202] : fam === 'steel' ? [236, 122, 62] : [200, 200, 195], cB = fam === 'wood' ? [186, 136, 78] : fam === 'lightsteel' ? [138, 158, 178] : fam === 'steel' ? [208, 92, 42] : [165, 165, 160];
+  var sg = 0; for (var i = 0; i < n; i++) sg += p[2*i]*p[2*i + 3] - p[2*i + 2]*p[2*i + 1]; var orient = sg > 0 ? 1 : -1;
+  for (i = 0; i < n && cnt < cap; i++){
+    var ax = p[2*i], ay = p[2*i + 1], bx = p[2*i + 2], by = p[2*i + 3], len = Math.hypot(bx - ax, by - ay); if (len < 0.5) continue;
+    var tx = (bx - ax)/len, ty = (by - ay)/len, nx = ty*orient, ny = -tx*orient, ox = ax + nx*out, oy = ay + ny*out, cx0 = ox + tx*len/2, cy0 = oy + ty*len/2, gb = Math.min(hAt(ox, oy), hAt(ox + tx*len, oy + ty*len));
+    var at = function(t, off){ return [ox + tx*t + nx*(off || 0), oy + ty*t + ny*(off || 0)]; };
+    var box = function(t, off, hl, hd, y0, y1, col){ var c = at(t, off); obox(m, c[0], c[1], tx, ty, hl, hd, gb + y0, gb + y1, col); cnt++; };
+    if (fam === 'wood' || fam === 'lightsteel'){
+      var nS = Math.max(1, Math.round(len/0.5));
+      for (var f = 0; f < F.lv; f++){
+        var y0 = f*sh, top = y0 + sh - 0.3;
+        box(len/2, 0, len/2, 0.07, y0, y0 + 0.045, cB);                                   /* bottom plate */
+        box(len/2, 0, len/2, 0.07, top - 0.09, top, cB);                                  /* double top plate */
+        box(len/2, 0, len/2, 0.0225, top, y0 + sh, cB);                                   /* rim joist: 0.24 m of the floor above */
+        box(len/2, 0, len/2, 0.07, y0 + 1.2, y0 + 1.245, cB);                             /* blocking */
+        for (var k = 0; k <= nS && cnt < cap; k++) box(k/nS*len, 0, 0.0225, 0.07, y0 + 0.045, top - 0.09, cA);   /* studs */
+      }
+    } else if (fam === 'steel'){
+      var nC = Math.max(1, Math.round(len/6)), step = curtain ? 0.5 : 1.25;
+      for (var k2 = 0; k2 <= nC; k2++) box(k2/nC*len, 0, 0.15, 0.15, 0, F.lv*sh, cA);   /* columns */
+      for (var f2 = 1; f2 <= F.lv; f2++) box(len/2, 0, len/2, 0.09, f2*sh - 0.4, f2*sh, cB);   /* beams */
+      if (curtain){ for (var k3 = 0; k3 <= Math.round(len/0.5) && cnt < cap; k3++) box(k3/Math.round(len/0.5)*len, 0.05, 0.025, 0.07, 0, F.lv*sh, cB); }
+      else if (clad){ for (var y = 1.0; y < F.lv*sh && cnt < cap; y += step) box(len/2, 0.03, len/2, 0.05, y, y + 0.15, cB); box(len/2, 0.03, len/2, 0.05, 0, 0.25, cB); }
+    } else {
+      for (var f3 = 1; f3 <= F.lv; f3++) box(len/2, 0, len/2, 0.1, f3*sh - 0.3, f3*sh, cB);   /* floor slabs */
+      box(0, 0, 0.1, 0.1, 0, F.lv*sh, cA);                                                  /* corner edge */
     }
-    for (var f = 0; f <= F.lv; f++){   /* plates at the foot, at each floor and the top (a beam or a rim joist) */
-      var hh = fam === 'steel' ? 0.4 : 0.24, yy = f*F.sh - (f ? hh : 0), x0 = ax + nx*out, y0 = ay + ny*out, x1 = bx + nx*out, y1 = by + ny*out, g1 = hAt(x0, y0), g2 = hAt(x1, y1), gm = Math.min(g1, g2);
-      var dx = Math.abs(ux)*0.06 + 0.001, dy = Math.abs(uy)*0.06 + 0.001, ex = Math.abs(nx)*0.06 + 0.03, ey = Math.abs(ny)*0.06 + 0.03;
-      fbox(m, Math.min(x0, x1) - ex, gm + yy, Math.min(y0, y1) - ey, Math.max(x0, x1) + ex, gm + yy + hh, Math.max(y0, y1) + ey, col2); cnt++;
-    }
-    if (fam === 'steel' && L > 5){ for (var s2 = 0; s2 < 1; s2++){ var xa = ax + nx*out, ya = ay + ny*out, xb = ax + ux*Math.min(6, L) + nx*out, yb = ay + uy*Math.min(6, L) + ny*out, ga = hAt(xa, ya);
-      m.quad(xa, ga, ya, xb, ga + F.sh - 0.4, yb, xb + 0.05, ga + F.sh - 0.4, yb + 0.05, xa + 0.05, ga, ya + 0.05, col2, 255); } }
   }
   return cnt ? m : null;
 }
 var frameBuf = null, frameDirty = false;
+V3.frameInfo = function(){ if (!frameD) return null; var m = frameMesh(); return {kind:frameD.kind, fam:frameD.fam, storeys:frameD.lv, edges:frameD.pts.length/2 - 1, tris:m ? m.p.length/9 : 0}; };
 
 /* ---------------- each frame ---------------- */
 function frame(ts){
