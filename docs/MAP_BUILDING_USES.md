@@ -23,6 +23,22 @@ Where a chain or a name shows the OpenStreetMap tags are missing or wrong, the b
 
 Tested on the Springfield, Missouri sample (five squares): 6 Walmart Supercenters, 2 wholesale clubs, 11 home-improvement stores, 3 police and 7 fire stations, 12 gyms, 90 schools, 129 churches, 22 supermarkets, 194 fast-food places.
 
+## 1b. Framed structure (builder 1.16.0)
+
+Every building also gets its **structure**, from the content chat's walls pack (`assets/shaped/walls.js`, `docs/SHAPED.md` section "walls"): `asmb:wall` is the wall kind and `asmb:frame` the frame family. A real building is a frame with skins on it, so the kind follows from use, floors, size and facing:
+
+| `asmb:wall` | `asmb:frame` | Storey | Used for |
+|---|---|---|---|
+| `wood_siding`, `wood_brick` | wood (studs every 0.5 m, plates, headers) | 3.0 m | houses, sheds, barns, small churches, apartments up to 3 floors (brick facing gives `wood_brick`) |
+| `lightsteel_sheet` | lightsteel (steel studs, same layout) | 3.5 m | small shops, small offices and hotels, apartments of 4 to 5 floors, small supermarkets and gyms |
+| `steel_cladding` | steel (columns on a 6 m grid, girts, beams) | 4.5 m | big-box and club stores, home centres, warehouses, factories, malls, stations, large supermarkets (over 2,500 m2) |
+| `steel_curtain` | steel (mullions, glass) | 3.5 m | glazed or mid-rise offices and banks |
+| `concrete_poured` | concrete | 3.5 m | hospitals, car parks, towers of 6 floors or more |
+| `concrete_block` | concrete | 3.0 m | garages and utility buildings |
+| `concrete_brick` | concrete (brick on block) | 3.5 m | schools, civic buildings, police and fire stations, large churches, brick apartments of 4 to 5 floors |
+
+The game's build mode and cell walls (0.56) read `asmb:wall` to choose the wall `kind` for the sections, openings and joints, and `asmb:frame` for the sticks and the floor type (`floors[family]`). A building the player places or changes in the builder carries the choice they made (Frame list in the Building and Change tools), otherwise the rule above.
+
 ## 2. How real buildings are designed (the rules that matter for a floor plan)
 
 These hold for almost every public or commercial building and are why a store does not look like an office:

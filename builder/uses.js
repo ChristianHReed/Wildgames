@@ -102,6 +102,31 @@ L.useOf = function(t){
   return null;
 };
 
+
+/* ---- framed structure ---- the wall kinds of the content chat's walls pack (assets/shaped/walls.js, docs/SHAPED.md "walls"): what a building is built from
+   follows from its use, its floors, its size and its facing. Written as `asmb:wall` (the kind) and `asmb:frame` (wood, lightsteel, steel or concrete). */
+L.WALLS = {wood_siding:['Wood frame, siding', 'wood', 3.0], wood_brick:['Wood frame, brick', 'wood', 3.0], lightsteel_sheet:['Light steel frame, sheet', 'lightsteel', 3.5], steel_cladding:['Steel frame, cladding', 'steel', 4.5],
+  steel_curtain:['Steel frame, glass curtain wall', 'steel', 3.5], concrete_poured:['Poured concrete', 'concrete', 3.5], concrete_block:['Concrete block', 'concrete', 3.0], concrete_brick:['Brick on block', 'concrete', 3.5]};
+L.frameOf = function(t, use, area){
+  var lv = parseInt(t['building:levels'], 10) || (parseFloat(t.height) ? Math.max(1, Math.round(parseFloat(t.height)/3.4)) : 1), mat = t['building:material'] || '', brick = /brick/.test(mat), glass = /glass/.test(mat), big = area > 1200;
+  switch (use){
+    case 'house': case 'shed': case 'barn': case 'greenhouse': return brick && use === 'house' ? 'wood_brick' : 'wood_siding';
+    case 'garage': return 'concrete_block';
+    case 'garage_shop': case 'auto_parts': return area > 400 ? 'steel_cladding' : 'concrete_block';
+    case 'apartments': return lv <= 3 ? (brick ? 'wood_brick' : 'wood_siding') : lv <= 5 ? (brick ? 'concrete_brick' : 'lightsteel_sheet') : 'concrete_poured';
+    case 'bigbox': case 'club': case 'home_improvement': case 'bigbox_special': case 'warehouse': case 'factory': case 'hangar': case 'station': case 'stadium': case 'mall': case 'department_store': return 'steel_cladding';
+    case 'supermarket': case 'gym': case 'venue': return area > 2500 ? 'steel_cladding' : 'lightsteel_sheet';
+    case 'office': case 'bank': return glass || lv >= 4 ? (lv >= 6 ? 'concrete_poured' : 'steel_curtain') : (brick ? 'concrete_brick' : 'lightsteel_sheet');
+    case 'hospital': case 'parking': return 'concrete_poured';
+    case 'hotel': return lv >= 4 ? 'concrete_poured' : (brick ? 'concrete_brick' : 'lightsteel_sheet');
+    case 'church': return area < 250 ? 'wood_siding' : 'concrete_brick';
+    case 'school': case 'college': case 'police': case 'fire': case 'townhall': case 'courthouse': case 'library': case 'post_office': case 'clinic': return lv >= 2 || brick || big ? 'concrete_brick' : 'lightsteel_sheet';
+    default: return big ? 'steel_cladding' : (brick ? 'wood_brick' : 'lightsteel_sheet');
+  }
+};
+/* the footprint area in square metres of a flat lon/lat ring */
+L.ringArea = function(c){ var a = 0, cl = Math.cos(c[1]*Math.PI/180); for (var i = 0; i + 3 < c.length; i += 2) a += c[i]*c[i + 3] - c[i + 2]*c[i + 1]; return Math.abs(a)/2*111320*cl*110540; };
+
 /* the use of every building in a square; sq = {ways:[[tags, coords]], pois:[[lon, lat, tags]]}. Returns counts by use. */
 L.uses = function(sq){
   var ways = sq.ways, G = {}, cs = 0.0015, counts = {}, bbs = {}, i;
@@ -117,7 +142,7 @@ L.uses = function(sq){
     for (var k = 0; k < cand.length; k++){ var bb = bbs[cand[k]]; if (p[0] < bb[0] || p[0] > bb[2] || p[1] < bb[1] || p[1] > bb[3]) continue;
       if (L.pip(ways[cand[k]][1], p[0], p[1])){ var ar = (bb[2] - bb[0])*(bb[3] - bb[1]); if (ar < area){ area = ar; best = cand[k]; } } }
     if (best >= 0) (inside[best] = inside[best] || []).push(p); });
-  for (i = 0; i < ways.length; i++){ var tags = ways[i][0]; if (!tags.building) continue; if (tags.generated === 'yes' && tags['asmb:use']){ counts[tags['asmb:use']] = (counts[tags['asmb:use']] || 0) + 1; continue; }
+  for (i = 0; i < ways.length; i++){ var tags = ways[i][0]; if (!tags.building) continue; if (tags.generated === 'yes' && tags['asmb:use']){ if (!tags['asmb:wall']){ var wa = L.frameOf(tags, tags['asmb:use'], 0); tags['asmb:wall'] = wa; tags['asmb:frame'] = L.WALLS[wa][1]; } counts[tags['asmb:use']] = (counts[tags['asmb:use']] || 0) + 1; continue; }
     var own = L.useOf(tags), pu = null, shops = 0, pts = tags.generated === 'yes' ? null : inside[i];   /* made-up buildings share one tag object per kind: never change it from a point inside one */
     if (pts){ pts.forEach(function(p){ var r = L.useOf(p[2]); if (!r || r.plain) return; if (p[2].shop) shops++; if (!pu || (r.chain && !pu.chain) || (pu.byName && !r.byName && !r.chain)) pu = r;
         if (r.set && (r.chain || r.byName)){ for (var kk in r.set) if (r.chain || !(p[2].shop || p[2].amenity || p[2].leisure || p[2].tourism)) p[2][kk] = r.set[kk]; } });
@@ -125,6 +150,8 @@ L.uses = function(sq){
     var use = own && own.chain ? own : (pu && pu.chain ? pu : (own && !own.plain && !own.byName ? own : (pu || own)));
     if (!use) continue;
     if (use.set && (use.chain || use.byName || use === pu)){ for (var k2 in use.set) if (use.chain || !(tags.shop || tags.amenity || tags.leisure || tags.tourism || tags.office)) tags[k2] = use.set[k2]; }
+    if (!tags['asmb:wall'] && tags.generated !== 'yes'){ var wk = L.frameOf(tags, use.use, L.ringArea(ways[i][1])); tags['asmb:wall'] = wk; tags['asmb:frame'] = L.WALLS[wk][1]; }
+    else if (!tags['asmb:wall']){ var wg = L.frameOf(tags, use.use, 0); tags['asmb:wall'] = wg; tags['asmb:frame'] = L.WALLS[wg][1]; }
     tags['asmb:use'] = use.use; if (use.label) tags['asmb:label'] = use.label; if (use.brand) tags['asmb:brand'] = use.brand;
     counts[use.use] = (counts[use.use] || 0) + 1;
   }

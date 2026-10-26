@@ -102,7 +102,9 @@ L.terrainApply = function(text, ops){
     else if (o.t === 'place' && L.BUILD[o.b]){
       var B = L.BUILD[o.b], cl3 = Math.cos(o.lat*Math.PI/180), ca = Math.cos(o.a || 0), sa = Math.sin(o.a || 0), hw2 = (o.w || B[1])/2, hd2 = (o.d || B[2])/2, ring2 = [[-hw2, -hd2], [hw2, -hd2], [hw2, hd2], [-hw2, hd2], [-hw2, -hd2]], rc3 = [];
       ring2.forEach(function(q){ var X = q[0]*ca - q[1]*sa, Y = q[0]*sa + q[1]*ca; rc3.push(+(o.lon + X/(111320*cl3)).toFixed(6), +(o.lat + Y/110540).toFixed(6)); });
-      var tg2 = {'asmb:made':'yes', src:'edit'}; for (var k4 in B[4]) tg2[k4] = B[4][k4]; if ((o.lv || B[3]) > 1 || o.lv) tg2['building:levels'] = String(o.lv || B[3]); sq.ways.push([tg2, rc3]); }
+      var tg2 = {'asmb:made':'yes', src:'edit'}; for (var k4 in B[4]) tg2[k4] = B[4][k4]; if ((o.lv || B[3]) > 1 || o.lv) tg2['building:levels'] = String(o.lv || B[3]);
+      if (L.useOf && L.frameOf){ var us2 = L.useOf(tg2), uk = us2 ? us2.use : 'house', wk2 = o.fw && L.WALLS[o.fw] ? o.fw : L.frameOf(tg2, uk, hw2*hd2*4); tg2['asmb:use'] = uk; if (us2 && us2.label) tg2['asmb:label'] = us2.label; tg2['asmb:wall'] = wk2; tg2['asmb:frame'] = L.WALLS[wk2][1]; }
+      sq.ways.push([tg2, rc3]); }
     else if (o.t === 'road' && L.ROADT[o.h]){
       var rt = L.ROADT[o.h], tg3 = {'asmb:made':'yes', src:'edit'}; tg3[rt[1]] = rt[2]; if (rt[3]) for (var k5 in rt[3]) tg3[k5] = rt[3][k5];
       if (rt[1] === 'highway' || rt[1] === 'railway'){ if (o.lv > 0){ tg3.bridge = 'yes'; tg3.layer = String(o.lv); } else if (o.lv < 0){ tg3.tunnel = 'yes'; tg3.layer = String(o.lv); } }
@@ -114,6 +116,7 @@ L.terrainApply = function(text, ops){
         if (o.rf){ tq['roof:shape'] = o.rf; delete tq['roof:angle']; delete tq['roof:height']; delete tq['roof:levels']; }
         if (o.wl){ tq['building:material'] = o.wl; delete tq['building:colour']; }
         if (o.wc){ tq['building:colour'] = o.wc; }
+        if (o.fw && L.WALLS && L.WALLS[o.fw]){ tq['asmb:wall'] = o.fw; tq['asmb:frame'] = L.WALLS[o.fw][1]; }
         tq['asmb:edited'] = 'yes'; break; } } }
     else if (o.t === 'remove'){
       var gone = -1; for (var wi = sq.ways.length - 1; wi >= 0; wi--){ var wt = sq.ways[wi]; if (wt[0].building && wt[1].length >= 8 && L.pip(wt[1], o.lon, o.lat)){ gone = wi; break; } }
