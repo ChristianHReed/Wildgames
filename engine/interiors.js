@@ -815,6 +815,20 @@ function carFit(k, cu){
     KFIT[key] = out; } catch (er){ console.log('carFit', er); }
   return KFIT[key];
 }
+/* 0.102.0: the boats pack (assets/shaped/boats.js): the hull and fittings as one model sitting on the water line, bobbing and rocking with the waves; fast boats draw a wake */
+var BOATM = {};
+function spBoat(name){
+  if (BOATM[name] !== undefined) return BOATM[name]; BOATM[name] = null;
+  try { var S = window.SHAPED && SHAPED.boats; if (!S || !S.models[name] || !SPON) return null; var mw = S.models[name], pcs = [], pn; for (pn in mw) pcs = pcs.concat(mw[pn]);
+    var col = spColour(S.palette, {BODY:S.paint[name]}, S.darker); BOATM[name] = {B:spModel(pcs, col, {car:true}), W:S.models.wake_v ? spModel(S.models.wake_v.body || [].concat.apply([], Object.keys(S.models.wake_v).map(function(k){ return S.models.wake_v[k]; })), spColour(S.palette, {BODY:S.paint.wake_v}, S.darker), {car:true}) : null}; } catch (er){ console.log('spBoat', er); BOATM[name] = null; }
+  return BOATM[name];
+}
+function spBoatDraw(m, v, now){
+  var K = spBoat(v.boat); if (!K) return false; var ph = now*1.3 + (hashStr(String(v.id)) % 97), bob = Math.sin(ph)*0.035;
+  m.part(K.B, v.x, v.y, v.yaw, bob - 0.05, 0, 0, 0, 0, 0);
+  if (K.W && (v.spd || 0) > 1.5) m.part(K.W, v.x, v.y, v.yaw, 0.02, 0, 0, 0, 0, 0);
+  return true;
+}
 function hashStr(t){ var h = 0, i; for (i = 0; i < t.length; i++) h = (h*31 + t.charCodeAt(i)) | 0; return h; }
 var SPB = {};
 function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(path.slice(0, 3) === 'ws.' ? SHAPED.waterside.palette : SHAPED.props.palette)); } catch (er){} return SPB[path]; }
