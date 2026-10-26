@@ -508,6 +508,7 @@ function placeProps(g){
    and in the wild logs, stumps, ferns, mushrooms, brambles, flowers and reeds. All are small and decorative: nothing here blocks you */
 var GB = {};
 function gB(path){ if (GB[path] !== undefined) return GB[path]; GB[path] = null; var a = path.split('.'), m = window.SHAPED && SHAPED.ground && SHAPED.ground.models[a[0]], pcs = m && m[a[1]]; if (pcs) try { GB[path] = spModel(pcs, spColour(SHAPED.ground.palette)); } catch (er){} return GB[path]; }
+function inFarmland(x, y){ var a = world.areas, i; for (i = 0; i < a.length; i++){ var ar = a[i]; if (ar.lu === 'farmland' && x > ar.minx && x < ar.maxx && y > ar.miny && y < ar.maxy && pip(ar.pts, x, y)) return true; } return false; }
 function placeDress(g){
   var w = world; if (!SPON || !w.roadOk) return; var hasM = false;
   var ok = function(x, y, e){ return !blocked(x, y) && !deckBlock(x, y) && !inWater(x, y, 0.5) && x > w.minx && x < w.maxx && y > w.miny && y < w.maxy && w.roadOk(x, y, e === undefined ? 1.5 : e); };
@@ -562,6 +563,18 @@ function placeDress(g){
       for (q = 0; q < np; q++){ var p0 = {x:pt[q*2], y:pt[q*2+1]}, p1 = {x:pt[((q + 1) % np)*2], y:pt[((q + 1) % np)*2+1]}, ex = p1.x - p0.x, ey = p1.y - p0.y, L = Math.hypot(ex, ey), n = Math.floor(L/4), m; if (L < 4) continue; ex /= L; ey /= L;
         for (m = 0; m < n; m++){ var fx = p0.x + ex*(m*4 + 2), fy = p0.y + ey*(m*4 + 2); if (!ok(fx, fy, 0.4)) continue; add(hash(ai, q*50 + m, 75) < 0.04 ? 'fm.fence_rail_gap' : 'fm.fence_wire_4', fx, fy, Math.atan2(-ey, ex), 1e6); fnc++; } }
       if (hash(ai, 76, 9) < 0.35){ var sx = (ar.minx + ar.maxx)/2, sy = (ar.miny + ar.maxy)/2; if (pip(ar.pts, sx, sy) && ok(sx, sy, 0.5)) add('fm.scarecrow', sx, sy, hash(ai, 77, 9)*6.28, 1e6); } }); }
+  /* 0.114.2: farm buildings (building=barn, farm, farm_auxiliary, stable, cowshed, silo, greenhouse is left alone): a silo or grain bin and hay beside a barn, a trough and a mailbox out by the door of a farmhouse */
+  if (spB('fm.silo')) w.buildings.forEach(function(b, bi){
+    if (b.gone || !b.door) return; var d = b.door, bt = b.bt;
+    if (bt === 'barn' || bt === 'stable' || bt === 'cowshed' || bt === 'farm_auxiliary'){
+      var tx = -d.ny, ty = d.nx, side = hash(bi, 81, 9) < 0.5 ? 1 : -1, w2 = Math.max(b.maxx - b.minx, b.maxy - b.miny)/2 + 5, x = b.cx + tx*side*w2, y = b.cy + ty*side*w2;
+      if (ok(x, y, 3.5)) add(hash(bi, 82, 9) < 0.6 ? 'fm.silo' : 'fm.grain_bin', x, y, hash(bi, 83, 9)*6.28, 1e6);
+      var hx = b.cx - tx*side*w2, hy = b.cy - ty*side*w2; if (ok(hx, hy, 2.5)) add(hash(bi, 84, 9) < 0.5 ? 'fm.bale_stack' : 'fm.haystack', hx, hy, hash(bi, 85, 9)*6.28, 1e6);
+      var tq = d.x - d.nx*4, tr = d.y - d.ny*4; if (bt !== 'farm_auxiliary' && ok(tq, tr, 1)) add('fm.water_trough', tq, tr, Math.atan2(-d.nx, -d.ny) + Math.PI/2, 1e6);
+    } else if (bt === 'farm' || (b.kind === 'house' && b.area > 80 && b.cat === 'house' && hash(bi, 86, 9) < 0.02 && inFarmland(b.cx, b.cy))){
+      var mx = d.x - d.nx*7 + d.ny*3, my = d.y - d.ny*7 - d.nx*3; if (ok(mx, my, 0.5)) add('fm.mailbox', mx, my, Math.atan2(-d.nx, -d.ny), 1e6);
+    }
+  });
   /* 0.114.0: the content chat's roadside pack: a fuel station's pumps stand under a canopy in front of the shop, and bus stops get a shelter */
   if (spB('rs.canopy_flat')) w.buildings.forEach(function(b, bi){
     if (b.kind !== 'fuel' || !b.door || b.gone) return; var d = b.door, tx = -d.ny, ty = d.nx, o = 8, cx = d.x - d.nx*o, cy = d.y - d.ny*o, ya = Math.atan2(-d.nx, -d.ny), cn = hash(bi, 41, 8) < 0.3 ? 'rs.canopy_vee' : 'rs.canopy_flat';
