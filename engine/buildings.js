@@ -554,10 +554,16 @@ function placeDress(g){
   w.waterLines.forEach(function(r, n){ var pt = r.pts, hw = r.w/2;
     for (var q = 0; q + 3 < pt.length; q += 2){ var ax = pt[q], ay = pt[q+1], l = Math.hypot(pt[q+2] - ax, pt[q+3] - ay); if (l < 0.5) continue; var dx = (pt[q+2] - ax)/l, dy = (pt[q+3] - ay)/l;
       for (var u = 0; u < l; u += 11){ var sd = hash(n + q, Math.floor(u), 5) < 0.5 ? 1 : -1; if (hash(n + q, Math.floor(u), 6) > 0.45) continue; var o = hw + 0.6 + hash(n, Math.floor(u), 7)*1.5, x = ax + dx*u - dy*o*sd, y = ay + dy*u + dx*o*sd;
-        if (!inWater(x, y, 0.2) && !blocked(x, y)) add('plants.reeds', x, y, hash(q, u, 8)*6.28, 600); } } });
+        if (!inWater(x, y, 0.2) && !blocked(x, y)){ var hr = hash(q, u, 9); add(spB('ws.reeds') ? (hr < 0.4 ? 'ws.cattails' : hr < 0.55 ? 'ws.cattails_small' : 'ws.reeds') : 'plants.reeds', x, y, hash(q, u, 8)*6.28, 600); } } } });
+  /* 0.98.1: the waterside pack: cattails and reeds round the edge of ponds and lakes, lily pads on small ponds, a heron now and then */
+  if (spB('ws.reeds')) w.areas.forEach(function(ar, ai){ if (ar.kind !== 'water' || ar.pts.length < 6) return; var pt = ar.pts, np = pt.length, bw = ar.maxx - ar.minx, bh = ar.maxy - ar.miny, arA = bw*bh, cnt = 0;
+    for (var q = 0; q < np && cnt < 120; q += 2){ var ax = pt[q], ay = pt[q+1], bx = pt[(q+2) % np], by = pt[(q+3) % np], l = Math.hypot(bx - ax, by - ay); if (l < 1) continue;
+      for (var u = 0; u < l; u += 8){ var hh = hash(ai*97 + q, Math.floor(u), 41); if (hh > 0.3) continue; var x = ax + (bx - ax)*u/l, y = ay + (by - ay)*u/l; if (blocked(x, y) || deckBlock(x, y) || !w.roadOk(x, y, 2)) continue; cnt++;
+        add(hh < 0.012 ? 'ws.heron' : hh < 0.12 ? 'ws.cattails' : hh < 0.2 ? 'ws.reeds' : 'ws.cattails_small', x, y, hash(q, u, 42)*6.28, 500); } }
+    if (arA < 30000){ var nl = Math.min(14, Math.floor(arA/900)); for (var k = 0; k < nl; k++){ var lx = ar.minx + hash(ai, k, 43)*bw, ly = ar.miny + hash(ai, k, 44)*bh; if (pip(ar.pts, lx, ly)) add(hash(ai, k, 45) < 0.3 ? 'ws.lily_pads_bloom' : 'ws.lily_pads', lx, ly, hash(ai, k, 46)*6.28, 300); } } });
   var total = 0;
   Object.keys(out).forEach(function(path){ var L = out[path], M = path.indexOf('ground.') === 0 ? gB(path.slice(7)) : spB(path); if (!M) return; var st = Math.max(1, Math.ceil(L.l.length/L.c));
-    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' ? 0.115 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
+    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
   w.dressCount = total; w.dressOut = out;
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */

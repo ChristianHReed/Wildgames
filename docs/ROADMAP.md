@@ -1,6 +1,6 @@
 # Afterstreet development roadmap
 
-Last updated: 26 October 2026, at version 0.98.0. This one document holds both the game features still to build and the free art and sound packs each step needs.
+Last updated: 26 October 2026, at version 0.98.1. This one document holds both the game features still to build and the free art and sound packs each step needs.
 
 The design (what the game is and why) is in [DESIGN.md](DESIGN.md); this page is the build plan. How to use it: work down the "Next versions" list. When a version needs a pack, the "Assets" section says where to get it and which download to pick. Download the zip and attach it to the chat; Claude converts it into the game's `assets` folder.
 
@@ -138,6 +138,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.93.1 | Offline list: the five open-source libraries the Maps Builder 1.1.0 loads (`builder/lib/*.js`) are saved with the rest, so the builder works offline from the website. |
 | 0.94.0 | Unused art packs removed: the Quaternius creatures and people models, the people texture, the unused Kenney furniture, car and box models and the old wheels of the replaced cars (several MB smaller; `?oldppl` is gone and `?oldart` now only affects held items). What is left on third-party art is listed for the content chat in `docs/ART_REQUESTS.md` section 12. |
 | 0.94.1 | For Maps Builder 1.2.0: `spB`, `bkMod`, `segX` and `segsX` (with their caches) moved from `play.html` into `engine/interiors.js`; `wx`, `lamps`, `fires` and `dark` added to the host contract in `engine/README.md`; `builder/host.js` and `builder/view3d.js` added to `STATIC` in `sw.js`. |
+| 0.98.1 | The waterside pack: cattails, reeds and the odd heron round the edge of ponds and lakes, lily pads on small ponds, and the creek reeds are now cattails and reeds from the pack. Docks, boats, trail furniture and the farm pack wait for data (Springfield has no farmland; the builder's maps do). |
 | 0.98.0 | The woods pack's forest floor: in woods the small plants are now ferns, mayapple, wildflowers, thickets, berry bush, sumac, saplings, fungus, mossy boulders and dead wood (logs, stump, brush pile, root ball, snags), about one in five dead. Baked into the nature art by `tools/build_nature.py`; logs, thickets and the like can be searched for wood and berries. Not yet: the woods canopy and understory trees, the land pack's road cuts and fills, the farm and waterside packs. |
 | 0.97.2 | Bridge piers over water are the structures pack's cap and shaft, spaced `min(50 m, length/2)` as the map chat's rule says, and as wide as the road. The deck, parapet and collision are still the engine's own. |
 | 0.97.1 | Dams (without a road), retaining walls of 1.2 m or more and breakwaters now block walking and driving. |

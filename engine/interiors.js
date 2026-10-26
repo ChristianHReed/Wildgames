@@ -90,7 +90,7 @@ var SP_OLD = {bed_single_A:'furniture.bed', bed_double_A:'furniture.bed', bed_do
   chair_stool:'f2.chair_stool', cabinet_medium_decorated:'f2.cabinet_medium_decorated', cabinet_small_decorated:'f2.cabinet_small_decorated', cabinet_medium:'f2.cabinet_medium', cactus_medium_A:'f2.cactus_medium_A', k_basin:'f2.k_basin', k_night:'f2.k_night', k_bunk:'f2.k_bunk', k_plant:'f2.k_plant', k_rug:'f2.k_rug', k_washer:'f2.k_washer', k_coat:'f2.k_coat', k_stool:'f2.k_stool'};   /* 0.95.0: the last thirteen Kenney pieces, now the content chat's furniture set 2 (assets/shaped/furniture2.js) */
 /* furniture that was plain boxes before and now has a model; its size comes from its floor space and its tallest box */
 var SP_NEW = {locker:'furniture.locker', pew:'furniture.pew', crate:'furniture.crate', wardrobe:'furniture.bookshelf', shelf:'furniture.shop_shelf'};
-function spPieces(path){ var a = path.split('.'), m; if (a[0] === 'f2'){ m = window.SHAPED && SHAPED.furniture2 && SHAPED.furniture2.models.furniture; return m && m[a[1]]; } m = SHAPED.props.models[a[0]]; return m && m[a[1]]; }
+function spPieces(path){ var a = path.split('.'), m; if (a[0] === 'ws'){ m = window.SHAPED && SHAPED.waterside && SHAPED.waterside.models.waterside; return m && m[a[1]]; } if (a[0] === 'f2'){ m = window.SHAPED && SHAPED.furniture2 && SHAPED.furniture2.models.furniture; return m && m[a[1]]; } m = SHAPED.props.models[a[0]]; return m && m[a[1]]; }
 function spFitQ(pcs, hx, hz){ var M = spModel(pcs, function(){ return [0, 0, 0]; }); return (hx > hz*1.4 && M.hz > M.hx*1.4) || (hz > hx*1.4 && M.hx > M.hz*1.4) ? 1 : 0; }
 var SPCAR = {}, MACH = [];
 function spInstall(){ if (SPON) (function(){
@@ -777,7 +777,7 @@ function manageInteriors(budget){
 function segX(ax, ay, bx, by, cx, cy, dx, dy){ var rx = bx - ax, ry = by - ay, sx = dx - cx, sy = dy - cy, den = rx*sy - ry*sx; if (Math.abs(den) < 1e-9) return false; var t = ((cx - ax)*sy - (cy - ay)*sx)/den, u = ((cx - ax)*ry - (cy - ay)*rx)/den; return t > 0.001 && t < 0.999 && u >= 0 && u <= 1; }
 function segsX(L, ax, ay, bx, by){ for (var i = 0; i < L.length; i += 4) if (segX(ax, ay, bx, by, L[i], L[i+1], L[i+2], L[i+3])) return true; return false; }
 var SPB = {};
-function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(SHAPED.props.palette)); } catch (er){} return SPB[path]; }
+function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(path.slice(0, 3) === 'ws.' ? SHAPED.waterside.palette : SHAPED.props.palette)); } catch (er){} return SPB[path]; }
 /* the art chat's torn, cracked and boarded wall pieces (buildings.breach), and the house number plaque */
 var BKM = {};
 function bkMod(grp, fin, name){
