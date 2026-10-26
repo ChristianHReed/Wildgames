@@ -433,7 +433,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.10</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.11</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -456,7 +456,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.10', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.11', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1922,7 +1922,7 @@ var SLUMP_T = 0;
 function pitSlump(dt){
   if (P.veh || P.inside || typeof DG === 'undefined' || !DG.cols.size) return; var c0 = digCol(P.x, P.y); if (c0 > -5) return;
   SLUMP_T += dt; if (SLUMP_T < 1) return; SLUMP_T = 0; var heavy = false; world.vehicles.forEach(function(v){ if (v.t && Math.hypot(v.x - P.x, v.y - P.y) < 6 && (v.spd || 0) > 1) heavy = true; });
-  var rate = (raining() ? 0.03 : 0) + (heavy ? 0.12 : 0) + (c0 <= -8 ? 0.004 : 0); if (!rate || Math.random() > rate) return;
+  var rate = (raining() ? 0.03 : 0) + (heavy ? 0.12 : 0) + (c0 <= -8 ? 0.004 : 0), nsh = 0; (world.edits.shores || []).forEach(function(sh){ if (Math.hypot(sh.x - P.x, sh.y - P.y) < 4) nsh++; }); rate *= nsh >= 2 ? 0 : nsh ? 0.15 : 1; if (!rate || Math.random() > rate) return;
   var ix0 = Math.floor(P.x/DGS), iy0 = Math.floor(P.y/DGS), L = [], dx, dy;
   for (dy = -3; dy <= 3; dy++) for (dx = -3; dx <= 3; dx++){ var v0 = dgVal(ix0 + dx, iy0 + dy); if (v0 < 0 && Math.hypot(dx, dy) <= 3) L.push([Math.hypot(dx, dy), ix0 + dx, iy0 + dy, v0]); }
   L.sort(function(a, b){ return a[0] - b[0]; }); var c = []; L.slice(0, 8).forEach(function(q){ c.push(q[1], q[2], Math.min(0, q[3] + 2)); });
@@ -3404,6 +3404,7 @@ function loadEdits(ed){
   E.solars = []; (Array.isArray(ed.solars) ? ed.solars : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.solars.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.plant = {s:ed.plant && ed.plant.s >= 0 ? Math.min(3, ed.plant.s | 0) : 0};
   E.covers = []; (Array.isArray(ed.covers) ? ed.covers : []).slice(0, 60).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.covers.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, br:q.br ? 1 : 0}); });
+  E.shores = []; (Array.isArray(ed.shores) ? ed.shores : []).slice(0, 60).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.shores.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.stakes = []; (Array.isArray(ed.stakes) ? ed.stakes : []).slice(0, 60).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.stakes.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y}); });
   E.ladders = []; (Array.isArray(ed.ladders) ? ed.ladders : []).slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.ladders.push({id:String(q.id).slice(0, 30), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
   E.kit = {}; for (k in (ed.kit || {})){ var kn0 = ed.kit[k] | 0; if (/^(ty|rm|p):[a-zA-Z0-9_]{2,30}$/.test(k) && kn0 > 0) E.kit[k] = Math.min(99, kn0); }
@@ -3430,6 +3431,7 @@ function applyEdit(e){
   if (e.a === 'col' && b && okCol(e.c, '')){ if (!b.col0) b.col0 = b.col; b.col = E.col[b.id] = e.c; dirtyChunk(b); }
   else if (e.a === 'cover' && e.l && isFinite(e.l.x) && isFinite(e.l.y)){ E.covers = E.covers || []; if (E.covers.length < 60) E.covers.push({id:String(e.l.id).slice(0, 30), x:+e.l.x, y:+e.l.y, br:0}); }
   else if (e.a === 'cbreak' && typeof e.id === 'string'){ (E.covers || []).forEach(function(c){ if (c.id === e.id) c.br = 1; }); }
+  else if (e.a === 'shore' && e.l && isFinite(e.l.x) && isFinite(e.l.y)){ E.shores = E.shores || []; if (E.shores.length < 60) E.shores.push({id:String(e.l.id).slice(0, 30), x:+e.l.x, y:+e.l.y, yaw:+e.l.yaw || 0}); }
   else if (e.a === 'stake' && e.l && isFinite(e.l.x) && isFinite(e.l.y)){ E.stakes = E.stakes || []; if (E.stakes.length < 60) E.stakes.push({id:String(e.l.id).slice(0, 30), x:+e.l.x, y:+e.l.y}); }
   else if (e.a === 'ladder' && e.l && isFinite(e.l.x) && isFinite(e.l.y)){ E.ladders = E.ladders || []; if (E.ladders.length < 40) E.ladders.push({id:String(e.l.id).slice(0, 30), x:+e.l.x, y:+e.l.y, yaw:+e.l.yaw || 0}); }
   else if (e.a === 'dig' && Array.isArray(e.c) && e.c.length % 3 === 0 && e.c.length <= 24 && typeof dgApply === 'function'){ var dc = e.c.map(function(v){ return v | 0; }); dgApply(dc); E.dig = E.dig || {}; for (i = 0; i + 2 < dc.length; i += 3){ var dk = dc[i] + ',' + dc[i+1], dv = Math.max(DG_MIN, Math.min(DG_MAX, dc[i+2])); if (dv) E.dig[dk] = dv; else delete E.dig[dk]; } }
@@ -3487,6 +3489,11 @@ function buildAct(a, pos){
     var cxx = (cq[0] + 1)*DGS, cyy = (cq[1] + 1)*DGS, lst = world.edits[a === 'cover' ? 'covers' : 'stakes'] || [], j2; for (j2 = 0; j2 < lst.length; j2++) if (Math.hypot(lst[j2].x - cxx, lst[j2].y - cyy) < 0.6 && (a === 'stake' || !lst[j2].br)){ toast('There is one there already.', 2); return; }
     if (lst.length >= 60){ toast('That is enough.', 2); return; }
     inv.wood -= cost; doEdit({a:a, l:{id:id, x:cxx, y:cyy}}); sfx('wood_hit', cxx, cyy, 0.7, 0.9); updateHud(); renderBuild(); }
+  else if (a === 'shore'){
+    if (inv.wood < 3 || inv.scrap < 1){ toast('A shoring panel takes 3 wood and 1 scrap.', 3); return; }
+    var shx = P.x + Math.cos(P.yaw)*0.55, shy = P.y + Math.sin(P.yaw)*0.55; if (digCol(shx, shy) > -2){ toast('Stand in a pit at least a metre deep and face the wall: the panel props it up.', 4); return; }
+    var shl = world.edits.shores || [], sj; for (sj = 0; sj < shl.length; sj++) if (Math.hypot(shl[sj].x - shx, shl[sj].y - shy) < 1.2){ toast('There is a panel there already.', 2); return; } if (shl.length >= 60){ toast('That is enough.', 2); return; }
+    inv.wood -= 3; inv.scrap -= 1; doEdit({a:'shore', l:{id:id, x:shx, y:shy, yaw:P.yaw + Math.PI/2}}); sfx('wood_hit', shx, shy, 0.7, 0.8); toast('Panel set. The pit is safer within a few metres of it.', 3); updateHud(); renderBuild(); }
   else if (a === 'ladder'){
     if (inv.wood < 3 || inv.scrap < 1){ toast('A ladder takes 3 wood and 1 scrap.', 3); return; }
     var lx = P.x + Math.cos(P.yaw)*1.2, ly = P.y + Math.sin(P.yaw)*1.2, bw = -1, by2 = 0, q2, near = 0;
@@ -3785,7 +3792,7 @@ function renderBuild(){
     survPanel() +
     '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('boardall', 'Board up all windows', '2 wood each. Every window of the building you stand in; broken ones cannot be boarded') + row('brace', 'Door brace', '3 wood, 2 scrap. A bar across the inside of the front door; aliens have to break it. Build from inside') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close torn-open walls of the nearest building', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 50 ft of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
-    '<h3>Holes</h3>' + row('cover', 'Plank cover', '4 wood. Face a hole a metre wide: planks hide it. Anything that steps on them breaks them and falls in (you too)') + row('stake', 'Stake board', '2 wood. Lays on the floor of a hole: whatever falls in takes heavy damage') + row('ladder', 'Ladder', '3 wood, 1 scrap. Put it against the wall of a pit (face the wall): you climb out of any depth beside it') + '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
+    '<h3>Holes</h3>' + row('cover', 'Plank cover', '4 wood. Face a hole a metre wide: planks hide it. Anything that steps on them breaks them and falls in (you too)') + row('stake', 'Stake board', '2 wood. Lays on the floor of a hole: whatever falls in takes heavy damage') + row('shore', 'Shoring panel', '3 wood, 1 scrap. Stand in a pit a metre or deeper and face the wall: props it up so rain and passing vehicles are far less likely to bring it down') + row('ladder', 'Ladder', '3 wood, 1 scrap. Put it against the wall of a pit (face the wall): you climb out of any depth beside it') + '<h3>Food and water</h3>' + row('coll', 'Rain collector', '2 wood, 2 scrap. Outdoors. Fills with clean water when it rains (holds ' + COLL_CAP + ' bottles)') + row('plot', 'Garden plot', '3 wood. Outdoors on open ground. Plant seed packets; water it or let it rain; harvest fresh food') +
     '<h3>Reshape the city</h3>' + row('paint', 'Repaint this building', 'Free. Cycles the wall color') + row('demo', 'Demolish this building', 'Stand outside it. Returns wood and scrap. Cannot be undone') +
     (net.role === 'guest' ? '<h3>Sharing</h3>' + row('ask', 'Ask for the host\'s building changes', 'If they agree, their repaints, walls and demolitions are saved for your own copy of this map') : '') +
     '<div style="margin-top:8px"><i>N closes this</i></div>';
@@ -3814,6 +3821,7 @@ function drawBuilt(m){
       continue; } var we = wallEnds(w.x, w.y, w.yaw), g0 = groundAt(we[0], we[1]), g1 = groundAt(we[2], we[3]), lo = Math.min(g0, g1, groundAt(w.x, w.y)), hi = Math.max(g0, g1, groundAt(w.x, w.y)), hh = (2.5 + 0.3 + hi - lo)/2;   /* support rule: the base sinks 0.3 m below the lowest ground under it and the top follows the highest, so a wall on a slope has no gap and no end hanging in the air */
     m.yo = lo - 0.3; m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.1, hh, 1.5, C('#8a6a48')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh*2 + 0.02, 0.14, 0.05, 1.5, C('#6b4a30')); m.ybox(w.x, w.y, w.yaw, 0, 0, hh, 0.13, 0.08, 1.5, C('#6b4a30')); }
   (E.covers || []).forEach(function(cv){ if (Math.abs(cv.x - P.x) > 80 || Math.abs(cv.y - P.y) > 80) return; var cm = digModel(cv.br ? 'plank_cover_s_broken' : 'plank_cover_s'); if (cm) m.modelS(cm, cv.x, cv.y, 0, hAt0(cv.x, cv.y), 1); else if (!cv.br){ m.yo = hAt0(cv.x, cv.y); m.ybox(cv.x, cv.y, 0, 0, 0, 0.03, 0.6, 0.03, 0.6, C('#8a6a48')); } });
+  (E.shores || []).forEach(function(sh){ if (Math.abs(sh.x - P.x) > 80 || Math.abs(sh.y - P.y) > 80) return; var shm = digModel('shoring_panel'); if (shm) m.modelS(shm, sh.x, sh.y, sh.yaw || 0, hAt(sh.x, sh.y), 1); else { m.yo = hAt(sh.x, sh.y); m.ybox(sh.x, sh.y, sh.yaw || 0, 0, 0, 0.9, 0.05, 0.9, 0.7, C('#8a6a3a')); } });
   (E.stakes || []).forEach(function(sk){ if (Math.abs(sk.x - P.x) > 80 || Math.abs(sk.y - P.y) > 80) return; var sm = digModel('stake_pit_s'); if (sm) m.modelS(sm, sk.x, sk.y, 0, hAt(sk.x, sk.y), 1); else { m.yo = hAt(sk.x, sk.y); m.ybox(sk.x, sk.y, 0, 0, 0, 0.2, 0.05, 0.2, 0.05, C('#c9a56a')); } });
   (E.ladders || []).forEach(function(ld){ if (Math.abs(ld.x - P.x) > 80 || Math.abs(ld.y - P.y) > 80) return; var g0 = hAt(ld.x, ld.y), dp = hAt0(ld.x, ld.y) - g0, lm = digModel(dp <= 1.9 ? 'ladder_s' : dp <= 2.9 ? 'ladder_m' : 'ladder_l'); if (lm){ m.modelS(lm, ld.x, ld.y, Math.atan2(-Math.cos(ld.yaw), Math.sin(ld.yaw)), g0, 1); return; }
     var top = Math.max(g0 + 1, hAt0(ld.x, ld.y) + 0.8), hh = (top - g0)/2, c0 = C('#8a6a48'), c1 = C('#6b4a30'), k;
