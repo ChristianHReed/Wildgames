@@ -180,3 +180,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.114.4) Some bus stops have a glass shelter; billboards stand beside main roads away from buildings, facing the road.
 - [ ] (0.114.5) Riding a motorbike, driving a motor boat or a digger plays an engine note that rises with speed (not rowboats, bicycles or kayaks).
 - [ ] (0.114.6) Moving in a rowboat, kayak or canoe gives a splash every second or so; motor boats do not.
+- [ ] (0.114.7) Riding a bicycle ticks quietly, quicker when faster.
