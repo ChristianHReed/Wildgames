@@ -264,7 +264,16 @@ var PLAN = {
   gym:{rooms:['gymfloor'], more:['lockers']},
   venue:{rooms:['hall'], more:['stock','breakroom']}
 };
+bzInstall();
 PLAN.apartments = PLAN.house; PLAN.food = PLAN.restaurant; PLAN.medical = PLAN.clinic; PLAN.industrial = PLAN.garage; PLAN.civic = PLAN.office;
+/* 0.103.0: the content chat's business pieces (assets/shaped/foodservice.js): a restaurant kitchen gets a flat-top grill, fryer, fridges, three-compartment sink and wire racks in place of the old stove and cabinets */
+var BZ = [['foodservice', 'fryer_single', null], ['foodservice', 'flat_top_grill', null], ['foodservice', 'reach_in_fridge', {food:5, water:3, none:2}], ['foodservice', 'sink_three_comp', null], ['foodservice', 'wire_rack', {food:3, scrap:2, none:3}], ['foodservice', 'steam_table', null], ['foodservice', 'dish_machine', null]];
+function bzInstall(){
+  if (!SPON) return; BZ.forEach(function(e){ try { var S = SHAPED[e[0]], pcs = S && S.models[e[0]][e[1]], inf = S && S.info[e[1]]; if (!pcs || !inf) return; var nm = 'z_' + e[1], hx = Math.max(0.2, inf.w/2), hz = Math.max(0.2, inf.len/2), hh = inf.h || 1;
+    FURN[nm] = {name:e[1].replace(/_/g, ' '), s:[hx, hz], boxes:[[0, hh/2, 0, hx, hh/2, hz, '#8a9199']], models:[nm]}; if (e[2]) FURN[nm].lt = e[2];
+    MODELS[nm] = spModel(pcs, spColour(S.palette), {q:spFitQ(pcs, hx, hz), fit:{hx:hx, hz:hz, h:hh}}); } catch (er){ console.log('bz', e[1], er); } });
+  if (FURN.z_fryer_single && FURN.z_flat_top_grill && FURN.z_reach_in_fridge) ROOMS.kitchenC = [['z_flat_top_grill', 'wall', 1], ['z_fryer_single', 'wall', 1], ['z_reach_in_fridge', 'wall', 2], ['z_sink_three_comp', 'wall', 1], ['z_wire_rack', 'wall', 2], ['counter', 'mid', 1], ['kcab', 'wall', 1]];
+}
 /* ---- upstairs: homes two storeys or taller get a staircase and a second floor. FH is the height of one storey ---- */
 var FH = 3.0, RUN = 3.6, PLAN_UP = {one:'bedroom', two:['bedroom', 'bath'], rooms:['bedroom', 'bath', 'bedroom'], more:['bedroom', 'store', 'office'], small:'bath'};
 /* what is upstairs depends on the building: bedrooms over a home, a flat over a shop, offices, wards, bunks, classrooms... */
