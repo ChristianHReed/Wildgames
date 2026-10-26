@@ -830,24 +830,41 @@ function carFit(k, cu){
 var BOATM = {};
 function spBoat(name){
   if (BOATM[name] !== undefined) return BOATM[name]; BOATM[name] = null;
-  try { var S = window.SHAPED && SHAPED.boats; if (!S || !S.models[name] || !SPON) return null; var mw = S.models[name], pcs = [], pn; for (pn in mw) pcs = pcs.concat(mw[pn]);
-    var col = spColour(S.palette, {BODY:S.paint[name]}, S.darker); BOATM[name] = {B:spModel(pcs, col, {car:true}), W:S.models.wake_v ? spModel(S.models.wake_v.body || [].concat.apply([], Object.keys(S.models.wake_v).map(function(k){ return S.models.wake_v[k]; })), spColour(S.palette, {BODY:S.paint.wake_v}, S.darker), {car:true}) : null}; } catch (er){ console.log('spBoat', er); BOATM[name] = null; }
+  try { var S = window.SHAPED && SHAPED.boats; if (!S || !S.models[name] || !SPON) return null; var mw = S.models[name], rg = S.rig[name] || {}, col = spColour(S.palette, {BODY:S.paint[name]}, S.darker), K = {B:null, A:[], rg:rg}, pn, flat = function(o){ return o.body || [].concat.apply([], Object.keys(o).map(function(k){ return o[k]; })); }, body = [];
+    for (pn in mw){ var r = rg[pn]; if (pn !== 'body' && r && r.turn && ((r.turn[1] === 1 && pn !== 'rudder') || r.turn[0] === 1 || r.turn[2] === 1)) K.A.push({n:pn, M:spModel(mw[pn], col, {car:true}), r:r}); else body = body.concat(mw[pn]); }
+    K.B = spModel(body, col, {car:true});
+    K.W = S.models.wake_v ? spModel(flat(S.models.wake_v), spColour(S.palette, {BODY:S.paint.wake_v}, S.darker), {car:true}) : null;
+    K.BW = S.models.bow_wave ? spModel(flat(S.models.bow_wave), spColour(S.palette, {BODY:S.paint.bow_wave}, S.darker), {car:true}) : null; BOATM[name] = K; } catch (er){ console.log('spBoat', er); BOATM[name] = null; }
   return BOATM[name];
 }
+/* 0.107.0: oars, paddles, the motor and the sail move. Each moving part turns about its rig pivot; a part's parent turns it too (the propeller sits on the motor). Model frame (x right, y up, z forward) to the cars' frame: forward = z, sideways = -x */
 function spBoatDraw(m, v, now){
-  var K = spBoat(v.boat); if (!K) return false; var ph = now*1.3 + (hashStr(String(v.id)) % 97), bob = Math.sin(ph)*0.035;
-  m.part(K.B, v.x, v.y, v.yaw, bob - 0.05, 0, 0, 0, 0, 0);
-  if (K.W && (v.spd || 0) > 1.5) m.part(K.W, v.x, v.y, v.yaw, 0.02, 0, 0, 0, 0, 0);
+  var K = spBoat(v.boat); if (!K) return false; var ph = now*1.3 + (hashStr(String(v.id)) % 97), bob = Math.sin(ph)*0.035, y0 = bob - 0.05, d2r = Math.PI/180, sp = v.spd || 0, sw = v.spin || 0;
+  m.part(K.B, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0);
+  K.A.forEach(function(a){
+    var n = a.n, r = a.r, pv = r.pivot, steps = [], ang = 0;
+    if (n === 'oar_l' || n === 'oar_r'){ ang = (sp > 0.3 ? Math.sin(sw*0.8)*30 : Math.sin(ph*0.7)*4)*d2r; steps.push({y:ang, cx:pv[2], cz:-pv[0]}); }
+    else if (n === 'paddle' && r.turn[0] === 1){ ang = (sp > 0.3 ? Math.sin(sw*0.9)*35 : Math.sin(ph*0.7)*5)*d2r; steps.push({z:ang, px:pv[2], py:pv[1]}); }
+    else if (n === 'paddle'){ ang = (sp > 0.3 ? Math.sin(sw*0.9)*28 : 0)*d2r; steps.push({x:ang, py:pv[1], cz:-pv[0]}); }
+    else if (n === 'pole'){ ang = (sp > 0.3 ? Math.sin(sw*0.7)*22 : 0)*d2r; steps.push({z:ang, px:pv[2], py:pv[1]}); }
+    else if (n === 'motor'){ steps.push({y:-(v.steer || 0)*0.9, cx:pv[2], cz:-pv[0]}); }
+    else if (n === 'prop'){ var mr = K.rg.motor; steps.push({x:sw*3, py:pv[1], cz:-pv[0]}); if (mr) steps.push({y:-(v.steer || 0)*0.9, cx:mr.pivot[2], cz:-mr.pivot[0]}); }
+    else if (n === 'sail'){ ang = Math.sin(ph*0.4)*18*d2r + (v.steer || 0)*0.5; steps.push({y:ang, cx:pv[2], cz:-pv[0]}); }
+    else if (n === 'ramp'){ steps.push({z:(sp > 0.3 ? 0 : 80)*d2r*0, px:pv[2], py:pv[1]}); }
+    m.chain(a.M, v.x, v.y, v.yaw, y0, steps);
+  });
+  if (K.W && sp > 1.5) m.part(K.W, v.x, v.y, v.yaw, 0.02, 0, 0, 0, 0, 0);
+  if (K.BW && sp > 3) m.part(K.BW, v.x, v.y, v.yaw, 0.02, 0, 0, 0, 0, 0);
   return true;
 }
 /* 0.105.0: working diggers (machines pack, `excavator` and `mini_excavator`): a chain of turns applied child first, each about its rest pivot, then the machine is set down at (x, z) and turned by yaw.
    steps: {z:rz, px, py} turns about the sideways axis through (px, py) (the cars' rz), {y:ry} slews about the upright axis through the origin */
 Mesh.prototype.chain = function(M, x, z, yaw, y0, steps){
   var cs = Math.cos(yaw), sn = Math.sin(yaw), p = M.p, c = M.c, q = [0,0,0,0,0,0,0,0,0], yb = y0 + this.yo, n = steps.length, i, j, k, st;
-  var T = steps.map(function(s2){ var a = s2.z !== undefined ? s2.z : s2.y; return {z:s2.z !== undefined, px:s2.px || 0, py:s2.py || 0, c:Math.cos(a), s:Math.sin(a)}; });
+  var T = steps.map(function(s2){ var a = s2.z !== undefined ? s2.z : s2.x !== undefined ? s2.x : s2.y; return {z:s2.z !== undefined, xr:s2.x !== undefined, px:s2.px || 0, py:s2.py || 0, cx:s2.cx || 0, cz:s2.cz || 0, c:Math.cos(a), s:Math.sin(a)}; });
   for (i = 0; i < M.n; i++){
     for (j = 0; j < 3; j++){ var o = i*9 + j*3, lx = p[o], ly = p[o + 1], lz = p[o + 2];
-      for (k = 0; k < n; k++){ st = T[k]; if (st.z){ var dx = lx - st.px, dy = ly - st.py; lx = st.px + dx*st.c + dy*st.s; ly = st.py - dx*st.s + dy*st.c; } else { var bx = lx*st.c - lz*st.s; lz = lx*st.s + lz*st.c; lx = bx; } }
+      for (k = 0; k < n; k++){ st = T[k]; if (st.z){ var dx = lx - st.px, dy = ly - st.py; lx = st.px + dx*st.c + dy*st.s; ly = st.py - dx*st.s + dy*st.c; } else if (st.xr){ var ey = ly - st.py, ez = lz - st.cz; ly = st.py + ey*st.c - ez*st.s; lz = st.cz + ey*st.s + ez*st.c; } else { var ux = lx - st.cx, uz = lz - st.cz, bx = ux*st.c - uz*st.s + st.cx; lz = ux*st.s + uz*st.c + st.cz; lx = bx; } }
       q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = yb + ly; q[j*3 + 2] = z + sn*lx + cs*lz; }
     this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
   }
