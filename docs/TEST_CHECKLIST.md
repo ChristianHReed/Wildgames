@@ -192,3 +192,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.114.16) Thin white lane dashes on both sides of the yellow centre line on the wider streets, and a white arrow on the road before a junction.
 - [ ] (0.114.17) Metal storm drains in the kerb every 80 m or so; low speed humps on a few quiet streets (check you can see them).
 - [ ] (0.114.18) With two players (host and guest): the guest sees the host's recruited survivors walk, ride and fight; a car left with a flat tyre or fitted parts looks and drives the same for both.
+- 0.114.19: repair a vehicle and bandage a wound; the XP line in the character list shows Mechanics and First aid; a book can raise either.

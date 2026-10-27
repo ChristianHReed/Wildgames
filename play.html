@@ -438,7 +438,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.18</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.19</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -461,7 +461,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.18', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.19', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -500,7 +500,7 @@ function startRun(ws, cs){
     P.hp = cs.hp > 0 ? Math.min(100, +cs.hp) : 100; P.hunger = Math.max(0, Math.min(100, +cs.hunger || 0)); P.thirst = Math.max(0, Math.min(100, +cs.thirst || 0)); deaths = cs.deaths | 0; loadConds(cs); loadWorn(cs);
   }
   seen = {}; marks = []; fmarks = []; if (cs && cs.sn) for (k = 0; k + 1 < cs.sn.length; k += 2) seen[(cs.sn[k] | 0) + ',' + (cs.sn[k+1] | 0)] = 1; if (cs && cs.mk) cs.mk.slice(0, 40).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) marks.push({x:+q.x, y:+q.y, n:String(q.n || '').slice(0, 12)}); }); seenT = 0; seeMap(true);
-  me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0, build:0, shoot:0};
+  me.look = readLook(); me.bg = el('cBg').value; me.cap = false; me.skills = {scav:0, melee:0, endur:0, build:0, shoot:0, mech:0, aid:0};
   if (cs){ if (cs.bg && SKN && /^(scout|medic|mechanic|builder)$/.test(cs.bg)) me.bg = cs.bg; if (cs.skills) for (k in me.skills) me.skills[k] = Math.max(0, +cs.skills[k] || 0); }
   throws = []; booms = [];
   if (cs){ (cs.designs || []).forEach(function(d){ adoptDesign(d); }); for (k in (cs.items || {})) if (DESIGNS[k] && cs.items[k] > 0) P.items[k] = Math.min(99, cs.items[k] | 0); if (cs.weapon && P.items[cs.weapon]) P.weapon = cs.weapon; }
@@ -656,7 +656,7 @@ function useItem(k){
   if (k === 'wood'){ if (inv.wood < 2 || inv.fiber < 1){ toast('A splint takes 2 wood and 1 plant fibre.', 3); return; } inv.wood -= 2; inv.fiber--; inv.splint++; feed('Made a splint', ITEMS.splint[1]); updateHud(); return; }
   if (inv[k] < 1 && ITEMS[k]){ toast('No ' + ITEMS[k][0].toLowerCase() + ' left.', 2); return; }
   if (inv[k] > 0 && (k === 'bandage' || k === 'water')){ P.actK = k === 'water' ? 'drink' : 'bandage'; P.actT = time; }
-  if (k === 'bandage'){ if (!(P.bleed > 0) && !P.wound){ toast('You have no wound to bandage.', 2.5); return; } inv.bandage--; P.bleed = 0; P.wound = 0; P.woundT = 0; sfx('search', undefined, undefined, 0.5); feed('Bandaged. The bleeding stops and the wound stays clean.', ITEMS.bandage[1]); updateHud(); return; }
+  if (k === 'bandage'){ if (!(P.bleed > 0) && !P.wound){ toast('You have no wound to bandage.', 2.5); return; } inv.bandage--; P.bleed = 0; P.wound = 0; P.woundT = 0; addXp('aid', 6); P.hp = Math.min(100, P.hp + 2*lvl('aid')); sfx('search', undefined, undefined, 0.5); feed('Bandaged. The bleeding stops and the wound stays clean.', ITEMS.bandage[1]); updateHud(); return; }
   if (k === 'antibio'){ if (!P.inf){ toast('You have no infection. Keep them for when a wound turns bad.', 3); return; } inv.antibio--; P.inf = 0; feed('Took antibiotics. The infection clears.', ITEMS.antibio[1]); updateHud(); return; }
   if (k === 'splint'){ if (P.leg !== 1){ toast(P.leg === 2 ? 'Your leg is already splinted.' : 'Your legs are fine.', 2.5); return; } inv.splint--; P.leg = 2; P.legT = LEG_S; feed('Splinted. It heals in about ten minutes; no running until then.', ITEMS.splint[1]); updateHud(); return; }
   if (k === 'tape'){ var wd = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; if (!wd || durOf(wd) >= 1){ toast(wd ? 'Your weapon is in good shape.' : 'Equip a made weapon to patch it.', 2.5); return; } inv.tape--; P.dur[wd] = Math.min(1, durOf(wd) + 0.4); feed('Patched the ' + DESIGNS[wd].name + ' (' + pct(P.dur[wd]) + ')', ITEMS.tape[1]); updateHud(); return; }
@@ -676,7 +676,7 @@ function useItem(k){
   inv[k]--;
   if (k === 'food'){ P.hunger = Math.min(100, P.hunger + 35); feed('Ate food', ITEMS.food[1]); }
   if (k === 'water'){ P.thirst = Math.min(100, P.thirst + 40); feed('Drank water', ITEMS.water[1]); }
-  if (k === 'medkit'){ var heal = me.bg === 'medic' ? 75 : 50; P.hp = Math.min(100, P.hp + heal); feed('+' + heal + ' Health' + (P.bleed > 0 || P.wound ? ', wound dressed' : ''), '#7dff9a'); P.bleed = 0; P.wound = 0; P.woundT = 0; if (P.inf && me.bg === 'medic'){ P.inf = 0; feed('As a medic you clean out the infection too', '#7dff9a'); } }
+  if (k === 'medkit'){ var heal = (me.bg === 'medic' ? 75 : 50) + 3*lvl('aid'); addXp('aid', 10); P.hp = Math.min(100, P.hp + heal); feed('+' + heal + ' Health' + (P.bleed > 0 || P.wound ? ', wound dressed' : ''), '#7dff9a'); P.bleed = 0; P.wound = 0; P.woundT = 0; if (P.inf && me.bg === 'medic'){ P.inf = 0; feed('As a medic you clean out the infection too', '#7dff9a'); } }
   updateHud();
 }
 function place(kind, pos){
@@ -1127,8 +1127,8 @@ function shoot(){
   gunHud(); updateHud();
 }
 /* ================= characters: look, background, skills ================= */
-var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:'Scavenging', melee:'Melee', endur:'Endurance', build:'Building', shoot:'Marksmanship'};
-var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0, build:0, shoot:0}, cap:false};
+var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:'Scavenging', melee:'Melee', endur:'Endurance', build:'Building', shoot:'Marksmanship', mech:'Mechanics', aid:'First aid'};
+var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0, build:0, shoot:0, mech:0, aid:0}, cap:false};
 function okCol(c, d){ return /^#[0-9a-f]{6}$/i.test(c) ? c : d; }
 function cleanLook(l){ l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(3, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(5, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(7, l.face | 0)), top:Math.max(0, Math.min(7, l.top | 0)), bot:Math.max(0, Math.min(5, l.bot | 0)), shoe:Math.max(0, Math.min(2, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0')}; }
 function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value, face:el('cFace').value, top:el('cTop').value, bot:el('cBot').value, shoe:el('cShoe').value, acc:el('cAcc').value}); }
@@ -3556,7 +3556,7 @@ function buildAct(a, pos){
   } else if (a === 'vrep'){
     var rv = P.veh, rd = 6; if (!rv) world.vehicles.forEach(function(o){ if (!o.t) return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < rd){ rd = d; rv = o; } });
     if (!rv){ toast('No car or truck within reach.', 2.5); return; } if (vhp(rv) >= 100 && !rv.flat){ toast('It is already sound.', 2.5); return; }
-    if (!(inv.parts > 0)){ toast('Repairs need a car part. Take them off wrecks with a wrench.', 3); return; } inv.parts--; if (rv.flat){ rv.flat = 0; rv.pk = 0; toast('Tyre fixed.', 2); } rv.hp = Math.min(100, vhp(rv) + 55); rv.warnHp = false; if (vhp(rv) > 0) rv.fireT = 0; sfx('metal', rv.x, rv.y, 0.8); makeNoise(rv.x, rv.y, 10); toast('Repaired. The vehicle is at ' + Math.round(vhp(rv)) + '%.', 3); updateHud();
+    if (!(inv.parts > 0)){ toast('Repairs need a car part. Take them off wrecks with a wrench.', 3); return; } inv.parts--; if (rv.flat){ rv.flat = 0; rv.pk = 0; toast('Tyre fixed.', 2); } rv.hp = Math.min(100, vhp(rv) + 55 + 6*lvl('mech')); addXp('mech', 10); rv.warnHp = false; if (vhp(rv) > 0) rv.fireT = 0; sfx('metal', rv.x, rv.y, 0.8); makeNoise(rv.x, rv.y, 10); toast('Repaired. The vehicle is at ' + Math.round(vhp(rv)) + '%.', 3); updateHud();
   } else if (a === 'bed'){
     if (!P.inside){ toast('A bed has to be inside a building.', 2.5); return; } if (world.nests[P.inside.id]){ toast('Not in a nest.', 2.5); return; }
     if (inv.wood < 5){ toast('A bed needs 5 wood.', 2.5); return; }
@@ -5337,7 +5337,7 @@ function syncChar(fromRoster){
     var c = found.c, l = cleanLook(c.look); if (fromRoster) el('pname').value = c.name || found.slug;
     el('cBuild').value = l.build; el('cSkin').value = l.skin; el('cShirt').value = l.shirt; el('cPants').value = l.pants; el('cHat').value = l.hat; el('cBody').value = l.body; el('cHair').value = l.hair; el('cHairC').value = l.hc; el('cFace').value = l.face; el('cTop').value = l.top; el('cBot').value = l.bot; el('cShoe').value = l.shoe; el('cAcc').value = l.acc;
     if (c.bg) el('cBg').value = c.bg; el('cBg').disabled = !!c.bg;
-    var sk = c.skills || {}; el('cInfo').textContent = 'Scavenging ' + xpLvl(sk.scav) + ' \u00b7 Melee ' + xpLvl(sk.melee) + ' \u00b7 Endurance ' + xpLvl(sk.endur) + ' \u00b7 Building ' + xpLvl(sk.build) + ' \u00b7 Marksmanship ' + xpLvl(sk.shoot) + ' \u00b7 Deaths ' + (c.deaths | 0) + '. Background is fixed once a survivor has played.';
+    var sk = c.skills || {}; el('cInfo').textContent = 'Scavenging ' + xpLvl(sk.scav) + ' \u00b7 Melee ' + xpLvl(sk.melee) + ' \u00b7 Endurance ' + xpLvl(sk.endur) + ' \u00b7 Building ' + xpLvl(sk.build) + ' \u00b7 Marksmanship ' + xpLvl(sk.shoot) + ' \u00b7 Mechanics ' + xpLvl(sk.mech) + ' \u00b7 First aid ' + xpLvl(sk.aid) + ' \u00b7 Deaths ' + (c.deaths | 0) + '. Background is fixed once a survivor has played.';
   } else { el('cBg').disabled = false; if (fromRoster) el('pname').value = ''; el('cInfo').textContent = 'New survivor. Pick a name, a look and a background.'; }
   drawPrev();
 }
