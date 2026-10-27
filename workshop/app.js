@@ -20,7 +20,7 @@
   function isModel(){ return !!S.doc && S.doc.type === 'model'; }
   function isSound(){ return !!S.doc && S.doc.type === 'sound'; }
   function partNames(){ return isModel() ? Object.keys(S.doc.parts || {body:{}}) : ['body', 'bonnet', 'boot']; }
-  function partOpts(){ return isModel() ? partNames().map(function(n){ return [n, n.replace(/_/g, ' ')]; }) : [['body', 'Body'], ['bonnet', 'Bonnet (opens)'], ['boot', 'Boot lid (opens)']]; }
+  function partOpts(){ return isModel() ? partNames().map(function(n){ return [n, n.replace(/_/g, ' ')]; }) : [['body', 'Body'], ['bonnet', 'Hood (opens)'], ['boot', 'Trunk lid (opens)']]; }
   var POINTC = {grip:'xff3b30', offhand:'xff8a30', seat:'x3b82ff', sit:'x3b82ff', saddle:'x3b82ff', thwart:'x3b82ff', hinge:'xffd23b', joint:'xffd23b', light:'xfff2b0', socket:'x35d07f', muzzle:'xff3b30', smoke:'xb0b0b0'};
 
   /* ---------------------------------------------------------------- state */
@@ -486,7 +486,7 @@
     if (S.layer === 'state') h += '<button class="sm on" data-l="state">Editing: ' + esc(stateLabel(S.state)) + '</button><button class="sm alt" data-l="car">Done</button>';
     $('layerBar').innerHTML = h;
     var p = '';
-    if (S.layer === 'car') p = tog('bonnet', 'Bonnet open') + tog('boot', 'Boot open') + tog('steer', 'Steer') + tog('markers', 'Inside parts') + tog('person', 'Person') + tog('planes', 'Planes');
+    if (S.layer === 'car') p = tog('bonnet', 'Hood open') + tog('boot', 'Trunk open') + tog('steer', 'Steer') + tog('markers', 'Inside parts') + tog('person', 'Person') + tog('planes', 'Planes');
     else if (S.layer === 'look') p = '<select id="lookSel">' + D.LOOKS.map(function(l){ return '<option value="' + l.key + '"' + (l.key === S.look ? ' selected' : '') + '>' + l.label + '</option>'; }).join('') + '</select>';
     $('previewBar').innerHTML = p;
     var ls = $('lookSel'); if (ls) ls.onchange = function(){ S.look = ls.value; rebuildScene(); };
@@ -571,7 +571,7 @@
         'Pick a shape on the left, then tap where it goes: it lands flush on the face you tap. Tap a piece to select it; drag a selected piece to move it. Two fingers zoom and pan.';
       return '<span class="stamp">Piece</span><p>' + hint + '</p>' +
         '<div class="row"><button class="alt sm" data-a="selAll">Select all</button>' + (S.layer === 'car' && S.doc.pieces.some(function(p){ return p.hidden; }) ? '<button class="alt sm" data-a="selHidden">Select inside parts</button>' : '') + '</div>' +
-        (S.layer === 'car' && S.doc.pieces.filter(function(p){ return p.g !== 'wheel'; }).length < 2 ? '<div class="card"><h3>Starting out</h3><p>Lay a long Block on the ground for the floor of the car, a shorter one on top for the cabin, Slopes for the bonnet and windscreen. Turn on <b>L | R</b> (on by default) so every piece off the middle is mirrored.</p><p>Or open one of the design chat\'s cars from <b>Designs</b> and change it.</p></div>' : '') +
+        (S.layer === 'car' && S.doc.pieces.filter(function(p){ return p.g !== 'wheel'; }).length < 2 ? '<div class="card"><h3>Starting out</h3><p>Lay a long Block on the ground for the floor of the car, a shorter one on top for the cabin, Slopes for the hood and windshield. Turn on <b>L | R</b> (on by default) so every piece off the middle is mirrored.</p><p>Or open one of the design chat\'s cars from <b>Designs</b> and change it.</p></div>' : '') +
         makeCard() + '<div class="card"><h3>Keys (keyboard)</h3><p class="muted">Delete removes · Ctrl+D duplicates · Ctrl+Z undo · arrows move left/right and front/back, Page Up/Down up and down · M mirror · F fit · Esc stop adding</p></div>';
     }
     if (sel.length > 1) return panelMany(sel);
@@ -705,8 +705,8 @@
     h += '<div class="card"><h3>' + (isModel() ? esc(S.doc.target.pack) + ' palette' : 'Game palette') + '</h3><div class="swatches">' + keys.map(function(c){ return '<button class="sw' + (cur === c ? ' on' : '') + '" title="' + esc(c) + '" style="background:' + esc(PL[c]) + '" data-a="col" data-c="' + esc(c) + '"></button>'; }).join('') + '</div></div>';
     return h;
   }
-  function stateLabel(k){ return {body_crumple_light:'Body, light crumple', body_crumple_heavy:'Body, heavy crumple', body_bumper_bent:'Body, bent bumper', bonnet_crumple_light:'Bonnet, light crumple', bonnet_crumple_heavy:'Bonnet, heavy crumple', bonnet_buckled:'Bonnet, buckled',
-    windscreen_cracked:'Cracked windscreen', windscreen_missing:'Missing windscreen', smoke:'Smoke', fire:'Fire', 'wreck.body':'Old wreck, body', 'wreck.bonnet':'Old wreck, bonnet', 'wreck.wheel':'Old wreck, wheel', 'burnt.body':'Burnt shell, body', 'burnt.bonnet':'Burnt shell, bonnet', 'burnt.wheel':'Burnt shell, wheel'}[k] || k; }
+  function stateLabel(k){ return {body_crumple_light:'Body, light crumple', body_crumple_heavy:'Body, heavy crumple', body_bumper_bent:'Body, bent bumper', bonnet_crumple_light:'Hood, light crumple', bonnet_crumple_heavy:'Hood, heavy crumple', bonnet_buckled:'Hood, buckled',
+    windscreen_cracked:'Cracked windscreen', windscreen_missing:'Missing windscreen', smoke:'Smoke', fire:'Fire', 'wreck.body':'Old wreck, body', 'wreck.bonnet':'Old wreck, hood', 'wreck.wheel':'Old wreck, wheel', 'burnt.body':'Burnt shell, body', 'burnt.bonnet':'Burnt shell, hood', 'burnt.wheel':'Burnt shell, wheel'}[k] || k; }
   function panelDamage(){
     var d = S.doc, A = asset();
     var h = '<span class="stamp">Damage</span><p>Made from your car automatically: the game shows these as it gets hurt. Change the strength or roll a new variation; edit any one by hand if you want.</p>';

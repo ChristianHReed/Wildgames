@@ -268,7 +268,7 @@
   <button id="hudMenu" title="Menu">&#9776;</button>
   <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
-  <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car boot, siphon fuel, or pick up and put down furniture &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
+  <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car trunk, siphon fuel, or pick up and put down furniture &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="salv" class="hidden"><span id="stxt"></span><div id="sbar"></div></div>
   <div id="plbar" class="hidden"><span id="pltxt"></span><span class="plb"><button id="plrot">Rotate</button><button id="plsn">Snap: on</button><button id="plok">Place</button><button id="plno" class="alt">Cancel</button></span></div>
   <div id="prompt" class="hidden"><span id="ptxt"></span><div id="pbar"></div></div>
@@ -301,7 +301,7 @@
   <div id="touch" class="hidden">
     <div id="stick"><div id="knob"></div></div>
     <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
-    <button id="tShoot" class="m1">Shoot</button><button id="tGun" class="m1">Gun</button><button id="tCar" class="m1 nx">Boot</button><button id="tThrow" class="m1">Throw</button><button id="tLight" class="m1">Light</button>
+    <button id="tShoot" class="m1">Shoot</button><button id="tGun" class="m1">Gun</button><button id="tCar" class="m1 nx">Trunk</button><button id="tThrow" class="m1">Throw</button><button id="tLight" class="m1">Light</button>
     <button id="tCade" class="m2">Wall</button><button id="tFire" class="m2">Fire</button><button id="tPing" class="m2">Mark</button><button id="tBuild" class="m2">Build menu</button>
     <button id="tTake" class="nx">Take apart</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
   </div>
@@ -448,7 +448,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.41</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.42</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -474,7 +474,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.41', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.42', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2067,7 +2067,7 @@ function update(dt){
   else if (P.veh){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = (document.body.classList.contains('touchmode') ? 'Tap here to get ' : 'Press E to get ') + (P.veh.t ? 'out' : 'off'); }
   else if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
-    el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.dead ? 'Hold J to take apart ' : target.t ? 'Press E to drive ' + (target.kind === 'truck' ? '' : '(Y: boot and fuel) ') : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.surv ? 'Press E: ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.surv ? target.name + ' (' + target.tip + ')' : target.name);
+    el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.dead ? 'Hold J to take apart ' : target.t ? 'Press E to drive ' + (target.kind === 'truck' ? '' : '(Y: trunk and fuel) ') : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.surv ? 'Press E: ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.surv ? target.name + ' (' + target.tip + ')' : target.name);
     if (target.port) el('ptxt').textContent = portText(target);
     else if (target.subC) el('ptxt').textContent = subText(target);
     else if (target.cboxC) el('ptxt').textContent = cboxText(target);
@@ -2211,7 +2211,7 @@ var hudKey = '', hudPeek = 0;
 function updateHud(){
   el('bTemp').style.width = (P.body + 100)/2 + '%'; el('bTemp').style.background = P.body < -55 ? '#5f8a9a' : P.body > 55 ? '#c67139' : '#7a8a5e';
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
-  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !((P.mag && P.mag[P.gun] > 0) || inv[gunNow().am] > 0)); el('tGun').classList.toggle('nx', GORDER.filter(gunOwned).length < 2); el('tCar').classList.toggle('nx', !(carNear() || P.carry || carryTarget())); el('tCar').textContent = P.carry ? 'Put down' : carryTarget() && !carNear() ? 'Carry' : 'Boot'; gunHud(); el('tLight').classList.toggle('nx', !(inv.flashlight > 0)); el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
+  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !((P.mag && P.mag[P.gun] > 0) || inv[gunNow().am] > 0)); el('tGun').classList.toggle('nx', GORDER.filter(gunOwned).length < 2); el('tCar').classList.toggle('nx', !(carNear() || P.carry || carryTarget())); el('tCar').textContent = P.carry ? 'Put down' : carryTarget() && !carNear() ? 'Carry' : 'Trunk'; gunHud(); el('tLight').classList.toggle('nx', !(inv.flashlight > 0)); el('tRun').classList.toggle('on', !!P.run); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   el('lowhp').style.opacity = P.hp < 25 ? Math.min(1, (25 - P.hp)/15) : 0; el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open|Damp|Cold|Hot|Hungry|Thirsty)/.test(t) ? ' class="mild"' : '') + '>' + condIcon(t) + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
@@ -3966,7 +3966,7 @@ var curChest = null;
 function openChest(c){ curChest = c; el('chest').classList.remove('hidden'); if (document.exitPointerLock) document.exitPointerLock(); renderChest(); }
 function renderChest(){
   var c = curChest, box = el('chest'); if (!c || box.classList.contains('hidden')) return;
-  var h = '<b>' + (c.boot ? 'Boot' : c.bed ? 'Truck bed' : 'Storage chest') + '</b> <button id="chClose" class="alt" style="float:right">Close</button><div class="irow"><span class="n"><i>Item</i></span><i>carried / stored</i></div>', k;
+  var h = '<b>' + (c.boot ? 'Trunk' : c.bed ? 'Truck bed' : 'Storage chest') + '</b> <button id="chClose" class="alt" style="float:right">Close</button><div class="irow"><span class="n"><i>Item</i></span><i>carried / stored</i></div>', k;
   var row = function(key, name, col, have, st){ return '<div class="irow"><span class="sw" style="background:' + col + '"></span><span class="n">' + name + '</span><i>' + have + ' / ' + st + '</i><button data-a="put" data-id="' + key + '"' + (have ? '' : ' disabled') + '>Store</button><button class="alt" data-a="get" data-id="' + key + '"' + (st ? '' : ' disabled') + '>Take</button></div>'; };
   for (k in ITEMS) if (inv[k] > 0 || c.inv[k] > 0) h += row('b:' + k, ITEMS[k][0], ITEMS[k][1], inv[k], c.inv[k] | 0);
   var ids = {}; for (k in P.items) if (P.items[k] > 0) ids[k] = 1; for (k in c.items) if (c.items[k] > 0) ids[k] = 1;
@@ -4125,7 +4125,7 @@ function makeVehicles(saved){
   bedChest();
 }
 function vehSave(){ var o = {}; world.vehicles.forEach(function(v){ o[v.id] = [r2(v.x), r2(v.y), r2(v.yaw), Math.round(v.fuel)]; if (v.id[0] === 'r') o[v.id].push(v.t, v.kind === 'truck' ? 'truck' : v.t ? carKind(v) : 0); else o[v.id].push(0, 0); if ((v.hp !== undefined && v.hp < 100) || v.gh !== undefined || v.cu){ o[v.id].push(v.hp !== undefined && v.hp < 100 ? Math.round(v.hp) : 100); if (v.gh !== undefined || v.cu){ o[v.id][7] = v.gh !== undefined ? 1 : 0; if (v.cu) o[v.id][8] = v.cu; } } }); o._u = 1; return o; }
-/* 0.51: town cars. Y (or the Boot button) at a parked car: first the boot is searched, then fuel is siphoned a can at a time (a car holds about 60 s of driving per can).
+/* 0.51: town cars. Y (or the Trunk button) at a parked car: first the trunk is searched, then fuel is siphoned a can at a time (a car holds about 60 s of driving per can).
    Burnt shells are empty and wrecks hold only the odd can. */
 var TRAIL = [], trailT = 0;
 var ARMYBOOT = {ammo:3, rifle:3, shell:2.5, flareshell:1, medkit:1.5, battery:1, carbine:0.35, revolver:0.3, hunting_rifle:0.25, pump_shotgun:0.3, flare_gun:0.2, none:2};
@@ -4137,7 +4137,7 @@ function carUse(){
   var E = world.edits;
   if (!(E.boots && E.boots[v.id]) && v.dead !== 'burnt'){
     doEdit({a:'boot', id:v.id}); var army = v.dead && hash(Math.round(v.x), Math.round(v.y), 61) < 0.08, r = rollStash(army ? ARMYBOOT : BOOT, army ? 5 : v.dead ? 2 : 3), got = [], k; for (k in r.inv){ inv[k] = (inv[k] || 0) + r.inv[k]; got.push('+' + r.inv[k] + ' ' + (ITEMS[k] ? ITEMS[k][0].toLowerCase() : k)); }
-    sfx('plank', v.x, v.y, 0.8, 0.7); makeNoise(v.x, v.y, 8); feed(got.length ? 'Searched the boot: ' + got.join(', ') : 'The boot is empty', ITEMS.wood[1]); updateHud(); return; }
+    sfx('plank', v.x, v.y, 0.8, 0.7); makeNoise(v.x, v.y, 8); feed(got.length ? 'Searched the trunk: ' + got.join(', ') : 'The trunk is empty', ITEMS.wood[1]); updateHud(); return; }
   var can = v.dead ? (v.siph ? 0 : (hash(v.id.length*7 + (v.x | 0), v.y | 0, 5) < 0.25 ? 1 : 0)) : Math.floor((v.fuel || 0)/CAN_M);
   if (can < 1){ toast(v.dead === 'burnt' ? 'A burnt-out shell. Nothing left in it.' : 'No fuel left to siphon.', 2.5); return; }
   v.siph = 1; if (!v.dead) v.fuel = Math.max(0, v.fuel - CAN_M); inv.fuel++; sfx('pot', v.x, v.y, 0.7, 0.8); makeNoise(v.x, v.y, 6); feed('Siphoned a can of fuel', ITEMS.fuel[1]); updateHud();
@@ -4184,7 +4184,7 @@ function vehBash(V, mx, my, dt){
   V.hp = Math.max(0, vhp(V) - pay*vWeak(V));
   if (E >= hp0){ by2[bk] = 0; emit({k:'edit', e:{a:'wbay', id:best.id, i:bk, v:0}}); rebuildWalls(); sfx('plank', best.x, best.y, 1, 0.7); feed('Smashed through the wall', '#e8b27a'); }
   else { wallHurt(best, bk, E); sfx('metal', best.x, best.y, 0.9, 0.5); }
-  fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60;  toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. Repair it from the Build menu (a car part) before it burns, or at a car shop.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
+  fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 34); if (vhp(V) <= 0){ V.fireT = 60;  toast('The ' + (V.kind === 'truck' ? 'truck' : 'car') + '\'s engine is wrecked. Repair it from the Build menu (a car part) before it burns, or at a car shop.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the hood. It will only crawl until it is repaired.', 4); }
   P.cause = P.cause || ''; if (spd > 12 && pay > 20){ P.hp -= 4; P.cause = 'a car crash'; } updateHud();
 }
 /* 0.88: driving. W gas, S brake then reverse, A D steer (less at speed), Space handbrake. The car keeps its own heading and speed; the view follows the heading. */
@@ -4294,7 +4294,7 @@ function carDrive(V, dt, thr, str, hb){
       var im = Math.abs(vs); V.crT = time + 0.4;
       if (im > 6){ V.hp = Math.max(0, vhp(V) - (im - 5)*1.3*vWeak(V)); crashSnd(im, P.x + ux*1.7, P.y + uy*1.7); fxAdd('effects.crash_burst', P.x + ux*1.7, P.y + uy*1.7, groundAt(P.x, P.y), {life:0.8, s0:0.9, s1:1.5, up:0.7}); makeNoise(P.x, P.y, 30);
         if (im > 16){ P.hp -= (im - 16)*0.9; P.cause = 'a car crash'; }
-        if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. Repair it from the Build menu (a car part) before it burns, or at a car shop.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the bonnet. It will only crawl until it is repaired.', 4); }
+        if (vhp(V) <= 0){ V.fireT = 60; toast('The engine is wrecked. Repair it from the Build menu (a car part) before it burns, or at a car shop.', 5); } else if (vhp(V) < 35 && !V.warnHp){ V.warnHp = true; toast('Steam pours from the hood. It will only crawl until it is repaired.', 4); }
         updateHud(); }
       vs = -vs*0.2;
     }
@@ -4377,7 +4377,7 @@ function vehAnim(v, now){
   } else if (dtf > 0) v.spd = 0;
   v.ax = v.x; v.ay = v.y; v.ayaw = v.yaw;
 }
-/* 0.75: car damage looks (props.vehicles[name].damage) by vehicle health: whole above 70; 70 to 40 bent bumper and cracked windscreen; 40 to 15 light crumple; under 15 heavy crumple with the bonnet buckled and smoke; wrecked at 0 with the windscreen gone; then burning, then the burnt shell */
+/* 0.75: car damage looks (props.vehicles[name].damage) by vehicle health: whole above 70; 70 to 40 bent bumper and cracked windscreen; 40 to 15 light crumple; under 15 heavy crumple with the hood buckled and smoke; wrecked at 0 with the windscreen gone; then burning, then the burnt shell */
 var CKD = {sedan:['sedan'], hatch:['hatchback'], suv:['suv'], wagon:['wagon'], offroad:['offroader'], crew:['crew_pickup'], flatbed:['flatbed'], boxtruck:['box_truck'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]}, CDM = {};
 
 /* 0.114.24: cars from content packs (the Workshop) join every per-car table under their pk_ key */
@@ -4447,13 +4447,13 @@ function bedChest(){
   if (!c && truckOf()){ c = {chest:true, name:'the truck bed', id:'truck', x:0, y:0, inv:{}, items:{}, designs:[]}; E.chests.push(c); }
   if (c){ c.name = 'the truck bed'; c.bed = true; } world.bed = c; bedFollow(); return c;
 }
-/* 0.114.9: a car fitted with a roof box, bed cap or other storage part has a boot chest that rides at its back and holds what you put in it */
+/* 0.114.9: a car fitted with a roof box, bed cap or other storage part has a trunk chest that rides at its back and holds what you put in it */
 function bootFollow(){
   var E = world.edits; world.vehicles.forEach(function(v){
     if (!v.t || v.kind === 'truck' || !v.cu || v.dead) return; var id = 'boot:' + v.id, c = null, i;
     for (i = 0; i < E.chests.length; i++) if (E.chests[i].id === id){ c = E.chests[i]; break; }
-    if (!c){ if (Math.abs(v.x - P.x) > 8 || Math.abs(v.y - P.y) > 8 || !(carSt(v).storage > 0) || E.chests.length >= 98) return; c = {chest:true, name:'the boot', id:id, x:0, y:0, inv:{}, items:{}, designs:[]}; E.chests.push(c); }
-    c.bed = true; c.boot = true; c.name = 'the boot'; if (v === P.veh){ c.x = c.y = 1e9; return; } var q = tpt(v, -2.3, 0); c.x = q.x; c.y = q.y; });
+    if (!c){ if (Math.abs(v.x - P.x) > 8 || Math.abs(v.y - P.y) > 8 || !(carSt(v).storage > 0) || E.chests.length >= 98) return; c = {chest:true, name:'the trunk', id:id, x:0, y:0, inv:{}, items:{}, designs:[]}; E.chests.push(c); }
+    c.bed = true; c.boot = true; c.name = 'the trunk'; if (v === P.veh){ c.x = c.y = 1e9; return; } var q = tpt(v, -2.3, 0); c.x = q.x; c.y = q.y; });
 }
 function bedFollow(){ var c = world.bed; if (!c) return; var v = truckOf(); if (!v || v === P.veh){ c.x = c.y = 1e9; return; } var q = tpt(v, -2.95, 0); c.x = q.x; c.y = q.y; }
 /* the places to stand: the driver's door (drive), the passenger door (sleep), the front corner (repairs) */
