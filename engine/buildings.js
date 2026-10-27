@@ -627,6 +627,14 @@ function placeDress(g){
     if (sp === 'basketball'){ put('basketball_hoop', u1 - 1.2, 0, Math.PI); put('basketball_hoop', u0 + 1.2, 0, 0); }
     else if (sp === 'soccer' || sp === 'american_football' || sp === 'football'){ put('soccer_goal', u1 - 0.3, 0, Math.PI/2*3); put('soccer_goal', u0 + 0.3, 0, Math.PI/2); }
     else if (sp === 'tennis' || sp === 'pickleball' || sp === 'volleyball'){ put(sp === 'volleyball' ? 'volleyball_net' : 'tennis_net', 0, 0, 0); }
+    /* 0.114.32: the floor and its painted lines. Courts are 4 m tiles (blue, or green for tennis) with white lines round the edge and across the middle; fields get their lines on the grass */
+    var court = sp === 'tennis' || sp === 'pickleball' || sp === 'volleyball' || sp === 'basketball', field = sp === 'soccer' || sp === 'american_football' || sp === 'football';
+    if ((court || field) && L2 >= 6 && W2 >= 4 && L2 < 140 && W2 < 100){
+      var cu0 = (u0 + u1)/2, cv0 = (v0 + v1)/2, nu = Math.max(1, Math.round(L2/4)), nv = Math.max(1, Math.round(W2/4)), tw = L2/nu, th = W2/nv, tile = sp === 'tennis' ? 'pk.court_green_plain' : 'pk.court_blue_plain', ln = function(nm, du, dv, rot){ var c = at(du, dv); if (ok(c[0], c[1], 0.3)) add('pk.' + nm, c[0], c[1], ya + rot, 4000); };
+      if (court) for (var iu = 0; iu < nu; iu++) for (var iv = 0; iv < nv; iv++){ var c = at(u0 + tw*(iu + 0.5), v0 + th*(iv + 0.5)); if (ok(c[0], c[1], 0.3)) add(tile, c[0], c[1], ya, 4000); }
+      for (var lu = u0 + 2; lu < u1 + 1.99; lu += 4){ var uu = Math.min(lu, u1 - 2); ln('field_line_4', uu, v0 + 0.15, Math.PI/2); ln('field_line_4', uu, v1 - 0.15, Math.PI/2); }
+      for (var lv = v0 + 2; lv < v1 + 1.99; lv += 4){ var vv = Math.min(lv, v1 - 2); ln('field_line_4', u0 + 0.15, vv, 0); ln('field_line_4', u1 - 0.15, vv, 0); if (sp !== 'volleyball' && sp !== 'pickleball') ln('field_line_4', cu0, vv, 0); }
+    }
     else if (sp === 'baseball' || sp === 'softball'){ put('home_plate', u0 + 3, 0, 0); put('baseball_backstop', u0 + 0.5, 0, Math.PI/2); put('pitchers_mound', u0 + 3 + Math.min(18, L2*0.35), 0, 0); }
   });
   w.waterLines.forEach(function(r, n){ var pt = r.pts, hw = r.w/2;
@@ -641,7 +649,7 @@ function placeDress(g){
     if (arA < 30000){ var nl = Math.min(14, Math.floor(arA/900)); for (var k = 0; k < nl; k++){ var lx = ar.minx + hash(ai, k, 43)*bw, ly = ar.miny + hash(ai, k, 44)*bh; if (pip(ar.pts, lx, ly)) add(hash(ai, k, 45) < 0.3 ? 'ws.lily_pads_bloom' : 'ws.lily_pads', lx, ly, hash(ai, k, 46)*6.28, 300); } } });
   var total = 0;
   Object.keys(out).forEach(function(path){ var L = out[path], M = path.indexOf('ground.') === 0 ? gB(path.slice(7)) : spB(path); if (!M) return; var st = Math.max(1, Math.ceil(L.l.length/L.c));
-    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
+    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' || path.slice(0, 9) === 'pk.court_' || path.slice(0, 13) === 'pk.field_line' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
   w.dressCount = total; w.dressOut = out;
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */

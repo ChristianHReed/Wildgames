@@ -205,3 +205,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.29: a Workshop weapon dropped for a guest or carried to another world keeps its icon.
 - 0.114.30: open workshop.html from the site: faces push and pull, move arrows, snapping turn rings, sliders on every number.
 - 0.114.31: open workshop.html from the site: axle blocks, drivetrain, the new blocks and creature bodies are there.
+- 0.114.32: load a map with a tennis court or basketball court: the floor is blue or green with white lines, and soccer fields show white lines. Needs a map that has pitches.
