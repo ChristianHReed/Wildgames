@@ -183,6 +183,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.114.19 | Two new skills: Mechanics (repairs heal more, XP from fixing) and First aid (bandages and medkits heal more). Skill books now cover all seven. Old saves load with both at 0. |
 | 0.114.20 | Searched loot setting on the start screen: refills after about five days (as before) or never comes back. |
 | 0.114.21 | Carry weight: the pack has a weight (wood 2 kg, scrap 1, soil 3, parts 3, fuel 4, water 1, others light). Past 30 kg (+3 per Endurance level) you slow down, up to 30% slower. |
+| 0.114.22 | Vault: jump (Space) while walking into a fence or a placed prop and you go over it; on the ground they still block. |
 | 0.99.2 | Ladders. Build menu, Holes: 3 wood and 1 scrap puts a ladder against the wall of a pit (face the wall); within 0.9 m of it you climb out of any depth. Saved and shared like other building. Plain wood model for now. |
 | 0.99.1 | Pits hurt. Stepping off the edge of a hole drops you; a fall of more than 2 m costs health (11 per extra metre) and from 3.5 m can break a leg. Aliens and zombies that drop into a pit take damage by the depth and then cannot climb out. Next: ladders and covers, touch controls, held shovel art. |
 | 0.99.0 | Soil with mass: digging. The ground stays smooth on top and has soil below in 0.5 m blocks, 6 m deep, stored only where dug or filled (`engine/dig.js`). With a shovel, look down at open ground and hold E to dig a 1 m square half a metre deeper (soil, and stone below 3 m); Shift+E puts soil back. The grass is cut away over a hole and the hole gets floor and walls of soil in layers (topsoil, subsoil, clay, limestone). People and aliens follow the new ground; a step up of more than 0.9 m stops them (2.1 m with a jump), so a pit holds what walks in. Not on roads, in buildings, in water or under trees. Saved with the world and shared in multiplayer. Shovels are found in houses and industrial buildings, and the supply chest has one. Next: traps, ladders and covers, held shovel art, touch controls. |
@@ -316,7 +317,7 @@ Ticked items are in the game.
 - [x] Slow climb through windows; broken glass cuts unless crouched
 - [x] Hills slow you going up
 - [x] Swimming drains stamina; wet clothes lower warmth
-- [ ] Vault low fences and props (needs props to be solid first)
+- [x] Vault low fences and props (0.114.22)
 - [x] Surface noise: louder on gravel and glass, quieter on grass
 - [x] Carry weight slows you (0.114.21)
 - [x] Fall damage

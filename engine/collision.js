@@ -150,7 +150,7 @@ function drawPorts(m){
 function collide(e, r){
   var cx0 = Math.floor(e.x/G), cy0 = Math.floor(e.y/G);
   for (var pass = 0; pass < 2; pass++){
-    stampN++; if (world.wallSegs.length && !e.cl) pushSegs(e, r, world.wallSegs);   /* a clinger goes over fences and walls */
+    stampN++; if (world.wallSegs.length && !e.cl && !(e === P && P.jy > 0.3 && !P.inside)) pushSegs(e, r, world.wallSegs);   /* a clinger goes over fences and walls */
     for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){
       var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
       for (var i = 0; i < cell.length; i++){
