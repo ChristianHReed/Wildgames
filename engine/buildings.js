@@ -518,6 +518,9 @@ function placeDress(g){
     var ends = [[p[0], p[1], p[2], p[3]], [p[n-2], p[n-1], p[n-4], p[n-3]]];
     ends.forEach(function(e, ei){ var dx = e[2] - e[0], dy = e[3] - e[1], l = Math.hypot(dx, dy); if (l < 8) return; dx /= l; dy /= l; var side = ei ? 1 : -1, off = r.w/2 + 2.4, yaw = Math.atan2(dx, dy), bk = main ? 10 : 5;
       var sx = e[0] + dx*bk - dy*off*side, sy = e[1] + dy*bk + dx*off*side;
+      if (main && spB('wm.crosswalk_zebra') && r.w >= 7 && r.w <= 16 && (r.hw === 'primary' || r.hw === 'secondary' || r.hw === 'tertiary')){ var cx0 = e[0] + dx*7, cy0 = e[1] + dy*7, nn = Math.max(1, Math.round(r.w/6.5)), qq;   /* 0.114.15: a zebra crossing across each main road end, and a stop line before it */
+        for (qq = 0; qq < nn; qq++){ var of = (qq - (nn - 1)/2)*6.5, zx = cx0 - dy*of, zy = cy0 + dx*of; if (ok(zx, zy, 0.2) || qq) add('wm.crosswalk_zebra', zx, zy, yaw, 600); }
+        add('wm.stop_line', e[0] + dx*11 - dy*r.w*0.25*(ei ? 1 : -1), e[1] + dy*11 + dx*r.w*0.25*(ei ? 1 : -1), yaw, 400); }
       if (main){ if (ok(sx, sy)) add('street.traffic_light', sx, sy, yaw, 120); }
       else { if (ok(sx, sy)) add('street.stop_sign', sx, sy, yaw, 300); var nx2 = e[0] + dx*bk + dy*off*side, ny2 = e[1] + dy*bk - dx*off*side; if (ok(nx2, ny2) && hash(ri, ei, 77) < 0.6) add('street.street_name_post', nx2, ny2, yaw, 250); } });
     var run = 30 + hash(ri, 5, 61)*40, k = 0;
@@ -624,7 +627,7 @@ function placeDress(g){
     if (arA < 30000){ var nl = Math.min(14, Math.floor(arA/900)); for (var k = 0; k < nl; k++){ var lx = ar.minx + hash(ai, k, 43)*bw, ly = ar.miny + hash(ai, k, 44)*bh; if (pip(ar.pts, lx, ly)) add(hash(ai, k, 45) < 0.3 ? 'ws.lily_pads_bloom' : 'ws.lily_pads', lx, ly, hash(ai, k, 46)*6.28, 300); } } });
   var total = 0;
   Object.keys(out).forEach(function(path){ var L = out[path], M = path.indexOf('ground.') === 0 ? gB(path.slice(7)) : spB(path); if (!M) return; var st = Math.max(1, Math.ceil(L.l.length/L.c));
-    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
+    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
   w.dressCount = total; w.dressOut = out;
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */
