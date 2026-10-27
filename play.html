@@ -448,7 +448,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.43</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.44</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -474,7 +474,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.43', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.44', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2484,7 +2484,7 @@ var RIG = null, SVC = {}, svN = 0, SVQ = [], svBuf = null;
 var SVNEW = {};
 function svClips(){
   if (SVNEW.done || !RIG || !SHAPED.survivor || !SHAPED.survivor.clips) return; SVNEW.done = 1;
-  var PK = SHAPED.survivor, nb = RIG.bones.length, names = ['jump', 'airborne', 'land', 'hurt', 'drink', 'bandage', 'pickup', 'attack_chop', 'attack_thrust', 'attack_swing', 'sit', 'lean_wall', 'wave', 'carry_crate', 'siphon', 'skin_kneel', 'change_wheel', 'pull_winch', 'dig_trowel'];   /* 0.114.43: the last five come from the survivor clips pack (packs/afterstreet-clips.js) when it is installed */
+  var PK = SHAPED.survivor, nb = RIG.bones.length, names = ['jump', 'airborne', 'land', 'hurt', 'drink', 'bandage', 'pickup', 'attack_chop', 'attack_thrust', 'attack_swing', 'sit', 'lean_wall', 'wave', 'carry_crate', 'siphon', 'skin_kneel', 'change_wheel', 'pull_winch', 'dig_trowel', 'ride_bicycle', 'ride_bicycle_coast', 'ride_moto', 'ride_quad', 'row', 'paddle_kayak', 'paddle_canoe', 'steer_outboard', 'seated_boat'];   /* 0.114.43: the last five come from the survivor clips pack (packs/afterstreet-clips.js) when it is installed */
   var rot = function(a){ var x = (a[0] || 0)*Math.PI/180, y = (a[1] || 0)*Math.PI/180, z = (a[2] || 0)*Math.PI/180, cx = Math.cos(x), sx = Math.sin(x), cy = Math.cos(y), sy = Math.sin(y), cz = Math.cos(z), sz = Math.sin(z);
     return [cy*cz, -cy*sz, sy,  cx*sz + sx*sy*cz, cx*cz - sx*sy*sz, -sx*cy,  sx*sz - cx*sy*cz, sx*cz + cx*sy*sz, cx*cy]; };
   var mul = function(A, B){ var R = []; for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) R.push(A[r*3]*B[c] + A[r*3+1]*B[3+c] + A[r*3+2]*B[6+c]); return R; };
@@ -2569,7 +2569,28 @@ function svQueue(o, look, gy, now){
   svClips();
   var R = RIG[look.body], clip = pplClip(o, R), cl = R.clips[clip], sp = clip === 'run' ? 1.5 : clip === 'walk' ? 1.1 : clip === 'attack' || clip === 'shoot' ? 2.6 : clip === 'crouchwalk' ? 0.9 : clip === 'swim' ? 0.8 : 0.35;
   var t = clip.indexOf('attack') === 0 && o.swk !== undefined ? o.swk*0.999 : o.ak !== undefined && SVNEW[clip] ? Math.min(0.999, o.ak) : clip === 'throw' ? (time - (P.thrT || 0))/0.5*0.999 : clip === 'shoot' && o.shk !== undefined ? o.shk*0.999 : now*sp + (o.id || 0)*0.37, f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1];
-  SVQ.push({S:svBuild(look), R:R, f:f, x:o.x, y:o.y, gy:gy, yaw:o.yaw});
+  var qx = o.x, qy = o.y, qg = gy;
+  if (o.rd){ var rc = Math.cos(o.yaw), rs = Math.sin(o.yaw); qx += rc*o.rd[0] - rs*o.rd[2]; qy += rs*o.rd[0] + rc*o.rd[2]; qg += o.rd[1]; }   /* 0.114.44: a rider sits at the vehicle's saddle, seat or helm point */
+  SVQ.push({S:svBuild(look), R:R, f:f, x:qx, y:qy, gy:qg, yaw:o.yaw});
+}
+/* 0.114.44: riding poses from the clips pack. The clip's anchor gives the pelvis in the vehicle model's own frame (x right, y up, z forward), solved on a reference model; a different model of the same kind shifts it by the difference of their saddle or seat points. Returns the clip, its frame (0 to 1) and where to stand the survivor's origin, or null (the old plain pose). */
+function rideOf(v){
+  var SS = window.SHAPED, A = SS && SS.survivor && SS.survivor.clipAnchor; if (!A || !SVNEW.done) return null;
+  var clip, ref, pt, pt0, ak = 0, mv = Math.abs(v.spd || 0) > 0.3, sw = v.spin || 0, i;
+  if (v.boat){ var K = SS.boats, nm = v.boat, seats = K && K.seats && K.seats[nm]; if (!seats) return null;
+    var cmap = {rowboat:['row', 'rowboat', 0], kayak:['paddle_kayak', 'kayak', 0], canoe:['paddle_canoe', 'canoe', 1], jon_boat:['steer_outboard', 'jon_boat', 0]}, c = cmap[nm];
+    if (c){ clip = c[0]; ref = c[1]; pt = seats[c[2]]; pt0 = K.seats[ref][c[2]]; if (clip !== 'steer_outboard') ak = mv ? ((sw*0.13) % 1 + 1) % 1 : 0; }
+    else { clip = 'seated_boat'; ref = 'rowboat'; pt = seats[0]; pt0 = K.seats.rowboat[1]; }
+  } else {
+    var B = SS.bikes, bn = v.moto || (typeof BIKEK !== 'undefined' ? BIKEK[Math.abs(hashStr(String(v.id))) % BIKEK.length] : 'bicycle_city'), sd = B && B.saddle && B.saddle[bn]; if (!sd) return null; if (Array.isArray(sd[0])) sd = sd[0];
+    if (/^motorbike|^moped/.test(bn)){ clip = 'ride_moto'; ref = 'motorbike_road'; }
+    else if (bn === 'quad_bike'){ clip = 'ride_quad'; ref = 'quad_bike'; }
+    else if (/^bicycle|^bmx|^cargo|^tandem|^tricycle/.test(bn)){ clip = mv ? 'ride_bicycle' : 'ride_bicycle_coast'; ref = 'bicycle_city'; ak = mv ? (((sw*0.4)/6.2832) % 1 + 1) % 1 : 0; }
+    else return null;
+    pt = sd; pt0 = B.saddle[ref]; if (Array.isArray(pt0[0])) pt0 = pt0[0];
+  }
+  var an = A[clip === 'ride_bicycle_coast' ? 'ride_bicycle_coast' : clip]; if (!an || !an.pelvis || !pt || !pt0) return null;
+  return {clip:clip, ak:ak, rd:[an.pelvis[0] + pt[0] - pt0[0], an.pelvis[1] + pt[1] - pt0[1] - 0.96, an.pelvis[2] + pt[2] - pt0[2]]};
 }
 /* move every queued survivor's pieces by its frame's bone matrices and draw them all as one mesh */
 function svDraw(){
@@ -2986,8 +3007,8 @@ function render(){
   var tc = C('#fff2b0');
   for (i = 0; i < bullets.length; i++){ var b = bullets[i], a = Math.atan2(b.vy, b.vx); m.yo = groundAt(b.x, b.y); var trm = fxModel('effects.tracer'); if (trm) m.modelS(trm, b.x, b.y, a - 1.5708, groundAt(b.x, b.y) + 1.35, 1); else m.ybox(b.x, b.y, a, -0.8, 0, 1.35, 0.8, 0.015, 0.015, tc); }
   var dgNow = time - digActT < 0.15 && !digFill(), rv = P.veh && !P.veh.t && !P.veh.mach ? P.veh : null;   /* 0.105.1: you stay visible on a bike, moped or boat */
-  if (tp && (!P.veh || rv)){ m.yo = (P.gy || 0) + (P.jy || 0) + (rv ? (rv.boat ? 0.1 : rv.moto ? 0.2 : 0.32) : 0); queuePerson(m, {x:P.x, y:P.y, yaw:rv ? rv.yaw : P.yaw, id:0, worn:P.worn, pack:true, mv:rv ? 0 : P.mv, vis:P.vis, sw:P.swing > 0 || dgNow, swk:P.swing > 0 ? 1 - P.swing/0.22 : dgNow ? Math.min(0.99, prog) : undefined, hp:P.hp, shk:P.shootCd > 0 ? 1 - P.shootCd/0.3 : undefined, lit:lightOn(), wpn:dgNow ? 'shovel' : heldWpn(), atk:dgNow ? 'attack_dig' : heldAtk(), ak:pAct()[1],
-      act:pAct()[0] || (time - (P.thrT || -9) < 0.5 ? 'throw' : P.shootCd > 0 ? 'shoot' : prog > 0 && target && target !== 'water' && !target.port ? (target.plant ? 'eat' : 'search') : null), swim:P.swim}, me.look, now); }
+  if (tp && (!P.veh || rv)){ var rdz = rv ? rideOf(rv) : null; m.yo = (P.gy || 0) + (P.jy || 0) + (rv && !rdz ? (rv.boat ? 0.1 : rv.moto ? 0.2 : 0.32) : rv && rv.boat ? -0.05 : 0); queuePerson(m, {x:P.x, y:P.y, yaw:rv ? rv.yaw : P.yaw, id:0, worn:P.worn, pack:true, mv:rv ? 0 : P.mv, vis:P.vis, sw:P.swing > 0 || dgNow, swk:P.swing > 0 ? 1 - P.swing/0.22 : dgNow ? Math.min(0.99, prog) : undefined, hp:P.hp, shk:P.shootCd > 0 ? 1 - P.shootCd/0.3 : undefined, lit:lightOn(), wpn:dgNow ? 'shovel' : heldWpn(), atk:dgNow ? 'attack_dig' : heldAtk(), ak:rdz ? rdz.ak : pAct()[1], rd:rdz ? rdz.rd : undefined,
+      act:rdz ? rdz.clip : pAct()[0] || (time - (P.thrT || -9) < 0.5 ? 'throw' : P.shootCd > 0 ? 'shoot' : prog > 0 && target && target !== 'water' && !target.port ? (target.plant ? 'eat' : 'search') : null), swim:P.swim}, me.look, now); }
   m.yo = 0; upload(m, dyn); drawMesh(dyn); drawCreatures(); drawPeople(); drawNature();
 
   /* held items */
