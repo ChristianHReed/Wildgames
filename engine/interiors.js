@@ -473,6 +473,35 @@ function growInterior(b, I){
   if (L === I.nl - 1) I.hatch = B.hatch; I.rooms = I.rooms.concat(B.rooms.map(function(r){ return 'up' + L + ':' + r; })); I.n += B.n; return true;
 }
 function freeInt(b){ var I = b.int; if (I && I.gs) I.gs.forEach(freeMesh); }
+
+/* ---- 0.114.27: floor plans from the content chat, fitted to a rectangular footprint ---- */
+var FPALIAS = {pharmacy:'gshop', cafe:'dining', deli:'gshop', jeweller:'gshop', cells:'bunkroom', cafeteria:'dining', chapel_hall:'nave', openplan:'office', boardroom:'office', factory:'warehouse', pumphouse:'workshop', control:'workshop', substation:'workshop', boilerhouse:'workshop', plantroom:'workshop', stairs:'hall'};
+function fpGround(b, u0, v0, u1, v1, ux, uy, vx, vy, gdu, gdv, NL){
+  var F = window.FLOORPLAN; if (!F || window.NOFLOORPLAN || !b.door) return null;
+  if (b.fp !== undefined && b.fp && b.fp.key === NL) return b.fp.out; if (b.fp === null) return null;
+  var out = null;
+  try {
+    var kind = F.kinds.indexOf(b.kind) >= 0 ? b.kind : F.kinds.indexOf(b.cat) >= 0 ? b.cat : null, W = u1 - u0, D = v1 - v0, p = b.pts;
+    if (kind && W >= 6 && D >= 5 && b.area >= 0.96*W*D){
+      var okc = [[u0 + 0.3, v0 + 0.3], [u1 - 0.3, v0 + 0.3], [u1 - 0.3, v1 - 0.3], [u0 + 0.3, v1 - 0.3]].every(function(c){ return pip(p, c[0]*ux + c[1]*vx, c[0]*uy + c[1]*vy); });
+      var dv0 = Math.abs(gdv - v0), dv1 = Math.abs(gdv - v1), front = dv0 <= dv1 ? 0 : 1;
+      if (okc && Math.min(dv0, dv1) < 2.6 && gdu > u0 + 1.5 && gdu < u1 - 1.5){
+        var plan = F.gen(kind, W, D, {seed:b.id, storeys:Math.max(1, NL || 1), entrance:gdu - (u0 + u1)/2}), S = plan && plan.storeys && plan.storeys[0];
+        if (S && !(F.check(plan).errors || []).length){
+          var sx = W/plan.w, sz = D/plan.d, tu = function(x){ return u0 + x*sx; }, tv = function(z){ return front ? v1 - z*sz : v0 + z*sz; };
+          out = {walls:[], doors:[], rooms:[]};
+          S.walls.forEach(function(w){
+            var onB = function(a, c){ return (Math.abs(a - 0) < 0.01 && Math.abs(c - 0) < 0.01) || (Math.abs(a - plan.w) < 0.01 && Math.abs(c - plan.w) < 0.01); }, onZ = function(a, c){ return (Math.abs(a) < 0.01 && Math.abs(c) < 0.01) || (Math.abs(a - plan.d) < 0.01 && Math.abs(c - plan.d) < 0.01); };
+            if (onB(w.x0, w.x1) || onZ(w.z0, w.z1)) return;   /* the outside walls are the building's own */
+            out.walls.push([tu(w.x0), tv(w.z0), tu(w.x1), tv(w.z1)]); });
+          S.doors.forEach(function(d){ if (d.b === -1 || d.a === -1) return; var h = d.w/2, a = d.axis === 'x' ? [d.x - h, d.z, d.x + h, d.z] : [d.x, d.z - h, d.x, d.z + h]; out.doors.push([tu(a[0]), tv(a[1]), tu(a[2]), tv(a[3])]); });
+          S.rooms.forEach(function(r){ var za = tv(r.z0), zb = tv(r.z1); out.rooms.push([tu(r.x0), Math.min(za, zb), tu(r.x1), Math.max(za, zb), r.furnish === false || r.type === 'hall' || r.type === 'stairs' ? 'hall' : (FPALIAS[r.type] || r.type)]); });
+        }
+      }
+    }
+  } catch (e){ out = null; }
+  b.fp = out ? {key:NL, out:out} : null; return out;
+}
 function genLevel(b, lvl, SS, CB, NL){
   /* shafts (0.49.4): two staircases, A for flights 0, 2, 4... and B for 1, 3, 5..., so flights never sit on top of each other. At this floor a shaft may have a flight going up from it (DEP) or the top of a flight arriving (ARR) */
   var ARR = null, DEP = null, SSl = SS || [];
@@ -549,7 +578,13 @@ function genLevel(b, lvl, SS, CB, NL){
   var LX = 0, LY = 0, gdu = b.door ? b.door.x*ux + b.door.y*uy : 1e9, gdv = b.door ? b.door.x*vx + b.door.y*vy : 1e9;
   if (ST){ var a0s = Math.min(ST.s0, ST.s1), a1s = Math.max(ST.s0, ST.s1); var sgn0 = Math.sign(ST.s1 - ST.s0), la = ST.land === 'side' ? ST.s1 - sgn0*0.5 : ST.s1 + sgn0*0.9, lc = ST.land === 'side' ? (ST.wallHi ? ST.c0 - 0.95 : ST.c1 + 0.95) : (ST.c0 + ST.c1)/2, lu = ST.A ? lc : la, lv0 = ST.A ? la : lc; LX = lu*ux + lv0*vx; LY = lu*uy + lv0*vy; }
   var eu0 = ST ? LX*ux + LY*uy : b.door ? b.door.x*ux + b.door.y*uy : 1e9, ev0 = ST ? LX*vx + LY*vy : b.door ? b.door.x*vx + b.door.y*vy : 1e9;
-  split(u0, v0, u1, v1, 0);
+  /* 0.114.27: ground floors of plain rectangular buildings use the content chat's checked floor plans (assets/shaped/floorplan.js): every room reachable, doors exactly where the plan puts them. Anything else (L-shapes, upper floors, no door on a long side) keeps the room splitter. */
+  var FPR = lvl ? null : fpGround(b, u0, v0, u1, v1, ux, uy, vx, vy, gdu, gdv, NL);
+  if (FPR){
+    FPR.walls.forEach(function(w){ ipiece(w[0]*ux + w[1]*vx, w[0]*uy + w[1]*vy, w[2]*ux + w[3]*vx, w[2]*uy + w[3]*vy, 0.1, ceilY, true); });
+    FPR.doors.forEach(function(d){ var ax1 = d[0]*ux + d[1]*vx, ay1 = d[0]*uy + d[1]*vy, ax2 = d[2]*ux + d[3]*vx, ay2 = d[2]*uy + d[3]*vy; ipiece(ax1, ay1, ax2, ay2, 2.2, ceilY, false); doors.push((ax1 + ax2)/2, (ay1 + ay2)/2); idoors.push([ax1, ay1, ax2, ay2]); });
+    FPR.rooms.forEach(function(r){ leaves.push(r); });
+  } else split(u0, v0, u1, v1, 0);
   /* ---- furnish: every room gets a job, then that job's list is laid out against walls, in rows or in the middle ---- */
   var keep = [], rects = [], total = 0, q, items = [], cls = 2;
   var LIMC = 0, FLIM = Math.max(110, Math.min(560, Math.round(60 + b.area/2.0)));   /* a big building gets furniture in every room, not just the first rooms from the door */
@@ -557,11 +592,11 @@ function genLevel(b, lvl, SS, CB, NL){
   for (i = 0; i < doors.length; i += 2) keep.push(doors[i]*ux + doors[i+1]*uy, doors[i]*vx + doors[i+1]*vy, 1.0);
   for (i = 0; i < b.wins.length; i += 6) keep.push(b.wins[i]*ux + b.wins[i+1]*uy, b.wins[i]*vx + b.wins[i+1]*vy, 0.75);
   var eu = ST ? eu0 : b.door ? b.door.x*ux + b.door.y*uy : b.cx*ux + b.cy*uy, ev = ST ? ev0 : b.door ? b.door.x*vx + b.door.y*vy : b.cx*vx + b.cy*vy;
-  var rooms = leaves.map(function(lf){ var cu = (lf[0] + lf[2])/2, cv = (lf[1] + lf[3])/2; return {a0:lf[0], b0:lf[1], a1:lf[2], b1:lf[3], cu:cu, cv:cv, w:lf[2] - lf[0], h:lf[3] - lf[1], area:(lf[2] - lf[0])*(lf[3] - lf[1]), d:Math.hypot(cu - eu, cv - ev)}; });
+  var rooms = leaves.map(function(lf){ var cu = (lf[0] + lf[2])/2, cv = (lf[1] + lf[3])/2; return {a0:lf[0], b0:lf[1], a1:lf[2], b1:lf[3], cu:cu, cv:cv, w:lf[2] - lf[0], h:lf[3] - lf[1], area:(lf[2] - lf[0])*(lf[3] - lf[1]), d:Math.hypot(cu - eu, cv - ev), pt:lf[4]}; });
   rooms.sort(function(x, y){ return x.d - y.d; });
   var plan = lvl ? upPlan(b) : PLAN[b.kind] || PLAN[b.cat] || PLAN.shop;
-  rooms.forEach(function(R, ri){ R.type = rooms.length === 1 ? (plan.one || plan.rooms[0]) : rooms.length === 2 && plan.two ? plan.two[ri] : plan.rooms[ri] || plan.more[(ri - plan.rooms.length) % plan.more.length]; });
-  if (plan.small && rooms.length >= 3){ var sm = 1; for (i = 2; i < rooms.length; i++) if (rooms[i].area < rooms[sm].area) sm = i; rooms[sm].type = plan.small; }
+  rooms.forEach(function(R, ri){ if (R.pt){ R.type = R.pt; return; } R.type = rooms.length === 1 ? (plan.one || plan.rooms[0]) : rooms.length === 2 && plan.two ? plan.two[ri] : plan.rooms[ri] || plan.more[(ri - plan.rooms.length) % plan.more.length]; });
+  if (!FPR && plan.small && rooms.length >= 3){ var sm = 1; for (i = 2; i < rooms.length; i++) if (rooms[i].area < rooms[sm].area) sm = i; rooms[sm].type = plan.small; }
   function free(cu, cv, hu, hv, R, flat){
     if (cu - hu < R.a0 + 0.04 || cu + hu > R.a1 - 0.04 || cv - hv < R.b0 + 0.04 || cv + hv > R.b1 - 0.04) return false;
     for (q = 0; q < 5; q++){ var pu = cu + [0,-1,1,-1,1][q]*hu, pv = cv + [0,-1,-1,1,1][q]*hv; if (!pip(p, pu*ux + pv*vx, pu*uy + pv*vy)) return false; }
@@ -613,7 +648,7 @@ function genLevel(b, lvl, SS, CB, NL){
   var U2W = function(a, c, A){ var uu = A ? c : a, vv = A ? a : c; return [uu*ux + vv*vx, uu*uy + vv*vy]; };
   var stairBox = function(S3){ var a0 = Math.min(S3.s0, S3.s1) - 1.5, a1 = Math.max(S3.s0, S3.s1) + 1.5; return S3.A ? [S3.c0 - 1.3, a0, S3.c1 + 1.3, a1] : [a0, S3.c0 - 1.3, a1, S3.c1 + 1.3]; };
   function placeStair(avoid){
-    var cands = rooms.filter(function(R){ return R.type !== 'bath' && R.area > 9; }).sort(function(x, y){ return y.area - x.area; }), SR = null;
+    var cands = rooms.filter(function(R){ return R.type !== 'bath' && R.type !== 'hall' && R.area > 9; }).sort(function(x, y){ return y.area - x.area; }), SR = null;
     for (var ri2 = 0; ri2 < cands.length && !SR; ri2++){ var R2 = cands[ri2];
       for (var A2 = 0; A2 < 2 && !SR; A2++){ var la0 = A2 ? R2.b0 : R2.a0, la1 = A2 ? R2.b1 : R2.a1, lc0 = A2 ? R2.a0 : R2.b0, lc1 = A2 ? R2.a1 : R2.b1;
         if (la1 - la0 < RUN + 1.15 || lc1 - lc0 < 2.2) continue;
