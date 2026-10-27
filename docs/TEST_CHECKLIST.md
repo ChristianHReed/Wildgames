@@ -196,3 +196,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.20: set Searched loot to Never comes back, search a cupboard, wait over five days away from it: it stays empty. Refills setting still restocks.
 - 0.114.21: fill the pack with wood or soil past about 30 kg: a message says it is heavy and you walk slower; drop items and speed returns.
 - 0.114.22: walk at a fence, jump at it: you clear it. Without the jump you are stopped. Aliens still do not cross it.
+- 0.114.23: docs only; nothing to test.

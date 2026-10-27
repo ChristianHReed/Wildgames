@@ -184,6 +184,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.114.20 | Searched loot setting on the start screen: refills after about five days (as before) or never comes back. |
 | 0.114.21 | Carry weight: the pack has a weight (wood 2 kg, scrap 1, soil 3, parts 3, fuel 4, water 1, others light). Past 30 kg (+3 per Endurance level) you slow down, up to 30% slower. |
 | 0.114.22 | Vault: jump (Space) while walking into a fence or a placed prop and you go over it; on the ground they still block. |
+| 0.114.23 | Roadmap tidy: checklist items already built in earlier versions are ticked (clinger, carry furniture, harvest, bases, vehicles vs walls, power plant, cable boxes). Two checklist items remain open: one wall logic for inside and outside, and frames for buildings. |
 | 0.99.2 | Ladders. Build menu, Holes: 3 wood and 1 scrap puts a ladder against the wall of a pit (face the wall); within 0.9 m of it you climb out of any depth. Saved and shared like other building. Plain wood model for now. |
 | 0.99.1 | Pits hurt. Stepping off the edge of a hole drops you; a fall of more than 2 m costs health (11 per extra metre) and from 3.5 m can break a leg. Aliens and zombies that drop into a pit take damage by the depth and then cannot climb out. Next: ladders and covers, touch controls, held shovel art. |
 | 0.99.0 | Soil with mass: digging. The ground stays smooth on top and has soil below in 0.5 m blocks, 6 m deep, stored only where dug or filled (`engine/dig.js`). With a shovel, look down at open ground and hold E to dig a 1 m square half a metre deeper (soil, and stone below 3 m); Shift+E puts soil back. The grass is cut away over a hole and the hole gets floor and walls of soil in layers (topsoil, subsoil, clay, limestone). People and aliens follow the new ground; a step up of more than 0.9 m stops them (2.1 m with a jump), so a pit holds what walks in. Not on roads, in buildings, in water or under trees. Saved with the world and shared in multiplayer. Shovels are found in houses and industrial buildings, and the supply chest has one. Next: traps, ladders and covers, held shovel art, touch controls. |
@@ -336,17 +337,17 @@ Ticked items are in the game.
 - [x] Power and water fail on a set day; generators
 - [x] Place things on a half-metre grid with a ghost, snapping to walls, fences and building sides
 - [x] Take furniture and cars apart with an axe, crowbar or wrench; a tool bench to build
-- [ ] Carry furniture whole and place it (0.52)
+- [x] Carry furniture whole and place it (0.52) (done in 0.64)
 - [ ] Inside and outside walls from one voxel-cell logic (0.56)
 - [ ] Wood frames for small buildings, steel or concrete frames for big ones; walls break easier than frames (0.56)
-- [ ] Harvest broken walls and frames for materials, and build with them (0.57)
-- [ ] Any building becomes a base once a custom bed is in it; claimed buildings can be fortified (0.58)
-- [ ] Vehicles break through walls and are damaged in turn (0.60)
+- [x] Harvest broken walls and frames for materials, and build with them (0.57) (done in 0.57)
+- [x] Any building becomes a base once a custom bed is in it; claimed buildings can be fortified (0.58) (done in 0.58)
+- [x] Vehicles break through walls and are damaged in turn (0.60) (done in 0.60)
 
 ### Power
 - [x] Power fails on a set day; generators
-- [ ] City power plants that can be repaired to light the whole town (0.59)
-- [ ] Cable box from generators, batteries or solar to the breaker panel of a house or building (0.59)
+- [x] City power plants that can be repaired to light the whole town (0.59) (done in 0.61, 0.66)
+- [x] Cable box from generators, batteries or solar to the breaker panel of a house or building (0.59) (done in 0.66)
 
 ### Aliens
 - [x] Sight cone blocked by walls; shorter at night unless you carry a light
@@ -363,7 +364,7 @@ Ticked items are in the game.
 - [x] Spitter that keeps its distance and lobs globs you can dodge
 - [x] Roaming packs from nests: a leader searches the town building by building, the pack turns to noise together, a horde goes home at dawn
 - [x] Hive stages: small, grown, burst
-- [ ] Clinger
+- [x] Clinger (0.50, 0.73; blood and trail decals still to do)
 - [x] Single aliens remember where they last saw you (0.63, 0.114)
 
 ### Survival
