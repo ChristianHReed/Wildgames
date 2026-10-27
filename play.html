@@ -321,6 +321,8 @@
         <label>Name<input id="pname" maxlength="16" value="Survivor"></label>
         <label>Background<select id="cBg"><option value="scout">Scout: moves faster</option><option value="medic">Medic: medkits heal more</option><option value="mechanic">Mechanic: building costs less</option><option value="builder">Builder: stronger barricades</option></select></label>
       </div>
+      <div id="svPre" class="row" style="margin-top:6px"></div>
+      <div style="font-size:12px;margin-top:4px">Pick a preset, then change anything you like. For a fully custom costume, build one in the Workshop. <button id="wsGo3" class="alt" type="button">Make a detailed costume in the Workshop</button></div>
       <div class="prow" style="align-items:flex-end;margin-top:8px">
         <canvas id="cPrev" width="192" height="312" style="width:96px;height:156px"></canvas>
         <label>Build<select id="cBuild"><option value="0">Slim</option><option value="1" selected>Average</option><option value="2">Broad</option></select></label>
@@ -328,15 +330,18 @@
         <label>Body<select id="cBody"><option value="0">Masculine</option><option value="1">Feminine</option></select></label>
         <label>Hair<select id="cHair"><option value="0">None</option><option value="1" selected>Buzzed</option><option value="2">Short</option><option value="3">Bob</option><option value="4">Buns</option><option value="5">Beard</option></select></label>
         <label>Hair colour<select id="cHairC"><option value="0">Black</option><option value="1" selected>Brown</option><option value="2">Auburn</option><option value="3">Blond</option><option value="4">Grey</option></select></label>
-        <label>Hat<select id="cHat"><option value="0">None</option><option value="1">Cap</option><option value="2">Beanie</option><option value="3">Helmet</option></select></label>
         <label>Shirt<input type="color" id="cShirt" value="#3566c4" style="height:36px;padding:2px"></label>
         <label>Pants<input type="color" id="cPants" value="#2b2f38" style="height:36px;padding:2px"></label>
+      </div>
+      <details style="margin-top:6px"><summary><b>More choices</b>: hat, face, top, bottoms, shoes, second colour</summary>
+      <div class="prow">
+        <label>Hat<select id="cHat"><option value="0">None</option><option value="1">Cap</option><option value="2">Beanie</option><option value="3">Helmet</option></select></label>
         <label>Face<select id="cFace"><option value="0">Calm</option><option value="1">Glasses</option><option value="2">Stubble</option><option value="3">Freckles</option><option value="4">Tired</option><option value="5">Moustache</option><option value="6">Dark glasses</option><option value="7">Scar</option></select></label>
         <label>Top<select id="cTop"><option value="0">T-shirt</option><option value="1">Striped tee</option><option value="2">Flannel shirt</option><option value="3">Spotted top</option><option value="4">Hoodie</option><option value="5">Open jacket</option><option value="6">Jumper</option><option value="7">Dungarees</option></select></label>
         <label>Bottoms<select id="cBot"><option value="0">Jeans</option><option value="1">Shorts</option><option value="2">Cargo trousers</option><option value="3">Capri trousers</option><option value="4">Track pants</option><option value="5">Rolled jeans</option></select></label>
         <label>Shoes<select id="cShoe"><option value="0">Trainers</option><option value="1">Boots</option><option value="2">Rain boots</option></select></label>
         <label>Second colour<input type="color" id="cAcc" value="#e9dab0" style="height:36px;padding:2px"></label>
-      </div>
+      </div></details>
       <div id="cInfo" style="margin-top:6px"></div>
     </div>
     <div class="panel">
@@ -374,15 +379,15 @@
       <div id="mmStatus"></div>
     </div>
     <div class="panel">
-      <b>Big region</b>
       <div id="bmBox" style="border-bottom:1px solid rgba(61,48,41,.25);padding-bottom:10px;margin-bottom:10px">
-        <b>Maps from the Maps Builder</b>
-        <div>Load a map file (.asmap) you made or were given, then press Play on it. You can also drop map files or edit files (.asedit) anywhere on this page. Maps stay on this device and work offline.</div>
+        <b>Maps Builder: open it, then load what it made</b>
+        <div>Make maps and edits in the Maps Builder, then bring the files back here. Load a map file (.asmap), then press Play on it; add an edits file (.asedit) to change a map you already play, saved progress included. You can also drop map files or edit files (.asedit) anywhere on this page. Maps stay on this device and work offline.</div>
         <div class="row" style="margin-top:6px"><label class="btn">Load map file<input id="asmapFile" type="file" accept=".asmap,.zip" multiple hidden></label> <label class="btn alt">Add edits file (.asedit)<input id="aseditFile" type="file" accept=".asedit,.json" multiple hidden></label> <button id="bldGo" class="alt" type="button">Open the Maps Builder</button></div>
         <div id="rgStatus" style="min-height:18px;font-weight:700;color:var(--clayDeep);margin-top:4px"></div>
         <div id="bmList"></div>
         <div id="edList" style="font-size:12px"></div>
       </div>
+      <b>Big region</b>
       <div>A region is far larger than a map: up to 50 miles in every direction. It is cut into squares about 3.4 miles across. Each square downloads the first time you travel into it and is then kept on this device, so it needs internet only for squares you have not visited or downloaded.</div>
       <div class="prow">
         <label>Centre<input id="rgPlace" placeholder="Springfield, Missouri"></label>
@@ -441,7 +446,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.37</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.38</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -467,7 +472,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.37', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.38', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -5158,6 +5163,26 @@ async function renderRegions(){
 el('rgGo').addEventListener('click', startRegion);
 el('bldGo').addEventListener('click', function(){ location.href = 'builder.html'; });
 el('wsGo').addEventListener('click', function(){ location.href = 'workshop.html'; });
+/* 0.114.38: survivor presets (every value is a choice the shaped survivor pack already offers) */
+(function(){
+  var PRE = [
+    ['Scout', {build:0, skin:1, body:0, hair:2, hc:1, shirt:'#6b8e4e', pants:'#4a4030', hat:1, top:2, bot:2, shoe:1, face:0, acc:'#d9c27a'}],
+    ['Medic', {build:1, skin:2, body:1, hair:3, hc:0, shirt:'#e8e8e0', pants:'#3a5a7a', hat:0, top:5, bot:0, shoe:0, face:0, acc:'#c0392b'}],
+    ['Mechanic', {build:2, skin:3, body:0, hair:1, hc:0, shirt:'#2f4f8f', pants:'#2b2f38', hat:1, top:7, bot:0, shoe:1, face:2, acc:'#d97b2a'}],
+    ['Builder', {build:2, skin:0, body:0, hair:5, hc:2, shirt:'#c4742a', pants:'#5a4a3a', hat:3, top:2, bot:2, shoe:1, face:5, acc:'#e0c040'}],
+    ['Runner', {build:0, skin:2, body:1, hair:4, hc:1, shirt:'#d94f6a', pants:'#222831', hat:0, top:4, bot:4, shoe:0, face:3, acc:'#ffffff'}],
+    ['Drifter', {build:1, skin:4, body:0, hair:2, hc:4, shirt:'#6d5c4a', pants:'#35373d', hat:2, top:6, bot:5, shoe:1, face:4, acc:'#9a8c70'}],
+    ['Caretaker', {build:1, skin:1, body:1, hair:3, hc:4, shirt:'#7a4e8a', pants:'#2e3b4e', hat:0, top:6, bot:3, shoe:2, face:1, acc:'#e9dab0'}]
+  ], row = el('svPre'), ids = {build:'cBuild', skin:'cSkin', body:'cBody', hair:'cHair', hc:'cHairC', shirt:'cShirt', pants:'cPants', hat:'cHat', top:'cTop', bot:'cBot', shoe:'cShoe', face:'cFace', acc:'cAcc'};
+  function apply(l){ Object.keys(ids).forEach(function(k){ if (l[k] !== undefined) el(ids[k]).value = l[k]; }); drawPrev(); }
+  PRE.forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.textContent = p[0]; b.addEventListener('click', function(){ apply(p[1]); }); row.appendChild(b); });
+  var r = document.createElement('button'); r.type = 'button'; r.className = 'alt'; r.textContent = 'Surprise me';
+  r.addEventListener('click', function(){ var l = {}, pick = function(id){ return Math.floor(Math.random()*el(id).options.length); }; ['cBuild', 'cSkin', 'cBody', 'cHair', 'cHairC', 'cHat', 'cTop', 'cBot', 'cShoe', 'cFace'].forEach(function(id){ l[Object.keys(ids).filter(function(k){ return ids[k] === id; })[0]] = pick(id); });
+    var col = function(){ return '#' + ('00000' + Math.floor(Math.random()*0xffffff).toString(16)).slice(-6); }; l.shirt = col(); l.pants = col(); l.acc = col(); apply(l); });
+  row.appendChild(r);
+  el('wsGo3').addEventListener('click', function(){ location.href = 'workshop.html'; });
+})();
+
 /* 0.92.0: open a map file made by the Maps Builder (.asmap: a zip with manifest.json and squares/I_J.json). Each square goes into the device's storage as a region the game lists and plays like any other. */
 async function zipOpen(file){
   var size = file.size, tail = new Uint8Array(await file.slice(Math.max(0, size - 65558), size).arrayBuffer()), dv = new DataView(tail.buffer), p = -1, i;

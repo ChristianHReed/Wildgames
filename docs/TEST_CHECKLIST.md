@@ -211,3 +211,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.35: from the game's Maps tab open the Builder, from the Builder open the Workshop, from the Workshop open the Maps Builder and the Game; every link lands on the right page.
 - 0.114.36: on the start screen, the Maps tab and the Workshop tab each show buttons that open the Workshop and the Maps Builder.
 - 0.114.37: the Maps tab has only the Maps Builder button; the Workshop tab has the Open the full Workshop button.
+- 0.114.38: Survivor tab: each preset changes the preview and Save keeps it; Surprise me randomises; More choices opens the rest; the Workshop button opens the Workshop. Maps tab: the Maps Builder box is first.
