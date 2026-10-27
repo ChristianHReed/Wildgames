@@ -27,10 +27,10 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
-window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve());
+window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve()).then(function(){ if(window.AfterstreetPacks) window.AfterstreetPacks.install(window.SHAPED); });
 </script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script type="module">
@@ -140,7 +140,7 @@ function packGrid(P, group, names, cols, pad, ground0, cpos, ctgt, opts){ opts=o
   let rows=[],cur=[],cw=0; items.forEach(it=>{ if(cw+it.w>cols&&cur.length){ rows.push(cur); cur=[]; cw=0; } cur.push(it); cw+=it.w; }); if(cur.length) rows.push(cur);
   const holes=[], put=[]; let zz=0; rows.forEach(r=>{ const rd=Math.max(...r.map(i=>i.d)); const tw=r.reduce((a,i)=>a+i.w,0); let xx=-tw/2; r.forEach(it=>{ const cx=xx+it.w/2, cz=zz-rd/2; put.push([it.n,cx,cz]); if(opts.sunk&&opts.sunk(it.n)) holes.push([it.n,(I[it.n]&&I[it.n].h)||0]); xx+=it.w; }); zz-=rd; });
   ground(400,400,opts.ground||0x6d7a4f);
-  put.forEach(([n,cx,cz])=>{ const g=mesh(M[n],col); const hh=holes.find(h=>h[0]===n); g.position.set(cx,hh?hh[1]:0,cz); if(opts.rot) g.rotation.y=opts.rot; scene.add(g); });
+  put.forEach(([n,cx,cz])=>{ const g=mesh(M[n],col); const hh=holes.find(h=>h[0]===n); g.position.set(cx,(hh?hh[1]:0)+((opts.lift&&opts.lift(n))||0),cz); if(opts.rot) g.rotation.y=opts.rot; scene.add(g); });
   cam.position.set(...cpos); ctl.target.set(...ctgt); }
 function grid(list, cols, dx, dz, cpos, ctgt, gcol){
   lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,60,gcol||0xd8d2c6);
@@ -668,6 +668,10 @@ const SCENES={
       for(let i=0;i<3;i++) put('pier_deck',66,0.4,22+i*4,0); put('pier_end',66,0.4,36,0);
       put('breakwater_mound_h3',-48,0,40,0); put('breakwater_mound_h3',-48,0,44,0); put('retaining_wall_unit',-56,0,26,0,1.5); put('retaining_wall_unit',-56,0,30,0,1.5);
       cam.position.set(5,95,175); ctl.target.set(5,2,-15); }},
+  bridges_new:{t:'Workshop: bridges and water works',d:'Made in the Workshop: three railings (steel, concrete parapet, timber), a 12 m girder span, a 16 m arch, a suspension deck with hangers and tower saddles, a cable-stayed deck, timber and steel trestles, spillway chute, stilling basin and fish ladder.',
+    make(){ packGrid(ST,'structures',['railing_steel_4m','railing_parapet_4m','railing_timber_4m','girder_span_road_12','arch_span_road_16','suspension_hanger_set_12','suspension_tower_saddle_road','stay_deck_road','trestle_span_timber_8','trestle_bent_steel_unit','trestle_span_steel_12','spillway_chute_h8','stilling_basin_8','fish_ladder_4m'],48,5,0,[0,34,58],[0,2,-14],{lift:n=>({girder_span_road_12:2,arch_span_road_16:8.7,trestle_span_timber_8:2.2,trestle_span_steel_12:1.8,stay_deck_road:1,spillway_chute_h8:8,fish_ladder_4m:1.4,stilling_basin_8:0,suspension_hanger_set_12:1})[n]||0}); }},
+  bridges_spans:{t:'Workshop: bridge spans, side view',d:'The 12 m girder span, 16 m arch and 12 m steel trestle from the side, so the structure under the deck shows.',
+    make(){ packGrid(ST,'structures',['girder_span_road_12','arch_span_road_16','trestle_span_steel_12','trestle_span_timber_8'],70,6,0,[34,4,30],[0,-3,-10],{lift:n=>({girder_span_road_12:2,arch_span_road_16:8.7,trestle_span_timber_8:2.2,trestle_span_steel_12:1.8})[n]||0}); }},
   land_cuts:{t:'Land: road cuts',d:'Rock cuts 4, 8 and 12 m high with benches, strata bands, joints, rubble benches and a grass cap; the mixed rock-and-soil cut; soil cuts at 2:1; and a cut dying away at its end. Each is 4 m of road, so they lay end to end. Road side faces left.',
     make(){ packGrid(LD,'land',['cut_rock_h4','cut_rock_h8','cut_rock_h12','cut_mixed_h8','cut_soil_h3','cut_soil_h6','cut_rock_end'],60,3,0,[0,26,24],[0,3,-6]); }},
   land_roadside:{t:'Land: banks, ditches, bluffs',d:'Roadside ditches (plain and with a pipe), a rockfall fence, embankments 3 and 6 m, a guardrail, rip-rap; then a river bluff (10 and 5 m), the talus below it and a rock shelter.',
