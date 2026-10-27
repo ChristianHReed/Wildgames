@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-fleet'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve()).then(function(){ if(window.AfterstreetPacks) window.AfterstreetPacks.install(window.SHAPED); });
@@ -689,6 +689,10 @@ const SCENES={
     make(){ survSheet([['masculine','top',['polo_shirt','tank_top','henley','fleece_vest','cardigan','scrubs']],['feminine','top',['polo_shirt','tank_top','henley','fleece_vest','cardigan','scrubs']],['masculine','bot',['skirt','leggings','cargo_shorts','work_pants']],['feminine','bot',['skirt','leggings','cargo_shorts','work_pants']],['masculine','worn',['duster','parka','apron','hi_vis_vest']],['feminine','worn',['duster','parka','apron','hi_vis_vest']]],2.0,1.05); }},
   survivors_new_heads:{t:'Workshop: new hair, hats and faces',d:'Close views of the new hair, hats, faces and gear.',
     make(){ survSheet([['feminine','hair',['long_hair','ponytail','mohawk','curly','braids','top_knot']],['masculine','hat',['bucket_hat','bandana','hard_hat','flat_cap','headband']],['masculine','face',['eyepatch','bandaged','goggles','respirator','war_paint']],['feminine','gear',['tool_belt','bandolier','shoulder_bag','hip_pack']],['masculine','shoe',['sandals','work_boots','high_tops']]],2.0,1.05); }},
+  fleet_new:{t:'Workshop: city bus and semi tractor',d:'The city bus (12.2 m, rear engine) and the three-axle semi tractor, built in the Workshop as working vehicles.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; ground(80,40,0xd8d2c6);
+      at(prop('vehicles','pk_afterstreet_fleet_city_bus'),-5,0,0,0.6); at(prop('vehicles','pk_afterstreet_fleet_semi_tractor'),7,0,0,0.6);
+      cam.position.set(2,7,22); ctl.target.set(1,1.6,0); }},
   land_cuts:{t:'Land: road cuts',d:'Rock cuts 4, 8 and 12 m high with benches, strata bands, joints, rubble benches and a grass cap; the mixed rock-and-soil cut; soil cuts at 2:1; and a cut dying away at its end. Each is 4 m of road, so they lay end to end. Road side faces left.',
     make(){ packGrid(LD,'land',['cut_rock_h4','cut_rock_h8','cut_rock_h12','cut_mixed_h8','cut_soil_h3','cut_soil_h6','cut_rock_end'],60,3,0,[0,26,24],[0,3,-6]); }},
   land_roadside:{t:'Land: banks, ditches, bluffs',d:'Roadside ditches (plain and with a pipe), a rockfall fence, embankments 3 and 6 m, a guardrail, rip-rap; then a river bluff (10 and 5 m), the talus below it and a rock shelter.',

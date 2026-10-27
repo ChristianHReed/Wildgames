@@ -1,1 +1,1 @@
-window.AFTERSTREET_PACK_FILES = ['workshop-sample', 'workshop-props-sample', 'afterstreet-bridges', 'afterstreet-survivors'];   /* pack files in this folder to load, without .js; add yours here */
+window.AFTERSTREET_PACK_FILES = ['workshop-sample', 'workshop-props-sample', 'afterstreet-bridges', 'afterstreet-survivors', 'afterstreet-fleet'];   /* pack files in this folder to load, without .js; add yours here */
