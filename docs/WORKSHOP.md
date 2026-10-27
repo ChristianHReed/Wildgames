@@ -102,3 +102,19 @@ The engine (shapes, symmetry, prefabs, materials, jobs, packs, the view) is shar
 4. **Workshop inside the game** (a workbench screen), using the same files.
 
 Stretch ideas from building games (docs/STRETCH.md): building a design in the game at a garage by filling in a ghost of it with found parts (Space Engineers' projector), panels and bumpers breaking off piece by piece in crashes (Trailmakers), wiring and logic (Stormworks).
+
+## Every asset type: progress (Workshop chat, 27 October 2026)
+
+The Workshop chat builds W1 to W15 from the content chat's plan (`Workshop for every asset - what has to be built`); the content chat makes content with it. Old Python packs are frozen one at a time once they open and re-export identically.
+
+**Done**
+- **W1 asset types and packs v2** (content chat's first pass, kept): any model is a design (`type: 'model'`, a kind, a target `SHAPED[pack].models[group][name]`, parts, points, the pack's own tables carried as `extra`). Packs version 2 mix vehicles and models; `packload.js` installs models by target.
+- **W3 opening the game's models**: Designs → "Open any model in the game…". Whole vehicles open as one design (a bike, boat or machine is `models[group]` with its parts; `power` keeps a bare list per name). `node workshop/tools/roundtrip.js` opens and saves every model: **2,067 models (83 whole), 0 differ**, and every carried table comes back unchanged.
+- **Colours per pack**: a model draws with its own pack's palette and shading (`darker`), and colour slots (BODY, WALL, TRIM, FRAME, ROOF, SKIN, SLEEVE, BASE...) preview with the pack's own paint, examples or summer season; the Paint tab has preview colours for slots. The exported model keeps the slot names.
+- **W6 points**: saddle, grips, pedals, seats, helm, wheels, vehicle rig (wheels, hinges, smoke, fuel cap) and `moving` hinges are read as points (426 across the game) and written back exactly where they came from on export.
+- **W2 moving parts** (Moves tab): each part can turn about a pivot and axis, or slide along an axis, within a range, hung from another part (the packs' own `rig` format: `{part: {parent, pivot, turn | slide, range, rest, note}}`). Sliders try each joint live; clips (`{name: [{t, part: value}]}`, the bikes' and boats' format) play and take keys from the current pose. A bike's or machine's wheel model is drawn at each wheel point. Rig and clips go back into the pack's `rig` and `clips` tables (bikes, boats, machines), or travel as `asset.rig` and `asset.clips` for new models.
+- **Single-list models stay single lists**: adding a part to a props model (a wardrobe's door) keeps the exported model one piece list (the parts are joined), and a turning part's hinge is added to the pack's `moving` table (`{piece, hinge, axis}`) beside the ones already there.
+
+**For the main chat**: a pack model with `asset.rig` names its moving parts; props models still draw closed, as today. Animating a door from a pack needs the game to draw that part's pieces separately (the pieces are in `asset.source.pieces` with their part name in `g`), which is the same step `moving`'s rule describes for the stock wardrobe.
+
+**Next**: W7 furniture and containers (states, size and weight, lights), W9 and W10 (held items, items, recipes, icons), W5 and W4 (skeletons, clips, characters and clothes), then W11, W12, W8, W13, W14, W15 and the extra shapes.

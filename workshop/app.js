@@ -28,7 +28,7 @@
     units:store.get('units', 'imp'), snap:store.get('snap', null), faceSnap:store.get('faceSnap', true),
     sym:{x:true, z:false}, lock:null, placing:null, multi:false, tab:'piece',
     preview:{bonnet:false, boot:false, markers:true, person:true, planes:true},
-    brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null, part:null, hideParts:{}, selPoint:-1
+    brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null, part:null, hideParts:{}, selPoint:-1, pose:{}, clip:null, clipT:0
   };
   if (S.snap == null) S.snap = S.units === 'imp' ? 0.0254 : 0.01;
 
@@ -52,6 +52,7 @@
   var saveT = 0; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(saveDraft, 700); }
   function setDoc(doc, keepView){
     doc.states = doc.states || {}; doc.dmg = doc.dmg || {seed:7, strength:1}; if (doc.type === 'model'){ doc.points = doc.points || []; doc.parts = doc.parts || {body:{}}; if (Array.isArray(doc.extra) === false) doc.extra = []; S.part = null; S.hideParts = {}; S.selPoint = -1; if (S.tab === 'car' || S.tab === 'damage') S.tab = 'piece'; } else if (S.tab === 'model') S.tab = 'piece';
+    playClip(null); S.pose = {};
     S.doc = doc; S.sel = []; S.undo = []; S.redo = []; S.layer = 'car'; S.look = 'whole'; S.state = null; S.asset = null;
     $('docName').value = doc.name;
     refresh(true); if (!keepView) fitView();
@@ -70,6 +71,7 @@
   function stateList(){ return S.doc.states[S.state] || []; }
   function active(){
     if (S.layer === 'state') return stateList();
+    if (isModel()) return S.doc.pieces.filter(function(p){ return !S.part || p.g === S.part || !S.hideOthers; });
     return S.doc.pieces.filter(function(p){ return S.layer === 'wheel' ? p.g === 'wheel' : p.g !== 'wheel'; });
   }
   function ownerList(){ return S.layer === 'state' ? stateList() : S.doc.pieces; }
@@ -159,6 +161,11 @@
         if (isModel() && S.hideParts[p.g]) return;
         var m = trisOf(nativesOf(p), 'p:' + JSON.stringify(p)), f = openFn(p);
         if (f) m = xform(m, f);
+        if (isModel()){
+          var pf = M.poseFn(S.doc, p.g, S.pose); if (pf) m = xform(m, function(q, n){ return pf(q, n); });
+          var inst = S.part !== p.g && M.instancesOf(S.doc, p.g);
+          if (inst){ inst.forEach(function(pt){ var w = pt.pos, left = w[0] < -0.01; solid.push(xform(m, wheelAt(w, left))); }); return; }
+        }
         if (p.hidden) ghost.push(m); else solid.push(m);
         if (selIds[p.id]) selM.push(m);
         picks.push({id:p.id, pos:m.pos});
@@ -191,6 +198,7 @@
   function outline(ids){
     var pos = [], col = [];
     ids.forEach(function(id){ var p = byId(id); if (!p) return; var f = openFn(p);
+      if (!f && isModel()){ var pf = M.poseFn(S.doc, p.g, S.pose); if (pf) f = function(q, n){ return pf(q, n); }; }
       nativesOf(p).forEach(function(np){ M.faces(np).forEach(function(fc){ for (var i = 0; i < fc.pts.length; i++){ var a = fc.pts[i], b = fc.pts[(i+1)%fc.pts.length];
         if (f){ a = f(a, [0,1,0])[0]; b = f(b, [0,1,0])[0]; }
         pos.push(a[0], a[1], a[2], b[0], b[1], b[2]); col.push(0.78, 0.36, 0.12, 1, 0.78, 0.36, 0.12, 1); } }); }); });
@@ -429,7 +437,7 @@
   $('viewBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; if (b.dataset.v === 'fit') fitView(true); else view.preset(b.dataset.v); });
 
   /* ---------------------------------------------------------------- side panel */
-  var TABS_CAR = [['piece', 'Piece'], ['car', 'Car'], ['paint', 'Paint'], ['damage', 'Damage'], ['check', 'Check']], TABS_MODEL = [['piece', 'Piece'], ['model', 'Model'], ['paint', 'Paint'], ['check', 'Check']];
+  var TABS_CAR = [['piece', 'Piece'], ['car', 'Car'], ['paint', 'Paint'], ['damage', 'Damage'], ['check', 'Check']], TABS_MODEL = [['piece', 'Piece'], ['model', 'Model'], ['moves', 'Moves'], ['paint', 'Paint'], ['check', 'Check']];
   function renderTabs(){ $('tabs').innerHTML = (isModel() ? TABS_MODEL : TABS_CAR).map(function(t){ return '<button class="' + (S.tab === t[0] ? 'on' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join(''); }
   $('tabs').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; S.tab = b.dataset.tab; renderTabs(); renderPanel(); });
 
@@ -455,6 +463,9 @@
       var v = cur + (+b.dataset.d)*stepOf(F); if (F.min != null) v = Math.max(F.min, v); if (F.max != null) v = Math.min(F.max, v); F.set(r4(v)); return; }
     var a = b.dataset.a; if (a && ACTIONS[a]) ACTIONS[a](b);
   });
+  $('body').addEventListener('input', function(e){
+    var t = e.target; if (t.dataset && t.dataset.k === 'jpose'){ S.pose[t.dataset.n] = +t.value; var lab = t.nextElementSibling, j = S.doc.rig[t.dataset.n]; if (lab) lab.textContent = j && j.slide ? fmtLen(+t.value) : Math.round(+t.value) + '°'; rebuildScene(); }
+  });
   $('body').addEventListener('change', function(e){
     var t = e.target;
     if (fields[t.id]){ var v = fieldValue(t.id, t.value); if (v != null) fields[t.id].set(r4(v)); return; }
@@ -464,7 +475,7 @@
 
   function renderPanel(){
     fieldSeq = 0; fields = {};
-    var f = {piece:panelPiece, car:panelCar, model:panelModel, paint:panelPaint, damage:panelDamage, check:isModel() ? panelCheckModel : panelCheck}[S.tab] || panelPiece;
+    var f = {piece:panelPiece, car:panelCar, model:panelModel, moves:panelMoves, paint:panelPaint, damage:panelDamage, check:isModel() ? panelCheckModel : panelCheck}[S.tab] || panelPiece;
     $('body').innerHTML = f();
   }
   function shapeName(p){
@@ -662,6 +673,44 @@
     h += '<div class="card"><h3>Inside the game files</h3><p class="muted">' + ((d.extra || []).length ? 'Also carried with it: ' + d.extra.map(function(e){ return esc(e.path.join('.')); }).join(', ') + '.' : 'Nothing else is stored with it.') + '</p></div>';
     return h;
   }
+  /* ---------------------------------------------------------------- moving parts (W2) */
+  var AXES = [['X', [1, 0, 0]], ['−X', [-1, 0, 0]], ['Y', [0, 1, 0]], ['−Y', [0, -1, 0]], ['Z', [0, 0, 1]], ['−Z', [0, 0, -1]]];
+  function axisIndex(v){ v = v || [0, 1, 0]; var best = 2, bd = -2; AXES.forEach(function(a, i){ var d = a[1][0]*v[0] + a[1][1]*v[1] + a[1][2]*v[2]; if (d > bd){ bd = d; best = i; } }); return best; }
+  function panelMoves(){
+    var d = S.doc, R = d.rig || {}, names = partNames(), h = '<span class="stamp">Moves</span>';
+    h += '<p>Parts that turn or slide: doors, lids, drawers, handlebars, cranks, an excavator\'s boom. Each turns about its pivot and carries the parts hung from it.</p>';
+    names.forEach(function(n){
+      var j = R[n];
+      h += '<div class="card"><h3>' + esc(n.replace(/_/g, ' ')) + '</h3>';
+      if (!j){ h += '<div class="row"><span class="muted grow">Does not move.</span><button class="alt sm" data-a="joint" data-n="' + esc(n) + '" data-k="turn">Make it turn</button><button class="alt sm" data-a="joint" data-n="' + esc(n) + '" data-k="slide">Make it slide</button></div></div>'; return; }
+      if (!j.turn && !j.slide){ h += '<div class="row"><span class="muted grow">The part everything else hangs from' + (j.note ? ': ' + esc(j.note) : '') + '.</span><button class="alt sm" data-a="joint" data-n="' + esc(n) + '" data-k="turn">Make it turn</button></div></div>'; return; }
+      var slide = !!j.slide, unit = slide ? 'len' : 'deg', v = S.pose[n] != null ? S.pose[n] : (j.rest || 0), rg = j.range || (slide ? [0, 0.4] : [-90, 90]);
+      h += '<div class="row"><label class="l">Hangs from</label><select class="grow" data-k="jparent" data-n="' + esc(n) + '"><option value="">(nothing: the model itself)</option>' + names.filter(function(x){ return x !== n; }).map(function(x){ return '<option' + (j.parent === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select></div>';
+      h += '<div class="row"><label class="l">' + (slide ? 'Slides along' : 'Turns about') + '</label><select data-k="jaxis" data-n="' + esc(n) + '">' + AXES.map(function(a, i){ return '<option value="' + i + '"' + (axisIndex(slide ? j.slide : j.turn) === i ? ' selected' : '') + '>' + a[0] + '</option>'; }).join('') + '</select>' +
+        '<button class="alt sm" data-a="jkind" data-n="' + esc(n) + '">' + (slide ? 'Turn instead' : 'Slide instead') + '</button></div>';
+      if (!slide) h += '<div class="card" style="margin:6px 0"><h3>Pivot (' + unitLabel() + ')</h3><div class="trio">' + [0, 1, 2].map(function(i){ return num('pivot ' + 'xyz'[i], (j.pivot || [0,0,0])[i], 'len', function(val){ commit(); S.doc.rig[n].pivot[i] = val; changed(true); }, {ax:'xyz'[i]}); }).join('') + '</div>' +
+        '<div class="row"><button class="alt sm" data-a="pivotSel" data-n="' + esc(n) + '">Pivot at selected piece</button>' + (S.selPoint >= 0 ? '<button class="alt sm" data-a="pivotPt" data-n="' + esc(n) + '">Pivot at selected point</button>' : '') + '</div></div>';
+      h += '<div class="row"><label class="l">Range</label>' + num('from', rg[0], unit, function(val){ commit(); S.doc.rig[n].range = [val, (S.doc.rig[n].range || rg)[1]]; changed(true); }) + num('to', rg[1], unit, function(val){ commit(); S.doc.rig[n].range = [(S.doc.rig[n].range || rg)[0], val]; changed(true); }) + '</div>';
+      h += '<div class="row"><label class="l">Try it</label><input class="grow" type="range" data-k="jpose" data-n="' + esc(n) + '" min="' + rg[0] + '" max="' + rg[1] + '" step="' + (slide ? 0.01 : 1) + '" value="' + v + '"><span class="muted" style="width:56px;text-align:right">' + (slide ? fmtLen(v) : Math.round(v) + '°') + '</span></div>';
+      h += '<div class="row"><button class="alt sm" data-a="jrest" data-n="' + esc(n) + '">Use as rest</button><button class="alt sm" data-a="jdel" data-n="' + esc(n) + '">Stop it moving</button></div>';
+      if (j.note) h += '<p class="muted">' + esc(j.note) + '</p>';
+      h += '</div>';
+    });
+    var C = d.clips || {};
+    h += '<div class="card"><h3>Clips</h3><p class="muted">Short movements the game plays (pedalling, steering, a door opening). Pose the parts with the sliders, then add a key.</p>';
+    h += Object.keys(C).length ? '<div class="list">' + Object.keys(C).map(function(c){ var on = S.clip === c; return '<div class="it"><span class="nm">' + esc(c) + ' <span class="muted">' + C[c].length + ' keys, ' + (C[c].length ? C[c][C[c].length - 1].t : 0) + ' s</span></span><button class="' + (on ? 'on' : 'alt') + ' sm" data-a="clipPlay" data-c="' + esc(c) + '">' + (on ? 'Stop' : 'Play') + '</button><button class="alt sm" data-a="clipKey" data-c="' + esc(c) + '">Add key</button><button class="alt sm" data-a="clipDel" data-c="' + esc(c) + '">Delete</button></div>'; }).join('') + '</div>' : '<p class="muted">No clips.</p>';
+    h += '<div class="row"><input class="grow" id="clipName" type="text" placeholder="New clip (e.g. open, pedal)"><button class="sm" data-a="clipNew">Add clip</button></div>';
+    h += '<div class="row"><button class="alt sm" data-a="poseReset">Back to rest</button></div></div>';
+    return h;
+  }
+  var clipTimer = 0;
+  function playClip(c){
+    cancelAnimationFrame(clipTimer);
+    if (!c){ S.clip = null; return; }
+    S.clip = c; var t0 = performance.now();
+    (function tick(now){ if (S.clip !== c) return; S.pose = M.clipPose(S.doc, c, (now - t0)/1000); rebuildScene(); clipTimer = requestAnimationFrame(tick); })(t0);
+  }
+
   function panelCheckModel(){
     var A = asset(), C = M.checkModel(S.doc, A), tot = A.stats.total, h = '<span class="stamp">Check</span>';
     h += C.length ? C.map(function(c){ return '<div class="msg ' + c[0] + '">' + esc(c[1]) + '</div>'; }).join('') : '<div class="msg info">Ready for the game.</div>';
@@ -674,9 +723,20 @@
   /* ---------------------------------------------------------------- panel actions */
   var ACTIONS = {
     selAll:selectAll,
+    joint:function(b){ commit(); M.addJoint(S.doc, b.dataset.n, b.dataset.k); changed(true); },
+    jkind:function(b){ commit(); var j = S.doc.rig[b.dataset.n]; if (j.slide){ j.turn = j.slide; delete j.slide; j.range = [-90, 90]; } else { j.slide = j.turn || [0, 0, 1]; delete j.turn; j.range = [0, 0.4]; } j.rest = 0; delete S.pose[b.dataset.n]; changed(true); },
+    jdel:function(b){ commit(); delete S.doc.rig[b.dataset.n]; delete S.pose[b.dataset.n]; changed(true); },
+    jrest:function(b){ var n = b.dataset.n; if (S.pose[n] == null) return; commit(); S.doc.rig[n].rest = Math.round(S.pose[n]*1e4)/1e4; changed(true); },
+    pivotSel:function(b){ var sel = selected(); if (!sel.length) return toast('Select a piece first: the pivot goes to its middle.'); var B = M.boundsOf([].concat.apply([], sel.map(nativesOf))); if (!B.ok) return; commit(); S.doc.rig[b.dataset.n].pivot = [0, 1, 2].map(function(i){ return r4((B.mn[i] + B.mx[i])/2); }); changed(true); },
+    pivotPt:function(b){ var pt = S.doc.points[S.selPoint]; if (!pt) return; commit(); S.doc.rig[b.dataset.n].pivot = pt.pos.slice(); changed(true); },
+    poseReset:function(){ playClip(null); S.pose = {}; refresh(true); },
+    clipNew:function(){ var n = slug(($('clipName') || {}).value); if (!n) return toast('Give the clip a name.'); commit(); S.doc.clips = S.doc.clips || {}; if (!S.doc.clips[n]) S.doc.clips[n] = []; changed(true); },
+    clipDel:function(b){ commit(); if (S.clip === b.dataset.c) playClip(null); delete S.doc.clips[b.dataset.c]; changed(true); },
+    clipPlay:function(b){ playClip(S.clip === b.dataset.c ? null : b.dataset.c); renderPanel(); },
+    clipKey:function(b){ var C = S.doc.clips[b.dataset.c], t = C.length ? Math.round((C[C.length - 1].t + 0.5)*100)/100 : 0, key = {t:t}; Object.keys(S.doc.rig || {}).forEach(function(n){ var v = S.pose[n] != null ? S.pose[n] : (S.doc.rig[n].rest || 0); key[n] = Math.round(v*1e4)/1e4; }); commit(); C.push(key); changed(true); toast('Key at ' + t + ' s'); },
     hidePart:function(b){ S.hideParts[b.dataset.n] = !S.hideParts[b.dataset.n]; refresh(true); },
-    addPart:function(){ var n = slug(($('partName') || {}).value); if (!n) return toast('Give the part a name.'); if (S.doc.parts[n]) return toast('There is a part called that already.'); commit(); S.doc.parts[n] = {}; (function fix(){ var L = S.doc.layout; if (L && L.$part !== undefined){ S.doc.layout = {main:L}; L = S.doc.layout; } L[n] = {$part:n}; })(); changed(true); },
-    delPart:function(b){ var n = b.dataset.n; if (S.doc.pieces.some(function(p){ return p.g === n; })) return toast('Move its pieces to another part first.'); commit(); delete S.doc.parts[n]; (function strip(o){ if (o && typeof o === 'object' && !Array.isArray(o)){ for (var k in o){ if (o[k] && o[k].$part === n) delete o[k]; else strip(o[k]); } } })(S.doc.layout); if (S.part === n) S.part = null; changed(true); },
+    addPart:function(){ var n = slug(($('partName') || {}).value); if (!n) return toast('Give the part a name.'); if (S.doc.parts[n]) return toast('There is a part called that already.'); commit(); M.addPart(S.doc, n); S.part = n; changed(true); },
+    delPart:function(b){ var n = b.dataset.n; if (S.doc.pieces.some(function(p){ return p.g === n; })) return toast('Move its pieces to another part first.'); commit(); M.removePart(S.doc, n); if (S.part === n) S.part = null; changed(true); },
     addPoint:function(){
       var kind = ($('ptNew') || {}).value || 'grip', at = [0, 0.5, 0], sel = selected();
       if (sel.length){ var B = M.boundsOf(M.toNativeAlways ? sel.reduce(function(a, p){ return a.concat(M.toNativeAlways(p)); }, []) : []); if (B.ok) at = [(B.mn[0] + B.mx[0])/2, (B.mn[1] + B.mx[1])/2, (B.mn[2] + B.mx[2])/2].map(r4); }
@@ -730,6 +790,9 @@
     bed:function(t){ setup(function(st){ var sp = asset().spec; st.bed = t.checked ? {y:0.75, z:r4(sp.tail + 0.9), w:r4(Math.min(1.6, sp.width - 0.15)), d:1.6} : null; }); },
     tank:function(t){ setup(function(st){ st.tank = t.value; }); },
     paint:function(t){ commit(); S.doc.paint[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
+    jparent:function(t){ commit(); var j = S.doc.rig[t.dataset.n]; if (t.value) j.parent = t.value; else delete j.parent; changed(true); },
+    jaxis:function(t){ commit(); var j = S.doc.rig[t.dataset.n], a = AXES[+t.value][1].slice(); if (j.slide) j.slide = a; else j.turn = a; changed(true); },
+    jpose:function(t){ S.pose[t.dataset.n] = +t.value; rebuildScene(); },
     slotcol:function(t){ commit(); S.doc.slotColours = S.doc.slotColours || {}; S.doc.slotColours[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
     dstr:function(t){ commit(); S.doc.dmg.strength = +t.value; changed(true); }
   };

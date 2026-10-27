@@ -85,6 +85,9 @@
     doc.parts = parts; doc.pieces = pieces; doc.points = []; doc.colours = {}; doc.states = {};
     doc.extra = extrasFor(shaped, pack, group, whole ? group : name);
     doc.slotColours = M.slotDefaults(shaped, pack, group, whole ? group : name);
+    var rg = extraOf(doc, 'rig'), cl = extraOf(doc, 'clips');
+    if (rg && rg.value && typeof rg.value === 'object' && !Array.isArray(rg.value)) doc.rig = clone(rg.value);
+    if (cl && cl.value && typeof cl.value === 'object' && !Array.isArray(cl.value)) doc.clips = clone(cl.value);
     delete doc._n;
     /* a grip point or hinge the pack already records becomes a visible point */
     M.pointsFromExtra(doc);
@@ -93,6 +96,7 @@
   function joinLayout(layout, byPart){
     if (layout && typeof layout === 'object' && !Array.isArray(layout)){
       if (layout.$part !== undefined) return byPart[layout.$part] || [];
+      if (layout.$parts !== undefined){ var all = []; layout.$parts.forEach(function(n){ all = all.concat(byPart[n] || []); }); return all; }
       var o = {}; for (var k in layout) o[k] = joinLayout(layout[k], byPart); return o;
     }
     return Array.isArray(layout) ? clone(layout) : layout;
@@ -172,6 +176,104 @@
   M.modelDarker = function(shaped, doc){ var P = (doc.target && shaped[doc.target.pack]) || {}; return typeof P.darker === 'number' ? P.darker : 0.78; };
   M.SLOT_NAMES = Object.keys(SLOT_FALLBACK);
 
+  /* ------------------------------------------------------------------ W2: moving parts
+     doc.rig is the packs' own rig format (bikes, boats, machines), for any model:
+       {part: {parent, pivot:[x,y,z], turn:[ax,ay,az] (axis, degrees) or slide:[ax,ay,az] (metres), range:[lo, hi], rest, note}}
+     doc.clips: {name: [{t: seconds, part: value, ...}, ...]} (the bikes' and boats' clip format: keys in time, values per part)
+     Pivots are in the model's rest pose; a child part is carried by its parent. */
+  M.addPart = function(doc, n){
+    doc.parts[n] = {};
+    var L = doc.layout;
+    if (L && L.$part !== undefined) doc.layout = {$parts:[L.$part, n]};          /* a single-list model stays one list: the new part is joined in */
+    else if (L && L.$parts) L.$parts.push(n);
+    else if (L && typeof L === 'object') L[n] = {$part:n};
+    else doc.layout = {$part:n};
+  };
+  M.removePart = function(doc, n){
+    delete doc.parts[n];
+    (function strip(o){ if (o && typeof o === 'object' && !Array.isArray(o)){ if (o.$parts) o.$parts = o.$parts.filter(function(x){ return x !== n; }); for (var k in o){ if (o[k] && o[k].$part === n) delete o[k]; else strip(o[k]); } } })(doc.layout);
+    if (doc.rig){ delete doc.rig[n]; for (var k in doc.rig) if (doc.rig[k].parent === n) doc.rig[k].parent = doc.rig[n] ? doc.rig[n].parent : undefined; }
+  };
+  function rotAxis(v, ax, deg){
+    var a = deg*Math.PI/180, l = Math.hypot(ax[0], ax[1], ax[2]) || 1, x = ax[0]/l, y = ax[1]/l, z = ax[2]/l, c = Math.cos(a), sn = Math.sin(a), t = 1 - c;
+    return [(t*x*x + c)*v[0] + (t*x*y - sn*z)*v[1] + (t*x*z + sn*y)*v[2],
+            (t*x*y + sn*z)*v[0] + (t*y*y + c)*v[1] + (t*y*z - sn*x)*v[2],
+            (t*x*z - sn*y)*v[0] + (t*y*z + sn*x)*v[1] + (t*z*z + c)*v[2]];
+  }
+  M.rotAxis = rotAxis;
+  /* a function moving a point (and a normal) of 'part' to where the pose puts it; pose = {part: value} (degrees or metres) */
+  M.poseFn = function(doc, part, pose){
+    var R = doc.rig || {}, chain = [], p = part, guard = 0;
+    while (p && R[p] && guard++ < 32){ chain.push(p); p = R[p].parent; }
+    if (!chain.length) return null;
+    var any = chain.some(function(q){ var v = pose && pose[q] != null ? pose[q] : (R[q].rest || 0); return Math.abs(v) > 1e-9; });
+    if (!any) return null;
+    return function(x, n){
+      var q = x.slice(), nn = n ? n.slice() : null;
+      chain.forEach(function(k){
+        var j = R[k], v = pose && pose[k] != null ? pose[k] : (j.rest || 0), pv = j.pivot || [0, 0, 0];
+        if (!v) return;
+        if (j.slide){ var sl = j.slide, l = Math.hypot(sl[0], sl[1], sl[2]) || 1; q = [q[0] + sl[0]/l*v, q[1] + sl[1]/l*v, q[2] + sl[2]/l*v]; return; }
+        if (!j.turn) return;
+        var r = rotAxis([q[0]-pv[0], q[1]-pv[1], q[2]-pv[2]], j.turn, v); q = [r[0]+pv[0], r[1]+pv[1], r[2]+pv[2]];
+        if (nn) nn = rotAxis(nn, j.turn, v);
+      });
+      return [q, nn];
+    };
+  };
+  /* the pose a clip gives at time t (keys interpolate in a straight line; the clip loops) */
+  M.clipPose = function(doc, name, t){
+    var C = doc.clips && doc.clips[name]; if (!C || !C.length) return {};
+    var end = C[C.length - 1].t || 1, tt = end > 0 ? t % end : 0, a = C[0], b = C[C.length - 1];
+    for (var i = 0; i < C.length - 1; i++) if (tt >= C[i].t && tt <= C[i+1].t){ a = C[i]; b = C[i+1]; break; }
+    var f = b.t > a.t ? (tt - a.t)/(b.t - a.t) : 0, out = {};
+    Object.keys(a).concat(Object.keys(b)).forEach(function(k){ if (k === 't') return; var va = a[k] != null ? a[k] : (b[k] || 0), vb = b[k] != null ? b[k] : va; out[k] = va + (vb - va)*f; });
+    return out;
+  };
+  /* a new joint for a part: turns about its own middle, about Y, a quarter turn each way */
+  M.addJoint = function(doc, part, kind){
+    doc.rig = doc.rig || {};
+    var B = M.boundsOf([].concat.apply([], doc.pieces.filter(function(p){ return p.g === part; }).map(function(p){ return M.toNative(p); })));
+    var c = B.ok ? [(B.mn[0]+B.mx[0])/2, (B.mn[1]+B.mx[1])/2, (B.mn[2]+B.mx[2])/2].map(function(v){ return Math.round(v*1e4)/1e4; }) : [0, 0, 0];
+    var first = Object.keys(doc.parts).filter(function(n){ return n !== part; })[0];
+    var j = {parent:first, pivot:c, rest:0};
+    if (kind === 'slide'){ j.slide = [0, 0, 1]; j.range = [0, 0.4]; } else { j.turn = [0, 1, 0]; j.range = [-90, 90]; }
+    if (!first) delete j.parent;
+    doc.rig[part] = j;
+    return j;
+  };
+  /* parts drawn at several points: a bike's or machine's single wheel model at each wheel point */
+  M.instancesOf = function(doc, part){
+    if (part !== 'wheel' && part !== 'wheels') return null;
+    var at = (doc.points || []).filter(function(p){ return /^wheel_\d+$/.test(p.name); });
+    return at.length ? at : null;
+  };
+  /* rig and clips into the asset: back into the pack's own tables where it has them, else as the asset's own */
+  function writeRig(doc, extra, A){
+    var hasRig = extraOf({extra:extra}, 'rig'), hasClips = extraOf({extra:extra}, 'clips');
+    var key = doc.target.name == null ? doc.target.group : doc.target.name;
+    if (doc.rig && Object.keys(doc.rig).length){
+      if (hasRig) hasRig.value = clone(doc.rig);
+      else if (doc.target.name == null && M.WHOLE_PACKS[doc.target.pack]) extra.push({path:['rig', key], value:clone(doc.rig)});
+      A.rig = clone(doc.rig);
+      /* props-style models keep their hinges in the pack's 'moving' table: {piece, hinge, axis} */
+      var props = doc.target.pack === 'props' || doc.layout && doc.layout.$parts;
+      if (props && !hasRig){
+        var mv = [];
+        Object.keys(doc.rig).forEach(function(n){ var j = doc.rig[n], t = j.turn; if (!t) return; var ax = Math.abs(t[0]) > 0.9 ? 'x' : Math.abs(t[2]) > 0.9 ? 'z' : 'y'; mv.push({piece:n, hinge:j.pivot.slice(), axis:ax}); });
+        if (mv.length){ var m0 = extraOf({extra:extra}, 'moving');
+          if (m0){ var old = Array.isArray(m0.value) ? m0.value : [m0.value]; mv.forEach(function(e){ var i = -1; old.forEach(function(o, k){ if (o && o.piece === e.piece) i = k; }); if (i >= 0) old[i] = e; else old.push(e); }); m0.value = old; }
+          else extra.push({path:['moving', doc.target.group, key], value:mv}); }
+      }
+    }
+    if (doc.clips && Object.keys(doc.clips).length){
+      if (hasClips) hasClips.value = clone(doc.clips);
+      else if (doc.target.name == null && M.WHOLE_PACKS[doc.target.pack]) extra.push({path:['clips', key], value:clone(doc.clips)});
+      A.clips = clone(doc.clips);
+    }
+  }
+  M.writeRig = writeRig;
+
   /* ------------------------------------------------------------------ W1: the finished asset, and a blank design of any kind */
   M.newModelDoc = function(kind, pack, group, name){
     var K = M.KINDS[kind] || M.KINDS.furniture, nm = name || ('my_' + kind);
@@ -187,10 +289,11 @@
     var value = M.exportModel(doc), pal = {};
     (function walk(o){ if (isPieceList(o)) o.forEach(function(q){ var n = String(q.c).replace(/_D$/, ''); if (CUSTOM.test(n)) pal[n] = '#' + n.slice(1); }); else if (o && typeof o === 'object' && !Array.isArray(o)) for (var k in o) walk(o[k]); })(value);
     var extra = clone(doc.extra || []);
-    /* points that came from the pack's tables go back to them */
+    /* points that came from the pack's tables go back to them, and so do moving parts and clips */
     M.writePoints(doc, extra);
     var A = {type:'model', id:doc.id, name:doc.name, kind:doc.kind, author:doc.author, notes:doc.notes, target:clone(doc.target), mode:doc.from ? 'replace' : 'add',
       value:value, extra:extra, palette:pal, points:clone(doc.points || []), parts:Object.keys(doc.parts), stats:{total:M.countModel(value)}, source:clone(doc)};
+    writeRig(doc, extra, A);
     return A;
   };
   /* generic checks for any model */
