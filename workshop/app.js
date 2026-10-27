@@ -606,7 +606,7 @@
     col:function(b){ var c = b.dataset.c; S.brush = c; if (S.sel.length) edit(function(p){ var dark = /_D$/.test(p.c); p.c = c + (dark && !/_D$/.test(c) ? '_D' : ''); if (!p.mSet) p.m = M.guessMaterial(c) === 'sheet' && p.m && p.m !== 'glass' && p.m !== 'lamp' ? p.m : M.guessMaterial(c); }); else renderPanel(); },
     addCol:function(){ var hex = $('newCol').value, n = M.customName(hex); commit(); S.doc.colours[n] = hex; S.brush = n; if (S.sel.length) selected().forEach(function(p){ p.c = n; }); changed(true); },
     prefab:function(){ makePrefab(($('pfName') || {}).value); },
-    prefabOne:function(){ var nm = prompt('Name this prefab', (selected()[0] || {}).name || 'Prefab'); if (nm != null) makePrefab(nm); },
+    prefabOne:function(){ makePrefab((selected()[0] || {}).name || ''); },
     makeWheel:function(){ commit(); S.doc.pieces = M.makeWheel(S.doc, S.doc.setup.wheelR, S.doc.setup.wheelW); changed(true); },
     showLooks:function(){ S.layer = S.layer === 'look' ? 'car' : 'look'; S.sel = []; refresh(true); },
     reroll:function(){ commit(); S.doc.dmg.seed = (S.doc.dmg.seed % 97) + 1 + Math.floor(Math.random()*7); changed(true); },
@@ -681,7 +681,7 @@
   var MODAL = {
     close:closeModal,
     open:function(b){ saveDraft(); setDoc(clone(drafts()[b.dataset.id])); closeModal(); },
-    del:function(b){ if (!confirm('Delete this design from this browser?')) return; var d = drafts(); delete d[b.dataset.id]; store.set('drafts', d); library(); },
+    del:function(b){ if (b.dataset.sure !== '1'){ b.dataset.sure = '1'; b.textContent = 'Tap again to delete'; return; } var d = drafts(); delete d[b.dataset.id]; store.set('drafts', d); library(); },
     blank:function(){ saveDraft(); var d = M.blankDoc(); d.id = uniqueId('my_car'); d.name = 'My car'; setDoc(d); closeModal(); },
     stock:function(b){ saveDraft(); var d = M.fromStock(PROPS, b.dataset.n); d.id = uniqueId(d.id); setDoc(d); closeModal(); toast('Opened a copy of the ' + b.dataset.n.replace(/_/g, ' ') + '. Pieces marked "inside" are its seats, engine, tank and boot space.'); },
     exportSel:function(){ var ids = [].slice.call(document.querySelectorAll('.pk:checked')).map(function(i){ return i.value; }); if (!ids.length) return toast('Tick at least one design.'); exportDialog(ids); },
