@@ -448,7 +448,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.42</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.43</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -474,7 +474,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.42', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.43', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -2484,7 +2484,7 @@ var RIG = null, SVC = {}, svN = 0, SVQ = [], svBuf = null;
 var SVNEW = {};
 function svClips(){
   if (SVNEW.done || !RIG || !SHAPED.survivor || !SHAPED.survivor.clips) return; SVNEW.done = 1;
-  var PK = SHAPED.survivor, nb = RIG.bones.length, names = ['jump', 'airborne', 'land', 'hurt', 'drink', 'bandage', 'pickup', 'attack_chop', 'attack_thrust', 'attack_swing', 'sit', 'lean_wall', 'wave', 'carry_crate'];
+  var PK = SHAPED.survivor, nb = RIG.bones.length, names = ['jump', 'airborne', 'land', 'hurt', 'drink', 'bandage', 'pickup', 'attack_chop', 'attack_thrust', 'attack_swing', 'sit', 'lean_wall', 'wave', 'carry_crate', 'siphon', 'skin_kneel', 'change_wheel', 'pull_winch', 'dig_trowel'];   /* 0.114.43: the last five come from the survivor clips pack (packs/afterstreet-clips.js) when it is installed */
   var rot = function(a){ var x = (a[0] || 0)*Math.PI/180, y = (a[1] || 0)*Math.PI/180, z = (a[2] || 0)*Math.PI/180, cx = Math.cos(x), sx = Math.sin(x), cy = Math.cos(y), sy = Math.sin(y), cz = Math.cos(z), sz = Math.sin(z);
     return [cy*cz, -cy*sz, sy,  cx*sz + sx*sy*cz, cx*cz - sx*sy*sz, -sx*cy,  sx*sz - cx*sy*cz, sx*cz + cx*sy*sz, cx*cy]; };
   var mul = function(A, B){ var R = []; for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) R.push(A[r*3]*B[c] + A[r*3+1]*B[3+c] + A[r*3+2]*B[6+c]); return R; };
@@ -2804,7 +2804,7 @@ function skyFx(m, e, now){
 /* ---- Art 5 (0.45.8): the art chat's held pack (assets/shaped/held.js): weapons in new / worn states, the player's own arms, the pistol with its flash and shell.
    Everything is built in the weapon's grip space (origin at the fist, business end along +Z) and carried by the swing frame. ?oldart goes back to the stand-ins ---- */
 /* what the player's third-person body is doing right now, from the new clips: [clip, progress 0..1] */
-var PACTD = {drink:1.4, bandage:2, pickup:0.7};
+var PACTD = {drink:1.4, bandage:2, pickup:0.7, siphon:2.2};
 function pAct(){
   var t = time;
   if (P.jy > 0){ var j = t - (P.jumpT || -9); return j < 0.25 ? ['jump', j/0.25] : ['airborne', 0]; }
@@ -2812,6 +2812,9 @@ function pAct(){
   if (P.swing > 0 || t - (P.thrT || -9) < 0.5 || P.shootCd > 0) return [null];
   if (P.hurt > 0) return ['hurt', Math.max(0, Math.min(1, 1 - P.hurt/0.4))];
   if (P.actK && t - P.actT < PACTD[P.actK]) return [P.actK, (t - P.actT)/PACTD[P.actK]];
+  /* 0.114.43: working poses from the clips pack, looped while the work goes on: butchering a carcass, fitting a part on the truck */
+  if (SV.t && SV.t.sv === 'carcass' && SV.p > 0) return ['skin_kneel', (t/0.9) % 1];
+  if (fitting()) return ['change_wheel', (t/0.6) % 1];
   return [null];
 }
 /* the weapon in the third-person hand ('name:state' for the held pack) and which attack clip it swings with */
@@ -4140,7 +4143,7 @@ function carUse(){
     sfx('plank', v.x, v.y, 0.8, 0.7); makeNoise(v.x, v.y, 8); feed(got.length ? 'Searched the trunk: ' + got.join(', ') : 'The trunk is empty', ITEMS.wood[1]); updateHud(); return; }
   var can = v.dead ? (v.siph ? 0 : (hash(v.id.length*7 + (v.x | 0), v.y | 0, 5) < 0.25 ? 1 : 0)) : Math.floor((v.fuel || 0)/CAN_M);
   if (can < 1){ toast(v.dead === 'burnt' ? 'A burnt-out shell. Nothing left in it.' : 'No fuel left to siphon.', 2.5); return; }
-  v.siph = 1; if (!v.dead) v.fuel = Math.max(0, v.fuel - CAN_M); inv.fuel++; sfx('pot', v.x, v.y, 0.7, 0.8); makeNoise(v.x, v.y, 6); feed('Siphoned a can of fuel', ITEMS.fuel[1]); updateHud();
+  v.siph = 1; if (!v.dead) v.fuel = Math.max(0, v.fuel - CAN_M); inv.fuel++; P.actK = 'siphon'; P.actT = time; sfx('pot', v.x, v.y, 0.7, 0.8); makeNoise(v.x, v.y, 6); feed('Siphoned a can of fuel', ITEMS.fuel[1]); updateHud();
 }
 function mount(v){
   if (v.dead){ toast('This ' + (v.dead === 'burnt' ? 'burnt-out shell' : 'wreck') + ' will never run again. Hold J with an axe, crowbar or wrench to take it apart for scrap.', 4.5); return; }

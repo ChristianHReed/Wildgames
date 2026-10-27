@@ -216,3 +216,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.40: Survivor tab: the eight new characters appear as buttons and change the preview; new hair, hats, faces, tops and shoes are marked Workshop in the lists; start a game with one and check it in play (third-person view and in a mirror or multiplayer guest).
 - 0.114.41: pick Fixer (tool belt) and add a duster as outer layer; both show on the preview, are kept when saved, and show on your survivor in play and on a guest's screen.
 - 0.114.42: the on-screen button near a parked car says Trunk; searching says trunk; the Workshop's car tab says Hood and Trunk lid.
+- 0.114.43: switch to the third-person view and siphon fuel from a parked car (Y): the survivor crouches with a hose; hold J at a deer carcass: kneeling and cutting; fit a part on the truck: the wheel-change pose.
