@@ -86,6 +86,8 @@
     doc.extra = extrasFor(shaped, pack, group, whole ? group : name);
     doc.slotColours = M.slotDefaults(shaped, pack, group, whole ? group : name);
     if (!whole) M.importStates(shaped, doc);
+    if (doc.kind === 'held' && group === 'weapons'){ doc.design = M.defaultDesign(doc); var TH = shaped[pack].twoHanded; if (Array.isArray(TH) && TH.indexOf(name) >= 0) doc.design.twoHanded = true; }
+    if (doc.kind === 'item') doc.item = M.defaultItem(doc);
     var rg = extraOf(doc, 'rig'), cl = extraOf(doc, 'clips');
     if (rg && rg.value && typeof rg.value === 'object' && !Array.isArray(rg.value)) doc.rig = clone(rg.value);
     if (cl && cl.value && typeof cl.value === 'object' && !Array.isArray(cl.value)) doc.clips = clone(cl.value);
@@ -327,6 +329,62 @@
   /* light points carry a colour and reach; the asset lists them for the game */
   M.lightsOf = function(doc){ return (doc.points || []).filter(function(p){ return p.kind === 'light'; }).map(function(p){ return {name:p.name, pos:p.pos.slice(), dir:(p.dir || [0, -1, 0]).slice(), colour:p.colour || '#ffd9a0', radius:p.radius || 6}; }); };
 
+  /* ------------------------------------------------------------------ W9: held items
+     A held model is {new, worn, broken}; its origin is the grip (the survivor's right fist), +Z points out of the fist.
+     doc.design is the game's own item design (play.html cleanDesign): kind melee | use | throw, shape 0-3 (Bat, Blade, Hammer, Spear),
+     power 1-100, colour, reach (m, 1.5-3.2), spd (0.7-1.4), and the held model's name. */
+  M.HELD_SHAPES = ['Bat (swing)', 'Blade (chop)', 'Hammer (heavy)', 'Spear (thrust)'];
+  M.defaultDesign = function(doc){ return {kind:'melee', shape:0, power:50, color:'#8f959c', reach:0, spd:1, twoHanded:false}; };
+  M.blankHeld = function(name){
+    var d = M.newModelDoc('held', 'held', 'weapons', name || 'my_weapon');
+    d.layout = {'new':{$part:'new'}, worn:{$part:'worn'}, broken:{$part:'broken'}}; d.parts = {'new':{}, worn:{}, broken:{}};
+    d.design = M.defaultDesign(d); return d;
+  };
+  /* worn and broken made from new: worn is darker with small dents and rust on metal; broken is snapped short and splintered */
+  M.makeWorn = function(doc){
+    var newP = doc.pieces.filter(function(p){ return p.g === 'new'; });
+    doc.pieces = doc.pieces.filter(function(p){ return p.g !== 'worn'; });
+    newP.forEach(function(p, i){ var q = clone(p); q.id = M.newId(doc); q.g = 'worn'; var m = q.m || M.guessMaterial(q.c);
+      if (m === 'steel' || m === 'sheet' || m === 'chrome') q.c = i % 3 === 0 ? 'rust' : String(q.c).replace(/_D$/, '') + '_D';
+      else if (!/_D$/.test(q.c)) q.c = q.c + '_D';
+      q.pos = q.pos.map(function(v, k){ return Math.round((v + (k === 1 ? 0 : 0.004*Math.sin(i*7.1 + k*3.3)))*1e4)/1e4; });
+      doc.pieces.push(q); });
+  };
+  M.makeBroken = function(doc){
+    var newP = doc.pieces.filter(function(p){ return p.g === 'new'; });
+    doc.pieces = doc.pieces.filter(function(p){ return p.g !== 'broken'; });
+    var all = []; newP.forEach(function(p){ all = all.concat(M.toNative(p)); }); var B = M.boundsOf(all); if (!B.ok) return;
+    var cut = B.mn[2] + (B.mx[2] - B.mn[2])*0.55;   /* the far end snaps off */
+    newP.forEach(function(p){
+      var b = M.boundsOf(M.toNative(p)); if (!b.ok || b.mn[2] >= cut) return;
+      var q = clone(p); q.id = M.newId(doc); q.g = 'broken'; q.c = /_D$/.test(q.c) ? q.c : q.c + '_D';
+      if (b.mx[2] > cut && q.d && Math.abs(q.rot[0]) < 1e-6 && Math.abs(q.rot[2]) < 1e-6 && (q.rot[1] % 180) === 0){ var keep = cut - b.mn[2]; q.d = q.d.slice(); q.d[2] = Math.max(0.01, keep); q.pos = q.pos.slice(); q.pos[2] = b.mn[2] + keep/2; }
+      else if (b.mx[2] > cut){ var k = (cut - b.mn[2])/(b.mx[2] - b.mn[2]); q.scl = (q.scl || [1,1,1]).slice(); q.scl[2] *= k; q.pos = q.pos.slice(); q.pos[2] = b.mn[2] + (q.pos[2] - b.mn[2])*k; }
+      doc.pieces.push(q);
+    });
+    /* a few splinters at the break */
+    for (var i = 0; i < 3; i++) doc.pieces.push({id:M.newId(doc), g:'broken', s:'loft', ax:'z', n:4, pos:[(i - 1)*0.008, B.mn[1] + (B.mx[1] - B.mn[1])/2, cut + 0.012 + i*0.006], rot:[0, 0, 0], scl:[1, 1, 1], c:'woodL', m:'wood', r:[[0, 0, -0.012, 0.006, 0.006], [0, 0, 0.012 + i*0.006, 0, 0]]});
+  };
+  /* move every piece so the chosen spot becomes the grip (the origin) */
+  M.gripAt = function(doc, at){ doc.pieces.forEach(function(p){ p.pos = [p.pos[0] - at[0], p.pos[1] - at[1], p.pos[2] - at[2]].map(function(v){ return Math.round(v*1e4)/1e4; }); }); (doc.points || []).forEach(function(p){ p.pos = [p.pos[0] - at[0], p.pos[1] - at[1], p.pos[2] - at[2]]; }); };
+  /* the design the game reads, from the Workshop's fields */
+  M.gameDesign = function(doc){
+    var d = doc.design; if (!d) return null;
+    var key = doc.target.name || doc.target.group, all = []; doc.pieces.forEach(function(p){ if (p.g === 'new') all = all.concat(M.toNative(p)); });
+    var B = M.boundsOf(all), len = B.ok ? Math.round((B.mx[2] - B.mn[2])*100)/100 : 0;
+    var o = {id:'ws-' + String(doc.id).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50), name:String(doc.name || 'Item').replace(/ \(copy\)$/, '').slice(0, 24), by:String(doc.author || 'Workshop').slice(0, 16),
+      kind:d.kind, power:Math.max(1, Math.min(100, Math.round(d.power || 1))), color:d.color || '#8f959c', model:key, length:len};
+    if (d.kind === 'melee'){ o.shape = Math.max(0, Math.min(3, d.shape | 0)); if (d.reach) o.reach = Math.max(1.5, Math.min(3.2, d.reach)); if (d.spd) o.spd = Math.max(0.7, Math.min(1.4, d.spd)); }
+    else if (d.beh) o.beh = d.beh;
+    if (d.twoHanded) o.twoHanded = true;
+    return o;
+  };
+
+  /* ------------------------------------------------------------------ W10: items, recipes, icons
+     doc.item: {key, name, weightLb, stack, uses, recipe: {item: count}, note}. The icon is rendered from the model (app.js) into doc.icon (a PNG data URL). */
+  M.defaultItem = function(doc){ return {key:String(doc.target.name || doc.id).replace(/[^a-z0-9_]/g, '_').slice(0, 24), name:String(doc.name).replace(/ \(copy\)$/, ''), weightLb:1, stack:10, uses:0, recipe:{}, note:''}; };
+  M.RECIPE_ITEMS = ['scrap','wood','nails','tape','plant_fibre','cloth','rope','glass','plastic','car_parts','battery','fuel','toolkit','sheet','chunk'];
+
   /* ------------------------------------------------------------------ W1: the finished asset, and a blank design of any kind */
   M.newModelDoc = function(kind, pack, group, name){
     var K = M.KINDS[kind] || M.KINDS.furniture, nm = name || ('my_' + kind);
@@ -350,6 +408,9 @@
     if (doc.variants && Object.keys(doc.variants).length){ A.variants = {}; Object.keys(doc.variants).forEach(function(st){ A.variants[st] = M.exportVariant(doc, st); A.stats[st] = M.countModel(A.variants[st]); }); }
     var L = M.lightsOf(doc); if (L.length) A.lights = L;
     if (M.salvage) try { var sv = M.salvage(doc); if (Object.keys(sv).length) A.salvage = sv; } catch (e){}
+    if (doc.kind === 'held' && doc.design){ A.design = M.gameDesign(doc); var th = extraOf({extra:extra}, 'twoHanded'); }
+    if (doc.item) A.item = clone(doc.item);
+    if (doc.icon) A.icon = doc.icon;
     return A;
   };
   /* generic checks for any model */
@@ -384,7 +445,12 @@
   var BLANK = {furniture:['props', 'furniture'], container:['props', 'containers'], item:['props', 'items'], held:['held', 'weapons'], building:['buildings', 'modules'],
     structure:['structures', 'structures'], plant:['flora', 'plants'], tile:['ground', 'tiles'], sign:['interiors', 'signs']};
   M.BLANK_KINDS = Object.keys(BLANK);
-  M.blankOfKind = function(kind, name){ var t = BLANK[kind] || BLANK.furniture; return M.newModelDoc(kind, t[0], t[1], name || ('my_' + kind)); };
+  M.blankOfKind = function(kind, name){
+    if (kind === 'held') return M.blankHeld(name || 'my_weapon');
+    var t = BLANK[kind] || BLANK.furniture, d = M.newModelDoc(kind, t[0], t[1], name || ('my_' + kind));
+    if (kind === 'item') d.item = M.defaultItem(d);
+    return d;
+  };
 
   /* ------------------------------------------------------------------ the round trip test (also used by tools/roundtrip.js) */
   function norm(o){

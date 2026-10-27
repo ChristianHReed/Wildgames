@@ -27,7 +27,7 @@
     doc:null, sel:[], layer:'car', look:'whole', state:null,
     units:store.get('units', 'imp'), snap:store.get('snap', null), faceSnap:store.get('faceSnap', true),
     sym:{x:true, z:false}, lock:null, placing:null, multi:false, tab:'piece',
-    preview:{bonnet:false, boot:false, markers:true, person:true, planes:true},
+    preview:{bonnet:false, boot:false, markers:true, person:true, planes:true, hand:true},
     brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null, part:null, hideParts:{}, selPoint:-1, pose:{}, clip:null, clipT:0, variant:null
   };
   if (S.snap == null) S.snap = S.units === 'imp' ? 0.0254 : 0.01;
@@ -72,6 +72,7 @@
   function active(){
     if (S.layer === 'state') return stateList();
     if (isModel() && S.variant && S.doc.variants && S.doc.variants[S.variant]) return S.doc.variants[S.variant].pieces;
+    if (isModel() && S.doc.kind === 'held' && S.doc.parts && S.doc.parts['new']) return S.doc.pieces.filter(function(p){ return p.g === (S.part || 'new'); });
     if (isModel()) return S.doc.pieces.filter(function(p){ return !S.part || p.g === S.part || !S.hideOthers; });
     return S.doc.pieces.filter(function(p){ return S.layer === 'wheel' ? p.g === 'wheel' : p.g !== 'wheel'; });
   }
@@ -164,6 +165,7 @@
         if (f) m = xform(m, f);
         if (isModel()){
           var pf = M.poseFn(S.doc, p.g, S.pose); if (pf) m = xform(m, function(q, n){ return pf(q, n); });
+          var gp = handGrip(); if (gp) m = xform(m, function(q, n){ return [[q[0] + gp[0], q[1] + gp[1], q[2] + gp[2]], n]; });
           var inst = S.part !== p.g && M.instancesOf(S.doc, p.g);
           if (inst){ inst.forEach(function(pt){ var w = pt.pos, left = w[0] < -0.01; solid.push(xform(m, wheelAt(w, left))); }); return; }
         }
@@ -177,6 +179,7 @@
         ghost.push(trisOf(base, 'base:' + JSON.stringify(S.doc.pieces)));
       }
     }
+    var man = handGrip() ? mannequin() : null; if (man) solid.push(man);
     view.set('solid', {tris:merge(solid)}, {order:1});
     view.set('ghost', ghost.length ? {tris:merge(ghost)} : null, {order:3, alpha:0.35, depthWrite:false});
     view.set('sel', selM.length ? {tris:merge(selM)} : null, {order:4, tint:[0.85, 0.45, 0.18, 0.38], offset:-1});
@@ -225,7 +228,7 @@
     view.set('planes', pl.length ? {tris:merge(pl)} : null, {order:6, alpha:0.12, lit:false, depthWrite:false});
     /* a 6 ft person beside the car, and a soft shadow under it */
     var extra = [];
-    if (S.preview.person && S.layer !== 'wheel'){
+    if (S.preview.person && S.layer !== 'wheel' && !handGrip()){
       var A = carBounds(), x = -(Math.max(0.9, A.ok ? Math.max(-A.mn[0], A.mx[0]) : 0.9) + 0.75);
       extra.push(trisOf(person(x), 'person' + x));
     }
@@ -417,7 +420,7 @@
     if (isModel()){
       var nm = partNames(), hb = (S.variant ? '<button class="sm on" data-a2="noop">State: ' + esc(S.variant.replace(/_/g, ' ')) + '</button><button class="sm alt" data-state="">Done</button> ' : '') + '<button class="sm ' + (!S.part ? 'on' : 'alt') + '" data-part="">All parts</button>' + nm.map(function(n){ return '<button class="sm ' + (S.part === n ? 'on' : 'alt') + '" data-part="' + esc(n) + '">' + esc(n.replace(/_/g, ' ')) + '</button>'; }).join('');
       $('layerBar').innerHTML = hb;
-      $('previewBar').innerHTML = tog('markers', 'Points') + tog('person', 'Person') + tog('planes', 'Planes');
+      $('previewBar').innerHTML = (S.doc.kind === 'held' ? tog('hand', 'In hand') : '') + tog('markers', 'Points') + tog('person', 'Person') + tog('planes', 'Planes');
       return;
     }
     var h = '<button class="sm ' + (S.layer === 'car' ? 'on' : 'alt') + '" data-l="car">Car</button><button class="sm ' + (S.layer === 'wheel' ? 'on' : 'alt') + '" data-l="wheel">Wheel</button>' +
@@ -672,6 +675,37 @@
         (pt.kind === 'light' ? '<div class="row" style="width:100%"><label class="l">Light</label><input type="color" data-k="ptcol" data-i="' + i + '" value="' + esc(pt.colour || '#ffd9a0') + '">' + num('reach', pt.radius || 6, 'len', function(v){ commit(); S.doc.points[i].radius = v; changed(false); }, {min:0.5}) + '</div>' : '') + '</div>'; }).join('') + '</div>' : '<p class="muted">No points yet.</p>';
     h += '<div class="row"><select id="ptNew" class="grow">' + Object.keys(M.POINT_KINDS).map(function(k){ return '<option value="' + k + '"' + (K.points.indexOf(k) >= 0 ? '' : '') + '>' + k + ' - ' + esc(M.POINT_KINDS[k]) + '</option>'; }).join('') + '</select><button class="sm" data-a="addPoint">Add point</button></div>' +
       '<p class="muted">Points are measured in the units you chose (X right, Y up, Z forward), drawn as coloured markers. A new point goes at the middle of the selected piece. For this kind, useful points: <b>' + esc(K.points.join(', ')) + '</b>.</p></div>';
+    if (d.kind === 'held'){
+      var z = d.design || (d.design = M.defaultDesign(d));
+      h += '<div class="card"><h3>As an item in the game</h3>' +
+        '<div class="row"><label class="l">Used as</label><select class="grow" data-k="dkind"><option value="melee"' + (z.kind === 'melee' ? ' selected' : '') + '>Weapon you swing</option><option value="throw"' + (z.kind === 'throw' ? ' selected' : '') + '>Thrown</option><option value="use"' + (z.kind === 'use' ? ' selected' : '') + '>Tool you use</option></select></div>' +
+        (z.kind === 'melee' ? '<div class="row"><label class="l">Fights like</label><select class="grow" data-k="dshape">' + M.HELD_SHAPES.map(function(t, i){ return '<option value="' + i + '"' + ((z.shape | 0) === i ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' : '') +
+        '<div class="row"><label class="l">Power</label><input class="grow" type="range" min="1" max="100" data-k="dpower" value="' + z.power + '"><span class="muted" style="width:34px;text-align:right">' + z.power + '</span></div>' +
+        (z.kind === 'melee' ? '<div class="row"><label class="l">Reach</label>' + num('reach', z.reach || 1.5, 'len', function(v){ commit(); S.doc.design.reach = Math.max(1.5, Math.min(3.2, v)); changed(false); }, {step:0.1}) + '<span class="muted">1.5 to 3.2 m</span></div>' +
+          '<div class="row"><label class="l">Speed</label>' + num('speed', z.spd || 1, 'n', function(v){ commit(); S.doc.design.spd = Math.max(0.7, Math.min(1.4, v)); changed(false); }, {step:0.05}) + '<span class="muted">0.7 slow to 1.4 quick</span></div>' : '') +
+        '<div class="row"><label class="l">Icon colour</label><input type="color" data-k="dcolor" value="' + esc(z.color || '#8f959c') + '"><label><input type="checkbox" data-k="dtwo"' + (z.twoHanded ? ' checked' : '') + '>Two hands</label></div>' +
+        '<p class="muted">These are the game\'s own item rules: power, reach and speed are kept in range so no pack can make an overpowered item.</p></div>';
+      h += '<div class="card"><h3>Grip and wear</h3><p class="muted">The model\'s origin is where the right fist holds it; +Z points out of the fist. Turn on <b>In hand</b> below the view to see it held.</p>' +
+        '<div class="row"><button class="alt sm" data-a="gripSel">Grip at the selected piece</button>' + (S.selPoint >= 0 ? '<button class="alt sm" data-a="gripPt">Grip at the selected point</button>' : '') + '</div>' +
+        '<div class="row"><button class="alt sm" data-a="mkWorn">Make worn from new</button><button class="alt sm" data-a="mkBroken">Make broken from new</button></div>' +
+        '<p class="muted">The game shows <b>worn</b> under a quarter condition. Make them again after changing <b>new</b>; edit them by picking the part above the view.</p></div>';
+    }
+    if (d.kind === 'item'){
+      var it = d.item || (d.item = M.defaultItem(d)), rec = it.recipe || {};
+      h += '<div class="card"><h3>As an item</h3>' +
+        '<div class="row"><label class="l">Item key</label><input class="grow" type="text" data-k="ikey" value="' + esc(it.key) + '"></div>' +
+        '<div class="row"><label class="l">Shown as</label><input class="grow" type="text" data-k="iname" value="' + esc(it.name) + '"></div>' +
+        '<div class="row"><label class="l">Weight</label>' + num('weight', it.weightLb, 'n', function(v){ commit(); S.doc.item.weightLb = Math.max(0, v); changed(false); }, {step:0.5, min:0}) + '<span class="muted">lb</span></div>' +
+        '<div class="row"><label class="l">Stacks to</label>' + num('stack', it.stack, 'n', function(v){ commit(); S.doc.item.stack = Math.max(1, Math.round(v)); changed(false); }, {min:1}) + '</div>' +
+        '<div class="row"><label class="l">Uses</label>' + num('uses', it.uses, 'n', function(v){ commit(); S.doc.item.uses = Math.max(0, Math.round(v)); changed(false); }, {min:0}) + '<span class="muted">0 = not used up</span></div>' +
+        '<div class="muted" style="margin-top:8px"><b>Made from</b></div>' + Object.keys(rec).map(function(k){ return '<div class="row"><label class="l">' + esc(k.replace(/_/g, ' ')) + '</label>' + num(k, rec[k], 'n', function(v){ commit(); if (v <= 0) delete S.doc.item.recipe[k]; else S.doc.item.recipe[k] = Math.round(v); changed(true); }, {min:0}) + '</div>'; }).join('') +
+        '<div class="row"><select id="recAdd">' + M.RECIPE_ITEMS.filter(function(k){ return !rec[k]; }).map(function(k){ return '<option>' + k + '</option>'; }).join('') + '</select><button class="alt sm" data-a="recAdd">Add to recipe</button></div>' +
+        '<p class="muted">The game decides what each item does by its key; a new key needs the game to know it (the main chat adds behaviours).</p></div>';
+    }
+    if (d.kind === 'held' || d.kind === 'item' || d.kind === 'furniture' || d.kind === 'container'){
+      h += '<div class="card"><h3>Icon</h3><div class="row">' + (d.icon ? '<img src="' + d.icon + '" alt="icon" style="width:96px;height:96px;border-radius:6px;border:1px solid var(--edge)">' : '<span class="muted grow">No icon yet.</span>') +
+        '<button class="alt sm" data-a="icon">' + (d.icon ? 'Draw it again' : 'Draw the icon') + '</button></div><p class="muted">Drawn from the model in a three-quarter view, for the backpack and the Items panel.</p></div>';
+    }
     /* states */
     var V = d.variants || {}, hints = (M.STATE_HINT[d.kind] || ['broken']).filter(function(x){ return !V[x]; });
     h += '<div class="card"><h3>States</h3><p class="muted">The same model in another state: a container searched, a wall damaged, a fire out. Each is saved as <b>' + esc((d.target.name || d.target.group) + '_<state>') + '</b>.</p><div class="list">' +
@@ -693,6 +727,38 @@
       (ex.some(function(e){ return e.path[0] === 'sizes' || e.path[0] === 'info'; }) ? '<div class="row"><button class="alt sm" data-a="measure">Measure it again from the pieces</button></div>' : '') + '</div>';
     return h;
   }
+  /* ---------------------------------------------------------------- held items in a survivor's hand (W9) */
+  function handGrip(){
+    if (!isModel() || S.doc.kind !== 'held' || !S.preview.hand) return null;
+    if (!SH.held || !SH.survivor){ if (!handGrip.loading){ handGrip.loading = true; M.loadStock(['held', 'survivor'], 'assets/shaped/', function(){ handGrip.loading = false; rebuildScene(); }); } return null; }
+    return SH.held.grip.pos;
+  }
+  var manMesh = null;
+  function mannequin(){
+    if (manMesh) return manMesh;
+    var V = SH.survivor, P = V.parts, pcs = [], add = function(o){ if (!o) return; if (Array.isArray(o)) pcs = pcs.concat(o); else for (var k in o) add(o[k]); };
+    var b = 'masculine'; add(P.body[b]); add(P.top && P.top[b] && (P.top[b].tshirt || P.top[b][Object.keys(P.top[b])[0]])); add(P.bottoms && P.bottoms[b] && (P.bottoms[b].jeans || P.bottoms[b][Object.keys(P.bottoms[b])[0]]));
+    var sh = P.shoes && (P.shoes.trainers || P.shoes[b] && P.shoes[b].trainers); add(sh);
+    var pal = {}, k; for (k in (V.palette || {})) pal[k] = V.palette[k]; var sl = {SKIN:'#c99a7a', HAIR:'#4a3426', SHIRT:'#6a7a5a', PANTS:'#3e4a5a', ACC:'#9a3a30'}; for (k in sl) pal[k] = pal[k] || sl[k];
+    pal.SKIN = '#c99a7a'; pal.SHIRT = '#6a7a5a'; pal.PANTS = '#3e4a5a';
+    var dk = V.darker || 0.78, cf = function(n){ var d = /_D$/.test(n), h = pal[n.replace(/_D$/, '')] || '#999999', c = SH.hex(h); return d ? c.map(function(v){ return v*dk; }) : c; };
+    var A = SH.build(pcs, cf), n = A.pos.length/3, col = new Float32Array(n*4);
+    for (var i = 0; i < n; i++){ col[i*4] = A.col[i*3]; col[i*4+1] = A.col[i*3+1]; col[i*4+2] = A.col[i*3+2]; col[i*4+3] = 1; }
+    manMesh = {pos:new Float32Array(A.pos), nor:new Float32Array(A.nor), col:col};
+    return manMesh;
+  }
+  /* ---------------------------------------------------------------- icons (W10): the model drawn on its own, three-quarter view */
+  function renderIcon(cb){
+    var cv = document.createElement('canvas'); cv.style.cssText = 'position:fixed;left:-400px;top:0;width:256px;height:256px'; document.body.appendChild(cv);
+    var v;
+    try { v = WSV.create(cv, {}); } catch (e){ cv.remove(); toast('Could not draw the icon: ' + e.message); return; }
+    var pcs = []; S.doc.pieces.forEach(function(p){ if (p.hidden) return; if (S.doc.kind === 'held' && p.g !== 'new') return; if (S.doc.variants && S.variant) return; pcs = pcs.concat(nativesOf(p)); });
+    var m = trisOf(pcs), B = M.boundsOf(pcs);
+    v.bg = [0.957, 0.918, 0.847]; v.set('m', {tris:m}, {order:1});
+    if (B.ok){ v.cam.fov = 26; v.frame(B.mn, B.mx, true); v.cam.yaw = S.doc.kind === 'held' ? 1.25 : 0.7; v.cam.pitch = S.doc.kind === 'held' ? 0.55 : 0.42; v.cam.dist *= 1.08; }
+    setTimeout(function(){ v.render(); var url = cv.toDataURL('image/png'); cv.remove(); cb(url); }, 60);
+  }
+
   /* ---------------------------------------------------------------- moving parts (W2) */
   var AXES = [['X', [1, 0, 0]], ['−X', [-1, 0, 0]], ['Y', [0, 1, 0]], ['−Y', [0, -1, 0]], ['Z', [0, 0, 1]], ['−Z', [0, 0, -1]]];
   function axisIndex(v){ v = v || [0, 1, 0]; var best = 2, bd = -2; AXES.forEach(function(a, i){ var d = a[1][0]*v[0] + a[1][1]*v[1] + a[1][2]*v[2]; if (d > bd){ bd = d; best = i; } }); return best; }
@@ -761,6 +827,12 @@
   /* ---------------------------------------------------------------- panel actions */
   var ACTIONS = {
     selAll:selectAll,
+    gripSel:function(){ var sel = selected(); if (!sel.length) return toast('Select the piece the hand holds.'); var B = M.boundsOf([].concat.apply([], sel.map(nativesOf))); if (!B.ok) return; commit(); M.gripAt(S.doc, [0, 1, 2].map(function(i){ return (B.mn[i] + B.mx[i])/2; })); changed(true); toast('The grip is now the middle of that piece.'); },
+    gripPt:function(){ var pt = S.doc.points[S.selPoint]; if (!pt) return; commit(); M.gripAt(S.doc, pt.pos.slice()); changed(true); },
+    mkWorn:function(){ commit(); M.makeWorn(S.doc); changed(true); toast('Worn made from new.'); },
+    mkBroken:function(){ commit(); M.makeBroken(S.doc); changed(true); toast('Broken made from new.'); },
+    recAdd:function(){ var k = ($('recAdd') || {}).value; if (!k) return; commit(); S.doc.item.recipe = S.doc.item.recipe || {}; S.doc.item.recipe[k] = 1; changed(true); },
+    icon:function(){ renderIcon(function(url){ commit(); S.doc.icon = url; changed(true); }); },
     editState2:function(b){ S.variant = b.dataset.s || null; S.sel = []; refresh(true); },
     addState2:function(){ var st = ($('newState') || {}).value; if (!st) return; commit(); M.addState(S.doc, st); S.variant = st; S.sel = []; changed(true); toast('New state "' + st + '": a copy of the model to change.'); },
     delState2:function(b){ if (b.dataset.sure !== '1'){ b.dataset.sure = '1'; b.textContent = 'Tap again'; return; } commit(); delete S.doc.variants[b.dataset.s]; if (S.variant === b.dataset.s) S.variant = null; changed(true); },
@@ -833,6 +905,13 @@
     bed:function(t){ setup(function(st){ var sp = asset().spec; st.bed = t.checked ? {y:0.75, z:r4(sp.tail + 0.9), w:r4(Math.min(1.6, sp.width - 0.15)), d:1.6} : null; }); },
     tank:function(t){ setup(function(st){ st.tank = t.value; }); },
     paint:function(t){ commit(); S.doc.paint[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
+    dkind:function(t){ commit(); S.doc.design.kind = t.value; changed(true); },
+    dshape:function(t){ commit(); S.doc.design.shape = +t.value; changed(false); },
+    dpower:function(t){ commit(); S.doc.design.power = +t.value; changed(true); },
+    dcolor:function(t){ commit(); S.doc.design.color = t.value; changed(false); },
+    dtwo:function(t){ commit(); S.doc.design.twoHanded = t.checked; changed(false); },
+    ikey:function(t){ commit(); S.doc.item.key = slug(t.value).slice(0, 24) || S.doc.item.key; changed(true); },
+    iname:function(t){ commit(); S.doc.item.name = t.value.slice(0, 24); changed(false); },
     fsize:function(t){ commit(); M.extraOf(S.doc, 'furnitureSize').value[0] = t.value; changed(false); },
     extra:function(t){ commit(); var e = S.doc.extra[+t.dataset.i]; if (t.dataset.f) e.value[t.dataset.f] = asLike(e.value[t.dataset.f], t.value); else e.value = asLike(e.value, t.value); changed(false); },
     ptcol:function(t){ commit(); S.doc.points[+t.dataset.i].colour = t.value; changed(false); },

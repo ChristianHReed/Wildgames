@@ -22,7 +22,7 @@
 (function(root){
   var P = root.AfterstreetPacks = root.AfterstreetPacks || {};
   P.FORMAT = 'afterstreet-pack'; P.VERSION = 2;
-  P.vehicles = P.vehicles || []; P.models = P.models || []; P.prefabs = P.prefabs || []; P.installed = P.installed || {}; P.errors = P.errors || [];
+  P.vehicles = P.vehicles || []; P.models = P.models || []; P.designs = P.designs || []; P.items = P.items || []; P.prefabs = P.prefabs || []; P.installed = P.installed || {}; P.errors = P.errors || [];
   function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'x'; }
   P.keyOf = function(pack, asset){ return 'pk_' + slug(pack.id) + '_' + slug(asset.id); };
 
@@ -60,6 +60,9 @@
       o[key] = e.value;
     });
     for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
+    /* a held item's game design (the game's custom item format) and an item's data travel with it */
+    if (a.design){ var dz = JSON.parse(JSON.stringify(a.design)); dz.model = key; if (a.icon) dz.iconData = a.icon; P.designs.push(dz); if (dz.twoHanded && PK.twoHanded && PK.twoHanded.indexOf(key) < 0) PK.twoHanded.push(key); }
+    if (a.item){ var it = JSON.parse(JSON.stringify(a.item)); it.model = t.pack + '.' + (whole ? '' : t.group + '.') + key; if (a.icon) it.icon = a.icon; P.items.push(it); }
     P.models.push({key:key, states:Object.keys(a.variants || {}), lights:a.lights || [], salvage:a.salvage || {}, rig:a.rig || null, clips:a.clips || null, pack:t.pack, group:whole ? null : t.group, whole:whole, name:a.name, kind:a.kind, packId:pack.id, author:a.author || pack.author, points:a.points || [], stats:a.stats || {}});
     P.installed[t.pack + '.' + (whole ? '' : t.group + '.') + key] = true;
   }
