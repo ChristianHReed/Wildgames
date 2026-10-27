@@ -45,7 +45,18 @@
 
   /* version 2: any other asset is a 'model': its value goes to SHAPED[target.pack].models[target.group][target.name], and the pack's own
      tables that hold an entry for the model (info, moving, furnitureSize, ...) get each a.extra entry ({path:[table, (group,) name], value}) under the model's key. mode 'add' never replaces a model the game has. */
+  /* a part placed by path (survivor clothes parts.top.masculine.<id>, an alien parts.<name>) with its creature's bones and clips */
+  function installAt(SH, pack, a){
+    var t = a.target, PK = SH[t.pack]; if (!PK){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no pack ' + t.pack + ' to put it in'); return; }
+    var path = t.path.slice(), last = path.pop(), o = PK; path.forEach(function(k){ o = o[k] = o[k] || {}; });
+    var key = last; if (a.mode === 'add' && o[key] !== undefined) key = P.keyOf(pack, a);
+    o[key] = a.value;
+    if (a.creature && t.path[0] === 'parts'){ PK.creatures = PK.creatures || {}; PK.creatures[key] = a.creature; }
+    for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
+    P.models.push({key:key, path:t.path.slice(0, -1).concat(key), pack:t.pack, kind:a.kind, name:a.name, packId:pack.id, author:a.author || pack.author, stats:a.stats || {}});
+  }
   function installModel(SH, pack, a){
+    if (a.target && a.target.path) return installAt(SH, pack, a);
     var t = a.target || {}, PK = SH[t.pack];
     if (!PK || !PK.models){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no pack ' + t.pack + ' to put it in'); return; }
     /* a whole model (a bike, a boat, a machine) has no name: it is models[group] itself */

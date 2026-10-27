@@ -63,7 +63,7 @@
       parts[part] = {};
       value.forEach(function(np){ var ep = {id:'p' + (++doc._n), g:part, pos:np.p.slice(), rot:[0, (np.ry || 0)*90, 0], scl:[1,1,1], c:np.c, m:M.guessMaterial(np.c), s:np.s};
         ['d','fy','ax','r','n','rot','ang','closed','caps','both','cin','v','f'].forEach(function(k){ if (np[k] !== undefined){ ep[k === 'rot' ? 'lrot' : k] = clone(np[k]); } });
-        if (np.glow) ep.glow = true; pieces.push(ep); });
+        if (np.glow) ep.glow = true; var kp = M.keepOf(np); if (kp) ep.keep = kp; pieces.push(ep); });
       return {$part:part};
     }
     if (Array.isArray(value)) return clone(value);
@@ -107,6 +107,9 @@
   /* the nested model value of a design, in the game's own format */
   M.exportModel = function(doc){
     var byPart = {};
+    /* a skeletal design saves every bone that has pieces, including bones that had none when it was opened */
+    if (doc.target && doc.target.path && doc.layout && typeof doc.layout === 'object' && doc.layout.$part === undefined && !doc.layout.$parts)
+      doc.pieces.forEach(function(ep){ if (!doc.layout[ep.g]) doc.layout[ep.g] = {$part:ep.g}; });
     Object.keys(doc.parts).forEach(function(g){ byPart[g] = []; });
     doc.pieces.forEach(function(ep){ if (!byPart[ep.g]) byPart[ep.g] = []; byPart[ep.g] = byPart[ep.g].concat(M.toNative(ep)); });
     var v = joinLayout(doc.layout, byPart); M.stripM(v); return v;
@@ -163,6 +166,7 @@
     var P = shaped[pack] || {}, out = {}, v;
     if (P.paint){ v = P.paint[key] || P.paint[group]; if (typeof v === 'string') out.BODY = v; else if (v && typeof v === 'object') for (var k in v) if (/^#/.test(v[k])) out[k] = v[k]; }
     if (P.examples){ var ex = P.examples[Object.keys(P.examples)[0]]; for (var k2 in ex) if (out[k2] == null) out[k2] = ex[k2]; }
+    if (P.slots) for (var ks in P.slots){ var sv = P.slots[ks]; if (Array.isArray(sv) && /^#/.test(sv[0]) && out[ks] == null) out[ks] = sv[Math.min(1, sv.length - 1)]; }
     if (P.seasons && P.seasons[key] && P.seasons[key].summer) for (var k3 in P.seasons[key].summer) out[k3] = P.seasons[key].summer[k3];
     return out;
   };
@@ -385,6 +389,88 @@
   M.defaultItem = function(doc){ return {key:String(doc.target.name || doc.id).replace(/[^a-z0-9_]/g, '_').slice(0, 24), name:String(doc.name).replace(/ \(copy\)$/, ''), weightLb:1, stack:10, uses:0, recipe:{}, note:''}; };
   M.RECIPE_ITEMS = ['scrap','wood','nails','tape','plant_fibre','cloth','rope','glass','plastic','car_parts','battery','fuel','toolkit','sheet','chunk'];
 
+  /* ------------------------------------------------------------------ W5: skeletons and clips (survivors, clothes, aliens, animals)
+     The packs share one format: bones {name: {pivot, tip, parent}}, pieces grouped by bone {bone: [pieces]},
+     clips {name: [frame, ...]} where a frame maps bone to [x, y, z] degrees about the bone's pivot, X then Y then Z, children carried.
+     In a skeletal design each part is a bone (a piece's g is its bone); doc.skeleton holds the bones and doc.frames the clips. */
+  function bonesToLayout(byBone){ var L = {}; Object.keys(byBone).forEach(function(b){ L[b] = {$part:b}; }); return L; }
+  function importBoned(shaped, pack, path, byBone, kind, name){
+    var doc = {format:'afterstreet-workshop', v:2, type:'model', id:name + '_copy', name:name.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }) + ' (copy)', author:'', licence:'MIT', notes:'',
+      kind:kind, target:{pack:pack, path:path}, from:pack + '.' + path.join('.'), parts:{}, pieces:[], points:[], extra:[], colours:{}, states:{}, _n:0};
+    Object.keys(byBone).forEach(function(b){ doc.parts[b] = {}; (byBone[b] || []).forEach(function(np){ var ep = M.fromNative(np, b, null); ep.id = 'p' + (++doc._n); doc.pieces.push(ep); }); });
+    doc.layout = bonesToLayout(byBone); delete doc._n;
+    doc.slotColours = M.slotDefaults(shaped, pack, null, name);
+    return doc;
+  }
+  /* an alien or an animal: its pieces by bone, bones and clips (aliens.creatures[name], animals.creatures[name]) */
+  M.importCreature = function(shaped, pack, name){
+    var P = shaped[pack], C = P.creatures[name], byBone = P.parts[name];
+    if (!C || !byBone) throw new Error('no creature ' + pack + '.' + name);
+    var doc = importBoned(shaped, pack, ['parts', name], byBone, 'creature', name);
+    doc.skeleton = clone(C.bones || {}); doc.frames = clone(C.clips || {});
+    Object.keys(doc.skeleton).forEach(function(b){ if (!doc.parts[b]) doc.parts[b] = {}; });   /* bones with no pieces are parts to put pieces on, not saved while empty */
+    doc.creature = {pack:pack, name:name};
+    Object.keys(C).forEach(function(k){ if (k !== 'bones' && k !== 'clips') doc.extra.push({path:['creatures', name, k], value:clone(C[k])}); });
+    return doc;
+  };
+  /* a survivor part: a garment, hair, hat, shoes, gear ... (survivor.parts[slot][body][choice] or parts[slot][choice]) on the survivor's skeleton */
+  M.importGarment = function(shaped, slot, body, choice){
+    var V = shaped.survivor, S0 = V.parts[slot], byBone = body ? S0[body][choice] : S0[choice];
+    if (!byBone) throw new Error('no survivor part ' + slot + '.' + (body ? body + '.' : '') + choice);
+    var path = body ? ['parts', slot, body, choice] : ['parts', slot, choice];
+    var doc = importBoned(shaped, 'survivor', path, byBone, 'clothing', choice);
+    doc.skeleton = clone(V.bones); doc.frames = clone(V.clips); doc.garment = {slot:slot, body:body || 'masculine', choice:choice};
+    doc.skeletonShared = true;   /* the survivor's own skeleton and clips: shown for posing, not saved with the part */
+    return doc;
+  };
+  M.SURVIVOR_SLOTS = ['top','bottoms','worn','shoes','hair','hat','face','gear','npc','body'];
+  M.survivorIndex = function(shaped){
+    var V = shaped.survivor, out = []; if (!V) return out;
+    M.SURVIVOR_SLOTS.forEach(function(sl){ var S0 = V.parts[sl]; if (!S0) return;
+      if (S0.masculine || S0.feminine) ['masculine','feminine'].forEach(function(b){ Object.keys(S0[b] || {}).forEach(function(c){ if (S0[b][c] && typeof S0[b][c] === 'object' && !Array.isArray(S0[b][c]) && !isPiece(S0[b][c])) out.push({slot:sl, body:b, choice:c}); }); });
+      else Object.keys(S0).forEach(function(c){ out.push({slot:sl, body:null, choice:c}); }); });
+    return out;
+  };
+  /* the pose of a bone chain for a frame: a function moving points and normals */
+  M.skinFn = function(doc, bone, frame){
+    var B = doc.skeleton || {}, chain = [], b = bone, guard = 0;
+    while (b && B[b] && guard++ < 64){ chain.push(b); b = B[b].parent; }
+    var used = chain.filter(function(k){ var r = frame && frame[k]; return r && (r[0] || r[1] || r[2]); });
+    if (!used.length) return null;
+    var mats = {}; used.forEach(function(k){ mats[k] = M.rotMat(frame[k]); });
+    return function(x, n){
+      var q = x.slice(), nn = n ? n.slice() : null;
+      chain.forEach(function(k){ var R = mats[k]; if (!R) return; var pv = B[k].pivot; var t = M.app3(R, [q[0]-pv[0], q[1]-pv[1], q[2]-pv[2]]); q = [t[0]+pv[0], t[1]+pv[1], t[2]+pv[2]]; if (nn) nn = M.app3(R, nn); });
+      return [q, nn];
+    };
+  };
+  /* a new bone: from the middle of the given pieces, hung from the nearest bone */
+  M.addBone = function(doc, name, at, parent){
+    doc.skeleton = doc.skeleton || {};
+    doc.skeleton[name] = {pivot:at.slice(), tip:[at[0], at[1] + 0.1, at[2]]}; if (parent) doc.skeleton[name].parent = parent;
+    if (!doc.parts[name]){ doc.parts[name] = {}; if (doc.layout && typeof doc.layout === 'object' && doc.layout.$part === undefined && !doc.layout.$parts) doc.layout[name] = {$part:name}; }
+    return doc.skeleton[name];
+  };
+  /* W4: a shell a set distance out from body pieces (sleeves, trousers, a coat): boxes grow on every side, tubes in radius */
+  M.inflate = function(pieces, dist, colour){
+    return pieces.map(function(ep){
+      var q = clone(ep); delete q.id; q.c = colour || q.c; delete q.keep;
+      if (q.d){ q.d = q.d.map(function(v){ return Math.round((v + dist*2)*1e4)/1e4; }); }
+      else if (q.s === 'loft' && q.r){ q.r = q.r.map(function(r){ var o = r.slice(); o[3] = Math.round((o[3] + dist)*1e4)/1e4; o[4] = Math.round((o[4] + dist)*1e4)/1e4; return o; }); }
+      else if (q.s === 'poly' || q.s === 'decal'){ var all = M.toNative(ep), B = M.boundsOf(all); if (B.ok){ var sz = [B.mx[0]-B.mn[0], B.mx[1]-B.mn[1], B.mx[2]-B.mn[2]]; q.scl = (q.scl || [1,1,1]).map(function(v, i){ return v*(sz[i] + dist*2)/Math.max(sz[i], 1e-3); }); } }
+      return q;
+    });
+  };
+  /* skeleton, clips and the part itself back into the pack */
+  function writeBoned(doc, A){
+    if (!doc.target.path) return;
+    if (doc.creature){
+      A.creature = {bones:clone(doc.skeleton || {}), clips:clone(doc.frames || {})};
+      (doc.extra || []).forEach(function(e){ if (e.path[0] === 'creatures') A.creature[e.path[2]] = clone(e.value); });
+    } else if (doc.skeletonShared === false && doc.skeleton){ A.skeleton = clone(doc.skeleton); A.clips = clone(doc.frames || {}); }
+  }
+  M.writeBoned = writeBoned;
+
   /* ------------------------------------------------------------------ W1: the finished asset, and a blank design of any kind */
   M.newModelDoc = function(kind, pack, group, name){
     var K = M.KINDS[kind] || M.KINDS.furniture, nm = name || ('my_' + kind);
@@ -405,6 +491,8 @@
     var A = {type:'model', id:doc.id, name:doc.name, kind:doc.kind, author:doc.author, notes:doc.notes, target:clone(doc.target), mode:doc.from ? 'replace' : 'add',
       value:value, extra:extra, palette:pal, points:clone(doc.points || []), parts:Object.keys(doc.parts), stats:{total:M.countModel(value)}, source:clone(doc)};
     writeRig(doc, extra, A);
+    writeBoned(doc, A);
+    if (doc.target.path) A.extra = (A.extra || []).filter(function(e){ return e.path[0] !== 'creatures'; });
     if (doc.variants && Object.keys(doc.variants).length){ A.variants = {}; Object.keys(doc.variants).forEach(function(st){ A.variants[st] = M.exportVariant(doc, st); A.stats[st] = M.countModel(A.variants[st]); }); }
     var L = M.lightsOf(doc); if (L.length) A.lights = L;
     if (M.salvage) try { var sv = M.salvage(doc); if (Object.keys(sv).length) A.salvage = sv; } catch (e){}
@@ -429,7 +517,7 @@
 
 
   /* ------------------------------------------------------------------ the game's own packs, loaded when asked for (browser) */
-  M.STOCK_PACKS = ['aliens','animals','autotrade','barriers','bikes','boats','buildings','businesses','civic','digging','farm','fleet','floorplan','flora','foodservice','furniture2','fx','ground','held','interiors','land','machinedig','machines','parks','pitworks','power','props','rail','roadside','services','shopfit','solar','structures','towers','vehiclekit','walls','waterside','woods','world'];
+  M.STOCK_PACKS = ['survivor','aliens','animals','autotrade','barriers','bikes','boats','buildings','businesses','civic','digging','farm','fleet','floorplan','flora','foodservice','furniture2','fx','ground','held','interiors','land','machinedig','machines','parks','pitworks','power','props','rail','roadside','services','shopfit','solar','structures','towers','vehiclekit','walls','waterside','woods','world'];
   /* load SHAPED packs by name from base ('assets/shaped/'); cb() when done. Packs that are not there are skipped. */
   M.loadStock = function(names, base, cb){
     var SHp = root.SHAPED || {}, todo = names.filter(function(n){ return !SHp[n]; }), left = todo.length;

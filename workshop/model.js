@@ -219,7 +219,7 @@
     if (ep.mx) out = out.concat(out.map(M.mirrorX));
     if (ep.mz) out = out.concat(out.map(M.mirrorZ));
     var mat = ep.m || M.guessMaterial(ep.c);
-    out.forEach(function(o){ tidy(o); o._m = mat; });
+    out.forEach(function(o){ tidy(o); o._m = mat; if (ep.keep) for (var k in ep.keep) o[k] = clone(ep.keep[k]); });
     return out;
   };
   function tidy(o){
@@ -234,8 +234,12 @@
   M.groupNative = function(doc, g){ var out = []; doc.pieces.forEach(function(p){ if (p.g === g) out = out.concat(M.toNative(p)); }); return out; };
 
   /* a game piece -> an editor piece (for opening the design chat's cars and packs without a Workshop source) */
+  var KNOWN = {s:1, p:1, c:1, ry:1, glow:1, d:1, fy:1, ax:1, r:1, n:1, rot:1, ang:1, closed:1, caps:1, both:1, cin:1, v:1, f:1, _m:1};
+  /* fields a pack puts on its pieces that the Workshop does not edit (a hair piece's hat: 'hide') ride along unchanged */
+  M.keepOf = function(np){ var k, o = null; for (k in np) if (!KNOWN[k]){ (o = o || {})[k] = clone(np[k]); } return o; };
   M.fromNative = function(np, g, doc){
     var ep = {id:M.newId(doc), g:g || 'body', pos:np.p.slice(), rot:[0, (np.ry||0)*90, 0], scl:[1,1,1], c:np.c, m:M.guessMaterial(np.c)};
+    var kp = M.keepOf(np); if (kp) ep.keep = kp;
     GEO.forEach(function(k){ var src = k === 'lrot' ? 'rot' : k; if (np[src] !== undefined) ep[k] = clone(np[src]); });
     ep.s = np.s; if (np.glow) ep.glow = true;
     if (doc) doc.pieces.push(ep);

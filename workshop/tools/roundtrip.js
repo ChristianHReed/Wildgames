@@ -32,5 +32,18 @@ Object.keys(SHAPED).sort().forEach(function(pack){
     });
   });
 });
+/* skeletal: aliens and animals, and every survivor part */
+var nbone = 0;
+['aliens', 'animals'].forEach(function(pk){ var P = SHAPED[pk]; if (!P || !P.creatures || (only && only !== pk)) return;
+  Object.keys(P.creatures).forEach(function(n){ if (!P.parts[n]) return; total++; nbone++;
+    try { var d = M.importCreature(SHAPED, pk, n), A = M.buildModelAsset(d);
+      if (!M.sameModel(A.value, P.parts[n])) { bad++; console.log('DIFFERENT', pk + '.parts.' + n); }
+      if (!M.sameModel(A.creature, P.creatures[n])) { bad++; console.log('CREATURE DIFFERS', pk + '.creatures.' + n); }
+    } catch (e){ bad++; console.log('ERROR', pk + '.' + n, e.message); } }); });
+if (SHAPED.survivor && (!only || only === 'survivor')) M.survivorIndex(SHAPED).forEach(function(g){ total++; nbone++;
+  try { var d = M.importGarment(SHAPED, g.slot, g.body, g.choice), A = M.buildModelAsset(d), want = g.body ? SHAPED.survivor.parts[g.slot][g.body][g.choice] : SHAPED.survivor.parts[g.slot][g.choice];
+    if (!M.sameModel(A.value, want)){ bad++; if (bad <= 20) console.log('DIFFERENT', 'survivor.parts.' + g.slot + '.' + (g.body ? g.body + '.' : '') + g.choice); }
+  } catch (e){ bad++; console.log('ERROR survivor', g.slot, g.choice, e.message); } });
+console.log(nbone + ' creatures and survivor parts (bones, clips) opened and saved');
 console.log(total + ' models opened and saved (' + whole + ' whole vehicles and groups), ' + pieces + ' pieces, ' + npts + ' points, ' + nstates + ' states, ' + bad + ' differ');
 process.exitCode = bad ? 1 : 0;
