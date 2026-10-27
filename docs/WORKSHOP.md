@@ -17,6 +17,15 @@ Open `workshop.html` beside `play.html` on the drive (works offline from USB or 
 - **Units**: inches and feet by default; centimetres and metres on the Check tab.
 - Designs autosave in the browser. **Export pack** writes a `.js` file; **Designs → Import a pack file** reads one (a friend's, or your own from another device).
 
+## Reshaping by touch (27 October 2026)
+
+From how Tinkercad and Shapr3D do it: visible handles you grab rather than gestures to discover (Shapr3D found showing push-pull handles raised success "by two orders of magnitude"), handles that keep the same size on screen and draw on top of the model, and touch targets around 44 points.
+
+- **Shape** (the default when a piece is selected): a push/pull handle on each face, coloured by direction (X red, Y green, Z blue). Drag one to stretch that side while the opposite side stays put; **Both sides** stretches from the middle. Arrows past the piece move it along X, Y or Z (with several pieces selected, all move together). A label shows the size or move while dragging ("Width 22 in"), and sizes and moves snap to the grid.
+- **Turn**: a ring per axis; drag along one to turn the piece (or the selection, about its middle). It snaps every 15 degrees, or 1 degree with the grid off.
+- Handles follow a turned piece's own sides. Blocks, slopes and cylinders change their size, tubes and cones their length or width, plates their width or height, other shapes their stretch. One drag is one undo step.
+- **Fine tuning**: every number in the panel is a slider with its value beside it. Drag the slider to try values (the view follows live, one undo step per drag); type the value for an exact one. Sliders step on the grid.
+
 ## Files
 
 | File | What it is |

@@ -63,7 +63,7 @@
   function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40); }
 
   /* undo: a snapshot before every change */
-  function commit(){ S.undo.push(JSON.stringify(S.doc)); if (S.undo.length > 120) S.undo.shift(); S.redo = []; }
+  function commit(){ if (S.liveField || S.gzDrag){ if (S.liveCommitted) return; S.liveCommitted = true; } S.undo.push(JSON.stringify(S.doc)); if (S.undo.length > 120) S.undo.shift(); S.redo = []; }
   function changed(full){ S.asset = null; saveSoon(); refresh(full); }
   function undo(){ if (!S.undo.length) return; S.redo.push(JSON.stringify(S.doc)); S.doc = JSON.parse(S.undo.pop()); keepSel(); changed(true); }
   function redo(){ if (!S.redo.length) return; S.undo.push(JSON.stringify(S.doc)); S.doc = JSON.parse(S.redo.pop()); keepSel(); changed(true); }
@@ -201,6 +201,7 @@
     view.set('pts', ptp.length ? {tris:trisOf(ptp)} : null, {order:7, depth:false, alpha:0.95, lit:false});
     sceneDecor();
     updateReadout();
+    gzDraw();
   }
   function pointPieces(){
     var out = [];
@@ -300,6 +301,7 @@
   }
   var hooks = {
     tap:function(x, y, ev){
+      if (S.gzTapped){ S.gzTapped = false; return; }
       if (S.layer === 'look') return;
       var h = hit(x, y);
       if (S.placing){ place(S.placing, h, x, y); return; }
@@ -313,6 +315,7 @@
     },
     doubleTap:function(x, y){ var h = hit(x, y); if (h){ var p = byId(h.id); var B = M.boundsOf(nativesOf(p)); if (B.ok) view.frame(B.mn.map(function(v, i){ return Math.min(v, h.p[i] - 0.3); }), B.mx.map(function(v, i){ return Math.max(v, h.p[i] + 0.3); }), true); } else fitView(true); },
     dragStart:function(x, y){
+      var gh = gzHit(x, y); if (gh){ gzStart(gh, x, y); return true; }
       if (S.layer === 'look' || S.placing || !S.sel.length) return false;
       var h = hit(x, y); if (!h || S.sel.indexOf(h.id) < 0) return false;
       var pl = dragPlane(h.p), start = WSV.hitPlane(view.ray(x, y).o, view.ray(x, y).d, h.p, pl.n); if (!start) return false;
@@ -321,6 +324,7 @@
       return true;
     },
     drag:function(x, y){
+      if (S.gzDrag){ gzMove(x, y); return; }
       if (!drag) return; var R = view.ray(x, y), q = WSV.hitPlane(R.o, R.d, drag.at, drag.pl.n); if (!q) return;
       var dv = [q[0]-drag.start[0], q[1]-drag.start[1], q[2]-drag.start[2]];
       if (drag.pl.ax){ var t = WSV.dot(dv, drag.pl.ax); dv = [drag.pl.ax[0]*t, drag.pl.ax[1]*t, drag.pl.ax[2]*t]; }
@@ -329,7 +333,7 @@
       banner('Moved ' + ['x','y','z'].map(function(a, i){ return a.toUpperCase() + ' ' + (dv[i] >= 0 ? '+' : '') + fmtNum(toUnit(dv[i])); }).join('  ') + ' ' + unitLabel());
       rebuildScene();
     },
-    dragEnd:function(tapped){ if (!drag) return; drag = null; banner(null); if (tapped){ S.undo.pop(); return; } changed(false); }
+    dragEnd:function(tapped){ if (S.gzDrag){ gzEnd(!tapped); return; } if (!drag) return; drag = null; banner(null); if (tapped){ S.undo.pop(); return; } changed(false); }
   };
 
   /* ---------------------------------------------------------------- adding pieces */
@@ -469,12 +473,23 @@
 
   /* a number field with - and + buttons, in the chosen units ('len'), degrees ('deg'), percent ('pct') or plain */
   var fieldSeq = 0, fields = {};
+  /* a number: a slider to try values, and the value itself to type an exact one. Lengths show in the chosen units */
+  function shownOf(kind, value){ return kind === 'len' ? fmtNum(toUnit(value)) : kind === 'pct' ? Math.round(value*100) : fmtNum(value); }
   function num(label, value, kind, set, opt){
-    opt = opt || {}; var id = 'f' + (fieldSeq++), shown;
-    if (kind === 'len') shown = fmtNum(toUnit(value)); else if (kind === 'pct') shown = Math.round(value*100); else shown = fmtNum(value);
+    opt = opt || {}; var id = 'f' + (fieldSeq++), shown = shownOf(kind, value), lo, hi, st;
     fields[id] = {kind:kind, set:set, step:opt.step, min:opt.min, max:opt.max};
+    if (kind === 'deg'){ lo = opt.min != null ? opt.min : -180; hi = opt.max != null ? opt.max : 180; st = 1; }
+    else if (kind === 'pct'){ lo = 0; hi = Math.max(300, Math.round(value*200)); st = 1; }
+    else if (kind === 'len'){ var u = toUnit(value), big = S.units === 'imp' ? 120 : 300;
+      if (opt.min != null){ lo = Math.max(0, toUnit(opt.min)); hi = Math.max(u*3, S.units === 'imp' ? 24 : 60); hi = Math.min(Math.max(hi, u + 1), Math.max(big*2, u*1.5)); }
+      else { var R = Math.max(Math.abs(u)*2, big); lo = -R; hi = R; }
+      st = S.snap ? toUnit(S.snap) : (S.units === 'imp' ? 0.1 : 0.1);
+      if (opt.max != null) hi = Math.min(hi, toUnit(opt.max)); }
+    else { lo = opt.min != null ? opt.min : Math.min(0, value*3); hi = opt.max != null ? opt.max : Math.max(10, Math.abs(value)*3); st = opt.step || 1; }
+    if (st > 0){ lo = Math.floor(lo/st + 1e-9)*st; hi = Math.ceil(hi/st - 1e-9)*st; lo = Math.round(lo*1e4)/1e4; hi = Math.round(hi*1e4)/1e4; }   /* slider steps land on whole grid steps */
     return '<div class="num">' + (opt.ax ? '<span class="ax ' + opt.ax + '">' + opt.ax.toUpperCase() + '</span>' : '') +
-      '<button data-f="' + id + '" data-d="-1">−</button><input id="' + id + '" inputmode="decimal" value="' + shown + '" aria-label="' + esc(label) + '"><button data-f="' + id + '" data-d="1">+</button></div>';
+      '<input type="range" class="sl" data-sf="' + id + '" min="' + lo + '" max="' + hi + '" step="' + st + '" value="' + shown + '" aria-label="' + esc(label) + ' slider">' +
+      '<input class="nv" id="' + id + '" inputmode="decimal" value="' + shown + '" aria-label="' + esc(label) + '"></div>';
   }
   function fieldValue(id, raw){
     var F = fields[id], v = parseFloat(String(raw).replace(',', '.')); if (!isFinite(v)) return null;
@@ -491,11 +506,14 @@
   });
   $('body').addEventListener('input', function(e){
     var t = e.target;
+    if (t.dataset && t.dataset.sf && fields[t.dataset.sf]){ var id = t.dataset.sf, v = fieldValue(id, t.value); if (v == null) return;
+      S.liveField = id; var box = $(id); if (box) box.value = t.value; fields[id].set(r4(v)); return; }
     if (t.dataset && t.dataset.k === 'arot'){ var fr = curFrame(); if (!fr) return; if (!S.arotUndo){ commit(); S.arotUndo = true; } var r = (fr[S.aBone] || [0, 0, 0]).slice(); r[+t.dataset.i] = +t.value; fr[S.aBone] = r; var lab = t.nextElementSibling; if (lab) lab.textContent = Math.round(+t.value) + '°'; rebuildScene(); return; }
     if (t.dataset && t.dataset.k === 'jpose'){ S.pose[t.dataset.n] = +t.value; var lab = t.nextElementSibling, j = S.doc.rig[t.dataset.n]; if (lab) lab.textContent = j && j.slide ? fmtLen(+t.value) : Math.round(+t.value) + '°'; rebuildScene(); }
   });
   $('body').addEventListener('change', function(e){
     var t = e.target;
+    if (t.dataset && t.dataset.sf){ S.liveField = null; S.liveCommitted = false; renderPanel(); return; }
     if (fields[t.id]){ var v = fieldValue(t.id, t.value); if (v != null) fields[t.id].set(r4(v)); return; }
     if (t.dataset.k && CHANGES[t.dataset.k]) CHANGES[t.dataset.k](t);
   });
@@ -992,6 +1010,136 @@
     commit(); made.forEach(function(q){ q.id = M.newId({pieces:L}); if (kind !== 'array' && kind !== 'radial') q.g = g; L.push(q); }); S.sel = made.map(function(q){ return q.id; }); changed(true);
   }
 
+  /* ---------------------------------------------------------------- handles in the view
+     Tinkercad and Shapr3D style: visible handles you grab. A push/pull handle on each face stretches that side while the opposite
+     side stays put ("Both sides" stretches from the middle); arrows move along X, Y or Z; Turn shows a ring per axis that snaps
+     every 15 degrees (1 degree with the grid off). Handles keep the same size on screen, sit on top of the model, and are
+     big enough for a finger (about 44 points). Numbers snap to the grid; a label shows the size, move or angle while dragging. */
+  S.gz = {mode:'shape', both:false};
+  var GZC = {x:'#d4553e', y:'#4f9a3c', z:'#3a76c0', hot:'#f0922a'};
+  var AXV = [[1, 0, 0], [0, 1, 0], [0, 0, 1]], AXN = ['x', 'y', 'z'];
+  function gzTarget(){ if (!S.doc || isSound() || S.layer === 'look' || S.placing || !view) return null; var sel = selected(); return sel.length ? sel : null; }
+  function localBounds(p){ var q = clone(p); q.pos = [0, 0, 0]; q.rot = [0, 0, 0]; q.mx = false; q.mz = false; delete q.hidden; var B = M.boundsOf(M.toNativeAlways(q)); return B.ok ? B : null; }
+  function wpp(at){ var e = view.eye(), d = Math.hypot(at[0]-e[0], at[1]-e[1], at[2]-e[2]); return 2*d*Math.tan(view.cam.fov*Math.PI/360)/Math.max(1, view.size()[1]); }
+  function gzOff(){ return (isModel() && handGrip()) || [0, 0, 0]; }
+  function add3(a, b){ return [a[0]+b[0], a[1]+b[1], a[2]+b[2]]; }
+  function sub3(a, b){ return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]; }
+  function mul3(a, k){ return [a[0]*k, a[1]*k, a[2]*k]; }
+  function selBounds(sel){ var all = []; sel.forEach(function(p){ all = all.concat(M.toNativeAlways(Object.assign(clone(p), {mx:false, mz:false}))); }); return M.boundsOf(all); }
+  function gzHandles(){
+    var sel = gzTarget(); if (!sel) return [];
+    var off = gzOff(), H = [], WB = selBounds(sel); if (!WB.ok) return [];
+    var C = add3([(WB.mn[0]+WB.mx[0])/2, (WB.mn[1]+WB.mx[1])/2, (WB.mn[2]+WB.mx[2])/2], off), px = wpp(C);
+    if (S.gz.mode === 'shape'){
+      if (sel.length === 1){ var p = sel[0], B = localBounds(p);
+        if (B){ var R = M.rotMat(p.rot || [0, 0, 0]), c = [0, 1, 2].map(function(i){ return (B.mn[i]+B.mx[i])/2; }), h = [0, 1, 2].map(function(i){ return (B.mx[i]-B.mn[i])/2; });
+          [0, 1, 2].forEach(function(i){ if (h[i] < 0.0015) return; [-1, 1].forEach(function(sg){ var L = c.slice(); L[i] += sg*h[i]; var e = [0, 0, 0]; e[i] = sg;
+            H.push({type:'face', i:i, sg:sg, pos:add3(add3(M.app3(R, L), p.pos), off), dir:M.app3(R, e), col:GZC[AXN[i]]}); }); }); } }
+      [0, 1, 2].forEach(function(a){ var ext = (WB.mx[a]-WB.mn[a])/2, k = Math.max(ext + 64*px, 90*px); H.push({type:'move', a:a, base:C, pos:add3(C, mul3(AXV[a], k)), col:GZC[AXN[a]]}); });
+    } else {
+      var rad = Math.max(Math.hypot(WB.mx[0]-WB.mn[0], WB.mx[1]-WB.mn[1], WB.mx[2]-WB.mn[2])/2 + 18*px, 80*px);
+      [0, 1, 2].forEach(function(a){ var u = AXV[(a+1)%3], v = AXV[(a+2)%3], ring = [];
+        for (var k = 0; k <= 64; k++){ var t = k/64*Math.PI*2; ring.push(add3(C, add3(mul3(u, Math.cos(t)*rad*(1 - a*0.06)), mul3(v, Math.sin(t)*rad*(1 - a*0.06))))); }
+        H.push({type:'turn', a:a, centre:C, ring:ring, pos:ring[8], col:GZC[AXN[a]]}); });
+    }
+    return H;
+  }
+  function gzDraw(){
+    if (!view) return;
+    var H = gzHandles(), pcs = [], pos = [], col = [], hot = S.gzDrag && S.gzDrag.h;
+    var line = function(a, b, hex){ var c = SH.hex(hex); pos.push(a[0], a[1], a[2], b[0], b[1], b[2]); col.push(c[0], c[1], c[2], 1, c[0], c[1], c[2], 1); };
+    H.forEach(function(h){
+      var isHot = hot && hot.type === h.type && hot.i === h.i && hot.sg === h.sg && hot.a === h.a, hex = isHot ? GZC.hot : h.col, px = wpp(h.pos), cn = M.customName(hex);
+      if (h.type === 'face'){ var sz = (isHot ? 20 : 16)*px; pcs.push({s:'bev', p:h.pos, d:[sz, sz, sz], c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[sz*0.55, sz*0.55, sz*0.55], c:'x' + 'fbf6ec', glow:true});
+        line(h.pos, add3(h.pos, mul3(h.dir, 14*px)), hex); }
+      else if (h.type === 'move'){ line(h.base, h.pos, hex); var r = (isHot ? 10 : 8)*px, a = h.a, ax = AXN[a], rr = [[0, 0, 0, r, r], [0, 0, 0, 0, 0]]; var d2 = 22*px;
+        rr[1][a === 0 ? 0 : a === 1 ? 1 : 2] = d2; pcs.push({s:'loft', p:h.pos, ax:ax, n:8, r:rr, c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[r*1.6, r*1.6, r*1.6], c:cn, glow:true}); }
+      else if (h.type === 'turn'){ for (var k = 0; k < h.ring.length - 1; k++) line(h.ring[k], h.ring[k+1], hex);
+        [8, 24, 40, 56].forEach(function(k){ var q = h.ring[k], s2 = (isHot ? 15 : 12)*wpp(q); pcs.push({s:'bev', p:q, d:[s2, s2, s2], c:cn, glow:true}); }); }
+    });
+    view.set('gz', pcs.length ? {tris:trisOf(pcs)} : null, {order:20, depth:false, lit:false});
+    view.set('gzl', pos.length ? {lines:{pos:pos, col:col}} : null, {order:19, depth:false, lit:false, alpha:0.95});
+    gzBar();
+  }
+  function gzBar(){
+    var el = $('gzBar'); if (!el) return; var on = !!gzTarget();
+    el.classList.toggle('hidden', !on); if (!on) return;
+    var h = '<button class="sm ' + (S.gz.mode === 'shape' ? 'on' : 'alt') + '" data-gz="shape">Shape</button><button class="sm ' + (S.gz.mode === 'turn' ? 'on' : 'alt') + '" data-gz="turn">Turn</button>';
+    if (S.gz.mode === 'shape' && selected().length === 1) h += '<button class="sm ' + (S.gz.both ? 'on' : 'alt') + '" data-gz="both" title="Stretch from the middle, both sides at once">Both sides</button>';
+    if (el.innerHTML !== h) el.innerHTML = h;
+  }
+  $('gzBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; var g = b.dataset.gz; if (g === 'both') S.gz.both = !S.gz.both; else S.gz.mode = g; gzDraw(); });
+  /* the handle under a finger or the mouse, in screen space */
+  function gzHit(x, y){
+    var H = gzHandles(), best = null, bd = 30;
+    H.forEach(function(h){
+      if (h.type === 'turn') return;
+      var q = view.project(h.pos); if (q[2] > 1 || q[2] < -1) return; var d = Math.hypot(q[0]-x, q[1]-y); if (d < bd || (best && best.type === 'move' && h.type === 'face' && d < bd + 6)){ bd = d; best = h; } });
+    if (best) return best;
+    var bt = null, btd = 18;
+    H.forEach(function(h){ if (h.type !== 'turn') return; for (var k = 0; k < h.ring.length - 1; k++){ var a = view.project(h.ring[k]), b = view.project(h.ring[k+1]);
+      var dx = b[0]-a[0], dy = b[1]-a[1], l2 = dx*dx + dy*dy || 1, t = Math.max(0, Math.min(1, ((x-a[0])*dx + (y-a[1])*dy)/l2)), d = Math.hypot(a[0] + dx*t - x, a[1] + dy*t - y);
+      if (d < btd){ btd = d; bt = h; } } });
+    return bt;
+  }
+  /* where the pointer's ray comes closest to a line through A along u */
+  function lineParam(A, u, x, y){ var R = view.ray(x, y), w = sub3(R.o, A), b = WSV.dot(u, R.d), dn = 1 - b*b; if (Math.abs(dn) < 1e-6) return null; return (WSV.dot(w, u) - b*WSV.dot(w, R.d))/dn; }
+  function eulerOf(m){
+    var y = Math.asin(Math.max(-1, Math.min(1, -m[6]))), x, z;
+    if (Math.abs(Math.cos(y)) > 1e-6){ x = Math.atan2(m[7], m[8]); z = Math.atan2(m[3], m[0]); } else { x = Math.atan2(-m[5], m[4]); z = 0; }
+    return [x, y, z].map(function(v){ var d = v*180/Math.PI; d = Math.round(d*100)/100; if (Math.abs(d - Math.round(d)) < 0.02) d = Math.round(d); if (d === -180) d = 180; return d === 0 ? 0 : d; });
+  }
+  function mulM(a, b){ var o = []; for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) o[i*3+j] = a[i*3]*b[j] + a[i*3+1]*b[3+j] + a[i*3+2]*b[6+j]; return o; }
+  /* change a piece's size along its own axis i by a factor, in the way its panel shows it */
+  function setSize(p, i, k){
+    if (p.d && p.s !== 'loft'){ p.d = p.d.slice(); p.d[i] = r4(Math.max(0.002, p.d[i]*k)); return; }
+    if (rectPlate(p) && i < 2){ p.v = p.v.map(function(v){ var q = v.slice(); q[i] = r4(q[i]*k); return q; }); return; }
+    if (simpleTube(p)){ var ax = p.ax || 'y', ia = ax === 'x' ? 0 : ax === 'y' ? 1 : 2;
+      if (i === ia){ p.r = p.r.map(function(r){ var o = r.slice(); o[ia] = r4(o[ia]*k); return o; }); return; }
+      var ri = i === (ax === 'x' ? 2 : 0) ? 3 : i === (ax === 'y' ? 2 : 1) ? 4 : -1;
+      if (ri > 0){ p.r = p.r.map(function(r){ var o = r.slice(); o[ri] = r4(o[ri]*k); return o; }); return; } }
+    p.scl = (p.scl || [1, 1, 1]).slice(); p.scl[i] = r4(p.scl[i]*k);
+  }
+  var AXWORD = ['Width', 'Height', 'Length'];
+  function gzLabel(t, x, y){ var el = $('gzLabel'); if (!t){ el.classList.add('hidden'); return; } el.textContent = t; el.classList.remove('hidden');
+    var W = view.size()[0]; el.style.left = Math.min(W - 160, x + 22) + 'px'; el.style.top = Math.max(4, y - 48) + 'px'; }
+  function gzStart(h, x, y){
+    var sel = selected(); S.gzDrag = {h:h, sel:sel.map(function(p){ return {p:p, p0:clone(p)}; })}; S.liveCommitted = false; commit();
+    var D = S.gzDrag;
+    if (h.type === 'face'){ var p = sel[0], B = localBounds(p); D.size0 = B.mx[h.i] - B.mn[h.i]; D.c = (B.mn[h.i] + B.mx[h.i])/2; D.half = D.size0/2; D.t0 = lineParam(h.pos, h.dir, x, y); D.R = M.rotMat(p.rot || [0, 0, 0]); }
+    else if (h.type === 'move'){ D.t0 = lineParam(h.base, AXV[h.a], x, y); }
+    else { var n = AXV[h.a], hit = WSV.hitPlane(view.ray(x, y).o, view.ray(x, y).d, h.centre, n); D.v0 = hit ? sub3(hit, h.centre) : null; D.C = sub3(h.centre, gzOff()); }
+    gzDraw();
+  }
+  function gzMove(x, y){
+    var D = S.gzDrag, h = D.h, st = S.snap;
+    if (h.type === 'face'){
+      var t = lineParam(h.pos, h.dir, x, y); if (t == null || D.t0 == null) return;
+      var size = D.size0 + (t - D.t0)*(S.gz.both ? 2 : 1); if (st) size = Math.round(size/st)*st; size = Math.max(st || 0.003, size);
+      var k = size/D.size0, it = D.sel[0], p = it.p; Object.assign(p, clone(it.p0)); setSize(p, h.i, k);
+      var fixed = S.gz.both ? D.c : D.c - h.sg*D.half, shift = -fixed*(k - 1), e = [0, 0, 0]; e[h.i] = 1; var w = M.app3(D.R, e);
+      p.pos = [0, 1, 2].map(function(j){ return r4(it.p0.pos[j] + w[j]*shift); });
+      gzLabel(AXWORD[h.i] + ' ' + fmtLen(size), x, y);
+    } else if (h.type === 'move'){
+      var t2 = lineParam(h.base, AXV[h.a], x, y); if (t2 == null || D.t0 == null) return; var dv = t2 - D.t0; if (st) dv = Math.round(dv/st)*st;
+      D.sel.forEach(function(it){ it.p.pos = it.p0.pos.slice(); it.p.pos[h.a] = r4(it.p0.pos[h.a] + dv); });
+      gzLabel('Move ' + AXN[h.a].toUpperCase() + ' ' + (dv >= 0 ? '+' : '−') + fmtLen(Math.abs(dv)), x, y);
+    } else {
+      if (!D.v0) return; var n = AXV[h.a], hit = WSV.hitPlane(view.ray(x, y).o, view.ray(x, y).d, h.centre, n); if (!hit) return;
+      var v = sub3(hit, h.centre), ang = Math.atan2(WSV.dot(WSV.cross(D.v0, v), n), WSV.dot(D.v0, v))*180/Math.PI, step = st ? 15 : 1; ang = Math.round(ang/step)*step;
+      var e2 = [0, 0, 0]; e2[h.a] = ang; var RA = M.rotMat(e2);
+      D.sel.forEach(function(it){ var R0 = M.rotMat(it.p0.rot || [0, 0, 0]); it.p.rot = eulerOf(mulM(RA, R0)); var d0 = sub3(it.p0.pos, D.C); it.p.pos = add3(D.C, M.app3(RA, d0)).map(r4); });
+      gzLabel('Turn ' + AXN[h.a].toUpperCase() + ' ' + ang + '°', x, y);
+    }
+    S.asset = null; rebuildScene();
+  }
+  function gzEnd(moved){
+    var D = S.gzDrag; S.gzDrag = null; S.liveCommitted = false; gzLabel(null);
+    if (!moved){ S.undo.pop(); S.gzTapped = true; gzDraw(); return; }
+    changed(true);
+  }
+  var gzRaf = 0; hooks.changed = function(){ if (gzRaf) return; gzRaf = requestAnimationFrame(function(){ gzRaf = 0; gzDraw(); }); };
+
   /* ---------------------------------------------------------------- moving parts (W2) */
   var AXES = [['X', [1, 0, 0]], ['−X', [-1, 0, 0]], ['Y', [0, 1, 0]], ['−Y', [0, -1, 0]], ['Z', [0, 0, 1]], ['−Z', [0, 0, -1]]];
   function axisIndex(v){ v = v || [0, 1, 0]; var best = 2, bd = -2; AXES.forEach(function(a, i){ var d = a[1][0]*v[0] + a[1][1]*v[1] + a[1][2]*v[2]; if (d > bd){ bd = d; best = i; } }); return best; }
@@ -1339,7 +1487,7 @@
     $('bUndo').disabled = !S.undo.length; $('bRedo').disabled = !S.redo.length;
     renderBars(); renderTabs();
     var ae = document.activeElement, focusId = ae && ae.id && fields[ae.id] ? ae.id : null;
-    renderPanel();
+    if (!S.liveField && !S.gzDrag) renderPanel();
     rebuildScene();
   }
 
