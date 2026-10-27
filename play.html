@@ -322,7 +322,7 @@
         <label>Background<select id="cBg"><option value="scout">Scout: moves faster</option><option value="medic">Medic: medkits heal more</option><option value="mechanic">Mechanic: building costs less</option><option value="builder">Builder: stronger barricades</option></select></label>
       </div>
       <div id="svPre" class="row" style="margin-top:6px"></div>
-      <div style="font-size:12px;margin-top:4px">Pick a preset, then change anything you like. For a fully custom costume, build one in the Workshop. <button id="wsGo3" class="alt" type="button">Make a detailed costume in the Workshop</button></div>
+      <div style="font-size:12px;margin-top:4px">Pick a preset, then change anything you like. For a fully custom costume, build one in the Workshop (Designs, survivor), export the pack, and put it in the game's packs folder: its clothes, hair, hats, faces and shoes then show up here in the lists, marked Workshop. <button id="wsGo3" class="alt" type="button">Make a detailed costume in the Workshop</button></div>
       <div class="prow" style="align-items:flex-end;margin-top:8px">
         <canvas id="cPrev" width="192" height="312" style="width:96px;height:156px"></canvas>
         <label>Build<select id="cBuild"><option value="0">Slim</option><option value="1" selected>Average</option><option value="2">Broad</option></select></label>
@@ -446,7 +446,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.38</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.39</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -472,7 +472,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.38', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.39', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1145,7 +1145,25 @@ function shoot(){
 var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:'Scavenging', melee:'Melee', endur:'Endurance', build:'Building', shoot:'Marksmanship', mech:'Mechanics', aid:'First aid'};
 var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0, build:0, shoot:0, mech:0, aid:0}, cap:false};
 function okCol(c, d){ return /^#[0-9a-f]{6}$/i.test(c) ? c : d; }
-function cleanLook(l){ l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(3, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(5, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(7, l.face | 0)), top:Math.max(0, Math.min(7, l.top | 0)), bot:Math.max(0, Math.min(5, l.bot | 0)), shoe:Math.max(0, Math.min(2, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0')}; }
+var LMAX = {hat:3, hair:5, face:7, top:7, bot:5, shoe:2};   /* 0.114.39: the highest choice of each kind; clothes from content packs raise it (svExtend) */
+function cleanLook(l){ svExtend(); l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(LMAX.hat, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(LMAX.hair, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(LMAX.face, l.face | 0)), top:Math.max(0, Math.min(LMAX.top, l.top | 0)), bot:Math.max(0, Math.min(LMAX.bot, l.bot | 0)), shoe:Math.max(0, Math.min(LMAX.shoe, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0')}; }
+/* 0.114.39: clothes, hair, hats, faces and shoes made in the Workshop (survivor parts in content packs) join the creator's lists after the stock ones */
+var SVX = {n:-1, base:null};
+function svExtend(){
+  var P = window.AfterstreetPacks, S = window.SHAPED && SHAPED.survivor; if (!P || !S || !S.choices || !S.parts || !P.models) return;
+  var ms = P.models.filter(function(m){ return m.pack === 'survivor' && m.path && m.path[0] === 'parts'; });
+  if (ms.length === SVX.n) return; SVX.n = ms.length;
+  var KIND = {top:['top', 'cTop', 'top'], bottoms:['bottoms', 'cBot', 'bot'], shoes:['shoes', 'cShoe', 'shoe'], face:['face', 'cFace', 'face'], hair:['hair', 'cHair', 'hair'], hat:['hat', 'cHat', 'hat']};
+  if (!SVX.base){ SVX.base = {}; for (var k in KIND) SVX.base[k] = S.choices[KIND[k][0]].length; }
+  var names = {}, bodies = {};
+  ms.forEach(function(m){ var sl = m.path[1], K = KIND[sl]; if (!K || m.path[1] === 'worn' || m.path[1] === 'gear' || m.path[1] === 'npc') return;
+    var body = (sl === 'top' || sl === 'bottoms') ? m.path[2] : '', list = S.choices[K[0]], key = m.key;
+    if (list.indexOf(key) < 0) list.push(key); (names[sl] = names[sl] || {})[key] = m.name || key; (bodies[sl + '.' + key] = bodies[sl + '.' + key] || []).push(body); });
+  for (var sl in KIND){ var K2 = KIND[sl], list = S.choices[K2[0]], sel = document.getElementById(K2[1]); LMAX[K2[2]] = list.length - 1; if (!sel) continue;
+    while (sel.options.length > SVX.base[sl]) sel.remove(sel.options.length - 1);
+    for (var i = SVX.base[sl]; i < list.length; i++){ var bs = bodies[sl + '.' + list[i]] || [], o = document.createElement('option'); o.value = i;
+      o.textContent = ((names[sl] || {})[list[i]] || list[i]) + (bs.length === 1 && bs[0] ? ' (' + (bs[0] === 'feminine' ? 'feminine' : 'masculine') + ' body only)' : '') + ' \u2022 Workshop'; sel.appendChild(o); } }
+}
 function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value, face:el('cFace').value, top:el('cTop').value, bot:el('cBot').value, shoe:el('cShoe').value, acc:el('cAcc').value}); }
 function xpLvl(xp){ return Math.min(10, Math.floor(Math.sqrt((+xp || 0)/20))); }
 function lvl(k){ var v = xpLvl(me.skills[k]); return me.cap ? Math.min(v, 2) : v; }
@@ -2482,7 +2500,7 @@ function svClips(){
 function shapedOn(){ return !!(RIG && window.SHAPED && SHAPED.survivor && SHAPED.build); }
 /* the game's look (and, for you, what you are wearing) as the pack's choices */
 function svLook(l, o){
-  var K = SHAPED.survivor.choices, w = o.worn || {}, hat = ['none', 'cap', 'beanie', 'helmet'][l.hat], shoe = K.shoes[l.shoe];
+  var K = SHAPED.survivor.choices, w = o.worn || {}, hat = K.hat[l.hat], shoe = K.shoes[l.shoe];
   if (w.head) hat = {beanie:'beanie', cap:'cap', helmet:'helmet'}[w.head.k] || hat; if (w.feet && w.feet.k === 'boots') shoe = 'boots';
   return {build:K.build[l.build], body:l.body ? 'feminine' : 'masculine', skin:l.skin, hairC:l.hc, hair:K.hair[l.hair], hat:hat, face:K.face[l.face], top:K.top[l.top], bot:K.bottoms[l.bot], shoe:shoe,
     shirt:l.shirt, pants:l.pants, acc:l.acc, pack:o.pack !== undefined ? !!o.pack : !o.talk, wpn:o.wpn || '', gloves:!!(w.hands && w.hands.k === 'gloves'), scarf:false,
