@@ -199,3 +199,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.23: docs only; nothing to test.
 - 0.114.24: with a pack in packs/, about one parked car in eight is a Workshop car (the Ozark Rambler). It drives, takes damage, becomes a wreck or burnt shell. Set Cars from content packs to Stock cars only: none appear. The Open the Workshop button goes to workshop.html.
 - 0.114.25: a recruited survivor rides a pack car in the seat the Workshop set; Hold J on a pack car gives its listed scrap, wood, parts and battery.
+- 0.114.26: swarmers or a car against a small house wall tear it open sooner than a warehouse or hospital wall (about 2x to 2.5x the damage needed).
