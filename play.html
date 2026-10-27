@@ -351,6 +351,7 @@
         <label>Head bob when walking<select id="bobS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Camera effects (sprint zoom, hit shake, weapon sway)<select id="fxS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Goal, for a new world<select id="scen"></select></label>
+        <label>Cars from content packs<select id="packCars"><option value="mix">Mixed in among the parked cars</option><option value="off">Stock cars only</option></select></label>
         <label>Searched loot<select id="lootRule"><option value="refill">Refills after about five days</option><option value="never">Never comes back</option></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
       </div>
@@ -377,7 +378,7 @@
       <div id="bmBox" style="border-bottom:1px solid rgba(61,48,41,.25);padding-bottom:10px;margin-bottom:10px">
         <b>Maps from the Maps Builder</b>
         <div>Load a map file (.asmap) you made or were given, then press Play on it. You can also drop map files or edit files (.asedit) anywhere on this page. Maps stay on this device and work offline.</div>
-        <div class="row" style="margin-top:6px"><label class="btn">Load map file<input id="asmapFile" type="file" accept=".asmap,.zip" multiple hidden></label> <label class="btn alt">Add edits file (.asedit)<input id="aseditFile" type="file" accept=".asedit,.json" multiple hidden></label> <button id="bldGo" class="alt" type="button">Open the Maps Builder</button></div>
+        <div class="row" style="margin-top:6px"><label class="btn">Load map file<input id="asmapFile" type="file" accept=".asmap,.zip" multiple hidden></label> <label class="btn alt">Add edits file (.asedit)<input id="aseditFile" type="file" accept=".asedit,.json" multiple hidden></label> <button id="bldGo" class="alt" type="button">Open the Maps Builder</button> <button id="wsGo" class="alt" type="button">Open the Workshop</button></div>
         <div id="rgStatus" style="min-height:18px;font-weight:700;color:var(--clayDeep);margin-top:4px"></div>
         <div id="bmList"></div>
         <div id="edList" style="font-size:12px"></div>
@@ -439,7 +440,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.23</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.24</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -459,13 +460,16 @@
   window.showTab = show;
 })();
 </script>
+<script src="packs/packload.js"></script>
+<script src="packs/index.js"></script>
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.23', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.24', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+  try { AfterstreetPacks.writeTags('packs/'); } catch (e) {}   /* 0.114.24: content packs (cars from the Workshop) load after the art and before the engine */
   return set;
 })();
 /* shared engine files (also loaded by the Maps Builder): same ?v=BUILD rule as the art */
@@ -4002,7 +4006,7 @@ function makeVehicles(saved){
     var dkH = r.br ? deckOfRoad(r, c.u, x, y) : null;
     if ((dkH === null && inWater(x, y, 2)) || buildingAt(x, y) || zoneAt(x, y, 10) || circ(x, y, 1.6)) return;
     var dd = hash(cx, cy, 26), dead = dd < 0.3 ? 'wreck' : dd < 0.42 ? 'burnt' : 0, tilt = dead ? (hash(cx, cy, 27) - 0.5)*1.1 : (hash(cx, cy, 28) - 0.5)*0.2, yaw = Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + tilt;
-    var bk = ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'sedan'][Math.floor(hash(cx, cy, 29)*12)];
+    var bk = ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'sedan'][Math.floor(hash(cx, cy, 29)*12)]; if (PACKK.length && el('packCars').value !== 'off' && hash(cx, cy, 30) < 0.12) bk = PACKK[Math.floor(hash(cx, cy, 31)*PACKK.length) % PACKK.length];
     if (MACH.length && hash(cx, cy, 31) < (r.hw === 'motorway' || r.hw === 'trunk' ? 0.16 : r.hw === 'primary' ? 0.1 : 0.05)){ var mk = MACH[Math.floor(hash(cx, cy, 32)*MACH.length)];
       if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(cx, cy, 33) - 0.5)*0.5, fuel:0}); rc++; } return; }
     list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(cx, cy, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, cx, cy)}); rc++;
@@ -4254,6 +4258,7 @@ function vehMoved(v, dx, dy, dt){
 function carKind(v){
   if (v.kind) return v.kind; var b = v.id[0] === 'c' ? world.buildings[+v.id.slice(1)] : null;
   if (v.dead){ var bk = ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'sedan'][Math.floor(hash(b ? b.id : 1, 3, 8)*12)]; return v.kind = bk + '_' + v.dead; }
+  if (!(b && b.kind === 'police') && PACKK.length && el('packCars').value !== 'off' && hash(b ? b.id : v.id.length, 5, 77) < 0.12) return v.kind = PACKK[Math.floor(hash(b ? b.id : v.id.length, 6, 78)*PACKK.length) % PACKK.length];
   return v.kind = b && b.kind === 'police' ? 'police' : ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'taxi', 'sedan', 'wagon', 'suv', 'van'][Math.floor(hash(b ? b.id : v.id.length, 3, 8)*16)];
 }
 function vehAnim(v, now){
@@ -4267,6 +4272,12 @@ function vehAnim(v, now){
 }
 /* 0.75: car damage looks (props.vehicles[name].damage) by vehicle health: whole above 70; 70 to 40 bent bumper and cracked windscreen; 40 to 15 light crumple; under 15 heavy crumple with the bonnet buckled and smoke; wrecked at 0 with the windscreen gone; then burning, then the burnt shell */
 var CKD = {sedan:['sedan'], hatch:['hatchback'], suv:['suv'], wagon:['wagon'], offroad:['offroader'], crew:['crew_pickup'], flatbed:['flatbed'], boxtruck:['box_truck'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}]}, CDM = {};
+
+/* 0.114.24: cars from content packs (the Workshop) join every per-car table under their pk_ key */
+var PACKK = [];
+(function(){ var PV = window.AfterstreetPacks && AfterstreetPacks.vehicles || []; PV.forEach(function(e){ var k = e.key, g = e.game || {}, mph = +g.topSpeedMph || 60, big = e.cls === 'truck' || e.cls === 'van' || e.cls === 'pickup', pw = g.power === 'strong' ? 1.15 : g.power === 'weak' ? 0.8 : 1;
+  PACKK.push(k); CKD[k] = [k, e.paint || {}]; KITV[k] = k; SLOT[k] = ['paint1', 'paint2', 'paint3'];
+  TANK[k] = Math.max(150, Math.min(600, (+g.rangeMiles || 300)*0.85)); TOPSPD[k] = Math.max(14, Math.min(40, mph*0.4)); WEAK[k] = big ? 0.6 : 0.9; ACCEL[k] = (big ? 8 : 11)*pw; }); })();
 function carDmgModel(k, lv, fire, cu){
   var key = k + '|' + lv + (fire ? 'f' : '') + (cu && (cu.c || cu.t) ? '|' + (cu.c || '') + (cu.t || '') : ''); if (CDM[key] !== undefined) return CDM[key]; CDM[key] = null;
   try { var C0 = CKD[k]; if (!C0 || !SPON || !VMOD[k] || !VMOD[k].w) return null; var PR = SHAPED.props, V = PR.models.vehicles[C0[0]], D = V && V.damage; if (!D) return null;
@@ -5071,6 +5082,7 @@ async function renderRegions(){
 }
 el('rgGo').addEventListener('click', startRegion);
 el('bldGo').addEventListener('click', function(){ location.href = 'builder.html'; });
+el('wsGo').addEventListener('click', function(){ location.href = 'workshop.html'; });
 /* 0.92.0: open a map file made by the Maps Builder (.asmap: a zip with manifest.json and squares/I_J.json). Each square goes into the device's storage as a region the game lists and plays like any other. */
 async function zipOpen(file){
   var size = file.size, tail = new Uint8Array(await file.slice(Math.max(0, size - 65558), size).arrayBuffer()), dv = new DataView(tail.buffer), p = -1, i;

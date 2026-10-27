@@ -197,3 +197,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.21: fill the pack with wood or soil past about 30 kg: a message says it is heavy and you walk slower; drop items and speed returns.
 - 0.114.22: walk at a fence, jump at it: you clear it. Without the jump you are stopped. Aliens still do not cross it.
 - 0.114.23: docs only; nothing to test.
+- 0.114.24: with a pack in packs/, about one parked car in eight is a Workshop car (the Ozark Rambler). It drives, takes damage, becomes a wreck or burnt shell. Set Cars from content packs to Stock cars only: none appear. The Open the Workshop button goes to workshop.html.

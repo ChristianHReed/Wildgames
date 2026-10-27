@@ -102,7 +102,10 @@ function spInstall(){ if (SPON) (function(){
     /* cars: the body and bonnet as one model, and a wheel placed at each of the rig's wheel positions; taxis and police cars repaint the sedan */
     var NEWC = {wagon:'wagon', suv:'suv', offroad:'offroader', crew:'crew_pickup', flatbed:'flatbed', boxtruck:'box_truck'};   /* 0.106.0: the content chat's six other cars */
     for (nm in NEWC){ var sp0 = PR.vehicleSpec[NEWC[nm]]; if (!sp0) continue; VMOD[nm] = VMOD[nm] || {n:0, p:new Float32Array(0), c:new Uint8Array(0)}; VMOD[nm].hx = sp0.length/2; VMOD[nm].hz = sp0.width/2; VMOD[nm].h = sp0.roof.y; VMOD[nm].drop = 0; }
+    var PCV = window.AfterstreetPacks && AfterstreetPacks.vehicles || [];   /* 0.114.24: Workshop cars from content packs */
+    PCV.forEach(function(e){ var sp1 = PR.vehicleSpec[e.key]; if (!sp1 || !PR.models.vehicles[e.key]) return; NEWC[e.key] = e.key; VMOD[e.key] = {n:0, p:new Float32Array(0), c:new Uint8Array(0), hx:sp1.length/2, hz:sp1.width/2, h:sp1.roof.y, drop:0}; });
     var CK = {sedan:['sedan'], hatch:['hatchback'], wagon:['wagon'], suv:['suv'], offroad:['offroader'], crew:['crew_pickup'], flatbed:['flatbed'], boxtruck:['box_truck'], van:['van'], taxi:['sedan', {paint3:'#c9a23a'}], police:['sedan', {paint3:'#e2ddd2', paint2:'#1f2024'}], truck:['pickup', {paint2:'#963e30'}]};
+    PCV.forEach(function(e){ if (NEWC[e.key]) CK[e.key] = [e.key, e.paint || {}]; });
     for (nm in CK){ var V = PR.models.vehicles[CK[nm][0]], R = PR.vehicleRig[CK[nm][0]]; if (!V || !R || !VMOD[nm]) continue;
       var vc = spColour(PR.palette, CK[nm][1]), B = spModel(V.body.concat(V.bonnet || []), vc, {car:true}), Wm = spModel(V.wheel, vc, {car:true});
       VMOD['sp_' + nm + '_w'] = Wm; B.w = R.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + nm + '_w']; }); B.h = VMOD[nm].h; SPCAR[nm] = VMOD[nm]; VMOD[nm] = B; }
@@ -117,6 +120,7 @@ function spInstall(){ if (SPON) (function(){
       var tt = PR.models.items.tyre_loose; if (tt) VMOD.tire = spModel(tt, tcol); } catch (er3){ console.log('truck bits', er3); }
     /* wrecks and burnt-out shells of every car: the same parts with their own wheels, sunk by sitDrop */
     var WB = {sedan:'sedan', hatch:'hatchback', suv:'suv', wagon:'wagon', offroad:'offroader', crew:'crew_pickup', flatbed:'flatbed', boxtruck:'box_truck', van:'van'};
+    PCV.forEach(function(e){ if (NEWC[e.key]) WB[e.key] = e.key; });
     for (nm in WB) ['wreck', 'burnt'].forEach(function(st){ var pn = WB[nm] + '_' + st, V2 = PR.models.vehicles[pn], R2 = PR.vehicleRig[pn], key = nm + '_' + st; if (!V2 || !R2 || !VMOD[nm] && !SPCAR[nm]) return;
       var vc2 = spColour(PR.palette), B2 = spModel(V2.body.concat(V2.bonnet || []), vc2, {car:true}), W2 = spModel(V2.wheel, vc2, {car:true}); VMOD['sp_' + key + '_w'] = W2; B2.w = R2.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + key + '_w']; }); B2.h = (SPCAR[nm] || VMOD[nm]).h; B2.drop = R2.sitDrop || 0; VMOD[key] = B2; });
     /* 0.87: the art chat's service and construction vehicles (assets/shaped/machines.js), parked at rest as abandoned wrecks on the roads */
@@ -194,6 +198,7 @@ FURN.stage = {s:[2.5,1.2], boxes:[[0,.3,0,2.5,.3,1.2,'#5a4028'],[0,.61,0,2.5,.01
    where: wall (back to a wall), door (wall nearest the way in), far (wall farthest from it), corner, end (middle of the far end wall), mid (centre of the room), rows (lines with aisles)
    how many: a negative number means one per that many square metres. extras: ring = chairs around it, seat = a chair in front, side = something beside it, face 'far' = rows all facing the far end ---- */
 ['dresser', 'fridge', 'closet', 'locker', 'wardrobe', 'shelf', 'filing', 'gunlocker', 'vending'].forEach(function(n){ FURN[n].heavy = 1; });   /* things you can shove against a door */
+try { if (window.AfterstreetPacks && window.SHAPED) AfterstreetPacks.install(window.SHAPED); } catch (er) { console.warn('packs', er); }
 spInstall();
 var ROOMS = {
   living:[['rug','mid',1],['sofa','wall',1],['tv','wall',1],['ctable','mid',1],['armchair','corner',1],['wardrobe','wall',1],['lamp','corner',1],['plant','corner',1]],
