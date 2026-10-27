@@ -790,15 +790,17 @@
     return manMesh;
   }
   /* ---------------------------------------------------------------- icons (W10): the model drawn on its own, three-quarter view */
-  function renderIcon(cb){
-    var cv = document.createElement('canvas'); cv.style.cssText = 'position:fixed;left:-400px;top:0;width:256px;height:256px'; document.body.appendChild(cv);
+  /* the game takes icons up to 60,000 characters: a busy model is drawn again smaller until it fits */
+  function renderIcon(cb, px){
+    px = px || 256;
+    var cv = document.createElement('canvas'); cv.style.cssText = 'position:fixed;left:-400px;top:0;width:' + px + 'px;height:' + px + 'px'; document.body.appendChild(cv);
     var v;
     try { v = WSV.create(cv, {}); } catch (e){ cv.remove(); toast('Could not draw the icon: ' + e.message); return; }
     var pcs = []; S.doc.pieces.forEach(function(p){ if (p.hidden) return; if (S.doc.kind === 'held' && p.g !== 'new') return; if (S.doc.variants && S.variant) return; pcs = pcs.concat(nativesOf(p)); });
     var m = trisOf(pcs), B = M.boundsOf(pcs);
     v.bg = [0.957, 0.918, 0.847]; v.set('m', {tris:m}, {order:1});
     if (B.ok){ v.cam.fov = 26; v.frame(B.mn, B.mx, true); v.cam.yaw = S.doc.kind === 'held' ? 1.25 : 0.7; v.cam.pitch = S.doc.kind === 'held' ? 0.55 : 0.42; v.cam.dist *= 1.08; }
-    setTimeout(function(){ v.render(); var url = cv.toDataURL('image/png'); cv.remove(); cb(url); }, 60);
+    setTimeout(function(){ v.render(); var url = cv.toDataURL('image/png'); cv.remove(); if (url.length > 58000 && px > 64) renderIcon(cb, Math.round(px*0.7)); else cb(url); }, 60);
   }
 
   /* ---------------------------------------------------------------- skeletons, clips, characters (W5, W4) */
