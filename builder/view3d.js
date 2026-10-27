@@ -124,6 +124,8 @@ async function boot(){
   var set = ARTSET, A = ['dataver', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', set + '/atlas', set + '/atlas3'];
   var NEED = {btex:1, 'shaped/shapes':1, 'shaped/buildings':1}; NEED[set + '/atlas'] = 1; NEED[set + '/atlas3'] = 1;
   for (var i = 0; i < A.length; i++){ V3.note('Loading the art: ' + Math.round(i/A.length*100) + '%', 30); try { await load('assets/' + A[i] + '.js'); } catch (e){ if (NEED[A[i]]) throw e; if (window.console) console.warn('3D view: skipped missing assets/' + A[i] + '.js'); } }
+  /* cars made in the Workshop (packs/*.js): loaded after the shaped art, installed beside the stock cars as vehicles.pk_<pack>_<id> */
+  try { await load('packs/packload.js'); await load('packs/index.js'); if (window.AfterstreetPacks){ await new Promise(function(res){ AfterstreetPacks.load('packs/', null, res); }); AfterstreetPacks.install(window.SHAPED); } } catch (e){ if (window.console) console.warn('3D view: no packs (' + e.message + ')'); }
   var E = ['core', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'collision', 'render'];
   for (var j = 0; j < E.length; j++) await load('engine/' + E[j] + '.js');
   glOK = initGL();
@@ -342,10 +344,22 @@ var frameBuf = null, frameDirty = false, propBuf = null, propDirty = true, propL
 V3.frameInfo = function(){ if (!frameD) return null; var m = frameMesh(); return {kind:frameD.kind, fam:frameD.fam, storeys:frameD.lv, edges:frameD.pts.length/2 - 1, tris:m ? m.p.length/9 : 0}; };
 
 /* the props the player has put down: map points tagged asmb:prop, drawn from the art packs (the game reads the same tag) */
+/* a car from props.js (or a Workshop pack): body, bonnet and boot as one model, and one wheel model drawn at each wheel point, as the game assembles it */
+var carC = {};
+function carParts(key){
+  if (carC[key] !== undefined) return carC[key]; carC[key] = null;
+  try { var path = key.split('.'), PR = SHAPED.props, V = PR.models.vehicles[path[1]], R = PR.vehicleRig[path[1]]; if (!V || !R || !V.body || !R.wheels) return null;
+    var pk = window.AfterstreetPacks && AfterstreetPacks.vehicles.filter(function(v){ return v.key === path[1]; })[0], col = spColour(PR.palette, pk ? pk.paint : undefined);
+    carC[key] = {B:spModel(V.body.concat(V.bonnet || [], V.boot || []), col, {car:true}), W:V.wheel ? spModel(V.wheel, col, {car:true}) : null, w:R.wheels.map(function(w){ return [w[2], w[1], -w[0]]; })};
+  } catch (e) { if (window.console) console.warn('car', key, e.message); }
+  return carC[key];
+}
 function propMesh(){
   if (!propList){ try { var J = cur.json || (cur.json = JSON.parse(cur.text)), g = world.geo; propList = []; (J.pois || []).forEach(function(q){ var t = q[2]; if (t && t['asmb:prop']) propList.push({p:t['asmb:prop'], x:(q[0] - g.lon0)*g.kx, y:-(q[1] - g.lat0)*g.ky, ry:(+t['asmb:ry'] || 0)}); }); } catch (e) { propList = []; } }
   if (!propList.length) return null;
-  var m = new Mesh(), any = false; propList.forEach(function(q){ var M = spB(q.p); if (!M) return; m.modelS(M, q.x, q.y, -q.ry*Math.PI/2, hAt(q.x, q.y), 1); any = true; });
+  var m = new Mesh(), any = false; propList.forEach(function(q){ var yw = -q.ry*Math.PI/2, y0 = hAt(q.x, q.y), car = /^vehicles\./.test(q.p) ? carParts(q.p) : null;
+    if (car){ m.modelS(car.B, q.x, q.y, yw, y0, 1); if (car.W){ var cs = Math.cos(yw), sn = Math.sin(yw); car.w.forEach(function(w){ m.modelS(car.W, q.x + cs*w[0] - sn*w[2], q.y + sn*w[0] + cs*w[2], yw, y0 + w[1], 1); }); } any = true; return; }
+    var M = spB(q.p); if (!M) return; m.modelS(M, q.x, q.y, yw, y0, 1); any = true; });
   return any ? m : null;
 }
 
