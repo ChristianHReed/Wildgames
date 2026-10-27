@@ -409,6 +409,12 @@ function bridgeBuild(g){
         segs.push({x0:a.x, y0:a.y, x1:b.x, y1:b.y, h0:a.H, h1:b.H, hw:hw, e:e});
       }
       var SM = structModels(), pw = r.w >= 11 ? 'wide' : 'road';
+      if (sp.wet){   /* 0.114.33: abutments at both ends, and a frame by length: truss 40 to 95 m, a suspended span over that */
+        var Lsp = sp.b - sp.a, dep = function(s){ var q = roadPt(r, s), q1 = roadPt(r, s - 0.6), q2 = roadPt(r, s + 0.6), dx = q2[0] - q1[0], dy = q2[1] - q1[1], l = Math.hypot(dx, dy) || 1; return {x:q[0], y:q[1], dx:dx/l, dy:dy/l, H:brH(sp, s, hAt(q[0], q[1])) + 0.14, t:hAt(q[0], q[1])}; }, sk = r.w/(pw === 'wide' ? 14 : 7);
+        if (SM['abutment_' + pw]) [[sp.a, 1], [sp.b, -1]].forEach(function(e){ var c = dep(e[0]), sy = Math.max(1, (c.H - 0.7 - (c.t - 1.5))/3); stPut(g, SM, 'abutment_' + pw, c.x + c.dx*e[1]*0.2, c.y + c.dy*e[1]*0.2, c.dx*e[1], c.dy*e[1], sk, sy, c.H - 0.7); });
+        if (Lsp >= 40 && Lsp < 95 && SM.truss_frame) for (var ts = sp.a + 4; ts < sp.b - 3; ts += 4){ var ct = dep(ts); stPut(g, SM, 'truss_frame', ct.x, ct.y, ct.dx, ct.dy, sk, 1, ct.H); }
+        else if (Lsp >= 95 && SM.suspension_tower_road && SM.hanger_top){ [sp.a + 6, sp.b - 6].forEach(function(ts){ var ct = dep(ts); stPut(g, SM, 'suspension_tower_road', ct.x, ct.y, ct.dx, ct.dy, sk, 1, ct.H); }); for (var hs = sp.a + 10; hs < sp.b - 9; hs += 4){ var ch = dep(hs); stPut(g, SM, 'hanger_top', ch.x, ch.y, ch.dx, ch.dy, sk, 1, ch.H); } }
+      }
       if (sp.wet && SM['pier_cap_' + pw]){ var stp = Math.max(3, Math.round(Math.min(50, (gb - ga)/2)/3)); g.pl = null;
         for (i = Math.min(stp, 2 + Math.floor((n - 3)/2)); i < n - 1; i += stp){ var c = P[i], hb = hAt(c.x, c.y) - 1.5, tx = c.ny, tz = -c.nx, sxk = r.w/(pw === 'wide' ? 14 : 7);
           stPut(g, SM, 'pier_shaft_' + pw + '_unit', c.x, c.y, tx, tz, sxk, Math.max(0.5, c.H - 1.0 - hb), hb); stPut(g, SM, 'pier_cap_' + pw, c.x, c.y, tx, tz, sxk, 1, c.H); } }
@@ -425,7 +431,11 @@ function bridgeBuild(g){
 var STM = null;
 function structModels(){
   if (STM) return STM; STM = {}; var S = window.SHAPED && SHAPED.structures; if (!S || typeof spModel !== 'function') return STM;
-  var col = spColour(S.palette), m = S.models.structures; for (var k in m) STM[k] = spModel(m[k], col); return STM;
+  var col = spColour(S.palette), m = S.models.structures; for (var k in m) STM[k] = spModel(m[k], col);
+  /* 0.114.33: the parts of the truss and suspension pieces that stand above the deck (the engine keeps its own deck) */
+  var top = function(src, test){ var pcs = m[src]; return pcs ? spModel(pcs.filter(test), col) : null; };
+  STM.truss_frame = top('truss_road', function(p){ return /^steel/.test(p.c); }); STM.hanger_top = top('suspension_hanger_road', function(p){ return /^(cable|steel)/.test(p.c); });
+  return STM;
 }
 /* one pack piece into the mesh: along (dx, dz), x scaled by sx, y by sy, standing at height y0 */
 function stPut(g, M, nm, x, z, dx, dz, sx, sy, y0){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
