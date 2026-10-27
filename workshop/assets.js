@@ -546,12 +546,61 @@
     return out;
   };
 
-  /* ------------------------------------------------------------------ W12: a new creature from a template */
-  M.CREATURE_TEMPLATES = ['four_legs', 'two_legs', 'crawler'];
+  /* ------------------------------------------------------------------ W12: a new creature from a template.
+     Each starting body has its bones, idle/walk/attack/dead clips (and fly or swim where it fits), and what it eats and how it behaves. */
+  M.CREATURE_TEMPLATES = ['four_legs', 'heavy', 'hopper', 'two_legs', 'bird', 'fish', 'snake', 'spider', 'insect', 'crawler'];
+  M.CREATURE_LABELS = {four_legs:'Four legs (deer, dog)', heavy:'Heavy four legs (bear, cow)', hopper:'Small hopper (rabbit)', two_legs:'Two legs (upright)', bird:'Bird (wings)', fish:'Fish', snake:'Snake', spider:'Spider (8 legs)', insect:'Insect (6 legs)', crawler:'Low crawler (lizard)'};
+  M.DIETS = [['herbivore', 'Plants only'], ['omnivore', 'Plants and meat'], ['carnivore', 'Meat only'], ['scavenger', 'Scraps and carrion']];
+  M.FOODS = [['grass', 'Grass and leaves'], ['crops', 'Crops and gardens'], ['berries', 'Berries, fruit, nuts'], ['seeds', 'Seeds and grain'], ['insects', 'Insects and worms'], ['fish', 'Fish'], ['small_animals', 'Small animals'], ['large_animals', 'Large animals'], ['people', 'People'], ['carrion', 'Carrion (dead things)'], ['rubbish', 'Rubbish and bins']];
+  M.TEMPERS = [['timid', 'Timid: runs from anything'], ['docile', 'Docile: ignores people, wanders off if hit'], ['curious', 'Curious: comes close, flees if hurt'], ['defensive', 'Defensive: fights back when cornered or hurt'], ['territorial', 'Territorial: warns, then attacks anyone near its spot'], ['aggressive', 'Aggressive: attacks on sight'], ['predator', 'Predator: stalks and hunts what it eats'], ['pack', 'Pack hunter: hunts with its group']];
+  M.ACTIVE = [['day', 'By day'], ['night', 'By night'], ['dusk', 'Dawn and dusk'], ['any', 'Any time']];
+  var CDEF = {
+    four_legs:{diet:'herbivore', eats:['grass', 'crops', 'berries'], temper:'timid', active:'dusk', group:[2, 6], height:1.1, walk:1.4, run:12, health:60, damage:0, fleeAt:30},
+    heavy:{diet:'omnivore', eats:['berries', 'fish', 'insects', 'rubbish', 'small_animals'], temper:'defensive', active:'any', group:[1, 1], height:1.5, walk:1.2, run:11, health:250, damage:35, fleeAt:15},
+    hopper:{diet:'herbivore', eats:['grass', 'crops', 'seeds'], temper:'timid', active:'dusk', group:[1, 3], height:0.35, walk:1, run:11, health:10, damage:0, fleeAt:100},
+    two_legs:{diet:'omnivore', eats:['people', 'carrion', 'rubbish'], temper:'aggressive', active:'night', group:[1, 4], height:1.8, walk:1.3, run:5, health:80, damage:12, fleeAt:0},
+    bird:{diet:'omnivore', eats:['seeds', 'insects', 'berries', 'rubbish'], temper:'timid', active:'day', group:[3, 12], height:0.3, walk:0.6, run:9, health:8, damage:0, fleeAt:100},
+    fish:{diet:'omnivore', eats:['insects', 'fish'], temper:'timid', active:'any', group:[1, 8], height:0.15, walk:0.4, run:2, health:6, damage:0, fleeAt:100},
+    snake:{diet:'carnivore', eats:['small_animals', 'insects'], temper:'defensive', active:'day', group:[1, 1], height:0.12, walk:0.5, run:1.5, health:12, damage:10, fleeAt:50},
+    spider:{diet:'carnivore', eats:['insects', 'small_animals'], temper:'territorial', active:'night', group:[1, 1], height:0.5, walk:1.2, run:4, health:30, damage:10, fleeAt:20},
+    insect:{diet:'scavenger', eats:['rubbish', 'carrion', 'crops'], temper:'docile', active:'any', group:[3, 20], height:0.3, walk:0.8, run:2, health:10, damage:3, fleeAt:40},
+    crawler:{diet:'carnivore', eats:['insects', 'small_animals', 'carrion'], temper:'defensive', active:'day', group:[1, 2], height:0.6, walk:0.8, run:4, health:40, damage:8, fleeAt:30}
+  };
+  /* a plain-words line for the game's existing 'behaviour' field, from the choices */
+  M.behaviourText = function(i){
+    var lab = function(L, k){ var r = L.filter(function(x){ return x[0] === k; })[0]; return r ? r[1] : k; };
+    var t = lab(M.TEMPERS, i.temper).split(':')[0].toLowerCase(), act = lab(M.ACTIVE, i.active).toLowerCase(), g = i.group || [1, 1];
+    var eats = (i.eats || []).map(function(k){ return k.replace(/_/g, ' '); }).join(', ');
+    return t + ': ' + i.diet + (eats ? ' (eats ' + eats + ')' : '') + ', active ' + act + (g[1] > 1 ? ', in groups of ' + g[0] + ' to ' + g[1] : ', alone');
+  };
+  M.creatureInfo = function(doc){ var e = (doc.extra || []).filter(function(x){ return x.path[0] === 'creatures' && x.path[2] === 'info'; })[0]; return e ? e.value : null; };
   M.blankCreature = function(tpl, name, pack){
+    if (M.CREATURE_TEMPLATES.indexOf(tpl) < 0) tpl = 'four_legs';
     var d = {format:'afterstreet-workshop', v:2, type:'model', id:name, name:name.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }), author:'', licence:'MIT', notes:'', kind:'creature',
       target:{pack:pack || 'animals', path:['parts', name]}, parts:{}, pieces:[], points:[], extra:[], colours:{}, states:{}, layout:{}, skeleton:{}, frames:{}, creature:{pack:pack || 'animals', name:name}};
-    var B = d.skeleton, add = function(b, piv, tip, par, shape, pos, size, c){ B[b] = {pivot:piv, tip:tip}; if (par) B[b].parent = par; d.parts[b] = {}; d.layout[b] = {$part:b}; d.pieces.push(ep(shape, pos, {g:b, d:size, c:c || 'BODY', m:'cloth'})); };
+    var B = d.skeleton, add = function(b, piv, tip, par, shape, pos, size, c, more){ B[b] = {pivot:piv, tip:tip}; if (par) B[b].parent = par; d.parts[b] = {}; d.layout[b] = {$part:b}; d.pieces.push(ep(shape, pos, Object.assign({g:b, c:c || 'BODY', m:'cloth'}, size ? {d:size} : {}, more || {}))); };
+    var extra = function(b, shape, pos, size, c, more){ d.pieces.push(ep(shape, pos, Object.assign({g:b, c:c || 'BODY', m:'cloth'}, size ? {d:size} : {}, more || {}))); };
+    var quad = function(o){ /* body, neck, head and four two-part legs */
+      var y = o.y, L = o.L, sp = o.spread || 1;
+      add('body', [0, y, 0], [0, y, L/2], null, 'bev', [0, y, 0], [o.w, o.h, L]);
+      add('neck', [0, y + 0.1, L/2], [0, y + o.neck, L/2 + 0.2], 'body', 'box', [0, y + o.neck*0.55, L/2 + 0.1], [o.nw, o.neck*0.8, o.nw]);
+      add('head', [0, y + o.neck - 0.05, L/2 + 0.2], [0, y + o.neck - 0.05, L/2 + 0.2 + o.hl], 'neck', 'bev', [0, y + o.neck - 0.03, L/2 + 0.2 + o.hl*0.4], [o.hw, o.hw*1.05, o.hl]);
+      [['fl', -1, 1], ['fr', 1, 1], ['hl', -1, -1], ['hr', 1, -1]].forEach(function(lg){ var x = o.w*0.4*lg[1], z = (L/2 - 0.15*L/1.4)*lg[2], fx = x*sp, ly = o.hind && lg[2] < 0 ? o.hind : 1;
+        add('leg_' + lg[0], [x, y - o.h*0.2, z], [fx, y/2, z], 'body', 'box', [(x + fx)/2, y*0.7, z], [o.lw, y*0.5, o.lw*1.2*ly]);
+        add('shin_' + lg[0], [fx, y/2, z], [fx, 0, z], 'leg_' + lg[0], 'box', [fx, y/4, z + (ly > 1 ? -0.03 : 0)], [o.lw*0.8, y/2, o.lw*ly]); });
+      d.frames = {idle:[{}, {neck:[6, 0, 0]}], walk:[{leg_fl:[20, 0, 0], leg_hr:[20, 0, 0], leg_fr:[-20, 0, 0], leg_hl:[-20, 0, 0]}, {}, {leg_fl:[-20, 0, 0], leg_hr:[-20, 0, 0], leg_fr:[20, 0, 0], leg_hl:[20, 0, 0]}, {}],
+        attack:[{neck:[-25, 0, 0], head:[-10, 0, 0]}, {neck:[25, 0, 0]}], dead:[{body:[0, 0, 85]}]};
+    };
+    var legs = function(n, bodyY, half, reach, lw, par){ /* spider and insect legs: pairs splayed out sideways, a knee up high */
+      var fr = {walk:[{}, {}], dead:[{}]};
+      for (var i = 0; i < n; i++){ var z = n === 1 ? 0 : half - 2*half*i/(n - 1);
+        [['l', -1], ['r', 1]].forEach(function(sd){ var nm = sd[0] + (i + 1), x0 = 0.08*sd[1], kx = (0.08 + reach*0.55)*sd[1], ky = bodyY + reach*0.35, fx = (0.08 + reach)*sd[1], kz = z*1.15, fz = z*1.4;
+          add('leg_' + nm, [x0, bodyY, z], [kx, ky, kz], par, 'loft', [0, 0, 0], null, 'BODY_D', {s:'loft', n:5, r:[[x0, bodyY, z, lw, lw], [kx, ky, kz, lw*0.9, lw*0.9]], pos:[0, 0, 0]});
+          add('shin_' + nm, [kx, ky, kz], [fx, 0, fz], 'leg_' + nm, 'loft', [0, 0, 0], null, 'BODY_D', {s:'loft', n:5, r:[[kx, ky, kz, lw*0.85, lw*0.85], [fx, 0.01, fz, lw*0.4, lw*0.4]], pos:[0, 0, 0]});
+          var a = (i % 2 === (sd[1] < 0 ? 0 : 1)) ? 18 : -18;
+          fr.walk[0]['leg_' + nm] = [0, a, 0]; fr.walk[1]['leg_' + nm] = [0, -a, 0]; fr.dead[0]['leg_' + nm] = [0, 0, -50*sd[1]]; }); }
+      return fr;
+    };
     if (tpl === 'two_legs'){
       add('body', [0, 1.0, 0], [0, 1.5, 0], null, 'bev', [0, 1.25, 0], [0.45, 0.6, 0.3]);
       add('head', [0, 1.55, 0], [0, 1.8, 0], 'body', 'bev', [0, 1.7, 0.03], [0.24, 0.28, 0.26]);
@@ -561,19 +610,66 @@
         add('shin_' + sd[0], [x*0.4, 0.5, 0], [x*0.4, 0, 0], 'leg_' + sd[0], 'box', [x*0.4, 0.25, 0.02], [0.13, 0.5, 0.15]); });
       d.frames = {idle:[{}, {body:[2, 0, 0], head:[-3, 0, 0]}], walk:[{leg_l:[-25, 0, 0], leg_r:[25, 0, 0], arm_l:[20, 0, 0], arm_r:[-20, 0, 0]}, {shin_l:[20, 0, 0], shin_r:[20, 0, 0]}, {leg_l:[25, 0, 0], leg_r:[-25, 0, 0], arm_l:[-20, 0, 0], arm_r:[20, 0, 0]}, {shin_l:[20, 0, 0], shin_r:[20, 0, 0]}],
         attack:[{arm_r:[-150, 0, 0]}, {arm_r:[-40, 0, 0], body:[15, 0, 0]}], dead:[{body:[-80, 0, 0]}]};
-    } else {
-      var low = tpl === 'crawler', y = low ? 0.35 : 0.8, L = low ? 1.2 : 1.4;
-      add('body', [0, y, 0], [0, y, L/2], null, 'bev', [0, y, 0], [low ? 0.6 : 0.5, low ? 0.3 : 0.5, L]);
-      add('neck', [0, y + 0.1, L/2], [0, y + 0.45, L/2 + 0.2], 'body', 'box', [0, y + 0.25, L/2 + 0.1], [0.2, 0.35, 0.2]);
-      add('head', [0, y + 0.4, L/2 + 0.2], [0, y + 0.4, L/2 + 0.55], 'neck', 'bev', [0, y + 0.42, L/2 + 0.35], [0.22, 0.24, 0.4]);
-      [['fl', -1, 1], ['fr', 1, 1], ['hl', -1, -1], ['hr', 1, -1]].forEach(function(lg){ var x = 0.2*lg[1]*(low ? 1.6 : 1), z = (L/2 - 0.15)*lg[2];
-        add('leg_' + lg[0], [x, y - 0.1, z], [x*(low ? 1.6 : 1), y/2, z], 'body', 'box', [x*(low ? 1.3 : 1), y*0.7, z], [0.1, y*0.5, 0.12]);
-        add('shin_' + lg[0], [x*(low ? 1.6 : 1), y/2, z], [x*(low ? 1.6 : 1), 0, z], 'leg_' + lg[0], 'box', [x*(low ? 1.6 : 1), y/4, z], [0.08, y/2, 0.1]); });
-      d.frames = {idle:[{}, {neck:[6, 0, 0]}], walk:[{leg_fl:[20, 0, 0], leg_hr:[20, 0, 0], leg_fr:[-20, 0, 0], leg_hl:[-20, 0, 0]}, {}, {leg_fl:[-20, 0, 0], leg_hr:[-20, 0, 0], leg_fr:[20, 0, 0], leg_hl:[20, 0, 0]}, {}],
-        attack:[{neck:[-25, 0, 0], head:[-10, 0, 0]}, {neck:[25, 0, 0], body:[0, 0, 0]}], dead:[{body:[0, 0, 85]}]};
+    } else if (tpl === 'four_legs') quad({y:0.8, L:1.4, w:0.5, h:0.5, neck:0.45, nw:0.2, hw:0.22, hl:0.4, lw:0.1});
+    else if (tpl === 'crawler') quad({y:0.35, L:1.2, w:0.6, h:0.3, neck:0.45, nw:0.2, hw:0.22, hl:0.4, lw:0.1, spread:1.6});
+    else if (tpl === 'heavy'){ quad({y:0.95, L:1.9, w:0.95, h:0.85, neck:0.35, nw:0.4, hw:0.42, hl:0.55, lw:0.24});
+      extra('body', 'bev', [0, 1.2, 0.45], [1.0, 0.7, 0.9], 'BODY'); }  /* shoulder hump */
+    else if (tpl === 'hopper'){ quad({y:0.2, L:0.38, w:0.24, h:0.22, neck:0.12, nw:0.1, hw:0.13, hl:0.16, lw:0.05, hind:1.8});
+      [-1, 1].forEach(function(s){ extra('head', 'bev', [0.035*s, 0.43, 0.31], [0.035, 0.16, 0.05], 'BODY'); });
+      extra('body', 'bev', [0, 0.25, -0.2], [0.07, 0.07, 0.06], 'xd8cfc0');
+      d.frames.walk = [{body:[-12, 0, 0], leg_hl:[-35, 0, 0], leg_hr:[-35, 0, 0], shin_hl:[30, 0, 0], shin_hr:[30, 0, 0]}, {body:[8, 0, 0], leg_fl:[25, 0, 0], leg_fr:[25, 0, 0], leg_hl:[30, 0, 0], leg_hr:[30, 0, 0]}];
+      d.frames.idle = [{}, {neck:[10, 0, 0]}, {neck:[-4, 0, 0]}]; }
+    else if (tpl === 'bird'){
+      add('body', [0, 0.16, 0], [0, 0.2, 0.12], null, 'bev', [0, 0.17, -0.01], [0.13, 0.12, 0.24]);
+      extra('body', 'wedge', [0, 0.19, -0.17], [0.1, 0.03, 0.12], 'BODY_D');
+      add('head', [0, 0.22, 0.09], [0, 0.3, 0.13], 'body', 'bev', [0, 0.27, 0.12], [0.08, 0.08, 0.09]);
+      extra('head', 'loft', [0, 0, 0], null, 'xc8a040', {s:'loft', ax:'z', n:4, r:[[0, 0.265, 0.16, 0.018, 0.014], [0, 0.26, 0.21, 0, 0]], pos:[0, 0, 0]});
+      [['l', -1], ['r', 1]].forEach(function(sd){ var x = 0.065*sd[1];
+        add('wing_' + sd[0], [x, 0.2, 0.02], [x + 0.22*sd[1], 0.2, -0.02], 'body', 'box', [x + 0.1*sd[1], 0.2, -0.02], [0.2, 0.015, 0.14], 'BODY_D');
+        add('leg_' + sd[0], [x*0.5, 0.11, 0], [x*0.5, 0, 0.01], 'body', 'cyl', [x*0.5, 0.06, 0], [0.012, 0.1, 0.012], 'xc8a040'); });
+      d.frames = {idle:[{}, {head:[10, 0, 0]}], walk:[{leg_l:[-25, 0, 0], leg_r:[25, 0, 0], head:[-8, 0, 0]}, {leg_l:[25, 0, 0], leg_r:[-25, 0, 0], head:[8, 0, 0]}],
+        fly:[{wing_l:[0, 0, 40], wing_r:[0, 0, -40], leg_l:[60, 0, 0], leg_r:[60, 0, 0]}, {wing_l:[0, 0, -35], wing_r:[0, 0, 35], leg_l:[60, 0, 0], leg_r:[60, 0, 0]}],
+        attack:[{head:[-30, 0, 0]}, {head:[35, 0, 0], body:[10, 0, 0]}], dead:[{body:[0, 0, 90], wing_l:[0, 0, -20]}]};
+    } else if (tpl === 'fish'){
+      add('body', [0, 0.2, 0], [0, 0.2, 0.2], null, 'loft', [0, 0, 0], null, 'BODY', {s:'loft', ax:'z', n:8, r:[[0, 0.2, -0.16, 0.025, 0.05], [0, 0.2, -0.05, 0.05, 0.08], [0, 0.2, 0.08, 0.045, 0.07], [0, 0.2, 0.17, 0.015, 0.03]], pos:[0, 0, 0]});
+      extra('body', 'wedge', [0, 0.29, 0], [0.01, 0.05, 0.1], 'BODY_D');
+      add('tail', [0, 0.2, -0.16], [0, 0.2, -0.28], 'body', 'wedge', [0, 0.2, -0.22], [0.01, 0.12, 0.1], 'BODY_D', {rot:[0, 180, 0]});
+      [['l', -1], ['r', 1]].forEach(function(sd){ add('fin_' + sd[0], [0.04*sd[1], 0.18, 0.06], [0.09*sd[1], 0.16, 0.02], 'body', 'box', [0.065*sd[1], 0.17, 0.04], [0.05, 0.005, 0.04], 'BODY_D'); });
+      var swim = [{body:[0, 8, 0], tail:[0, -30, 0], fin_l:[0, 0, 15]}, {body:[0, -8, 0], tail:[0, 30, 0], fin_r:[0, 0, -15]}];
+      d.frames = {idle:[{fin_l:[0, 0, 15], fin_r:[0, 0, -15]}, {tail:[0, 8, 0]}], swim:swim, walk:swim, attack:[{body:[-10, 0, 0]}, {body:[0, 20, 0], tail:[0, -45, 0]}], dead:[{body:[0, 0, 180]}]};
+    } else if (tpl === 'snake'){
+      var n = 7, seg = 0.17, y = 0.065, prev = null;
+      for (var i = 0; i < n; i++){ var z0 = 0.5 - i*seg, nm = i === 0 ? 'head' : 'seg' + i, w = i === 0 ? 0.07 : 0.06 - Math.max(0, i - 4)*0.012;
+        add(nm, [0, y, z0], [0, y, z0 - seg], prev, 'loft', [0, 0, 0], null, i === 0 ? 'BODY_D' : 'BODY', {s:'loft', ax:'z', n:6, r:[[0, y, z0, w*0.8, w*0.6], [0, y, z0 - seg, w, w*0.8]], pos:[0, 0, 0]}); prev = nm; }
+      extra('seg6', 'loft', [0, 0, 0], null, 'BODY', {s:'loft', ax:'z', n:6, r:[[0, y, 0.5 - n*seg, 0.03, 0.025], [0, y, 0.5 - n*seg - 0.16, 0, 0]], pos:[0, 0, 0]});
+      /* bones point backwards from the head, so the head is the root and each segment hangs off the one in front */
+      var sl = function(s){ var f = {}; for (var k = 1; k < n; k++) f['seg' + k] = [0, s*(k % 2 ? 22 : -22), 0]; f.head = [0, -s*12, 0]; return f; };
+      d.frames = {idle:[{}, {head:[-10, 0, 0]}], walk:[sl(1), sl(-1)], attack:[{head:[-35, 0, 0], seg1:[-25, 0, 0]}, {head:[20, 0, 0], seg1:[10, 0, 0]}], dead:[{head:[0, 0, 160]}]};
+    } else if (tpl === 'spider'){
+      add('body', [0, 0.3, 0.05], [0, 0.3, 0.2], null, 'bev', [0, 0.3, 0.07], [0.2, 0.13, 0.2], 'BODY_D');
+      add('abdomen', [0, 0.32, -0.03], [0, 0.32, -0.33], 'body', 'loft', [0, 0, 0], null, 'BODY', {s:'loft', ax:'z', n:8, r:[[0, 0.33, -0.03, 0.06, 0.06], [0, 0.35, -0.15, 0.17, 0.15], [0, 0.34, -0.3, 0.1, 0.09], [0, 0.33, -0.36, 0, 0]], pos:[0, 0, 0]});
+      [-1, 1].forEach(function(s){ extra('body', 'box', [0.03*s, 0.31, 0.18], [0.03, 0.03, 0.03], 'x141210', {glow:true}); });
+      var fr = legs(4, 0.3, 0.1, 0.4, 0.025, 'body');
+      d.frames = {idle:[{}, {abdomen:[4, 0, 0]}], walk:fr.walk, attack:[{body:[-15, 0, 0], leg_l1:[0, 0, 40], leg_r1:[0, 0, -40]}, {body:[10, 0, 0]}], dead:fr.dead.map(function(f){ return Object.assign({body:[0, 0, 180]}, f); })};
+    } else { /* insect */
+      add('body', [0, 0.18, 0], [0, 0.18, 0.12], null, 'bev', [0, 0.18, 0.03], [0.14, 0.1, 0.16], 'BODY_D');
+      add('head', [0, 0.18, 0.11], [0, 0.18, 0.2], 'body', 'bev', [0, 0.18, 0.16], [0.1, 0.09, 0.09], 'BODY_D');
+      [-1, 1].forEach(function(s){ extra('head', 'loft', [0, 0, 0], null, 'BODY_D', {s:'loft', n:4, r:[[0.03*s, 0.2, 0.19, 0.006, 0.006], [0.12*s, 0.3, 0.33, 0.003, 0.003]], pos:[0, 0, 0]}); });
+      add('abdomen', [0, 0.19, -0.05], [0, 0.18, -0.32], 'body', 'loft', [0, 0, 0], null, 'BODY', {s:'loft', ax:'z', n:8, r:[[0, 0.19, -0.05, 0.06, 0.05], [0, 0.19, -0.16, 0.1, 0.08], [0, 0.18, -0.3, 0.05, 0.04], [0, 0.18, -0.34, 0, 0]], pos:[0, 0, 0]});
+      [['l', -1], ['r', 1]].forEach(function(sd){ add('wing_' + sd[0], [0.03*sd[1], 0.24, 0], [0.06*sd[1], 0.24, -0.26], 'body', 'plate', [0.06*sd[1], 0.245, -0.13], null, 'xb8c4c0', {s:'decal', v:[[0.02*sd[1], 0.245, 0.02], [0.1*sd[1], 0.245, -0.08], [0.08*sd[1], 0.245, -0.3], [0.02*sd[1], 0.245, -0.25]], n:[0, 1, 0], both:true, pos:[0, 0, 0]}); });
+      var fr2 = legs(3, 0.17, 0.09, 0.26, 0.016, 'body');
+      d.frames = {idle:[{}, {head:[0, 6, 0]}], walk:fr2.walk, fly:[{wing_l:[0, 0, 30], wing_r:[0, 0, -30]}, {wing_l:[0, 0, -20], wing_r:[0, 0, 20]}], attack:[{head:[-20, 0, 0]}, {head:[15, 0, 0], body:[8, 0, 0]}], dead:fr2.dead.map(function(f){ return Object.assign({body:[0, 0, 180]}, f); })};
     }
-    d.extra.push({path:['creatures', name, 'info'], value:{height:tpl === 'two_legs' ? 1.8 : y + 0.4, walk:1.4, run:tpl === 'crawler' ? 4 : 9, health:60, damage:tpl === 'two_legs' ? 12 : 8, gives:{raw_meat:3, hide:1}, behaviour:'', note:''}});
-    d.slotColours = {BODY:'#7a6a5a'};
+    var C = CDEF[tpl], info = {height:C.height, length:0, walk:C.walk, run:C.run, health:C.health, damage:C.damage, fleeAt:C.fleeAt, diet:C.diet, eats:C.eats.slice(), temper:C.temper, active:C.active, group:C.group.slice(),
+      gives:{raw_meat:Math.max(1, Math.round(C.health/20))}, behaviour:'', note:''};
+    if (C.health >= 30) info.gives.hide = 1;
+    if (tpl === 'fish') info.water = true;
+    if (tpl === 'bird' || tpl === 'insect') info.flies = true;
+    var LB = M.boundsOf(d.pieces.reduce(function(o, q){ return o.concat(M.toNative(q)); }, [])); if (LB.ok){ info.length = r4(LB.mx[2] - LB.mn[2]); info.height = r4(LB.mx[1]); }
+    info.behaviour = M.behaviourText(info);
+    d.extra.push({path:['creatures', name, 'info'], value:info});
+    d.pieces.forEach(function(q){ if (M.isCustom(q.c)) d.colours[q.c] = '#' + q.c.slice(1); });
+    d.slotColours = {BODY:{four_legs:'#8a6a4a', heavy:'#4a3a2e', hopper:'#9a8a72', two_legs:'#7a6a5a', bird:'#5a6470', fish:'#7a8a6a', snake:'#6a6a3a', spider:'#3a3230', insect:'#3e4a2e', crawler:'#6a7a4a'}[tpl]};
     return d;
   };
 
@@ -640,6 +736,13 @@
     var out = [];
     if (!doc.pieces.length) out.push(['bad', 'There are no pieces yet.']);
     if (A.stats.total > 4000) out.push(['warn', 'Heavy model: ' + A.stats.total + ' triangles.']);
+    var ci = doc.kind === 'creature' && M.creatureInfo ? M.creatureInfo(doc) : null;
+    if (ci && ci.diet){ var meat = ['fish', 'small_animals', 'large_animals', 'people', 'carrion'], plant = ['grass', 'crops', 'berries', 'seeds'], e = ci.eats || [];
+      if (!e.length) out.push(['warn', 'It eats nothing: tick what it eats on the Model tab.']);
+      if (ci.diet === 'herbivore' && e.some(function(k){ return meat.indexOf(k) >= 0; })) out.push(['warn', 'A plant eater that eats meat: make it an omnivore, or untick the meat.']);
+      if (ci.diet === 'carnivore' && e.some(function(k){ return plant.indexOf(k) >= 0; })) out.push(['warn', 'A meat eater that eats plants: make it an omnivore, or untick the plants.']);
+      if ((ci.temper === 'predator' || ci.temper === 'pack') && !e.some(function(k){ return meat.indexOf(k) >= 0; })) out.push(['warn', 'A hunter needs something to hunt: tick an animal (or people) under Eats.']);
+      if ((ci.temper === 'aggressive' || ci.temper === 'predator' || ci.temper === 'pack' || ci.temper === 'territorial') && !ci.damage) out.push(['warn', 'It attacks but does no damage: set Bite or hit.']); }
     var K = M.KINDS[doc.kind] || {points:[]}, have = {}; (doc.points || []).forEach(function(p){ have[p.kind] = 1; });
     if (doc.kind === 'held' && !have.grip) out.push(['warn', 'No grip point: the hand uses the pack\'s common grip (origin of the model).']);
     if (doc.kind === 'container' && !have.hinge) out.push(['info', 'No hinge point: the lid will not open in the game.']);

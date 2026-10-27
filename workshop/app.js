@@ -55,6 +55,7 @@
     if (doc.type === 'sound'){ doc.pieces = doc.pieces || []; doc.parts = {}; doc.points = []; doc.states = {}; S.tab = 'sound'; }
     doc.states = doc.states || {}; doc.dmg = doc.dmg || {seed:7, strength:1}; if (doc.type === 'model'){ doc.points = doc.points || []; doc.parts = doc.parts || {body:{}}; if (Array.isArray(doc.extra) === false) doc.extra = []; S.part = null; S.hideParts = {}; S.selPoint = -1; if (S.tab === 'car' || S.tab === 'damage') S.tab = 'piece'; } else if (S.tab === 'model') S.tab = 'piece';
     playClip(null); S.pose = {}; S.variant = null; stopAnim(); setTimeout(fxRun, 0); S.waveData = null; S.aClip = null; S.aFrame = 0; S.aBone = null; manBoned = null;
+    if (doc.type !== 'model' && doc.type !== 'sound' && doc.setup) M.ensureAxles(doc);
     S.doc = doc; S.sel = []; S.undo = []; S.redo = []; S.layer = 'car'; S.look = 'whole'; S.state = null; S.asset = null;
     $('docName').value = doc.name;
     refresh(true); if (!keepView) fitView();
@@ -130,7 +131,12 @@
   }
   function hingeX(h, ang){ var c = Math.cos(ang), s = Math.sin(ang);
     return function(p, n){ var y = p[1]-h[1], z = p[2]-h[2]; return [[p[0], h[1] + y*c - z*s, h[2] + y*s + z*c], [n[0], n[1]*c - n[2]*s, n[1]*s + n[2]*c]]; }; }
-  function wheelAt(w, left){ return function(p, n){ return left ? [[-p[0] + w[0], p[1] + w[1], -p[2] + w[2]], [-n[0], n[1], -n[2]]] : [[p[0] + w[0], p[1] + w[1], p[2] + w[2]], n]; }; }
+  function wheelAt(w, left, yaw){ var c = Math.cos(yaw || 0), s = Math.sin(yaw || 0), ry = function(v){ return [v[0]*c + v[2]*s, v[1], -v[0]*s + v[2]*c]; };
+    return function(p, n){ var q = left ? [-p[0], p[1], -p[2]] : p, m = left ? [-n[0], n[1], -n[2]] : n; if (yaw){ q = ry(q); m = ry(m); } return [[q[0] + w[0], q[1] + w[1], q[2] + w[2]], m]; }; }
+  /* where the wheels go: on the hubs at the ends of each axle block (older designs: the setup numbers) */
+  function hubs(){ var A = M.axlesOf(S.doc), r = S.doc.setup.wheelR;
+    if (!A.length) return S.doc.setup.axles.map(function(z){ return {z:z, track:S.doc.setup.track, y:r, steer:false}; });
+    return A.map(function(a){ return {z:a.z, track:a.track, y:r, steer:a.steer}; }); }
   function groupBounds(g){ var pcs = []; S.doc.pieces.forEach(function(p){ if (p.g === g && !p.hidden) pcs = pcs.concat(nativesOf(p)); }); return M.boundsOf(pcs); }
   function openFn(p){
     if (S.layer !== 'car') return null;
@@ -141,8 +147,8 @@
   var picks = [];   /* [{id, pos}] world-space triangles that taps can hit */
   function wheelMeshes(){
     var wm = trisOf(S.doc.pieces.filter(function(p){ return p.g === 'wheel'; }).reduce(function(a, p){ return a.concat(nativesOf(p)); }, []), 'wheelset:' + JSON.stringify(S.doc.pieces.filter(function(p){ return p.g === 'wheel'; })));
-    var t = S.doc.setup.track, r = S.doc.setup.wheelR, out = [];
-    S.doc.setup.axles.forEach(function(z){ out.push(xform(wm, wheelAt([t, r, z], false))); out.push(xform(wm, wheelAt([-t, r, z], true))); });
+    var out = [], yaw = S.preview.steer ? 0.42 : 0;
+    hubs().forEach(function(h){ var y = h.steer ? yaw : 0; out.push(xform(wm, wheelAt([h.track, h.y, h.z], false, y))); out.push(xform(wm, wheelAt([-h.track, h.y, h.z], true, y))); });
     return out;
   }
   function rebuildScene(){
@@ -151,6 +157,7 @@
     var tl = $('tools'); if (tl) tl.classList.toggle('hidden', isSound());
     if (isSound()){ ['solid','ghost','sel','selLines','pts','bones','person','shadow','planes','fx','grid'].forEach(function(k){ view.set(k, null); }); updateReadout(); drawWave(); return; }
     picks = [];
+    if (!isModel() && S.doc.setup) M.syncAxles(S.doc);   /* axles stay on the middle line at wheel height; only front/back moves */
     var solid = [], selM = [], ghost = [], lines = [], selIds = {}; S.sel.forEach(function(i){ selIds[i] = 1; });
     if (S.layer === 'look'){
       var A = asset(), L = D.LOOKS.filter(function(l){ return l.key === S.look; })[0] || D.LOOKS[0], pcs = [], wheel = A.model.wheel, drop = 0;
@@ -160,8 +167,7 @@
       var m = trisOf(pcs, 'look:' + S.look + JSON.stringify(S.doc.dmg) + JSON.stringify(S.doc.states) + JSON.stringify(S.doc.pieces));
       solid.push(drop ? xform(m, function(p, n){ return [[p[0], p[1] - drop, p[2]], n]; }) : m);
       var wm = trisOf(wheel, 'lookwheel:' + S.look + JSON.stringify(S.doc.pieces.filter(function(p){ return p.g === 'wheel'; })));
-      var t = S.doc.setup.track, r = S.doc.setup.wheelR - drop;
-      S.doc.setup.axles.forEach(function(z){ solid.push(xform(wm, wheelAt([t, r, z], false))); solid.push(xform(wm, wheelAt([-t, r, z], true))); });
+      hubs().forEach(function(h){ solid.push(xform(wm, wheelAt([h.track, h.y - drop, h.z], false))); solid.push(xform(wm, wheelAt([-h.track, h.y - drop, h.z], true))); });
     } else {
       var list = active();
       list.forEach(function(p){
@@ -180,7 +186,8 @@
         if (selIds[p.id]) selM.push(m);
         picks.push({id:p.id, pos:m.pos});
       });
-      if (S.layer === 'car' && !isModel()) solid = solid.concat(wheelMeshes());
+      if (S.layer === 'car' && !isModel()){ solid = solid.concat(wheelMeshes());
+        var DT = M.drivetrain(S.doc); if (DT.pieces.length){ var dm = trisOf(DT.pieces.reduce(function(a, q){ return a.concat(M.toNative(q)); }, []), 'dt:' + JSON.stringify(DT.pieces)); if (S.doc.setup.drawShaft === false) ghost.push(dm); else solid.push(dm); } }
       if (S.layer === 'state'){ /* show the clean car faintly round the state being edited */
         var base = []; S.doc.pieces.forEach(function(p){ if (p.g !== 'wheel' && !p.hidden) base = base.concat(nativesOf(p)); });
         ghost.push(trisOf(base, 'base:' + JSON.stringify(S.doc.pieces)));
@@ -355,6 +362,13 @@
       if (S.layer !== 'state') {} /* addPiece pushed into ownerList */
       seat(p, at, n, !!h || x != null);
       made = [p];
+    } else if (kind.kind === 'axle'){
+      /* an axle goes under the car at the tapped front/back position; it sits at wheel height on the middle line */
+      var nA = M.axlesOf(S.doc).length, ax = M.makeAxle(S.doc, r4(snapV(at[2])), {steer:false, driven:false, name:'axle ' + (nA + 1)});
+      made = [ax];
+    } else if (kind.kind === 'gearbox'){
+      var gbx = M.addPiece(S.doc, 'bev', [0, 0, 0], {g:'body', c:'underside', m:'steel', fn:'gearbox', d:[0.3, 0.26, 0.45], name:'gearbox'});
+      seat(gbx, at, n, !!h || x != null); gbx.pos[0] = 0; gbx.mx = false; made = [gbx];
     } else if (kind.kind === 'prefab'){
       var pf = S.prefabs.filter(function(f){ return f.id === kind.key; })[0]; if (!pf) return;
       var base = [snapV(at[0]), Math.max(0, snapV(at[1])), snapV(at[2])];
@@ -408,12 +422,29 @@
     tube:'<svg viewBox="0 0 30 24"><path d="M5 9l18-3 3 3v6l-3 3-18-3z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/><ellipse cx="23" cy="12" rx="3" ry="6" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.4"/></svg>',
     cone:'<svg viewBox="0 0 30 24"><path d="M15 3L6 18c0 2 4 3 9 3s9-1 9-3z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
     plate:'<svg viewBox="0 0 30 24"><path d="M5 7l16-3 4 13-16 3z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    corner:'<svg viewBox="0 0 30 24"><path d="M4 18l12 4 10-6-4-12z M16 22l6-18 M4 18l18-14" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    incorner:'<svg viewBox="0 0 30 24"><path d="M4 18l12 4 10-6V5L14 3 4 8z M4 8l12 4 10-7 M16 12v10" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/><path d="M4 8l12 4" stroke="#3d3029" stroke-width="1.4"/></svg>',
+    pyramid:'<svg viewBox="0 0 30 24"><path d="M15 3L4 17l11 5 11-5z M15 3v19" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    prism:'<svg viewBox="0 0 30 24"><path d="M5 19l5-13 16-2-5 13z M21 17l5-13 3 13z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    hex:'<svg viewBox="0 0 30 24"><path d="M8 5h14l4 4-4 4H8L4 9z M4 9v8l4 4h14l4-4V9 M8 13v8 M22 13v8" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    ball:'<svg viewBox="0 0 30 24"><circle cx="15" cy="12" r="9" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4"/><path d="M6 12c3 3 15 3 18 0" fill="none" stroke="#3d3029" stroke-width="1"/></svg>',
+    dome:'<svg viewBox="0 0 30 24"><path d="M5 18a10 10 0 0 1 20 0z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4"/><ellipse cx="15" cy="18" rx="10" ry="3" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    arch:'<svg viewBox="0 0 30 24"><path d="M3 20a8 8 0 0 1 16 0z M11 12l10-6a8 8 0 0 1 6 8l-8 6" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    quarter:'<svg viewBox="0 0 30 24"><path d="M4 20V10a10 10 0 0 1 10 10z M4 10l10-6a10 10 0 0 1 10 10l-10 6" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    axle:'<svg viewBox="0 0 30 24"><path d="M7 12h16" stroke="#3d3029" stroke-width="2.4"/><ellipse cx="5" cy="12" rx="3" ry="7" fill="#57524c" stroke="#3d3029" stroke-width="1.3"/><ellipse cx="25" cy="12" rx="3" ry="7" fill="#57524c" stroke="#3d3029" stroke-width="1.3"/><rect x="12" y="9" width="6" height="6" rx="1" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    gearbox:'<svg viewBox="0 0 30 24"><circle cx="11" cy="12" r="6" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-dasharray="2.2 1.2"/><circle cx="21" cy="9" r="4" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.4" stroke-dasharray="2 1"/><circle cx="11" cy="12" r="1.6" fill="#3d3029"/></svg>',
     prefab:'<svg viewBox="0 0 30 24"><path d="M5 8h9v9H5z M16 5h9v9h-9z M12 13h9v8h-9z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/></svg>'
   };
   function renderTools(){
     var h = '<div class="grp">Add</div>';
     M.SHAPE_ORDER.forEach(function(k){ var on = S.placing && S.placing.kind === 'shape' && S.placing.key === k;
       h += '<button class="tool' + (on ? ' on' : '') + '" data-add="' + k + '" title="Add a ' + M.SHAPES[k].label.toLowerCase() + '">' + ICON[k] + M.SHAPES[k].label + '</button>'; });
+    h += '<div class="grp">More blocks</div>';
+    M.SHAPE_MORE.forEach(function(k){ var on = S.placing && S.placing.kind === 'shape' && S.placing.key === k;
+      h += '<button class="tool' + (on ? ' on' : '') + '" data-add="' + k + '" title="Add a ' + M.SHAPES[k].label.toLowerCase() + '">' + ICON[k] + M.SHAPES[k].label + '</button>'; });
+    if (!isModel() && S.layer === 'car'){ h += '<div class="grp">Vehicle parts</div>';
+      [['axle', 'Axle', 'An axle: its wheels mount on its ends'], ['gearbox', 'Gearbox', 'Where the driveshaft leaves the engine']].forEach(function(v){ var on = S.placing && S.placing.kind === v[0];
+        h += '<button class="tool' + (on ? ' on' : '') + '" data-veh="' + v[0] + '" title="' + v[2] + '">' + ICON[v[0]] + v[1] + '</button>'; }); }
     if (S.prefabs.length){ h += '<div class="grp">Prefabs</div>'; S.prefabs.forEach(function(pf){ var on = S.placing && S.placing.kind === 'prefab' && S.placing.key === pf.id;
       h += '<button class="tool' + (on ? ' on' : '') + '" data-pf="' + esc(pf.id) + '">' + ICON.prefab + esc(pf.name.slice(0, 12)) + '</button>'; }); }
     h += '<div class="grp">Build</div>';
@@ -428,6 +459,7 @@
   $('tools').addEventListener('click', function(e){
     var b = e.target.closest('button'); if (!b) return;
     if (b.dataset.add) return startPlacing({kind:'shape', key:b.dataset.add, label:M.SHAPES[b.dataset.add].label});
+    if (b.dataset.veh) return startPlacing({kind:b.dataset.veh, key:b.dataset.veh, label:b.dataset.veh === 'axle' ? 'Axle' : 'Gearbox'});
     if (b.dataset.pf){ var pf = S.prefabs.filter(function(f){ return f.id === b.dataset.pf; })[0]; return startPlacing({kind:'prefab', key:pf.id, label:pf.name}); }
     var t = b.dataset.t;
     if (t === 'symx') S.sym.x = !S.sym.x;
@@ -454,7 +486,7 @@
     if (S.layer === 'state') h += '<button class="sm on" data-l="state">Editing: ' + esc(stateLabel(S.state)) + '</button><button class="sm alt" data-l="car">Done</button>';
     $('layerBar').innerHTML = h;
     var p = '';
-    if (S.layer === 'car') p = tog('bonnet', 'Bonnet open') + tog('boot', 'Boot open') + tog('markers', 'Inside parts') + tog('person', 'Person') + tog('planes', 'Planes');
+    if (S.layer === 'car') p = tog('bonnet', 'Bonnet open') + tog('boot', 'Boot open') + tog('steer', 'Steer') + tog('markers', 'Inside parts') + tog('person', 'Person') + tog('planes', 'Planes');
     else if (S.layer === 'look') p = '<select id="lookSel">' + D.LOOKS.map(function(l){ return '<option value="' + l.key + '"' + (l.key === S.look ? ' selected' : '') + '>' + l.label + '</option>'; }).join('') + '</select>';
     $('previewBar').innerHTML = p;
     var ls = $('lookSel'); if (ls) ls.onchange = function(){ S.look = ls.value; rebuildScene(); };
@@ -546,6 +578,12 @@
     var p = sel[0], h = '<span class="stamp">' + esc(shapeName(p)) + '</span> <span class="muted">' + esc(p.name || p.id) + '</span>';
     h += '<div class="row"><label class="l">Name</label><input class="grow" type="text" data-k="name" value="' + esc(p.name || '') + '" placeholder="e.g. left door"></div>';
     if (p.g !== 'wheel' && S.layer === 'car') h += '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g">' + partOpts().map(function(o){ return '<option value="' + o[0] + '"' + (p.g === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    if (p.fn === 'axle' && !isModel()){
+      var ax1 = p.axle || {};
+      h += '<div class="card"><h3>Axle</h3><div class="row"><label><input type="checkbox" data-k="asteer"' + (ax1.steer ? ' checked' : '') + '>Steers (its wheels turn)</label><label><input type="checkbox" data-k="adrive"' + (ax1.driven ? ' checked' : '') + '>Driven (the engine turns it)</label></div>' +
+        '<div class="row"><label class="l">Wheels apart</label>' + num('axle track', M.axlesOf(S.doc).filter(function(a){ return a.p === p; })[0].track*2, 'len', function(v){ edit(function(q){ q.d = (q.d || [1.4, 0.07, 0.07]).slice(); q.d[0] = r4(Math.max(0.2, v - S.doc.setup.wheelW)); }); }, {min:0.3, ax:'x'}) + '</div>' +
+        '<p class="muted">Its wheels sit on its two ends, so moving it moves them. It stays on the middle line at wheel height; drag it forward or back. Turn on <b>Steer</b> below the view to see the steering wheels turn.</p></div>';
+    }
     h += '<div class="card"><h3>Where (' + unitLabel() + ')</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return num(a, p.pos[i], 'len', function(v){ edit(function(q){ q.pos[i] = v; }); }, {ax:a}); }).join('') + '</div>' +
       '<p class="muted">X right, Y up, Z forward. The car\'s middle is X 0, the ground Y 0.</p></div>';
     h += '<div class="card"><h3>Size</h3>' + sizeFields(p) + '</div>';
@@ -620,12 +658,17 @@
     h += '<div class="card"><h3>Wheels</h3>' +
       '<div class="row"><label class="l">Size across</label>' + num('wheel size', s.wheelR*2, 'len', function(v){ setup(function(st){ st.wheelR = r4(v/2); }); }, {min:0.2}) + '</div>' +
       '<div class="row"><label class="l">Tyre width</label>' + num('tyre width', s.wheelW, 'len', function(v){ setup(function(st){ st.wheelW = v; }); }, {min:0.05}) + '</div>' +
-      '<div class="row"><label class="l">Apart</label>' + num('track', s.track*2, 'len', function(v){ setup(function(st){ st.track = r4(v/2); }); }, {min:0.3}) + '</div>' +
-      '<div class="row"><label class="l">Front axle</label>' + num('front axle', s.axles[0], 'len', function(v){ setup(function(st){ st.axles[0] = v; }); }, {ax:'z'}) + '</div>' +
-      '<div class="row"><label class="l">Rear axle</label>' + num('rear axle', s.axles[1], 'len', function(v){ setup(function(st){ st.axles[1] = v; }); }, {ax:'z'}) + '</div>' +
+
       '<div class="row"><label class="l">Arch room</label>' + num('arch clearance', s.archClear, 'len', function(v){ setup(function(st){ st.archClear = v; }); }, {min:0}) + '</div>' +
       '<div class="row"><button class="alt sm" data-a="makeWheel">Make a new plain wheel at this size</button></div>' +
       '<p class="muted">Arch room is the gap over the tyre; bigger tyres from the vehicle kit lift the car to clear it.</p></div>';
+    var AX = M.axlesOf(d), DT = M.drivetrain(d);
+    h += '<div class="card"><h3>Axles and drive</h3><p class="muted">Wheels are not loose: each axle carries a pair. Power goes engine → gearbox → driveshaft → each <b>driven</b> axle; <b>steering</b> axles turn their wheels.</p><div class="list">' +
+      AX.map(function(a, i){ return '<div class="it"><span class="nm">' + esc(a.p.name || 'axle ' + (i + 1)) + ' <span class="muted">' + fmtLen(a.z) + (a.steer ? ' · steers' : '') + (a.driven ? ' · driven' : '') + (a.p.hidden ? ' · inside' : '') + '</span></span><button class="alt sm" data-a="selAxle" data-id="' + esc(a.p.id) + '">Select</button></div>'; }).join('') + '</div>' +
+      '<div class="row"><button class="alt sm" data-a="addAxle">Add an axle</button></div>' +
+      '<table>' + tr('Drive', {FWD:'front-wheel drive', RWD:'rear-wheel drive', '4WD':'four-wheel drive', AWD:'all-wheel drive', none:'nothing driven'}[DT.layout]) + tr('Wheels', AX.length*2) + '</table>' +
+      DT.issues.map(function(c){ return '<div class="msg ' + c[0] + '">' + esc(c[1]) + '</div>'; }).join('') +
+      '<div class="row"><label><input type="checkbox" data-k="dshaft"' + (s.drawShaft === false ? '' : ' checked') + '>Draw the driveshaft and differentials in the game</label></div></div>';
     h += '<div class="card"><h3>Load bed</h3><div class="row"><label><input type="checkbox" data-k="bed"' + (s.bed ? ' checked' : '') + '>Has an open load bed (pickups, flatbeds)</label></div>' +
       (s.bed ? '<div class="row"><label class="l">Floor height</label>' + num('bed y', s.bed.y, 'len', function(v){ setup(function(st){ st.bed.y = v; }); }) + '</div><div class="row"><label class="l">Middle</label>' + num('bed z', s.bed.z, 'len', function(v){ setup(function(st){ st.bed.z = v; }); }, {ax:'z'}) + '</div>' +
         '<div class="row"><label class="l">Size</label>' + num('bed width', s.bed.w, 'len', function(v){ setup(function(st){ st.bed.w = v; }); }, {ax:'x'}) + num('bed length', s.bed.d, 'len', function(v){ setup(function(st){ st.bed.d = v; }); }, {ax:'z'}) + '</div>' : '') + '</div>';
@@ -634,7 +677,7 @@
     h += '<div class="card"><h3>What the game will get</h3><table>' +
       tr('Seats', g.seats) + tr('Drives', g.driveable ? 'yes' : 'no (needs an engine and a seat)') + tr('Range on a full tank', g.rangeMiles ? g.rangeMiles + ' miles' : 'no tank') +
       tr('Cargo', g.cargoSlots + ' slots') + tr('Sleeps', g.sleeps || '—') + tr('Engine', g.power) +
-      tr('Length', fmtLen(sp.length)) + tr('Width', fmtLen(sp.width)) + tr('Roof', fmtLen(sp.roof.y)) + tr('Wheelbase', fmtLen(s.axles[0] - s.axles[1])) + tr('Ground clearance', fmtLen(sp.ground)) +
+      tr('Length', fmtLen(sp.length)) + tr('Width', fmtLen(sp.width)) + tr('Roof', fmtLen(sp.roof.y)) + tr('Wheelbase', fmtLen(s.axles[0] - s.axles[s.axles.length - 1])) + tr('Ground clearance', fmtLen(sp.ground)) +
       '</table><p class="muted">Seats, range, cargo and lights come from the pieces you give a Job (Piece tab).</p></div>';
     h += '<div class="card"><h3>Salvage and build cost</h3><table>' + Object.keys(A.salvage).map(function(k){ return tr(k.replace(/_/g, ' '), A.salvage[k] + ' → ' + (A.buildCost[k] || '—')); }).join('') +
       '</table><p class="muted">Left: what taking it apart gives. Right: what building it from the design would cost (for the game to use).</p></div>';
@@ -684,6 +727,7 @@
     h += '<div class="card"><h3>Detail budget</h3><div class="meter"><i style="width:' + Math.min(100, tot/30) + '%;background:' + (tot > 3000 ? 'var(--bad)' : tot > 1500 ? 'var(--ochre)' : 'var(--sage)') + '"></i></div>' +
       '<table>' + tr('Body, bonnet, boot', A.stats.body + ' triangles') + tr('Each wheel', A.stats.wheel + ' triangles') + tr('Whole car', tot + ' triangles') + tr('Stock sedan for comparison', stockSedanTris() + ' triangles') + '</table>' +
       '<p class="muted">Like the performance limits in building games: towns park dozens of cars, so lighter cars keep phones smooth.</p></div>';
+    h += '<div class="card"><h3>Joined up</h3><p class="muted">As in Space Engineers, every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button></div></div>';
     h += '<div class="card"><h3>Pieces</h3><table>' + tr('Pieces you placed', S.doc.pieces.filter(function(p){ return !p.hidden; }).length) + tr('Inside parts', S.doc.pieces.filter(function(p){ return p.hidden; }).length) +
       tr('Mirrored', S.doc.pieces.filter(function(p){ return p.mx || p.mz; }).length) + tr('Pack size', Math.round(JSON.stringify(A).length/1024) + ' KB') + '</table></div>';
     h += '<div class="card"><h3>Units</h3><div class="row"><button class="' + (S.units === 'imp' ? 'on' : 'alt') + ' sm" data-a="units" data-u="imp">Inches and feet</button><button class="' + (S.units === 'met' ? 'on' : 'alt') + ' sm" data-a="units" data-u="met">Centimetres and metres</button></div></div>';
@@ -780,6 +824,27 @@
       h += '<div class="card"><h3>Carrying</h3>' + (fv ? '<div class="row"><label class="l">Size</label><select class="grow" data-k="fsize">' + M.SIZE_CLASSES.map(function(c){ return '<option value="' + c[0] + '"' + (fv[0] === c[0] ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select></div>' +
         '<div class="row"><label class="l">Weight</label>' + num('weight', Math.round(fv[1]*2.20462), 'n', function(v){ commit(); M.extraOf(S.doc, 'furnitureSize').value[1] = Math.round(v/2.20462); changed(true); }, {min:1, step:5}) + '<span class="muted">lb</span></div>'
         : '<p class="muted">It cannot be picked up and carried.</p><button class="alt sm" data-a="makeCarry">Let survivors carry it</button>') + '</div>';
+    }
+    /* creatures: what it eats and how it behaves (stored in the pack's creatures.<name>.info, beside height, speeds and health) */
+    var ci = d.kind === 'creature' ? M.creatureInfo(d) : null;
+    if (ci){
+      var opt = function(L, cur, none){ return (none ? '<option value="">' + none + '</option>' : '') + L.map(function(o){ return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); };
+      var MPH = 2.23694, gr = ci.group || [1, 1];
+      h += '<div class="card"><h3>Food and temper</h3>' +
+        '<div class="row"><label class="l">Diet</label><select class="grow" data-k="cdiet">' + opt(M.DIETS, ci.diet, 'Not set') + '</select></div>' +
+        '<div class="muted" style="margin-top:6px"><b>Eats</b></div><div class="row" style="flex-wrap:wrap">' + M.FOODS.map(function(f){ return '<label style="min-width:46%"><input type="checkbox" data-k="ceat" data-f="' + f[0] + '"' + ((ci.eats || []).indexOf(f[0]) >= 0 ? ' checked' : '') + '>' + esc(f[1]) + '</label>'; }).join('') + '</div>' +
+        '<div class="row"><label class="l">Temper</label><select class="grow" data-k="ctemper">' + opt(M.TEMPERS, ci.temper, 'Not set') + '</select></div>' +
+        '<div class="row"><label class="l">Out and about</label><select class="grow" data-k="cactive">' + opt(M.ACTIVE, ci.active, 'Not set') + '</select></div>' +
+        '<div class="row"><label class="l">Group of</label>' + num('group min', gr[0], 'n', function(v){ cinfo(function(i){ var g = (i.group || [1, 1]).slice(); g[0] = Math.max(1, Math.round(v)); g[1] = Math.max(g[0], g[1]); i.group = g; }); }, {min:1}) +
+          '<span class="muted">to</span>' + num('group max', gr[1], 'n', function(v){ cinfo(function(i){ var g = (i.group || [1, 1]).slice(); g[1] = Math.max(1, Math.round(v)); g[0] = Math.min(g[0], g[1]); i.group = g; }); }, {min:1}) + '</div>' +
+        '<div class="row"><label><input type="checkbox" data-k="cflag" data-f="flies"' + (ci.flies ? ' checked' : '') + '>Flies</label><label><input type="checkbox" data-k="cflag" data-f="water"' + (ci.water ? ' checked' : '') + '>Lives in water</label><label><input type="checkbox" data-k="cflag" data-f="tameable"' + (ci.tameable ? ' checked' : '') + '>Can be tamed</label></div>' +
+        '<p class="muted">' + esc(M.behaviourText(ci)) + '</p></div>';
+      h += '<div class="card"><h3>Body and strength</h3>' +
+        '<div class="row"><label class="l">Health</label>' + num('health', ci.health || 0, 'n', function(v){ cinfo(function(i){ i.health = Math.max(1, Math.round(v)); }); }, {min:1, step:5}) + '</div>' +
+        '<div class="row"><label class="l">Bite or hit</label>' + num('damage', ci.damage || 0, 'n', function(v){ cinfo(function(i){ i.damage = Math.max(0, Math.round(v)); }); }, {min:0}) + '</div>' +
+        '<div class="row"><label class="l">Walks at</label>' + num('walk', Math.round((ci.walk || 1)*MPH*10)/10, 'n', function(v){ cinfo(function(i){ i.walk = r4(Math.max(0.1, v)/MPH); }); }, {min:0.1, step:0.5}) + '<span class="muted">mph</span></div>' +
+        '<div class="row"><label class="l">Runs at</label>' + num('run', Math.round((ci.run || 1)*MPH*10)/10, 'n', function(v){ cinfo(function(i){ i.run = r4(Math.max(0.1, v)/MPH); }); }, {min:0.1, step:1}) + '<span class="muted">mph</span></div>' +
+        '<div class="row"><label class="l">Runs off at</label>' + num('flee', ci.fleeAt || 0, 'n', function(v){ cinfo(function(i){ i.fleeAt = Math.max(0, Math.min(100, Math.round(v))); }); }, {min:0, max:100, step:5}) + '<span class="muted">% health</span></div></div>';
     }
     /* the pack's own details for this model, editable where they are simple values */
     var ex = d.extra || [];
@@ -1042,6 +1107,8 @@
         for (var k = 0; k <= 64; k++){ var t = k/64*Math.PI*2; ring.push(add3(C, add3(mul3(u, Math.cos(t)*rad*(1 - a*0.06)), mul3(v, Math.sin(t)*rad*(1 - a*0.06))))); }
         H.push({type:'turn', a:a, centre:C, ring:ring, pos:ring[8], col:GZC[AXN[a]]}); });
     }
+    /* an axle only slides forward and back and only gets longer or shorter: drop the handles that would fight that */
+    if (sel.length === 1 && sel[0].fn === 'axle' && !isModel()) H = H.filter(function(h){ return h.type === 'move' ? h.a === 2 : h.type === 'face' ? h.i === 0 : false; });
     return H;
   }
   function gzDraw(){
@@ -1196,11 +1263,14 @@
     return text;
   }
 
+  /* change the creature's info and keep the plain-words behaviour line in step (unless someone wrote their own) */
+  function cinfo(fn){ commit(); var i = M.creatureInfo(S.doc); if (!i) return; var auto = !i.behaviour || i.behaviour === M.behaviourText(i); fn(i); if (auto) i.behaviour = M.behaviourText(i); changed(false); }
   function panelCheckModel(){
     var A = asset(), C = M.checkModel(S.doc, A), tot = A.stats.total, h = '<span class="stamp">Check</span>';
     h += C.length ? C.map(function(c){ return '<div class="msg ' + c[0] + '">' + esc(c[1]) + '</div>'; }).join('') : '<div class="msg info">Ready for the game.</div>';
     h += '<div class="card"><h3>Detail budget</h3><div class="meter"><i style="width:' + Math.min(100, tot/40) + '%;background:' + (tot > 4000 ? 'var(--bad)' : tot > 2000 ? 'var(--ochre)' : 'var(--sage)') + '"></i></div>' +
       '<table>' + tr('Whole model', tot + ' triangles') + A.parts.map(function(n){ return tr('Part: ' + n, S.doc.pieces.filter(function(p){ return p.g === n; }).length + ' pieces'); }).join('') + tr('Points', (S.doc.points || []).length) + tr('Pack size', Math.round(JSON.stringify(A).length/1024) + ' KB') + '</table></div>';
+    if (!isSkel()) h += '<div class="card"><h3>Joined up</h3><p class="muted">Every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button></div></div>';
     h += '<div class="card"><h3>Units</h3><div class="row"><button class="' + (S.units === 'imp' ? 'on' : 'alt') + ' sm" data-a="units" data-u="imp">Inches and feet</button><button class="' + (S.units === 'met' ? 'on' : 'alt') + ' sm" data-a="units" data-u="met">Centimetres and metres</button></div></div>';
     return h;
   }
@@ -1264,6 +1334,9 @@
     selPoint:function(b){ S.selPoint = +b.dataset.i; refresh(true); },
     delPoint:function(b){ commit(); S.doc.points.splice(+b.dataset.i, 1); S.selPoint = -1; changed(true); },
     stockBack:function(){ stockBrowser(); },
+    selAxle:function(b){ S.sel = [b.dataset.id]; S.tab = 'piece'; refresh(true); },
+    addAxle:function(){ commit(); var A = M.axlesOf(S.doc), z = A.length ? r4(A[A.length - 1].z - 1.2) : 0; M.makeAxle(S.doc, z, {driven:true, name:'axle ' + (A.length + 1)}); S.sel = [S.doc.pieces[S.doc.pieces.length - 1].id]; changed(true); },
+    selLoose:function(){ S.sel = M.loosePieces(S.doc, ownerList()); if (!S.sel.length) toast('Every piece touches the rest.'); S.tab = 'piece'; refresh(true); },
     selHidden:function(){ S.sel = S.doc.pieces.filter(function(p){ return p.hidden; }).map(function(p){ return p.id; }); refresh(); },
     del:removeSel, dup:function(){ duplicate(false); }, mirrorCopy:function(){ duplicate(true); },
     turnY:function(){ edit(function(p){ p.rot[1] = ((p.rot[1] || 0) + 90) % 360; }); },
@@ -1336,7 +1409,15 @@
     jaxis:function(t){ commit(); var j = S.doc.rig[t.dataset.n], a = AXES[+t.value][1].slice(); if (j.slide) j.slide = a; else j.turn = a; changed(true); },
     jpose:function(t){ S.pose[t.dataset.n] = +t.value; rebuildScene(); },
     slotcol:function(t){ commit(); S.doc.slotColours = S.doc.slotColours || {}; S.doc.slotColours[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
-    dstr:function(t){ commit(); S.doc.dmg.strength = +t.value; changed(true); }
+    dstr:function(t){ commit(); S.doc.dmg.strength = +t.value; changed(true); },
+    asteer:function(t){ edit(function(p){ p.axle = Object.assign({}, p.axle, {steer:t.checked}); }, true); },
+    adrive:function(t){ edit(function(p){ p.axle = Object.assign({}, p.axle, {driven:t.checked}); }, true); },
+    dshaft:function(t){ commit(); S.doc.setup.drawShaft = t.checked; changed(true); },
+    cdiet:function(t){ cinfo(function(i){ i.diet = t.value; }); },
+    ceat:function(t){ cinfo(function(i){ var e = (i.eats || []).filter(function(k){ return k !== t.dataset.f; }); if (t.checked) e.push(t.dataset.f); i.eats = e; }); },
+    ctemper:function(t){ cinfo(function(i){ i.temper = t.value; }); },
+    cactive:function(t){ cinfo(function(i){ i.active = t.value; }); },
+    cflag:function(t){ cinfo(function(i){ if (t.checked) i[t.dataset.f] = true; else delete i[t.dataset.f]; }); }
   };
   function retube(p, ax){
     var ia = p.ax === 'x' ? 0 : p.ax === 'y' ? 1 : 2, len = Math.abs(p.r[1][ia] - p.r[0][ia]), ib = ax === 'x' ? 0 : ax === 'y' ? 1 : 2;
@@ -1374,7 +1455,7 @@
     h += '<div class="list">' + ids.map(function(id){ var x = d[id]; return '<div class="it"><input type="checkbox" class="pk" value="' + esc(id) + '"' + (id === S.doc.id ? ' checked' : '') + '><span class="nm">' + esc(x.name) + ' <span class="muted">' + (x.saved ? new Date(x.saved).toLocaleDateString() : '') + '</span></span>' +
       (id === S.doc.id ? '<span class="muted">open</span>' : '<button class="alt sm" data-m="open" data-id="' + esc(id) + '">Open</button>') + '<button class="alt sm" data-m="del" data-id="' + esc(id) + '">Delete</button></div>'; }).join('') + '</div>';
     h += '<div class="row" style="margin-top:12px"><button class="sm" data-m="exportSel">Export ticked as one pack</button><button class="alt sm" data-m="import">Import a pack file</button></div>';
-    h += '<div class="card"><h3>Start something new</h3><div class="row"><button class="alt sm" data-m="blank">Blank car</button>' + M.BLANK_KINDS.map(function(k){ return (k === 'creature' ? M.CREATURE_TEMPLATES.map(function(t){ return '<button class="alt sm" data-m="blankCreature" data-t="' + t + '">Blank creature (' + t.replace('_', ' ') + ')</button>'; }).join('') : '<button class="alt sm" data-m="blankKind" data-k="' + k + '">Blank ' + esc(k === 'sound' ? 'sound' : M.KINDS[k].label.toLowerCase()) + '</button>'); }).join('') + '</div><div class="row"><button class="sm" data-m="stockBrowser">Open any model in the game…</button></div><p class="muted">Or start from one of the design chat\'s cars (a copy; the game\'s own car is not changed):</p><div class="row">' +
+    h += '<div class="card"><h3>Start something new</h3><div class="row"><button class="alt sm" data-m="blank">Blank car</button>' + M.BLANK_KINDS.map(function(k){ return (k === 'creature' ? M.CREATURE_TEMPLATES.map(function(t){ return '<button class="alt sm" data-m="blankCreature" data-t="' + t + '">Creature: ' + esc(M.CREATURE_LABELS[t] || t) + '</button>'; }).join('') : '<button class="alt sm" data-m="blankKind" data-k="' + k + '">Blank ' + esc(k === 'sound' ? 'sound' : M.KINDS[k].label.toLowerCase()) + '</button>'); }).join('') + '</div><div class="row"><button class="sm" data-m="stockBrowser">Open any model in the game…</button></div><p class="muted">Or start from one of the design chat\'s cars (a copy; the game\'s own car is not changed):</p><div class="row">' +
       STOCK.map(function(n){ return '<button class="alt sm" data-m="stock" data-n="' + n + '">' + n.replace(/_/g, ' ') + '</button>'; }).join('') + '</div></div>';
     if (S.prefabs.length) h += '<div class="card"><h3>Prefabs</h3><div class="list">' + S.prefabs.map(function(pf){ return '<div class="it"><span class="nm">' + esc(pf.name) + ' <span class="muted">' + pf.pieces.length + ' pieces</span></span><button class="alt sm" data-m="pfdel" data-id="' + esc(pf.id) + '">Delete</button></div>'; }).join('') + '</div></div>';
     h += '<div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Close</button></div>';
@@ -1517,5 +1598,5 @@
   var cur = store.get('current', null), all = drafts();
   if (cur && all[cur]) setDoc(clone(all[cur]));
   else { var first = M.fromStock(PROPS, 'pickup'); first.id = uniqueId('my_pickup'); first.name = 'My pickup'; setDoc(first); setTimeout(function(){ toast('Welcome! This is a copy of the pickup to try things on. Designs → Blank car to start from nothing.'); }, 400); }
-  window.WORKSHOP = {S:S, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit};
+  window.WORKSHOP = {S:S, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit, changed:changed, fitView:fitView};
 })();

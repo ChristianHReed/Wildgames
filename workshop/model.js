@@ -49,9 +49,20 @@
     cyl:   {label:'Cylinder',   make:function(){ return {s:'cyl', d:[0.2,0.2,0.2], ax:'y'}; }},
     tube:  {label:'Tube',       make:function(){ return {s:'loft', ax:'z', n:8, r:[[0,0,-0.2,0.1,0.1],[0,0,0.2,0.1,0.1]]}; }},
     cone:  {label:'Cone',       make:function(){ return {s:'loft', ax:'y', n:8, r:[[0,-0.15,0,0.12,0.12],[0,0.15,0,0,0]]}; }},
-    plate: {label:'Plate',      make:function(){ return {s:'decal', v:[[-0.2,-0.1,0],[0.2,-0.1,0],[0.2,0.1,0],[-0.2,0.1,0]], n:[0,0,1]}; }}
+    plate: {label:'Plate',      make:function(){ return {s:'decal', v:[[-0.2,-0.1,0],[0.2,-0.1,0],[0.2,0.1,0],[-0.2,0.1,0]], n:[0,0,1]}; }},
+    /* more blocks, as in building games: corners, round edges, domes. They are solid pieces the game already draws. */
+    corner:  {label:'Corner slope', make:function(){ var x = 0.2, y = 0.1, z = 0.2; return {s:'poly', v:[[-x,-y,-z],[x,-y,-z],[x,-y,z],[-x,-y,z],[x,y,z]], f:[[0,1,2,3],[1,2,4],[2,3,4],[0,1,4],[0,3,4]]}; }},
+    incorner:{label:'Inside corner', make:function(){ var x = 0.2, y = 0.1, z = 0.2; return {s:'poly', v:[[-x,-y,-z],[x,-y,-z],[x,-y,z],[-x,-y,z],[x,y,-z],[x,y,z],[-x,y,z]], f:[[0,1,2,3],[4,5,6],[1,2,5,4],[2,3,6,5],[0,1,4],[0,3,6],[0,4,6]]}; }},
+    pyramid: {label:'Pyramid',  make:function(){ return {s:'loft', ax:'y', n:4, lrot:45, r:[[0,-0.1,0,0.2828,0.2828],[0,0.1,0,0,0]]}; }},
+    prism:   {label:'Prism',    make:function(){ return {s:'loft', ax:'z', n:3, lrot:90, r:[[0,0,-0.2,0.18,0.18],[0,0,0.2,0.18,0.18]]}; }},
+    hex:     {label:'Hex block', make:function(){ return {s:'loft', ax:'y', n:6, r:[[0,-0.1,0,0.2,0.2],[0,0.1,0,0.2,0.2]]}; }},
+    ball:    {label:'Ball',     make:function(){ var r = 0.15; return {s:'loft', ax:'y', n:10, r:[[0,-r,0,0,0],[0,-r*0.71,0,r*0.71,r*0.71],[0,0,0,r,r],[0,r*0.71,0,r*0.71,r*0.71],[0,r,0,0,0]]}; }},
+    dome:    {label:'Dome',     make:function(){ var r = 0.2; return {s:'loft', ax:'y', n:10, r:[[0,0,0,r,r],[0,r*0.5,0,r*0.87,r*0.87],[0,r*0.85,0,r*0.53,r*0.53],[0,r,0,0,0]]}; }},
+    arch:    {label:'Half round', make:function(){ return {s:'loft', ax:'z', ang:[0,30,60,90,120,150,180], r:[[0,0,-0.2,0.2,0.2],[0,0,0.2,0.2,0.2]]}; }},
+    quarter: {label:'Quarter round', make:function(){ var k = [1,1,1,1,1,0]; return {s:'loft', ax:'z', ang:[0,22.5,45,67.5,90,225], r:[[0,0,-0.2,0.2,0.2,k],[0,0,0.2,0.2,0.2,k]]}; }}
   };
   M.SHAPE_ORDER = ['box','bev','wedge','cyl','tube','cone','plate'];
+  M.SHAPE_MORE = ['corner','incorner','pyramid','prism','hex','ball','dome','arch','quarter'];
 
   /* materials: how a piece breaks, what it salvages into and what it costs to build */
   M.MATERIALS = {
@@ -87,7 +98,9 @@
     sleep:     {label:'Sleeping spot', hint:'somewhere to sleep (bed, rear bench)'},
     headlight: {label:'Headlight',   hint:'throws light forward at night'},
     taillight: {label:'Tail light',  hint:'glows red at the back'},
-    battery:   {label:'Battery',     hint:'salvages as a car battery'}
+    battery:   {label:'Battery',     hint:'salvages as a car battery'},
+    axle:      {label:'Axle',        hint:'carries a pair of wheels at its ends; set whether it steers and whether the engine drives it'},
+    gearbox:   {label:'Gearbox',     hint:'where the driveshaft leaves the engine (behind it if there is none)'}
   };
 
   M.GROUPS = ['body','bonnet','boot','wheel'];
@@ -102,6 +115,7 @@
       setup:{wheelR:0.32, wheelW:0.2, track:0.78, axles:[1.4, -1.4], archClear:0.12, bed:null, tank:'medium', topSpeed:85},
       dmg:{seed:7, strength:1}};
     d.pieces = M.makeWheel(d, 0.32, 0.2);
+    M.makeAxle(d, 1.4, {steer:true}); M.makeAxle(d, -1.4, {driven:true});
     return d;
   };
   /* a plain wheel like the design chat's: a chamfered 8-sided tyre and a 6-sided hub, axis X, outer face +X */
@@ -283,13 +297,16 @@
   };
   /* the rig: wheel points, hinges and where smoke rises (props.js vehicleRig) */
   M.rig = function(doc, nat, sp){
-    var S = doc.setup, t = S.track, r = S.wheelR, a = S.axles;
-    var rig = {wheels:[[-t, r, a[1]], [-t, r, a[0]], [t, r, a[1]], [t, r, a[0]]], wheelAxis:'x',
+    var S = doc.setup, t = S.track, r = S.wheelR, a = S.axles, AX = M.axlesOf ? M.axlesOf(doc) : [];
+    var wheels = AX.length ? [] : [[-t, r, a[1]], [-t, r, a[0]], [t, r, a[1]], [t, r, a[0]]];
+    if (AX.length){ var asc = AX.slice().sort(function(p, q){ return p.z - q.z; }); [-1, 1].forEach(function(sd){ asc.forEach(function(x){ wheels.push([r4(sd*x.track), r, r4(x.z)]); }); }); }
+    var rig = {wheels:wheels, wheelAxis:'x',
       wheelRule:'Place the wheel model at each position (turned half a turn on the left side), spin it about x; the bonnet opens about its hinge.'};
     var bo = boundsOf(nat.bonnet), bt = boundsOf(nat.boot);
     if (bo.ok){ rig.bonnetHinge = v3r([0, bo.mx[1], bo.mn[2]]); rig.bonnetAxis = 'x'; rig.smokeAt = v3r([0, bo.mx[1] + 0.08, (bo.mn[2] + bo.mx[2])/2]); }
     else rig.smokeAt = v3r([0, sp.hood + 0.08, sp.nose - 0.7]);
     if (bt.ok){ rig.bootHinge = v3r([0, bt.mx[1], bt.mx[2]]); rig.bootAxis = 'x'; rig.bootRule = 'the boot lid opens upwards about its hinge (the edge nearest the cabin)'; }
+    if (AX.length){ var DT = M.drivetrain(doc); rig.drive = {layout:DT.layout, axles:DT.axles, rule:'wheels at z of a steer axle turn to steer; wheels at z of a driven axle push the car; wheels lists every hub, left side first, back to front'}; }
     return rig;
   };
   /* the vehicle kit's mounts (a port of assets/shaped/src/kit_index.py car_mounts) */
@@ -314,8 +331,9 @@
     return Mt;
   };
   M.kitEntry = function(doc, s){
-    var S = doc.setup, wp = [];
-    s.axles.forEach(function(z){ [1,-1].forEach(function(sx){ wp.push([sx*s.track, s.wheelR, z]); }); });
+    var S = doc.setup, wp = [], AX = M.axlesOf(doc);
+    if (AX.length) AX.forEach(function(a){ [1,-1].forEach(function(sx){ wp.push([r4(sx*a.track), s.wheelR, a.z]); }); });
+    else s.axles.forEach(function(z){ [1,-1].forEach(function(sx){ wp.push([sx*s.track, s.wheelR, z]); }); });
     return {pack:'workshop', group:'car', kind:'car', wheel:{r:S.wheelR, w:S.wheelW, points:wp, archClear:S.archClear, maxR:r4(S.wheelR*1.4), stock:{tyre:S.tyre || 'road', rim:S.rim || 'steel'}},
       paintSlots:['paint1','paint2','paint3'], mounts:M.mounts(s)};
   };
@@ -397,10 +415,90 @@
     return out;
   }
 
+  /* ------------------------------------------------------------------ axles and the drivetrain
+     As Space Engineers mounts wheels on suspension blocks and Scrap Mechanic on bearings: wheels are never placed loose.
+     An axle is a block (fn 'axle'); its two ends are hubs where the design's wheel model is mounted, so moving an axle moves
+     its wheels. Each axle steers or not and is driven or not. Power runs engine -> gearbox -> driveshaft -> each driven axle
+     (Stormworks' chain); the Workshop draws the shaft and the differential and checks the chain is complete. */
+  M.axlesOf = function(doc){
+    var W = doc.setup.wheelW || 0.2;
+    return doc.pieces.filter(function(p){ return p.fn === 'axle' && p.g !== 'wheel'; }).map(function(p){
+      var len = p.d ? p.d[0] : 1.4; return {p:p, z:p.pos[2], y:p.pos[1], track:r4(len/2 + W/2), steer:!!(p.axle && p.axle.steer), driven:!!(p.axle && p.axle.driven)};
+    }).sort(function(a, b){ return b.z - a.z; });
+  };
+  M.makeAxle = function(doc, z, o){
+    o = o || {}; var S = doc.setup, t = o.track || S.track || 0.78, W = S.wheelW || 0.2;
+    return M.addPiece(doc, 'cyl', [0, S.wheelR, z], {ax:'x', d:[r4(Math.max(0.2, 2*t - W)), 0.07, 0.07], c:'underside', m:'steel', fn:'axle',
+      axle:{steer:!!o.steer, driven:!!o.driven}, name:o.name || (o.steer ? 'front axle' : 'rear axle'), hidden:!!o.hidden});
+  };
+  /* older designs kept the axles as numbers: make them axle blocks */
+  M.ensureAxles = function(doc){
+    if (doc.type && doc.type !== 'vehicle') return;
+    if (doc.pieces.some(function(p){ return p.fn === 'axle'; })) return;
+    var S = doc.setup, a = S.axles || [1.4, -1.4];
+    if (doc.from && S.drawShaft === undefined) S.drawShaft = false;   /* a stock car opened unchanged exports exactly as it was */
+    M.makeAxle(doc, a[0], {steer:true, driven:false, track:S.track, hidden:!!doc.from});
+    for (var i = 1; i < a.length; i++) M.makeAxle(doc, a[i], {steer:false, driven:true, track:S.track, hidden:!!doc.from, name:i > 1 ? 'rear axle ' + i : 'rear axle'});
+  };
+  /* the setup numbers follow the axle blocks (wheel height, front and rear positions, track) */
+  M.syncAxles = function(doc){
+    var A = M.axlesOf(doc); if (!A.length) return A;
+    A.forEach(function(a){ a.p.pos = [0, doc.setup.wheelR, a.p.pos[2]]; a.p.rot = [0, 0, 0]; a.y = doc.setup.wheelR; });
+    doc.setup.axles = A.map(function(a){ return a.z; }); doc.setup.track = A[0].track;
+    return A;
+  };
+  function centreOf(p){ var B = boundsOf(baseToNative(Object.assign(clone(p), {mx:false, mz:false, hidden:false}))); return B.ok ? {c:[(B.mn[0]+B.mx[0])/2, (B.mn[1]+B.mx[1])/2, (B.mn[2]+B.mx[2])/2], B:B} : null; }
+  M.drivetrain = function(doc){
+    var A = M.axlesOf(doc), eng = doc.pieces.filter(function(p){ return p.fn === 'engine'; })[0], gb = doc.pieces.filter(function(p){ return p.fn === 'gearbox'; })[0];
+    var out = {pieces:[], layout:'none', issues:[], axles:A.map(function(a){ return {z:a.z, track:a.track, steer:a.steer, driven:a.driven}; })};
+    var driven = A.filter(function(a){ return a.driven; }), steer = A.filter(function(a){ return a.steer; });
+    var front = A.length ? A[0].z : 0, rear = A.length ? A[A.length - 1].z : 0;
+    var df = driven.some(function(a){ return a.z === front; }), dr = driven.some(function(a){ return a.z !== front; });
+    out.layout = !driven.length ? 'none' : df && dr ? (A.length > 2 ? 'AWD' : '4WD') : df ? 'FWD' : 'RWD';
+    if (!A.length) out.issues.push(['bad', 'No axles: add an axle block (Vehicle parts) so the wheels have something to turn on.']);
+    if (A.length === 1) out.issues.push(['warn', 'Only one axle: a car needs at least two (a front and a rear).']);
+    if (A.length && !steer.length) out.issues.push(['warn', 'No axle steers: tick Steers on the front axle.']);
+    if (driven.length && !eng) out.issues.push(['bad', 'An axle is driven but there is no engine to drive it.']);
+    if (eng && A.length && !driven.length) out.issues.push(['bad', 'There is an engine but no driven axle: tick Driven on an axle.']);
+    if (!eng || !driven.length) return out;
+    var E = centreOf(eng), G;
+    if (gb){ var gc = centreOf(gb); G = gc ? gc.c : null; }
+    if (!G && E){ G = [0, E.c[1] - 0.05, E.B.mn[2] - 0.2];
+      out.pieces.push({id:'dg', g:'body', s:'bev', pos:[0, r4(G[1]), r4(G[2] + 0.1)], rot:[0,0,0], scl:[1,1,1], d:[0.3, 0.26, 0.4], c:'underside', m:'steel', name:'gearbox (drawn)'}); }
+    driven.forEach(function(a, i){
+      var D = [0, a.y, a.z];
+      out.pieces.push({id:'dd' + i, g:'body', s:'bev', pos:[0, r4(a.y), r4(a.z)], rot:[0,0,0], scl:[1,1,1], d:[0.26, 0.2, 0.22], c:'underside', m:'steel', name:'differential (drawn)'});
+      if (G && Math.abs(G[2] - D[2]) > 0.25){
+        var from = [0, G[1] - 0.08, G[2] + (D[2] < G[2] ? -0.1 : 0.1)], to = [0, D[1] + 0.02, D[2] + (D[2] < G[2] ? 0.13 : -0.13)];
+        var L = Math.hypot(to[1]-from[1], to[2]-from[2]), pitch = Math.atan2(-(to[1]-from[1]), to[2]-from[2])*180/Math.PI;
+        out.pieces.push({id:'ds' + i, g:'body', s:'loft', ax:'z', n:6, pos:[0, r4((from[1]+to[1])/2), r4((from[2]+to[2])/2)], rot:[r4(pitch), 0, 0], scl:[1,1,1], c:'steel', m:'steel', name:'driveshaft (drawn)', r:[[0,0,r4(-L/2),0.03,0.03],[0,0,r4(L/2),0.03,0.03]]});
+      }
+    });
+    return out;
+  };
+  /* blocks that do not touch the rest (Space Engineers' grids: a block must join the grid). Axles count as joined when the body is
+     within suspension reach above them. Returns the ids of loose pieces. */
+  M.loosePieces = function(doc, pieces){
+    var list = (pieces || doc.pieces).filter(function(p){ return !p.hidden && p.g !== 'wheel'; }), n = list.length; if (n < 2) return [];
+    var box = list.map(function(p){ var B = boundsOf(baseToNative(Object.assign(clone(p), {hidden:false}))); return B.ok ? B : null; }), tol = 0.012;
+    var par = list.map(function(_, i){ return i; }), find = function(i){ while (par[i] !== i){ par[i] = par[par[i]]; i = par[i]; } return i; };
+    var touch = function(a, b, extraY){ return a.mn[0] <= b.mx[0] + tol && b.mn[0] <= a.mx[0] + tol && a.mn[2] <= b.mx[2] + tol && b.mn[2] <= a.mx[2] + tol && a.mn[1] <= b.mx[1] + tol + (extraY || 0) && b.mn[1] <= a.mx[1] + tol + (extraY || 0); };
+    for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++){
+      if (!box[i] || !box[j]) continue;
+      var ax = list[i].fn === 'axle' || list[j].fn === 'axle';
+      if (touch(box[i], box[j], ax ? 0.45 : 0)){ var a = find(i), b = find(j); if (a !== b) par[a] = b; }
+    }
+    var size = {}; list.forEach(function(_, i){ var r = find(i); size[r] = (size[r] || 0) + 1; });
+    var main = Object.keys(size).sort(function(a, b){ return size[b] - size[a]; })[0];
+    return list.filter(function(_, i){ return String(find(i)) !== main; }).map(function(p){ return p.id; });
+  };
+
   /* ------------------------------------------------------------------ the finished asset */
   M.countTris = function(pcs){ return SH.count(pcs); };
   M.buildAsset = function(doc, DMG){
+    M.syncAxles(doc);
     var nat = {}; M.GROUPS.forEach(function(g){ nat[g] = M.groupNative(doc, g); });
+    var DT = M.drivetrain(doc); if (doc.setup.drawShaft !== false) DT.pieces.forEach(function(ep){ nat.body = nat.body.concat(M.toNative(ep)); });
     var sp = M.spec(doc, nat), rig = M.rig(doc, nat, sp), kit = M.kitEntry(doc, sp), F = M.functions(doc);
     var model = {body:nat.body, wheel:nat.wheel};
     if (nat.bonnet.length) model.bonnet = nat.bonnet;
@@ -418,9 +516,9 @@
     var A = {type:'vehicle', id:doc.id, name:doc.name, cls:doc.cls, author:doc.author, notes:doc.notes,
       paint:clone(doc.paint), palette:usedCustom(doc, lists),
       model:model, rig:rig, spec:sp, kit:kit,
-      functions:F, game:M.gameStats(doc, F), salvage:sal, buildCost:M.buildCost(sal),
+      functions:F, game:Object.assign(M.gameStats(doc, F), {drive:DT.layout, axles:DT.axles.length}), salvage:sal, buildCost:M.buildCost(sal),
       stats:{body:M.countTris(nat.body.concat(nat.bonnet, nat.boot)), wheel:M.countTris(nat.wheel)}};
-    A.stats.total = A.stats.body + 4*A.stats.wheel;
+    A.stats.total = A.stats.body + rig.wheels.length*A.stats.wheel;
     if (wreck){ A.wreck = wreck; A.burnt = burnt; A.rigWreck = gen.rigWreck; A.rigBurnt = gen.rigBurnt; }
     stripM(A.model); if (A.wreck){ stripM(A.wreck); stripM(A.burnt); }
     A.source = clone(doc);
@@ -443,6 +541,7 @@
     doc.cls = /pickup|flatbed/.test(name) ? 'pickup' : /van/.test(name) ? 'van' : /truck/.test(name) ? 'truck' : 'car';
     doc.from = 'props.vehicles.' + name;
     autoTag(doc, sp);
+    M.ensureAxles(doc);
     return doc;
   };
   /* guess the function parts of a car that has none: seats inside the cabin, lamps by colour, an engine under the bonnet */
@@ -522,6 +621,8 @@
   /* ------------------------------------------------------------------ checks a builder should know about */
   M.check = function(doc, A){
     var out = [], s = A.spec, S = doc.setup;
+    M.drivetrain(doc).issues.forEach(function(x){ out.push(x); });
+    var loose = M.loosePieces(doc); if (loose.length) out.push(['warn', loose.length + ' piece' + (loose.length > 1 ? 's do' : ' does') + ' not touch the rest of the vehicle (Select loose pieces on this tab).']);
     if (!doc.pieces.some(function(p){ return p.g === 'body'; })) out.push(['bad', 'There is no body yet: add a block and stretch it.']);
     if (!A.functions.engine) out.push(['bad', 'No engine: tag a piece under the bonnet as the Engine, or the car will not drive.']);
     if (!A.functions.seats.length) out.push(['bad', 'No seats: tag a seat so someone can drive it.']);

@@ -6,7 +6,7 @@ Open `workshop.html` beside `play.html` on the drive (works offline from USB or 
 
 ## What it does
 
-- **Free building from shapes.** Block, soft block, slope, cylinder, tube, cone and plate. Pick one, tap where it goes: it lands **flush on the face you tap** (face snap), snapped to the grid (½ in to 6 in, or 1 to 25 cm). Tap a piece to select it, drag a selected piece to move it (along the ground by default; lock to X, Y or Z with "Move"). Size, position and turn are exact number fields with − and + buttons.
+- **Free building from shapes.** Block, soft block, slope, cylinder, tube, cone and plate, plus **more blocks**: corner slope, inside corner, pyramid, prism, hex block, ball, dome, half round (arch) and quarter round. Pick one, tap where it goes: it lands **flush on the face you tap** (face snap), snapped to the grid (½ in to 6 in, or 1 to 25 cm). Tap a piece to select it, drag a selected piece to move it (along the ground by default; lock to X, Y or Z with "Move"). Size, position and turn are exact number fields with − and + buttons.
 - **Symmetry planes**, as in Space Engineers: left/right is on by default, front/back optional. A piece placed off a plane is mirrored and stays linked; "Mirrored copy" makes an independent opposite part.
 - **Prefabs**: save a group of pieces (a headlight cluster, a grille, a roof rack) and place it on any design. Prefabs travel inside packs.
 - **Parts of the car**: each piece belongs to the body, the bonnet (opens on its hinge) or the boot lid. The Wheel view edits one wheel; the game puts it at all four corners.
@@ -25,6 +25,20 @@ From how Tinkercad and Shapr3D do it: visible handles you grab rather than gestu
 - **Turn**: a ring per axis; drag along one to turn the piece (or the selection, about its middle). It snaps every 15 degrees, or 1 degree with the grid off.
 - Handles follow a turned piece's own sides. Blocks, slopes and cylinders change their size, tubes and cones their length or width, plates their width or height, other shapes their stretch. One drag is one undo step.
 - **Fine tuning**: every number in the panel is a slider with its value beside it. Drag the slider to try values (the view follows live, one undo step per drag); type the value for an exact one. Sliders step on the grid.
+
+## Vehicles that work like machines, and more creatures (27 October 2026)
+
+How the building games do it: Space Engineers adds the wheel automatically when you place a wheel suspension block, and decorative wheels do nothing; in Scrap Mechanic a wheel only turns on a bearing driven by an engine; Stormworks runs power engine → gearbox → driveshaft, with each part a block you connect. The Workshop now follows the same idea.
+
+- **Axles are blocks.** Wheels are never loose: each axle (Vehicle parts → Axle) carries a pair of wheels at its ends, so moving an axle moves its wheels and making it longer sets how far apart they are. An axle stays on the car's middle line at wheel height; it slides forward and back only. Any number of axles (six- and eight-wheel trucks).
+- **Steers and Driven.** Tick each on the axle (Piece tab) or see them all on the Car tab (Axles and drive). The **Steer** toggle below the view turns the steering wheels so you can see them.
+- **The power chain.** Engine (a piece with the Engine job) → gearbox (Vehicle parts → Gearbox, or one is drawn behind the engine) → driveshaft → a differential on each driven axle. The Workshop draws the shaft and differentials (they go into the game too, unless you untick it) and checks the chain: no axles, one axle, nothing steers, a driven axle with no engine, an engine with nothing driven. The drive is worked out as front-wheel, rear-wheel, four-wheel or all-wheel drive.
+- **Joined up.** As in Space Engineers, where a block must join the grid: the Check tab warns when a piece touches nothing else, and **Select loose pieces** picks them. Axles count as joined when the body is within suspension reach above them.
+- Older designs and the design chat's cars get axle blocks automatically (front steers, rear driven); a stock car opened unchanged still exports exactly as it was.
+- **Creatures**: ten starting bodies (four legs, heavy four legs, small hopper, two legs, bird with wings, fish, snake, spider with eight legs, insect with six legs and wings, low crawler), each with bones and idle, walk, attack and dead clips (birds and insects also fly, fish swim).
+- **Food and temper** (Model tab): diet (plants only, plants and meat, meat only, scraps and carrion), what it eats (grass, crops, berries, seeds, insects, fish, small animals, large animals, people, carrion, rubbish), temper (timid, docile, curious, defensive, territorial, aggressive, predator, pack hunter), when it is out (day, night, dawn and dusk, any time), group size, flies, lives in water, can be tamed; plus health, bite, walking and running speed in mph and when it runs off. The game's plain-words `behaviour` line is written from these. Checks catch a plant eater that eats meat, a hunter with nothing to hunt, an attacker with no bite.
+
+Pack additions (all optional, older readers ignore them): vehicle `rig.wheels` lists every hub (left side first, back to front), `rig.drive {layout: FWD|RWD|4WD|AWD|none, axles:[{z, track, steer, driven}]}`, `game.drive` and `game.axles`; creature `info` gains `diet, eats[], temper, active, group [min, max], flies, water, tameable`.
 
 ## Files
 
@@ -67,12 +81,12 @@ asset (type 'vehicle'):
   paint      {paint1, paint2, paint3}        the car's default paint (use as the colour override, like the taxi and police repaints)
   palette    {x7a2a24: '#7a2a24', ...}       the pack's own colours, named x + hex so they never clash
   model      {body, bonnet, boot, wheel, damage{the ten looks}}     exactly as props.js models.vehicles[name]
-  rig        {wheels, wheelAxis, bonnetHinge, bonnetAxis, bootHinge, bootAxis, smokeAt, wheelRule, bootRule}   as props.js vehicleRig
+  rig        {wheels, wheelAxis, bonnetHinge, bonnetAxis, bootHinge, bootAxis, smokeAt, wheelRule, bootRule, drive}   as props.js vehicleRig; wheels lists every axle's hubs; drive {layout, axles[{z, track, steer, driven}]}
   spec       {length, width, wheelR, wheelW, axles, track, archClear, ground, roof{y,z,w,d}, hood, nose, tail, bumperY, glassFront, cabBack, bed?}   as vehicleSpec
   kit        the vehicle kit entry (wheel, paintSlots, mounts): tyres, rims and the 190 bolt-on parts fit it like the stock cars
   wreck, burnt  {body, bonnet, wheel}; rigWreck, rigBurnt (with sitDrop)
   functions  {seats[[x,y,z]...] (driver first), engine [x,y,z], tanks, storageL, sleep, headlights[], taillights[], battery, engineL}
-  game       {seats, driveable, rangeMiles, cargoSlots, sleeps, topSpeedMph, power: none|weak|normal|strong}
+  game       {seats, driveable, rangeMiles, cargoSlots, sleeps, topSpeedMph, power: none|weak|normal|strong, drive: FWD|RWD|4WD|AWD|none, axles}
   salvage    {scrap, glass, plastic, cloth, wood, tyre, car_parts, car_battery, fuel}   what taking it apart gives
   buildCost  the same items: what building it from the design costs
   stats      {body, wheel, total} triangles

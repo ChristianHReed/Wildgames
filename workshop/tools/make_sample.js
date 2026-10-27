@@ -12,7 +12,8 @@ doc.id = 'ozark_rambler'; doc.name = 'Ozark Rambler'; doc.author = 'AfterStreet 
 doc.notes = 'A 1970s wood-panelled family wagon, built from Workshop shapes only.';
 doc.paint = {paint1:'#7d8a6a', paint2:'#e2ddd2', paint3:'#3e5a7a'};
 doc.setup = {wheelR:0.33, wheelW:0.21, track:0.79, axles:[1.45, -1.5], archClear:0.12, bed:null, tank:'large', topSpeed:80};
-doc.pieces = M.makeWheel(doc, 0.33, 0.21);
+doc.pieces = M.makeWheel(doc, 0.33, 0.21).filter(function(p){ return p.fn !== 'axle'; });
+M.makeAxle(doc, 1.45, {steer:true, name:'front axle'}); M.makeAxle(doc, -1.5, {driven:true, name:'rear axle'});   /* rear-wheel drive, like the wagons it copies */
 function add(s, pos, o){ return M.addPiece(doc, s, pos, o); }
 var W = '#8a5a34';   /* the wood panel, our own colour */
 doc.colours[M.customName(W)] = W;
