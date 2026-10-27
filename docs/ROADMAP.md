@@ -444,3 +444,4 @@ These pieces are still plain coloured boxes. The Furniture Kit now covers the ki
 - [x] Content: gap assessment and three packs: rail (30), civic (29), barriers and survival works (28) (docs/ART_GAPS.md)
 | 0.114.35 | The three pages link to each other: the game's Maps tab opens the Maps Builder and the Workshop, the Builder header has Workshop and Game links, the Workshop header has Game and Maps Builder links. Two one-line edits in builder.html and workshop.html (owned by the map and Workshop chats). | done |
 | 0.114.36 | The Workshop tab on the game's start screen gets Open the full Workshop and Open the Maps Builder buttons (the Maps tab already had both). | done |
+| 0.114.37 | The Workshop link moved from the start screen's Maps tab to the Workshop tab; the Maps tab keeps the Maps Builder link. | done |

@@ -210,3 +210,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.34: walk outside the fence: deer, rabbits, turkeys, squirrels and foxes appear at a distance and move away as you near; crouch to creep up. Hit one with a bat or gun, hold J at the carcass: raw meat and a hide. Eat meat beside a campfire: cooked, +warmth. Eat it raw: may poison you.
 - 0.114.35: from the game's Maps tab open the Builder, from the Builder open the Workshop, from the Workshop open the Maps Builder and the Game; every link lands on the right page.
 - 0.114.36: on the start screen, the Maps tab and the Workshop tab each show buttons that open the Workshop and the Maps Builder.
+- 0.114.37: the Maps tab has only the Maps Builder button; the Workshop tab has the Open the full Workshop button.
