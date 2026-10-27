@@ -203,3 +203,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.27: walk into several houses, shops, clinics and warehouses: rooms open onto each other through doors, nothing blocks a doorway, the kitchen/bedroom/stock rooms are furnished. Add ?oldplan to the address: the old random rooms return. Report any room you cannot reach.
 - 0.114.28: a pack with a held-item design shows it in the Items panel (K) under Content packs, with its icon. No pack has one yet; test once the Workshop chat makes one.
 - 0.114.29: a Workshop weapon dropped for a guest or carried to another world keeps its icon.
+- 0.114.30: open workshop.html from the site: faces push and pull, move arrows, snapping turn rings, sliders on every number.
