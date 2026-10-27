@@ -181,6 +181,7 @@ One list for both documents. The design page ([DESIGN.md](DESIGN.md)) says what 
 | 0.114.17 | Storm drains in the kerb about every 85 m on every street, alternating sides (about 3,500 in Springfield), and speed humps on some quiet streets (about 150). The humps are only 7 cm high and I could not see them from the ground, so check them from a car. Still to do from the world kit: kerbs and ramps, bike lanes, sidewalk materials, waterfalls, ore. |
 | 0.114.18 | Multiplayer gaps, first part: the host now sends guests where its survivors are (position, facing, walking, waiting or following, riding in which vehicle, attacking), so guests see recruits move, ride and fight; and a vehicle you leave tells everyone its health, flat tyre and fitted parts (not only position and fuel). Checked by feeding a snapshot into a single game, not with two real players. Still to do: guests hearing the host's alien awareness and stalker trail, boats and bikes mid-drive, guests recruiting and talking to survivors, supply chest and boot sync. |
 | 0.114.19 | Two new skills: Mechanics (repairs heal more, XP from fixing) and First aid (bandages and medkits heal more). Skill books now cover all seven. Old saves load with both at 0. |
+| 0.114.20 | Searched loot setting on the start screen: refills after about five days (as before) or never comes back. |
 | 0.99.2 | Ladders. Build menu, Holes: 3 wood and 1 scrap puts a ladder against the wall of a pit (face the wall); within 0.9 m of it you climb out of any depth. Saved and shared like other building. Plain wood model for now. |
 | 0.99.1 | Pits hurt. Stepping off the edge of a hole drops you; a fall of more than 2 m costs health (11 per extra metre) and from 3.5 m can break a leg. Aliens and zombies that drop into a pit take damage by the depth and then cannot climb out. Next: ladders and covers, touch controls, held shovel art. |
 | 0.99.0 | Soil with mass: digging. The ground stays smooth on top and has soil below in 0.5 m blocks, 6 m deep, stored only where dug or filled (`engine/dig.js`). With a shovel, look down at open ground and hold E to dig a 1 m square half a metre deeper (soil, and stone below 3 m); Shift+E puts soil back. The grass is cut away over a hole and the hole gets floor and walls of soil in layers (topsoil, subsoil, clay, limestone). People and aliens follow the new ground; a step up of more than 0.9 m stops them (2.1 m with a jump), so a pit holds what walks in. Not on roads, in buildings, in water or under trees. Saved with the world and shared in multiplayer. Shovels are found in houses and industrial buildings, and the supply chest has one. Next: traps, ladders and covers, held shovel art, touch controls. |
@@ -375,7 +376,7 @@ Ticked items are in the game.
 - [x] Sound (music still to do)
 - [x] Other survivors to recruit, with needs and jobs (first part, 0.49.0)
 - [x] Horde nights: packs leave the nests every third night and sweep the town (base defence tuning still to do, 0.50)
-- [ ] Loot that does not come back
+- [x] Loot that does not come back (0.114.20)
 - [x] Vehicle repair (the safe-house truck), a truck bed to store gear, sleeping in the cab
 - [ ] Siphoning fuel, car trunks, headlights
 - [ ] Skill books and more skills

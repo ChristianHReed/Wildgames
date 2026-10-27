@@ -351,6 +351,7 @@
         <label>Head bob when walking<select id="bobS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Camera effects (sprint zoom, hit shake, weapon sway)<select id="fxS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Goal, for a new world<select id="scen"></select></label>
+        <label>Searched loot<select id="lootRule"><option value="refill">Refills after about five days</option><option value="never">Never comes back</option></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
       </div>
     </div>
@@ -438,7 +439,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.19</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.20</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -461,7 +462,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.19', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.20', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -855,7 +856,7 @@ function plantE(o){
 var GOTB = [], RESTOCK = 5, restockT = 0;
 function gotMark(b, i){ if (!b.gotT) b.gotT = {}; b.gotT[i] = time; if (GOTB.indexOf(b) < 0) GOTB.push(b); }
 function restockTick(dt){
-  restockT -= dt; if (restockT > 0) return; restockT = 20;
+  restockT -= dt; if (restockT > 0) return; restockT = 20; if (el('lootRule').value === 'never') return;
   for (var n = GOTB.length - 1; n >= 0; n--){ var b = GOTB[n], any = false, near = !b.gone && Math.abs(b.cx - P.x) < 90 && Math.abs(b.cy - P.y) < 90;
     for (var i in b.gotT){ if (time - b.gotT[i] > RESTOCK*DAY && !near){ delete b.got[i]; delete b.gotT[i]; if (b.int && b.int.conts) b.int.conts.forEach(function(c){ if (String(c.i) === String(i)) c.stash = null; }); } else any = true; }
     if (!any) GOTB.splice(n, 1); }
@@ -5346,7 +5347,7 @@ el('pname').addEventListener('input', function(){ syncChar(false); });
 ['cBuild', 'cSkin', 'cShirt', 'cPants', 'cHat', 'cBody', 'cHair', 'cHairC', 'cFace', 'cTop', 'cBot', 'cShoe', 'cAcc'].forEach(function(id){ el(id).addEventListener('input', drawPrev); });
 (function(){
   var n = lsGet('lastblock:name'), q = lsGet('lastblock:quality'), vr = lsGet('lastblock:vrule');
-  if (n) el('pname').value = n; if (vr) el('vRule').value = vr;
+  if (n) el('pname').value = n; if (vr) el('vRule').value = vr; var lr = lsGet('lastblock:loot'); if (lr) el('lootRule').value = lr; el('lootRule').addEventListener('change', function(){ lsSet('lastblock:loot', el('lootRule').value); });
   el('vRule').addEventListener('change', function(){ lsSet('lastblock:vrule', el('vRule').value); });
   syncChar(false);
   var dl0 = lsGet('lastblock:daylen'); if (dl0 && el('dayLen').querySelector('option[value="' + dl0 + '"]')) el('dayLen').value = dl0;
