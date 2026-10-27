@@ -48,17 +48,18 @@
   function installModel(SH, pack, a){
     var t = a.target || {}, PK = SH[t.pack];
     if (!PK || !PK.models){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no pack ' + t.pack + ' to put it in'); return; }
-    var G = PK.models[t.group] = PK.models[t.group] || {}, key = t.name;
+    /* a whole model (a bike, a boat, a machine) has no name: it is models[group] itself */
+    var whole = t.name == null, G = whole ? PK.models : (PK.models[t.group] = PK.models[t.group] || {}), key = whole ? t.group : t.name;
     if (a.mode === 'add' && G[key] !== undefined){ key = P.keyOf(pack, a); }
-    if (P.installed[t.pack + '.' + t.group + '.' + key]) return;
+    if (P.installed[t.pack + '.' + (whole ? '' : t.group + '.') + key]) return;
     G[key] = a.value;
     (a.extra || []).forEach(function(e){
       var path = e.path.slice(0, -1), o = PK; for (var i = 0; i < path.length; i++){ o[path[i]] = o[path[i]] || {}; o = o[path[i]]; }
       o[key] = e.value;
     });
     for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
-    P.models.push({key:key, pack:t.pack, group:t.group, name:a.name, kind:a.kind, packId:pack.id, author:a.author || pack.author, points:a.points || [], stats:a.stats || {}});
-    P.installed[t.pack + '.' + t.group + '.' + key] = true;
+    P.models.push({key:key, pack:t.pack, group:whole ? null : t.group, whole:whole, name:a.name, kind:a.kind, packId:pack.id, author:a.author || pack.author, points:a.points || [], stats:a.stats || {}});
+    P.installed[t.pack + '.' + (whole ? '' : t.group + '.') + key] = true;
   }
   P.install = function(SH){
     SH = SH || root.SHAPED; if (!SH || !SH.props) { P.errors.push('props.js must load before packs are installed'); return P; }

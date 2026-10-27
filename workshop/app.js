@@ -86,11 +86,17 @@
 
   /* ---------------------------------------------------------------- 3D scene */
   var view, meshCache = {};
-  function colourFn(){ return M.colourOf(S.doc, PAL); }
+  /* cars use the props palette; any other model uses its own pack's palette, colour slots and shading */
+  function pal(){ return isModel() ? M.modelPalette(SH, S.doc) : PAL; }
+  function colourFn(){
+    if (!isModel()) return M.colourOf(S.doc, PAL);
+    var P = pal(), dk = M.modelDarker(SH, S.doc);
+    return function(name){ var c = M.colourHex(S.doc, P, name), rgb = SH.hex(c.hex); return c.dark ? rgb.map(function(v){ return v*dk; }) : rgb; };
+  }
   function nativesOf(p){ return M.toNativeAlways(p); }
   /* game pieces -> triangles (with lit flag in alpha), cached by the piece's JSON */
   function trisOf(pcs, key){
-    var k = key ? key + JSON.stringify(S.doc.paint) + JSON.stringify(S.doc.colours) : null;
+    var k = key ? key + JSON.stringify(S.doc.paint) + JSON.stringify(S.doc.colours) + JSON.stringify(S.doc.slotColours || null) + (S.doc.target ? S.doc.target.pack : '') : null;
     if (k && meshCache[k]) return meshCache[k];
     var cf = colourFn(), lit = [], glo = [];
     pcs.forEach(function(pc){ (pc.glow ? glo : lit).push(pc); });
@@ -489,7 +495,7 @@
     h += '<div class="card"><h3>Turn (degrees)</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return num(a, p.rot[i], 'deg', function(v){ edit(function(q){ q.rot[i] = v; }); }, {ax:a}); }).join('') + '</div>' +
       '<div class="row"><button class="alt sm" data-a="turnY">Quarter turn</button><button class="alt sm" data-a="unturn">Square up</button></div>' +
       (p.rot[0] || p.rot[2] || (p.rot[1] % 90) ? '<p class="muted">A turn that is not a quarter turn about Y is saved as a shaped piece, exactly as you see it.</p>' : '') + '</div>';
-    h += '<div class="card"><h3>Look</h3><div class="row"><label class="l">Colour</label><button class="sw" style="background:' + esc(M.colourHex(S.doc, PAL, p.c).hex) + '" data-a="toPaint"></button><span class="muted">' + esc(colourLabel(p.c)) + '</span>' +
+    h += '<div class="card"><h3>Look</h3><div class="row"><label class="l">Colour</label><button class="sw" style="background:' + esc(M.colourHex(S.doc, pal(), p.c).hex) + '" data-a="toPaint"></button><span class="muted">' + esc(colourLabel(p.c)) + '</span>' +
       '<label><input type="checkbox" data-k="dark"' + (/_D$/.test(p.c) ? ' checked' : '') + '>Shade</label></div>' +
       '<div class="swatches">' + quickSwatches(p.c) + '</div>' +
       '<div class="row"><label><input type="checkbox" data-k="glow"' + (p.glow ? ' checked' : '') + '>Glows (lamps)</label></div></div>';
@@ -541,7 +547,7 @@
   var QUICK = ['paint1','paint2','paint3','glass','glassL','chrome','black','white','underside','tyre','hub','head','tail','lamp','seat','plastic','rust','metal','steel','plateW'];
   function quickSwatches(cur){
     var list = QUICK.concat(Object.keys(S.doc.colours));
-    return list.map(function(c){ return '<button class="sw' + (c === cur ? ' on' : '') + '" title="' + esc(colourLabel(c)) + '" style="background:' + esc(M.colourHex(S.doc, PAL, c).hex) + '" data-a="col" data-c="' + esc(c) + '"></button>'; }).join('') +
+    return list.map(function(c){ return '<button class="sw' + (c === cur ? ' on' : '') + '" title="' + esc(colourLabel(c)) + '" style="background:' + esc(M.colourHex(S.doc, pal(), c).hex) + '" data-a="col" data-c="' + esc(c) + '"></button>'; }).join('') +
       '<button class="alt sm" data-a="toPaint">More…</button>';
   }
   function colourLabel(c){ c = String(c).replace(/_D$/, ''); return {paint1:'Paint 1', paint2:'Paint 2', paint3:'Paint 3'}[c] || (M.isCustom(c) ? 'Your colour #' + c.slice(1) : c); }
@@ -583,12 +589,18 @@
   function panelPaint(){
     var d = S.doc, sel = selected(), cur = sel.length === 1 ? sel[0].c : S.brush;
     var h = '<span class="stamp">Paint</span><p>' + (sel.length ? 'Tap a colour to paint the selected piece' + (sel.length > 1 ? 's' : '') + '.' : 'Tap a colour to use it for new pieces.') + '</p>';
-    h += '<div class="card"><h3>The car\'s paint</h3><p class="muted">Pieces in Paint 1, 2 or 3 take these colours. Players can repaint them in the game; found cars come in other colours.</p>' +
+    if (!isModel()) h += '<div class="card"><h3>The car\'s paint</h3><p class="muted">Pieces in Paint 1, 2 or 3 take these colours. Players can repaint them in the game; found cars come in other colours.</p>' +
       ['paint1','paint2','paint3'].map(function(k){ return '<div class="row"><button class="sw' + (cur === k ? ' on' : '') + '" style="background:' + esc(d.paint[k]) + '" data-a="col" data-c="' + k + '"></button><label class="l">' + colourLabel(k) + '</label><input type="color" data-k="paint" data-slot="' + k + '" value="' + esc(d.paint[k]) + '"></div>'; }).join('') + '</div>';
     h += '<div class="card"><h3>Your colours</h3><div class="swatches">' + Object.keys(d.colours).map(function(c){ return '<button class="sw' + (cur === c ? ' on' : '') + '" style="background:' + esc(d.colours[c]) + '" data-a="col" data-c="' + esc(c) + '"></button>'; }).join('') +
       '</div><div class="row"><input type="color" id="newCol" value="#6a7a5a"><button class="alt sm" data-a="addCol">Add colour</button></div><p class="muted">The game shares one palette; your own colours travel inside the pack.</p></div>';
-    var keys = Object.keys(PAL).filter(function(k){ return !/^paint/.test(k); });
-    h += '<div class="card"><h3>Game palette</h3><div class="swatches">' + keys.map(function(c){ return '<button class="sw' + (cur === c ? ' on' : '') + '" title="' + esc(c) + '" style="background:' + esc(PAL[c]) + '" data-a="col" data-c="' + esc(c) + '"></button>'; }).join('') + '</div></div>';
+    var PL = pal(), keys = Object.keys(isModel() ? ((SH[S.doc.target.pack] || {}).palette || PL) : PL).filter(function(k){ return !/^paint/.test(k); });
+    if (isModel()){
+      var used = {}; S.doc.pieces.forEach(function(p){ var n = String(p.c).replace(/_D$/, ''); if (/^[A-Z][A-Z0-9_]*$/.test(n)) used[n] = 1; });
+      var sl = Object.keys(used).concat(Object.keys(S.doc.slotColours || {})).filter(function(v, i, a){ return a.indexOf(v) === i; });
+      if (sl.length) h += '<div class="card"><h3>Colour slots</h3><p class="muted">The game fills these (a bike\'s paint, a wall\'s colour, the survivor\'s skin). Pick a colour to preview with; the model keeps the slot.</p>' +
+        sl.map(function(k){ var hx = PL[k] || '#888888'; return '<div class="row"><button class="sw' + (cur === k ? ' on' : '') + '" style="background:' + esc(hx) + '" data-a="col" data-c="' + esc(k) + '"></button><label class="l">' + esc(k) + '</label><input type="color" data-k="slotcol" data-slot="' + esc(k) + '" value="' + esc(/^#[0-9a-f]{6}$/i.test(hx) ? hx : '#888888') + '"></div>'; }).join('') + '</div>';
+    }
+    h += '<div class="card"><h3>' + (isModel() ? esc(S.doc.target.pack) + ' palette' : 'Game palette') + '</h3><div class="swatches">' + keys.map(function(c){ return '<button class="sw' + (cur === c ? ' on' : '') + '" title="' + esc(c) + '" style="background:' + esc(PL[c]) + '" data-a="col" data-c="' + esc(c) + '"></button>'; }).join('') + '</div></div>';
     return h;
   }
   function stateLabel(k){ return {body_crumple_light:'Body, light crumple', body_crumple_heavy:'Body, heavy crumple', body_bumper_bent:'Body, bent bumper', bonnet_crumple_light:'Bonnet, light crumple', bonnet_crumple_heavy:'Bonnet, heavy crumple', bonnet_buckled:'Bonnet, buckled',
@@ -718,6 +730,7 @@
     bed:function(t){ setup(function(st){ var sp = asset().spec; st.bed = t.checked ? {y:0.75, z:r4(sp.tail + 0.9), w:r4(Math.min(1.6, sp.width - 0.15)), d:1.6} : null; }); },
     tank:function(t){ setup(function(st){ st.tank = t.value; }); },
     paint:function(t){ commit(); S.doc.paint[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
+    slotcol:function(t){ commit(); S.doc.slotColours = S.doc.slotColours || {}; S.doc.slotColours[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
     dstr:function(t){ commit(); S.doc.dmg.strength = +t.value; changed(true); }
   };
   function retube(p, ax){
@@ -771,10 +784,12 @@
   function stockPack(name){
     var box = $('modalBox'); box.innerHTML = '<h2>' + esc(name) + '</h2><p>Loading…</p>';
     M.loadStock([name], 'assets/shaped/', function(){
-      var idx = M.stockIndex(name), groups = Object.keys(idx), total = 0; groups.forEach(function(g){ total += idx[g].length; });
+      var idx = M.stockIndex(name), groups = Object.keys(idx), total = 0; groups.forEach(function(g){ total += idx[g] ? idx[g].length : 1; });
       if (!groups.length){ box.innerHTML = '<h2>' + esc(name) + '</h2><p>This pack has no models to open (or could not load).</p><div class="row"><button class="alt sm" data-m="stockBrowser">Back</button></div>'; return; }
       var h = '<h2>' + esc(name) + ' <span class="muted">' + total + ' models</span></h2><div class="row"><input class="grow" id="stockFilter" type="text" placeholder="Filter by name"><button class="alt sm" data-m="stockBrowser">Back</button><button class="alt sm" data-m="close">Close</button></div><div class="list" id="stockList" style="max-height:52vh;overflow:auto">';
-      groups.forEach(function(g){ h += '<div class="muted" style="margin-top:6px">' + esc(g) + '</div>' + idx[g].map(function(n){ return '<div class="it stk" data-n="' + esc(n.toLowerCase()) + '"><span class="nm">' + esc(n.replace(/_/g, ' ')) + '</span><button class="alt sm" data-m="stockOpen" data-p="' + esc(name) + '" data-g="' + esc(g) + '" data-n="' + esc(n) + '">Open a copy</button></div>'; }).join(''); });
+      var wholes = groups.filter(function(g){ return !idx[g]; });
+      if (wholes.length) h += '<div class="muted" style="margin-top:6px">whole models</div>' + wholes.map(function(g){ return '<div class="it stk" data-n="' + esc(g.toLowerCase()) + '"><span class="nm">' + esc(g.replace(/_/g, ' ')) + '</span><button class="alt sm" data-m="stockOpen" data-p="' + esc(name) + '" data-g="' + esc(g) + '" data-n="">Open a copy</button></div>'; }).join('');
+      groups.filter(function(g){ return idx[g]; }).forEach(function(g){ h += '<div class="muted" style="margin-top:6px">' + esc(g) + '</div>' + idx[g].map(function(n){ return '<div class="it stk" data-n="' + esc(n.toLowerCase()) + '"><span class="nm">' + esc(n.replace(/_/g, ' ')) + '</span><button class="alt sm" data-m="stockOpen" data-p="' + esc(name) + '" data-g="' + esc(g) + '" data-n="' + esc(n) + '">Open a copy</button></div>'; }).join(''); });
       h += '</div>'; box.innerHTML = h;
       var f = $('stockFilter'); if (f) f.addEventListener('input', function(){ var q = f.value.trim().toLowerCase().replace(/ /g, '_'); [].slice.call(document.querySelectorAll('#stockList .stk')).forEach(function(el){ el.classList.toggle('hidden', !!q && el.dataset.n.indexOf(q) < 0); }); });
     });
@@ -787,7 +802,7 @@
     blankKind:function(b){ saveDraft(); var d = M.blankOfKind(b.dataset.k, uniqueId('my_' + b.dataset.k)); d.name = 'My ' + M.KINDS[b.dataset.k].label.toLowerCase(); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); },
     stockBrowser:function(){ stockBrowser(); },
     stockPack:function(b){ stockPack(b.dataset.n); },
-    stockOpen:function(b){ var pk = b.dataset.p, g = b.dataset.g, n = b.dataset.n; saveDraft(); try { var d = M.importModel(SH, pk, g, n); d.id = uniqueId(d.id); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); toast('Opened a copy of ' + pk + '.' + g + '.' + n + ' (' + d.pieces.length + ' pieces). The game\'s own model is not changed.'); } catch (e){ toast('Could not open it: ' + e.message); } },
+    stockOpen:function(b){ var pk = b.dataset.p, g = b.dataset.g, n = b.dataset.n || null; saveDraft(); try { var d = M.importModel(SH, pk, g, n); d.id = uniqueId(d.id); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); toast('Opened a copy of ' + pk + '.' + g + (n ? '.' + n : '') + ' (' + d.pieces.length + ' pieces). The game\'s own model is not changed.'); } catch (e){ toast('Could not open it: ' + e.message); } },
     stock:function(b){ saveDraft(); var d = M.fromStock(PROPS, b.dataset.n); d.id = uniqueId(d.id); setDoc(d); closeModal(); toast('Opened a copy of the ' + b.dataset.n.replace(/_/g, ' ') + '. Pieces marked "inside" are its seats, engine, tank and boot space.'); },
     exportSel:function(){ var ids = [].slice.call(document.querySelectorAll('.pk:checked')).map(function(i){ return i.value; }); if (!ids.length) return toast('Tick at least one design.'); exportDialog(ids); },
     import:function(){ $('fileIn').click(); },

@@ -51,6 +51,7 @@
     for (var k in P){
       if (k === 'models' || k === 'palette' || k === 'stats') continue;
       var v = P[k]; if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
+      if (k === 'darker') continue;
       if (own.call(v, name)) out.push({path:[k, name], value:clone(v[name])});
       else if (v[group] && typeof v[group] === 'object' && !Array.isArray(v[group]) && own.call(v[group], name)) out.push({path:[k, group, name], value:clone(v[group][name])});
     }
@@ -69,16 +70,21 @@
     if (value && typeof value === 'object'){ var o = {}; for (var k in value) o[k] = splitLayout(value[k], path.concat(k), parts, pieces, doc); return o; }
     return value;
   }
-  /* shaped = window.SHAPED; the model is shaped[pack].models[group][name] */
+  /* packs whose groups are whole models (a bike is models.bicycle_city = {body, bars, crank, wheel}); and groups that are one bare piece list (power) */
+  M.WHOLE_PACKS = {bikes:1, boats:1, machines:1};
+  M.isWholeGroup = function(shaped, pack, group){ var G = shaped[pack] && shaped[pack].models && shaped[pack].models[group]; return !!G && (!!M.WHOLE_PACKS[pack] || isPieceList(G)); };
+  /* shaped = window.SHAPED; the model is shaped[pack].models[group][name], or the whole group when name is null */
   M.importModel = function(shaped, pack, group, name){
-    var P = shaped[pack], value = P && P.models && P.models[group] && P.models[group][name];
-    if (value == null) throw new Error('no model ' + pack + '.' + group + '.' + name);
-    var doc = {format:'afterstreet-workshop', v:2, type:'model', id:name + '_copy', name:name.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }) + ' (copy)', author:'', licence:'MIT', notes:'',
-      kind:M.kindOf(pack, group), target:{pack:pack, group:group, name:name}, from:pack + '.' + group + '.' + name, _n:0};
+    var P = shaped[pack], whole = name == null, value = P && P.models && P.models[group] && (whole ? P.models[group] : P.models[group][name]);
+    if (value == null) throw new Error('no model ' + pack + '.' + group + (whole ? '' : '.' + name));
+    var key = whole ? group : name;
+    var doc = {format:'afterstreet-workshop', v:2, type:'model', id:key + '_copy', name:key.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }) + ' (copy)', author:'', licence:'MIT', notes:'',
+      kind:M.kindOf(pack, group), target:{pack:pack, group:group, name:whole ? null : name}, from:pack + '.' + group + (whole ? '' : '.' + name), _n:0};
     var parts = {}, pieces = [];
     doc.layout = splitLayout(value, [], parts, pieces, doc);
     doc.parts = parts; doc.pieces = pieces; doc.points = []; doc.colours = {}; doc.states = {};
-    doc.extra = extrasFor(shaped, pack, group, name);
+    doc.extra = extrasFor(shaped, pack, group, whole ? group : name);
+    doc.slotColours = M.slotDefaults(shaped, pack, group, whole ? group : name);
     delete doc._n;
     /* a grip point or hinge the pack already records becomes a visible point */
     M.pointsFromExtra(doc);
@@ -112,11 +118,59 @@
   /* points the pack already keeps in its own tables */
   function extraOf(doc, table){ var r = null; (doc.extra || []).forEach(function(e){ if (e.path[0] === table) r = e; }); return r; }
   M.extraOf = extraOf;
+  /* points the pack already keeps in its own tables; each remembers where it came from (src) so a moved point is written back.
+     src: {t: table, i: index in a list (or null), f: field of an object (or null)} */
+  function vec3(v){ return Array.isArray(v) && v.length === 3 && v.every(function(x){ return typeof x === 'number'; }); }
+  function addFrom(doc, name, kind, pos, dir, src){ var p = M.addPoint(doc, name, kind, pos, dir); p.src = src; return p; }
   M.pointsFromExtra = function(doc){
-    var mv = extraOf(doc, 'moving'), vr = extraOf(doc, 'vehicleRig');
-    if (mv) (Array.isArray(mv.value) ? mv.value : [mv.value]).forEach(function(m, i){ if (m && m.hinge) M.addPoint(doc, 'hinge_' + (m.piece || i), 'hinge', m.hinge, m.axis === 'x' ? [1, 0, 0] : m.axis === 'z' ? [0, 0, 1] : [0, 1, 0]); });
-    if (vr){ var r = vr.value; (r.wheels || []).forEach(function(w, i){ M.addPoint(doc, 'wheel_' + i, 'socket', w); }); if (r.bonnetHinge) M.addPoint(doc, 'bonnet_hinge', 'hinge', r.bonnetHinge, [1, 0, 0]); if (r.smokeAt) M.addPoint(doc, 'smoke', 'smoke', r.smokeAt, [0, 1, 0]); }
+    var T = function(t){ var e = extraOf(doc, t); return e ? e.value : null; };
+    var mv = T('moving');
+    if (mv) (Array.isArray(mv) ? mv : [mv]).forEach(function(m, i){ if (m && vec3(m.hinge)) addFrom(doc, 'hinge_' + (m.piece || i), 'hinge', m.hinge, m.axis === 'x' ? [1, 0, 0] : m.axis === 'z' ? [0, 0, 1] : [0, 1, 0], {t:'moving', i:Array.isArray(mv) ? i : null, f:'hinge'}); });
+    var vr = T('vehicleRig');
+    if (vr){ (vr.wheels || []).forEach(function(w, i){ if (vec3(w)) addFrom(doc, 'wheel_' + i, 'socket', w, [1, 0, 0], {t:'vehicleRig', f:'wheels', i:i}); });
+      ['bonnetHinge', 'bootHinge', 'doorHinge'].forEach(function(k){ if (vec3(vr[k])) addFrom(doc, k.replace('Hinge', '_hinge'), 'hinge', vr[k], [1, 0, 0], {t:'vehicleRig', f:k}); });
+      if (vec3(vr.smokeAt)) addFrom(doc, 'smoke', 'smoke', vr.smokeAt, [0, 1, 0], {t:'vehicleRig', f:'smokeAt'});
+      if (vec3(vr.fuelCap)) addFrom(doc, 'fuel_cap', 'socket', vr.fuelCap, [-1, 0, 0], {t:'vehicleRig', f:'fuelCap'}); }
+    /* bikes, boats and machines */
+    var one = {saddle:'saddle', helm:'tiller'}, many = {grips:'grip', pedals:'pedal', seats:'seat', wheels:'socket'};
+    Object.keys(one).forEach(function(t){ var v = T(t); if (vec3(v)) addFrom(doc, t, one[t], v, [0, 1, 0], {t:t}); });
+    Object.keys(many).forEach(function(t){ var v = T(t); if (Array.isArray(v)) v.forEach(function(q, i){ if (vec3(q)) addFrom(doc, t.replace(/s$/, '') + '_' + i, many[t], q, t === 'wheels' ? [1, 0, 0] : [0, 1, 0], {t:t, i:i}); }); });
   };
+  /* put moved points back into the tables they came from */
+  M.writePoints = function(doc, extra){
+    (doc.points || []).forEach(function(p){
+      var sr = p.src; if (!sr) return; var e = extraOf({extra:extra}, sr.t); if (!e) return;
+      var pos = p.pos.slice();
+      if (sr.f && sr.i != null){ if (Array.isArray(e.value)) e.value[sr.i][sr.f] = pos; else if (e.value[sr.f]) e.value[sr.f][sr.i] = pos; }
+      else if (sr.f){ e.value[sr.f] = pos; }
+      else if (sr.i != null){ e.value[sr.i] = pos; }
+      else e.value = pos;
+    });
+  };
+
+  /* ------------------------------------------------------------------ colours: each pack's own palette, shading and colour slots */
+  var SLOT_FALLBACK = {BODY:'#8a6a4a', SKIN:'#c99a7a', HAIR:'#4a3426', SHIRT:'#5a6a7a', PANTS:'#3e4a5a', ACC:'#9a3a30', SLEEVE:'#5a6a7a',
+    WALL:'#9fb3a6', TRIM:'#e8e0d0', FRAME:'#e8e0d0', ROOF:'#4a4446', INNER:'#d8d0bc', BASE:'#6a6a5a', DETAIL:'#7a7a6a', DETAIL2:'#5a5a4a', WATER:'#3e5a6a', WATER_L:'#5a7a8a', FOAM:'#e8ecec', LAND:'#6a7a4a'};
+  /* what the game would fill each colour slot with for this model (a preview; the exported model keeps the slot names) */
+  M.slotDefaults = function(shaped, pack, group, key){
+    var P = shaped[pack] || {}, out = {}, v;
+    if (P.paint){ v = P.paint[key] || P.paint[group]; if (typeof v === 'string') out.BODY = v; else if (v && typeof v === 'object') for (var k in v) if (/^#/.test(v[k])) out[k] = v[k]; }
+    if (P.examples){ var ex = P.examples[Object.keys(P.examples)[0]]; for (var k2 in ex) if (out[k2] == null) out[k2] = ex[k2]; }
+    if (P.seasons && P.seasons[key] && P.seasons[key].summer) for (var k3 in P.seasons[key].summer) out[k3] = P.seasons[key].summer[k3];
+    return out;
+  };
+  /* the full palette a model design is drawn with: the pack's palette, its slots, then the design's own colours */
+  M.modelPalette = function(shaped, doc){
+    var P = (doc.target && shaped[doc.target.pack]) || {}, pal = {}, k;
+    var base = (shaped.props && shaped.props.palette) || {};
+    for (k in base) pal[k] = base[k];
+    for (k in (P.palette || {})) pal[k] = P.palette[k];
+    for (k in SLOT_FALLBACK) if (pal[k] == null) pal[k] = SLOT_FALLBACK[k];
+    for (k in (doc.slotColours || {})) pal[k] = doc.slotColours[k];
+    return pal;
+  };
+  M.modelDarker = function(shaped, doc){ var P = (doc.target && shaped[doc.target.pack]) || {}; return typeof P.darker === 'number' ? P.darker : 0.78; };
+  M.SLOT_NAMES = Object.keys(SLOT_FALLBACK);
 
   /* ------------------------------------------------------------------ W1: the finished asset, and a blank design of any kind */
   M.newModelDoc = function(kind, pack, group, name){
@@ -133,9 +187,8 @@
     var value = M.exportModel(doc), pal = {};
     (function walk(o){ if (isPieceList(o)) o.forEach(function(q){ var n = String(q.c).replace(/_D$/, ''); if (CUSTOM.test(n)) pal[n] = '#' + n.slice(1); }); else if (o && typeof o === 'object' && !Array.isArray(o)) for (var k in o) walk(o[k]); })(value);
     var extra = clone(doc.extra || []);
-    /* a moving part's hinge point goes back to the pack's table */
-    var mv = extraOf({extra:extra}, 'moving');
-    if (mv && Array.isArray(mv.value)) mv.value.forEach(function(m, i){ var p = (doc.points || []).filter(function(q){ return q.kind === 'hinge' && q.name === 'hinge_' + (m.piece || i); })[0]; if (p) m.hinge = p.pos.slice(); });
+    /* points that came from the pack's tables go back to them */
+    M.writePoints(doc, extra);
     var A = {type:'model', id:doc.id, name:doc.name, kind:doc.kind, author:doc.author, notes:doc.notes, target:clone(doc.target), mode:doc.from ? 'replace' : 'add',
       value:value, extra:extra, palette:pal, points:clone(doc.points || []), parts:Object.keys(doc.parts), stats:{total:M.countModel(value)}, source:clone(doc)};
     return A;
@@ -167,7 +220,7 @@
   /* what a loaded pack holds: {group: [names]} */
   M.stockIndex = function(pack){
     var P = root.SHAPED && root.SHAPED[pack], out = {}; if (!P || !P.models) return out;
-    Object.keys(P.models).forEach(function(g){ out[g] = Object.keys(P.models[g]); }); return out;
+    Object.keys(P.models).forEach(function(g){ out[g] = M.isWholeGroup(root.SHAPED, pack, g) ? null : Object.keys(P.models[g]); }); return out;
   };
   var BLANK = {furniture:['props', 'furniture'], container:['props', 'containers'], item:['props', 'items'], held:['held', 'weapons'], building:['buildings', 'modules'],
     structure:['structures', 'structures'], plant:['flora', 'plants'], tile:['ground', 'tiles'], sign:['interiors', 'signs']};
