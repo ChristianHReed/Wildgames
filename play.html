@@ -448,7 +448,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.45</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.46</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -474,7 +474,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.45', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.46', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1147,8 +1147,8 @@ function shoot(){
 var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:'Scavenging', melee:'Melee', endur:'Endurance', build:'Building', shoot:'Marksmanship', mech:'Mechanics', aid:'First aid'};
 var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0, build:0, shoot:0, mech:0, aid:0}, cap:false};
 function okCol(c, d){ return /^#[0-9a-f]{6}$/i.test(c) ? c : d; }
-var LMAX = {hat:3, hair:5, face:7, top:7, bot:5, shoe:2};   /* 0.114.39: the highest choice of each kind; clothes from content packs raise it (svExtend) */
-function cleanLook(l){ svExtend(); l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(LMAX.hat, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(LMAX.hair, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(LMAX.face, l.face | 0)), top:Math.max(0, Math.min(LMAX.top, l.top | 0)), bot:Math.max(0, Math.min(LMAX.bot, l.bot | 0)), shoe:Math.max(0, Math.min(LMAX.shoe, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0'), gx:svOk('gear', l.gx), ow:svOk('worn', l.ow)}; }
+var LMAX = {build:2, hat:3, hair:5, face:7, top:7, bot:5, shoe:2};   /* 0.114.39: the highest choice of each kind; clothes from content packs raise it (svExtend) */
+function cleanLook(l){ svExtend(); l = l || {}; return {build:Math.max(0, Math.min(LMAX.build, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(LMAX.hat, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(LMAX.hair, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(LMAX.face, l.face | 0)), top:Math.max(0, Math.min(LMAX.top, l.top | 0)), bot:Math.max(0, Math.min(LMAX.bot, l.bot | 0)), shoe:Math.max(0, Math.min(LMAX.shoe, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0'), gx:svOk('gear', l.gx), ow:svOk('worn', l.ow)}; }
 /* 0.114.41: an extra gear piece and an outer layer chosen in the creator (names from the pack's gear and worn lists); anything the page has no such part for is dropped */
 function svOk(kind, v){ var S = window.SHAPED && SHAPED.survivor; if (!S || !S.parts) return kind === 'gear' ? '' : ''; if (Array.isArray(v)) v = v[0]; v = String(v || ''); if (!v) return ''; var P0 = S.parts[kind]; if (!P0) return ''; if (kind === 'worn' ? (P0.masculine && P0.masculine[v]) || (P0.feminine && P0.feminine[v]) : P0[v]) return (kind === 'gear' && /^(backpack|scarf|gloves)$/.test(v)) ? '' : v; return ''; }
 /* 0.114.39: clothes, hair, hats, faces and shoes made in the Workshop (survivor parts in content packs) join the creator's lists after the stock ones */
@@ -1156,7 +1156,7 @@ var SVX = {n:-1, base:null};
 function svExtend(){
   var P = window.AfterstreetPacks, S = window.SHAPED && SHAPED.survivor; if (!P || !S || !S.choices || !S.parts || !P.models) return;
   var ms = P.models.filter(function(m){ return m.pack === 'survivor' && m.path && m.path[0] === 'parts'; });
-  var pn = ms.length + (S.presets || []).length; if (pn === SVX.n) return; SVX.n = pn;
+  var pn = ms.length + (S.presets || []).length + Object.keys(S.bodyTypes || {}).length; if (pn === SVX.n) return; SVX.n = pn;
   var KIND = {top:['top', 'cTop', 'top'], bottoms:['bottoms', 'cBot', 'bot'], shoes:['shoes', 'cShoe', 'shoe'], face:['face', 'cFace', 'face'], hair:['hair', 'cHair', 'hair'], hat:['hat', 'cHat', 'hat']};
   if (!SVX.base){ SVX.base = {}; for (var k in KIND){ var s0 = document.getElementById(KIND[k][1]); if (!s0) return; SVX.base[k] = s0.options.length; } SVX.n = -1; }   /* the stock options in the page, counted once, before any pack's are added */
   SVX.n = pn;
@@ -1168,6 +1168,11 @@ function svExtend(){
     while (sel.options.length > SVX.base[sl]) sel.remove(sel.options.length - 1);
     for (var i = SVX.base[sl]; i < list.length; i++){ var bs = bodies[sl + '.' + list[i]] || [], o = document.createElement('option'); o.value = i;
       o.textContent = ((names[sl] || {})[list[i]] || list[i]) + (bs.length === 1 && bs[0] ? ' (' + (bs[0] === 'feminine' ? 'feminine' : 'masculine') + ' body only)' : '') + ' \u2022 Workshop'; sel.appendChild(o); } }
+  /* body types made in the Workshop: a size (and, optionally, its own head and hands) in the Build list */
+  var bsel = document.getElementById('cBuild'); if (bsel){ if (SVX.nb === undefined) SVX.nb = bsel.options.length; while (bsel.options.length > SVX.nb) bsel.remove(bsel.options.length - 1);
+    var bnames = S.choices.build.slice(0, 3); Object.keys(S.bodyTypes || {}).forEach(function(k){ var bt = S.bodyTypes[k]; if (!bt) return; S.builds = S.builds || {}; S.builds[k] = (bt.build || [1, 1, 1]).slice(); if (bnames.indexOf(k) < 0) bnames.push(k);
+      var o = document.createElement('option'); o.value = bnames.indexOf(k); o.textContent = k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }) + ' \u2022 Workshop'; bsel.appendChild(o); });
+    S.choices.build = bnames; LMAX.build = bnames.length - 1; }
   [['cGear', 'gear', 'gear'], ['cOuter', 'worn', 'worn']].forEach(function(g){ var sel = document.getElementById(g[0]); if (!sel) return; var v = sel.value; sel.length = 1;
     (S.choices[g[1]] || []).forEach(function(k){ if (g[1] === 'gear' ? /^(backpack|scarf|gloves)$/.test(k) : /^(trousers|thermals)$/.test(k)) return;
       var o = document.createElement('option'); o.value = k; o.textContent = k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }); sel.appendChild(o); }); sel.value = v; });
@@ -2528,7 +2533,7 @@ function svParts(PK, look){
   var P0 = PK.parts, out = {}, add = function(src){ if (!src) return; for (var b in src) (out[b] = out[b] || []).push.apply(out[b], src[b]); };
   /* clothes worn in the game (pack version 7): a sweater and a coat are layers over the creator top; trousers and thermals replace the bottoms */
   var WN = (P0.worn || {})[look.body] || {}, wl = (look.worn || []).filter(function(k){ return WN[k]; }), legs = wl.filter(function(k){ return k === 'trousers' || k === 'thermals'; })[0];
-  add(P0.body[look.body]); add(P0.top[look.body][look.top]); if (legs) add(WN[legs]); else add(P0.bottoms[look.body][look.bot]);
+  var BTY = (PK.bodyTypes || {})[look.build], BTP = BTY && BTY.parts && BTY.parts[look.body]; add(BTP || P0.body[look.body]); add(P0.top[look.body][look.top]); if (legs) add(WN[legs]); else add(P0.bottoms[look.body][look.bot]);
   wl.forEach(function(k){ if (k !== legs) add(WN[k]); }); add(P0.shoes[look.shoe]); add(P0.face[look.face]); add(P0.hair[look.hair]); add(P0.hat[look.hat]);
   if (look.gx) add(P0.gear[look.gx]); if (look.pack) add(P0.gear.backpack); if (look.scarf) add(P0.gear.scarf);
   (look.npc || []).forEach(function(k){ add(P0.npc && P0.npc[k]); });   /* a recruitable survivor's own pieces: hat, vest, bag, cane */
@@ -2570,8 +2575,8 @@ function svQueue(o, look, gy, now){
   var R = RIG[look.body], clip = pplClip(o, R), cl = R.clips[clip], sp = clip === 'run' ? 1.5 : clip === 'walk' ? 1.1 : clip === 'attack' || clip === 'shoot' ? 2.6 : clip === 'crouchwalk' ? 0.9 : clip === 'swim' ? 0.8 : 0.35;
   var t = clip.indexOf('attack') === 0 && o.swk !== undefined ? o.swk*0.999 : o.ak !== undefined && SVNEW[clip] ? Math.min(0.999, o.ak) : clip === 'throw' ? (time - (P.thrT || 0))/0.5*0.999 : clip === 'shoot' && o.shk !== undefined ? o.shk*0.999 : now*sp + (o.id || 0)*0.37, f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1];
   var qx = o.x, qy = o.y, qg = gy;
-  if (o.rd){ var rc = Math.cos(o.yaw), rs = Math.sin(o.yaw); qx += rc*o.rd[0] - rs*o.rd[2]; qy += rs*o.rd[0] + rc*o.rd[2]; qg += o.rd[1]; }   /* 0.114.44: a rider sits at the vehicle's saddle, seat or helm point */
-  SVQ.push({S:svBuild(look), R:R, f:f, x:qx, y:qy, gy:qg, yaw:o.yaw});
+  if (o.rd){ var rc = Math.cos(o.yaw), rs = Math.sin(o.yaw); qx += rc*o.rd[2] + rs*o.rd[0]; qy += rs*o.rd[2] - rc*o.rd[0]; qg += o.rd[1]; }   /* 0.114.44: a rider sits at the vehicle's saddle, seat or helm point */
+  SVQ.push({S:svBuild(look), R:R, f:f, x:qx, y:qy, gy:qg, yaw:o.yaw, hs:((SHAPED.survivor.builds[look.build] || [])[2]) || 1});
 }
 /* 0.114.44: riding poses from the clips pack. The clip's anchor gives the pelvis in the vehicle model's own frame (x right, y up, z forward), solved on a reference model; a different model of the same kind shifts it by the difference of their saddle or seat points. Returns the clip, its frame (0 to 1) and where to stand the survivor's origin, or null (the old plain pose). */
 function rideOf(v){
@@ -2601,8 +2606,8 @@ function svDraw(){
     var q = SVQ[i], M = q.R.M, lift = q.R.lift, cs = Math.cos(q.yaw), sn = Math.sin(q.yaw);
     for (var b = 0; b < q.S.bones.length; b++){
       var bo = q.S.bones[b], m0 = (q.f*nb + bo.bi)*12, a = M[m0], b1 = M[m0+1], c = M[m0+2], d = M[m0+3], e = M[m0+4], f = M[m0+5], g = M[m0+6], h = M[m0+7], k = M[m0+8], tx = M[m0+9], ty = M[m0+10], tz = M[m0+11], pp = bo.p;
-      for (var v = 0; v < bo.n; v++){ var x = pp[v*3], y = pp[v*3+1], z = pp[v*3+2], X = a*x + b1*y + c*z + tx, Y = d*x + e*y + f*z + ty, Z = g*x + h*y + k*z + tz;
-        var lx = Z, lz = -X; P1[o*3] = q.x + cs*lx - sn*lz; P1[o*3+1] = q.gy + Y + lift; P1[o*3+2] = q.y + sn*lx + cs*lz; o++; }   /* the skeleton faces +z; the game's forward is +x */
+      for (var v = 0; v < bo.n; v++){ var x = pp[v*3], y = pp[v*3+1], z = pp[v*3+2], X = (a*x + b1*y + c*z + tx)*q.hs, Y = (d*x + e*y + f*z + ty)*q.hs, Z = (g*x + h*y + k*z + tz)*q.hs;   /* 0.114.46: a body type's height scales the whole survivor about the feet */
+        var lx = Z, lz = -X; P1[o*3] = q.x + cs*lx - sn*lz; P1[o*3+1] = q.gy + Y + lift*q.hs; P1[o*3+2] = q.y + sn*lx + cs*lz; o++; }   /* the skeleton faces +z; the game's forward is +x */
       C1.set(bo.c, (o - bo.n)*4);
     }
   }
@@ -5464,9 +5469,9 @@ function pplRaw(key){
 function drawPrevShaped(){
   var cv2 = el('cPrev'), c = cv2.getContext('2d'), W2 = cv2.width, H2 = cv2.height, PK = SHAPED.survivor, look = svLook(readLook(), {pack:false, worn:{}}), parts = svParts(PK, look), all = [];
   for (var b in parts) all.push.apply(all, parts[b]);
-  var o = SHAPED.build(all, svColourer(PK, look), null, {tone:PK.tone, oy:0}), ya = 0.5, cs = Math.cos(ya), sn = Math.sin(ya), sc = H2/1.92, tris = [], L = [0.45, 0.6, 0.66], ll = Math.hypot(L[0], L[1], L[2]);
+  var o = SHAPED.build(all, svColourer(PK, look), null, {tone:PK.tone, oy:0}), ya = 0.5, cs = Math.cos(ya), sn = Math.sin(ya), hs = (PK.builds[look.build] || [])[2] || 1, sc = H2/(1.92*Math.max(1, hs)), tris = [], L = [0.45, 0.6, 0.66], ll = Math.hypot(L[0], L[1], L[2]);
   for (var i = 0; i < o.pos.length; i += 9){
-    var q = []; for (var k = 0; k < 3; k++){ var x = o.pos[i + k*3], y = o.pos[i + k*3 + 1], z = o.pos[i + k*3 + 2]; q.push([x*cs + z*sn, y, -x*sn + z*cs]); }
+    var q = []; for (var k = 0; k < 3; k++){ var x = o.pos[i + k*3], y = o.pos[i + k*3 + 1], z = o.pos[i + k*3 + 2]; q.push([(x*cs + z*sn)*hs, y*hs, (-x*sn + z*cs)*hs]); }
     var nx = o.nor[i]*cs + o.nor[i+2]*sn, ny = o.nor[i+1], nz = -o.nor[i]*sn + o.nor[i+2]*cs; if (nz < -0.05) continue;   /* faces turned away */
     var lit = 0.62 + 0.38*Math.max(0, (nx*L[0] + ny*L[1] + nz*L[2])/ll), cl = [o.col[i]*lit, o.col[i+1]*lit, o.col[i+2]*lit].map(function(v){ return Math.min(255, Math.round(v*255)); });
     tris.push([(q[0][2] + q[1][2] + q[2][2])/3, q, 'rgb(' + cl.join(',') + ')']);

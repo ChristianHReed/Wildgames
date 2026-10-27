@@ -423,6 +423,15 @@
     doc.skeletonShared = true;   /* the survivor's own skeleton and clips: shown for posing, not saved with the part */
     return doc;
   };
+  /* 0.114.46: a body type. Its own head, neck and hands (survivor.bodyTypes[name].parts[body]) and its size (survivor.bodyTypes[name].build = [width, depth, height]) added to the creator's Build list. Made from a copy of the stock body so the head and hands can be reshaped; the size sliders show on the survivor under it. */
+  M.newBodyType = function(shaped, name, body){
+    var V = shaped.survivor, b = body === 'feminine' ? 'feminine' : 'masculine', key = String(name || 'body').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'body';
+    var doc = importBoned(shaped, 'survivor', ['bodyTypes', key, 'parts', b], V.parts.body[b], 'clothing', key);
+    delete doc.from; doc.id = key + '_' + b; doc.name = String(name || key) + ' (' + b + ')';
+    doc.skeleton = clone(V.bones); doc.frames = clone(V.clips); doc.skeletonShared = true;
+    doc.garment = {slot:'body', body:b, choice:key}; doc.bodyType = {w:1, d:1, h:1};
+    return doc;
+  };
   M.SURVIVOR_SLOTS = ['top','bottoms','worn','shoes','hair','hat','face','gear','npc','body'];
   M.survivorIndex = function(shaped){
     var V = shaped.survivor, out = []; if (!V) return out;
@@ -709,6 +718,7 @@
     var value = M.exportModel(doc), pal = {};
     (function walk(o){ if (isPieceList(o)) o.forEach(function(q){ var n = String(q.c).replace(/_D$/, ''); if (CUSTOM.test(n)) pal[n] = '#' + n.slice(1); }); else if (o && typeof o === 'object' && !Array.isArray(o)) for (var k in o) walk(o[k]); })(value);
     var extra = clone(doc.extra || []);
+    if (doc.bodyType && doc.target.path && doc.target.path[0] === 'bodyTypes') extra.push({path:['bodyTypes', doc.target.path[1], 'build'], value:[doc.bodyType.w, doc.bodyType.d, doc.bodyType.h].map(function(v){ return Math.round((+v || 1)*1e3)/1e3; })});
     /* points that came from the pack's tables go back to them, and so do moving parts and clips */
     M.writePoints(doc, extra);
     var A = {type:'model', id:doc.id, name:doc.name, kind:doc.kind, author:doc.author, notes:doc.notes, target:clone(doc.target), mode:doc.from ? 'replace' : 'add',

@@ -739,6 +739,7 @@
   function dirIndex(d){ d = d || [0, 0, 1]; for (var i = 0; i < DIRS.length; i++) if (DIRS[i][1][0] === d[0] && DIRS[i][1][1] === d[1] && DIRS[i][1][2] === d[2]) return i; return 0; }
   function panelModel(){
     var d = S.doc, A = asset(), K = M.KINDS[d.kind] || M.KINDS.furniture, h = '<span class="stamp">Model</span>';
+    if (d.bodyType) h += '<div class="card"><h3>Body type size</h3><p class="muted">The survivor under this body type is drawn this wide, deep and tall (1 is the average build; the head keeps its width). In the game the type shows in the creator\'s Build list. Make the other body (masculine or feminine) with the same name to give both the same size.</p>' + [['Width', 'w'], ['Depth', 'd'], ['Height', 'h']].map(function(r){ return '<div class="row"><label class="l">' + r[0] + '</label>' + num(r[0].toLowerCase(), d.bodyType[r[1]], 'n', function(v){ commit(); d.bodyType[r[1]] = Math.max(0.6, Math.min(1.5, v)); changed(true); }, {min:0.6, max:1.5}) + '</div>'; }).join('') + '</div>';
     h += '<div class="card"><h3>What it is</h3>' +
       '<div class="row"><label class="l">Kind</label><select class="grow" data-k="kind">' + Object.keys(M.KINDS).map(function(k){ return '<option value="' + k + '"' + (d.kind === k ? ' selected' : '') + '>' + esc(M.KINDS[k].label) + '</option>'; }).join('') + '</select></div>' +
       '<div class="row"><label class="l">Made by</label><input class="grow" type="text" data-k="author" value="' + esc(d.author || '') + '"></div>' +
@@ -892,7 +893,8 @@
   var BUILD = {slim:[0.9, 0.93], average:[1, 1], broad:[1.14, 1.08]};
   /* a bone's mesh: stretched for the build (not the head and neck, as the game does), then posed */
   function skelMesh(m, bone, frame){
-    if (S.doc.garment && S.build !== 'average' && bone !== 'Head' && bone !== 'neck_01'){ var bb = BUILD[S.build]; m = xform(m, function(q, n){ return [[q[0]*bb[0], q[1], q[2]*bb[1]], n]; }); }
+    if (S.doc.bodyType){ var bt = S.doc.bodyType, hd = bone === 'Head' || bone === 'neck_01'; m = xform(m, function(q, n){ return [[hd ? q[0] : q[0]*bt.w, q[1]*bt.h, hd ? q[2] : q[2]*bt.d], n]; }); }
+    else if (S.doc.garment && S.build !== 'average' && bone !== 'Head' && bone !== 'neck_01'){ var bb = BUILD[S.build]; m = xform(m, function(q, n){ return [[q[0]*bb[0], q[1], q[2]*bb[1]], n]; }); }
     var f = frame && M.skinFn(S.doc, bone, frame); return f ? xform(m, function(q, n){ return f(q, n); }) : m;
   }
   /* the survivor under a garment: the body and a plain outfit, leaving out the slot being made */
@@ -900,7 +902,7 @@
   function refPieces(){
     if (manBoned) return manBoned;
     var V = SH.survivor, P = V.parts, g = S.doc.garment, b = g.body || 'masculine', out = {}, add = function(o){ if (!o) return; for (var bone in o) if (Array.isArray(o[bone])) out[bone] = (out[bone] || []).concat(o[bone]); };
-    add(P.body[b]);
+    if (g.slot !== 'body') add(P.body[b]);
     if (g.slot !== 'top') add(P.top[b].tshirt); if (g.slot !== 'bottoms' && !(g.slot === 'worn' && /trousers|thermals/.test(g.choice))) add(P.bottoms[b].jeans);
     if (g.slot !== 'shoes') add(P.shoes.trainers); if (g.slot !== 'hair' && g.slot !== 'hat') add(P.hair.short);
     manBoned = out; return out;
@@ -1473,6 +1475,7 @@
       var P = SH[name], h = '<h2>' + esc(name) + '</h2><div class="row"><input class="grow" id="stockFilter" type="text" placeholder="Filter by name"><button class="alt sm" data-m="stockBrowser">Back</button><button class="alt sm" data-m="close">Close</button></div><div class="list" id="stockList" style="max-height:52vh;overflow:auto">';
       if (!P){ box.innerHTML = '<p>Could not load ' + esc(name) + '.</p>'; return; }
       if (name === 'survivor'){ var last = '';
+        h += '<div class="card"><h3>Make a body type</h3><p class="muted">A new size and shape for survivors, with its own head and hands you can reshape. It joins the creator\'s Build list.</p><div class="row"><input class="grow" id="btName" type="text" placeholder="Name (e.g. tall, stocky)"><select id="btBody"><option value="masculine">Masculine</option><option value="feminine">Feminine</option></select><button class="sm" data-m="newBodyType">Make it</button></div></div>';
         M.survivorIndex(SH).forEach(function(g){ var head = g.slot + (g.body ? ' · ' + g.body : ''); if (head !== last){ h += '<div class="muted" style="margin-top:6px">' + esc(head) + '</div>'; last = head; }
           h += '<div class="it stk" data-n="' + esc(g.choice.toLowerCase()) + '"><span class="nm">' + esc(g.choice.replace(/_/g, ' ')) + '</span><button class="alt sm" data-m="openGarment" data-s="' + esc(g.slot) + '" data-b="' + esc(g.body || '') + '" data-c="' + esc(g.choice) + '">Open a copy</button></div>'; }); }
       else Object.keys(P.creatures || {}).filter(function(n){ return P.parts && P.parts[n]; }).forEach(function(n){ h += '<div class="it stk" data-n="' + esc(n) + '"><span class="nm">' + esc(n.replace(/_/g, ' ')) + ' <span class="muted">' + Object.keys(P.creatures[n].bones || {}).length + ' bones, ' + Object.keys(P.creatures[n].clips || {}).length + ' clips</span></span><button class="alt sm" data-m="openCreature" data-p="' + esc(name) + '" data-n="' + esc(n) + '">Open a copy</button></div>'; });
@@ -1499,6 +1502,7 @@
     blankCreature:function(b){ saveDraft(); var d = M.blankCreature(b.dataset.t, uniqueId('my_' + b.dataset.t)); d.name = 'My creature'; setDoc(d); S.tab = 'anim'; refresh(true); closeModal(); toast('A starter creature: reshape its pieces, then pose its clips on the Animate tab.'); },
     stockBrowser:function(){ stockBrowser(); },
     openCreature:function(b){ saveDraft(); try { var d = M.importCreature(SH, b.dataset.p, b.dataset.n); d.id = uniqueId(d.id); setDoc(d); S.tab = 'anim'; refresh(true); closeModal(); toast('Opened a copy of the ' + b.dataset.n.replace(/_/g, ' ') + ': its bones and clips are on the Animate tab.'); } catch (e){ toast('Could not open it: ' + e.message); } },
+    newBodyType:function(){ var nm = ($('btName') && $('btName').value || '').trim(); if (!nm) return toast('Give the body type a name.'); saveDraft(); try { var d = M.newBodyType(SH, nm, $('btBody').value); d.id = uniqueId(d.id); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); toast('A new body type, on a survivor. Set its size on the Model tab; reshape the head and hands on the survivor.'); } catch (e){ toast('Could not make it: ' + e.message); } },
     openGarment:function(b){ saveDraft(); try { var d = M.importGarment(SH, b.dataset.s, b.dataset.b || null, b.dataset.c); d.id = uniqueId(d.id); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); toast('Opened a copy of ' + b.dataset.s + ' ' + b.dataset.c.replace(/_/g, ' ') + ', on a survivor.'); } catch (e){ toast('Could not open it: ' + e.message); } },
     stockPack:function(b){ stockPack(b.dataset.n); },
     stockOpen:function(b){ var pk = b.dataset.p, g = b.dataset.g, n = b.dataset.n || null; saveDraft(); try { var d = M.importModel(SH, pk, g, n); d.id = uniqueId(d.id); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); toast('Opened a copy of ' + pk + '.' + g + (n ? '.' + n : '') + ' (' + d.pieces.length + ' pieces). The game\'s own model is not changed.'); } catch (e){ toast('Could not open it: ' + e.message); } },

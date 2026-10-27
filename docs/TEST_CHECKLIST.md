@@ -218,3 +218,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.42: the on-screen button near a parked car says Trunk; searching says trunk; the Workshop's car tab says Hood and Trunk lid.
 - 0.114.43: switch to the third-person view and siphon fuel from a parked car (Y): the survivor crouches with a hose; hold J at a deer carcass: kneeling and cutting; fit a part on the truck: the wheel-change pose.
 - 0.114.44: third-person view: ride a bicycle (pedal legs turn, hands on grips), a moped or motorbike, then each boat type; check you sit on the seat and nothing floats or sinks. Report any boat where the rider is off its seat.
+- 0.114.46: Workshop: make a body type, set Height to 1.12 and Width to 0.9, export the pack, add it to packs/: the Survivor tab's Build list shows it, the preview is taller and thinner, and in play (third person) the survivor is taller. Also check a bike and a boat rider sit on the seat.
