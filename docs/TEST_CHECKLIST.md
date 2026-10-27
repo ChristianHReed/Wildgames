@@ -187,3 +187,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.114.11) Build menu, Holes, Shoring panel: set one in a pit; cave-ins in rain become rare, two stop them.
 - [ ] (0.114.12) Build menu, Defenses, Sandbag wall (8 soil): a sandbag wall appears in front of you and blocks aliens longer than a barricade.
 - [ ] (0.114.13) Recruit survivors, tell them to follow, drive a car or boat: they get in and sit; get out and they climb out beside it. Seats: car 3, motorbike 1, boats by size.
+- [ ] (0.114.14) Maps tab: Load map file takes a Builder .asmap (several at once), the map appears in the list under it with Play and Remove; dropping a .asmap or .asedit on the page loads it.
