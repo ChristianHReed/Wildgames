@@ -531,6 +531,12 @@ function placeDress(g){
         for (var lu = 6; lu < ll; lu += 12){ var along = acc + lu; if (along < 16 || along > tl - 16) continue; [-1, 1].forEach(function(sg){ var dxp = lx0 + ldx*lu - ldy*r.w*0.25*sg, dyp = ly0 + ldy*lu + ldx*r.w*0.25*sg; if (!blocked(dxp, dyp)) add('wm.lane_dash_white', dxp, dyp, lyaw, 9000); }); }
         acc += ll; }
     }
+    /* 0.114.17: a storm drain in the kerb every 45 m or so, alternating sides, and a speed hump now and then on the quieter streets */
+    if (spB('wm.storm_drain')){ var sq2, sacc = 0, sk = 0, stl = 0; for (sq2 = 0; sq2 + 3 < n; sq2 += 2) stl += Math.hypot(p[sq2 + 2] - p[sq2], p[sq2 + 3] - p[sq2 + 1]);
+      for (sq2 = 0; sq2 + 3 < n; sq2 += 2){ var sx0 = p[sq2], sy0 = p[sq2 + 1], sl = Math.hypot(p[sq2 + 2] - sx0, p[sq2 + 3] - sy0); if (sl < 0.5) continue; var sdx = (p[sq2 + 2] - sx0)/sl, sdy = (p[sq2 + 3] - sy0)/sl;
+        for (var su = 20 + hash(ri, sq2, 63)*20; su < sl; su += 70 + hash(ri, Math.floor(su), 64)*30, sk++){ var salong = sacc + su; if (salong < 14 || salong > stl - 14) continue; var ssd = sk % 2 ? 1 : -1, sof = r.w/2 - 0.35, sdx2 = sx0 + sdx*su - sdy*sof*ssd, sdy2 = sy0 + sdy*su + sdx*sof*ssd; if (!blocked(sdx2, sdy2)) add('wm.storm_drain', sdx2, sdy2, Math.atan2(-sdy, sdx), 1200); }
+        if (!main && r.w <= 8 && sl > 60 && hash(ri, sq2, 65) < 0.12){ var hu = sl*0.5, hx2 = sx0 + sdx*hu, hy2 = sy0 + sdy*hu; if (sacc + hu > 20 && sacc + hu < stl - 20) add('wm.speed_hump', hx2, hy2, Math.atan2(sdx, sdy), 300); }
+        sacc += sl; } }
     var run = 30 + hash(ri, 5, 61)*40, k = 0;
     for (var q = 0; q + 3 < n; q += 2){ var ax = p[q], ay = p[q+1], l = Math.hypot(p[q+2] - ax, p[q+3] - ay); if (l < 0.5) continue; var dx = (p[q+2] - ax)/l, dy = (p[q+3] - ay)/l, yaw = Math.atan2(dx, dy);
       for (; run < l; run += main ? 70 : 60, k++){
