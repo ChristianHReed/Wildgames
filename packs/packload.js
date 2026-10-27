@@ -51,6 +51,9 @@
     var path = t.path.slice(), last = path.pop(), o = PK; path.forEach(function(k){ o = o[k] = o[k] || {}; });
     var key = last; if (a.mode === 'add' && o[key] !== undefined) key = P.keyOf(pack, a);
     o[key] = a.value;
+    /* a new survivor part is offered by the creator: its name joins survivor.choices[slot] */
+    if (t.pack === 'survivor' && t.path[0] === 'parts' && PK.choices && Array.isArray(PK.choices[t.path[1]]) && PK.choices[t.path[1]].indexOf(key) < 0) PK.choices[t.path[1]].push(key);
+    (a.extra || []).forEach(function(e){ var q = e.path.slice(), l = q.pop(), z = PK; q.forEach(function(k){ z = z[k] = z[k] || {}; }); z[l] = e.value; });
     if (a.creature && t.path[0] === 'parts'){ PK.creatures = PK.creatures || {}; PK.creatures[key] = a.creature; }
     for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
     P.models.push({key:key, path:t.path.slice(0, -1).concat(key), pack:t.pack, kind:a.kind, name:a.name, packId:pack.id, author:a.author || pack.author, stats:a.stats || {}});
@@ -89,6 +92,8 @@
           /* a sound: recordings added to the game's sounds under its key (window.ART.sounds[key] = [base64, ...]); load packs before the first tap starts the audio */
           if (a.type === 'sound'){ if (a.sound && a.sound.key && a.sound.variants){ var AR = root.ART = root.ART || {}; AR.sounds = AR.sounds || {}; AR.sounds[a.sound.key] = a.sound.variants.slice(); P.sounds.push({key:a.sound.key, name:a.name, packId:pack.id}); } return; }
           if (a.type === 'model'){ installModel(SH, pack, a); return; }
+          /* a ready-made character: creator choices (survivor.npcLooks[id]) the game offers as a player look or a recruitable survivor */
+          if (a.type === 'look'){ var SV = SH.survivor; if (!SV || !a.look){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no survivor pack for a look'); return; } SV.npcLooks = SV.npcLooks || {}; var lk = a.id; if (SV.npcLooks[lk]) lk = P.keyOf(pack, a); SV.npcLooks[lk] = JSON.parse(JSON.stringify(a.look)); (P.looks = P.looks || []).push({key:lk, name:a.name, packId:pack.id, author:a.author || pack.author}); return; }
           if (a.type !== 'vehicle' || !a.model || !a.model.body) return;
           var key = P.keyOf(pack, a);
           if (P.installed[key]) return;

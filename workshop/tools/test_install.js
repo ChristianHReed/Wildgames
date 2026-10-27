@@ -10,9 +10,9 @@ var P = AfterstreetPacks.install(SHAPED), bad = 0;
 P.errors.forEach(function(e){ console.log('ERROR', e); bad++; });
 function count(pcs){ return SHAPED.count(pcs); }
 P.models.forEach(function(m){
-  var v = m.whole ? SHAPED[m.pack].models[m.key] : SHAPED[m.pack].models[m.group][m.key]; if (!v){ console.log('MISSING', m.pack, m.group, m.key); bad++; return; }
+  var v = m.path ? m.path.reduce(function(o, k){ return o && o[k]; }, SHAPED[m.pack]) : m.whole ? SHAPED[m.pack].models[m.key] : SHAPED[m.pack].models[m.group][m.key]; if (!v){ console.log('MISSING', m.pack, m.group, m.key); bad++; return; }
   var tris = 0; (function walk(o){ if (Array.isArray(o) && o.length && o[0] && o[0].s) tris += count(o); else if (o && typeof o === 'object') for (var k in o) walk(o[k]); })(v);
-  console.log('installed', m.pack + '.' + m.group + '.' + m.key, m.kind, tris + ' triangles', tris ? '' : 'EMPTY'); if (!tris) bad++;
+  console.log('installed', m.pack + '.' + (m.path ? m.path.join('.') : m.group + '.' + m.key), m.kind, tris + ' triangles', tris ? '' : 'EMPTY'); if (!tris) bad++;
 });
 P.vehicles.forEach(function(v){ console.log('installed car', v.key); });
 console.log(bad ? bad + ' problems' : 'all good');

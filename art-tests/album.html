@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve()).then(function(){ if(window.AfterstreetPacks) window.AfterstreetPacks.install(window.SHAPED); });
@@ -92,6 +92,14 @@ function survivor(look){
 }
 function held(name, state){ return mesh(HE.models.weapons[name][state], colourer(HE.palette,{})); }
 function fpArms(pose, skin, sleeve){ const c=colourer(HE.palette,{SKIN:skin,SLEEVE:sleeve}); const g=new THREE.Group(); g.add(mesh(HE.models.fp[pose].right,c)); g.add(mesh(HE.models.fp[pose].left,c)); return g; }
+function survSheet(all,dy,dx){
+  lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null;
+  const rg=window.__sheet||[0,all.length], rows=all.slice(rg[0],rg[1]);
+  const base={build:'average',skin:2,hc:1,hair:'short',hat:'none',face:'calm',top:'tshirt',bot:'jeans',shoe:'trainers',shirt:'#9aa5ad',pants:'#4a5666',acc:'#c9742a',worn:[],gear:[]};
+  rows.forEach(([body,key,names],j)=>names.forEach((n,i)=>{ const o=Object.assign({},base,{body}); if(key==='worn'){ o.worn=[n]; } else if(key==='gear'){ o.gear=[n]; } else o[key]=n; if(key==='face'){ o.hair='buzzed'; } if(key==='shoe') o.bot='shorts';
+    at(survivor(o),(i-(names.length-1)/2)*dx,(rows.length-1-j)*dy,0,0.28); }));
+  const H=rows.length*dy+0.4, z=Math.max(H/0.63, 7*dx/1.0)*1.1; cam.position.set(0,H/2-0.1,z); ctl.target.set(0,H/2-0.1,0); if(window.__cam){ cam.position.set(...window.__cam[0]); ctl.target.set(...window.__cam[1]); }
+}
 const LOOKS=[
   {body:'masculine',build:'average',skin:2,hc:0,hair:'short',hat:'none',face:'calm',top:'open_jacket',bot:'jeans',shoe:'boots',shirt:'#5a4a40',pants:'#a08a6a',acc:'#6a8a96'},
   {body:'feminine',build:'slim',skin:3,hc:0,hair:'bob',hat:'none',face:'calm',top:'dungarees',bot:'jeans',shoe:'trainers',shirt:'#8a96a0',pants:'#6a6e78',acc:'#8a96a0'},
@@ -672,6 +680,15 @@ const SCENES={
     make(){ packGrid(ST,'structures',['railing_steel_4m','railing_parapet_4m','railing_timber_4m','girder_span_road_12','arch_span_road_16','suspension_hanger_set_12','suspension_tower_saddle_road','stay_deck_road','trestle_span_timber_8','trestle_bent_steel_unit','trestle_span_steel_12','spillway_chute_h8','stilling_basin_8','fish_ladder_4m'],48,5,0,[0,34,58],[0,2,-14],{lift:n=>({girder_span_road_12:2,arch_span_road_16:8.7,trestle_span_timber_8:2.2,trestle_span_steel_12:1.8,stay_deck_road:1,spillway_chute_h8:8,fish_ladder_4m:1.4,stilling_basin_8:0,suspension_hanger_set_12:1})[n]||0}); }},
   bridges_spans:{t:'Workshop: bridge spans, side view',d:'The 12 m girder span, 16 m arch and 12 m steel trestle from the side, so the structure under the deck shows.',
     make(){ packGrid(ST,'structures',['girder_span_road_12','arch_span_road_16','trestle_span_steel_12','trestle_span_timber_8'],70,6,0,[34,4,30],[0,-3,-10],{lift:n=>({girder_span_road_12:2,arch_span_road_16:8.7,trestle_span_timber_8:2.2,trestle_span_steel_12:1.8})[n]||0}); }},
+  survivors_new:{t:'Workshop: new player characters',d:'Eight ready-made characters from the Workshop (mechanic, courier, hiker, scavenger, nurse, wanderer, foreman, librarian) wearing the new tops, bottoms, shoes, hair, hats, faces, gear and outer layers.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xe2ddd2);
+      const N=SV.npcLooks, ks=['mechanic','courier','hiker','scavenger','nurse','wanderer','foreman','librarian'];
+      ks.forEach((n,i)=>{ const L=N[n]; at(survivor({body:L.body,build:L.build,skin:L.skin,hc:L.hairColour,hair:L.hair,hat:L.hat,face:L.face,top:L.top,bot:L.bottoms,shoe:L.shoes,shirt:L.shirt,pants:L.pants,acc:L.acc,npc:L.npc,worn:L.worn||[],gear:L.gear||[]}),(i-3.5)*1.0,0,0,0.3); });
+      cam.position.set(0,1.9,9.5); ctl.target.set(0,0.95,0); }},
+  survivors_new_clothes:{t:'Workshop: new clothes',d:'New tops, bottoms and outer layers on a plain survivor, masculine then feminine. Rows: tops, bottoms, outer layers.',
+    make(){ survSheet([['masculine','top',['polo_shirt','tank_top','henley','fleece_vest','cardigan','scrubs']],['feminine','top',['polo_shirt','tank_top','henley','fleece_vest','cardigan','scrubs']],['masculine','bot',['skirt','leggings','cargo_shorts','work_pants']],['feminine','bot',['skirt','leggings','cargo_shorts','work_pants']],['masculine','worn',['duster','parka','apron','hi_vis_vest']],['feminine','worn',['duster','parka','apron','hi_vis_vest']]],2.0,1.05); }},
+  survivors_new_heads:{t:'Workshop: new hair, hats and faces',d:'Close views of the new hair, hats, faces and gear.',
+    make(){ survSheet([['feminine','hair',['long_hair','ponytail','mohawk','curly','braids','top_knot']],['masculine','hat',['bucket_hat','bandana','hard_hat','flat_cap','headband']],['masculine','face',['eyepatch','bandaged','goggles','respirator','war_paint']],['feminine','gear',['tool_belt','bandolier','shoulder_bag','hip_pack']],['masculine','shoe',['sandals','work_boots','high_tops']]],2.0,1.05); }},
   land_cuts:{t:'Land: road cuts',d:'Rock cuts 4, 8 and 12 m high with benches, strata bands, joints, rubble benches and a grass cap; the mixed rock-and-soil cut; soil cuts at 2:1; and a cut dying away at its end. Each is 4 m of road, so they lay end to end. Road side faces left.',
     make(){ packGrid(LD,'land',['cut_rock_h4','cut_rock_h8','cut_rock_h12','cut_mixed_h8','cut_soil_h3','cut_soil_h6','cut_rock_end'],60,3,0,[0,26,24],[0,3,-6]); }},
   land_roadside:{t:'Land: banks, ditches, bluffs',d:'Roadside ditches (plain and with a pipe), a rockfall fence, embankments 3 and 6 m, a guardrail, rip-rap; then a river bluff (10 and 5 m), the talus below it and a rock shelter.',
