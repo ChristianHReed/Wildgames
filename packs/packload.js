@@ -93,7 +93,8 @@
           if (a.type === 'sound'){ if (a.sound && a.sound.key && a.sound.variants){ var AR = root.ART = root.ART || {}; AR.sounds = AR.sounds || {}; AR.sounds[a.sound.key] = a.sound.variants.slice(); P.sounds.push({key:a.sound.key, name:a.name, packId:pack.id}); } return; }
           if (a.type === 'model'){ installModel(SH, pack, a); return; }
           /* a ready-made character: creator choices (survivor.npcLooks[id]) the game offers as a player look or a recruitable survivor */
-          if (a.type === 'look'){ var SV = SH.survivor; if (!SV || !a.look){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no survivor pack for a look'); return; } SV.npcLooks = SV.npcLooks || {}; var lk = a.id; if (SV.npcLooks[lk]) lk = P.keyOf(pack, a); SV.npcLooks[lk] = JSON.parse(JSON.stringify(a.look)); (P.looks = P.looks || []).push({key:lk, name:a.name, packId:pack.id, author:a.author || pack.author}); return; }
+          if (a.type === 'look'){ var SV = SH.survivor; if (!SV || !a.look){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no survivor pack for a look'); return; } SV.npcLooks = SV.npcLooks || {}; var lk = a.id; if (SV.npcLooks[lk]) lk = P.keyOf(pack, a); SV.npcLooks[lk] = JSON.parse(JSON.stringify(a.look)); SV.presets = SV.presets || []; SV.presets.push({name:a.name, look:{build:a.look.build, skin:a.look.skin, body:a.look.body, hair:a.look.hair, hc:a.look.hairColour, shirt:a.look.shirt, pants:a.look.pants, hat:a.look.hat, top:a.look.top, bot:a.look.bottoms, shoe:a.look.shoes, face:a.look.face, acc:a.look.acc}});
+            (P.looks = P.looks || []).push({key:lk, name:a.name, packId:pack.id, author:a.author || pack.author}); return; }
           if (a.type !== 'vehicle' || !a.model || !a.model.body) return;
           var key = P.keyOf(pack, a);
           if (P.installed[key]) return;
