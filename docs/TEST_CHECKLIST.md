@@ -194,3 +194,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - [ ] (0.114.18) With two players (host and guest): the guest sees the host's recruited survivors walk, ride and fight; a car left with a flat tyre or fitted parts looks and drives the same for both.
 - 0.114.19: repair a vehicle and bandage a wound; the XP line in the character list shows Mechanics and First aid; a book can raise either.
 - 0.114.20: set Searched loot to Never comes back, search a cupboard, wait over five days away from it: it stays empty. Refills setting still restocks.
+- 0.114.21: fill the pack with wood or soil past about 30 kg: a message says it is heavy and you walk slower; drop items and speed returns.

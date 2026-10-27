@@ -439,7 +439,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.20</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.21</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -462,7 +462,7 @@
 <script>
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
-var BUILD = '0.114.20', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.21', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1893,7 +1893,11 @@ function stamTick(dt, g, moving){
 }
 /* 0.77: what you carry slows you by its weight (props.furnitureSize: kg): a chair hardly, a fridge to a crawl */
 function carryMul(k){ var fs = window.SHAPED && SHAPED.props && SHAPED.props.furnitureSize, w = fs && fs[k] ? fs[k][1] : 0; return w ? Math.max(0.35, 1 - w/100) : 0.55; }
-function moveMul(){ return (P.carry ? carryMul(P.carry) : 1)*(P.leg === 1 ? 0.55 : P.leg === 2 ? 0.8 : 1)*(P.rest < 12 ? 0.9 : 1)*(me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
+/* 0.114.20: the pack itself weighs: past a comfortable load you slow down, up to 30% at a full haul. Endurance raises the comfortable load */
+var KG = {wood:2, scrap:1, soil:3, parts:3, fuel:4, water:1, ammo:0.05, food:0.4, fresh:0.3, bandage:0.05, seeds:0.02, medkit:0.6};
+function packKg(){ var t = 0, k, v; for (k in inv){ v = +inv[k]; if (v > 0) t += v*(KG[k] !== undefined ? KG[k] : 0.4); } return t; }
+function packMul(){ var kg = packKg(), lim = 30 + 3*lvl('endur'); if (kg <= lim){ P.heavy = 0; return 1; } if (!P.heavy){ P.heavy = 1; feed('Your pack is heavy. You are slower until you drop some weight.', '#c0c6cc'); } return Math.max(0.7, 1 - (kg - lim)/lim*0.3); }
+function moveMul(){ return (P.carry ? carryMul(P.carry) : 1)*packMul()*(P.leg === 1 ? 0.55 : P.leg === 2 ? 0.8 : 1)*(P.rest < 12 ? 0.9 : 1)*(me.bg === 'scout' ? 1.12 : 1)*(P.body < -55 ? 0.85 : 1)*(wx.w === 4 && !P.inside ? 0.8 : 1); }
 function weatherTick(dt, day){
   if (world.lastDay !== day){ if (world.lastDay) spreadNests(); world.lastDay = day; }
   if (time >= wx.until){
