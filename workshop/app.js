@@ -28,7 +28,7 @@
     units:store.get('units', 'imp'), snap:store.get('snap', null), faceSnap:store.get('faceSnap', true),
     sym:{x:true, z:false}, lock:null, placing:null, multi:false, tab:'piece',
     preview:{bonnet:false, boot:false, markers:true, person:true, planes:true},
-    brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null, part:null, hideParts:{}, selPoint:-1, pose:{}, clip:null, clipT:0
+    brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null, part:null, hideParts:{}, selPoint:-1, pose:{}, clip:null, clipT:0, variant:null
   };
   if (S.snap == null) S.snap = S.units === 'imp' ? 0.0254 : 0.01;
 
@@ -52,7 +52,7 @@
   var saveT = 0; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(saveDraft, 700); }
   function setDoc(doc, keepView){
     doc.states = doc.states || {}; doc.dmg = doc.dmg || {seed:7, strength:1}; if (doc.type === 'model'){ doc.points = doc.points || []; doc.parts = doc.parts || {body:{}}; if (Array.isArray(doc.extra) === false) doc.extra = []; S.part = null; S.hideParts = {}; S.selPoint = -1; if (S.tab === 'car' || S.tab === 'damage') S.tab = 'piece'; } else if (S.tab === 'model') S.tab = 'piece';
-    playClip(null); S.pose = {};
+    playClip(null); S.pose = {}; S.variant = null;
     S.doc = doc; S.sel = []; S.undo = []; S.redo = []; S.layer = 'car'; S.look = 'whole'; S.state = null; S.asset = null;
     $('docName').value = doc.name;
     refresh(true); if (!keepView) fitView();
@@ -71,10 +71,11 @@
   function stateList(){ return S.doc.states[S.state] || []; }
   function active(){
     if (S.layer === 'state') return stateList();
+    if (isModel() && S.variant && S.doc.variants && S.doc.variants[S.variant]) return S.doc.variants[S.variant].pieces;
     if (isModel()) return S.doc.pieces.filter(function(p){ return !S.part || p.g === S.part || !S.hideOthers; });
     return S.doc.pieces.filter(function(p){ return S.layer === 'wheel' ? p.g === 'wheel' : p.g !== 'wheel'; });
   }
-  function ownerList(){ return S.layer === 'state' ? stateList() : S.doc.pieces; }
+  function ownerList(){ if (isModel() && S.variant && S.doc.variants && S.doc.variants[S.variant]) return S.doc.variants[S.variant].pieces; return S.layer === 'state' ? stateList() : S.doc.pieces; }
   function byId(id){ var L = ownerList(); for (var i = 0; i < L.length; i++) if (L[i].id === id) return L[i]; return null; }
   function selected(){ return S.sel.map(byId).filter(Boolean); }
 
@@ -414,7 +415,7 @@
   /* ---------------------------------------------------------------- layer bar and preview toggles */
   function renderBars(){
     if (isModel()){
-      var nm = partNames(), hb = '<button class="sm ' + (!S.part ? 'on' : 'alt') + '" data-part="">All parts</button>' + nm.map(function(n){ return '<button class="sm ' + (S.part === n ? 'on' : 'alt') + '" data-part="' + esc(n) + '">' + esc(n.replace(/_/g, ' ')) + '</button>'; }).join('');
+      var nm = partNames(), hb = (S.variant ? '<button class="sm on" data-a2="noop">State: ' + esc(S.variant.replace(/_/g, ' ')) + '</button><button class="sm alt" data-state="">Done</button> ' : '') + '<button class="sm ' + (!S.part ? 'on' : 'alt') + '" data-part="">All parts</button>' + nm.map(function(n){ return '<button class="sm ' + (S.part === n ? 'on' : 'alt') + '" data-part="' + esc(n) + '">' + esc(n.replace(/_/g, ' ')) + '</button>'; }).join('');
       $('layerBar').innerHTML = hb;
       $('previewBar').innerHTML = tog('markers', 'Points') + tog('person', 'Person') + tog('planes', 'Planes');
       return;
@@ -430,7 +431,7 @@
     var ls = $('lookSel'); if (ls) ls.onchange = function(){ S.look = ls.value; rebuildScene(); };
   }
   function tog(k, label){ return '<button class="sm ' + (S.preview[k] ? 'on' : 'alt') + '" data-p="' + k + '">' + label + '</button>'; }
-  $('layerBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; if (b.dataset.part !== undefined){ S.part = b.dataset.part || null; renderBars(); return; } var l = b.dataset.l;
+  $('layerBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; if (b.dataset.part !== undefined){ S.part = b.dataset.part || null; renderBars(); return; } if (b.dataset.state !== undefined){ S.variant = b.dataset.state || null; S.sel = []; refresh(true); return; } if (b.dataset.a2) return; var l = b.dataset.l;
     if (l === 'state') return; S.layer = l; S.sel = []; S.placing = null; banner(null); if (l !== 'state') S.state = null;
     if (l === 'look') S.tab = 'damage'; refresh(true); fitView(true); });
   $('previewBar').addEventListener('click', function(e){ var b = e.target.closest('button[data-p]'); if (!b) return; S.preview[b.dataset.p] = !S.preview[b.dataset.p]; renderBars(); rebuildScene(); });
@@ -667,10 +668,29 @@
         '<select data-k="ptkind" data-i="' + i + '">' + Object.keys(M.POINT_KINDS).map(function(k){ return '<option value="' + k + '"' + (pt.kind === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select>' +
         [0, 1, 2].map(function(ax){ return '<input style="width:62px" inputmode="decimal" data-k="ptv" data-i="' + i + '" data-ax="' + ax + '" value="' + fmtNum(toUnit(pt.pos[ax])) + '" aria-label="' + 'xyz'[ax] + '">'; }).join('') +
         '<select data-k="ptdir" data-i="' + i + '">' + DIRS.map(function(o, j){ return '<option value="' + j + '"' + (dirIndex(pt.dir) === j ? ' selected' : '') + '>' + o[0] + '</option>'; }).join('') + '</select>' +
-        '<button class="alt sm" data-a="delPoint" data-i="' + i + '">Delete</button></div>'; }).join('') + '</div>' : '<p class="muted">No points yet.</p>';
+        '<button class="alt sm" data-a="delPoint" data-i="' + i + '">Delete</button>' +
+        (pt.kind === 'light' ? '<div class="row" style="width:100%"><label class="l">Light</label><input type="color" data-k="ptcol" data-i="' + i + '" value="' + esc(pt.colour || '#ffd9a0') + '">' + num('reach', pt.radius || 6, 'len', function(v){ commit(); S.doc.points[i].radius = v; changed(false); }, {min:0.5}) + '</div>' : '') + '</div>'; }).join('') + '</div>' : '<p class="muted">No points yet.</p>';
     h += '<div class="row"><select id="ptNew" class="grow">' + Object.keys(M.POINT_KINDS).map(function(k){ return '<option value="' + k + '"' + (K.points.indexOf(k) >= 0 ? '' : '') + '>' + k + ' - ' + esc(M.POINT_KINDS[k]) + '</option>'; }).join('') + '</select><button class="sm" data-a="addPoint">Add point</button></div>' +
       '<p class="muted">Points are measured in the units you chose (X right, Y up, Z forward), drawn as coloured markers. A new point goes at the middle of the selected piece. For this kind, useful points: <b>' + esc(K.points.join(', ')) + '</b>.</p></div>';
-    h += '<div class="card"><h3>Inside the game files</h3><p class="muted">' + ((d.extra || []).length ? 'Also carried with it: ' + d.extra.map(function(e){ return esc(e.path.join('.')); }).join(', ') + '.' : 'Nothing else is stored with it.') + '</p></div>';
+    /* states */
+    var V = d.variants || {}, hints = (M.STATE_HINT[d.kind] || ['broken']).filter(function(x){ return !V[x]; });
+    h += '<div class="card"><h3>States</h3><p class="muted">The same model in another state: a container searched, a wall damaged, a fire out. Each is saved as <b>' + esc((d.target.name || d.target.group) + '_<state>') + '</b>.</p><div class="list">' +
+      '<div class="it"><span class="nm">' + (S.variant ? '' : '<b>') + 'As it is' + (S.variant ? '' : ' (editing)</b>') + '</span>' + (S.variant ? '<button class="alt sm" data-a="editState2" data-s="">Edit</button>' : '') + '</div>' +
+      Object.keys(V).map(function(st){ return '<div class="it"><span class="nm">' + (S.variant === st ? '<b>' + esc(st.replace(/_/g, ' ')) + ' (editing)</b>' : esc(st.replace(/_/g, ' '))) + ' <span class="muted">' + V[st].pieces.length + ' pieces</span></span>' +
+        (S.variant === st ? '' : '<button class="alt sm" data-a="editState2" data-s="' + esc(st) + '">Edit</button>') + '<button class="alt sm" data-a="delState2" data-s="' + esc(st) + '">Delete</button></div>'; }).join('') + '</div>' +
+      '<div class="row"><select id="newState">' + hints.concat(M.STATES.filter(function(x){ return hints.indexOf(x) < 0 && !V[x]; })).map(function(x){ return '<option>' + x + '</option>'; }).join('') + '</select><button class="sm" data-a="addState2">Add state (copy of the model)</button></div></div>';
+    /* size and weight (furniture that can be carried) */
+    var fs = M.extraOf(d, 'furnitureSize');
+    if (d.target.pack === 'props' && (d.kind === 'furniture' || d.kind === 'container')){
+      var fv = fs ? fs.value : null;
+      h += '<div class="card"><h3>Carrying</h3>' + (fv ? '<div class="row"><label class="l">Size</label><select class="grow" data-k="fsize">' + M.SIZE_CLASSES.map(function(c){ return '<option value="' + c[0] + '"' + (fv[0] === c[0] ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="row"><label class="l">Weight</label>' + num('weight', Math.round(fv[1]*2.20462), 'n', function(v){ commit(); M.extraOf(S.doc, 'furnitureSize').value[1] = Math.round(v/2.20462); changed(true); }, {min:1, step:5}) + '<span class="muted">lb</span></div>'
+        : '<p class="muted">It cannot be picked up and carried.</p><button class="alt sm" data-a="makeCarry">Let survivors carry it</button>') + '</div>';
+    }
+    /* the pack's own details for this model, editable where they are simple values */
+    var ex = d.extra || [];
+    h += '<div class="card"><h3>Game details</h3>' + (ex.length ? ex.map(function(e, i){ return extraFields(e, i); }).join('') : '<p class="muted">Nothing else is stored with it.</p>') +
+      (ex.some(function(e){ return e.path[0] === 'sizes' || e.path[0] === 'info'; }) ? '<div class="row"><button class="alt sm" data-a="measure">Measure it again from the pieces</button></div>' : '') + '</div>';
     return h;
   }
   /* ---------------------------------------------------------------- moving parts (W2) */
@@ -711,6 +731,24 @@
     (function tick(now){ if (S.clip !== c) return; S.pose = M.clipPose(S.doc, c, (now - t0)/1000); rebuildScene(); clipTimer = requestAnimationFrame(tick); })(t0);
   }
 
+  function extraFields(e, i){
+    var v = e.value, h = '<div class="muted" style="margin-top:8px"><b>' + esc(e.path[0]) + '</b></div>';
+    var simple = function(x){ return x == null || typeof x === 'number' || typeof x === 'string' || typeof x === 'boolean' || (Array.isArray(x) && x.every(function(y){ return typeof y === 'number' || typeof y === 'string'; })); };
+    if (simple(v)) return h + '<div class="row"><input class="grow" type="text" data-k="extra" data-i="' + i + '" value="' + esc(Array.isArray(v) ? v.join(', ') : String(v)) + '"></div>';
+    if (v && typeof v === 'object' && !Array.isArray(v)){
+      return h + Object.keys(v).map(function(k){ var x = v[k]; if (!simple(x)) return '<div class="row"><label class="l">' + esc(k) + '</label><span class="muted">kept as it is</span></div>';
+        return '<div class="row"><label class="l">' + esc(k) + '</label><input class="grow" type="text" data-k="extra" data-i="' + i + '" data-f="' + esc(k) + '" value="' + esc(Array.isArray(x) ? x.join(', ') : String(x)) + '"></div>'; }).join('');
+    }
+    return h + '<p class="muted">Kept as it is.</p>';
+  }
+  /* text back to the type it had: numbers stay numbers, lists stay lists */
+  function asLike(old, text){
+    if (Array.isArray(old)) return text.split(',').map(function(t, k){ t = t.trim(); return typeof old[k] === 'number' || (old[k] === undefined && typeof old[0] === 'number') ? +t : t; });
+    if (typeof old === 'number'){ var n = parseFloat(text); return isFinite(n) ? n : old; }
+    if (typeof old === 'boolean') return /^(true|yes|1)$/i.test(text.trim());
+    return text;
+  }
+
   function panelCheckModel(){
     var A = asset(), C = M.checkModel(S.doc, A), tot = A.stats.total, h = '<span class="stamp">Check</span>';
     h += C.length ? C.map(function(c){ return '<div class="msg ' + c[0] + '">' + esc(c[1]) + '</div>'; }).join('') : '<div class="msg info">Ready for the game.</div>';
@@ -723,6 +761,11 @@
   /* ---------------------------------------------------------------- panel actions */
   var ACTIONS = {
     selAll:selectAll,
+    editState2:function(b){ S.variant = b.dataset.s || null; S.sel = []; refresh(true); },
+    addState2:function(){ var st = ($('newState') || {}).value; if (!st) return; commit(); M.addState(S.doc, st); S.variant = st; S.sel = []; changed(true); toast('New state "' + st + '": a copy of the model to change.'); },
+    delState2:function(b){ if (b.dataset.sure !== '1'){ b.dataset.sure = '1'; b.textContent = 'Tap again'; return; } commit(); delete S.doc.variants[b.dataset.s]; if (S.variant === b.dataset.s) S.variant = null; changed(true); },
+    makeCarry:function(){ commit(); S.doc.extra = S.doc.extra || []; S.doc.extra.push({path:['furnitureSize', S.doc.target.name || S.doc.id], value:['medium', 20]}); changed(true); },
+    measure:function(){ commit(); var r = M.measureInto(S.doc, S.doc.extra); changed(true); if (r) toast('Measured: ' + fmtLen(r.w) + ' wide, ' + fmtLen(r.len) + ' long, ' + fmtLen(r.h) + ' tall'); },
     joint:function(b){ commit(); M.addJoint(S.doc, b.dataset.n, b.dataset.k); changed(true); },
     jkind:function(b){ commit(); var j = S.doc.rig[b.dataset.n]; if (j.slide){ j.turn = j.slide; delete j.slide; j.range = [-90, 90]; } else { j.slide = j.turn || [0, 0, 1]; delete j.turn; j.range = [0, 0.4]; } j.rest = 0; delete S.pose[b.dataset.n]; changed(true); },
     jdel:function(b){ commit(); delete S.doc.rig[b.dataset.n]; delete S.pose[b.dataset.n]; changed(true); },
@@ -790,6 +833,9 @@
     bed:function(t){ setup(function(st){ var sp = asset().spec; st.bed = t.checked ? {y:0.75, z:r4(sp.tail + 0.9), w:r4(Math.min(1.6, sp.width - 0.15)), d:1.6} : null; }); },
     tank:function(t){ setup(function(st){ st.tank = t.value; }); },
     paint:function(t){ commit(); S.doc.paint[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
+    fsize:function(t){ commit(); M.extraOf(S.doc, 'furnitureSize').value[0] = t.value; changed(false); },
+    extra:function(t){ commit(); var e = S.doc.extra[+t.dataset.i]; if (t.dataset.f) e.value[t.dataset.f] = asLike(e.value[t.dataset.f], t.value); else e.value = asLike(e.value, t.value); changed(false); },
+    ptcol:function(t){ commit(); S.doc.points[+t.dataset.i].colour = t.value; changed(false); },
     jparent:function(t){ commit(); var j = S.doc.rig[t.dataset.n]; if (t.value) j.parent = t.value; else delete j.parent; changed(true); },
     jaxis:function(t){ commit(); var j = S.doc.rig[t.dataset.n], a = AXES[+t.value][1].slice(); if (j.slide) j.slide = a; else j.turn = a; changed(true); },
     jpose:function(t){ S.pose[t.dataset.n] = +t.value; rebuildScene(); },

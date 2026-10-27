@@ -85,6 +85,7 @@
     doc.parts = parts; doc.pieces = pieces; doc.points = []; doc.colours = {}; doc.states = {};
     doc.extra = extrasFor(shaped, pack, group, whole ? group : name);
     doc.slotColours = M.slotDefaults(shaped, pack, group, whole ? group : name);
+    if (!whole) M.importStates(shaped, doc);
     var rg = extraOf(doc, 'rig'), cl = extraOf(doc, 'clips');
     if (rg && rg.value && typeof rg.value === 'object' && !Array.isArray(rg.value)) doc.rig = clone(rg.value);
     if (cl && cl.value && typeof cl.value === 'object' && !Array.isArray(cl.value)) doc.clips = clone(cl.value);
@@ -274,6 +275,58 @@
   }
   M.writeRig = writeRig;
 
+  /* ------------------------------------------------------------------ W7: states (variants), sizes, lights, salvage
+     A state is a sibling model named <name>_<state> (cupboard_searched, wall_plain_damaged, barricade_nearly_gone, campfire_out).
+     It opens with its model as doc.variants[state] = {pieces}, is edited in place, and is saved back under its own name. */
+  M.STATES = ['searched','damaged','nearly_gone','broken','snapped','lit','out','off','on','running','dead','open','closed','up','loaded','empty','flat','wrapped','fall','ripe','sprouting','growing','harvested','b','c','d'];
+  M.STATE_HINT = {container:['searched'], furniture:['broken','open','lit','off'], building:['damaged','broken'], structure:['damaged','broken'], plant:['fall','ripe','b','c'], item:['flat','empty'], sign:['lit','off']};
+  M.siblingStates = function(shaped, pack, group, name){
+    var G = shaped[pack] && shaped[pack].models && shaped[pack].models[group]; if (!G || name == null) return [];
+    return M.STATES.filter(function(st){ return G[name + '_' + st] !== undefined; });
+  };
+  function piecesOf(value, part, doc){
+    var out = [];
+    value.forEach(function(np){ var ep = M.fromNative(np, part, null); ep.id = 'v' + (++doc._vn); out.push(ep); });
+    return out;
+  }
+  /* bring a model's states into the design (each must have the same layout as the model) */
+  M.importStates = function(shaped, doc){
+    var t = doc.target; if (t.name == null) return;
+    var G = shaped[t.pack].models[t.group]; doc._vn = 0; doc.variants = doc.variants || {};
+    M.siblingStates(shaped, t.pack, t.group, t.name).forEach(function(st){
+      var v = G[t.name + '_' + st], parts = {}, pieces = [];
+      var sub = {_n:0}; var lay = (function split(value, path){ if (isPieceList(value)){ var part = path.join('.') || 'body'; parts[part] = 1; pieces = pieces.concat(piecesOf(value, part, doc)); return {$part:part}; }
+        if (Array.isArray(value)) return clone(value); if (value && typeof value === 'object'){ var o = {}; for (var k in value) o[k] = split(value[k], path.concat(k)); return o; } return value; })(v, []);
+      doc.variants[st] = {layout:lay, pieces:pieces, from:t.pack + '.' + t.group + '.' + t.name + '_' + st};
+    });
+    delete doc._vn;
+  };
+  /* a new state starts as a copy of the model as it is now */
+  M.addState = function(doc, st){
+    doc.variants = doc.variants || {};
+    doc.variants[st] = {layout:clone(doc.layout), pieces:doc.pieces.map(function(p){ var q = clone(p); q.id = 'v' + Math.random().toString(36).slice(2, 8); return q; })};
+    return doc.variants[st];
+  };
+  M.exportVariant = function(doc, st){
+    var V = doc.variants[st], byPart = {};
+    V.pieces.forEach(function(ep){ (byPart[ep.g] = byPart[ep.g] || []).push.apply(byPart[ep.g], M.toNative(ep)); });
+    var v = joinLayout(V.layout || doc.layout, byPart); M.stripM(v); return v;
+  };
+  /* furniture size classes (props furnitureSize: [class, kg]); carry rules come from the class */
+  M.SIZE_CLASSES = [['small', 'Small: carried in front at walking speed less 10%'], ['medium', 'Medium: speed less 30%, no running'], ['large', 'Large: speed less 50%, two can carry it']];
+  /* the pack tables that measure a model ([w, len, h] in 'sizes'; w, len, h in 'info') */
+  M.measureInto = function(doc, extra){
+    var all = []; doc.pieces.forEach(function(p){ all = all.concat(M.toNative(p)); });
+    var B = M.boundsOf(all); if (!B.ok) return false;
+    var r3 = function(v){ return Math.round(v*100)/100; }, w = r3(B.mx[0]-B.mn[0]), len = r3(B.mx[2]-B.mn[2]), h = r3(B.mx[1]);
+    var sz = extraOf({extra:extra}, 'sizes'), inf = extraOf({extra:extra}, 'info');
+    if (sz && Array.isArray(sz.value) && sz.value.length === 3) sz.value = [w, len, h];
+    if (inf && inf.value && typeof inf.value === 'object'){ if ('w' in inf.value) inf.value.w = w; if ('len' in inf.value) inf.value.len = len; if ('h' in inf.value) inf.value.h = h; }
+    return {w:w, len:len, h:h};
+  };
+  /* light points carry a colour and reach; the asset lists them for the game */
+  M.lightsOf = function(doc){ return (doc.points || []).filter(function(p){ return p.kind === 'light'; }).map(function(p){ return {name:p.name, pos:p.pos.slice(), dir:(p.dir || [0, -1, 0]).slice(), colour:p.colour || '#ffd9a0', radius:p.radius || 6}; }); };
+
   /* ------------------------------------------------------------------ W1: the finished asset, and a blank design of any kind */
   M.newModelDoc = function(kind, pack, group, name){
     var K = M.KINDS[kind] || M.KINDS.furniture, nm = name || ('my_' + kind);
@@ -294,6 +347,9 @@
     var A = {type:'model', id:doc.id, name:doc.name, kind:doc.kind, author:doc.author, notes:doc.notes, target:clone(doc.target), mode:doc.from ? 'replace' : 'add',
       value:value, extra:extra, palette:pal, points:clone(doc.points || []), parts:Object.keys(doc.parts), stats:{total:M.countModel(value)}, source:clone(doc)};
     writeRig(doc, extra, A);
+    if (doc.variants && Object.keys(doc.variants).length){ A.variants = {}; Object.keys(doc.variants).forEach(function(st){ A.variants[st] = M.exportVariant(doc, st); A.stats[st] = M.countModel(A.variants[st]); }); }
+    var L = M.lightsOf(doc); if (L.length) A.lights = L;
+    if (M.salvage) try { var sv = M.salvage(doc); if (Object.keys(sv).length) A.salvage = sv; } catch (e){}
     return A;
   };
   /* generic checks for any model */
