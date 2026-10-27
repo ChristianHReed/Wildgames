@@ -440,7 +440,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.33</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.34</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -466,10 +466,10 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.33', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.34', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
-  ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+  ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
   try { AfterstreetPacks.writeTags('packs/'); } catch (e) {}   /* 0.114.24: content packs (cars from the Workshop) load after the art and before the engine */
   return set;
 })();
@@ -496,7 +496,7 @@ function startRun(ws, cs){
   P = {x:sx, y:sy, yaw:0, pitch:0, hp:100, hunger:100, thirst:100, items:{}, weapon:null, quick:null, body:0, feel:66, light:false, fl:1, rd:1, noise:0, stam:100, crouch:false, run:false, tired:false, vis:1, wet:0, inside:null, warnT:0, atkCd:0, swing:0, shootCd:0, hurt:0, swim:false, bob:0, worn:{}}; loadConds(null);
   inv = newInv(true); P.carry = null;
   heat.clear(); w.mem = [];
-  zombies = []; packsA = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
+  zombies = []; WILD = []; packsA = []; bullets = []; fires = []; cades = []; packs = []; corpses = []; lamps = []; curLoot = null; autoUse = null; big.on = false; time = 0; kills = 0; searched = 0; deaths = 0; prog = 0; target = null; worldPlayers = {};
   loaded.forEach(function(b){ freeInt(b); b.int = null; }); loaded = []; facs = [];
   w.buildings.forEach(function(b){ b.got = {}; b.bar = null; b.sbar = null; b.gbar = null; b.php = null; }); w.crates.forEach(function(c){ c.looted = false; });
   w.trees.forEach(function(t){ t.alive = true; t.hp = 3; });
@@ -667,6 +667,8 @@ function useItem(k){
   if (k === 'splint'){ if (P.leg !== 1){ toast(P.leg === 2 ? 'Your leg is already splinted.' : 'Your legs are fine.', 2.5); return; } inv.splint--; P.leg = 2; P.legT = LEG_S; feed('Splinted. It heals in about ten minutes; no running until then.', ITEMS.splint[1]); updateHud(); return; }
   if (k === 'tape'){ var wd = P.weapon && P.items[P.weapon] > 0 ? P.weapon : null; if (!wd || durOf(wd) >= 1){ toast(wd ? 'Your weapon is in good shape.' : 'Equip a made weapon to patch it.', 2.5); return; } inv.tape--; P.dur[wd] = Math.min(1, durOf(wd) + 0.4); feed('Patched the ' + DESIGNS[wd].name + ' (' + pct(P.dur[wd]) + ')', ITEMS.tape[1]); updateHud(); return; }
   if (k === 'fresh'){ inv.fresh--; P.hunger = Math.min(100, P.hunger + 45); P.thirst = Math.min(100, P.thirst + 8); feed('Ate fresh food', ITEMS.fresh[1]); updateHud(); return; }
+  if (k === 'meat'){ if (!(inv.meat > 0)) return; inv.meat--; if (nearFire()){ P.hunger = Math.min(100, P.hunger + 40); P.body = Math.min(40, P.body + 10); feed('Cooked the meat over the fire and ate it', ITEMS.cooked[1]); } else { P.hunger = Math.min(100, P.hunger + 18); feed('Ate raw meat', ITEMS.meat[1]); if (Math.random() < 0.6) makeSick('Raw meat does that.'); } updateHud(); return; }
+  if (k === 'cooked'){ if (!(inv.cooked > 0)) return; inv.cooked--; P.hunger = Math.min(100, P.hunger + 50); feed('Ate cooked meat', ITEMS.cooked[1]); updateHud(); return; }
   if (k === 'rotten'){ inv.rotten--; P.hunger = Math.min(100, P.hunger + 15); feed('Ate rotten food', ITEMS.rotten[1]); if (Math.random() < 0.5) makeSick('That was a mistake.'); updateHud(); return; }
   if (k === 'dirty'){
     if (nearFire()){ var nb = inv.dirty; inv.water += nb; inv.dirty = 0; sfx('pot', undefined, undefined, 0.6); feed('Boiled ' + nb + ' bottle' + (nb > 1 ? 's' : '') + ' over the fire', ITEMS.water[1]); updateHud(); return; }
@@ -1022,8 +1024,8 @@ function takeLoot(key){
 el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id === 'ltClose'){ closeLoot(); return; } var k = t.getAttribute && t.getAttribute('data-k'); if (k) takeLoot(k); });
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
-var CATS = [['Food and drink', ['meal', 'fresh', 'food', 'water', 'dirty', 'berry', 'rotten']], ['Medical', ['medkit', 'bandage', 'antibio', 'splint', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'tape', 'fuel', 'fiber', 'stone', 'soil']], ['Power and light', ['generator', 'flashlight', 'radio', 'lantern', 'battery']], ['Clothes', ['coat', 'raincoat', 'leather', 'sweater', 'beanie', 'cap', 'helmet', 'gloves', 'trousers', 'thermals', 'boots']], ['Gear', ['key', 'seeds', 'shovel']], ['Truck parts', ['toolkit', 'tire', 'carbat', 'parts']]];
-var USE = {coat:'Wear', raincoat:'Wear', leather:'Wear', sweater:'Wear', beanie:'Wear', cap:'Wear', helmet:'Wear', gloves:'Wear', trousers:'Wear', thermals:'Wear', boots:'Wear', generator:'Set it up here', fresh:'Eat', rotten:'Eat (risky)', dirty:function(){ return nearFire() ? 'Boil it all (fire)' : 'Drink (risky)'; }, bandage:'Use', antibio:'Take', splint:'Use', tape:'Patch weapon', fiber:'Make a bandage', wood:'Make a splint', meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
+var CATS = [['Food and drink', ['meal', 'fresh', 'food', 'water', 'dirty', 'berry', 'rotten', 'meat', 'cooked']], ['Medical', ['medkit', 'bandage', 'antibio', 'splint', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'hide', 'tape', 'fuel', 'fiber', 'stone', 'soil']], ['Power and light', ['generator', 'flashlight', 'radio', 'lantern', 'battery']], ['Clothes', ['coat', 'raincoat', 'leather', 'sweater', 'beanie', 'cap', 'helmet', 'gloves', 'trousers', 'thermals', 'boots']], ['Gear', ['key', 'seeds', 'shovel']], ['Truck parts', ['toolkit', 'tire', 'carbat', 'parts']]];
+var USE = {coat:'Wear', raincoat:'Wear', leather:'Wear', sweater:'Wear', beanie:'Wear', cap:'Wear', helmet:'Wear', gloves:'Wear', trousers:'Wear', thermals:'Wear', boots:'Wear', generator:'Set it up here', fresh:'Eat', rotten:'Eat (risky)', meat:function(){ return nearFire() ? 'Cook and eat (fire)' : 'Eat raw (risky)'; }, cooked:'Eat', dirty:function(){ return nearFire() ? 'Boil it all (fire)' : 'Drink (risky)'; }, bandage:'Use', antibio:'Take', splint:'Use', tape:'Patch weapon', fiber:'Make a bandage', wood:'Make a splint', meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
 var NOTE = {fresh:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.freshT || FRESH_S)/60)) + ' min'; }, meal:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.mealT || MEAL_S)/60)) + ' min'; },
   rotten:function(){ return 'half the time it makes you sick'; }, dirty:function(){ return 'boil it at a stove (1 wood) or beside a campfire'; }, bandage:function(){ return 'stops bleeding and keeps a wound clean'; },
   antibio:function(){ return 'cures an infected wound'; }, splint:function(){ return 'lets a broken leg heal'; }, tape:function(){ return 'patches your equipped weapon (+40%)'; }, wood:function(){ return '2 wood and 1 plant fibre make a splint'; }, seeds:function(){ return 'plant one in a garden plot (Build, N)'; },
@@ -1063,6 +1065,7 @@ function swing(){
       if (z.k < 2 && unaware && (behind || P.crouch) && (z.k === 0 || (P.crouch && behind))){ wear(1); hitZombie(z, 999, 0, 0, true); feed('Quiet takedown', '#9bb07a'); addXp('melee', 4); hit = true; continue; }   /* from behind, or crouched, on one that has not noticed you */
       hitZombie(z, ws0.dmg + 0.25*lvl('melee'), dx/d*8, dy/d*8); hit = true; wear(1); }
   }
+  WILD.forEach(function(w){ if (w.dead) return; var wx = w.x - P.x, wy = w.y - P.y, wd = Math.hypot(wx, wy); if (wd < ws0.reach + 0.5 && (wd < 0.8 || (wx*fx + wy*fy)/wd > 0.5)){ hitWild(w, (ws0.dmg + 0.25*lvl('melee'))*4); hit = true; wear(1); } });
   if (hit){ addXp('melee', 2); return; }
   var pn = portNear(); if (pn && pn.o.k < 0 && doorState(pn.o.b) === 0 && pn.d < 2.2){ var db0 = pn.o.b; db0.smash = (db0.smash || 0) + 1; makeNoise(P.x, P.y, 16);
     if (db0.smash >= 4){ db0.smash = 0; setPort(db0, -2, 0); setPort(db0, -1, 2); makeNoise(P.x, P.y, 32); feed('You smashed the door in. That was loud.', '#ff8f7a'); } else feed('The door shudders', '#c0c6cc'); return; }
@@ -2145,10 +2148,11 @@ function update(dt){
       b.x += b.vx*dt/st; b.y += b.vy*dt/st;
       if (hitWall(b.x, b.y)){ dead = true; fxAdd('effects.hit_spark', b.x, b.y, groundAt(b.x, b.y), {life:0.18, s0:0.8, s1:1.1, up:1.2}); break; }
       for (var q = 0; q < zombies.length; q++){ var zz = zombies[q]; if (Math.hypot(zz.x - b.x, zz.y - b.y) < 0.35 + AK[zz.k].r){ hitZombie(zz, b.dmg || 5, 0, 0); b.hz = 1; dead = true; break; } }
+      if (!dead) for (var wq = 0; wq < WILD.length; wq++){ var wl = WILD[wq]; if (!wl.dead && Math.hypot(wl.x - b.x, wl.y - b.y) < 0.6){ hitWild(wl, (b.dmg || 5)*2); b.hz = 1; dead = true; break; } }
     }
     if (dead || b.t <= 0){ landBullet(b); bullets.splice(i, 1); }
   }
-  survTick(dt); spitTick(dt); packT = (packT || 0) - dt; if (packT <= 0 && net.role !== 'guest'){ packT = 0.5; packTick(0.5); } seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
+  wildTick(dt); survTick(dt); spitTick(dt); packT = (packT || 0) - dt; if (packT <= 0 && net.role !== 'guest'){ packT = 0.5; packTick(0.5); } seenT -= dt; if (seenT <= 0){ seenT = 0.7; seeMap(); }
   spawnT -= dt;
   if (spawnT <= 0 && net.role !== 'guest'){ spawnT = 0.5; spawnAliens(day); }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) el('toast').style.opacity = 0; }
@@ -2336,12 +2340,13 @@ function eyeOf(pos){
 }
 function loadCreatures(){   /* 0.94: the old Bestiary models are gone; every alien kind is the art chat's shaped model (assets/shaped/aliens.js) */
   if (SPON && SHAPED.aliens) CNAME.forEach(function(n){ try { var o = shapedCreature(n); if (o) CRE[n] = o; } catch (er){ console.log('shaped alien', n, er); } });
+  if (SPON && SHAPED.animals) WSPEC.forEach(function(sp){ try { var o = shapedCreature(sp[0], SHAPED.animals); if (o) ANI[sp[0]] = o; } catch (er){ console.log('shaped animal', sp[0], er); } });
 }
 /* Art 2 (0.44): the art chat's own aliens and rigs (assets/shaped/aliens.js) in place of the Bestiary stand-ins. Each bone's pieces are built once in the rest pose;
    every key frame turns each bone about its pivot (as three.js does: angles X, Y, Z, children carried along), in-between frames are blended so walking is smooth,
    and every frame is baked into its own mesh like the old poses. Eyes, vents and seams are glowing pieces (alpha 128), so no extra eye boxes are drawn */
-function shapedCreature(name){
-  var AL = SHAPED.aliens, C0 = AL.creatures[name], parts = AL.parts[name]; if (!C0 || !parts) return null;
+function shapedCreature(name, pack){
+  var AL = pack || SHAPED.aliens, C0 = AL.creatures[name], parts = AL.parts[name]; if (!C0 || !parts) return null;
   var bones = Object.keys(C0.bones), colourOf = spColour(AL.palette), V = [], CL = [], BI = [], EY = [];
   bones.forEach(function(bn, bi){ var pcs = parts[bn]; if (!pcs) return;
     [false, true].forEach(function(gl2){ var sub = pcs.filter(function(q){ return !!q.glow === gl2; }); if (!sub.length) return;
@@ -2363,7 +2368,8 @@ function shapedCreature(name){
   var keys = [], clips = {}, add = function(cn, list, loop, per){ var st = keys.length; if (!list || !list.length) list = [{}];
     var n = loop ? list.length : Math.max(1, list.length - 1); for (var i = 0; i < n; i++) for (var j = 0; j < (list.length > 1 ? per : 1); j++) keys.push({k:blend(list[i], list[(i + 1) % list.length], j/per), cn:cn});
     if (!loop && list.length > 1) keys.push({k:list[list.length - 1], cn:cn}); clips[cn] = [st, keys.length - st]; };
-  add('walk', C0.clips.walk, true, 3); add('attack', C0.clips.attack, false, 3); add('idle', C0.clips.idle, true, 1); add('dead', C0.clips.dead, true, 1);
+  if (pack){ add('walk', C0.clips.walk, true, 3); add('run', C0.clips.run, true, 3); ['idle', 'eat', 'alert'].forEach(function(cn){ add(cn, C0.clips[cn], true, 1); }); add('die', C0.clips.die, false, 3); add('dead', C0.clips.dead, true, 1); }   /* 0.114.34: animals */
+  else { add('walk', C0.clips.walk, true, 3); add('attack', C0.clips.attack, false, 3); add('idle', C0.clips.idle, true, 1); add('dead', C0.clips.dead, true, 1); }
   var cb = gl.createBuffer(), tb = gl.createBuffer(), tc = new Float32Array(nv*3); for (var i = 0; i < nv; i++) tc[i*3 + 2] = -1;
   gl.bindBuffer(gl.ARRAY_BUFFER, cb); gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(CL), gl.STATIC_DRAW); gl.bindBuffer(gl.ARRAY_BUFFER, tb); gl.bufferData(gl.ARRAY_BUFFER, tc, gl.STATIC_DRAW);
   var o = {n:nv, clips:clips, h:C0.height || 1, poses:[], shaped:true};
@@ -2602,6 +2608,60 @@ function gather(o){
   if (!any) feed('Nothing worth taking', '#c0c6cc');
   world.edits.picked[o.key] = time; var i = clutter.indexOf(o); if (i >= 0) clutter.splice(i, 1); emit({k:'pick', key:o.key}); addXp('scav', 1); updateHud();
 }
+
+/* ================= 0.114.34: wildlife and hunting (assets/shaped/animals.js, made in the content chat) =================
+   Deer, rabbits, turkeys, squirrels and foxes live outdoors near you: they graze and wander, stop to watch when you come close, and bolt when you are loud or near
+   (sprinting and driving scare them from further off, crouching lets you creep close). Hit one with a weapon or a bullet; hold J at the carcass to butcher it for raw meat and a hide.
+   They are local to each player's game, so hunting needs no network sync. */
+var WILD = [], ANI = {}, wildT = 2, WSPEC = [['deer', 3], ['rabbit', 4], ['turkey', 2], ['squirrel', 3], ['fox', 1]], wildId = 1;
+function aniInfo(k){ var C = window.SHAPED && SHAPED.animals && SHAPED.animals.creatures && SHAPED.animals.creatures[k]; return C && C.info || null; }
+function wildSpawn(){
+  var tot = 0, i; WSPEC.forEach(function(s){ tot += s[1]; }); var r = Math.random()*tot, k = WSPEC[0][0]; for (i = 0; i < WSPEC.length; i++){ r -= WSPEC[i][1]; if (r <= 0){ k = WSPEC[i][0]; break; } }
+  var I = aniInfo(k), a = Math.random()*6.283, d = 45 + Math.random()*40, x = P.x + Math.cos(a)*d, y = P.y + Math.sin(a)*d;
+  if (!I || !ANI[k] || blocked(x, y) || inWater(x, y, 1.5) || hitWall(x, y) || (world.roadAt && world.roadAt(x, y)) || (world.minx !== undefined && (x < world.minx || x > world.maxx || y < world.miny || y > world.maxy))) return;
+  WILD.push({id:wildId++, k:k, x:x, y:y, ang:Math.random()*6.283, hp:I.health || 30, st:'idle', t:2 + Math.random()*5, ph:Math.random(), ft:0});
+}
+function wildMove(w, dx, dy){
+  var nx = w.x + dx, ny = w.y + dy; if (blocked(nx, ny) || inWater(nx, ny, 0.6) || hitWall(nx, ny)) return false; w.x = nx; w.y = ny; return true;
+}
+function hitWild(w, dmg){
+  if (w.dead) return; w.hp -= dmg; w.st = 'flee'; w.ft = 6; makeNoise(w.x, w.y, 14); fxAdd('effects.goo_splat', w.x, w.y, groundAt(w.x, w.y), {life:30, s0:0.7, up:0.02});
+  if (w.hp <= 0){ w.dead = true; w.dtt = 0; feed('You killed the ' + w.k + '. Hold J beside it to butcher it.', '#9bb07a'); }
+}
+function wildTick(dt){
+  if (!window.SHAPED || !SHAPED.animals || !world || !P) return;
+  wildT -= dt; if (wildT <= 0){ wildT = 3; var live = 0; WILD.forEach(function(w){ if (!w.dead) live++; }); if (live < 8 && !P.inside) wildSpawn(); }
+  var nm = P.veh ? 2.5 : (P.vis || 1);
+  for (var i = WILD.length - 1; i >= 0; i--){
+    var w = WILD[i], d = Math.hypot(w.x - P.x, w.y - P.y), I = aniInfo(w.k) || {};
+    if (d > 160 || (w.dead && (w.dtt || 0) > 900)){ WILD.splice(i, 1); continue; }
+    if (w.dead){ w.dtt = (w.dtt || 0) + dt; continue; }
+    var fr = (I.fleeAt || 20)*0.55*nm, spd = 0, heading = null;
+    if (w.st !== 'flee' && d < fr){ w.st = 'flee'; w.ft = 4 + Math.random()*3; }
+    if (w.st === 'flee'){
+      w.ft -= dt; heading = Math.atan2(w.y - P.y, w.x - P.x) + Math.sin(time*0.7 + w.id)*0.5; spd = Math.min(I.run || 6, 9);
+      if (w.ft <= 0 && d > fr*1.5){ w.st = 'idle'; w.t = 3; }
+    } else if (d < fr*1.7 && d < 60){ w.st = 'alert'; heading = Math.atan2(P.y - w.y, P.x - w.x); w.t = 2; }
+    else if (w.st === 'alert'){ w.st = 'idle'; w.t = 2; }
+    else if (w.st === 'idle'){ w.t -= dt; if (w.t <= 0){ if (Math.random() < 0.6){ w.st = 'walk'; var ta = Math.random()*6.283, tl = 4 + Math.random()*8; w.tx = w.x + Math.cos(ta)*tl; w.ty = w.y + Math.sin(ta)*tl; w.t = tl/Math.max(0.5, I.walk || 1) + 2; } else w.t = 3 + Math.random()*5; } }
+    else if (w.st === 'walk'){ w.t -= dt; var dd = Math.hypot(w.tx - w.x, w.ty - w.y); if (dd < 0.8 || w.t <= 0){ w.st = 'idle'; w.t = 3 + Math.random()*5; } else { heading = Math.atan2(w.ty - w.y, w.tx - w.x); spd = Math.min(2.2, I.walk || 1); } }
+    if (heading !== null){ var da = Math.atan2(Math.sin(heading - w.ang), Math.cos(heading - w.ang)); w.ang += da*Math.min(1, dt*(w.st === 'flee' ? 9 : 4)); }
+    if (spd > 0){ var sx = Math.cos(w.ang)*spd*dt, sy = Math.sin(w.ang)*spd*dt;
+      if (wildMove(w, sx, sy)) w.ph += spd*dt/Math.max(0.8, (I.length || 1.2)*0.9);
+      else if (!wildMove(w, sx, 0) && !wildMove(w, 0, sy)){ w.ang += 1.2 + Math.random(); if (w.st === 'walk') w.st = 'idle'; } }
+  }
+}
+function drawWild(){
+  var any = false;
+  for (var i = 0; i < WILD.length; i++){
+    var w = WILD[i], c = ANI[w.k]; if (!c || Math.abs(w.x - P.x) > 130 || Math.abs(w.y - P.y) > 130) continue; any = true;
+    var gy = groundAt(w.x, w.y), ph = (time*0.35 + w.id*0.37) % 1;
+    if (w.dead){ w.dtt = w.dtt || 0; if (w.dtt < 1.2) drawCreature(c, 'die', Math.min(0.999, w.dtt/1.2), w.x, gy, w.y, w.ang, false); else drawCreature(c, 'dead', 0, w.x, gy, w.y, w.ang, false); continue; }
+    var run = w.st === 'flee', mv = run || w.st === 'walk', clip = run ? 'run' : mv ? 'walk' : w.st === 'alert' ? 'alert' : (w.id % 2 ? 'eat' : 'idle');
+    drawCreature(c, clip, mv ? w.ph : ph, w.x, gy, w.y, w.ang, false);
+  }
+  if (any){ gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.hurtU, 0); }
+}
 function drawCreatures(){
   var i, any = false;
   for (i = 0; i < zombies.length; i++){
@@ -2614,6 +2674,7 @@ function drawCreatures(){
   }
   for (i = 0; i < corpses.length; i++){ var cp = corpses[i], cc = CRE[CNAME[cp.k]]; if (!cc || Math.abs(cp.x - P.x) > 90 || Math.abs(cp.y - P.y) > 90) continue; any = true; var cage = time - cp.t, fz = cage > 226 && cc.clips.fade;   /* the last 14 s: the fade pose, sinking into the ground */ drawCreature(cc, fz ? 'fade' : 'dead', fz ? Math.min(0.999, (cage - 226)/4) : 0, cp.x, (cp.ry || groundAt(cp.x, cp.y) + (cp.lvl ? FH : 0)) - (fz ? Math.min(0.3, Math.max(0, cage - 230)/10*0.3) : 0), cp.y, (cp.x*7 + cp.y*3) % 6.283, false); }
   if (any){ gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.hurtU, 0); }
+  drawWild();
 }
 var ZC = ['#6f5a4a','#4f5d6b','#5d4a5f','#56624a'];
 function drawAlien(m, z){
@@ -3631,6 +3692,7 @@ function salvInfo(o){
     if (r.mat === 'stone'){ r.y.chunk = 1; r.need = 'a crowbar'; if (T.crowbar){ r.tool = T.crowbar; r.secs = 10; } }
     else if (r.mat === 'metal'){ r.y.scrap = 2; r.y.sheet = 1; r.need = 'a wrench, a toolkit or a crowbar'; if (T.wrench){ r.tool = T.wrench; r.secs = 5; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 8; } }
     else { r.y.wood = 2; r.y.nails = 2; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 3.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 6; } } }
+  else if (o.sv === 'carcass'){ var gi = (aniInfo(o.k) || {}).gives || {}; r.label = o.k + ' carcass'; r.mat = 'flesh'; r.y.meat = Math.max(1, gi.raw_meat || 1); if (gi.hide) r.y.hide = gi.hide; r.need = 'a blade, an axe or a crowbar (or bare hands, slowly)'; if (T.axe){ r.tool = T.axe; r.secs = 4; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 5; } else if (T.toolkit){ r.tool = 'kit'; r.secs = 6; } else { r.tool = 'hands'; r.secs = 12; } }
   else if (o.sv === 'bench'){ r.label = 'tool bench'; r.mat = 'wood'; r.y.wood = 4; r.y.scrap = 2; r.need = 'an axe or a crowbar'; if (T.axe){ r.tool = T.axe; r.secs = 2.5; } else if (T.crowbar){ r.tool = T.crowbar; r.secs = 4; } }
   else { var car = !!o.t; r.label = car ? 'car' : o.mach ? 'digger' : o.boat ? 'boat' : o.moto ? 'motorbike' : 'bicycle'; r.mat = 'car'; r.y.scrap = car ? (o.dead === 'burnt' ? 3 : o.dead ? 5 : 6) : 2;
     var pe = car && PACKE[baseKind(carKind(o))]; if (pe && pe.salvage){ var sv0 = pe.salvage, fr = o.dead === 'burnt' ? 0.4 : o.dead ? 0.7 : 1, mp = {scrap:'scrap', wood:'wood', car_parts:'parts', car_battery:'battery'}; r.y = {}; for (var sk2 in mp) if (sv0[sk2] > 0) r.y[mp[sk2]] = Math.max(1, Math.round(sv0[sk2]*fr)); if (!r.y.scrap) r.y.scrap = 3; }   /* 0.114.25: a Workshop car gives what its maker listed */ r.need = 'a wrench or a toolkit' + (car ? '' : ', or a crowbar');
@@ -3643,6 +3705,7 @@ function findSalvage(){
   var test = function(o2){ dx = o2.x - P.x; dy = o2.y - P.y; d = Math.hypot(dx, dy); de = d*(1.2 - 0.4*(dx*fx + dy*fy)/(d || 1)); if (de < bd && (d < 1.0 || (dx*fx + dy*fy)/d > 0.45)){ bd = de; best = o2; } };
   for (i = 0; i < loaded.length; i++){ var b = loaded[i]; if (!b.int || !b.int.furn || P.x < b.minx - 3 || P.x > b.maxx + 3 || P.y < b.miny - 3 || P.y > b.maxy + 3) continue; for (j = 0; j < b.int.furn.length; j++){ o = b.int.furn[j]; if ((o.lvl || 0) === (P.lvl || 0)) test(o); } }
   (world.edits.benches || []).forEach(function(q){ q.sv = 'bench'; test(q); });
+  WILD.forEach(function(q){ if (q.dead){ q.sv = 'carcass'; test(q); } });
   if (!P.inside) (world.edits.walls || []).forEach(function(w){ if (Math.abs(w.x - P.x) > 4 || Math.abs(w.y - P.y) > 4) return; var by = wallBays(w), ddx = -Math.sin(w.yaw), ddy = Math.cos(w.yaw);
     for (var k = 0; k < 6; k++){ if (by[k] <= 0) continue; var key = w.id + ':' + k, o3 = BAYO[key] || (BAYO[key] = {sv:'bay', w:w, k:k}); o3.x = w.x + ddx*(-1.25 + 0.5*k); o3.y = w.y + ddy*(-1.25 + 0.5*k); test(o3); } });
   if (!P.inside) for (i = 0; i < world.vehicles.length; i++){ o = world.vehicles[i]; if (o.kind !== 'truck' && o.id !== 'truck') test(o); }
@@ -3677,6 +3740,7 @@ function doSalvage(o, inf){
     if (by2.every(function(v){ return v <= 0; })) doEdit({a:'unwall', id:o.w.id});
   } else if (o.sv === 'tw'){
     if (bwDown(o.b, o.k)) return; for (k2 in inf.y) g[k2] = inf.y[k2]; if (inf.mat === 'wood' && Math.random() < 0.4) delete g.wood; doEdit({a:'breach', b:o.b.id, i:o.k, on:1}); makeNoise(o.x, o.y, inf.mat === 'metal' ? 22 : inf.mat === 'stone' ? 26 : 14);
+  } else if (o.sv === 'carcass'){ for (k2 in inf.y) g[k2] = inf.y[k2]; var wi = WILD.indexOf(o); if (wi >= 0) WILD.splice(wi, 1); addXp('scav', 3);
   } else if (o.sv === 'bench'){ for (k2 in inf.y) g[k2] = inf.y[k2]; doEdit({a:'unbench', id:o.id});
   } else {
     for (k2 in inf.y) g[k2] = inf.y[k2];

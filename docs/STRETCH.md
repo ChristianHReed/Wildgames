@@ -13,3 +13,6 @@ Ideas that are not in the build plan (docs/ROADMAP.md, "Next versions"). Nothing
 
 ## From the Workshop's W1 to W15 hand-off (27 October)
 Game-side wiring still to do, after the planned roadmap: pack items (new keys need behaviour), clothes in the survivor creator (`survivor.choices`), moving parts and hinged doors on pack models, lights (colour, reach), plant sway and harvest, collision boxes for pack buildings and structures, particle effects (`AfterstreetPacks.effects`), creatures (bones, clips, drops), sounds installed before `sndInit`, packs picked on a device (IndexedDB), guests' pack cars sent to the host, pack-car headlights and build cost.
+
+## Animals, next (from 0.114.34)
+Boars, wolves and bears that attack; birds that fly and perch; fish and fishing; farm animals on farmland; a knife item (butchering is axe, crowbar, toolkit or bare hands for now); hide crafting (clothes, bags); bones and fat uses; animals synced to guests; wolves hunting the player at night.
