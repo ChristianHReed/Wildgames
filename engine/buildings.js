@@ -520,9 +520,17 @@ function placeDress(g){
       var sx = e[0] + dx*bk - dy*off*side, sy = e[1] + dy*bk + dx*off*side;
       if (main && spB('wm.crosswalk_zebra') && r.w >= 7 && r.w <= 16 && (r.hw === 'primary' || r.hw === 'secondary' || r.hw === 'tertiary')){ var cx0 = e[0] + dx*7, cy0 = e[1] + dy*7, nn = Math.max(1, Math.round(r.w/6.5)), qq;   /* 0.114.15: a zebra crossing across each main road end, and a stop line before it */
         for (qq = 0; qq < nn; qq++){ var of = (qq - (nn - 1)/2)*6.5, zx = cx0 - dy*of, zy = cy0 + dx*of; if (ok(zx, zy, 0.2) || qq) add('wm.crosswalk_zebra', zx, zy, yaw, 600); }
+        if (spB('wm.arrow_straight') && r.w >= 9) add('wm.arrow_straight', e[0] + dx*20 - dy*r.w*0.25*(ei ? 1 : -1), e[1] + dy*20 + dx*r.w*0.25*(ei ? 1 : -1), yaw + Math.PI, 400);
         add('wm.stop_line', e[0] + dx*11 - dy*r.w*0.25*(ei ? 1 : -1), e[1] + dy*11 + dx*r.w*0.25*(ei ? 1 : -1), yaw, 400); }
       if (main){ if (ok(sx, sy)) add('street.traffic_light', sx, sy, yaw, 120); }
       else { if (ok(sx, sy)) add('street.stop_sign', sx, sy, yaw, 300); var nx2 = e[0] + dx*bk + dy*off*side, ny2 = e[1] + dy*bk - dx*off*side; if (ok(nx2, ny2) && hash(ri, ei, 77) < 0.6) add('street.street_name_post', nx2, ny2, yaw, 250); } });
+    /* 0.114.16: lane dashes down multi-lane main roads (a dash every 12 m on each lane line, clear of the junctions) and a straight arrow before each end */
+    if (main && r.w >= 9 && r.w <= 22 && spB('wm.lane_dash_white') && (r.hw === 'primary' || r.hw === 'secondary' || r.hw === 'tertiary')){
+      var tl = 0, lq; for (lq = 0; lq + 3 < n; lq += 2) tl += Math.hypot(p[lq + 2] - p[lq], p[lq + 3] - p[lq + 1]); var acc = 0;
+      for (lq = 0; lq + 3 < n; lq += 2){ var lx0 = p[lq], ly0 = p[lq + 1], ll = Math.hypot(p[lq + 2] - lx0, p[lq + 3] - ly0); if (ll < 0.5) continue; var ldx = (p[lq + 2] - lx0)/ll, ldy = (p[lq + 3] - ly0)/ll, lyaw = Math.atan2(ldx, ldy);
+        for (var lu = 6; lu < ll; lu += 12){ var along = acc + lu; if (along < 16 || along > tl - 16) continue; [-1, 1].forEach(function(sg){ var dxp = lx0 + ldx*lu - ldy*r.w*0.25*sg, dyp = ly0 + ldy*lu + ldx*r.w*0.25*sg; if (!blocked(dxp, dyp)) add('wm.lane_dash_white', dxp, dyp, lyaw, 9000); }); }
+        acc += ll; }
+    }
     var run = 30 + hash(ri, 5, 61)*40, k = 0;
     for (var q = 0; q + 3 < n; q += 2){ var ax = p[q], ay = p[q+1], l = Math.hypot(p[q+2] - ax, p[q+3] - ay); if (l < 0.5) continue; var dx = (p[q+2] - ax)/l, dy = (p[q+3] - ay)/l, yaw = Math.atan2(dx, dy);
       for (; run < l; run += main ? 70 : 60, k++){
