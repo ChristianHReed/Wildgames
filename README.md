@@ -23,7 +23,8 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | `maps/` | Map files |
 | `world/` | One save per map, written by the game |
 | `characters/` | One file per survivor, written by the game |
-| `packs/` | Item and scenario packs |
+| `workshop.html`, `workshop/` | The AfterStreet Workshop: make your own cars from shapes and export them as packs (see `docs/WORKSHOP.md`). Online: https://christianhreed.github.io/Wildgames/workshop.html |
+| `packs/` | Content packs players make and share (vehicles and prefabs so far; `packs/README.md`) |
 | `prototypes/` | Earlier versions, kept for reference |
 | `assets/shaped/` | Shaped-piece content packs and their builder (see `docs/SHAPED.md`) |
 | `art-tests/` | Art-style test scenes, not part of the game. Round 1: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street.html · Round 2: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street-2.html · Round 3, the stress test (today's buildings against blocks on a real Springfield square, with a benchmark): https://christianhreed.github.io/Wildgames/art-tests/voxel-stress-test.html. Add `?fps=1` to the game's link for a frame-rate counter to compare |

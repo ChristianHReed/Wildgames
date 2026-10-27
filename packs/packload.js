@@ -1,0 +1,73 @@
+/* AfterStreet content packs: the loader the game (play.html) and the Maps Builder (builder.html) share.
+   A pack is a .js file in this folder that pushes one object onto window.AFTERSTREET_PACKS (made by the Workshop, workshop.html).
+   It loads from a drive over file:// with a plain script tag, like every other asset file.
+
+   Use:
+     <script src="packs/packload.js"></script>
+     <script src="packs/index.js"></script>          lists the pack files to load (window.AFTERSTREET_PACK_FILES)
+     <script>AfterstreetPacks.writeTags('packs/')</script>   while the page is still loading (document.write, as play.html loads assets)
+     ... after assets/shaped/props.js (and vehiclekit.js if used) have loaded:
+     AfterstreetPacks.install(window.SHAPED)
+
+   install() adds every Workshop vehicle to the same tables the design chat's cars live in, under the key pk_<pack>_<id>:
+     SHAPED.props.models.vehicles[key]           {body, bonnet, boot, wheel, damage}   (as props.js; damage has the same ten looks)
+     SHAPED.props.models.vehicles[key + '_wreck'] and [key + '_burnt']   {body, bonnet, wheel}
+     SHAPED.props.vehicleRig[key], [key_wreck], [key_burnt]             wheels, hinges, smokeAt, sitDrop
+     SHAPED.props.vehicleSpec[key]                                      measurements
+     SHAPED.props.palette                                               plus the pack's own colours (named x + hex, so they never clash)
+     SHAPED.vehiclekit.vehicles[key]                                    mounts and wheels for tyres, rims and bolt-on parts
+   and lists them in AfterstreetPacks.vehicles: [{key, name, cls, pack, paint, game, functions, salvage, buildCost, stats}].
+   The game's own car code then treats a pack car like the stock ones: draw body + bonnet with the wheel at each rig point,
+   paint with entry.paint as the paint1..3 override, switch to damage looks by health. AfterstreetPacks.prefabs holds shared prefabs. */
+(function(root){
+  var P = root.AfterstreetPacks = root.AfterstreetPacks || {};
+  P.FORMAT = 'afterstreet-pack'; P.VERSION = 1;
+  P.vehicles = P.vehicles || []; P.prefabs = P.prefabs || []; P.installed = P.installed || {}; P.errors = P.errors || [];
+  function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'x'; }
+  P.keyOf = function(pack, asset){ return 'pk_' + slug(pack.id) + '_' + slug(asset.id); };
+
+  /* script tags for every listed pack, while the page is still being read */
+  P.writeTags = function(base, files){
+    files = files || root.AFTERSTREET_PACK_FILES || [];
+    files.forEach(function(f){ document.write('<script src="' + base + String(f).replace(/\.js$/, '') + '.js"><\/script>'); });
+  };
+  /* the same after the page has loaded; cb() when all have loaded or failed */
+  P.load = function(base, files, cb){
+    files = files || root.AFTERSTREET_PACK_FILES || []; var left = files.length;
+    if (!left){ if (cb) cb(); return; }
+    files.forEach(function(f){ var s = document.createElement('script'); s.src = base + String(f).replace(/\.js$/, '') + '.js';
+      s.onload = s.onerror = function(e){ if (e && e.type === 'error') P.errors.push('could not load pack ' + f); if (--left === 0 && cb) cb(); };
+      document.head.appendChild(s); });
+  };
+  /* a pack from text (a file the player picked, or one kept in the browser) */
+  P.parse = function(text){ var a = text.indexOf('{'), b = text.lastIndexOf('}'); var p = JSON.parse(text.slice(a, b + 1)); if (p.format !== P.FORMAT) throw new Error('not an AfterStreet pack'); return p; };
+  P.add = function(pack){ (root.AFTERSTREET_PACKS = root.AFTERSTREET_PACKS || []).push(pack); };
+
+  P.install = function(SH){
+    SH = SH || root.SHAPED; if (!SH || !SH.props) { P.errors.push('props.js must load before packs are installed'); return P; }
+    var PR = SH.props, K = SH.vehiclekit;
+    (root.AFTERSTREET_PACKS || []).forEach(function(pack){
+      if (!pack || pack.format !== P.FORMAT){ P.errors.push('skipped something that is not a pack'); return; }
+      if (pack.version > P.VERSION) P.errors.push('pack ' + pack.id + ' is version ' + pack.version + '; this game reads ' + P.VERSION + ' (trying anyway)');
+      (pack.assets || []).forEach(function(a){
+        try {
+          if (a.type !== 'vehicle' || !a.model || !a.model.body) return;
+          var key = P.keyOf(pack, a);
+          if (P.installed[key]) return;
+          var m = a.model;
+          PR.models.vehicles[key] = {body:m.body, bonnet:m.bonnet || [], boot:m.boot || [], wheel:m.wheel, damage:m.damage || {}};
+          PR.vehicleRig[key] = a.rig; PR.vehicleSpec[key] = a.spec;
+          if (a.wreck){ PR.models.vehicles[key + '_wreck'] = a.wreck; PR.vehicleRig[key + '_wreck'] = a.rigWreck; }
+          if (a.burnt){ PR.models.vehicles[key + '_burnt'] = a.burnt; PR.vehicleRig[key + '_burnt'] = a.rigBurnt; }
+          for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)) PR.palette[c] = a.palette[c];
+          if (K && K.vehicles && a.kit) K.vehicles[key] = a.kit;
+          P.vehicles.push({key:key, name:a.name, cls:a.cls || 'car', pack:pack.id, packName:pack.name, author:a.author || pack.author, paint:a.paint || {},
+            game:a.game || {}, functions:a.functions || {}, salvage:a.salvage || {}, buildCost:a.buildCost || {}, stats:a.stats || {}});
+          P.installed[key] = true;
+        } catch (e){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': ' + e.message); }
+      });
+      (pack.prefabs || []).forEach(function(pf){ if (!P.prefabs.some(function(q){ return q.id === pf.id; })) P.prefabs.push(pf); });
+    });
+    return P;
+  };
+})(typeof window !== 'undefined' ? window : this);

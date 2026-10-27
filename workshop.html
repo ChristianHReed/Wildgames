@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AfterStreet Workshop</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="manifest" href="workshop.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Workshop">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f5ead8">
+<style>
+  /* the game's "field journal" look (play.html, builder.html, design/afterstreet_handoff/design_tokens.json) */
+  :root{--cream:#f5ead8;--paper:#fbf3e4;--paper2:#fff8ee;--sand:#ebddc5;--sandDeep:#e0cfb2;--edge:#d9c7a8;--ink:#201e1d;--inkSoft:#3d3833;--muted:#6b5e50;--outline:#3d3029;
+    --clay:#c67139;--clayHover:#ad5d29;--clayDeep:#9a5226;--sage:#7a8a5e;--sageDeep:#56643f;--label:#5c6a43;--ochre:#d9a845;--river:#5f8a9a;--plum:#8a6a8a;--bad:#a8432f;
+    --disp:Caprasimo,"Cooper Black","Rockwell Extra Bold",Georgia,serif;--ui:Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"Special Elite","Courier New",Courier,monospace;
+    --shadow:2px 3px 0 rgba(61,48,41,.16),0 10px 22px rgba(70,40,15,.14)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--cream);font-family:var(--ui);color:var(--ink);overscroll-behavior:none}
+  body{display:flex;flex-direction:column;overflow:hidden}
+  .hidden{display:none !important}
+  button{font-family:var(--ui);font-size:14px;font-weight:700;background:var(--clay);color:#fff;border:0;border-radius:4px;box-shadow:0 3px 0 var(--clayDeep);padding:8px 12px;cursor:pointer;line-height:1.2;touch-action:manipulation}
+  button:hover{background:var(--clayHover)}
+  button.alt{background:var(--sand);color:var(--ink);box-shadow:0 3px 0 #cdb895}
+  button.alt:hover{background:#e0c6a4}
+  button.on{background:var(--sage);box-shadow:0 3px 0 var(--sageDeep);color:#fff}
+  button.sm{font-size:12px;padding:5px 8px}
+  button:disabled{background:var(--sandDeep);color:#a39684;box-shadow:0 3px 0 #cdb895;cursor:default}
+  input,select{font-family:var(--ui);font-size:15px;color:var(--ink);background:var(--paper2);border:2px solid var(--edge);border-radius:4px;padding:6px;min-width:0}
+  input:focus,select:focus{outline:none;border-color:var(--clay)}
+  input[type=checkbox]{width:20px;height:20px;accent-color:var(--clay);vertical-align:-4px;margin:0 6px 0 0}
+  input[type=range]{padding:0;border:0;background:none;accent-color:var(--clay)}
+  input[type=color]{padding:0;width:44px;height:34px;border-radius:4px}
+  p{font-size:13px;line-height:1.45;color:var(--inkSoft);margin:6px 0}
+  .muted{color:var(--muted);font-size:12px}
+  .stamp{display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--label);border:1.5px solid currentColor;border-radius:3px;padding:2px 7px 1px;transform:rotate(-1.5deg);margin:4px 0 8px}
+  header{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));border-bottom:1px solid var(--edge);background:var(--paper);flex:none;flex-wrap:wrap}
+  header h1{font-family:var(--disp);font-size:20px;font-weight:400;margin:0 6px 0 0;color:var(--outline);white-space:nowrap}
+  header #docName{flex:1;min-width:110px;max-width:260px;font-weight:700}
+  header .sp{flex:1}
+  header .back{font-size:13px;font-weight:700;color:var(--clayDeep);text-decoration:none;white-space:nowrap}
+  main{flex:1;display:flex;min-height:0}
+  /* tool strip */
+  #tools{width:84px;flex:none;overflow-y:auto;background:var(--paper);border-right:1px solid var(--edge);padding:8px 6px;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}
+  #tools .grp{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-top:6px}
+  .tool{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--paper2);border:1.5px solid var(--edge);border-radius:6px;padding:5px 2px;color:var(--ink);box-shadow:none;font-size:11px;font-weight:600}
+  .tool:hover{background:#f6ead6}
+  .tool.on{border-color:var(--clay);background:#f7e1cc;color:var(--clayDeep)}
+  .tool svg{width:30px;height:24px}
+  /* viewport */
+  #vp{flex:1;position:relative;min-width:0;background:#e9dcc5}
+  #cv{display:block;width:100%;height:100%}
+  #layerBar{position:absolute;top:10px;left:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 20px)}
+  #viewBar{position:absolute;right:10px;bottom:10px;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 20px)}
+  #previewBar{position:absolute;left:10px;bottom:10px;display:flex;gap:4px;flex-wrap:wrap;max-width:60%}
+  #banner{position:absolute;left:50%;top:52px;transform:translateX(-50%);background:rgba(32,30,29,.8);color:#f5ead8;font-size:13px;border-radius:999px;padding:6px 14px;pointer-events:none;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}
+  #readout{position:absolute;right:10px;top:10px;background:rgba(251,243,228,.92);border:1px solid var(--edge);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--inkSoft);font-variant-numeric:tabular-nums;pointer-events:none;text-align:right}
+  /* side panel */
+  #panel{width:360px;flex:none;display:flex;flex-direction:column;background:var(--paper);border-left:1px solid var(--edge);min-height:0}
+  #tabs{display:flex;gap:2px;padding:8px 8px 0;border-bottom:1px solid var(--edge);flex:none;overflow-x:auto}
+  #tabs button{background:transparent;color:var(--muted);box-shadow:none;border-radius:6px 6px 0 0;padding:8px 10px;font-size:13px;border:1px solid transparent;border-bottom:0}
+  #tabs button.on{background:var(--paper2);color:var(--clayDeep);border-color:var(--edge);margin-bottom:-1px}
+  #body{flex:1;overflow-y:auto;padding:12px 12px 60px;-webkit-overflow-scrolling:touch;background:var(--paper2)}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+  .row>label.l{width:88px;font-size:13px;color:var(--inkSoft);flex:none}
+  .row>.grow{flex:1}
+  .num{display:flex;align-items:stretch;border:2px solid var(--edge);border-radius:4px;background:var(--paper2);overflow:hidden;flex:1;min-width:84px}
+  .num input{border:0;border-radius:0;width:100%;text-align:center;padding:6px 2px;font-variant-numeric:tabular-nums;background:transparent}
+  .num button{background:var(--sand);color:var(--ink);box-shadow:none;border-radius:0;padding:0 9px;font-size:16px}
+  .num .ax{font-family:var(--mono);font-size:11px;color:#fff;display:flex;align-items:center;padding:0 5px}
+  .ax.x{background:#b5523d}.ax.y{background:#6b8a3f}.ax.z{background:#4e7393}
+  .trio{display:flex;gap:4px;flex:1}
+  .trio .num{min-width:0}
+  .trio .num button{padding:0 6px}
+  .trio .num input{font-size:14px;padding:6px 0}
+  .trio .num .ax{padding:0 3px}
+  .sw{width:30px;height:30px;border-radius:5px;border:2px solid rgba(0,0,0,.18);cursor:pointer;flex:none;padding:0;box-shadow:none}
+  .sw.on{outline:3px solid var(--clay);outline-offset:1px}
+  .swatches{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+  .card{border:1.5px solid var(--edge);border-radius:6px;padding:9px;margin:10px 0;background:var(--paper)}
+  .card h3{margin:0 0 6px;font-size:14px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  td{padding:3px 4px;border-bottom:1px solid var(--edge)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .msg{font-size:13px;padding:6px 8px;border-radius:4px;margin:4px 0}
+  .msg.bad{background:#f4d8cf;color:#6e2414}.msg.warn{background:#f6e6c4;color:#5d4110}.msg.info{background:#e5e9d8;color:#3d4a2a}
+  .meter{height:10px;background:var(--sand);border-radius:999px;overflow:hidden;margin:4px 0}
+  .meter i{display:block;height:100%;background:var(--sage)}
+  .list .it{display:flex;align-items:center;gap:6px;padding:7px 4px;border-bottom:1px solid var(--edge);font-size:14px}
+  .list .it .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* modal */
+  #modal{position:fixed;inset:0;background:rgba(32,30,29,.42);display:flex;align-items:center;justify-content:center;z-index:50;padding:14px}
+  #modal .box{background:var(--paper);border:1px solid var(--edge);border-radius:8px;box-shadow:var(--shadow);width:min(560px,100%);max-height:88vh;overflow-y:auto;padding:16px}
+  #modal h2{font-family:var(--disp);font-weight:400;font-size:22px;margin:0 0 6px;color:var(--outline)}
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--cream);padding:9px 16px;border-radius:999px;font-size:14px;z-index:60;box-shadow:var(--shadow);pointer-events:none;max-width:90%}
+  /* phones and narrow tablets: view on top, tools as a strip, panel below */
+  @media (max-width:900px){
+    main{flex-direction:column;overflow-y:auto}
+    #vp{flex:none;height:52vh;order:0}
+    #tools{order:1;width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--edge);padding:6px}
+    #tools .grp{display:none}
+    .tool{min-width:62px}
+    #panel{order:2;width:auto;border-left:0;flex:none}
+    #body{overflow:visible;padding-bottom:30px}
+    header h1{font-size:17px}
+    #previewBar{max-width:100%;bottom:52px}
+    #readout{top:auto;bottom:96px;font-size:11px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <a href="play.html" class="back" title="Back to the game">◀ Game</a>
+  <h1>Workshop</h1>
+  <input id="docName" type="text" aria-label="Design name">
+  <button class="alt sm" id="bUndo" title="Undo (Ctrl+Z)">Undo</button>
+  <button class="alt sm" id="bRedo" title="Redo (Ctrl+Y)">Redo</button>
+  <span class="sp"></span>
+  <button class="alt sm" id="bLib">Designs</button>
+  <button class="sm" id="bExport">Export pack</button>
+</header>
+<main>
+  <nav id="tools" aria-label="Tools"></nav>
+  <section id="vp">
+    <canvas id="cv"></canvas>
+    <div id="layerBar"></div>
+    <div id="readout"></div>
+    <div id="banner" class="hidden"></div>
+    <div id="previewBar"></div>
+    <div id="viewBar">
+      <button class="alt sm" data-v="front">Front</button><button class="alt sm" data-v="right">Side</button><button class="alt sm" data-v="top">Top</button><button class="alt sm" data-v="three">3/4</button><button class="alt sm" data-v="fit">Fit</button>
+    </div>
+  </section>
+  <aside id="panel">
+    <div id="tabs"></div>
+    <div id="body"></div>
+  </aside>
+</main>
+<div id="modal" class="hidden"><div class="box" id="modalBox"></div></div>
+<div id="toast" class="hidden"></div>
+<input type="file" id="fileIn" accept=".js,.json,text/javascript,application/json" class="hidden" multiple>
+<script src="assets/shaped/shapes.js"></script>
+<script src="assets/shaped/props.js"></script>
+<script src="workshop/model.js"></script>
+<script src="workshop/damage.js"></script>
+<script src="workshop/view.js"></script>
+<script src="workshop/app.js"></script>
+<script>if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});</script>
+</body>
+</html>

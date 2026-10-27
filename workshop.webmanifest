@@ -1,0 +1,9 @@
+{
+  "name": "AfterStreet Workshop",
+  "short_name": "Workshop",
+  "start_url": "workshop.html",
+  "display": "standalone",
+  "background_color": "#f5ead8",
+  "theme_color": "#f5ead8",
+  "icons": [{"src": "icon.png", "sizes": "512x512", "type": "image/png"}, {"src": "icon-180.png", "sizes": "180x180", "type": "image/png"}]
+}
