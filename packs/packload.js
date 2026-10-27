@@ -21,8 +21,8 @@
    paint with entry.paint as the paint1..3 override, switch to damage looks by health. AfterstreetPacks.prefabs holds shared prefabs. */
 (function(root){
   var P = root.AfterstreetPacks = root.AfterstreetPacks || {};
-  P.FORMAT = 'afterstreet-pack'; P.VERSION = 1;
-  P.vehicles = P.vehicles || []; P.prefabs = P.prefabs || []; P.installed = P.installed || {}; P.errors = P.errors || [];
+  P.FORMAT = 'afterstreet-pack'; P.VERSION = 2;
+  P.vehicles = P.vehicles || []; P.models = P.models || []; P.prefabs = P.prefabs || []; P.installed = P.installed || {}; P.errors = P.errors || [];
   function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'x'; }
   P.keyOf = function(pack, asset){ return 'pk_' + slug(pack.id) + '_' + slug(asset.id); };
 
@@ -43,6 +43,23 @@
   P.parse = function(text){ var a = text.indexOf('{'), b = text.lastIndexOf('}'); var p = JSON.parse(text.slice(a, b + 1)); if (p.format !== P.FORMAT) throw new Error('not an AfterStreet pack'); return p; };
   P.add = function(pack){ (root.AFTERSTREET_PACKS = root.AFTERSTREET_PACKS || []).push(pack); };
 
+  /* version 2: any other asset is a 'model': its value goes to SHAPED[target.pack].models[target.group][target.name], and the pack's own
+     tables that hold an entry for the model (info, moving, furnitureSize, ...) get each a.extra entry ({path:[table, (group,) name], value}) under the model's key. mode 'add' never replaces a model the game has. */
+  function installModel(SH, pack, a){
+    var t = a.target || {}, PK = SH[t.pack];
+    if (!PK || !PK.models){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no pack ' + t.pack + ' to put it in'); return; }
+    var G = PK.models[t.group] = PK.models[t.group] || {}, key = t.name;
+    if (a.mode === 'add' && G[key] !== undefined){ key = P.keyOf(pack, a); }
+    if (P.installed[t.pack + '.' + t.group + '.' + key]) return;
+    G[key] = a.value;
+    (a.extra || []).forEach(function(e){
+      var path = e.path.slice(0, -1), o = PK; for (var i = 0; i < path.length; i++){ o[path[i]] = o[path[i]] || {}; o = o[path[i]]; }
+      o[key] = e.value;
+    });
+    for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
+    P.models.push({key:key, pack:t.pack, group:t.group, name:a.name, kind:a.kind, packId:pack.id, author:a.author || pack.author, points:a.points || [], stats:a.stats || {}});
+    P.installed[t.pack + '.' + t.group + '.' + key] = true;
+  }
   P.install = function(SH){
     SH = SH || root.SHAPED; if (!SH || !SH.props) { P.errors.push('props.js must load before packs are installed'); return P; }
     var PR = SH.props, K = SH.vehiclekit;
@@ -51,6 +68,7 @@
       if (pack.version > P.VERSION) P.errors.push('pack ' + pack.id + ' is version ' + pack.version + '; this game reads ' + P.VERSION + ' (trying anyway)');
       (pack.assets || []).forEach(function(a){
         try {
+          if (a.type === 'model'){ installModel(SH, pack, a); return; }
           if (a.type !== 'vehicle' || !a.model || !a.model.body) return;
           var key = P.keyOf(pack, a);
           if (P.installed[key]) return;

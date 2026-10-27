@@ -16,13 +16,19 @@
     set:function(k, v){ try { localStorage.setItem('afterstreet.workshop.' + k, JSON.stringify(v)); return true; } catch (e){ toast('Could not save in this browser (storage full or private mode). Export a pack to keep your work.'); return false; } }
   };
 
+  /* a design is a vehicle (the car editor) or a model (any other asset: see workshop/assets.js) */
+  function isModel(){ return !!S.doc && S.doc.type === 'model'; }
+  function partNames(){ return isModel() ? Object.keys(S.doc.parts || {body:{}}) : ['body', 'bonnet', 'boot']; }
+  function partOpts(){ return isModel() ? partNames().map(function(n){ return [n, n.replace(/_/g, ' ')]; }) : [['body', 'Body'], ['bonnet', 'Bonnet (opens)'], ['boot', 'Boot lid (opens)']]; }
+  var POINTC = {grip:'xff3b30', offhand:'xff8a30', seat:'x3b82ff', sit:'x3b82ff', saddle:'x3b82ff', thwart:'x3b82ff', hinge:'xffd23b', joint:'xffd23b', light:'xfff2b0', socket:'x35d07f', muzzle:'xff3b30', smoke:'xb0b0b0'};
+
   /* ---------------------------------------------------------------- state */
   var S = {
     doc:null, sel:[], layer:'car', look:'whole', state:null,
     units:store.get('units', 'imp'), snap:store.get('snap', null), faceSnap:store.get('faceSnap', true),
     sym:{x:true, z:false}, lock:null, placing:null, multi:false, tab:'piece',
     preview:{bonnet:false, boot:false, markers:true, person:true, planes:true},
-    brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null
+    brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null, part:null, hideParts:{}, selPoint:-1
   };
   if (S.snap == null) S.snap = S.units === 'imp' ? 0.0254 : 0.01;
 
@@ -45,7 +51,7 @@
   function saveDraft(){ if (!S.doc) return; var d = drafts(); S.doc.saved = Date.now(); d[S.doc.id] = S.doc; store.set('drafts', d); store.set('current', S.doc.id); }
   var saveT = 0; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(saveDraft, 700); }
   function setDoc(doc, keepView){
-    doc.states = doc.states || {}; doc.dmg = doc.dmg || {seed:7, strength:1};
+    doc.states = doc.states || {}; doc.dmg = doc.dmg || {seed:7, strength:1}; if (doc.type === 'model'){ doc.points = doc.points || []; doc.parts = doc.parts || {body:{}}; if (Array.isArray(doc.extra) === false) doc.extra = []; S.part = null; S.hideParts = {}; S.selPoint = -1; if (S.tab === 'car' || S.tab === 'damage') S.tab = 'piece'; } else if (S.tab === 'model') S.tab = 'piece';
     S.doc = doc; S.sel = []; S.undo = []; S.redo = []; S.layer = 'car'; S.look = 'whole'; S.state = null; S.asset = null;
     $('docName').value = doc.name;
     refresh(true); if (!keepView) fitView();
@@ -73,6 +79,7 @@
   /* ---------------------------------------------------------------- the finished asset (measurements, damage, checks) */
   function asset(){
     if (S.asset && S.assetFor === S.doc) return S.asset;
+    if (isModel()){ S.asset = M.buildModelAsset(S.doc); S.assetFor = S.doc; return S.asset; }
     try { S.asset = M.buildAsset(S.doc, D); } catch (e){ console.error(e); S.asset = M.buildAsset(S.doc, null); }
     S.assetFor = S.doc; return S.asset;
   }
@@ -143,13 +150,14 @@
       var list = active();
       list.forEach(function(p){
         if (p.hidden && !S.preview.markers) return;
+        if (isModel() && S.hideParts[p.g]) return;
         var m = trisOf(nativesOf(p), 'p:' + JSON.stringify(p)), f = openFn(p);
         if (f) m = xform(m, f);
         if (p.hidden) ghost.push(m); else solid.push(m);
         if (selIds[p.id]) selM.push(m);
         picks.push({id:p.id, pos:m.pos});
       });
-      if (S.layer === 'car') solid = solid.concat(wheelMeshes());
+      if (S.layer === 'car' && !isModel()) solid = solid.concat(wheelMeshes());
       if (S.layer === 'state'){ /* show the clean car faintly round the state being edited */
         var base = []; S.doc.pieces.forEach(function(p){ if (p.g !== 'wheel' && !p.hidden) base = base.concat(nativesOf(p)); });
         ghost.push(trisOf(base, 'base:' + JSON.stringify(S.doc.pieces)));
@@ -159,8 +167,19 @@
     view.set('ghost', ghost.length ? {tris:merge(ghost)} : null, {order:3, alpha:0.35, depthWrite:false});
     view.set('sel', selM.length ? {tris:merge(selM)} : null, {order:4, tint:[0.85, 0.45, 0.18, 0.38], offset:-1});
     view.set('selLines', selM.length ? {lines:outline(S.sel)} : null, {order:5, depth:false, alpha:0.9, lit:false});
+    var ptp = isModel() && S.preview.markers ? pointPieces() : [];
+    view.set('pts', ptp.length ? {tris:trisOf(ptp)} : null, {order:7, depth:false, alpha:0.95, lit:false});
     sceneDecor();
     updateReadout();
+  }
+  function pointPieces(){
+    var out = [];
+    (S.doc.points || []).forEach(function(pt, i){
+      var k = i === S.selPoint ? 0.09 : 0.06, c = POINTC[pt.kind] || 'xff7a30', d = pt.dir || [0, 0, 1];
+      out.push({s:'box', p:pt.pos.slice(), d:[k, k, k], c:c, glow:true});
+      out.push({s:'box', p:[pt.pos[0] + d[0]*0.1, pt.pos[1] + d[1]*0.1, pt.pos[2] + d[2]*0.1], d:[0.02 + Math.abs(d[0])*0.18, 0.02 + Math.abs(d[1])*0.18, 0.02 + Math.abs(d[2])*0.18], c:c, glow:true});
+    });
+    return out;
   }
   /* the edges of the selected pieces' faces, drawn through everything so a piece inside another still shows */
   function outline(ids){
@@ -288,7 +307,7 @@
     else if (x != null){ var R = view.ray(x, y), g = WSV.hitPlane(R.o, R.d, [0, 0, 0], [0, 1, 0]); at = g || view.cam.target.slice(); }
     else at = view.cam.target.slice();
     if (S.layer === 'wheel' && !h) at = [S.doc.setup.wheelW/2 + 0.02, 0, 0];
-    var g = S.layer === 'wheel' ? 'wheel' : 'body';
+    var g = S.layer === 'wheel' ? 'wheel' : (isModel() ? (S.part || partNames()[0]) : 'body');
     if (kind.kind === 'shape'){
       var p = M.addPiece({pieces:ownerList()}, kind.key, [0, 0, 0], {g:g, c:S.brush, m:M.guessMaterial(S.brush)});
       if (S.layer !== 'state') {} /* addPiece pushed into ownerList */
@@ -380,6 +399,12 @@
 
   /* ---------------------------------------------------------------- layer bar and preview toggles */
   function renderBars(){
+    if (isModel()){
+      var nm = partNames(), hb = '<button class="sm ' + (!S.part ? 'on' : 'alt') + '" data-part="">All parts</button>' + nm.map(function(n){ return '<button class="sm ' + (S.part === n ? 'on' : 'alt') + '" data-part="' + esc(n) + '">' + esc(n.replace(/_/g, ' ')) + '</button>'; }).join('');
+      $('layerBar').innerHTML = hb;
+      $('previewBar').innerHTML = tog('markers', 'Points') + tog('person', 'Person') + tog('planes', 'Planes');
+      return;
+    }
     var h = '<button class="sm ' + (S.layer === 'car' ? 'on' : 'alt') + '" data-l="car">Car</button><button class="sm ' + (S.layer === 'wheel' ? 'on' : 'alt') + '" data-l="wheel">Wheel</button>' +
       '<button class="sm ' + (S.layer === 'look' ? 'on' : 'alt') + '" data-l="look">Damage</button>';
     if (S.layer === 'state') h += '<button class="sm on" data-l="state">Editing: ' + esc(stateLabel(S.state)) + '</button><button class="sm alt" data-l="car">Done</button>';
@@ -391,15 +416,15 @@
     var ls = $('lookSel'); if (ls) ls.onchange = function(){ S.look = ls.value; rebuildScene(); };
   }
   function tog(k, label){ return '<button class="sm ' + (S.preview[k] ? 'on' : 'alt') + '" data-p="' + k + '">' + label + '</button>'; }
-  $('layerBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; var l = b.dataset.l;
+  $('layerBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; if (b.dataset.part !== undefined){ S.part = b.dataset.part || null; renderBars(); return; } var l = b.dataset.l;
     if (l === 'state') return; S.layer = l; S.sel = []; S.placing = null; banner(null); if (l !== 'state') S.state = null;
     if (l === 'look') S.tab = 'damage'; refresh(true); fitView(true); });
   $('previewBar').addEventListener('click', function(e){ var b = e.target.closest('button[data-p]'); if (!b) return; S.preview[b.dataset.p] = !S.preview[b.dataset.p]; renderBars(); rebuildScene(); });
   $('viewBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; if (b.dataset.v === 'fit') fitView(true); else view.preset(b.dataset.v); });
 
   /* ---------------------------------------------------------------- side panel */
-  var TABS = [['piece', 'Piece'], ['car', 'Car'], ['paint', 'Paint'], ['damage', 'Damage'], ['check', 'Check']];
-  function renderTabs(){ $('tabs').innerHTML = TABS.map(function(t){ return '<button class="' + (S.tab === t[0] ? 'on' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join(''); }
+  var TABS_CAR = [['piece', 'Piece'], ['car', 'Car'], ['paint', 'Paint'], ['damage', 'Damage'], ['check', 'Check']], TABS_MODEL = [['piece', 'Piece'], ['model', 'Model'], ['paint', 'Paint'], ['check', 'Check']];
+  function renderTabs(){ $('tabs').innerHTML = (isModel() ? TABS_MODEL : TABS_CAR).map(function(t){ return '<button class="' + (S.tab === t[0] ? 'on' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join(''); }
   $('tabs').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; S.tab = b.dataset.tab; renderTabs(); renderPanel(); });
 
   /* a number field with - and + buttons, in the chosen units ('len'), degrees ('deg'), percent ('pct') or plain */
@@ -433,7 +458,7 @@
 
   function renderPanel(){
     fieldSeq = 0; fields = {};
-    var f = {piece:panelPiece, car:panelCar, paint:panelPaint, damage:panelDamage, check:panelCheck}[S.tab];
+    var f = {piece:panelPiece, car:panelCar, model:panelModel, paint:panelPaint, damage:panelDamage, check:isModel() ? panelCheckModel : panelCheck}[S.tab] || panelPiece;
     $('body').innerHTML = f();
   }
   function shapeName(p){
@@ -457,7 +482,7 @@
     if (sel.length > 1) return panelMany(sel);
     var p = sel[0], h = '<span class="stamp">' + esc(shapeName(p)) + '</span> <span class="muted">' + esc(p.name || p.id) + '</span>';
     h += '<div class="row"><label class="l">Name</label><input class="grow" type="text" data-k="name" value="' + esc(p.name || '') + '" placeholder="e.g. left door"></div>';
-    if (p.g !== 'wheel' && S.layer === 'car') h += '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g">' + [['body','Body'],['bonnet','Bonnet (opens)'],['boot','Boot lid (opens)']].map(function(o){ return '<option value="' + o[0] + '"' + (p.g === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    if (p.g !== 'wheel' && S.layer === 'car') h += '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g">' + partOpts().map(function(o){ return '<option value="' + o[0] + '"' + (p.g === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
     h += '<div class="card"><h3>Where (' + unitLabel() + ')</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return num(a, p.pos[i], 'len', function(v){ edit(function(q){ q.pos[i] = v; }); }, {ax:a}); }).join('') + '</div>' +
       '<p class="muted">X right, Y up, Z forward. The car\'s middle is X 0, the ground Y 0.</p></div>';
     h += '<div class="card"><h3>Size</h3>' + sizeFields(p) + '</div>';
@@ -469,7 +494,7 @@
       '<div class="swatches">' + quickSwatches(p.c) + '</div>' +
       '<div class="row"><label><input type="checkbox" data-k="glow"' + (p.glow ? ' checked' : '') + '>Glows (lamps)</label></div></div>';
     h += '<div class="card"><h3>What it is</h3><div class="row"><label class="l">Material</label><select class="grow" data-k="m">' + Object.keys(M.MATERIALS).map(function(k){ return '<option value="' + k + '"' + ((p.m || M.guessMaterial(p.c)) === k ? ' selected' : '') + '>' + M.MATERIALS[k].label + '</option>'; }).join('') + '</select></div>' +
-      (p.g !== 'wheel' ? '<div class="row"><label class="l">Job</label><select class="grow" data-k="fn"><option value="">None</option>' + Object.keys(M.FUNCTIONS).map(function(k){ return '<option value="' + k + '"' + (p.fn === k ? ' selected' : '') + '>' + M.FUNCTIONS[k].label + '</option>'; }).join('') + '</select></div>' +
+      (p.g !== 'wheel' && !isModel() ? '<div class="row"><label class="l">Job</label><select class="grow" data-k="fn"><option value="">None</option>' + Object.keys(M.FUNCTIONS).map(function(k){ return '<option value="' + k + '"' + (p.fn === k ? ' selected' : '') + '>' + M.FUNCTIONS[k].label + '</option>'; }).join('') + '</select></div>' +
         (p.fn ? '<p class="muted">' + esc(M.FUNCTIONS[p.fn].hint) + '</p>' : '') +
         '<div class="row"><label><input type="checkbox" data-k="hidden"' + (p.hidden ? ' checked' : '') + '>Inside part (not drawn in the game)</label></div>' : '') + '</div>';
     if (S.layer !== 'state' && p.g !== 'wheel') h += '<div class="card"><h3>Symmetry</h3><div class="row"><label><input type="checkbox" data-k="mx"' + (p.mx ? ' checked' : '') + '>Mirror left / right</label><label><input type="checkbox" data-k="mz"' + (p.mz ? ' checked' : '') + '>Mirror front / back</label></div></div>';
@@ -481,7 +506,7 @@
     h += '<div class="card"><h3>Move together</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return '<div class="num"><span class="ax ' + a + '">' + a.toUpperCase() + '</span><button data-a="nudge" data-i="' + i + '" data-d="-1">−</button><button data-a="nudge" data-i="' + i + '" data-d="1">+</button></div>'; }).join('') + '</div><p class="muted">Each tap moves one grid step. Or drag any selected piece.</p></div>';
     h += '<div class="card"><h3>Look</h3><div class="swatches">' + quickSwatches(null) + '</div></div>';
     h += '<div class="card"><h3>What they are</h3><div class="row"><label class="l">Material</label><select class="grow" data-k="m"><option value="">(mixed)</option>' + Object.keys(M.MATERIALS).map(function(k){ return '<option value="' + k + '">' + M.MATERIALS[k].label + '</option>'; }).join('') + '</select></div>' +
-      (S.layer === 'car' ? '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g"><option value="">(mixed)</option><option value="body">Body</option><option value="bonnet">Bonnet</option><option value="boot">Boot lid</option></select></div>' : '') + '</div>';
+      (S.layer === 'car' ? '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g"><option value="">(mixed)</option>' + partOpts().map(function(o){ return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select></div>' : '') + '</div>';
     h += '<div class="card"><h3>Prefab</h3><p class="muted">Save these pieces to place again on any design (a headlight cluster, a grille, a roof rack). Prefabs go into packs too.</p><div class="row"><input class="grow" id="pfName" type="text" placeholder="Prefab name"><button class="sm" data-a="prefab">Save prefab</button></div></div>';
     h += actionsRow(sel.length);
     return h;
@@ -594,9 +619,61 @@
     return h;
   }
 
+  /* ---------------------------------------------------------------- models: kind, parts, points (any asset that is not a car) */
+  var DIRS = [['+Z (forward)', [0, 0, 1]], ['-Z (back)', [0, 0, -1]], ['+X (right)', [1, 0, 0]], ['-X (left)', [-1, 0, 0]], ['+Y (up)', [0, 1, 0]], ['-Y (down)', [0, -1, 0]]];
+  function dirIndex(d){ d = d || [0, 0, 1]; for (var i = 0; i < DIRS.length; i++) if (DIRS[i][1][0] === d[0] && DIRS[i][1][1] === d[1] && DIRS[i][1][2] === d[2]) return i; return 0; }
+  function panelModel(){
+    var d = S.doc, A = asset(), K = M.KINDS[d.kind] || M.KINDS.furniture, h = '<span class="stamp">Model</span>';
+    h += '<div class="card"><h3>What it is</h3>' +
+      '<div class="row"><label class="l">Kind</label><select class="grow" data-k="kind">' + Object.keys(M.KINDS).map(function(k){ return '<option value="' + k + '"' + (d.kind === k ? ' selected' : '') + '>' + esc(M.KINDS[k].label) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="row"><label class="l">Made by</label><input class="grow" type="text" data-k="author" value="' + esc(d.author || '') + '"></div>' +
+      '<div class="row"><label class="l">Pack</label><select class="grow" data-k="tpack">' + M.STOCK_PACKS.concat(['props']).filter(function(v, i, a){ return a.indexOf(v) === i; }).sort().map(function(k){ return '<option' + (d.target.pack === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div class="row"><label class="l">Group</label><input class="grow" type="text" data-k="tgroup" value="' + esc(d.target.group) + '"></div>' +
+      '<div class="row"><label class="l">Name</label><input class="grow" type="text" data-k="tname" value="' + esc(d.target.name) + '"></div>' +
+      '<p class="muted">' + (d.from ? 'Opened from <b>' + esc(d.from) + '</b>. Saved into a pack, it <b>replaces</b> that model in the game when the pack loads (give it another name above to add a new model instead).' : 'A new model: it is added to <b>' + esc(d.target.pack + '.' + d.target.group) + '</b> when a pack with it loads.') + '</p></div>';
+    h += '<div class="card"><h3>Parts</h3><div class="list">' + partNames().map(function(n){
+      var cnt = d.pieces.filter(function(p){ return p.g === n; }).length;
+      return '<div class="it"><span class="nm">' + esc(n.replace(/_/g, ' ')) + ' <span class="muted">' + cnt + ' pieces</span></span><button class="alt sm" data-a="hidePart" data-n="' + esc(n) + '">' + (S.hideParts[n] ? 'Show' : 'Hide') + '</button>' +
+        (cnt || partNames().length < 2 ? '' : '<button class="alt sm" data-a="delPart" data-n="' + esc(n) + '">Remove</button>') + '</div>'; }).join('') + '</div>' +
+      '<div class="row"><input class="grow" id="partName" type="text" placeholder="New part (e.g. lid, door, searched)"><button class="sm" data-a="addPart">Add part</button></div>' +
+      '<p class="muted">A part is one list of pieces the game draws together. Models with states (a container closed and searched) or moving parts keep each in its own part. Pick the part a piece belongs to on the Piece tab.</p></div>';
+    h += '<div class="card"><h3>Points</h3>';
+    var pts = d.points || [];
+    h += pts.length ? '<div class="list">' + pts.map(function(pt, i){
+      return '<div class="it" style="flex-wrap:wrap"><button class="' + (i === S.selPoint ? 'on' : 'alt') + ' sm" data-a="selPoint" data-i="' + i + '">' + esc(pt.name) + '</button>' +
+        '<select data-k="ptkind" data-i="' + i + '">' + Object.keys(M.POINT_KINDS).map(function(k){ return '<option value="' + k + '"' + (pt.kind === k ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select>' +
+        [0, 1, 2].map(function(ax){ return '<input style="width:62px" inputmode="decimal" data-k="ptv" data-i="' + i + '" data-ax="' + ax + '" value="' + fmtNum(toUnit(pt.pos[ax])) + '" aria-label="' + 'xyz'[ax] + '">'; }).join('') +
+        '<select data-k="ptdir" data-i="' + i + '">' + DIRS.map(function(o, j){ return '<option value="' + j + '"' + (dirIndex(pt.dir) === j ? ' selected' : '') + '>' + o[0] + '</option>'; }).join('') + '</select>' +
+        '<button class="alt sm" data-a="delPoint" data-i="' + i + '">Delete</button></div>'; }).join('') + '</div>' : '<p class="muted">No points yet.</p>';
+    h += '<div class="row"><select id="ptNew" class="grow">' + Object.keys(M.POINT_KINDS).map(function(k){ return '<option value="' + k + '"' + (K.points.indexOf(k) >= 0 ? '' : '') + '>' + k + ' - ' + esc(M.POINT_KINDS[k]) + '</option>'; }).join('') + '</select><button class="sm" data-a="addPoint">Add point</button></div>' +
+      '<p class="muted">Points are measured in the units you chose (X right, Y up, Z forward), drawn as coloured markers. A new point goes at the middle of the selected piece. For this kind, useful points: <b>' + esc(K.points.join(', ')) + '</b>.</p></div>';
+    h += '<div class="card"><h3>Inside the game files</h3><p class="muted">' + ((d.extra || []).length ? 'Also carried with it: ' + d.extra.map(function(e){ return esc(e.path.join('.')); }).join(', ') + '.' : 'Nothing else is stored with it.') + '</p></div>';
+    return h;
+  }
+  function panelCheckModel(){
+    var A = asset(), C = M.checkModel(S.doc, A), tot = A.stats.total, h = '<span class="stamp">Check</span>';
+    h += C.length ? C.map(function(c){ return '<div class="msg ' + c[0] + '">' + esc(c[1]) + '</div>'; }).join('') : '<div class="msg info">Ready for the game.</div>';
+    h += '<div class="card"><h3>Detail budget</h3><div class="meter"><i style="width:' + Math.min(100, tot/40) + '%;background:' + (tot > 4000 ? 'var(--bad)' : tot > 2000 ? 'var(--ochre)' : 'var(--sage)') + '"></i></div>' +
+      '<table>' + tr('Whole model', tot + ' triangles') + A.parts.map(function(n){ return tr('Part: ' + n, S.doc.pieces.filter(function(p){ return p.g === n; }).length + ' pieces'); }).join('') + tr('Points', (S.doc.points || []).length) + tr('Pack size', Math.round(JSON.stringify(A).length/1024) + ' KB') + '</table></div>';
+    h += '<div class="card"><h3>Units</h3><div class="row"><button class="' + (S.units === 'imp' ? 'on' : 'alt') + ' sm" data-a="units" data-u="imp">Inches and feet</button><button class="' + (S.units === 'met' ? 'on' : 'alt') + ' sm" data-a="units" data-u="met">Centimetres and metres</button></div></div>';
+    return h;
+  }
+
   /* ---------------------------------------------------------------- panel actions */
   var ACTIONS = {
     selAll:selectAll,
+    hidePart:function(b){ S.hideParts[b.dataset.n] = !S.hideParts[b.dataset.n]; refresh(true); },
+    addPart:function(){ var n = slug(($('partName') || {}).value); if (!n) return toast('Give the part a name.'); if (S.doc.parts[n]) return toast('There is a part called that already.'); commit(); S.doc.parts[n] = {}; (function fix(){ var L = S.doc.layout; if (L && L.$part !== undefined){ S.doc.layout = {main:L}; L = S.doc.layout; } L[n] = {$part:n}; })(); changed(true); },
+    delPart:function(b){ var n = b.dataset.n; if (S.doc.pieces.some(function(p){ return p.g === n; })) return toast('Move its pieces to another part first.'); commit(); delete S.doc.parts[n]; (function strip(o){ if (o && typeof o === 'object' && !Array.isArray(o)){ for (var k in o){ if (o[k] && o[k].$part === n) delete o[k]; else strip(o[k]); } } })(S.doc.layout); if (S.part === n) S.part = null; changed(true); },
+    addPoint:function(){
+      var kind = ($('ptNew') || {}).value || 'grip', at = [0, 0.5, 0], sel = selected();
+      if (sel.length){ var B = M.boundsOf(M.toNativeAlways ? sel.reduce(function(a, p){ return a.concat(M.toNativeAlways(p)); }, []) : []); if (B.ok) at = [(B.mn[0] + B.mx[0])/2, (B.mn[1] + B.mx[1])/2, (B.mn[2] + B.mx[2])/2].map(r4); }
+      commit(); var n = kind, k = 2; while ((S.doc.points || []).some(function(q){ return q.name === n; })) n = kind + '_' + k++;
+      M.addPoint(S.doc, n, kind, at); S.selPoint = S.doc.points.length - 1; changed(true);
+    },
+    selPoint:function(b){ S.selPoint = +b.dataset.i; refresh(true); },
+    delPoint:function(b){ commit(); S.doc.points.splice(+b.dataset.i, 1); S.selPoint = -1; changed(true); },
+    stockBack:function(){ stockBrowser(); },
     selHidden:function(){ S.sel = S.doc.pieces.filter(function(p){ return p.hidden; }).map(function(p){ return p.id; }); refresh(); },
     del:removeSel, dup:function(){ duplicate(false); }, mirrorCopy:function(){ duplicate(true); },
     turnY:function(){ edit(function(p){ p.rot[1] = ((p.rot[1] || 0) + 90) % 360; }); },
@@ -615,6 +692,13 @@
     units:function(b){ S.units = b.dataset.u; store.set('units', S.units); S.snap = SNAPS[S.units][2][0]; store.set('snap', S.snap); renderTools(); refresh(true); }
   };
   var CHANGES = {
+    kind:function(t){ commit(); S.doc.kind = t.value; changed(true); },
+    tpack:function(t){ commit(); S.doc.target.pack = t.value; changed(false); },
+    tgroup:function(t){ commit(); S.doc.target.group = slug(t.value) || S.doc.target.group; changed(false); },
+    tname:function(t){ var v = slug(t.value) || S.doc.target.name; commit(); if ((S.doc.extra || []).length) S.doc.extra.forEach(function(e){ e.path[e.path.length - 1] = v; }); S.doc.target.name = v; if (S.doc.from && v !== S.doc.from.split('.').pop()) delete S.doc.from; changed(true); },
+    ptkind:function(t){ commit(); S.doc.points[+t.dataset.i].kind = t.value; changed(true); },
+    ptdir:function(t){ commit(); S.doc.points[+t.dataset.i].dir = DIRS[+t.value][1].slice(); changed(true); },
+    ptv:function(t){ var v = parseFloat(String(t.value).replace(',', '.')); if (!isFinite(v)) return; commit(); S.doc.points[+t.dataset.i].pos[+t.dataset.ax] = r4(fromUnit(v)); changed(false); },
     name:function(t){ edit(function(p){ p.name = t.value; }, false); },
     g:function(t){ if (t.value) edit(function(p){ p.g = t.value; }); },
     dark:function(t){ edit(function(p){ var b = p.c.replace(/_D$/, ''); p.c = t.checked ? b + '_D' : b; }); },
@@ -672,17 +756,38 @@
     h += '<div class="list">' + ids.map(function(id){ var x = d[id]; return '<div class="it"><input type="checkbox" class="pk" value="' + esc(id) + '"' + (id === S.doc.id ? ' checked' : '') + '><span class="nm">' + esc(x.name) + ' <span class="muted">' + (x.saved ? new Date(x.saved).toLocaleDateString() : '') + '</span></span>' +
       (id === S.doc.id ? '<span class="muted">open</span>' : '<button class="alt sm" data-m="open" data-id="' + esc(id) + '">Open</button>') + '<button class="alt sm" data-m="del" data-id="' + esc(id) + '">Delete</button></div>'; }).join('') + '</div>';
     h += '<div class="row" style="margin-top:12px"><button class="sm" data-m="exportSel">Export ticked as one pack</button><button class="alt sm" data-m="import">Import a pack file</button></div>';
-    h += '<div class="card"><h3>Start something new</h3><div class="row"><button class="alt sm" data-m="blank">Blank car</button></div><p class="muted">Or start from one of the design chat\'s cars (a copy; the game\'s own car is not changed):</p><div class="row">' +
+    h += '<div class="card"><h3>Start something new</h3><div class="row"><button class="alt sm" data-m="blank">Blank car</button>' + M.BLANK_KINDS.map(function(k){ return '<button class="alt sm" data-m="blankKind" data-k="' + k + '">Blank ' + esc(M.KINDS[k].label.toLowerCase()) + '</button>'; }).join('') + '</div><div class="row"><button class="sm" data-m="stockBrowser">Open any model in the game…</button></div><p class="muted">Or start from one of the design chat\'s cars (a copy; the game\'s own car is not changed):</p><div class="row">' +
       STOCK.map(function(n){ return '<button class="alt sm" data-m="stock" data-n="' + n + '">' + n.replace(/_/g, ' ') + '</button>'; }).join('') + '</div></div>';
     if (S.prefabs.length) h += '<div class="card"><h3>Prefabs</h3><div class="list">' + S.prefabs.map(function(pf){ return '<div class="it"><span class="nm">' + esc(pf.name) + ' <span class="muted">' + pf.pieces.length + ' pieces</span></span><button class="alt sm" data-m="pfdel" data-id="' + esc(pf.id) + '">Delete</button></div>'; }).join('') + '</div></div>';
     h += '<div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Close</button></div>';
     modal(h);
+  }
+  /* every model of every pack the game has, opened as an editable copy */
+  function stockBrowser(){
+    var h = '<h2>Models in the game</h2><p>Pick a pack, then a model. You get a copy to change; the game\'s own model is not touched until you export a pack that replaces it.</p><div class="row" style="flex-wrap:wrap">' +
+      M.STOCK_PACKS.map(function(n){ return '<button class="alt sm" data-m="stockPack" data-n="' + n + '">' + n + '</button>'; }).join('') + '</div><div class="row" style="justify-content:flex-end;margin-top:10px"><button class="alt sm" data-m="close">Close</button></div>';
+    modal(h);
+  }
+  function stockPack(name){
+    var box = $('modalBox'); box.innerHTML = '<h2>' + esc(name) + '</h2><p>Loading…</p>';
+    M.loadStock([name], 'assets/shaped/', function(){
+      var idx = M.stockIndex(name), groups = Object.keys(idx), total = 0; groups.forEach(function(g){ total += idx[g].length; });
+      if (!groups.length){ box.innerHTML = '<h2>' + esc(name) + '</h2><p>This pack has no models to open (or could not load).</p><div class="row"><button class="alt sm" data-m="stockBrowser">Back</button></div>'; return; }
+      var h = '<h2>' + esc(name) + ' <span class="muted">' + total + ' models</span></h2><div class="row"><input class="grow" id="stockFilter" type="text" placeholder="Filter by name"><button class="alt sm" data-m="stockBrowser">Back</button><button class="alt sm" data-m="close">Close</button></div><div class="list" id="stockList" style="max-height:52vh;overflow:auto">';
+      groups.forEach(function(g){ h += '<div class="muted" style="margin-top:6px">' + esc(g) + '</div>' + idx[g].map(function(n){ return '<div class="it stk" data-n="' + esc(n.toLowerCase()) + '"><span class="nm">' + esc(n.replace(/_/g, ' ')) + '</span><button class="alt sm" data-m="stockOpen" data-p="' + esc(name) + '" data-g="' + esc(g) + '" data-n="' + esc(n) + '">Open a copy</button></div>'; }).join(''); });
+      h += '</div>'; box.innerHTML = h;
+      var f = $('stockFilter'); if (f) f.addEventListener('input', function(){ var q = f.value.trim().toLowerCase().replace(/ /g, '_'); [].slice.call(document.querySelectorAll('#stockList .stk')).forEach(function(el){ el.classList.toggle('hidden', !!q && el.dataset.n.indexOf(q) < 0); }); });
+    });
   }
   var MODAL = {
     close:closeModal,
     open:function(b){ saveDraft(); setDoc(clone(drafts()[b.dataset.id])); closeModal(); },
     del:function(b){ if (b.dataset.sure !== '1'){ b.dataset.sure = '1'; b.textContent = 'Tap again to delete'; return; } var d = drafts(); delete d[b.dataset.id]; store.set('drafts', d); library(); },
     blank:function(){ saveDraft(); var d = M.blankDoc(); d.id = uniqueId('my_car'); d.name = 'My car'; setDoc(d); closeModal(); },
+    blankKind:function(b){ saveDraft(); var d = M.blankOfKind(b.dataset.k, uniqueId('my_' + b.dataset.k)); d.name = 'My ' + M.KINDS[b.dataset.k].label.toLowerCase(); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); },
+    stockBrowser:function(){ stockBrowser(); },
+    stockPack:function(b){ stockPack(b.dataset.n); },
+    stockOpen:function(b){ var pk = b.dataset.p, g = b.dataset.g, n = b.dataset.n; saveDraft(); try { var d = M.importModel(SH, pk, g, n); d.id = uniqueId(d.id); setDoc(d); S.tab = 'model'; refresh(true); closeModal(); toast('Opened a copy of ' + pk + '.' + g + '.' + n + ' (' + d.pieces.length + ' pieces). The game\'s own model is not changed.'); } catch (e){ toast('Could not open it: ' + e.message); } },
     stock:function(b){ saveDraft(); var d = M.fromStock(PROPS, b.dataset.n); d.id = uniqueId(d.id); setDoc(d); closeModal(); toast('Opened a copy of the ' + b.dataset.n.replace(/_/g, ' ') + '. Pieces marked "inside" are its seats, engine, tank and boot space.'); },
     exportSel:function(){ var ids = [].slice.call(document.querySelectorAll('.pk:checked')).map(function(i){ return i.value; }); if (!ids.length) return toast('Tick at least one design.'); exportDialog(ids); },
     import:function(){ $('fileIn').click(); },
@@ -705,7 +810,7 @@
   function doExport(){
     var name = $('xName').value.trim() || 'My vehicles', pk = M.newPack({id:slug(name).replace(/_/g, '-') || 'my-pack', name:name, author:$('xAuthor').value.trim(), licence:$('xLic').value});
     var d = drafts(), bad = [];
-    exportIds.forEach(function(id){ var doc = d[id]; if (!doc) return; try { pk.assets.push(M.buildAsset(doc, D)); } catch (e){ console.error(e); bad.push(doc.name); } });
+    exportIds.forEach(function(id){ var doc = d[id]; if (!doc) return; try { if (doc.type === 'model'){ pk.assets.push(M.buildModelAsset(doc)); pk.version = 2; } else pk.assets.push(M.buildAsset(doc, D)); } catch (e){ console.error(e); bad.push(doc.name); } });
     if ($('xPf') && $('xPf').checked) pk.prefabs = clone(S.prefabs);
     var text = M.packToJS(pk), file = pk.id + '.js';
     download(file, text);
@@ -727,7 +832,7 @@
   function importText(text, fname){
     try {
       var pk = M.parsePack(text), d = drafts(), n = 0, last = null;
-      (pk.assets || []).forEach(function(a){ if (a.type !== 'vehicle') return; var doc = M.docFromAsset(a); doc.id = uniqueId(doc.id || doc.name); d[doc.id] = doc; last = doc; n++; });
+      (pk.assets || []).forEach(function(a){ if (a.type !== 'vehicle' && !(a.type === 'model' && a.source)) return; var doc = a.type === 'model' ? clone(a.source) : M.docFromAsset(a); doc.id = uniqueId(doc.id || doc.name); d[doc.id] = doc; last = doc; n++; });
       (pk.prefabs || []).forEach(function(pf){ if (!S.prefabs.some(function(q){ return q.id === pf.id; })) S.prefabs.push(pf); });
       store.set('drafts', d); store.set('prefabs', S.prefabs); renderTools();
       if (last){ setDoc(clone(last)); }
