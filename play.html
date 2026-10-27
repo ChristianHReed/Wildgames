@@ -446,7 +446,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.39</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.40</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -472,7 +472,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.39', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.40', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1152,9 +1152,10 @@ var SVX = {n:-1, base:null};
 function svExtend(){
   var P = window.AfterstreetPacks, S = window.SHAPED && SHAPED.survivor; if (!P || !S || !S.choices || !S.parts || !P.models) return;
   var ms = P.models.filter(function(m){ return m.pack === 'survivor' && m.path && m.path[0] === 'parts'; });
-  if (ms.length === SVX.n) return; SVX.n = ms.length;
+  var pn = ms.length + (S.presets || []).length; if (pn === SVX.n) return; SVX.n = pn;
   var KIND = {top:['top', 'cTop', 'top'], bottoms:['bottoms', 'cBot', 'bot'], shoes:['shoes', 'cShoe', 'shoe'], face:['face', 'cFace', 'face'], hair:['hair', 'cHair', 'hair'], hat:['hat', 'cHat', 'hat']};
-  if (!SVX.base){ SVX.base = {}; for (var k in KIND) SVX.base[k] = S.choices[KIND[k][0]].length; }
+  if (!SVX.base){ SVX.base = {}; for (var k in KIND){ var s0 = document.getElementById(KIND[k][1]); if (!s0) return; SVX.base[k] = s0.options.length; } SVX.n = -1; }   /* the stock options in the page, counted once, before any pack's are added */
+  SVX.n = pn;
   var names = {}, bodies = {};
   ms.forEach(function(m){ var sl = m.path[1], K = KIND[sl]; if (!K || m.path[1] === 'worn' || m.path[1] === 'gear' || m.path[1] === 'npc') return;
     var body = (sl === 'top' || sl === 'bottoms') ? m.path[2] : '', list = S.choices[K[0]], key = m.key;
@@ -1163,6 +1164,7 @@ function svExtend(){
     while (sel.options.length > SVX.base[sl]) sel.remove(sel.options.length - 1);
     for (var i = SVX.base[sl]; i < list.length; i++){ var bs = bodies[sl + '.' + list[i]] || [], o = document.createElement('option'); o.value = i;
       o.textContent = ((names[sl] || {})[list[i]] || list[i]) + (bs.length === 1 && bs[0] ? ' (' + (bs[0] === 'feminine' ? 'feminine' : 'masculine') + ' body only)' : '') + ' \u2022 Workshop'; sel.appendChild(o); } }
+  if (window.svRebuildPresets) window.svRebuildPresets();
 }
 function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value, face:el('cFace').value, top:el('cTop').value, bot:el('cBot').value, shoe:el('cShoe').value, acc:el('cAcc').value}); }
 function xpLvl(xp){ return Math.min(10, Math.floor(Math.sqrt((+xp || 0)/20))); }
@@ -5193,11 +5195,19 @@ el('wsGo').addEventListener('click', function(){ location.href = 'workshop.html'
     ['Caretaker', {build:1, skin:1, body:1, hair:3, hc:4, shirt:'#7a4e8a', pants:'#2e3b4e', hat:0, top:6, bot:3, shoe:2, face:1, acc:'#e9dab0'}]
   ], row = el('svPre'), ids = {build:'cBuild', skin:'cSkin', body:'cBody', hair:'cHair', hc:'cHairC', shirt:'cShirt', pants:'cPants', hat:'cHat', top:'cTop', bot:'cBot', shoe:'cShoe', face:'cFace', acc:'cAcc'};
   function apply(l){ Object.keys(ids).forEach(function(k){ if (l[k] !== undefined) el(ids[k]).value = l[k]; }); drawPrev(); }
-  PRE.forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.textContent = p[0]; b.addEventListener('click', function(){ apply(p[1]); }); row.appendChild(b); });
-  var r = document.createElement('button'); r.type = 'button'; r.className = 'alt'; r.textContent = 'Surprise me';
-  r.addEventListener('click', function(){ var l = {}, pick = function(id){ return Math.floor(Math.random()*el(id).options.length); }; ['cBuild', 'cSkin', 'cBody', 'cHair', 'cHairC', 'cHat', 'cTop', 'cBot', 'cShoe', 'cFace'].forEach(function(id){ l[Object.keys(ids).filter(function(k){ return ids[k] === id; })[0]] = pick(id); });
-    var col = function(){ return '#' + ('00000' + Math.floor(Math.random()*0xffffff).toString(16)).slice(-6); }; l.shirt = col(); l.pants = col(); l.acc = col(); apply(l); });
-  row.appendChild(r);
+  /* ready-made characters from content packs (survivor.presets: names for the choices) join the stock presets */
+  function packPre(){ var S = window.SHAPED && SHAPED.survivor, K = S && S.choices, out = []; if (!K) return out;
+    var ix = function(list, v){ return typeof v === 'number' ? v : Math.max(0, list.indexOf(v)); };
+    (S.presets || []).forEach(function(q){ var L = q.look || {}; out.push([q.name, {build:ix(K.build, L.build), skin:L.skin | 0, body:ix(K.body, L.body), hair:ix(K.hair, L.hair), hc:L.hc | 0, shirt:L.shirt, pants:L.pants, hat:ix(K.hat, L.hat), top:ix(K.top, L.top), bot:ix(K.bottoms, L.bot), shoe:ix(K.shoes, L.shoe), face:ix(K.face, L.face), acc:L.acc}]); });
+    return out; }
+  window.svRebuildPresets = function(){
+    row.innerHTML = '';
+    PRE.concat(packPre()).forEach(function(p){ var b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.textContent = p[0]; b.addEventListener('click', function(){ apply(p[1]); }); row.appendChild(b); });
+    var r = document.createElement('button'); r.type = 'button'; r.className = 'alt'; r.textContent = 'Surprise me';
+    r.addEventListener('click', function(){ var l = {}, pick = function(id){ return Math.floor(Math.random()*el(id).options.length); }; ['cBuild', 'cSkin', 'cBody', 'cHair', 'cHairC', 'cHat', 'cTop', 'cBot', 'cShoe', 'cFace'].forEach(function(id){ l[Object.keys(ids).filter(function(k){ return ids[k] === id; })[0]] = pick(id); });
+      var col = function(){ return '#' + ('00000' + Math.floor(Math.random()*0xffffff).toString(16)).slice(-6); }; l.shirt = col(); l.pants = col(); l.acc = col(); apply(l); });
+    row.appendChild(r); };
+  window.svRebuildPresets();
   el('wsGo3').addEventListener('click', function(){ location.href = 'workshop.html'; });
 })();
 
