@@ -333,7 +333,7 @@
         <label>Shirt<input type="color" id="cShirt" value="#3566c4" style="height:36px;padding:2px"></label>
         <label>Pants<input type="color" id="cPants" value="#2b2f38" style="height:36px;padding:2px"></label>
       </div>
-      <details style="margin-top:6px"><summary><b>More choices</b>: hat, face, top, bottoms, shoes, second colour</summary>
+      <details style="margin-top:6px"><summary><b>More choices</b>: hat, face, top, bottoms, shoes, second colour, outer layer, gear</summary>
       <div class="prow">
         <label>Hat<select id="cHat"><option value="0">None</option><option value="1">Cap</option><option value="2">Beanie</option><option value="3">Helmet</option></select></label>
         <label>Face<select id="cFace"><option value="0">Calm</option><option value="1">Glasses</option><option value="2">Stubble</option><option value="3">Freckles</option><option value="4">Tired</option><option value="5">Moustache</option><option value="6">Dark glasses</option><option value="7">Scar</option></select></label>
@@ -341,6 +341,8 @@
         <label>Bottoms<select id="cBot"><option value="0">Jeans</option><option value="1">Shorts</option><option value="2">Cargo trousers</option><option value="3">Capri trousers</option><option value="4">Track pants</option><option value="5">Rolled jeans</option></select></label>
         <label>Shoes<select id="cShoe"><option value="0">Trainers</option><option value="1">Boots</option><option value="2">Rain boots</option></select></label>
         <label>Second colour<input type="color" id="cAcc" value="#e9dab0" style="height:36px;padding:2px"></label>
+        <label>Outer layer<select id="cOuter"><option value="">None</option></select></label>
+        <label>Gear<select id="cGear"><option value="">None</option></select></label>
       </div></details>
       <div id="cInfo" style="margin-top:6px"></div>
     </div>
@@ -446,7 +448,7 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.40</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.41</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -472,7 +474,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.40', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.41', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1146,7 +1148,9 @@ var SKIN = ['#f1c9a5', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'], SKN = {scav:
 var me = {look:{build:1, skin:1, shirt:'#3566c4', pants:'#2b2f38', hat:0}, bg:'scout', skills:{scav:0, melee:0, endur:0, build:0, shoot:0, mech:0, aid:0}, cap:false};
 function okCol(c, d){ return /^#[0-9a-f]{6}$/i.test(c) ? c : d; }
 var LMAX = {hat:3, hair:5, face:7, top:7, bot:5, shoe:2};   /* 0.114.39: the highest choice of each kind; clothes from content packs raise it (svExtend) */
-function cleanLook(l){ svExtend(); l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(LMAX.hat, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(LMAX.hair, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(LMAX.face, l.face | 0)), top:Math.max(0, Math.min(LMAX.top, l.top | 0)), bot:Math.max(0, Math.min(LMAX.bot, l.bot | 0)), shoe:Math.max(0, Math.min(LMAX.shoe, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0')}; }
+function cleanLook(l){ svExtend(); l = l || {}; return {build:Math.max(0, Math.min(2, l.build | 0)), skin:Math.max(0, Math.min(4, l.skin | 0)), shirt:okCol(l.shirt, '#3566c4'), pants:okCol(l.pants, '#2b2f38'), hat:Math.max(0, Math.min(LMAX.hat, l.hat | 0)), body:l.body | 0 ? 1 : 0, hair:l.hair === undefined ? 1 : Math.max(0, Math.min(LMAX.hair, l.hair | 0)), hc:l.hc === undefined ? 1 : Math.max(0, Math.min(4, l.hc | 0)), face:Math.max(0, Math.min(LMAX.face, l.face | 0)), top:Math.max(0, Math.min(LMAX.top, l.top | 0)), bot:Math.max(0, Math.min(LMAX.bot, l.bot | 0)), shoe:Math.max(0, Math.min(LMAX.shoe, l.shoe | 0)), acc:okCol(l.acc, '#e9dab0'), gx:svOk('gear', l.gx), ow:svOk('worn', l.ow)}; }
+/* 0.114.41: an extra gear piece and an outer layer chosen in the creator (names from the pack's gear and worn lists); anything the page has no such part for is dropped */
+function svOk(kind, v){ var S = window.SHAPED && SHAPED.survivor; if (!S || !S.parts) return kind === 'gear' ? '' : ''; if (Array.isArray(v)) v = v[0]; v = String(v || ''); if (!v) return ''; var P0 = S.parts[kind]; if (!P0) return ''; if (kind === 'worn' ? (P0.masculine && P0.masculine[v]) || (P0.feminine && P0.feminine[v]) : P0[v]) return (kind === 'gear' && /^(backpack|scarf|gloves)$/.test(v)) ? '' : v; return ''; }
 /* 0.114.39: clothes, hair, hats, faces and shoes made in the Workshop (survivor parts in content packs) join the creator's lists after the stock ones */
 var SVX = {n:-1, base:null};
 function svExtend(){
@@ -1164,9 +1168,12 @@ function svExtend(){
     while (sel.options.length > SVX.base[sl]) sel.remove(sel.options.length - 1);
     for (var i = SVX.base[sl]; i < list.length; i++){ var bs = bodies[sl + '.' + list[i]] || [], o = document.createElement('option'); o.value = i;
       o.textContent = ((names[sl] || {})[list[i]] || list[i]) + (bs.length === 1 && bs[0] ? ' (' + (bs[0] === 'feminine' ? 'feminine' : 'masculine') + ' body only)' : '') + ' \u2022 Workshop'; sel.appendChild(o); } }
+  [['cGear', 'gear', 'gear'], ['cOuter', 'worn', 'worn']].forEach(function(g){ var sel = document.getElementById(g[0]); if (!sel) return; var v = sel.value; sel.length = 1;
+    (S.choices[g[1]] || []).forEach(function(k){ if (g[1] === 'gear' ? /^(backpack|scarf|gloves)$/.test(k) : /^(trousers|thermals)$/.test(k)) return;
+      var o = document.createElement('option'); o.value = k; o.textContent = k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }); sel.appendChild(o); }); sel.value = v; });
   if (window.svRebuildPresets) window.svRebuildPresets();
 }
-function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value, face:el('cFace').value, top:el('cTop').value, bot:el('cBot').value, shoe:el('cShoe').value, acc:el('cAcc').value}); }
+function readLook(){ return cleanLook({build:el('cBuild').value, skin:el('cSkin').value, shirt:el('cShirt').value, pants:el('cPants').value, hat:el('cHat').value, body:el('cBody').value, hair:el('cHair').value, hc:el('cHairC').value, face:el('cFace').value, top:el('cTop').value, bot:el('cBot').value, shoe:el('cShoe').value, acc:el('cAcc').value, gx:el('cGear').value, ow:el('cOuter').value}); }
 function xpLvl(xp){ return Math.min(10, Math.floor(Math.sqrt((+xp || 0)/20))); }
 function lvl(k){ var v = xpLvl(me.skills[k]); return me.cap ? Math.min(v, 2) : v; }
 function addXp(k, n){ var a = xpLvl(me.skills[k]); me.skills[k] = (+me.skills[k] || 0) + n; if (xpLvl(me.skills[k]) > a) feed(SKN[k] + ' is now level ' + xpLvl(me.skills[k]), '#f2d14a'); }
@@ -2506,7 +2513,7 @@ function svLook(l, o){
   if (w.head) hat = {beanie:'beanie', cap:'cap', helmet:'helmet'}[w.head.k] || hat; if (w.feet && w.feet.k === 'boots') shoe = 'boots';
   return {build:K.build[l.build], body:l.body ? 'feminine' : 'masculine', skin:l.skin, hairC:l.hc, hair:K.hair[l.hair], hat:hat, face:K.face[l.face], top:K.top[l.top], bot:K.bottoms[l.bot], shoe:shoe,
     shirt:l.shirt, pants:l.pants, acc:l.acc, pack:o.pack !== undefined ? !!o.pack : !o.talk, wpn:o.wpn || '', gloves:!!(w.hands && w.hands.k === 'gloves'), scarf:false,
-    worn:['top', 'outer', 'legs'].map(function(sl){ return w[sl] && w[sl].k; }).filter(function(k){ return k && (K.worn || []).indexOf(k) >= 0; })};
+    worn:['top', 'outer', 'legs'].map(function(sl){ return w[sl] && w[sl].k; }).concat(l.ow ? [l.ow] : []).filter(function(k, i, a){ return k && (K.worn || []).indexOf(k) >= 0 && a.indexOf(k) === i; }), gx:l.gx || ''};
 }
 function svColourer(PK, look){
   var slot = {SKIN:PK.slots.SKIN[look.skin], HAIR:PK.slots.HAIR[look.hairC], SHIRT:look.shirt, PANTS:look.pants, ACC:look.acc};
@@ -2523,7 +2530,7 @@ function svParts(PK, look){
   var WN = (P0.worn || {})[look.body] || {}, wl = (look.worn || []).filter(function(k){ return WN[k]; }), legs = wl.filter(function(k){ return k === 'trousers' || k === 'thermals'; })[0];
   add(P0.body[look.body]); add(P0.top[look.body][look.top]); if (legs) add(WN[legs]); else add(P0.bottoms[look.body][look.bot]);
   wl.forEach(function(k){ if (k !== legs) add(WN[k]); }); add(P0.shoes[look.shoe]); add(P0.face[look.face]); add(P0.hair[look.hair]); add(P0.hat[look.hat]);
-  if (look.pack) add(P0.gear.backpack); if (look.scarf) add(P0.gear.scarf);
+  if (look.gx) add(P0.gear[look.gx]); if (look.pack) add(P0.gear.backpack); if (look.scarf) add(P0.gear.scarf);
   (look.npc || []).forEach(function(k){ add(P0.npc && P0.npc[k]); });   /* a recruitable survivor's own pieces: hat, vest, bag, cane */
   if (look.gloves){ delete out.hand_l; delete out.hand_r; add(P0.gear.gloves); }
   if ((look.hat !== 'none' || (look.npc || []).some(function(k){ return k === 'wide_brim' || k === 'hood_up'; })) && out.Head) out.Head = out.Head.filter(function(q){ return q.hat !== 'hide'; });
@@ -5194,11 +5201,11 @@ el('wsGo').addEventListener('click', function(){ location.href = 'workshop.html'
     ['Drifter', {build:1, skin:4, body:0, hair:2, hc:4, shirt:'#6d5c4a', pants:'#35373d', hat:2, top:6, bot:5, shoe:1, face:4, acc:'#9a8c70'}],
     ['Caretaker', {build:1, skin:1, body:1, hair:3, hc:4, shirt:'#7a4e8a', pants:'#2e3b4e', hat:0, top:6, bot:3, shoe:2, face:1, acc:'#e9dab0'}]
   ], row = el('svPre'), ids = {build:'cBuild', skin:'cSkin', body:'cBody', hair:'cHair', hc:'cHairC', shirt:'cShirt', pants:'cPants', hat:'cHat', top:'cTop', bot:'cBot', shoe:'cShoe', face:'cFace', acc:'cAcc'};
-  function apply(l){ Object.keys(ids).forEach(function(k){ if (l[k] !== undefined) el(ids[k]).value = l[k]; }); drawPrev(); }
+  function apply(l){ Object.keys(ids).forEach(function(k){ if (l[k] !== undefined) el(ids[k]).value = l[k]; }); el('cGear').value = l.gx || ''; el('cOuter').value = l.ow || ''; drawPrev(); }
   /* ready-made characters from content packs (survivor.presets: names for the choices) join the stock presets */
   function packPre(){ var S = window.SHAPED && SHAPED.survivor, K = S && S.choices, out = []; if (!K) return out;
     var ix = function(list, v){ return typeof v === 'number' ? v : Math.max(0, list.indexOf(v)); };
-    (S.presets || []).forEach(function(q){ var L = q.look || {}; out.push([q.name, {build:ix(K.build, L.build), skin:L.skin | 0, body:ix(K.body, L.body), hair:ix(K.hair, L.hair), hc:L.hc | 0, shirt:L.shirt, pants:L.pants, hat:ix(K.hat, L.hat), top:ix(K.top, L.top), bot:ix(K.bottoms, L.bot), shoe:ix(K.shoes, L.shoe), face:ix(K.face, L.face), acc:L.acc}]); });
+    (S.presets || []).forEach(function(q){ var L = q.look || {}; out.push([q.name, {build:ix(K.build, L.build), skin:L.skin | 0, body:ix(K.body, L.body), hair:ix(K.hair, L.hair), hc:L.hc | 0, shirt:L.shirt, pants:L.pants, hat:ix(K.hat, L.hat), top:ix(K.top, L.top), bot:ix(K.bottoms, L.bot), shoe:ix(K.shoes, L.shoe), face:ix(K.face, L.face), acc:L.acc, gx:(L.gx || ''), ow:(L.ow || '')}]); });
     return out; }
   window.svRebuildPresets = function(){
     row.innerHTML = '';
@@ -5480,7 +5487,7 @@ function syncChar(fromRoster){
   r.innerHTML = h + '<option value="">New survivor</option>'; r.value = found ? found.slug : '';
   if (found){
     var c = found.c, l = cleanLook(c.look); if (fromRoster) el('pname').value = c.name || found.slug;
-    el('cBuild').value = l.build; el('cSkin').value = l.skin; el('cShirt').value = l.shirt; el('cPants').value = l.pants; el('cHat').value = l.hat; el('cBody').value = l.body; el('cHair').value = l.hair; el('cHairC').value = l.hc; el('cFace').value = l.face; el('cTop').value = l.top; el('cBot').value = l.bot; el('cShoe').value = l.shoe; el('cAcc').value = l.acc;
+    el('cBuild').value = l.build; el('cSkin').value = l.skin; el('cShirt').value = l.shirt; el('cPants').value = l.pants; el('cHat').value = l.hat; el('cBody').value = l.body; el('cHair').value = l.hair; el('cHairC').value = l.hc; el('cFace').value = l.face; el('cTop').value = l.top; el('cBot').value = l.bot; el('cShoe').value = l.shoe; el('cAcc').value = l.acc; el('cGear').value = l.gx; el('cOuter').value = l.ow;
     if (c.bg) el('cBg').value = c.bg; el('cBg').disabled = !!c.bg;
     var sk = c.skills || {}; el('cInfo').textContent = 'Scavenging ' + xpLvl(sk.scav) + ' \u00b7 Melee ' + xpLvl(sk.melee) + ' \u00b7 Endurance ' + xpLvl(sk.endur) + ' \u00b7 Building ' + xpLvl(sk.build) + ' \u00b7 Marksmanship ' + xpLvl(sk.shoot) + ' \u00b7 Mechanics ' + xpLvl(sk.mech) + ' \u00b7 First aid ' + xpLvl(sk.aid) + ' \u00b7 Deaths ' + (c.deaths | 0) + '. Background is fixed once a survivor has played.';
   } else { el('cBg').disabled = false; if (fromRoster) el('pname').value = ''; el('cInfo').textContent = 'New survivor. Pick a name, a look and a background.'; }
@@ -5488,7 +5495,7 @@ function syncChar(fromRoster){
 }
 el('roster').addEventListener('change', function(){ syncChar(true); });
 el('pname').addEventListener('input', function(){ syncChar(false); });
-['cBuild', 'cSkin', 'cShirt', 'cPants', 'cHat', 'cBody', 'cHair', 'cHairC', 'cFace', 'cTop', 'cBot', 'cShoe', 'cAcc'].forEach(function(id){ el(id).addEventListener('input', drawPrev); });
+['cBuild', 'cSkin', 'cShirt', 'cPants', 'cHat', 'cBody', 'cHair', 'cHairC', 'cFace', 'cTop', 'cBot', 'cShoe', 'cAcc', 'cGear', 'cOuter'].forEach(function(id){ el(id).addEventListener('input', drawPrev); });
 (function(){
   var n = lsGet('lastblock:name'), q = lsGet('lastblock:quality'), vr = lsGet('lastblock:vrule');
   if (n) el('pname').value = n; if (vr) el('vRule').value = vr; var lr = lsGet('lastblock:loot'); if (lr) el('lootRule').value = lr; el('lootRule').addEventListener('change', function(){ lsSet('lastblock:loot', el('lootRule').value); });

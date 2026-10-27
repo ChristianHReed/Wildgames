@@ -214,3 +214,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.38: Survivor tab: each preset changes the preview and Save keeps it; Surprise me randomises; More choices opens the rest; the Workshop button opens the Workshop. Maps tab: the Maps Builder box is first.
 - 0.114.39: make a top in the Workshop (Designs, survivor), export the pack, add it to packs/ and packs/index.js, reload: it is last in the Top list marked Workshop, shows on the preview and on your survivor in play.
 - 0.114.40: Survivor tab: the eight new characters appear as buttons and change the preview; new hair, hats, faces, tops and shoes are marked Workshop in the lists; start a game with one and check it in play (third-person view and in a mirror or multiplayer guest).
+- 0.114.41: pick Fixer (tool belt) and add a duster as outer layer; both show on the preview, are kept when saved, and show on your survivor in play and on a guest's screen.
