@@ -10,3 +10,6 @@ Ideas that are not in the build plan (docs/ROADMAP.md, "Next versions"). Nothing
 - Workshop: a pose sweep that checks clothes never poke through the body at any build or clip frame; a second paint slot for trims.
 - Workshop: NPC looks edited as named bundles (old_ranger, medic) in the Workshop; copying a garment between the masculine and feminine bodies with automatic refit.
 - Workshop: wiring building modules together on a grid in the Workshop (whole buildings from modules), tile edge sockets that check neighbours.
+
+## From the Workshop's W1 to W15 hand-off (27 October)
+Game-side wiring still to do, after the planned roadmap: pack items (new keys need behaviour), clothes in the survivor creator (`survivor.choices`), moving parts and hinged doors on pack models, lights (colour, reach), plant sway and harvest, collision boxes for pack buildings and structures, particle effects (`AfterstreetPacks.effects`), creatures (bones, clips, drops), sounds installed before `sndInit`, packs picked on a device (IndexedDB), guests' pack cars sent to the host, pack-car headlights and build cost.

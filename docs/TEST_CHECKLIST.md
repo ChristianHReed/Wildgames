@@ -201,3 +201,4 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.25: a recruited survivor rides a pack car in the seat the Workshop set; Hold J on a pack car gives its listed scrap, wood, parts and battery.
 - 0.114.26: swarmers or a car against a small house wall tear it open sooner than a warehouse or hospital wall (about 2x to 2.5x the damage needed).
 - 0.114.27: walk into several houses, shops, clinics and warehouses: rooms open onto each other through doors, nothing blocks a doorway, the kitchen/bedroom/stock rooms are furnished. Add ?oldplan to the address: the old random rooms return. Report any room you cannot reach.
+- 0.114.28: a pack with a held-item design shows it in the Items panel (K) under Content packs, with its icon. No pack has one yet; test once the Workshop chat makes one.
