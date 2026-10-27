@@ -442,3 +442,4 @@ These pieces are still plain coloured boxes. The Furniture Kit now covers the ki
 - [x] Content: digging kit (held shovel, attack_dig, dig sounds, soil table, pit pieces) and machines that dig: excavator, mini excavator, wheel loader, dozer, dump truck (docs/DIGGING.md)
 - [x] Content: roadside and odd buildings (47: gas station types and canopies, diner, motel, drive-in, novelty, water tower, grain elevator, mobile homes, Ozark stone and log houses, cave mouth) (docs/ROADSIDE.md)
 - [x] Content: gap assessment and three packs: rail (30), civic (29), barriers and survival works (28) (docs/ART_GAPS.md)
+| 0.114.35 | The three pages link to each other: the game's Maps tab opens the Maps Builder and the Workshop, the Builder header has Workshop and Game links, the Workshop header has Game and Maps Builder links. Two one-line edits in builder.html and workshop.html (owned by the map and Workshop chats). | done |
