@@ -471,6 +471,133 @@
   }
   M.writeBoned = writeBoned;
 
+  /* ------------------------------------------------------------------ more shapes: lathe, extrude, stairs, array, radial, pipe
+     Each makes ordinary pieces (loft, poly, decal, box), so everything the Workshop already does works on the result. */
+  function ep(shape, pos, o){ var p = {id:'n' + Math.random().toString(36).slice(2, 9), g:o && o.g || 'body', s:shape, pos:pos.map(r4), rot:[0, 0, 0], scl:[1, 1, 1], c:o && o.c || 'paint1', m:o && o.m || 'sheet'}; for (var k in (o || {})) if (k !== 'g') p[k] = o[k]; return p; }
+  function r4(v){ return Math.round(v*1e4)/1e4; }
+  /* spin a profile [[radius, height], ...] about Y: a vase, a bollard, a lamp shade, a wheel hub */
+  M.lathe = function(profile, sides, at, o){
+    return [ep('loft', at, Object.assign({ax:'y', n:sides || 8, r:profile.map(function(q){ return [0, r4(q[1]), 0, r4(q[0]), r4(q[0])]; })}, o || {}))];
+  };
+  function convex(P){ var sg = 0; for (var i = 0; i < P.length; i++){ var a = P[i], b = P[(i+1)%P.length], c = P[(i+2)%P.length], cr = (b[0]-a[0])*(c[1]-b[1]) - (b[1]-a[1])*(c[0]-b[0]); if (Math.abs(cr) < 1e-9) continue; if (!sg) sg = Math.sign(cr); else if (Math.sign(cr) !== sg) return false; } return true; }
+  /* ear clipping for a simple outline */
+  function earcut(P){
+    var idx = P.map(function(_, i){ return i; }), tris = [], area = 0, i;
+    for (i = 0; i < P.length; i++){ var a = P[i], b = P[(i+1)%P.length]; area += a[0]*b[1] - b[0]*a[1]; }
+    var ccw = area > 0, guard = 0;
+    function inside(p, a, b, c){ var d1 = (p[0]-b[0])*(a[1]-b[1]) - (a[0]-b[0])*(p[1]-b[1]), d2 = (p[0]-c[0])*(b[1]-c[1]) - (b[0]-c[0])*(p[1]-c[1]), d3 = (p[0]-a[0])*(c[1]-a[1]) - (c[0]-a[0])*(p[1]-a[1]); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); }
+    while (idx.length > 3 && guard++ < 1000){
+      for (i = 0; i < idx.length; i++){
+        var ia = idx[(i + idx.length - 1) % idx.length], ib = idx[i], ic = idx[(i + 1) % idx.length], A = P[ia], B = P[ib], C = P[ic];
+        var cr = (B[0]-A[0])*(C[1]-A[1]) - (B[1]-A[1])*(C[0]-A[0]); if (ccw ? cr <= 0 : cr >= 0) continue;
+        if (idx.some(function(k){ return k !== ia && k !== ib && k !== ic && inside(P[k], A, B, C); })) continue;
+        tris.push([ia, ib, ic]); idx.splice(i, 1); break;
+      }
+    }
+    if (idx.length === 3) tris.push(idx.slice());
+    return tris;
+  }
+  /* raise an outline [[x, z], ...] by a height: a sign, a bracket, an L-shaped counter. Convex outlines make one solid piece. */
+  M.extrude = function(outline, h, at, o){
+    o = o || {}; var P = outline.map(function(q){ return [r4(q[0]), r4(q[1])]; });
+    if (convex(P)){ var v = [], f = [], n = P.length;
+      P.forEach(function(q){ v.push([q[0], 0, q[1]]); }); P.forEach(function(q){ v.push([q[0], r4(h), q[1]]); });
+      f.push(P.map(function(_, i){ return i; })); f.push(P.map(function(_, i){ return n + i; }));
+      for (var i = 0; i < n; i++){ var j = (i + 1) % n; f.push([i, j, n + j, n + i]); }
+      return [ep('poly', at, Object.assign({v:v, f:f}, o))];
+    }
+    var out = [], T = earcut(P), mk = function(pts, nrm){ var c = [0, 0, 0]; pts.forEach(function(q){ c[0] += q[0]/pts.length; c[1] += q[1]/pts.length; c[2] += q[2]/pts.length; }); return ep('decal', [at[0] + c[0], at[1] + c[1], at[2] + c[2]], Object.assign({v:pts.map(function(q){ return [r4(q[0]-c[0]), r4(q[1]-c[1]), r4(q[2]-c[2])]; }), n:nrm}, o)); };
+    T.forEach(function(t){ out.push(mk(t.map(function(k){ return [P[k][0], h, P[k][1]]; }), [0, 1, 0])); out.push(mk(t.map(function(k){ return [P[k][0], 0, P[k][1]]; }), [0, -1, 0])); });
+    for (var k = 0; k < P.length; k++){ var a = P[k], b = P[(k + 1) % P.length], dx = b[0]-a[0], dz = b[1]-a[1], l = Math.hypot(dx, dz) || 1;
+      var nrm = [dz/l, 0, -dx/l]; var cx = (a[0]+b[0])/2, cz = (a[1]+b[1])/2, mid = [0, 0]; P.forEach(function(q){ mid[0] += q[0]/P.length; mid[1] += q[1]/P.length; });
+      if ((cx - mid[0])*nrm[0] + (cz - mid[1])*nrm[2] < 0 && convex(P)) nrm = [-nrm[0], 0, -nrm[2]];
+      var area2 = 0; P.forEach(function(q, i2){ var q2 = P[(i2+1)%P.length]; area2 += q[0]*q2[1] - q2[0]*q[1]; }); if (area2 > 0) nrm = [-dz/l, 0, dx/l];
+      out.push(mk([[a[0], 0, a[1]], [b[0], 0, b[1]], [b[0], h, b[1]], [a[0], h, a[1]]], nrm.map(r4))); }
+    return out;
+  };
+  M.stairs = function(steps, width, rise, run, at, o){ var out = []; for (var i = 0; i < steps; i++) out.push(ep('box', [at[0], at[1] + rise*(i + 0.5), at[2] + run*(i + 0.5)], Object.assign({d:[width, rise, run]}, o || {}))); return out; };
+  /* copies of pieces in a row (pickets, windows, rail ties) or round a centre (wheel spokes, turbine blades, a ring of posts) */
+  M.arrayOf = function(pieces, n, step){ var out = []; for (var i = 1; i < n; i++) pieces.forEach(function(p){ var q = clone(p); q.id = 'n' + Math.random().toString(36).slice(2, 9); q.pos = [r4(p.pos[0] + step[0]*i), r4(p.pos[1] + step[1]*i), r4(p.pos[2] + step[2]*i)]; out.push(q); }); return out; };
+  M.radialOf = function(pieces, n, centre){ var out = []; for (var i = 1; i < n; i++){ var a = 360*i/n, R = M.rotMat([0, a, 0]);
+    pieces.forEach(function(p){ var q = clone(p); q.id = 'n' + Math.random().toString(36).slice(2, 9); var d = M.app3(R, [p.pos[0]-centre[0], p.pos[1]-centre[1], p.pos[2]-centre[2]]); q.pos = [r4(d[0]+centre[0]), r4(d[1]+centre[1]), r4(d[2]+centre[2])]; q.rot = [q.rot[0], r4(((q.rot[1] || 0) + a) % 360), q.rot[2]]; out.push(q); }); } return out; };
+  /* a pipe, cable or rail through points: one tube per run, turned to follow it */
+  M.pipe = function(points, radius, sides, o){
+    var out = [];
+    for (var i = 0; i < points.length - 1; i++){ var a = points[i], b = points[i+1], d = [b[0]-a[0], b[1]-a[1], b[2]-a[2]], L = Math.hypot(d[0], d[1], d[2]); if (L < 1e-4) continue;
+      var yaw = Math.atan2(d[0], d[2])*180/Math.PI, pitch = -Math.asin(d[1]/L)*180/Math.PI;
+      var p = ep('loft', [(a[0]+b[0])/2, (a[1]+b[1])/2, (a[2]+b[2])/2], Object.assign({ax:'z', n:sides || 6, r:[[0, 0, r4(-L/2), radius, radius], [0, 0, r4(L/2), radius, radius]]}, o || {}));
+      p.rot = [r4(pitch), r4(yaw), 0]; out.push(p); }
+    return out;
+  };
+
+  /* ------------------------------------------------------------------ W11: plants (states are growth stages and seasons; this grows a tree) */
+  function rnd(seed){ var x = Math.sin(seed*127.1)*43758.5453; return x - Math.floor(x); }
+  M.growTree = function(o){
+    o = Object.assign({height:6, trunk:0.25, branches:6, spread:2.2, leaf:1.4, seed:3, bark:'bark', leafC:'leaf'}, o || {});
+    var out = [], th = o.height*0.55;
+    out.push(ep('loft', [0, 0, 0], {g:'body', ax:'y', n:7, c:o.bark, m:'wood', r:[[0, 0, 0, o.trunk*1.3, o.trunk*1.3], [0, 0.4, 0, o.trunk, o.trunk], [0, th, 0, o.trunk*0.7, o.trunk*0.7], [0, o.height*0.8, 0, o.trunk*0.35, o.trunk*0.35]], name:'trunk'}));
+    for (var i = 0; i < o.branches; i++){
+      var a = i/o.branches*360 + rnd(o.seed + i)*30, h = th*(0.75 + 0.45*rnd(o.seed*3 + i)), len = o.spread*(0.6 + 0.4*rnd(o.seed*7 + i)), rad = a*Math.PI/180;
+      var tip = [Math.sin(rad)*len, h + len*0.55, Math.cos(rad)*len];
+      out = out.concat(M.pipe([[0, h, 0], tip], o.trunk*0.32, 5, {g:'body', c:o.bark, m:'wood', name:'branch'}));
+      out.push(ep('bev', tip, {g:'leaves', d:[o.leaf*(1 + 0.3*rnd(i + 11)), o.leaf*0.8, o.leaf*(1 + 0.3*rnd(i + 17))], c:o.leafC, m:'cloth', name:'leaves', rot:[0, r4(rnd(i + 5)*90), 0]}));
+    }
+    out.push(ep('bev', [0, o.height*0.85, 0], {g:'leaves', d:[o.leaf*1.6, o.leaf*1.1, o.leaf*1.6], c:o.leafC, m:'cloth', name:'crown'}));
+    return out;
+  };
+
+  /* ------------------------------------------------------------------ W12: a new creature from a template */
+  M.CREATURE_TEMPLATES = ['four_legs', 'two_legs', 'crawler'];
+  M.blankCreature = function(tpl, name, pack){
+    var d = {format:'afterstreet-workshop', v:2, type:'model', id:name, name:name.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }), author:'', licence:'MIT', notes:'', kind:'creature',
+      target:{pack:pack || 'animals', path:['parts', name]}, parts:{}, pieces:[], points:[], extra:[], colours:{}, states:{}, layout:{}, skeleton:{}, frames:{}, creature:{pack:pack || 'animals', name:name}};
+    var B = d.skeleton, add = function(b, piv, tip, par, shape, pos, size, c){ B[b] = {pivot:piv, tip:tip}; if (par) B[b].parent = par; d.parts[b] = {}; d.layout[b] = {$part:b}; d.pieces.push(ep(shape, pos, {g:b, d:size, c:c || 'BODY', m:'cloth'})); };
+    if (tpl === 'two_legs'){
+      add('body', [0, 1.0, 0], [0, 1.5, 0], null, 'bev', [0, 1.25, 0], [0.45, 0.6, 0.3]);
+      add('head', [0, 1.55, 0], [0, 1.8, 0], 'body', 'bev', [0, 1.7, 0.03], [0.24, 0.28, 0.26]);
+      [['l', -1], ['r', 1]].forEach(function(sd){ var x = 0.3*sd[1];
+        add('arm_' + sd[0], [x, 1.5, 0], [x, 0.95, 0], 'body', 'box', [x, 1.22, 0], [0.12, 0.55, 0.12]);
+        add('leg_' + sd[0], [x*0.4, 0.95, 0], [x*0.4, 0.5, 0], 'body', 'box', [x*0.4, 0.72, 0], [0.16, 0.48, 0.16]);
+        add('shin_' + sd[0], [x*0.4, 0.5, 0], [x*0.4, 0, 0], 'leg_' + sd[0], 'box', [x*0.4, 0.25, 0.02], [0.13, 0.5, 0.15]); });
+      d.frames = {idle:[{}, {body:[2, 0, 0], head:[-3, 0, 0]}], walk:[{leg_l:[-25, 0, 0], leg_r:[25, 0, 0], arm_l:[20, 0, 0], arm_r:[-20, 0, 0]}, {shin_l:[20, 0, 0], shin_r:[20, 0, 0]}, {leg_l:[25, 0, 0], leg_r:[-25, 0, 0], arm_l:[-20, 0, 0], arm_r:[20, 0, 0]}, {shin_l:[20, 0, 0], shin_r:[20, 0, 0]}],
+        attack:[{arm_r:[-150, 0, 0]}, {arm_r:[-40, 0, 0], body:[15, 0, 0]}], dead:[{body:[-80, 0, 0]}]};
+    } else {
+      var low = tpl === 'crawler', y = low ? 0.35 : 0.8, L = low ? 1.2 : 1.4;
+      add('body', [0, y, 0], [0, y, L/2], null, 'bev', [0, y, 0], [low ? 0.6 : 0.5, low ? 0.3 : 0.5, L]);
+      add('neck', [0, y + 0.1, L/2], [0, y + 0.45, L/2 + 0.2], 'body', 'box', [0, y + 0.25, L/2 + 0.1], [0.2, 0.35, 0.2]);
+      add('head', [0, y + 0.4, L/2 + 0.2], [0, y + 0.4, L/2 + 0.55], 'neck', 'bev', [0, y + 0.42, L/2 + 0.35], [0.22, 0.24, 0.4]);
+      [['fl', -1, 1], ['fr', 1, 1], ['hl', -1, -1], ['hr', 1, -1]].forEach(function(lg){ var x = 0.2*lg[1]*(low ? 1.6 : 1), z = (L/2 - 0.15)*lg[2];
+        add('leg_' + lg[0], [x, y - 0.1, z], [x*(low ? 1.6 : 1), y/2, z], 'body', 'box', [x*(low ? 1.3 : 1), y*0.7, z], [0.1, y*0.5, 0.12]);
+        add('shin_' + lg[0], [x*(low ? 1.6 : 1), y/2, z], [x*(low ? 1.6 : 1), 0, z], 'leg_' + lg[0], 'box', [x*(low ? 1.6 : 1), y/4, z], [0.08, y/2, 0.1]); });
+      d.frames = {idle:[{}, {neck:[6, 0, 0]}], walk:[{leg_fl:[20, 0, 0], leg_hr:[20, 0, 0], leg_fr:[-20, 0, 0], leg_hl:[-20, 0, 0]}, {}, {leg_fl:[-20, 0, 0], leg_hr:[-20, 0, 0], leg_fr:[20, 0, 0], leg_hl:[20, 0, 0]}, {}],
+        attack:[{neck:[-25, 0, 0], head:[-10, 0, 0]}, {neck:[25, 0, 0], body:[0, 0, 0]}], dead:[{body:[0, 0, 85]}]};
+    }
+    d.extra.push({path:['creatures', name, 'info'], value:{height:tpl === 'two_legs' ? 1.8 : y + 0.4, walk:1.4, run:tpl === 'crawler' ? 4 : 9, health:60, damage:tpl === 'two_legs' ? 12 : 8, gives:{raw_meat:3, hide:1}, behaviour:'', note:''}});
+    d.slotColours = {BODY:'#7a6a5a'};
+    return d;
+  };
+
+  /* ------------------------------------------------------------------ W14: effects (particles the game spawns) */
+  M.defaultEffect = function(){ return {count:24, life:1.2, size:[0.05, 0.18], speed:[0.5, 2.5], spread:40, up:1, gravity:-2, colour:['#d8d0c0', '#8a8278'], glow:false, shape:'puff', fade:true}; };
+  /* where each particle is at time t (seconds), for previews; the game runs the same numbers */
+  M.effectState = function(E, t, seed){
+    var out = [], n = E.count | 0;
+    for (var i = 0; i < n; i++){
+      var r = function(k){ return rnd((seed || 1)*97 + i*13 + k); }, born = r(1)*E.life*0.4, age = t - born; if (age < 0 || age > E.life) continue;
+      var sp = E.speed[0] + (E.speed[1] - E.speed[0])*r(2), az = r(3)*Math.PI*2, el = (90 - E.spread*r(4))*Math.PI/180;
+      var v = [Math.cos(el)*Math.cos(az)*sp, Math.sin(el)*sp*(E.up || 1), Math.cos(el)*Math.sin(az)*sp];
+      var p = [v[0]*age, v[1]*age + 0.5*(E.gravity || 0)*age*age, v[2]*age], k = age/E.life;
+      out.push({pos:p, size:E.size[0] + (E.size[1] - E.size[0])*(E.shape === 'spark' ? 1 - k : k), k:k, i:i});
+    }
+    return out;
+  };
+
+  /* ------------------------------------------------------------------ W15: sounds (a recipe the browser plays and records) */
+  /* layers: noise or tone, with a frequency (and where it slides to), a filter, an envelope and a level; variations change pitch and timing a little */
+  M.defaultSound = function(key){ return {format:'afterstreet-workshop', v:2, type:'sound', id:key || 'my_sound', name:(key || 'my sound').replace(/_/g, ' '), author:'', licence:'MIT', notes:'', key:key || 'my_sound', length:0.6, variations:3, vary:0.08,
+    layers:[{kind:'noise', freq:1200, freq2:400, filter:'lowpass', q:1, attack:0.005, hold:0.05, release:0.35, gain:0.8, delay:0}, {kind:'tone', wave:'sine', freq:180, freq2:90, filter:'none', q:1, attack:0.002, hold:0.02, release:0.25, gain:0.5, delay:0}]}; };
+  M.SOUND_KEYS_HINT = ['step_gravel','land_wood','hit_metal','swing_wood','pan_clang','door_creak','engine_idle','alien_swarmer_idle','pickup_item','craft_done'];
+
   /* ------------------------------------------------------------------ W1: the finished asset, and a blank design of any kind */
   M.newModelDoc = function(kind, pack, group, name){
     var K = M.KINDS[kind] || M.KINDS.furniture, nm = name || ('my_' + kind);
@@ -499,6 +626,13 @@
     if (doc.kind === 'held' && doc.design){ A.design = M.gameDesign(doc); var th = extraOf({extra:extra}, 'twoHanded'); }
     if (doc.item) A.item = clone(doc.item);
     if (doc.icon) A.icon = doc.icon;
+    if (doc.sway) A.sway = clone(doc.sway);
+    if (doc.harvest && Object.keys(doc.harvest).length) A.harvest = clone(doc.harvest);
+    if (doc.effect) A.effect = clone(doc.effect);
+    if (doc.kind === 'building' || doc.kind === 'structure'){
+      /* a box per part for collision (the map builder and the game can use these until a model has its own) */
+      A.collide = Object.keys(doc.parts).map(function(g){ var all = []; doc.pieces.forEach(function(p){ if (p.g === g && !p.hidden) all = all.concat(M.toNative(p)); }); var B = M.boundsOf(all); return B.ok ? {part:g, min:B.mn.map(r4), max:B.mx.map(r4)} : null; }).filter(Boolean);
+    }
     return A;
   };
   /* generic checks for any model */
@@ -530,13 +664,17 @@
     var P = root.SHAPED && root.SHAPED[pack], out = {}; if (!P || !P.models) return out;
     Object.keys(P.models).forEach(function(g){ out[g] = M.isWholeGroup(root.SHAPED, pack, g) ? null : Object.keys(P.models[g]); }); return out;
   };
-  var BLANK = {furniture:['props', 'furniture'], container:['props', 'containers'], item:['props', 'items'], held:['held', 'weapons'], building:['buildings', 'modules'],
+  var BLANK = {effect:['fx', 'effects'], creature:['animals', 'parts'], sound:['', ''], furniture:['props', 'furniture'], container:['props', 'containers'], item:['props', 'items'], held:['held', 'weapons'], building:['buildings', 'modules'],
     structure:['structures', 'structures'], plant:['flora', 'plants'], tile:['ground', 'tiles'], sign:['interiors', 'signs']};
-  M.BLANK_KINDS = Object.keys(BLANK);
+  M.BLANK_KINDS = Object.keys(BLANK).filter(function(k){ return k !== 'creature' && k !== 'sound'; }).concat(['creature', 'sound']);
   M.blankOfKind = function(kind, name){
     if (kind === 'held') return M.blankHeld(name || 'my_weapon');
+    if (kind === 'creature') return M.blankCreature('four_legs', name || 'my_creature');
+    if (kind === 'sound') return M.defaultSound(name || 'my_sound');
     var t = BLANK[kind] || BLANK.furniture, d = M.newModelDoc(kind, t[0], t[1], name || ('my_' + kind));
     if (kind === 'item') d.item = M.defaultItem(d);
+    if (kind === 'effect') d.effect = M.defaultEffect();
+    if (kind === 'plant'){ d.layout = {$parts:['body', 'leaves']}; d.parts = {body:{}, leaves:{}}; d.sway = {body:0.1, leaves:1}; d.harvest = {}; }
     return d;
   };
 
