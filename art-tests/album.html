@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-fleet'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-fleet','../packs/afterstreet-clips','../packs/afterstreet-waterways'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve()).then(function(){ if(window.AfterstreetPacks) window.AfterstreetPacks.install(window.SHAPED); });
@@ -142,6 +142,11 @@ function prop(cat, name){
   for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
   return g;
 }
+function waterRows(P, names, per, dx, dz, cpos, ctgt, o){ o=o||{};
+  lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; const col=colourer(P.palette,{}), M=P.models.land;
+  ground(400,400,o.water||0x4a7a90);
+  names.forEach((n,i)=>{ const g=mesh(M[n],col), r=Math.floor(i/per), c=i%per; g.position.set(c*dx,0,-r*dz); if(o.rot) g.rotation.y=o.rot; scene.add(g); });
+  cam.position.set(...cpos); ctl.target.set(...ctgt); }
 function packGrid(P, group, names, cols, pad, ground0, cpos, ctgt, opts){ opts=opts||{};
   lights('day'); scene.background=new THREE.Color(opts.sky||0xdde6ea); scene.fog=null; const col=colourer(P.palette,{}), M=P.models[group], I=P.info||{};
   const items=names.map(n=>{ const i=I[n]||{w:2,len:2}; return {n,w:Math.max(i.w||2,1)+pad,d:Math.max(i.len||2,1)+pad,iw:i.w||2,id:i.len||2}; });
@@ -682,6 +687,12 @@ const SCENES={
     make(){ packGrid(ST,'structures',['girder_span_road_12','arch_span_road_16','trestle_span_steel_12','trestle_span_timber_8'],70,6,0,[34,4,30],[0,-3,-10],{lift:n=>({girder_span_road_12:2,arch_span_road_16:8.7,trestle_span_timber_8:2.2,trestle_span_steel_12:1.8})[n]||0}); }},
   bridges_brick:{t:'Structures: brick footbridge',d:'The brick footbridge pieces: deck unit, abutment, 8 m arch span and pier cap, seen from the side and above.',
     make(){ packGrid(ST,'structures',['deck_path_brick','abutment_path_brick','arch_path_brick_8','pier_cap_path_brick'],40,4,0,[4,9,26],[0,1.5,0],{lift:n=>({arch_path_brick_8:4.3,abutment_path_brick:3.1,pier_cap_path_brick:0.7})[n]||0,rot:-Math.PI/2}); }},
+  waterways_banks:{t:'Waterways: bank profiles',d:'Fourteen bank types from the water (left), the bank rising to the right: shelf, gravel, sand, mud, cut clay, slump, roots, rip-rap, gabion, stone wall, concrete channel, timber crib, stairs, landing.',
+    make(){ waterRows(S.land,['bank_shelf_4','bank_gravel_4','bank_sand_4','bank_mud_4','bank_cut_clay_4','bank_slump_4','bank_roots_4','bank_riprap_4','bank_gabion_4','bank_stone_wall_4','bank_concrete_channel_4','bank_timber_crib_4','bank_stairs_4','bank_landing_4'],7,5.2,6.5,[16,9,24],[16,0.6,-4]); }},
+  waterways_shore:{t:'Waterways: shore plants, drift and built edges',d:'Sedge, cattail, cane, willow, sycamore, drift line, fallen tree, outfalls, culvert, seep and city junk.',
+    make(){ waterRows(S.land,['sedge_edge_4','cattail_edge_4','cane_brake_4','willow_whips','sycamore_lean','drift_line_4','fallen_tree_bank','outfall_pipe_4','culvert_mouth_4','seep_bank_4','creek_junk_cart','creek_junk_tyres','creek_junk_pallet_a','creek_junk_bike','wet_margin_4','mud_prints_4','mud_cracks_4'],6,6.5,8,[18,12,28],[18,1.2,-8],{water:0x6d7a4f}); }},
+  waterways_flow:{t:'Waterways: flow cues',d:'Rocks with wakes, a chute, current streaks, rapids, an eddy, foam line, a ledge drop and a creek mouth, laid on a water tile.',
+    make(){ waterRows(S.land,['rock_wake_s','rock_wake_m','rock_pair_chute','flow_streaks_4','rapids_4','eddy_4','foam_scum_4','ledge_drop_4','stream_mouth_4'],5,6.5,7,[13,12,16],[13,0,-3.5]); }},
   survivors_new:{t:'Workshop: new player characters',d:'Eight ready-made characters from the Workshop (mechanic, courier, hiker, scavenger, nurse, wanderer, foreman, librarian) wearing the new tops, bottoms, shoes, hair, hats, faces, gear and outer layers.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xe2ddd2);
       const N=SV.npcLooks, ks=['mechanic','courier','hiker','scavenger','nurse','wanderer','foreman','librarian'];
