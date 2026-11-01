@@ -905,6 +905,11 @@ function spBoat(name){
 function spBoatDraw(m, v, now){
   var K = spBoat(v.boat); if (!K) return false; var ph = now*1.3 + (hashStr(String(v.id)) % 97), bob = Math.sin(ph)*0.035, y0 = bob - 0.05, d2r = Math.PI/180, sp = v.spd || 0, sw = v.spin || 0;
   m.part(K.B, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0);
+  /* 0.114.62: the river is a flat sheet, so it would show through the inside of an open hull. A bilge floor just above the waterline, as wide as the hull is at the gunwale, hides it */
+  if (!K.fl){ K.fl = []; var P0 = K.B.p, bins = {}, i, BW = 0.25; for (i = 0; i < K.B.n*3; i++){ var px = P0[i*3], py = P0[i*3+1], pz = P0[i*3+2]; if (py < 0.12) continue; var b = Math.round(px/BW), o2 = bins[b] || (bins[b] = [1e9, -1e9]); if (pz < o2[0]) o2[0] = pz; if (pz > o2[1]) o2[1] = pz; }
+    Object.keys(bins).map(Number).sort(function(a, b){ return a - b; }).forEach(function(b){ var o2 = bins[b]; if (o2[1] - o2[0] > 0.3) K.fl.push([b*BW - BW/2, b*BW + BW/2, o2[0] + 0.07, o2[1] - 0.07]); }); }
+  if (K.fl.length){ var cs = Math.cos(v.yaw), sn = Math.sin(v.yaw), fy = m.yo + y0 + 0.2, fc = [92, 72, 52], pt = function(lx, lz){ return [v.x + cs*lx - sn*lz, v.y + sn*lx + cs*lz]; };
+    K.fl.forEach(function(f){ var a = pt(f[0], f[2]), b = pt(f[1], f[2]), c = pt(f[1], f[3]), d = pt(f[0], f[3]); m.quad(a[0], fy, a[1], b[0], fy, b[1], c[0], fy, c[1], d[0], fy, d[1], fc, 255); }); }
   K.A.forEach(function(a){
     var n = a.n, r = a.r, pv = r.pivot, steps = [], ang = 0;
     if (n === 'oar_l' || n === 'oar_r'){ ang = (sp > 0.3 ? Math.sin(sw*0.8)*30 : Math.sin(ph*0.7)*4)*d2r; steps.push({y:ang, cx:pv[2], cz:-pv[0]}); }
