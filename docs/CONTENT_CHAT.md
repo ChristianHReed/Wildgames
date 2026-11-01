@@ -36,7 +36,7 @@ Read this before every decision. I am the **Content chat** for AfterStreet (open
 - Log open items honestly in the reply note instead of claiming completeness.
 
 ## Open work I owe (update when it changes)
-From `ART_REQUESTS_FINISH.md`: held items (pickaxe, trowel, jerry can, big wrench), sounds, wheel states/weather/tow pieces, pit water/cave-in/hole frames/item icons, cave interiors, marina/docks/boat seat points/wake foam, post office/dealership/business states/orchard, power plant kit/pylons, aliens/hive/base defence/skinning clips, survival backlog, courtyards. Also: freeze old python packs one by one; visual check of clip poses; military ammo/magazines and gun fp tables; vehicle wrecks/burnt variants for remade vehicles.
+From `ART_REQUESTS_FINISH.md` (section 2 held tools done, 1 Nov 2026): sounds, wheel states/weather/tow pieces, pit water/cave-in/hole frames/item icons, cave interiors, marina/docks/boat seat points/wake foam, post office/dealership/business states/orchard, power plant kit/pylons, aliens/hive/base defence/skinning clips, survival backlog, courtyards. Also: freeze old python packs one by one; visual check of clip poses; gun fp tables (military magazines, rocket, crate and belt box are done); vehicle wrecks/burnt variants for remade vehicles.
 
 ## What exists (map of my work)
-Packs in `packs/`: bridges, survivors, fleet, clips, waterways, military, crafts (generated from `workshop/designs/`). Docs: `docs/WATERWAYS.md`, `docs/VEHICLE_BUILD.md`, `docs/ROAD_THICKNESS.md`, `docs/CONTENT_NOTE_VEHICLES_REMADE.md`, this file.
+Packs in `packs/`: tools (`make_held_tools.js`), bridges, survivors, fleet, clips, waterways, military, crafts (generated from `workshop/designs/`). Docs: `docs/WATERWAYS.md`, `docs/VEHICLE_BUILD.md`, `docs/ROAD_THICKNESS.md`, `docs/CONTENT_NOTE_VEHICLES_REMADE.md`, this file.

@@ -9,3 +9,5 @@ Made by the Content chat. Generic olive/tan, no insignia, no real units or brand
 **Bases** (same pack, land group, 4 m tiles end in `_4`): guard_tower, watchtower_wood, gatehouse, chainlink_fence_4, razor_wire_coil, hesco_barrier_4 (earth-filled gabion wall), sandbag_wall_4, sandbag_nest, pillbox_bunker, earth_bunker, barracks_hut, command_building, hangar_small, motor_pool_shed, command_tent, helipad, fuel_depot, radio_mast, tank_trap, hardened_checkpoint, flagpole. Map chat can place them for OSM `military=*` tags (see `docs/MAP_BUILDING_USES.md`).
 
 Rebuild: `node workshop/tools/make_military.js`; album scenes `military_bases`, `military_weapons`.
+
+**Also made:** held magazines and ammo: rifle_magazine, smg_magazine, rocket_round, ammo_crate_mil, belt_box (in `afterstreet-military`).

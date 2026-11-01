@@ -80,6 +80,18 @@ weapon('hand_grenade', 'Hand grenade', 'A fragmentation grenade with a pin and s
 weapon('rocket_launcher', 'Rocket launcher', 'A reusable shoulder-fired anti-armour launcher: olive tube, sight on the left, flared muzzle; one shot then reload; two hands.', {length:1.1, ground:{roll:90, yaw:0, lift:0.06}, note:'two hands; shoulder fired; empty = tube only', offhandAt:0.3, muzzle:[0, 0.07, 0.75], ammo:'rocket', holds:1, twoHanded:true}, function(a){
   a.cyl(0, 0.07, 0.15, 0.045, 0.9, K.od); a.cyl(0, 0.07, 0.62, 0.058, 0.08, K.odD); a.cyl(0, 0.07, -0.3, 0.06, 0.06, 'gunMetal'); a.box(0, -0.02, 0.05, 0.03, 0.09, 0.04, 'black', {rot:[-14, 0, 0], m:'plastic'}); a.box(0, 0.0, 0.28, 0.03, 0.05, 0.03, 'black'); a.box(-0.04, 0.12, 0.2, 0.02, 0.03, 0.12, 'black'); a.cyl(0, 0.07, -0.04, 0.05, 0.05, K.odD); });
 
+/* magazines, rockets and crates: held items too (in the left hand while reloading, or carried) */
+weapon('rifle_magazine', 'Rifle magazine (30)', 'A curved 30-round 5.56 mm magazine; shown in the left hand while reloading the assault rifle.', {length:0.17, ground:{roll:0, yaw:0, lift:0.02}, note:'reload prop; holds 30 rifle rounds'}, function(a){
+  a.box(0, 0, 0, 0.026, 0.17, 0.055, K.mag, {rot:[8, 0, 0]}); a.box(0, -0.085, 0.004, 0.03, 0.012, 0.06, 'gunMetal'); a.box(0, 0.088, 0.01, 0.022, 0.01, 0.04, 'brass'); a.box(0.014, 0, 0.0, 0.004, 0.14, 0.03, 'gunMetal'); });
+weapon('smg_magazine', 'SMG magazine (32)', 'A long straight 32-round 9 mm stick magazine.', {length:0.2, ground:{roll:0, yaw:0, lift:0.02}, note:'reload prop; holds 32 pistol rounds'}, function(a){
+  a.box(0, 0, 0, 0.024, 0.2, 0.04, K.mag); a.box(0, -0.1, 0, 0.028, 0.012, 0.044, 'gunMetal'); a.box(0, 0.102, 0, 0.02, 0.008, 0.034, 'brass'); });
+weapon('rocket_round', 'Rocket', 'An anti-armour rocket with a fin set and a warhead, olive body with a grey nose; loads the launcher.', {length:0.9, ground:{roll:90, yaw:0, lift:0.05}, note:'ammo for the rocket launcher'}, function(a){
+  a.cyl(0, 0, 0, 0.04, 0.7, K.od); a.cyl(0, 0, 0.42, 0.055, 0.14, K.odD); a.cyl(0, 0, 0.52, 0.02, 0.06, 'gunMetal'); [0, 90].forEach(function(r){ a.box(0, 0, -0.3, 0.14, 0.01, 0.1, 'gunMetal', {rot:[0, 0, r]}); }); });
+weapon('ammo_crate_mil', 'Military ammo crate', 'A stencil-free olive steel ammunition crate with a hinged lid and a rope handle; carried in one hand.', {length:0.4, ground:{roll:0, yaw:0, lift:0.0}, note:'carry; loot container for rounds'}, function(a){
+  a.box(0, 0, 0, 0.18, 0.2, 0.4, K.od, {m:'sheet'}); a.box(0, 0.105, 0, 0.19, 0.012, 0.41, K.odD, {m:'sheet'}); a.box(0, 0.14, 0, 0.1, 0.04, 0.01, K.tanL, {m:'cloth'}); a.box(0.095, 0.02, 0, 0.012, 0.03, 0.12, 'gunMetal'); a.box(-0.095, 0.02, 0, 0.012, 0.03, 0.12, 'gunMetal'); });
+weapon('belt_box', 'Machine-gun belt box', 'A 100-round belt in an olive box with a spring clip; fits under the light machine gun.', {length:0.22, ground:{roll:0, yaw:0, lift:0.0}, note:'reload prop; holds 100 rifle rounds'}, function(a){
+  a.box(0, 0, 0, 0.09, 0.11, 0.2, K.od, {m:'sheet'}); a.box(0, 0.058, 0, 0.092, 0.012, 0.202, K.odD); a.box(0.02, -0.02, 0.105, 0.05, 0.03, 0.01, 'brass'); a.box(0, 0.1, 0.0, 0.02, 0.05, 0.12, 'rope' in K ? K.tanL : K.tanL, {m:'cloth'}); });
+
 /* ======================================================= base structures ======================================================= */
 function model(name, label, note, w, len, h, build, kind){
   var d = M.newModelDoc(kind || 'structure', 'land', 'land', name); d.name = label; d.notes = note; d.author = 'AfterStreet content chat';

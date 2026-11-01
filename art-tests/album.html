@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-fleet','../packs/afterstreet-clips','../packs/afterstreet-waterways','../packs/afterstreet-military','../packs/workshop-crafts'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-fleet','../packs/afterstreet-clips','../packs/afterstreet-waterways','../packs/afterstreet-military','../packs/afterstreet-tools','../packs/workshop-crafts'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve()).then(function(){ if(window.AfterstreetPacks) window.AfterstreetPacks.install(window.SHAPED); });
@@ -701,6 +701,10 @@ const SCENES={
         for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
         g.position.set((i%3)*5, 0, -Math.floor(i/3)*7); scene.add(g); });
       cam.position.set(14,9,6); ctl.target.set(5,0.8,-3); }},
+  tools_held:{t:'Held tools: pickaxe, trowel, jerry can, big wrench; military magazines',d:'The new held items (new state) side by side.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; ground(40,40,0x6d7a4f); const col=colourer(HE.palette||PR.palette,{}), M=HE.models.weapons;
+      ['pickaxe','trowel','jerry_can','wrench_big','rifle_magazine','smg_magazine','rocket_round','ammo_crate_mil','belt_box'].forEach((n,i)=>{ const g=mesh(M[n].new,col); g.rotation.y=Math.PI/2; g.position.set(0,0.4,-i*0.6); scene.add(g); });
+      cam.position.set(3.2,1.4,-2.4); ctl.target.set(0,0.3,-2.4); }},
   waterways_banks:{t:'Waterways: bank profiles',d:'Fourteen bank types from the water (left), the bank rising to the right: shelf, gravel, sand, mud, cut clay, slump, roots, rip-rap, gabion, stone wall, concrete channel, timber crib, stairs, landing.',
     make(){ waterRows(S.land,['bank_shelf_4','bank_gravel_4','bank_sand_4','bank_mud_4','bank_cut_clay_4','bank_slump_4','bank_roots_4','bank_riprap_4','bank_gabion_4','bank_stone_wall_4','bank_concrete_channel_4','bank_timber_crib_4','bank_stairs_4','bank_landing_4'],7,5.2,6.5,[16,9,24],[16,0.6,-4]); }},
   waterways_shore:{t:'Waterways: shore plants, drift and built edges',d:'Sedge, cattail, cane, willow, sycamore, drift line, fallen tree, outfalls, culvert, seep and city junk.',
