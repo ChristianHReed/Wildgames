@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Afterstreet voxel lab</title>
+<style>
+:root{--bg:#1b1f24;--fg:#f2efe6;--panel:rgba(30,34,40,.88);--accent:#f7de6b}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:14px/1.35 system-ui,sans-serif;overflow:hidden;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;pointer-events:none}
+#info{left:12px;top:10px;background:var(--panel);padding:8px 10px;border-radius:8px;max-width:min(360px,70vw);font-size:13px}
+#cross{left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border:2px solid #fff;border-radius:50%;opacity:.7;box-sizing:border-box}
+#prog{left:50%;top:calc(50% + 20px);width:80px;height:6px;margin-left:-40px;background:rgba(0,0,0,.5);border-radius:3px;overflow:hidden;display:none}
+#prog i{display:block;height:100%;width:0;background:var(--accent)}
+#bar{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:4px;max-width:96vw;overflow-x:auto;padding:4px;background:var(--panel);border-radius:10px}
+#bar button{min-width:46px;height:46px;border:2px solid transparent;border-radius:8px;color:#fff;font-size:11px;text-shadow:0 1px 2px #000;cursor:pointer;background-clip:padding-box}
+#bar button.on{border-color:var(--accent)}
+.btns{position:fixed;right:12px;bottom:86px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.btns button,#top button{background:var(--panel);color:var(--fg);border:1px solid #556;border-radius:20px;padding:10px 16px;font-size:14px}
+#top{position:fixed;right:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:60vw}
+#joy{position:fixed;left:24px;bottom:96px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3)}
+#joy i{position:absolute;left:40px;top:40px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.5)}
+#tab{position:fixed;left:0;top:0;bottom:0;width:min(560px,100vw);background:var(--panel);padding:12px;overflow:auto;display:none;z-index:5}
+#tab table{border-collapse:collapse;width:100%;font-size:12px}#tab td,#tab th{padding:3px 4px;border-bottom:1px solid #445;text-align:left}
+#tab input[type=number]{width:54px;background:#222;color:#fff;border:1px solid #556;border-radius:4px}
+a{color:var(--accent)}
+</style></head><body>
+<canvas id="c"></canvas>
+<div class="hud" id="cross"></div><div class="hud" id="prog"><i></i></div>
+<div class="hud" id="info"></div>
+<div id="top"><button id="bTab">Materials</button><button id="bRain">Rain: off</button><button id="bReset">Reset</button><a href="play.html" style="align-self:center">Back to the game</a></div>
+<div id="joy"><i></i></div>
+<div class="btns"><button id="bJump">Jump</button><button id="bFire">Light</button><button id="bPlace">Place</button><button id="bDig">Dig</button><button id="bTool">Tool: hand</button></div>
+<div id="bar"></div>
+<div id="tab"><b>Afterstreet voxel lab</b> <button id="bClose" style="float:right">Close</button>
+<p style="font-size:12px">One grid of 0.5 m blocks and one material table. Change a number and try it straight away: dig time, walking speed, how far a built block can reach without ground under it, whether it burns. The test world has a river in a channel (still water that flows toward the south), a gorge, a hill, a brick house with glass, a wooden bridge and a wooden tower. Dig with the right tool; light the tower; turn on rain and watch the bare ground turn to mud; dig under the bridge.</p>
+<div id="mats"></div></div>
+<script src="engine/voxel.js"></script>
+<script>
+(function(){
+var V = VOX, S = V.S, W = V.testWorld(), cv = document.getElementById('c'), gl = cv.getContext('webgl', {antialias:false, alpha:false}); if (!gl){ document.body.innerHTML = '<p style="padding:20px">This device has no WebGL.</p>'; return; }
+function sh(t, s){ var o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; }
+var pr = gl.createProgram();
+gl.attachShader(pr, sh(gl.VERTEX_SHADER, 'attribute vec3 p;attribute vec3 c;attribute float f;uniform mat4 vp;varying vec3 vc;varying vec3 wp;varying float vf;void main(){vc=c/255.0;wp=p;vf=f;gl_Position=vp*vec4(p,1.0);}'));
+gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, 'precision mediump float;varying vec3 vc;varying vec3 wp;varying float vf;uniform vec3 cam;uniform vec3 sky;uniform float tm;uniform vec2 flow;uniform float pass;' +
+ 'void main(){vec3 col=vc;float a=1.0;if(vf>0.5&&vf<1.5){vec2 dir=normalize(flow);vec2 pe=vec2(-dir.y,dir.x);float s=dot(wp.xz,dir)*1.4-tm*length(flow)*1.3;float n=sin(dot(wp.xz,pe)*2.7+floor(s)*1.7);float st=smoothstep(0.62,0.7,fract(s+n*0.15))*(1.0-smoothstep(0.78,0.86,fract(s+n*0.15)));col=mix(col,vec3(0.92,0.97,1.0),0.38*st);a=0.7;}else if(vf>1.5){a=0.34;}' +
+ 'float d=length(wp-cam);float fg=smoothstep(50.0,150.0,d);gl_FragColor=vec4(mix(col,sky,fg),a);}'));
+gl.bindAttribLocation(pr, 0, 'p'); gl.bindAttribLocation(pr, 1, 'c'); gl.bindAttribLocation(pr, 2, 'f'); gl.linkProgram(pr); gl.useProgram(pr);
+var U = {}; ['vp', 'cam', 'sky', 'tm', 'flow'].forEach(function(n){ U[n] = gl.getUniformLocation(pr, n); });
+var SKY = [0.62, 0.78, 0.9]; gl.uniform3fv(U.sky, SKY); gl.clearColor(SKY[0], SKY[1], SKY[2], 1); gl.enable(gl.DEPTH_TEST);
+/* ---- chunk meshes: rebuilt a few per frame when blocks change ---- */
+var CH = {}, tris = 0;
+function up(arr){ if (!arr.length) return null; var b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, arr, gl.STATIC_DRAW); return {b:b, n:arr.length/7}; }
+function rebuild(budget){
+  var n = 0; for (var k of W.dirty){ if (n++ >= budget) break; W.dirty.delete(k); var cx = k % W.cx, cz = Math.floor(k/W.cx) % W.cz, cy = Math.floor(k/(W.cx*W.cz)), m = W.mesh(cx, cy, cz), o = CH[k];
+    if (o){ if (o.s) gl.deleteBuffer(o.s.b); if (o.w) gl.deleteBuffer(o.w.b); } CH[k] = {s:up(m.solid), w:up(m.water), x:(cx + 0.5)*V.CS*S, y:(cy + 0.5)*V.CS*S, z:(cz + 0.5)*V.CS*S}; }
+  tris = 0; for (var q in CH) tris += ((CH[q].s ? CH[q].s.n : 0) + (CH[q].w ? CH[q].w.n : 0))/3;
+}
+function draw(o, cam){ if (!o) return; gl.bindBuffer(gl.ARRAY_BUFFER, o.b); gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1); gl.enableVertexAttribArray(2);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 28, 0); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 28, 12); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 28, 24); gl.drawArrays(gl.TRIANGLES, 0, o.n); }
+/* ---- player and camera ---- */
+var P = {x:W.spawn.x, y:W.spawn.y, z:W.spawn.z, vx:0, vy:0, vz:0, on:false}, yaw = 0, pitch = 0, EYE = 1.6, PH = 1.7, PW = 0.6, inv = {}, tool = 0, sel = 11, held = {}, stand = {wet:false, on:0};
+var keys = {}, mv = [0, 0], look = null, dig = {key:'', t:0, need:0};
+function persp(fov, asp, n, f){ var t = 1/Math.tan(fov/2); return [t/asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n)/(n - f), -1, 0, 0, 2*f*n/(n - f), 0]; }
+function mul(a, b){ var o = new Array(16), c, r, k, s; for (c = 0; c < 4; c++) for (r = 0; r < 4; r++){ s = 0; for (k = 0; k < 4; k++) s += a[k*4 + r]*b[c*4 + k]; o[c*4 + r] = s; } return o; }
+function view(){ var cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), ex = P.x, ey = P.y + EYE, ez = P.z;
+  /* forward = (sin yaw*cos pitch, sin pitch, -cos yaw*cos pitch): yaw 0 looks north (-z) */
+  var f = [sy*cp, sp, -cy*cp], r = [cy, 0, sy], u = [-sy*sp, cp, cy*sp]; // right, up
+  return [r[0], u[0], -f[0], 0, r[1], u[1], -f[1], 0, r[2], u[2], -f[2], 0, -(r[0]*ex + r[1]*ey + r[2]*ez), -(u[0]*ex + u[1]*ey + u[2]*ez), (f[0]*ex + f[1]*ey + f[2]*ez), 1]; }
+function fwd(){ var cp = Math.cos(pitch); return [Math.sin(yaw)*cp, Math.sin(pitch), -Math.cos(yaw)*cp]; }
+/* ---- the bar of materials and the materials table ---- */
+var PICK = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14], bar = document.getElementById('bar');
+PICK.forEach(function(id){ var m = V.MAT[id], b = document.createElement('button'); b.textContent = m.name; b.style.background = 'rgb(' + m.color.join(',') + ')'; b.onclick = function(){ sel = id; paint(); }; b.dataset.id = id; bar.appendChild(b); });
+function paint(){ [].forEach.call(bar.children, function(b){ b.classList.toggle('on', +b.dataset.id === sel); }); }
+paint();
+function table(){ var h = '<table><tr><th>block</th><th>dig s</th><th>tool</th><th>speed</th><th>reach</th><th>burns</th><th>falls</th></tr>';
+  V.MAT.forEach(function(m){ if (!m.id || m.liquid && 0) return; h += '<tr><td><span style="display:inline-block;width:10px;height:10px;background:rgb(' + m.color.join(',') + ')"></span> ' + m.name + '</td><td><input type="number" step="0.1" min="0" data-k="hard" data-i="' + m.id + '" value="' + m.hard + '"></td><td>' + m.tool +
+    '</td><td><input type="number" step="0.05" min="0.1" max="2" data-k="speed" data-i="' + m.id + '" value="' + m.speed + '"></td><td><input type="number" step="1" min="0" max="40" data-k="str" data-i="' + m.id + '" value="' + (m.ground ? 99 : m.str) + '"' + (m.ground ? ' disabled' : '') + '></td><td><input type="checkbox" data-k="burn" data-i="' + m.id + '"' + (m.burn ? ' checked' : '') + '></td><td><input type="checkbox" data-k="fall" data-i="' + m.id + '"' + (m.fall ? ' checked' : '') + '></td></tr>'; });
+  document.getElementById('mats').innerHTML = h + '</table><p style="font-size:12px">dig s: seconds by hand with no tool preference; the right tool takes about a third of that, the wrong tool or bare hands longer. reach: how many blocks a built block can span from natural ground before it falls. Rain turns grass and soil to mud; mud dries again.</p>';
+  [].forEach.call(document.querySelectorAll('#mats input'), function(i){ i.onchange = function(){ var m = V.MAT[+i.dataset.i], k = i.dataset.k; m[k] = i.type === 'checkbox' ? (i.checked ? 1 : 0) : +i.value; }; }); }
+table();
+document.getElementById('bTab').onclick = function(){ document.getElementById('tab').style.display = 'block'; }; document.getElementById('bClose').onclick = function(){ document.getElementById('tab').style.display = 'none'; };
+var bRain = document.getElementById('bRain'); bRain.onclick = function(){ W.rain = !W.rain; bRain.textContent = 'Rain: ' + (W.rain ? 'on' : 'off'); };
+document.getElementById('bReset').onclick = function(){ location.reload(); };
+var bTool = document.getElementById('bTool'); bTool.onclick = function(){ tool = (tool + 1)%V.TOOLS.length; bTool.textContent = 'Tool: ' + V.TOOLS[tool]; };
+/* ---- input: keys and mouse (click the picture to look around), or a stick and a drag on touch ---- */
+addEventListener('keydown', function(e){ keys[e.code] = 1; if (e.code === 'KeyT') bTool.onclick(); if (e.code === 'KeyR') bRain.onclick(); if (e.code === 'KeyF') doFire(); if (e.code === 'KeyE') doPlace(); if (/^Digit[1-9]$/.test(e.code)) { sel = PICK[+e.code.slice(5) - 1] || sel; paint(); } });
+addEventListener('keyup', function(e){ keys[e.code] = 0; });
+cv.addEventListener('click', function(){ if (!('ontouchstart' in window) && document.pointerLockElement !== cv) cv.requestPointerLock && cv.requestPointerLock(); });
+document.addEventListener('mousemove', function(e){ if (document.pointerLockElement === cv){ yaw += e.movementX*0.0025; pitch = Math.max(-1.5, Math.min(1.5, pitch - e.movementY*0.0025)); } });
+cv.addEventListener('mousedown', function(e){ if (document.pointerLockElement !== cv) return; if (e.button === 0) held.dig = 1; else if (e.button === 2) doPlace(); });
+cv.addEventListener('mouseup', function(e){ if (e.button === 0) held.dig = 0; }); cv.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+var joy = document.getElementById('joy'), knob = joy.firstElementChild, jid = null, jc = null;
+joy.addEventListener('touchstart', function(e){ var t = e.changedTouches[0]; jid = t.identifier; var r = joy.getBoundingClientRect(); jc = [r.left + 60, r.top + 60]; e.preventDefault(); }, {passive:false});
+cv.addEventListener('touchstart', function(e){ var t = e.changedTouches[0]; look = {id:t.identifier, x:t.clientX, y:t.clientY}; e.preventDefault(); }, {passive:false});
+addEventListener('touchmove', function(e){ for (var i = 0; i < e.changedTouches.length; i++){ var t = e.changedTouches[i];
+  if (t.identifier === jid){ var dx = (t.clientX - jc[0])/50, dy = (t.clientY - jc[1])/50, l = Math.hypot(dx, dy); if (l > 1){ dx /= l; dy /= l; } mv = [dx, dy]; knob.style.transform = 'translate(' + dx*30 + 'px,' + dy*30 + 'px)'; }
+  else if (look && t.identifier === look.id){ yaw += (t.clientX - look.x)*0.006; pitch = Math.max(-1.5, Math.min(1.5, pitch - (t.clientY - look.y)*0.006)); look.x = t.clientX; look.y = t.clientY; } } e.preventDefault(); }, {passive:false});
+addEventListener('touchend', function(e){ for (var i = 0; i < e.changedTouches.length; i++){ var t = e.changedTouches[i]; if (t.identifier === jid){ jid = null; mv = [0, 0]; knob.style.transform = ''; } if (look && t.identifier === look.id) look = null; } });
+function hold(id, k){ var b = document.getElementById(id); ['touchstart', 'mousedown'].forEach(function(ev){ b.addEventListener(ev, function(e){ held[k] = 1; e.preventDefault(); e.stopPropagation(); }, {passive:false}); }); ['touchend', 'mouseup', 'mouseleave'].forEach(function(ev){ b.addEventListener(ev, function(){ held[k] = 0; }); }); }
+hold('bDig', 'dig'); hold('bJump', 'jump');
+document.getElementById('bPlace').onclick = function(){ doPlace(); }; document.getElementById('bFire').onclick = function(){ doFire(); };
+var msg = '', msgT = 0; function say(t){ msg = t; msgT = 2.5; }
+function target(){ var f = fwd(); return W.ray(P.x, P.y + EYE, P.z, f[0], f[1], f[2], 6); }
+function doPlace(){ var t = target(); if (!t) return; var x = t.px, y = t.py, z = t.pz; if (W.get(x, y, z) !== 0 && !V.MAT[W.get(x, y, z)].liquid) return;
+  var save = W.get(x, y, z); W.d[W.i(x, y, z)] = sel; var clash = W.hits(P.x, P.y, P.z, PW, PH); W.d[W.i(x, y, z)] = save; if (clash){ say('Something is in the way.'); return; } W.set(x, y, z, sel); say('Placed ' + V.MAT[sel].name); }
+function doFire(){ var t = target(); if (!t) return; if (W.ignite(t.x, t.y, t.z)) say('The ' + V.MAT[t.m].name + ' catches fire.'); else say('The ' + V.MAT[t.m].name + ' does not burn.'); }
+/* ---- the loop ---- */
+var last = performance.now(), acc = 0, fps = 0, fpsT = 0, fc = 0;
+function frame(now){
+  var dt = Math.min(0.05, (now - last)/1000); last = now; fc++; fpsT += dt; if (fpsT > 0.5){ fps = Math.round(fc/fpsT); fc = 0; fpsT = 0; }
+  var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + mv[0], iz = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0) + mv[1], l = Math.hypot(ix, iz); if (l > 1){ ix /= l; iz /= l; }
+  var sp = (keys.ShiftLeft ? 6 : 3.6)*(V.MAT[stand.on] ? V.MAT[stand.on].speed : 1)*(stand.wet ? V.MAT[9].speed : 1), cy = Math.cos(yaw), sy = Math.sin(yaw);
+  P.vx = (ix*cy - iz*sy)*sp; P.vz = (ix*sy + iz*cy)*sp;
+  if (stand.wet){ P.vx += W.flow[0]*0.9; P.vz += W.flow[1]*0.9; P.vy += (-3 - P.vy*2.5)*dt; if (keys.Space || held.jump) P.vy = 2.2; }
+  else { P.vy -= 22*dt; if ((keys.Space || held.jump) && P.on){ P.vy = 7; P.on = false; } }
+  stand = W.move(P, dt, PW, PH); if (P.y < -20){ P.x = W.spawn.x; P.y = W.spawn.y; P.z = W.spawn.z; P.vy = 0; }
+  /* digging: hold to break the block you look at; the time comes from the material and the tool */
+  var t = target(), pg = document.getElementById('prog');
+  if (held.dig && t){ var key = t.x + ',' + t.y + ',' + t.z; if (dig.key !== key){ dig = {key:key, t:0, need:V.digTime(t.m, V.TOOLS[tool])}; } dig.t += dt; pg.style.display = 'block'; pg.firstElementChild.style.width = Math.min(100, dig.t/Math.max(0.05, dig.need)*100) + '%';
+    if (dig.t >= dig.need){ var d = V.MAT[t.m].drops; if (d) inv[V.MAT[d].name] = (inv[V.MAT[d].name] || 0) + 1; W.set(t.x, t.y, t.z, 0); dig = {key:'', t:0, need:0}; } }
+  else { dig = {key:'', t:0, need:0}; pg.style.display = 'none'; }
+  acc += dt; while (acc >= 0.1){ acc -= 0.1; W.tick(0.1); }
+  rebuild(8);
+  var asp = cv.clientWidth/cv.clientHeight, dpr = Math.min(devicePixelRatio || 1, 1.5), w = Math.round(cv.clientWidth*dpr), h = Math.round(cv.clientHeight*dpr); if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  gl.viewport(0, 0, cv.width, cv.height); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.uniformMatrix4fv(U.vp, false, new Float32Array(mul(persp(1.2, asp, 0.1, 400), view()))); gl.uniform3f(U.cam, P.x, P.y + EYE, P.z); gl.uniform1f(U.tm, now/1000); gl.uniform2f(U.flow, W.flow[0], W.flow[1]);
+  var cam = [P.x, P.y + EYE, P.z], K, o; gl.disable(gl.BLEND); gl.depthMask(true);
+  for (K in CH){ o = CH[K]; if (Math.abs(o.x - P.x) < 150 && Math.abs(o.z - P.z) < 150) draw(o.s, cam); }
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+  for (K in CH){ o = CH[K]; if (o.w && Math.abs(o.x - P.x) < 150 && Math.abs(o.z - P.z) < 150) draw(o.w, cam); }
+  msgT -= dt; var tm = t ? V.MAT[t.m] : null, inf = '<b>' + (tm ? tm.name : 'nothing in reach') + '</b>' + (tm ? ' · dig ' + V.digTime(t.m, V.TOOLS[tool]).toFixed(1) + ' s with ' + V.TOOLS[tool] + (tm.tool !== 'any' ? ' (wants ' + tm.tool + ')' : '') + (tm.burn ? ' · burns' : '') + (tm.fall ? ' · falls' : '') + (tm.ground ? '' : ' · reach ' + tm.str) : '');
+  inf += '<br>standing on ' + (V.MAT[stand.on] ? V.MAT[stand.on].name : '—') + (stand.wet ? ', in water (flows south)' : '') + ' · speed ×' + (V.MAT[stand.on] ? V.MAT[stand.on].speed : 1) + '<br>' + Object.keys(inv).map(function(k){ return k + ' ' + inv[k]; }).join(', ') + (msgT > 0 ? '<br><i>' + msg + '</i>' : '') + '<br><span style="opacity:.6">' + fps + ' fps · ' + Math.round(tris/1000) + 'k triangles · ' + W.fire.size + ' burning</span>';
+  document.getElementById('info').innerHTML = inf;
+  requestAnimationFrame(frame);
+}
+window.VL = {W:W, P:P, set:function(y, p){ yaw = y; pitch = p; }, V:V};
+requestAnimationFrame(frame);
+})();
+</script></body></html>
