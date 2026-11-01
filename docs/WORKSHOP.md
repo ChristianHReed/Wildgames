@@ -50,6 +50,8 @@ Pack additions (all optional, older readers ignore them): vehicle `rig.wheels` l
 - **Build stations**: `workshop.html?station=workbench|carshop|hangar|dock|wardrobe` opens the Workshop for one kind of thing, with a **Build in the game** button that hands the design back to the game. See `docs/STATIONS.md`.
 - **Build library** for making vehicles from scripts, with tests: see `docs/VEHICLE_BUILD.md`.
 
+The Workshop chat's own working rules: `docs/WORKSHOP_CHAT.md`.
+
 ## Files
 
 | File | What it is |
