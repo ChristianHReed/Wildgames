@@ -16,7 +16,7 @@
      SHAPED.props.vehicleSpec[key]                                      measurements
      SHAPED.props.palette                                               plus the pack's own colours (named x + hex so they never clash, or glass... so the game draws them as see-through glass)
      SHAPED.vehiclekit.vehicles[key]                                    mounts and wheels for tyres, rims and bolt-on parts
-   and lists them in AfterstreetPacks.vehicles: [{key, name, cls, pack, paint, game, functions, salvage, buildCost, stats, interior, coupling, size}].
+   and lists them in AfterstreetPacks.vehicles: [{key, name, cls, pack, paint, game, functions, salvage, buildCost, stats, interior, coupling, size, points}].
   Moving parts (doors) are in models.vehicles[key].parts with vehicleRig[key].parts; walk-in rooms in the list entry's interior.
   Boats from the Workshop go into SHAPED.boats (models, rig, seats, helm, buoy, draught: the boats pack's own tables) and
   AfterstreetPacks.boats; aircraft into SHAPED.aircraft (models, rig, seats, pilot, wheels, flight) and AfterstreetPacks.aircraft.
@@ -126,7 +126,7 @@
           if (K && K.vehicles && a.kit) K.vehicles[key] = a.kit;
           P.vehicles.push({key:key, name:a.name, cls:a.cls || 'car', pack:pack.id, packName:pack.name, author:a.author || pack.author, paint:a.paint || {},
             game:a.game || {}, functions:a.functions || {}, salvage:a.salvage || {}, buildCost:a.buildCost || {}, stats:a.stats || {},
-            interior:a.interior || null, coupling:a.coupling || null, size:a.size || null});
+            interior:a.interior || null, coupling:a.coupling || null, size:a.size || null, points:a.points || (a.source && a.source.points) || []});
           P.installed[key] = true;
         } catch (e){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': ' + e.message); }
       });
