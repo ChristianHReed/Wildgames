@@ -55,10 +55,10 @@ var DGW = new Map();
 /* 0.114.54: water that flows into dug ground. A dug column next to open water (a river, creek or pond) and lower than the water's surface fills to that surface, and the water then
    spreads on through every dug column that is lower than it, a ring at a time (like the cellular water of DwarfCorp and Minecraft, but on this game's 0.5 m columns and without a
    full simulation: water level is the same everywhere it reaches). Filling a column in with soil takes the water out of it. DGL maps column to water surface height. */
-var DGL = new Map(), DGF = [], DGLT = 0, DG_RIVER_Y = 0.05;
+var DGL = new Map(), DGF = [], DGLT = 0;
 function dgWetNb(ix, iy){
   var d = [[1, 0], [-1, 0], [0, 1], [0, -1]], i, l; for (i = 0; i < 4; i++){ l = DGL.get(dgKey(ix + d[i][0], iy + d[i][1])); if (l !== undefined) return l; }
-  if (typeof world !== 'undefined' && world && world.water) for (i = 0; i < 4; i++) if (inWater((ix + d[i][0] + 0.5)*DGS, (iy + d[i][1] + 0.5)*DGS, 0)) return DG_RIVER_Y;
+  if (typeof world !== 'undefined' && world && world.water) for (i = 0; i < 4; i++) if (inWater((ix + d[i][0] + 0.5)*DGS, (iy + d[i][1] + 0.5)*DGS, 0)) return waterY((ix + d[i][0] + 0.5)*DGS, (iy + d[i][1] + 0.5)*DGS);
   return null;
 }
 function dgSeed(ix, iy){ var v = DG.cols.get(dgKey(ix, iy)); if (!(v < 0) || DGL.has(dgKey(ix, iy))) return; var l = dgWetNb(ix, iy); if (l !== null && dgBase(ix, iy) + v*DGS < l - 0.02) DGF.push(ix, iy, l); }

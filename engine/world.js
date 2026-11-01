@@ -532,14 +532,14 @@ function wwPlan(w){
           var nm = SQ[(run + si*3 + Math.floor(h1*3)) % SQ.length];
           if (sd < 0 && run % 17 === 5) nm = 'outfall_pipe_4'; else if (h2 < 0.07) nm = 'bank_slump_4';
           put(nm, bx, by, dx, dz, sc); put('wet_margin_4', bx, by, dx, dz, 1);
-          if (sd > 0){ put(h1 < 0.3 ? 'cattail_edge_4' : 'sedge_edge_4', bx, by, dx, dz, 1); if (run % 3 === 0) put('foam_scum_4', bx, by, dx, dz, 1); if (run % 5 === 2) put('willow_whips', bx + nx*3.2, by + ny*3.2, dx, dz, 1); else if (run % 7 === 4) put('sycamore_lean', bx + nx*2.6, by + ny*2.6, dx, dz, 1); else if (run % 11 === 8) put('fallen_tree_bank', bx, by, dx, dz, 1); }
-          else { put('drift_line_4', bx, by, dx, dz, 1); if (run % 3 === 1) put('foam_scum_4', bx, by, dx, dz, 1); }
+          if (sd > 0){ put(h1 < 0.3 ? 'cattail_edge_4' : 'sedge_edge_4', bx, by, dx, dz, 1);  if (run % 5 === 2) put('willow_whips', bx + nx*3.2, by + ny*3.2, dx, dz, 1); else if (run % 7 === 4) put('sycamore_lean', bx + nx*2.6, by + ny*2.6, dx, dz, 1); else if (run % 11 === 8) put('fallen_tree_bank', bx, by, dx, dz, 1); }
+          else { put('drift_line_4', bx, by, dx, dz, 1);  }
         }
         if (near) continue;
         /* the flow: streaks on every other tile, a wake behind a rock now and then, a chute with rapids and an eddy by the shallows */
-        if (run % 2 === 0) put('flow_streaks_4', cx + nx*(h1 - 0.5)*3, cy + ny*(h1 - 0.5)*3, ux, uy, 1);
+        
         if (run % 9 === 3) put('rock_wake_m', cx + nx*1.5, cy + ny*1.5, ux, uy, 1); else if (run % 9 === 7) put('rock_wake_s', cx - nx*1.8, cy - ny*1.8, ux, uy, 1);
-        if (run % 23 === 10) put('rapids_4', cx, cy, ux, uy, 1); if (run % 23 === 14) put('eddy_4', cx + nx*3.5, cy + ny*3.5, ux, uy, 1);
+        
         var jk = ['creek_junk_cart', 'creek_junk_tyres', 'creek_junk_pallet_a', 'creek_junk_bike'];
         if (run % 13 === 6) put(jk[Math.floor(h2*4) % 4], cx - nx*(hw - 1.5), cy - ny*(hw - 1.5), ux, uy, 1);
       }
@@ -867,6 +867,8 @@ function circ(x, y, r){
   for (var i = 0; i < 8; i++) if (blocked(x + CX[i]*r, y + CY[i]*r)) return true;
   return false;
 }
+/* the height of the water surface at a point (the river is drawn there): the test river stands at 0.05, anywhere else just above the ground */
+function waterY(x, y){ return (typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) ? 0.05 : hAt0(x, y) + 0.05 + (world.liftY || 0); }
 function inWater(x, y, r){
   var i, a;
   for (i = 0; i < world.water.length; i++){

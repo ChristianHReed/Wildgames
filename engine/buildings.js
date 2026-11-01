@@ -688,8 +688,20 @@ function prep3D(){
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
   });
   bridgeScan(w); buildSunk(w); wwPlan(w);
-  var LIFT = w.hg ? 0.05 : 0, SWY = 0.062, RDY = SWY - ROAD_T;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
+  var LIFT = w.hg ? 0.12 : 0, SWY = 0.062, RDY = SWY - ROAD_T;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
   /* sidewalk and road ribbons: cut = true leaves out the stretches that fall inside a sunk road (a path or lane meeting a sunk street stops at its kerb) */
+  /* 0.114.55: a river is one surface: five strips across, flow along the river (the texture runs downstream), and the strip's distance from the bank goes to the shader in the uv
+     so it can darken the deep middle and put foam on the edges. vt.z carries the half width: 19.05 + hw/100 */
+  var waterRibbon = function(p, hw, gap){
+    var run = 0, S = [-1, -0.5, 0, 0.5, 1], zz = 19.05 + Math.min(40, hw)/100, inGap = function(q){ if (gap) for (var gi = 0; gi < gap.length; gi++) if (q >= gap[gi][0] && q <= gap[gi][1]) return true; return false; };
+    for (var q = 0; q < p.length - 2; q += 2){
+      var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue; if (inGap(q)){ run += l; continue; }
+      var nx = -(bz - az)/l, nz = (bx - ax)/l, k, i;
+      for (k = 0; k < 4; k++){ var A = S[k], B = S[k+1], V = [[ax, az, A, run], [bx, bz, A, run + l], [bx, bz, B, run + l], [ax, az, B, run]], tr = [0, 1, 2, 0, 2, 3];
+        for (i = 0; i < 6; i++){ var vv = V[tr[i]]; g.p.push(vv[0] + nx*hw*vv[2], 0.05, vv[1] + nz*hw*vv[2]); g.c.push(255, 255, 255, 255); g.t.push(vv[2]*hw/6, vv[3]/6, zz); } }
+      run += l;
+    }
+  };
   var ribbon = function(p, hw, y, tile, col, lanes, gap, cut){
     var run = 0, inGap = function(q){ if (gap) for (var gi = 0; gi < gap.length; gi++) if (q >= gap[gi][0] && q <= gap[gi][1]) return true; return false; };
     for (var q = 0; q < p.length - 2; q += 2){
@@ -719,12 +731,13 @@ function prep3D(){
     }
   });
   w.roads.forEach(function(r){
-    if (r.kind === 'water') ribbon(r.pts, r.w/2, 0.05, TX.water, WHITE, false, r.cul);
+    if (r.kind === 'water') waterRibbon(r.pts, r.w/2, r.cul);
     else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false, r.tun, true);
     else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false, r.tun, true); }
     else ribbon(r.pts, r.w/2, r.kind === 'road' && r.w >= 6 ? RDY : 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap, !(r.kind === 'road' && r.w >= 6));
   });
-  g.pl = null; if (w.hg) drape(g, 0.05);
+  g.pl = null; if (w.hg) drape(g, LIFT); w.liftY = LIFT;
+  if (w.hg && mapSrc && mapSrc.street){ var WT = g.t, WP = g.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; }   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
   sunkWalls(w, g, LIFT, SWY, RDY);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
   try { structBuild(g); } catch (er){ console.log('structures', er); }
