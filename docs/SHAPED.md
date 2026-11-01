@@ -952,7 +952,7 @@ Each material is a 2 m by 2 m tile: a flat base square in colour slot BASE and a
 How to use it: paint the smooth ground in BASE (the terrain already has a colour per area), then scatter the tile's small
 shapes over each 2 m cell near the player, turned by a random quarter turn so the repeat does not show. seasons[material]
 gives BASE, DETAIL and DETAIL2 for spring, summer, autumn and winter (snow lies on level ground in winter).
-Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long. kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm. edges[kind]: a 2 m strip (x -1..1, z 0..0.5) laid along the border where this ground meets another, +Z towards this ground: a ragged band of its BASE colour and its small shapes thinning out towards the line. Colour it with seasons[the ground on the +Z side].
+Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 12 in (0.3048 m) kerb, 2 m long. kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 30.5 cm (12 in); set the base on the road surface, which is ROAD_T below the pavement. edges[kind]: a 2 m strip (x -1..1, z 0..0.5) laid along the border where this ground meets another, +Z towards this ground: a ragged band of its BASE colour and its small shapes thinning out towards the line. Colour it with seasons[the ground on the +Z side].
 
 | Model | Tris, verts, welded |
 | --- | --- |

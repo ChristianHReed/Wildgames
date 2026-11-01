@@ -91,6 +91,16 @@ function dgBuild(ck){
   var old = DG.mesh.get(ck); if (old && old.g) freeMesh(old.g);
   if (any && g.p.length) DG.mesh.set(ck, {g:upload(g), x:(cx + 0.5)*DGN*DGS, y:(cy + 0.5)*DGN*DGS}); else DG.mesh.delete(ck);
 }
+/* sunk roads (world.js): cut the terrain away over each sunk road segment in the window, column by column, where the column's middle is inside the road */
+function dgRoadMask(m, ox, oy){
+  var x0 = ox*DGS, y0 = oy*DGS, W = DGM_W*DGS, seen = new Set(), cx, cy, i, k;
+  for (cy = Math.floor(y0/40); cy <= Math.floor((y0 + W)/40); cy++) for (cx = Math.floor(x0/40); cx <= Math.floor((x0 + W)/40); cx++){
+    var l = SUNK.get(gk(cx, cy)); if (!l) continue;
+    for (i = 0; i < l.length; i++){ var s = l[i]; if (seen.has(s)) continue; seen.add(s);
+      var hw = s[4] - 0.1, ia = Math.max(0, Math.floor((Math.min(s[0], s[2]) - hw - x0)/DGS)), ib = Math.min(DGM_W - 1, Math.floor((Math.max(s[0], s[2]) + hw - x0)/DGS)), ja = Math.max(0, Math.floor((Math.min(s[1], s[3]) - hw - y0)/DGS)), jb = Math.min(DGM_W - 1, Math.floor((Math.max(s[1], s[3]) + hw - y0)/DGS));
+      for (var j = ja; j <= jb; j++) for (k = ia; k <= ib; k++) if (segDist(x0 + (k + 0.5)*DGS, y0 + (j + 0.5)*DGS, s[0], s[1], s[2], s[3]) < hw) m[j*DGM_W + k] = 255; }
+  }
+}
 /* the mask: one byte per column, 255 where the ground is dug away, over 128 m round the player, drawn by the terrain shader to cut the hole */
 function dgMask(px, py){
   if (!DG.mtex){ DG.mtex = gl.createTexture(); DG.mask = new Uint8Array(DGM_W*DGM_W); gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, DG.mtex);
@@ -101,12 +111,13 @@ function dgMask(px, py){
   if (Math.abs(cx - DG.mox) > 48 || Math.abs(cy - DG.moy) > 48 || DG.mox === 1e9){ DG.mox = cx; DG.moy = cy; DG.mdirty = true; }
   if (!DG.mdirty) return; DG.mdirty = false; var m = DG.mask, ox = DG.mox - DGM_W/2, oy = DG.moy - DGM_W/2; m.fill(0);
   DG.cols.forEach(function(v, key){ if (v >= 0) return; var i = dgIx(key) - ox, j = dgIy(key) - oy; if (i >= 0 && j >= 0 && i < DGM_W && j < DGM_W) m[j*DGM_W + i] = 255; });
+  if (SUNK) dgRoadMask(m, ox, oy);
   gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, DG.mtex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, DGM_W, DGM_W, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, m); gl.activeTexture(gl.TEXTURE0);
 }
 /* once a frame before the ground is drawn: rebuild a couple of changed chunks and tell the shader about the mask */
 function dgPrep(px, py, U){
-  if (!DG.cols.size){ gl.uniform1f(U.dmOn, 0); return; }
+  if (!DG.cols.size && !SUNK){ gl.uniform1f(U.dmOn, 0); return; }
   var n = 0; DG.dirty.forEach(function(ck){ if (n < 3){ DG.dirty.delete(ck); dgBuild(ck); n++; } });
   dgMask(px, py);
   gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, DG.mtex); gl.activeTexture(gl.TEXTURE0);

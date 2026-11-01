@@ -7,7 +7,7 @@ Each material is a 2 m by 2 m tile: a flat base square in colour slot BASE and a
 How to use it: paint the smooth ground in BASE (the terrain already has a colour per area), then scatter the tile's small
 shapes over each 2 m cell near the player, turned by a random quarter turn so the repeat does not show. seasons[material]
 gives BASE, DETAIL and DETAIL2 for spring, summer, autumn and winter (snow lies on level ground in winter).
-Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 15 cm kerb, 2 m long."""
+Decals (puddle, ice, crack, pothole, skid_marks) sit 1 cm above whatever they are on. The kerb is a real 12 in (0.3048 m) kerb, 2 m long."""
 import math, random
 from kit import *
 
@@ -80,11 +80,12 @@ def edge(kind):
         else: o.append(blob(x, z, 0.05 + 0.08*z, 'DETAIL', 6, 90 + i, 0.005))
     return o
 E = {k: edge(k) for k in ('grass', 'snow', 'gravel', 'dirt', 'sand')}
-KERB = [hull([(-H, 0, -0.08), (H, 0, -0.08), (H, 0, 0.08), (-H, 0, 0.08), (-H, 0.15, -0.08), (H, 0.15, -0.08), (H, 0.15, 0.05), (-H, 0.15, 0.05)], 'kerb'),
-        flat([(-H, 0.0005, 0.08), (H, 0.0005, 0.08), (H, 0.0005, 0.35), (-H, 0.0005, 0.35)], 'gutter', (0, 1, 0)), flat([(-0.005, 0.0, 0.081), (0.005, 0.0, 0.081), (0.005, 0.15, 0.051), (-0.005, 0.15, 0.051)], 'kerbD')]
+KH = 0.3048   # a kerb is 12 in (0.3048 m) tall: streets are sunk that much below their pavements (engine/world.js ROAD_T)
+KERB = [hull([(-H, 0, -0.08), (H, 0, -0.08), (H, 0, 0.08), (-H, 0, 0.08), (-H, KH, -0.08), (H, KH, -0.08), (H, KH, 0.05), (-H, KH, 0.05)], 'kerb'),
+        flat([(-H, 0.0005, 0.08), (H, 0.0005, 0.08), (H, 0.0005, 0.35), (-H, 0.0005, 0.35)], 'gutter', (0, 1, 0)), flat([(-0.005, 0.0, 0.081), (0.005, 0.0, 0.081), (0.005, KH, 0.051), (-0.005, KH, 0.051)], 'kerbD')]
 pack = {'name': 'ground', 'version': 1, 'style': 'flat colour with small shapes; seasons by palette', 'units': 'metres', 'tile': 2.0, 'palette': PALETTE, 'seasons': SEASONS, 'darker': 0.78,
         'about': __doc__.split('\n', 2)[2], 'flatModels': True, 'models': {'tiles': T, 'decals': D, 'kerb': {'kerb_strip': KERB}, 'edges': E},
         'edgeRule': 'edges[kind]: a 2 m strip (x -1..1, z 0..0.5) laid along the border where this ground meets another, +Z towards this ground: a ragged band of its BASE colour and its small shapes thinning out towards the line. Colour it with seasons[the ground on the +Z side].',
-        'kerbRule': 'kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 15 cm.'}
+        'kerbRule': 'kerb_strip: the road side is +Z (the gutter strip lies on the road), the pavement side -Z; tops at 30.5 cm (12 in); set the base on the road surface, which is ROAD_T below the pavement.'}
 out, st = write_pack('ground', pack, __file__)
 for k, v in st.items(): print(k, v)

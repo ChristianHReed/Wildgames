@@ -339,7 +339,26 @@ function buildHeights(w, raw, lon0, lat0, kx, ky){
 }
 /* height of the ground: the bare ground (hAt0, each grid square two flat triangles, the same ones that are drawn) plus what has been dug or filled (dig.js; DIGN is 0 until something has) */
 var DIGN = 0;
-function hAt(x, y){ return DIGN ? hAt0(x, y) + digOff(x, y) : hAt0(x, y); }
+function hAt(x, y){ var h = DIGN ? hAt0(x, y) + digOff(x, y) : hAt0(x, y); return SUNK ? h + roadOff(x, y) : h; }
+/* 1.0 sunk roads: a paved street 6 m or wider lies ROAD_T (12 in, 0.3048 m) below its pavements, with a vertical kerb face on each side. The terrain is cut away over the road (the
+   same mask the digging uses), the road is drawn at the lower level, and everything that stands on the ground asks hAt() or groundAt(), which know the road is lower.
+   SUNK maps a 40 m cell to the road segments [x0, y0, x1, y1, half width] that are sunk (not the stretches on bridges or in tunnels); buildings.js builds it with the roads' geometry. */
+var ROAD_T = 0.3048, SUNK = null;
+function inRanges(r, q){ if (r) for (var i = 0; i < r.length; i++) if (q >= r[i][0] && q <= r[i][1]) return true; return false; }
+function buildSunk(w){
+  SUNK = null; var G = new Map(), n = 0;
+  w.roads.forEach(function(r){
+    if (r.kind !== 'road' || r.w < 6) return; var p = r.pts, hw = r.w/2, gp = (r.gap || []).concat(r.tun || []);
+    for (var q = 0; q + 3 < p.length; q += 2){ if (inRanges(gp, q)) continue; var sg = [p[q], p[q+1], p[q+2], p[q+3], hw]; n++;
+      for (var cy = Math.floor((Math.min(p[q+1], p[q+3]) - hw)/40); cy <= Math.floor((Math.max(p[q+1], p[q+3]) + hw)/40); cy++)
+        for (var cx = Math.floor((Math.min(p[q], p[q+2]) - hw)/40); cx <= Math.floor((Math.max(p[q], p[q+2]) + hw)/40); cx++){ var k = gk(cx, cy), l = G.get(k); if (!l) G.set(k, l = []); l.push(sg); } } });
+  w.sunk = n; if (n) SUNK = G;
+}
+/* how far below the pavement the road surface is at (x, y): -ROAD_T on a sunk road (e is how far outside the road edge still counts), 0 elsewhere */
+function roadOff(x, y, e){
+  var l = SUNK && SUNK.get(gk(Math.floor(x/40), Math.floor(y/40))); if (!l) return 0; e = e || 0;
+  for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return -ROAD_T; } return 0;
+}
 function hAt0(x, y){
   var g = world.hg; if (!g) return 0;
   var u = (x - g.x0)/g.cell, v = (y - g.y0)/g.cell; u = u < 0 ? 0 : u > g.cols - 1.001 ? g.cols - 1.001 : u; v = v < 0 ? 0 : v > g.rows - 1.001 ? g.rows - 1.001 : v;
@@ -554,7 +573,7 @@ function baseAt(x, y, hint){ LASTDECK = false; if (DK && hint !== undefined){ va
 function deckBlock(x, y){ if (!DK) return false; var l = DKG.get(gk(Math.floor(x/16), Math.floor(y/16))); if (!l) return false; for (var i = 0; i < l.length; i++){ var sg = DK[l[i]]; if (sg.e < 0.3) continue; if (segDist(x, y, sg.x0, sg.y0, sg.x1, sg.y1) < sg.hw + 2.5) return true; } return false; }
 function deckOfRoad(r, s, x, y){ if (!r.br) return null; for (var i = 0; i < r.br.length; i++){ var sp = r.br[i]; if (s >= sp.ga && s <= sp.gb){ var t = hAt(x, y), H = brH(sp, s, t) + 0.14; return H - t > 0.3 || inWater(x, y, 2) ? H : null; } } return null; }
 /* height you stand at: a building's level floor indoors, the ground outdoors */
-function groundAt(x, y){ if (!world.hg) return 0; var b = buildingAt(x, y); return b ? b.base : hAt(x, y); }
+function groundAt(x, y){ if (!world.hg) return SUNK ? roadOff(x, y) : 0; var b = buildingAt(x, y); return b ? b.base : hAt(x, y); }
 /* the height something is standing at, counting stairs and upper floors */
 function entY(e){ return groundAt(e.x, e.y) + lvlY(buildingAt(e.x, e.y), e); }
 /* lay a flat mesh over the hills: cut every triangle along the terrain's own triangles, so each piece lies flat on the ground */

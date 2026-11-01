@@ -439,7 +439,7 @@ function grdTile(o){
   grdKerbs(m, o, x0, y0);
   if (o.g) freeMesh(o.g); o.g = m.p.length ? upload(m) : null; o.sea = sea;
 }
-/* kerbs: a 15 cm kerb along the edge of every paved street that has a pavement; none where another street crosses */
+/* kerbs: a 12 in kerb along the edge of every paved street that has a pavement; none where another street crosses */
 function grdKerbs(m, o, x0, y0){
   var G = SHAPED.ground, pcs = G.models.kerb && G.models.kerb.kerb_strip; if (!pcs || !world.roadCell) return; var K = GDM.kerb; if (!K){ try { K = GDM.kerb = spModel(pcs, spColour(G.palette)); } catch (er){ GDM.kerb = K = null; } } if (!K) return;
   var RC = world.RC, seen = new Set(), cx, cy, i, j;
@@ -451,7 +451,7 @@ function grdKerbs(m, o, x0, y0){
         var px = sg[0] + dx*t - dy*sg[4]*side, py = sg[1] + dy*t + dx*sg[4]*side; if (px < x0 || px >= x0 + DT || py < y0 || py >= y0 + DT) continue;
         var skip = false, L2 = world.roadCell(Math.floor(px/RC), Math.floor(py/RC)); if (L2) for (j = 0; j < L2.length && !skip; j++){ var q = L2[j]; if (q !== sg && q[5] !== 'path' && segDist(px, py, q[0], q[1], q[2], q[3]) < q[4] - 0.2) skip = true; }
         if (skip || buildingAt(px, py) || inWater(px, py, 0.3)) continue;
-        m.model(K, px, py, ang + (side > 0 ? 3.14159 : 0), hAt(px, py));
+        m.model(K, px, py, ang + (side > 0 ? 3.14159 : 0), SUNK ? hAt0(px, py) + 0.062 - ROAD_T : hAt(px, py));   /* the base stands on the sunk road surface, the top is level with the pavement */
       }
     }
   }
@@ -658,6 +658,22 @@ function placeDress(g){
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */
 function manageFacades(){}
 function dirtyChunk(b){ if (b && b.fac){ freeMesh(b.fac); b.fac = null; } if (b && b.chunk && b.chunk.far){ freeMesh(b.chunk.far); b.chunk.far = null; } if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); freeMesh(b.chunk.l); b.chunk.g = null; b.chunk.l = null; } }
+/* the kerb face: a vertical wall of 12 in down each side of every sunk road, from the pavement to the road surface, in 2 m pieces that follow the ground; none where another street joins */
+function sunkWalls(w, g, LIFT, SWY, RDY){
+  if (!SUNK) return; g.pl = null; var KC = [166, 162, 152];
+  w.roads.forEach(function(r){
+    if (r.kind !== 'road' || r.w < 6) return; var p = r.pts, hw = r.w/2, gp = (r.gap || []).concat(r.tun || []);
+    for (var q = 0; q + 3 < p.length; q += 2){
+      if (inRanges(gp, q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue;
+      var ns = Math.max(1, Math.ceil(l/2)), ux = (bx - ax)/l, uz = (bz - az)/l, nx = -uz, nz = ux, si;
+      for (si = 0; si < ns; si++){ var s0 = l*si/ns, s1 = l*(si + 1)/ns, mx = ax + ux*(s0 + s1)/2, mz = az + uz*(s0 + s1)/2;
+        [-1, 1].forEach(function(sd){ if (roadOff(mx + nx*(hw + 0.4)*sd, mz + nz*(hw + 0.4)*sd, 0.1)) return;
+          var x0 = ax + ux*s0 + nx*hw*sd, z0 = az + uz*s0 + nz*hw*sd, x1 = ax + ux*s1 + nx*hw*sd, z1 = az + uz*s1 + nz*hw*sd, h0 = hAt0(x0, z0), h1 = hAt0(x1, z1);
+          g.quad(x0, h0 + RDY + LIFT, z0, x1, h1 + RDY + LIFT, z1, x1, h1 + SWY + LIFT, z1, x0, h0 + SWY + LIFT, z0, KC, 255); });
+      }
+    }
+  });
+}
 function prep3D(){
   var w = world, g = new Mesh(), chunks = new Map(), i;
   /* lawns in parks and on greens use the terrain's own grass (tile 45 = terrain blend, no other layers), so they meet it without a seam;
@@ -669,25 +685,45 @@ function prep3D(){
     var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : 0.25];
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
   });
-  bridgeScan(w);
-  var ribbon = function(p, hw, y, tile, col, lanes, gap){
+  bridgeScan(w); buildSunk(w);
+  var LIFT = w.hg ? 0.05 : 0, SWY = 0.062, RDY = SWY - ROAD_T;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
+  /* sidewalk and road ribbons: cut = true leaves out the stretches that fall inside a sunk road (a path or lane meeting a sunk street stops at its kerb) */
+  var ribbon = function(p, hw, y, tile, col, lanes, gap, cut){
     var run = 0, inGap = function(q){ if (gap) for (var gi = 0; gi < gap.length; gi++) if (q >= gap[gi][0] && q <= gap[gi][1]) return true; return false; };
     for (var q = 0; q < p.length - 2; q += 2){
       if (inGap(q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx-ax, bz-az); if (l < 0.01) continue;
+      if (cut && SUNK && l > 2.5){ var ns = Math.ceil(l/2), si, sx0, sz0, sx1, sz1, sl = l/ns;   /* long segments are cut into 2 m pieces so each can be tested */
+        for (si = 0; si < ns; si++){ sx0 = ax + (bx - ax)*si/ns; sz0 = az + (bz - az)*si/ns; sx1 = ax + (bx - ax)*(si + 1)/ns; sz1 = az + (bz - az)*(si + 1)/ns;
+          if (roadOff((sx0 + sx1)/2, (sz0 + sz1)/2, 0.3)) continue; var snx = -(sz1-sz0)/sl*hw, snz = (sx1-sx0)/sl*hw; g.pl = [tile, 0.25]; g.quad(sx0+snx,y,sz0+snz, sx1+snx,y,sz1+snz, sx1-snx,y,sz1-snz, sx0-snx,y,sz0-snz, col, 255); }
+        continue; }
+      if (cut && SUNK && roadOff((ax + bx)/2, (az + bz)/2, 0.3)) continue;
       var nx = -(bz-az)/l*hw, nz = (bx-ax)/l*hw;
       if (lanes){ g.pl = null; g.quadUV([ax+nx,y,az+nz, bx+nx,y,bz+nz, bx-nx,y,bz-nz, ax-nx,y,az-nz], [0,run/8, 0,(run+l)/8, 1,(run+l)/8, 1,run/8], TX.lanes, col, 255); run += l; }
       else { g.pl = [tile, 0.25]; g.quad(ax+nx,y,az+nz, bx+nx,y,bz+nz, bx-nx,y,bz-nz, ax-nx,y,az-nz, col, 255); }
     }
     if (hw >= 1.5){ g.pl = [lanes ? TX.asphalt : tile, 0.25]; for (q = 2; q < p.length - 2; q += 2) if (!inGap(q) && !inGap(q - 2)) for (var k = 0; k < 6; k++){ var a0 = k*1.0472, a1 = a0 + 1.0472; g.tri(p[q], y - 0.004, p[q+1], p[q] + Math.cos(a0)*hw, y - 0.004, p[q+1] + Math.sin(a0)*hw, p[q] + Math.cos(a1)*hw, y - 0.004, p[q+1] + Math.sin(a1)*hw, col, 255); } }
   };
-  w.roads.forEach(function(r){ if (r.kind === 'road' && r.w >= 6) ribbon(r.pts, r.w/2 + 2, 0.062, TX.sidewalk, WHITE, false, r.tun ? (r.gap || []).concat(r.tun) : r.gap); });
+  /* the pavement is two 2 m strips, one each side of the sunk road; none where another street crosses (that is the road's own surface) */
+  w.roads.forEach(function(r){
+    if (r.kind !== 'road' || r.w < 6) return; var p = r.pts, hw = r.w/2, gp = (r.gap || []).concat(r.tun || []);
+    for (var q = 0; q + 3 < p.length; q += 2){
+      if (inRanges(gp, q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue;
+      var ns = Math.max(1, Math.ceil(l/2)), ux = (bx - ax)/l, uz = (bz - az)/l, nx = -uz, nz = ux, si;
+      for (si = 0; si < ns; si++){ var s0 = l*si/ns, s1 = l*(si + 1)/ns, mx = ax + ux*(s0 + s1)/2, mz = az + uz*(s0 + s1)/2;
+        [-1, 1].forEach(function(sd){ if (roadOff(mx + nx*(hw + 1)*sd, mz + nz*(hw + 1)*sd, 0.2) || roadOff(mx + nx*(hw + 0.1)*sd, mz + nz*(hw + 0.1)*sd, 0.0)) return;
+          var x0 = ax + ux*s0, z0 = az + uz*s0, x1 = ax + ux*s1, z1 = az + uz*s1; g.pl = [TX.sidewalk, 0.25];
+          g.quad(x0 + nx*hw*sd, SWY, z0 + nz*hw*sd, x1 + nx*hw*sd, SWY, z1 + nz*hw*sd, x1 + nx*(hw + 2)*sd, SWY, z1 + nz*(hw + 2)*sd, x0 + nx*(hw + 2)*sd, SWY, z0 + nz*(hw + 2)*sd, WHITE, 255); });
+      }
+    }
+  });
   w.roads.forEach(function(r){
     if (r.kind === 'water') ribbon(r.pts, r.w/2, 0.05, TX.water, WHITE, false, r.cul);
-    else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false, r.tun);
-    else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false, r.tun); }
-    else ribbon(r.pts, r.w/2, 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap);
+    else if (r.kind === 'path') ribbon(r.pts, r.w/2, 0.07, TX.sidewalk, [240,226,200], false, r.tun, true);
+    else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false, r.tun, true); }
+    else ribbon(r.pts, r.w/2, r.kind === 'road' && r.w >= 6 ? RDY : 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap, !(r.kind === 'road' && r.w >= 6));
   });
   g.pl = null; if (w.hg) drape(g, 0.05);
+  sunkWalls(w, g, LIFT, SWY, RDY);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
   try { structBuild(g); } catch (er){ console.log('structures', er); }
   try { waterwaysBuild(g); } catch (er){ console.log('waterways', er); }
