@@ -133,8 +133,8 @@ var TEST_ST = {x0:-310, x1:270, y0:-190, y1:240};   /* 0.114.66: the Test World 
    pieces' lip stands (bed -0.9 m, shelf +0.5 m); a steep hill the hill road climbs; a mountain; a gorge 14 m deep across the field */
 function testSheetH(x, y){
   var h = 0.4, dx = Math.abs(x - 30);
-  if (y < 92) h += dx < 5.5 ? -0.9 : dx < 8.5 ? 0.5 : 0;
-  var q = Math.hypot((x - 95)/78, (y - 108)/36); if (q < 1.25){ var tq = q < 0.85 ? 1 : (1.25 - q)/0.4; h += -2.4*tq*tq*(3 - 2*tq); }   /* smooth bowl: the water's edge (q 1.18) is where the ground meets the water level, so no dry pit shows beside the lake */   /* the lake: a bowl 2.4 m deep, the river runs into it */
+  if (y < 110) h += dx < 5.5 ? -0.9 : dx < 8.5 ? 0.5 : 0;
+  var q = Math.hypot((x - 112)/70, (y - 108)/36); if (q < 1.25){ var tq = q < 0.85 ? 1 : (1.25 - q)/0.4; h += -2.4*tq*tq*(3 - 2*tq); }   /* smooth bowl: the water's edge (q 1.18) is where the ground meets the water level, so no dry pit shows beside the lake */   /* the lake: a bowl 2.4 m deep, the river runs into it */
   var r = Math.hypot(x + 130, y + 110); if (r < 42) h += 28*(1 - r/42)*(1 + 0.05*Math.sin(x/5)*Math.cos(y/6));
   var m = Math.hypot(x + 205, y - 100)/100; if (m < 1) h += 85*Math.pow(1 - m, 1.25)*(1 + 0.12*Math.sin(x/9)*Math.cos(y/11));
   var gx = Math.abs(x - 215), gy = y > 58 && y < 140 ? 1 : y >= 140 && y < 150 ? (150 - y)/10 : y > 48 && y <= 58 ? (y - 48)/10 : 0;
@@ -156,8 +156,8 @@ function testStreetRaw(){
   rect(-24, -64, 16, 14, {building:'house', name:'The house'});
   rect(-26, -30, 18, 20, {building:'yes', shop:'convenience', name:'Shop front'});
   rect(-30, 8, 22, 26, {building:'apartments', 'building:levels':'8', name:'Apartment block'});
-  line([[30, -165], [30, 90]], {waterway:'river', name:'Test River'});
-  var lk = []; for (var li = 0; li < 28; li++){ var la = li/28*Math.PI*2; lk.push([95 + Math.cos(la)*78*1.18, 108 + Math.sin(la)*36*1.18]); }
+  line([[30, -165], [30, 108]], {waterway:'river', name:'Test River'});
+  var lk = []; for (var li = 0; li < 28; li++){ var la = li/28*Math.PI*2; lk.push([112 + Math.cos(la)*70*1.18, 108 + Math.sin(la)*36*1.18]);   /* west shore at x 29, clear of the street and its pavement */ }
   poly(lk, {natural:'water', name:'Test Lake'});
   poly([[44, -165], [250, -165], [250, -50], [44, -50]], {natural:'wood', name:'Dense forest'});
   poly([[44, -46], [200, -46], [200, 24], [44, 24]], {leisure:'park', name:'Test Park'});
@@ -172,7 +172,7 @@ function testStreetRaw(){
   rect(-24, 158, 14, 10, {building:'yes', amenity:'fuel', name:'Gas station'});
   rect(-36, 172, 26, 18, {building:'yes', amenity:'police', name:'Police station'});
   rect(-30, 194, 20, 14, {building:'yes', amenity:'restaurant', name:'Diner'});
-  rect(150, 56, 18, 12, {building:'barn', name:'Barn'});
+  rect(150, 168, 18, 12, {building:'barn', name:'Barn'});
   rect(178, 30, 12, 10, {building:'house', name:'Farmhouse'});
   /* the hill road: climbs the steep hill from the street (a steep street for the sunk-road kerbs) */
   line([[0, -140], [-45, -139], [-85, -134], [-110, -126], [-130, -112]], {highway:'residential', name:'Hill Road'});
