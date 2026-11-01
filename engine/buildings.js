@@ -684,7 +684,7 @@ function prep3D(){
   w.areas.forEach(function(a){
     var p = a.pts; if (!ATILE[a.kind]) return;
     if (p.length > 800){ var st = Math.ceil(p.length/800)*2, q = []; for (i = 0; i < p.length; i += st) q.push(p[i], p[i+1]); p = q; }
-    var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : 0.25];
+    var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : a.kind === 'water' ? 0.12 : 0.25];   /* 0.114.75: lakes take a larger water texture, so the far surface does not break into noise */
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
   });
   bridgeScan(w); buildSunk(w); wwPlan(w);
