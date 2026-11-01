@@ -457,6 +457,63 @@ function stPut(g, M, nm, x, z, dx, dz, sx, sy, y0){ var m = M[nm]; if (!m) retur
 function stTilt(g, M, nm, x, z, dx, dz, sx, y0, y1){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
   for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + (y1 - y0)*(lz/4 + 0.5) + p[i*9 + j*3 + 1]; q[j*3 + 2] = z + sn*lx + cs*lz; }
     g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } return true; }
+/* 0.114.49: the waterways pack (banks, shore plants, flow cues, creek junk) laid along the test street's river. The game's own data-driven placement (bends, pools, riffles)
+   is still to come (docs/STRETCH.md); this lays a mix by the guide's recipes: natural banks and plants on the park side, built banks and junk on the street side */
+var LNM = null;
+function landModels(){
+  if (LNM) return LNM; LNM = {}; var S = window.SHAPED && SHAPED.land; if (!S || typeof spModel !== 'function') return LNM;
+  var col = spColour(S.palette), m = S.models.land || {}; for (var k in m) LNM[k] = spModel(m[k], col); return LNM;
+}
+function waterwaysBuild(g){
+  if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street) return; var w = world, M = landModels(); if (!M.bank_shelf_4 || !w.waterLines) return;
+  var Y0 = 0.05, put = function(nm, x, z, dx, dz, sx){ return stPut(g, M, nm, x, z, dx, dz, sx || 1, 0.55, Y0); };
+  var EAST = ['bank_shelf_4', 'bank_gravel_4', 'bank_roots_4', 'bank_shelf_4', 'bank_sand_4', 'bank_mud_4', 'bank_cut_clay_4', 'bank_gravel_4'],
+      WEST = ['bank_gabion_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_stone_wall_4', 'bank_concrete_channel_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_gabion_4'];
+  var cross = []; w.roads.forEach(function(r){ if (r.kind !== 'path') return; var p = r.pts; w.waterLines.forEach(function(wl){ var q = wl.pts;
+    for (var a = 0; a + 3 < p.length; a += 2) for (var b = 0; b + 3 < q.length; b += 2){ var rx = p[a+2] - p[a], ry = p[a+3] - p[a+1], sx = q[b+2] - q[b], sy = q[b+3] - q[b+1], den = rx*sy - ry*sx; if (Math.abs(den) < 1e-6) continue;
+      var t = ((q[b] - p[a])*sy - (q[b+1] - p[a+1])*sx)/den, u = ((q[b] - p[a])*ry - (q[b+1] - p[a+1])*rx)/den; if (t >= 0 && t <= 1 && u >= 0 && u <= 1) cross.push([p[a] + rx*t, p[a+1] + ry*t]); } }); });
+  w.waterLines.forEach(function(wl, wi){ var P = wl.pts, hw = wl.w/2, run = 0;
+    for (var q = 0; q + 3 < P.length; q += 2){
+      var ax = P[q], ay = P[q+1], L = Math.hypot(P[q+2] - ax, P[q+3] - ay); if (L < 1) continue; var ux = (P[q+2] - ax)/L, uy = (P[q+3] - ay)/L, nx = uy, ny = -ux;
+      for (var u0 = 2; u0 < L; u0 += 4, run++){
+        var cx = ax + ux*u0, cy = ay + uy*u0, near = cross.some(function(c){ return Math.hypot(c[0] - cx, c[1] - cy) < 8; }), h1 = hash(run, 5, 91), h2 = hash(run, 6, 92);
+        for (var si = 0; si < 2; si++){ var sd = si ? -1 : 1, bx = cx + nx*sd*(hw + 1.5), by = cy + ny*sd*(hw + 1.5), dx = ux*sd, dz = uy*sd, SQ = sd > 0 ? EAST : WEST, sc = 0.85 + hash(run, si, 93)*0.4;
+          if (near){ if (sd > 0) put('bank_landing_4', bx, by, dx, dz, 1); else put('bank_stairs_4', bx, by, dx, dz, 1); continue; }
+          var nm = SQ[(run + si*3 + Math.floor(h1*3)) % SQ.length];
+          if (sd < 0 && run % 17 === 5) nm = 'outfall_pipe_4'; else if (h2 < 0.07) nm = 'bank_slump_4';
+          put(nm, bx, by, dx, dz, sc); put('wet_margin_4', bx, by, dx, dz, 1);
+          if (sd > 0){ put(h1 < 0.3 ? 'cattail_edge_4' : 'sedge_edge_4', bx, by, dx, dz, 1); if (run % 3 === 0) put('foam_scum_4', bx, by, dx, dz, 1); if (run % 5 === 2) put('willow_whips', bx + nx*3.2, by + ny*3.2, dx, dz, 1); else if (run % 7 === 4) put('sycamore_lean', bx + nx*2.6, by + ny*2.6, dx, dz, 1); else if (run % 11 === 8) put('fallen_tree_bank', bx, by, dx, dz, 1); }
+          else { put('drift_line_4', bx, by, dx, dz, 1); if (run % 3 === 1) put('foam_scum_4', bx, by, dx, dz, 1); }
+        }
+        if (near) continue;
+        /* the flow: streaks on every other tile, a wake behind a rock now and then, a chute with rapids and an eddy by the shallows */
+        if (run % 2 === 0) put('flow_streaks_4', cx + nx*(h1 - 0.5)*3, cy + ny*(h1 - 0.5)*3, ux, uy, 1);
+        if (run % 9 === 3) put('rock_wake_m', cx + nx*1.5, cy + ny*1.5, ux, uy, 1); else if (run % 9 === 7) put('rock_wake_s', cx - nx*1.8, cy - ny*1.8, ux, uy, 1);
+        if (run % 23 === 10) put('rapids_4', cx, cy, ux, uy, 1); if (run % 23 === 14) put('eddy_4', cx + nx*3.5, cy + ny*3.5, ux, uy, 1);
+        var jk = ['creek_junk_cart', 'creek_junk_tyres', 'creek_junk_pallet_a', 'creek_junk_bike'];
+        if (run % 13 === 6) put(jk[Math.floor(h2*4) % 4], cx - nx*(hw - 1.5), cy - ny*(hw - 1.5), ux, uy, 1);
+      }
+    } });
+}
+/* 0.114.49: the wall of hand-held items on the test street: a brick wall from the barriers pack with every weapon in the held pack hung on it at reaching height.
+   Each weapon is laid flat against the wall with its length (the pack's z) along the wall, at its true size */
+var BWM = null;
+function rackData(w){
+  if (w.rack) return; w.rack = []; if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street || !window.SHAPED || !SHAPED.held) return;
+  var RK = Object.keys(SHAPED.held.models.weapons), rd = w.roads.filter(function(r){ return r.hw === 'residential'; })[0], rx = rd ? rd.pts[0] - 11 : -121; w.rackX = rx;
+  RK.forEach(function(k, ki){ var col = ki % 11, row = Math.floor(ki/11); w.rack.push({fix:'rack', key:k, name:k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }), x:rx + 1.6, y:56 + col*1.7, h:1.0 + row*0.62, wx:rx + 0.45}); });
+}
+function rackBuild(g){
+  rackData(world);
+  var w = world; if (!w.rack || !w.rack.length || !window.SHAPED || !SHAPED.barriers || !SHAPED.held || typeof spModel !== 'function') return;
+  if (!BWM) BWM = spModel(SHAPED.barriers.models.barriers.fence_brick_wall_4, spColour(SHAPED.barriers.palette));
+  var rx = w.rackX, z0 = w.rack[0].y - 1.7, n = Math.ceil(11*1.7/4) + 1, i, H = SHAPED.held, hc = spColour(H.palette, {}), HM = {}; g.pl = null;
+  for (i = 0; i < n; i++){ var z = z0 + 2 + i*4; stPut(g, {wall:BWM}, 'wall', rx, z, 1, 0, 1, 1, hAt(rx, z)); }
+  w.rack.forEach(function(q){ var W = H.models.weapons[q.key], pcs = W && (W['new'] || W); if (!pcs) return; var M = HM[q.key] || (HM[q.key] = spModel(pcs, hc)); if (!M) return;
+    var gy = hAt(q.wx, q.y) + q.h, p = M.p, c = M.c, a = [0,0,0,0,0,0,0,0,0], t, j;
+    for (t = 0; t < M.n; t++){ for (j = 0; j < 3; j++){ a[j*3] = q.wx + p[t*9 + j*3]; a[j*3 + 1] = gy + p[t*9 + j*3 + 1]; a[j*3 + 2] = q.y + p[t*9 + j*3 + 2]; }
+      g.tri(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], [c[t*3], c[t*3 + 1], c[t*3 + 2]], 255); } });
+}
 function structBuild(g){
   var w = world, L = w.structures, M = structModels(); if (!L || !L.length || !M.dam_end_wall) return; var n = 0;
   var put = function(nm, x, z, dx, dz, sy){ if (stPut(g, M, nm, x, z, dx, dz, 1, sy, hAt(x, z))) n++; };

@@ -16,3 +16,5 @@ Game-side wiring still to do, after the planned roadmap: pack items (new keys ne
 
 ## Animals, next (from 0.114.34)
 Boars, wolves and bears that attack; birds that fly and perch; fish and fishing; farm animals on farmland; a knife item (butchering is axe, crowbar, toolkit or bare hands for now); hide crafting (clothes, bags); bones and fat uses; animals synced to guests; wolves hunting the player at night.
+
+- Waterways pack in the real map: choose the bank piece from the data (bend inside or outside, town or country) per the guide's table, fit banks to the terrain, flow scrolling. Only the test street has it now (waterwaysBuild in engine/world.js).
