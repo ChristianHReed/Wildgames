@@ -25,9 +25,9 @@ var DESIGNS = {
   jon_boat:function(b){ hull(b, 2.1, 0.7, 0.55, {bow:0.5}); seatAt(b, -1.5, 1.3, 'stern seat'); seatAt(b, 0.1, 1.3, 'middle seat'); seatAt(b, 1.4, 1.3, 'bow seat'); b.outboard([0, 0.45, -2.15], {height:0.8}); b.tank([0, 0.18, -1.0], [0.4, 0.25, 0.3]); },
   bass_boat:function(b){ hull(b, 2.6, 0.9, 0.7, {bow:0.6}); b.box([-0.88, 0.7, 0.8], [0.88, 0.76, 2.4], {c:'paint3', m:'sheet', name:'casting deck'}); b.box([-0.88, 0.4, 0.9], [0.88, 0.7, 0.95], {c:'paint1', name:'deck front'});
     seatAt(b, 0.0, 1.4, 'driver bench', 0.45); seatAt(b, -1.2, 1.4, 'rear bench', 0.45); b.box([0.3, 0.45, 0.4], [0.8, 1.0, 0.7], {c:'paint2', fitting:true, name:'console'}); b.outboard([0, 0.55, -2.65], {height:0.9}); b.tank([0, 0.18, -1.8], [0.5, 0.25, 0.4]); },
-  runabout:function(b){ hull(b, 2.4, 0.9, 0.7, {bow:0.6}); b.box([-0.8, 0.7, 0.5], [0.8, 1.15, 0.58], {c:'glass', m:'glass', name:'windscreen'}); seatAt(b, 0.1, 1.5, 'front bench', 0.42); seatAt(b, -1.1, 1.5, 'rear bench', 0.42); b.outboard([0, 0.55, -2.45], {height:0.9}); b.tank([0, 0.18, -1.7], [0.5, 0.25, 0.4]); },
+  runabout:function(b){ hull(b, 2.4, 0.9, 0.7, {bow:0.6}); b.box([-0.8, 0.7, 0.5], [0.8, 1.15, 0.54], {c:'glass', m:'glass', name:'windscreen'}); seatAt(b, 0.1, 1.5, 'front bench', 0.42); seatAt(b, -1.1, 1.5, 'rear bench', 0.42); b.outboard([0, 0.55, -2.45], {height:0.9}); b.tank([0, 0.18, -1.7], [0.5, 0.25, 0.4]); },
   fishing_boat:function(b){ hull(b, 3.0, 1.1, 0.9, {bow:0.8});
-    b.box([-1.0, 0.9, -0.2], [1.0, 2.1, 1.4], {c:'paint1', name:'wheelhouse'}); b.box([-0.95, 1.3, 1.4], [0.95, 1.9, 1.46], {c:'glass', m:'glass', name:'wheelhouse glass'});
+    b.box([-1.0, 0.9, -0.2], [1.0, 2.1, 1.4], {c:'paint1', name:'wheelhouse'}); b.box([-0.95, 1.3, 1.4], [0.95, 1.9, 1.44], {c:'glass', m:'glass', name:'wheelhouse glass'});
     b.box([-1.0, 2.1, -0.3], [1.0, 2.18, 1.5], {c:'paint2', name:'cabin roof'});
     seatAt(b, 0.9, 1.4, 'helm seat', 0.5); seatAt(b, -1.8, 1.8, 'stern bench', 0.4); b.outboard([0, 0.7, -3.05], {height:1.1}); b.tank([0, 0.2, -1.2], [0.7, 0.3, 0.6]); },
   jet_ski:function(b){ b.box([-0.5, 0, -1.4], [0.5, 0.35, 1.2], {c:'paint1', m:'sheet', name:'hull'}); b.block('wedge', [0, 0.18, 1.4], [1.0, 0.36, 0.4], {c:'paint1', m:'sheet', name:'bow'});

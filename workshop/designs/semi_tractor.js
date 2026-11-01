@@ -11,7 +11,7 @@ module.exports = function(WSB){
   b.box([-0.5, 0.95, -1.3], [0.5, 1.0, -0.4], {c:'underside', m:'steel', name:'fifth wheel plate'});
   b.box([-1.0, 0.95, 3.4], [1.0, 1.95, 5.1], {c:'paint1', name:'hood'});
   b.box([-1.25, 0.95, 1.6], [1.25, 1.9, 3.4], {c:'paint1', name:'cab lower'});
-  b.box([-1.2, 1.9, 2.5], [1.2, 2.8, 3.3], {c:'glass', m:'glass', name:'windscreen'});
+  b.box([-1.2, 1.9, 3.26], [1.2, 2.8, 3.3], {c:'glass', m:'glass', name:'windscreen'}); b.box([1.16, 1.9, 2.5], [1.2, 2.8, 3.26], {c:'glass', m:'glass', mx:true, name:'side glass'});
   b.box([-1.25, 1.9, 1.6], [1.25, 3.2, 2.5], {c:'paint1', name:'cab upper'});
   b.box([-1.25, 2.8, 2.5], [1.25, 3.2, 3.35], {c:'paint1', name:'cab roof'});
   b.box([-1.25, 0.95, 0.4], [1.25, 3.2, 1.6], {c:'paint1', name:'sleeper'});

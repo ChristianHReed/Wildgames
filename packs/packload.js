@@ -14,7 +14,7 @@
      SHAPED.props.models.vehicles[key + '_wreck'] and [key + '_burnt']   {body, bonnet, wheel}
      SHAPED.props.vehicleRig[key], [key_wreck], [key_burnt]             wheels, hinges, smokeAt, sitDrop
      SHAPED.props.vehicleSpec[key]                                      measurements
-     SHAPED.props.palette                                               plus the pack's own colours (named x + hex, so they never clash)
+     SHAPED.props.palette                                               plus the pack's own colours (named x + hex so they never clash, or glass... so the game draws them as see-through glass)
      SHAPED.vehiclekit.vehicles[key]                                    mounts and wheels for tyres, rims and bolt-on parts
    and lists them in AfterstreetPacks.vehicles: [{key, name, cls, pack, paint, game, functions, salvage, buildCost, stats, interior, coupling, size}].
   Moving parts (doors) are in models.vehicles[key].parts with vehicleRig[key].parts; walk-in rooms in the list entry's interior.
@@ -58,7 +58,7 @@
     if (t.pack === 'survivor' && t.path[0] === 'parts' && PK.choices && Array.isArray(PK.choices[t.path[1]]) && PK.choices[t.path[1]].indexOf(key) < 0) PK.choices[t.path[1]].push(key);
     (a.extra || []).forEach(function(e){ var q = e.path.slice(), l = q.pop(), z = PK; q.forEach(function(k){ z = z[k] = z[k] || {}; }); z[l] = e.value; });
     if (a.creature && t.path[0] === 'parts'){ PK.creatures = PK.creatures || {}; PK.creatures[key] = a.creature; }
-    for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
+    for (var c in (a.palette || {})) if (/^(x[0-9a-f]{6}|glass[A-Za-z0-9]*)$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
     P.models.push({key:key, path:t.path.slice(0, -1).concat(key), pack:t.pack, kind:a.kind, name:a.name, packId:pack.id, author:a.author || pack.author, stats:a.stats || {}});
   }
   function installModel(SH, pack, a){
@@ -76,7 +76,7 @@
       var path = e.path.slice(0, -1), o = PK; for (var i = 0; i < path.length; i++){ o[path[i]] = o[path[i]] || {}; o = o[path[i]]; }
       o[key] = e.value;
     });
-    for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
+    for (var c in (a.palette || {})) if (/^(x[0-9a-f]{6}|glass[A-Za-z0-9]*)$/i.test(c)){ PK.palette = PK.palette || {}; PK.palette[c] = a.palette[c]; }
     /* a held item's game design (the game's custom item format) and an item's data travel with it */
     if (a.design){ var dz = JSON.parse(JSON.stringify(a.design)); dz.model = key; if (a.icon) dz.iconData = a.icon; P.designs.push(dz); if (dz.twoHanded && PK.twoHanded && PK.twoHanded.indexOf(key) < 0) PK.twoHanded.push(key); }
     if (a.item){ var it = JSON.parse(JSON.stringify(a.item)); it.model = t.pack + '.' + (whole ? '' : t.group + '.') + key; if (a.icon) it.icon = a.icon; P.items.push(it); }
@@ -122,7 +122,7 @@
           PR.vehicleRig[key] = a.rig; PR.vehicleSpec[key] = a.spec;
           if (a.wreck){ PR.models.vehicles[key + '_wreck'] = a.wreck; PR.vehicleRig[key + '_wreck'] = a.rigWreck; }
           if (a.burnt){ PR.models.vehicles[key + '_burnt'] = a.burnt; PR.vehicleRig[key + '_burnt'] = a.rigBurnt; }
-          for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)) PR.palette[c] = a.palette[c];
+          for (var c in (a.palette || {})) if (/^(x[0-9a-f]{6}|glass[A-Za-z0-9]*)$/i.test(c)) PR.palette[c] = a.palette[c];
           if (K && K.vehicles && a.kit) K.vehicles[key] = a.kit;
           P.vehicles.push({key:key, name:a.name, cls:a.cls || 'car', pack:pack.id, packName:pack.name, author:a.author || pack.author, paint:a.paint || {},
             game:a.game || {}, functions:a.functions || {}, salvage:a.salvage || {}, buildCost:a.buildCost || {}, stats:a.stats || {},

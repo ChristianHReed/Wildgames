@@ -9,7 +9,7 @@ function body4x4(b, o){ /* jeep / humvee shape */
   b.box([-hw + 0.1, g + 0.1, B + 0.1], [hw - 0.1, g + 0.24, cabF], {c:'underside', m:'steel', name:'floor pan'});
   b.box([-hw, g + 0.2, B], [hw, belt, F], {c:'paint1', name:'lower body'});
   b.box([-hw + 0.05, belt, cabF], [hw - 0.05, belt + 0.12, F - 0.05], {c:'paint1', name:'hood'});
-  b.box([-hw + 0.03, belt, cabF], [hw - 0.03, roof - 0.12, cabF + 0.08], {c:'glass', m:'glass', name:'windscreen'});
+  b.box([-hw + 0.03, belt, cabF], [hw - 0.03, roof - 0.12, cabF + 0.04], {c:'glass', m:'glass', name:'windscreen'});
   b.box([-hw + 0.03, roof - 0.12, cabB], [hw - 0.03, roof, cabF + 0.12], {c:'paint1', name:'roof'});
   b.box([hw - 0.08, belt, cabB], [hw - 0.03, roof - 0.12, cabF], {c:'paint1', mx:true, name:'cab side'});
   b.box([-hw + 0.03, belt, cabB - 0.05], [hw - 0.03, roof - 0.12, cabB], {c:'paint1', name:'tailgate'});
@@ -31,7 +31,7 @@ function cargoTruck(WSB){ var b = mk(WSB, 'army_cargo_truck', 'Army 6x6 cargo tr
   b.wheels(0.5, 0.3); b.axle(2.6, {steer:true, track:1.0, name:'front axle'}); b.axle(-1.2, {driven:true, track:1.0, name:'rear axle 1'}); b.axle(-2.6, {driven:true, track:1.0, name:'rear axle 2'});
   b.box([0.35, 0.55, -4.0], [0.48, 0.85, 3.5], {c:'underside', m:'steel', mx:true, name:'chassis rail'}); b.box([-0.48, 0.8, -4.0], [0.48, 0.92, 0.4], {c:'underside', m:'steel', name:'subframe'});
   b.box([-1.0, 0.9, 2.4], [1.0, 1.7, 3.5], {c:'paint1', name:'hood'}); b.box([-1.1, 0.9, 0.7], [1.1, 1.6, 2.4], {c:'paint1', name:'cab lower'});
-  b.box([-1.1, 1.6, 0.7], [1.1, 2.7, 1.4], {c:'paint1', name:'cab back'}); b.box([-1.05, 1.6, 1.4], [1.05, 2.65, 2.3], {c:'glass', m:'glass', name:'cab glass'}); b.box([-1.1, 2.65, 0.7], [1.1, 2.75, 2.35], {c:'paint1', name:'cab roof'});
+  b.box([-1.1, 1.6, 0.7], [1.1, 2.7, 1.4], {c:'paint1', name:'cab back'}); b.box([-1.05, 1.6, 2.26], [1.05, 2.65, 2.3], {c:'glass', m:'glass', name:'windscreen'}); b.box([1.01, 1.6, 1.4], [1.05, 2.65, 2.26], {c:'glass', m:'glass', mx:true, name:'cab side glass'}); b.box([-1.1, 2.65, 0.7], [1.1, 2.75, 2.35], {c:'paint1', name:'cab roof'});
   b.door([1.1, 1.0, 1.3], [1.15, 2.6, 2.3], {c:'paint1', mx:true, hinge:'front', name:'cab door'});
   b.box([-1.1, 0.7, 3.5], [1.1, 1.0, 3.7], {c:'paint2', m:'steel', name:'bumper'}); b.box([-0.7, 1.0, 3.5], [0.7, 1.6, 3.55], {c:'black', m:'plastic', name:'grille'});
   b.light('headlight', [0.75, 1.3, 3.57], [0.24, 0.2, 0.04]); b.light('taillight', [1.0, 1.3, -4.05], [0.16, 0.24, 0.04]);
@@ -44,7 +44,7 @@ function apc(WSB){ var b = mk(WSB, 'apc_8x8', 'Armoured personnel carrier 8x8', 
   b.box([-1.3, 0.55, -4.4], [1.3, 0.75, 4.4], {c:'underside', m:'steel', name:'hull floor'});
   /* armoured hull: sloped nose, box body */
   b.block('wedge', [0, 1.2, 4.2], [2.6, 1.0, 1.1], {c:'paint1', m:'steel', name:'glacis'}); b.box([-1.3, 0.75, 3.0], [1.3, 1.7, 3.7], {c:'paint1', m:'steel', name:'nose block'});
-  b.box([-1.3, 1.7, 1.8], [1.3, 2.3, 3.0], {c:'paint1', m:'steel', name:'driver hump'}); b.box([-0.9, 1.9, 3.0], [0.9, 2.1, 3.1], {c:'glass', m:'glass', name:'driver visor'});
+  b.box([-1.3, 1.7, 1.8], [1.3, 2.3, 3.0], {c:'paint1', m:'steel', name:'driver hump'}); b.box([-0.9, 1.9, 3.0], [0.9, 2.1, 3.04], {c:'glass', m:'glass', name:'driver visor'});
   b.shell([-1.3, 0.8, -4.4], [1.3, 2.45, 1.8], {open:['back'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'troop bay', room:'troop bay'});
   b.door([-1.3, 0.8, -4.55], [1.3, 2.45, -4.5], {kind:'ramp', c:'paint1', name:'rear ramp'});
   b.box([-0.5, 2.45, -1.0], [0.5, 2.55, 1.4], {c:'paint1', m:'steel', name:'roof hatch plate'}); b.box([-0.35, 2.55, -0.2], [0.35, 3.0, 0.6], {c:'paint1', m:'steel', name:'turret'}); b.box([-0.05, 2.7, 0.6], [0.05, 2.8, 2.2], {c:'black', m:'steel', name:'autocannon'});
@@ -54,7 +54,7 @@ function apc(WSB){ var b = mk(WSB, 'apc_8x8', 'Armoured personnel carrier 8x8', 
 function armouredCar(WSB){ var b = mk(WSB, 'armoured_car', 'Armoured car', 'land', 'car', SAND, {topSpeed:80});
   b.wheels(0.45, 0.3); b.axle(1.7, {steer:true, track:1.05, name:'front axle'}); b.axle(-1.7, {driven:true, track:1.05, name:'rear axle'});
   b.box([-1.15, 0.5, -2.8], [1.15, 0.7, 2.8], {c:'underside', m:'steel', name:'hull floor'}); b.box([-1.2, 0.7, -2.8], [1.2, 1.5, 2.4], {c:'paint1', m:'steel', name:'hull'}); b.block('wedge', [0, 1.1, 2.7], [2.4, 0.8, 0.6], {c:'paint1', m:'steel', name:'bonnet slope'});
-  b.box([-1.1, 1.5, -2.4], [1.1, 2.1, 1.0], {c:'paint1', m:'steel', name:'cabin'}); b.box([-1.0, 1.7, 1.0], [1.0, 2.0, 1.08], {c:'glass', m:'glass', name:'windscreen'}); b.box([-0.9, 2.1, -1.0], [0.9, 2.18, 0.8], {c:'paint1', m:'steel', name:'roof'});
+  b.box([-1.1, 1.5, -2.4], [1.1, 2.1, 1.0], {c:'paint1', m:'steel', name:'cabin'}); b.box([-1.0, 1.7, 1.0], [1.0, 2.0, 1.04], {c:'glass', m:'glass', name:'windscreen'}); b.box([-0.9, 2.1, -1.0], [0.9, 2.18, 0.8], {c:'paint1', m:'steel', name:'roof'});
   b.door([1.2, 0.8, 0.0], [1.26, 1.95, 0.9], {mx:true, hinge:'front', c:'paint1', name:'door'});
   b.light('headlight', [0.9, 1.0, 3.0], [0.2, 0.16, 0.04]); b.light('taillight', [1.0, 1.1, -2.8], [0.16, 0.2, 0.04]);
   b.engine([0, 1.1, 2.0], [1.0, 0.6, 0.8]); b.tank([0, 0.8, -1.8], [0.8, 0.3, 0.6]); b.battery([0.8, 1.2, 2.2]); b.seat([0.45, 0.85, 0.4], {mx:true, name:'front seat'}); b.seat([0, 0.85, -0.8], {size:[1.6, 0.1, 0.45], name:'bench'}); return b; }
@@ -66,12 +66,12 @@ function ammoTrailer(WSB){ var b = mk(WSB, 'ammo_trailer', 'Ammo trailer', 'land
 function patrolBoat(WSB){ var b = mk(WSB, 'patrol_boat', 'Patrol boat', 'water', 'motorboat', ['#7a8088', '#2b2d26', '#5a5a52']);
   b.box([-1.2, 0, -4.0], [1.2, 0.08, 4.0], {c:'paint1', m:'sheet', name:'bottom'}); b.box([1.15, 0, -4.0], [1.25, 1.0, 4.0], {c:'paint1', m:'sheet', mx:true, name:'side'}); b.block('wedge', [0, 0.5, 4.5], [2.4, 1.0, 1.0], {c:'paint1', m:'sheet', name:'bow'}); b.box([-1.25, 0, -4.08], [1.25, 1.0, -4.0], {c:'paint1', m:'sheet', name:'transom'});
   b.hull([-1.15, 0, -4.0], [1.15, 1.0, 4.6]); b.box([-1.15, 1.0, -4.0], [1.15, 1.06, 4.0], {c:'paint2', name:'deck'});
-  b.box([-1.0, 1.06, -1.2], [1.0, 2.3, 1.2], {c:'paint1', name:'wheelhouse'}); b.box([-0.95, 1.6, 1.2], [0.95, 2.1, 1.26], {c:'glass', m:'glass', name:'bridge glass'}); b.box([-1.05, 2.3, -1.3], [1.05, 2.38, 1.3], {c:'paint2', name:'bridge roof'});
+  b.box([-1.0, 1.06, -1.2], [1.0, 2.3, 1.2], {c:'paint1', name:'wheelhouse'}); b.box([-0.95, 1.6, 1.2], [0.95, 2.1, 1.24], {c:'glass', m:'glass', name:'bridge glass'}); b.box([-1.05, 2.3, -1.3], [1.05, 2.38, 1.3], {c:'paint2', name:'bridge roof'});
   b.box([-0.05, 1.06, 2.6], [0.05, 1.5, 2.7], {c:'paint2', m:'steel', name:'gun mount post'}); b.box([-0.05, 1.5, 2.5], [0.05, 1.6, 3.3], {c:'black', m:'steel', name:'bow gun'});
   b.seat([0.5, 1.1, 0.6], {name:'helm seat'}); b.seat([0, 1.085, -2.0], {size:[1.8, 0.05, 0.4], c:'paint2', name:'crew bench'});
   b.outboard([-0.6, 0.9, -4.08], {height:1.2}); b.outboard([0.6, 0.9, -4.08], {height:1.2}); b.tank([0, 0.3, -2.5], [0.8, 0.3, 0.6]); return b; }
 function transportHeli(WSB){ var b = mk(WSB, 'transport_heli', 'Transport helicopter', 'air', 'heli', OD);
-  b.box([-1.1, 0.7, -2.6], [1.1, 0.82, 2.4], {c:'underside', m:'steel', name:'floor'}); b.box([-1.1, 0.82, 0.8], [1.1, 2.7, 2.4], {c:'paint1', name:'cockpit'}); b.box([-1.0, 1.5, 2.4], [1.0, 2.6, 3.0], {c:'glass', m:'glass', name:'nose glass'});
+  b.box([-1.1, 0.7, -2.6], [1.1, 0.82, 2.4], {c:'underside', m:'steel', name:'floor'}); b.box([-1.1, 0.82, 0.8], [1.1, 2.7, 2.4], {c:'paint1', name:'cockpit'}); b.box([-1.0, 1.5, 2.96], [1.0, 2.6, 3.0], {c:'glass', m:'glass', name:'nose glass'}); b.box([0.96, 1.5, 2.4], [1.0, 2.6, 2.96], {c:'glass', m:'glass', mx:true, name:'nose side glass'});
   b.box([-1.1, 2.7, -2.6], [1.1, 2.8, 2.4], {c:'paint1', name:'roof'}); b.box([-1.1, 0.82, -2.7], [1.1, 2.7, -2.6], {c:'paint1', name:'cabin back'}); b.box([1.1, 0.82, 0.8], [1.15, 2.7, 2.4], {c:'paint1', mx:true, name:'pilot side'});
   b.room([-1.08, 0.82, -2.6], [1.08, 2.7, 0.8], 'troop cabin'); b.door([1.12, 0.82, -2.6], [1.18, 2.65, 0.8], {kind:'slide', c:'paint1', mx:true, name:'cabin door'});
   b.box([-0.6, 2.8, -2.2], [0.6, 3.3, 0.6], {c:'paint1', name:'engine cowl'}); b.box([-0.25, 1.9, -8.0], [0.25, 2.5, -2.6], {c:'paint1', name:'tail boom'}); b.box([-0.05, 2.2, -8.3], [0.05, 3.5, -7.6], {c:'paint1', name:'fin'});

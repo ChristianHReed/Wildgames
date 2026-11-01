@@ -3,7 +3,7 @@ module.exports = function(WSB){
   var b = WSB.create({id:'utility_heli', name:'Utility helicopter', domain:'air', cls:'heli', paint:{paint1:'#3e5a3a', paint2:'#c9c3b6', paint3:'#2a2a2a'}});
   b.box([-0.8, 0.5, -1.2], [0.8, 0.65, 1.4], {c:'underside', m:'sheet', name:'floor'});
   b.box([-0.8, 0.65, 0.3], [0.8, 1.95, 1.4], {c:'paint1', m:'sheet', name:'cockpit'});
-  b.box([-0.75, 1.0, 1.4], [0.75, 1.9, 1.95], {c:'glass', m:'glass', name:'nose glass'});
+  b.box([-0.75, 1.0, 1.91], [0.75, 1.9, 1.95], {c:'glass', m:'glass', name:'nose glass'}); b.box([0.71, 1.0, 1.4], [0.75, 1.9, 1.91], {c:'glass', m:'glass', mx:true, name:'nose side glass'});
   b.box([-0.8, 1.95, -1.2], [0.8, 2.05, 1.4], {c:'paint1', m:'sheet', name:'roof'});
   b.box([-0.8, 0.65, -1.3], [0.8, 1.95, -1.2], {c:'paint1', m:'sheet', name:'cabin back'});
   b.box([0.8, 0.65, 0.3], [0.85, 1.95, 1.4], {c:'paint1', m:'sheet', mx:true, name:'pilot side'});

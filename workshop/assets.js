@@ -716,7 +716,7 @@
   /* a pack asset (type 'model'): the value goes to SHAPED[target.pack].models[target.group][target.name] at install */
   M.buildModelAsset = function(doc){
     var value = M.exportModel(doc), pal = {};
-    (function walk(o){ if (isPieceList(o)) o.forEach(function(q){ var n = String(q.c).replace(/_D$/, ''); if (CUSTOM.test(n)) pal[n] = '#' + n.slice(1); }); else if (o && typeof o === 'object' && !Array.isArray(o)) for (var k in o) walk(o[k]); })(value);
+    (function walk(o){ if (isPieceList(o)) o.forEach(function(q){ var n = String(q.c).replace(/_D$/, ''); if (CUSTOM.test(n)) pal[n] = '#' + n.slice(1); else if (/^glass/.test(n) && doc.colours && doc.colours[n]) pal[n] = doc.colours[n]; /* a model's own tint of glass keeps its name (glass...) so the game draws it see-through */ }); else if (o && typeof o === 'object' && !Array.isArray(o)) for (var k in o) walk(o[k]); })(value);
     var extra = clone(doc.extra || []);
     if (doc.bodyType && doc.target.path && doc.target.path[0] === 'bodyTypes') extra.push({path:['bodyTypes', doc.target.path[1], 'build'], value:[doc.bodyType.w, doc.bodyType.d, doc.bodyType.h].map(function(v){ return Math.round((+v || 1)*1e3)/1e3; })});
     /* points that came from the pack's tables go back to them, and so do moving parts and clips */

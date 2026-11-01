@@ -12,7 +12,7 @@ module.exports = function(WSB){
   b.box([-0.95, 0.78, 2.2], [0.95, 1.45, 3.15], {c:'paint2', name:'hood'});
   b.box([-1.05, 0.78, 0.6], [1.05, 1.45, 2.2], {c:'paint2', name:'cab lower'});
   b.box([-1.05, 1.45, 0.6], [1.05, 2.55, 1.35], {c:'paint2', name:'cab back'});
-  b.box([-1.0, 1.45, 1.35], [1.0, 2.5, 2.1], {c:'glass', m:'glass', name:'cab glass'});
+  b.box([-1.0, 1.45, 2.06], [1.0, 2.5, 2.1], {c:'glass', m:'glass', name:'windscreen'}); b.box([0.96, 1.45, 1.35], [1.0, 2.5, 2.06], {c:'glass', m:'glass', mx:true, name:'side glass'});
   b.box([-1.05, 2.5, 0.6], [1.05, 2.6, 2.15], {c:'paint2', name:'cab roof'});
   b.door([1.05, 0.95, 1.2], [1.1, 2.45, 2.15], {c:'paint2', mx:true, hinge:'front', name:'cab door'});
   b.box([-1.1, 0.55, 3.15], [1.1, 0.8, 3.3], {c:'chrome', m:'chrome', name:'bumper'});

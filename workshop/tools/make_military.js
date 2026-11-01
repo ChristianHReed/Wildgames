@@ -10,13 +10,14 @@ var pack = M.newPack({id:'afterstreet-military', name:'AfterStreet military: wea
 var C = function(h){ return M.customName(h); };
 var K = {od:C('#5a6040'), odD:C('#454a30'), odL:C('#7a8058'), tan:C('#a89870'), tanD:C('#8a7a56'), tanL:C('#c4b48c'), camo:C('#6a7048'), cammo:C('#3e4a30'), bag:C('#b0a078'), bagD:C('#8e7e5c'),
   conc:C('#9a988e'), concD:C('#7a786e'), concL:C('#b4b2a6'), wire:C('#8a8c8e'), razor:C('#aab0b6'), tarp:C('#4e5a3a'), canvas:C('#7a7a54'), lamp:C('#f0e0a0'), paintW:C('#e8e8e0'), paintR:C('#a8322a'), paintY:C('#d8b830'),
-  grn:C('#3a4a2a'), rubber:C('#26272a'), lens:C('#2a3a48'), mag:C('#2b2d31'), pol:C('#34363a')};
+  grn:C('#3a4a2a'), rubber:C('#26272a'), lens:'glassTint', mag:C('#2b2d31'), pol:C('#34363a')};
 
 /* ======================================================= held weapons ======================================================= */
 var info = {};
 require(root + 'assets/shaped/land.js');
 /* stock colour names the target palette lacks become custom colours with the props palette's hex, so every viewer draws the same colour */
-function fixColours(d, pal){ d.pieces.forEach(function(p){ if (typeof p.c !== 'string' || /^x[0-9a-fA-F]{6}/.test(p.c)) return; var dark = /_D$/.test(p.c), nm = p.c.replace(/_D$/, '');
+function fixColours(d, pal){ d.colours = d.colours || {}; d.colours.glassTint = '#86a8b4'; /* the slight blue-green tint of every pane; the name starts with glass so the game draws it see-through */
+  d.pieces.forEach(function(p){ if (typeof p.c !== 'string' || /^x[0-9a-fA-F]{6}/.test(p.c) || p.c === 'glassTint') return; var dark = /_D$/.test(p.c), nm = p.c.replace(/_D$/, '');
   if (pal[nm]) return; var hex = SHAPED.props.palette[nm]; if (!hex) return; d.colours = d.colours || {}; var cn = M.customName(hex); d.colours[cn] = hex; p.c = cn + (dark ? '_D' : ''); }); }
 function weapon(name, label, note, I, build){
   var d = M.blankHeld(name); d.name = label; d.notes = note; d.author = 'AfterStreet content chat';

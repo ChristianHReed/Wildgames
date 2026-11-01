@@ -7,13 +7,13 @@ function busBody(b, o){
   b.shell([-hw + 0.06, fl, a], [hw - 0.06, rf - 0.06, f], {open:['left', 'right'], c:'paint1', floorC:'underside', wall:0.06, floor:0.1, name:'bus', room:'cabin'});
   /* left wall: skirt, glass band, belt rail */
   b.box([-hw, fl - 0.1, a], [-hw + 0.06, fl + 0.95, f], {c:'paint1', name:'left skirt'});
-  b.box([-hw, fl + 0.95, a], [-hw + 0.06, rf - 0.3, f], {c:'glass', m:'glass', name:'left windows'});
+  b.box([-hw + 0.02, fl + 0.95, a], [-hw + 0.06, rf - 0.3, f], {c:'glass', m:'glass', name:'left windows'});
   b.box([-hw, rf - 0.3, a], [-hw + 0.06, rf, f], {c:'paint1', name:'left rail'});
   /* right wall: same, with a doorway between doorA and doorB */
   b.box([hw - 0.06, fl - 0.1, a], [hw, fl + 0.95, doorA], {c:'paint1', name:'right skirt back'});
   b.box([hw - 0.06, fl - 0.1, doorB], [hw, fl + 0.95, f], {c:'paint1', name:'right skirt front'});
-  b.box([hw - 0.06, fl + 0.95, a], [hw, rf - 0.3, doorA], {c:'glass', m:'glass', name:'right windows'});
-  b.box([hw - 0.06, fl + 0.95, doorB], [hw, rf - 0.3, f], {c:'glass', m:'glass', name:'right windscreen side'});
+  b.box([hw - 0.06, fl + 0.95, a], [hw - 0.02, rf - 0.3, doorA], {c:'glass', m:'glass', name:'right windows'});
+  b.box([hw - 0.06, fl + 0.95, doorB], [hw - 0.02, rf - 0.3, f], {c:'glass', m:'glass', name:'right windscreen side'});
   b.box([hw - 0.06, rf - 0.3, a], [hw, rf, f], {c:'paint1', name:'right rail'});
   b.box([hw - 0.06, fl + 1.95, doorA], [hw, rf - 0.3, doorB], {c:'paint1', name:'door header'});
   b.door([hw - 0.04, fl - 0.05, doorA], [hw, fl + 1.95, doorB], {kind:'slide', c:'paint2', name:'passenger door'});
@@ -38,7 +38,7 @@ var DESIGNS = {
     b.box([-1.25, 0.6, 3.8], [1.25, 1.55, 4.7], {c:'paint1', name:'hood'}); b.box([-1.2, 0.5, 4.7], [1.2, 1.1, 4.75], {c:'black', m:'plastic', name:'grille'}); b.box([-1.3, 1.5, 3.8], [1.3, 1.6, 4.6], {c:'paint2', name:'hood stripe'}); }; },
   fire_engine:function(){ return function(b){ b.wheels(0.5, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
     b.box([-0.45, 0.7, -4.8], [0.45, 0.9, 4.0], {c:'underside', m:'steel', name:'chassis'});
-    b.box([-1.3, 0.9, 1.4], [1.3, 1.9, 4.1], {c:'paint1', name:'cab lower'}); b.box([-1.3, 1.9, 1.4], [1.3, 3.1, 2.5], {c:'paint1', name:'cab'}); b.box([-1.25, 1.9, 2.5], [1.25, 3.0, 3.3], {c:'glass', m:'glass', name:'cab glass'}); b.box([-1.3, 3.0, 1.4], [1.3, 3.1, 3.4], {c:'paint1', name:'cab roof'});
+    b.box([-1.3, 0.9, 1.4], [1.3, 1.9, 4.1], {c:'paint1', name:'cab lower'}); b.box([-1.3, 1.9, 1.4], [1.3, 3.1, 2.5], {c:'paint1', name:'cab'}); b.box([-1.25, 1.9, 3.26], [1.25, 3.0, 3.3], {c:'glass', m:'glass', name:'cab glass'}); b.box([1.21, 1.9, 2.5], [1.25, 3.0, 3.26], {c:'glass', m:'glass', mx:true, name:'cab side glass'}); b.box([-1.3, 3.0, 1.4], [1.3, 3.1, 3.4], {c:'paint1', name:'cab roof'});
     b.door([1.3, 1.0, 1.7], [1.34, 3.0, 3.1], {mx:true, hinge:'front', c:'paint1', name:'cab door'});
     b.shell([-1.2, 1.0, -4.7], [1.2, 2.7, 1.3], {open:['back'], c:'paint1', floorC:'underside', wall:0.05, floor:0.1, name:'locker', room:'locker'}); b.door([-1.2, 1.0, -4.8], [1.2, 2.7, -4.72], {kind:'roll', c:'paint2', name:'locker door'});
     b.box([-1.3, 2.7, -4.8], [1.3, 3.0, 1.4], {c:'paint2', name:'upper body'}); b.box([-0.5, 3.0, -4.0], [0.5, 3.15, 1.0], {c:'chrome', m:'steel', name:'ladder rack'});
@@ -46,7 +46,7 @@ var DESIGNS = {
     b.engine([0, 1.4, 3.0], [1.2, 0.7, 1.0]); b.tank([0, 0.95, -1.5], [0.8, 0.25, 1.5]); b.battery([0.9, 1.3, 3.6]); b.seat([0.6, 1.6, 2.0], {mx:true, name:'cab seat'}); b.storage([-1.1, 1.05, -4.6], [1.1, 2.4, -2.0], 'hose lockers'); }; },
   motorhome:function(){ return function(b){ b.wheels(0.42, 0.28); b.axle(2.7, {steer:true, track:0.95, name:'front axle'}); b.axle(-2.2, {driven:true, track:0.95, name:'rear axle'});
     b.box([-0.5, 0.5, -4.1], [0.5, 0.7, 3.6], {c:'underside', m:'steel', name:'chassis'});
-    b.box([-1.1, 0.7, 2.2], [1.1, 1.5, 3.7], {c:'paint1', name:'nose'}); b.box([-1.05, 1.5, 2.2], [1.05, 2.4, 3.3], {c:'glass', m:'glass', name:'windscreen'}); b.box([-1.1, 2.4, 1.6], [1.1, 2.5, 3.4], {c:'paint1', name:'cab roof'});
+    b.box([-1.1, 0.7, 2.2], [1.1, 1.5, 3.7], {c:'paint1', name:'nose'}); b.box([-1.05, 1.5, 3.26], [1.05, 2.4, 3.3], {c:'glass', m:'glass', name:'windscreen'}); b.box([1.01, 1.5, 2.2], [1.05, 2.4, 3.26], {c:'glass', m:'glass', mx:true, name:'cab side glass'}); b.box([-1.1, 2.4, 1.6], [1.1, 2.5, 3.4], {c:'paint1', name:'cab roof'});
     b.door([1.1, 0.9, 2.3], [1.14, 2.35, 3.2], {mx:true, hinge:'front', c:'paint1', name:'cab door'});
     b.shell([-1.25, 0.8, -4.2], [1.25, 3.0, 2.2], {open:['left', 'right'], c:'paint1', floorC:'#8a6a48', wall:0.06, floor:0.1, name:'living area', room:'living area'});
     b.box([-1.31, 0.7, -4.2], [-1.25, 3.05, 2.2], {c:'paint1', name:'left wall'}); b.box([1.25, 0.7, -4.2], [1.31, 3.05, -1.0], {c:'paint1', name:'right wall back'}); b.box([1.25, 2.4, -1.0], [1.31, 3.05, 0.1], {c:'paint1', name:'door header'}); b.box([1.25, 0.7, 0.1], [1.31, 3.05, 2.2], {c:'paint1', name:'right wall front'});
