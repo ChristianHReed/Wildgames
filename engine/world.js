@@ -610,15 +610,16 @@ function structBuild(g){
   } catch (er){ console.log('structure', er); } });
 }
 /* the deck under (x, y) nearest the height hint (within 2.6 m), or the highest raised one for hint 'hi'; null when none */
-function deckHit(x, y, hint){
+/* tol: how far above or below your own height a deck may be and still count as the one you are on (default 2.6 m; boats and swimmers pass a few tenths so they pass under bridges) */
+function deckHit(x, y, hint, tol){
   if (!DK) return null; var l = DKG.get(gk(Math.floor(x/16), Math.floor(y/16))); if (!l) return null; var best = null, bd = 1e9;
   for (var i = 0; i < l.length; i++){ var sg = DK[l[i]], dx = sg.x1 - sg.x0, dy = sg.y1 - sg.y0, l2 = dx*dx + dy*dy || 1, u = Math.max(0, Math.min(1, ((x - sg.x0)*dx + (y - sg.y0)*dy)/l2)), px = sg.x0 + dx*u, py = sg.y0 + dy*u, lat = Math.hypot(x - px, y - py);
     if (lat > sg.hw) continue; var h = sg.h0 + (sg.h1 - sg.h0)*u;
     if (hint === 'hi'){ if (sg.e > 0.5 && -h < bd){ bd = -h; best = {h:h, lat:((x - sg.x0)*dy - (y - sg.y0)*dx)/Math.sqrt(l2), hw:sg.hw, e:sg.e, dx:dx, dy:dy}; } continue; }
-    var dh = Math.abs(h - hint); if (dh < 2.6 && dh < bd){ bd = dh; best = {h:h, lat:((x - sg.x0)*dy - (y - sg.y0)*dx)/Math.sqrt(l2), hw:sg.hw, e:sg.e, dx:dx, dy:dy}; } }
+    var dh = Math.abs(h - hint); if (dh < (tol || 2.6) && dh < bd){ bd = dh; best = {h:h, lat:((x - sg.x0)*dy - (y - sg.y0)*dx)/Math.sqrt(l2), hw:sg.hw, e:sg.e, dx:dx, dy:dy}; } }
   return best;
 }
-function baseAt(x, y, hint){ LASTDECK = false; if (DK && hint !== undefined){ var d = deckHit(x, y, hint); if (d){ LASTDECK = true; return d.h; } } return hAt(x, y); }
+function baseAt(x, y, hint, tol){ LASTDECK = false; if (DK && hint !== undefined){ var d = deckHit(x, y, hint, tol); if (d){ LASTDECK = true; return d.h; } } return hAt(x, y); }
 function deckBlock(x, y){ if (!DK) return false; var l = DKG.get(gk(Math.floor(x/16), Math.floor(y/16))); if (!l) return false; for (var i = 0; i < l.length; i++){ var sg = DK[l[i]]; if (sg.e < 0.3) continue; if (segDist(x, y, sg.x0, sg.y0, sg.x1, sg.y1) < sg.hw + 2.5) return true; } return false; }
 function deckOfRoad(r, s, x, y){ if (!r.br) return null; for (var i = 0; i < r.br.length; i++){ var sp = r.br[i]; if (s >= sp.ga && s <= sp.gb){ var t = hAt(x, y), H = brH(sp, s, t) + 0.14; return H - t > 0.3 || inWater(x, y, 2) ? H : null; } } return null; }
 /* height you stand at: a building's level floor indoors, the ground outdoors */
