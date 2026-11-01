@@ -1,3 +1,5 @@
+# NOTE (Nov 2026): the brick footbridge pieces (deck_path_brick, abutment_path_brick, arch_path_brick_8, pier_cap_path_brick) are added by workshop/tools/make_brick_path.js.
+# Running this script overwrites structures.js and drops them: run the Workshop script again afterwards.
 #!/usr/bin/env python3
 """Afterstreet structures pack, version 1 (26 October 2026): bridges, overpasses, tunnels, culverts, dams and water works, for the map chat's `structures`
 records (docs/MAP_STRUCTURES.md). Writes assets/shaped/structures.js. Run: python3 assets/shaped/src/structures.py
