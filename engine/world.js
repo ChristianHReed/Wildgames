@@ -352,9 +352,14 @@ function roadLen(r){ if (r.cum) return r.cum; var c = [0], p = r.pts; for (var q
 function roadPt(r, s){ var c = roadLen(r), n = c.length - 1, i = 0; s = Math.max(0, Math.min(c[n], s)); while (i < n - 1 && c[i+1] < s) i++; var l = c[i+1] - c[i] || 1, u = (s - c[i])/l, p = r.pts; return [p[i*2] + (p[i*2+2] - p[i*2])*u, p[i*2+1] + (p[i*2+3] - p[i*2+1])*u, i]; }
 function brH(sp, s, terr){ var k = s < sp.a ? Math.max(0, 1 - (sp.a - s)/sp.rs) : s > sp.b ? Math.max(0, 1 - (s - sp.b)/sp.re) : 1; k = k*k*(3 - 2*k); var base = sp.ba + (sp.bb - sp.ba)*Math.max(0, Math.min(1, (s - sp.a)/Math.max(1, sp.b - sp.a))); return terr + (base - terr)*k; }
 function bridgeScan(w){
-  DK = null; DKG = null; if (!w.hg) return; var spans = {}, cand = [], mws = [];
-  w.roads.forEach(function(r, ri){ r.br = null; r.gap = null; r.cum = null; if (r.kind === 'road' && r.w >= 6 && r.pts.length >= 4){ cand.push(ri); if (BRHW[r.hw]) mws.push(ri); } });
+  DK = null; DKG = null; if (!w.hg) return; var spans = {}, cand = [], mws = [], wcand = [];
+  w.roads.forEach(function(r, ri){ r.br = null; r.gap = null; r.cum = null; if (r.kind === 'road' && r.w >= 6 && r.pts.length >= 4){ cand.push(ri); if (BRHW[r.hw]) mws.push(ri); } else if (r.kind === 'path' && r.pts.length >= 4 && !r.nobr) wcand.push(ri); });
   var add = function(ri, a, b, ba, bb, ramp, wet){ (spans[ri] = spans[ri] || []).push({a:a, b:b, ba:ba, bb:bb, ramp:ramp, wet:wet}); };
+  /* 0.114.47: footways, paths and cycleways cross water on a footbridge of their own (short ramps, built from the structures pack's path pieces) */
+  wcand.forEach(function(ri){ var r = w.roads[ri], c = roadLen(r), L = c[c.length - 1], run = -1, s;
+    for (s = 0; s <= L + 2; s += 2){ var pt = roadPt(r, Math.min(s, L)), wet = s <= L && inWater(pt[0], pt[1], 0.4);
+      if (wet && run < 0) run = s;
+      if (!wet && run >= 0){ var e = s - 2; if (e - run >= 3 && e - run < 60){ var a = Math.max(0, run - 3), b = Math.min(L, e + 3), pa = roadPt(r, a), pb = roadPt(r, b); add(ri, a, b, hAt(pa[0], pa[1]) + 0.45, hAt(pb[0], pb[1]) + 0.45, 9, 1); } run = -1; } } });
   cand.forEach(function(ri){ var r = w.roads[ri], c = roadLen(r), L = c[c.length - 1], run = -1, s;
     for (s = 0; s <= L + 3; s += 3){ var pt = roadPt(r, Math.min(s, L)), wet = s <= L && inWater(pt[0], pt[1], 0.4);
       if (wet && run < 0) run = s;
@@ -389,17 +394,17 @@ function bridgeScan(w){
 function bridgeBuild(g){
   var w = world, segs = []; if (!w.hg) return;
   var wall = function(ax, az, bx, bz, y0a, y1a, y0b, y1b, col){ g.pl = null; g.quad(ax, y0a, az, bx, y0b, bz, bx, y1b, bz, ax, y1a, az, col, 255); g.quad(ax, y0a, az, ax, y1a, az, bx, y1b, bz, bx, y0b, bz, col, 255); };
-  w.roads.forEach(function(r){ if (!r.br) return; var hw = r.w/2;
+  w.roads.forEach(function(r){ if (!r.br) return; var hw = r.w/2, isP = r.kind === 'path';
     r.br.forEach(function(sp){
       var ga = sp.ga, gb = sp.gb, n = Math.max(2, Math.ceil((gb - ga)/3)), P = [], i;
       for (i = 0; i <= n; i++){ var s = ga + (gb - ga)*i/n, q = roadPt(r, s), q2 = roadPt(r, s + 0.6), q1 = roadPt(r, s - 0.6), dx = q2[0] - q1[0], dy = q2[1] - q1[1], l = Math.hypot(dx, dy) || 1, t = hAt(q[0], q[1]);
         P.push({s:s, x:q[0], y:q[1], nx:-dy/l, ny:dx/l, t:t, H:brH(sp, s, t) + 0.14, core:s >= sp.a && s <= sp.b}); }
       var run = 0;
       for (i = 0; i < n; i++){ var a = P[i], b = P[i+1], l = Math.hypot(b.x - a.x, b.y - a.y), nxa = a.nx*hw, nya = a.ny*hw, nxb = b.nx*hw, nyb = b.ny*hw;
-        if (r.w >= 8){ g.pl = null; g.quadUV([a.x + nxa, a.H, a.y + nya, b.x + nxb, b.H, b.y + nyb, b.x - nxb, b.H, b.y - nyb, a.x - nxa, a.H, a.y - nya], [0, run/8, 0, (run + l)/8, 1, (run + l)/8, 1, run/8], TX.lanes, WHITE, 255); }
+        if (isP){} else if (r.w >= 8){ g.pl = null; g.quadUV([a.x + nxa, a.H, a.y + nya, b.x + nxb, b.H, b.y + nyb, b.x - nxb, b.H, b.y - nyb, a.x - nxa, a.H, a.y - nya], [0, run/8, 0, (run + l)/8, 1, (run + l)/8, 1, run/8], TX.lanes, WHITE, 255); }
         else { g.pl = [TX.asphalt, 0.25]; g.quad(a.x + nxa, a.H, a.y + nya, b.x + nxb, b.H, b.y + nyb, b.x - nxb, b.H, b.y - nyb, a.x - nxa, a.H, a.y - nya, WHITE, 255); }
         run += l; var e = Math.min(a.H - a.t, b.H - b.t);
-        if (e > 0.5) [1, -1].forEach(function(sg){
+        if (e > 0.5 && !isP) [1, -1].forEach(function(sg){
           var ex = a.x + sg*nxa, ey = a.y + sg*nya, fx = b.x + sg*nxb, fy = b.y + sg*nyb;
           wall(ex, ey, fx, fy, a.H - 0.7, a.H, b.H - 0.7, b.H, [150, 148, 142]);   /* the edge of the slab */
           wall(ex, ey, fx, fy, a.H, a.H + 0.85, b.H, b.H + 0.85, [176, 174, 168]);   /* parapet */
@@ -409,6 +414,13 @@ function bridgeBuild(g){
         segs.push({x0:a.x, y0:a.y, x1:b.x, y1:b.y, h0:a.H, h1:b.H, hw:hw, e:e});
       }
       var SM = structModels(), pw = r.w >= 11 ? 'wide' : 'road';
+      if (isP){   /* 0.114.47: a footbridge from the structures pack: path deck pieces laid along the way (tilted up the ramps), an abutment at each end */
+        var dp = function(s){ var q = roadPt(r, s), q1 = roadPt(r, s - 0.6), q2 = roadPt(r, s + 0.6), dx = q2[0] - q1[0], dy = q2[1] - q1[1], l = Math.hypot(dx, dy) || 1; return {x:q[0], y:q[1], dx:dx/l, dy:dy/l, H:brH(sp, s, hAt(q[0], q[1])) + 0.14, t:hAt(q[0], q[1])}; };
+        var dkN = SM.deck_path_brick ? 'deck_path_brick' : 'deck_path', abN = SM.abutment_path_brick ? 'abutment_path_brick' : 'abutment_path';   /* a brick footbridge from the structures pack is used when it exists */
+        if (SM[dkN]) for (var us = ga; us < gb - 0.01; us += 4){ var u1 = Math.min(gb, us + 4), um = (us + u1)/2, cm = dp(um), c0 = dp(Math.max(ga, um - 2)), c1 = dp(Math.min(gb, um + 2)); stTilt(g, SM, dkN, cm.x, cm.y, cm.dx, cm.dy, 1, c0.H - 0.02, c1.H - 0.02); }
+        if (SM[abN]) [[sp.a, 1], [sp.b, -1]].forEach(function(e){ var c = dp(e[0]), sy = Math.max(1, (c.H - (c.t - 1.5))/3); stPut(g, SM, abN, c.x + c.dx*e[1]*0.2, c.y + c.dy*e[1]*0.2, c.dx*e[1], c.dy*e[1], 1, sy, c.H - 0.02); });
+        return;
+      }
       if (sp.wet){   /* 0.114.33: abutments at both ends, and a frame by length: truss 40 to 95 m, a suspended span over that */
         var Lsp = sp.b - sp.a, dep = function(s){ var q = roadPt(r, s), q1 = roadPt(r, s - 0.6), q2 = roadPt(r, s + 0.6), dx = q2[0] - q1[0], dy = q2[1] - q1[1], l = Math.hypot(dx, dy) || 1; return {x:q[0], y:q[1], dx:dx/l, dy:dy/l, H:brH(sp, s, hAt(q[0], q[1])) + 0.14, t:hAt(q[0], q[1])}; }, sk = r.w/(pw === 'wide' ? 14 : 7);
         if (SM['abutment_' + pw]) [[sp.a, 1], [sp.b, -1]].forEach(function(e){ var c = dep(e[0]), sy = Math.max(1, (c.H - 0.7 - (c.t - 1.5))/3); stPut(g, SM, 'abutment_' + pw, c.x + c.dx*e[1]*0.2, c.y + c.dy*e[1]*0.2, c.dx*e[1], c.dy*e[1], sk, sy, c.H - 0.7); });
@@ -440,6 +452,10 @@ function structModels(){
 /* one pack piece into the mesh: along (dx, dz), x scaled by sx, y by sy, standing at height y0 */
 function stPut(g, M, nm, x, z, dx, dz, sx, sy, y0){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
   for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sy; q[j*3 + 2] = z + sn*lx + cs*lz; }
+    g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } return true; }
+/* a pack piece laid along (dx, dz) whose length (z, -2 to 2) climbs from y0 at its start to y1 at its end: the footbridge's deck and ramps */
+function stTilt(g, M, nm, x, z, dx, dz, sx, y0, y1){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
+  for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + (y1 - y0)*(lz/4 + 0.5) + p[i*9 + j*3 + 1]; q[j*3 + 2] = z + sn*lx + cs*lz; }
     g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } return true; }
 function structBuild(g){
   var w = world, L = w.structures, M = structModels(); if (!L || !L.length || !M.dam_end_wall) return; var n = 0;

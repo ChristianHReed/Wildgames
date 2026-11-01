@@ -124,6 +124,33 @@ function parseText(text){
   }
   throw new Error('Unrecognized file. Use a .osm export, Overpass JSON, or GeoJSON.');
 }
+
+/* 0.114.47: the test street (start screen, Test street tab). One street, flat, for trying a change before it goes into the main game. Only map tags that bring in the content chat's art:
+   west side a house, a shop front and a tall apartment block; east side, across a river, a dense wood, a park and a field, with a footbridge over the river into the park.
+   Nothing here is drawn by the engine's own art: every building, tree, bench, crop and bridge piece comes from the shaped packs. */
+var TEST_ST = {x0:-200, x1:250, y0:-200, y1:200};
+function testStreetElev(){
+  var u = 1/111320, v = 1/110540, cell = 10, cols = Math.round((TEST_ST.x1 - TEST_ST.x0)/cell) + 1, rows = Math.round((TEST_ST.y1 - TEST_ST.y0)/cell) + 1, d = new Int16Array(cols*rows);
+  for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){ var x = TEST_ST.x0 + i*cell, h = 0.4 - 3.2*Math.exp(-(x - 30)*(x - 30)/70); d[j*cols + i] = Math.round(h*10); }   /* flat, with the river's channel */
+  return {s:-TEST_ST.y1*v, n:-TEST_ST.y0*v, w:TEST_ST.x0*u, e:TEST_ST.x1*u, cols:cols, rows:rows, d:b64of(new Uint8Array(d.buffer))};
+}
+function testStreetRaw(){
+  var u = 1/111320, v = 1/110540, ways = [], pois = [];
+  var LL = function(x, y){ return [x*u, -y*v]; };
+  var poly = function(pts, tags){ var c = pts.map(function(p){ return LL(p[0], p[1]); }); c.push(c[0]); ways.push({c:c, tags:tags}); };
+  var rect = function(x, y, w, h, tags){ poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], tags); };
+  var line = function(pts, tags){ ways.push({c:pts.map(function(p){ return LL(p[0], p[1]); }), tags:tags}); };
+  line([[0, -190], [0, 190]], {highway:'residential', name:'Test Street'});
+  rect(-24, -64, 16, 14, {building:'house', name:'The house'});
+  rect(-26, -30, 18, 20, {building:'yes', shop:'convenience', name:'Shop front'});
+  rect(-30, 8, 22, 26, {building:'apartments', 'building:levels':'8', name:'Apartment block'});
+  line([[30, -190], [30, 190]], {waterway:'river', name:'Test River'});
+  poly([[44, -190], [250, -190], [250, -50], [44, -50]], {natural:'wood', name:'Dense forest'});
+  poly([[44, -46], [200, -46], [200, 24], [44, 24]], {leisure:'park', name:'Test Park'});
+  poly([[44, 28], [250, 28], [250, 190], [44, 190]], {landuse:'farmland', name:'Field'});
+  line([[3.5, -12], [60, -12]], {highway:'footway', name:'Footbridge path'});
+  return {ways:ways, pois:pois, elev:testStreetElev(), spawn:LL(-3, -40), name:'Test Street'};
+}
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }
 function DEMO_CK(x){ return 470 + 26*Math.sin(x/95) + 10*Math.sin(x/37); }
 /* the demo town gets made-up rolling hills so terrain can be seen without downloading anything */

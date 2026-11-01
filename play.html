@@ -448,7 +448,14 @@
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
       <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
     </ol>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.46</span>.</p>
+    <div class="panel" id="testPanel">
+      <b>Test street: what we are working on</b>
+      <div>One flat street for trying a change before it goes into the main game. On the west side: a house, a shop front and an eight-storey apartment block. On the east side, across a river: a dense wood, a park and a field, with a footbridge from the street into the park. Everything on it comes from the content chat's packs; nothing is drawn by the game's own art.</div>
+      <div class="row" style="margin-top:8px"><button id="testStreet">Play the test street</button></div>
+      <div style="font-size:12px;margin-top:6px"><b>Placeholder:</b> the content chat has not made a brick footbridge yet, so the bridge is the structures pack's path bridge (concrete and steel). Its request is in the Project ("Request to content chat - brick footbridge"). It joins automatically when that art arrives.</div>
+      <div style="font-size:12px;margin-top:4px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
+    </div>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.47</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -457,8 +464,8 @@
 /* 0.83: sort the start page's sections into journal tabs (the elements are moved, not rebuilt, so every button keeps working) */
 (function(){
   var box = document.querySelector('#title .box'); if (!box) return; var K = box.children, c = [].slice.call(K);
-  var pick = function(i){ return c[i]; };
-  var T = [['play', 'Play', '#f7de6b', [5, 6, 9, 10]], ['survivor', 'Survivor', '#f4a98a', [3]], ['maps', 'Maps', '#b9d98f', [7, 8, 14]], ['settings', 'Settings', '#9fd0e6', [4]], ['saves', 'Saves', '#d2b4e6', [11]], ['workshop', 'Workshop', '#f6c36a', [12]], ['together', 'Together', '#f2b5cf', [13]]];
+  var pick = function(i){ return typeof i === 'string' ? document.getElementById(i) : c[i]; };
+  var T = [['play', 'Play', '#f7de6b', [5, 6, 9, 10]], ['survivor', 'Survivor', '#f4a98a', [3]], ['maps', 'Maps', '#b9d98f', [7, 8, 14]], ['settings', 'Settings', '#9fd0e6', [4]], ['saves', 'Saves', '#d2b4e6', [11]], ['workshop', 'Workshop', '#f6c36a', [12]], ['together', 'Together', '#f2b5cf', [13]], ['street', 'Test street', '#e8c9a0', ['testPanel']]];
   var jr = document.createElement('div'); jr.className = 'jrn'; var pg = document.createElement('div'); pg.className = 'jpages'; var tb = document.createElement('div'); tb.className = 'jtabs'; jr.appendChild(pg); jr.appendChild(tb);
   var first = c[5]; box.insertBefore(jr, first);
   var show = function(id){ T.forEach(function(t){ t[4].classList.toggle('on', t[0] === id); t[5].classList.toggle('on', t[0] === id); }); try { localStorage.setItem('lastblock:tab', id); } catch (e){} };
@@ -474,7 +481,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.46', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.47', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -5379,7 +5386,7 @@ el('mmGo').addEventListener('click', makeMap);
 /* ================= entering and leaving a world ================= */
 async function enter(raw, name){
   try {
-    if (!raw.zone) lsSet('lastblock:lastplay', JSON.stringify({k:mapSrc && mapSrc.demo ? 'demo' : 'other'}));
+    if (!raw.zone) lsSet('lastblock:lastplay', JSON.stringify({k:mapSrc && mapSrc.demo ? 'demo' : mapSrc && mapSrc.street ? 'street' : 'other'}));
     if (!raw.zone) region = null;
     netClose(); if (raw.name) name = raw.name;
     lsSet('lastblock:name', el('pname').value); lsSet('lastblock:quality', el('qual').value);
@@ -5419,6 +5426,7 @@ el('spring').addEventListener('click', function(){
   if (!glOK) return; if (!SPRING){ fail('The built-in Springfield map is missing from this copy of the game. Copy the whole assets folder.'); return; }
   playRegion(SPRING);
 });
+el('testStreet').addEventListener('click', function(){ if (glOK){ mapSrc = {street:true}; enter(testStreetRaw(), 'Test Street'); } });
 el('demo').addEventListener('click', function(){ if (glOK){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); } });
 /* stuck somewhere? play the last map again, starting at its safe house (your things and the world are kept) */
 var toSafe = false;
@@ -5426,6 +5434,7 @@ el('safeBtn').addEventListener('click', function(){
   if (!glOK) return; var lp = null; try { lp = JSON.parse(lsGet('lastblock:lastplay') || 'null'); } catch (e){}
   toSafe = true;
   if (lp && lp.k === 'demo'){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); return; }
+  if (lp && lp.k === 'street'){ mapSrc = {street:true}; enter(testStreetRaw(), 'Test Street'); return; }
   if (lp && lp.k === 'region'){ var R = REGIONS.filter(function(r){ return r.id === lp.id; })[0]; if (R){ R.last = null; saveRegions(); playRegion(R); return; } }
   if ((!lp || lp.k === 'spring') && SPRING){ SPRING.last = null; saveRegions(); playRegion(SPRING); return; }
   info('Now press Play on the map you were on: you will start at its safe house.');
