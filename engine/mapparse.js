@@ -151,7 +151,7 @@ function testStreetRaw(){
   var poly = function(pts, tags){ var c = pts.map(function(p){ return LL(p[0], p[1]); }); c.push(c[0]); ways.push({c:c, tags:tags}); };
   var rect = function(x, y, w, h, tags){ poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], tags); };
   var line = function(pts, tags){ ways.push({c:pts.map(function(p){ return LL(p[0], p[1]); }), tags:tags}); };
-  line([[0, -290], [0, 290]], {highway:'residential', name:'Test Street'});
+  line([[0, -290], [0, 290]], {highway:'residential', name:'Test World'});
   rect(-24, -64, 16, 14, {building:'house', name:'The house'});
   rect(-26, -30, 18, 20, {building:'yes', shop:'convenience', name:'Shop front'});
   rect(-30, 8, 22, 26, {building:'apartments', 'building:levels':'8', name:'Apartment block'});
@@ -177,7 +177,7 @@ function testStreetRaw(){
   line([[0, 100], [60, 100], [140, 100], [230, 100]], {highway:'residential', name:'Gorge Road'});
   /* a gravel track through the wood and the mountain's foot */
   line([[0, -270], [-120, -270], [-230, -170], [-250, -60]], {highway:'track', name:'Mountain track'});
-  return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, spawn:LL(-3, -40), name:'Test Street'};
+  return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, spawn:LL(-3, -40), name:'Test World'};
 }
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }
 function DEMO_CK(x){ return 470 + 26*Math.sin(x/95) + 10*Math.sin(x/37); }
