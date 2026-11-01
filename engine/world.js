@@ -876,7 +876,9 @@ function flowAt(x, y){
       if (d < hw && d < bd){ bd = d; var l = Math.sqrt(sl); best = [sx/l, sy/l, 0.25 + 0.75*(1 - d/hw)]; } } }
   return best;
 }
-function waterY(x, y){ return (typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) ? 0.05 : hAt0(x, y) + 0.05 + (world.liftY || 0); }
+function waterY(x, y){ var dl = typeof dgWetLevel === 'function' ? dgWetLevel(x, y) : null; if (dl !== null) return dl; return (typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) ? 0.05 : hAt0(x, y) + 0.05 + (world.liftY || 0); }
+/* open water or water standing in dug ground */
+function wet(x, y){ return inWater(x, y, 0) || (typeof dgWetLevel === 'function' && dgWetLevel(x, y) !== null); }
 function inWater(x, y, r){
   var i, a;
   for (i = 0; i < world.water.length; i++){

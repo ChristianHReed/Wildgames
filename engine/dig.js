@@ -62,6 +62,8 @@ function dgWetNb(ix, iy){
   return null;
 }
 function dgSeed(ix, iy){ var v = DG.cols.get(dgKey(ix, iy)); if (!(v < 0) || DGL.has(dgKey(ix, iy))) return; var l = dgWetNb(ix, iy); if (l !== null && dgBase(ix, iy) + v*DGS < l - 0.02) DGF.push(ix, iy, l); }
+/* the water level standing over (x, y) in dug ground, or null: swimmers and boats use it */
+function dgWetLevel(x, y){ if (!DGL.size) return null; var ix = Math.floor(x/DGS), iy = Math.floor(y/DGS), l = DGL.get(dgKey(ix, iy)); if (l === undefined) return null; var v = DG.cols.get(dgKey(ix, iy)); return v < 0 && dgBase(ix, iy) + v*DGS < l - 0.15 ? l : null; }
 function dgSpread(budget){
   var d = [[1, 0], [-1, 0], [0, 1], [0, -1]], n = 0, i;
   while (DGF.length && n < budget){

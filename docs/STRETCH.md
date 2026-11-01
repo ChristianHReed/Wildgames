@@ -22,3 +22,7 @@ Boars, wolves and bears that attack; birds that fly and perch; fish and fishing;
 
 - Water: gradual depth, draining, running downhill over undug ground, current, boats and swimming in dug channels, the river as a deformable surface (see docs/WATER.md).
 - Bank pieces: place by real river data (bends, pools, riffles) on real maps; today the layout is only on the test sheet.
+
+- Water running downhill over undug ground (runoff, puddles in low spots); the river as a deformable surface.
+- Upper-floor window glass is still opaque (ground floor is see-through).
+- Bridge deck slab and earth ramps can still step on very steep approaches (trusses and hangers now lean with the deck).
