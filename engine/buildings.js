@@ -486,6 +486,8 @@ function seat(b, m, lm, s0, l0){
   if (b.door){ var ox = -b.door.nx, oy = -b.door.ny, sx = b.door.x + ox*0.8, sy = b.door.y + oy*0.8, lo = hAt(sx + ox*0.8, sy + oy*0.8) - 0.4; if (base - lo > 0.5) m.ybox(sx, sy, Math.atan2(oy, ox), 0, 0, (base + lo)/2, 0.8, (base - lo)/2, 1.0, [196,186,170]); }
 }
 /* street furniture: lights along main roads, hydrants on side streets, benches in parks, dumpsters by shops, bushes by houses */
+/* 0.114.54: scenery you cannot walk or drive through (radius in metres) */
+var SOLID = {'plants.stump':0.45, 'plants.fallen_log':0.5, 'plants.bramble':0.5, 'fm.bale_round':0.9, 'fm.hay_wagon':1.3, 'fm.tractor':1.3, 'fm.water_trough':0.8, 'fm.scarecrow':0.3, 'fm.windmill':1.0, 'street.power_pole':0.2, 'street.bike_rack':0.4, 'street.phone_box':0.5, 'street.newspaper_box':0.3, 'street.mailbox':0.25, 'street.parking_meter':0.15, 'street.bollard':0.2, 'street.traffic_light':0.2, 'rs.pump_island_modern':1.0, 'rs.billboard':0.4};
 var OBR = {streetlight:0.25, firehydrant:0.3, bench:0.75, dumpster:1.3, bush:0.5};
 function placeProps(g){
   var w = world, M = MODELS; if (!M.streetlight) return;
@@ -652,7 +654,7 @@ function placeDress(g){
     if (arA < 30000){ var nl = Math.min(14, Math.floor(arA/900)); for (var k = 0; k < nl; k++){ var lx = ar.minx + hash(ai, k, 43)*bw, ly = ar.miny + hash(ai, k, 44)*bh; if (pip(ar.pts, lx, ly)) add(hash(ai, k, 45) < 0.3 ? 'ws.lily_pads_bloom' : 'ws.lily_pads', lx, ly, hash(ai, k, 46)*6.28, 300); } } });
   var total = 0;
   Object.keys(out).forEach(function(path){ var L = out[path], M = path.indexOf('ground.') === 0 ? gB(path.slice(7)) : spB(path); if (!M) return; var st = Math.max(1, Math.ceil(L.l.length/L.c));
-    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' || path.slice(0, 9) === 'pk.court_' || path.slice(0, 13) === 'pk.field_line' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
+    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; if (SOLID[path]){ (w.obstL = w.obstL || []).push([c[0], c[1], SOLID[path]]); w.obst = null; } g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' || path.slice(0, 9) === 'pk.court_' || path.slice(0, 13) === 'pk.field_line' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
   w.dressCount = total; w.dressOut = out;
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */
@@ -685,7 +687,7 @@ function prep3D(){
     var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : 0.25];
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
   });
-  bridgeScan(w); buildSunk(w);
+  bridgeScan(w); buildSunk(w); wwPlan(w);
   var LIFT = w.hg ? 0.05 : 0, SWY = 0.062, RDY = SWY - ROAD_T;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
   /* sidewalk and road ribbons: cut = true leaves out the stretches that fall inside a sunk road (a path or lane meeting a sunk street stops at its kerb) */
   var ribbon = function(p, hw, y, tile, col, lanes, gap, cut){

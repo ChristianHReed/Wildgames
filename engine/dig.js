@@ -25,19 +25,21 @@ function digCol(x, y){ return DG.cols.get(dgKey(Math.floor(x/DGS), Math.floor(y/
 function dgApply(list){
   for (var i = 0; i + 2 < list.length; i += 3){
     var ix = list[i] | 0, iy = list[i+1] | 0, v = Math.max(DG_MIN, Math.min(DG_MAX, list[i+2] | 0)), k = dgKey(ix, iy);
-    if (v) DG.cols.set(k, v); else DG.cols.delete(k);
+    if (v) DG.cols.set(k, v); else DG.cols.delete(k); DGL.delete(k);
     var cx = Math.floor(ix/DGN), cy = Math.floor(iy/DGN);
     for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) DG.dirty.add(dgKey(cx + dx, cy + dy));
   }
+  for (var si = 0; si + 2 < list.length; si += 3){ dgSeed(list[si] | 0, list[si+1] | 0); for (var sj = 0; sj < 4; sj++) dgSeed((list[si] | 0) + [1, -1, 0, 0][sj], (list[si+1] | 0) + [0, 0, 1, -1][sj]); }
   DGN_ON(); DG.mdirty = true;
 }
 function DGN_ON(){ DIGN = DG.cols.size; }   /* DIGN is world.js's switch: 0 means hAt() skips the lookup */
 /* a saved map {"ix,iy": blocks} back into the world */
 function dgLoad(map){
-  DGW.clear(); DG.cols.clear(); DG.mesh.forEach(function(o){ if (o.g) freeMesh(o.g); }); DG.mesh.clear(); DG.dirty.clear();
+  DGW.clear(); DGL.clear(); DGF.length = 0; DG.cols.clear(); DG.mesh.forEach(function(o){ if (o.g) freeMesh(o.g); }); DG.mesh.clear(); DG.dirty.clear();
   var list = [], k; for (k in (map || {})){ var p = k.split(','); if (p.length === 2 && isFinite(p[0]) && isFinite(p[1]) && isFinite(map[k])) list.push(p[0] | 0, p[1] | 0, map[k] | 0); }
   for (var i = 0; i + 2 < list.length; i += 3) DG.cols.set(dgKey(list[i], list[i+1]), Math.max(DG_MIN, Math.min(DG_MAX, list[i+2])));
   DG.cols.forEach(function(v, key){ var cx = Math.floor(dgIx(key)/DGN), cy = Math.floor(dgIy(key)/DGN); for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) DG.dirty.add(dgKey(cx + dx, cy + dy)); });
+  DG.cols.forEach(function(v, key){ dgSeed(dgIx(key), dgIy(key)); });
   DGN_ON(); DG.mdirty = true;
 }
 /* the soil's colours by depth below the ground's own surface (metres): topsoil, subsoil, clay, then limestone with chert bands */
@@ -50,6 +52,26 @@ var DG_FILL = [118, 90, 60];
 /* 0.115.0: water in pits. Near a creek, pond or lake the ground is wet: the water table lies 0.5 m under the surface at the water's edge and sinks to 2 m at 24 m out, and beyond that the pit stays dry.
    A dug column deeper than the table has water standing at that level. Returns the table depth in metres below the bare ground (99 = dry). */
 var DGW = new Map();
+/* 0.114.54: water that flows into dug ground. A dug column next to open water (a river, creek or pond) and lower than the water's surface fills to that surface, and the water then
+   spreads on through every dug column that is lower than it, a ring at a time (like the cellular water of DwarfCorp and Minecraft, but on this game's 0.5 m columns and without a
+   full simulation: water level is the same everywhere it reaches). Filling a column in with soil takes the water out of it. DGL maps column to water surface height. */
+var DGL = new Map(), DGF = [], DGLT = 0, DG_RIVER_Y = 0.05;
+function dgWetNb(ix, iy){
+  var d = [[1, 0], [-1, 0], [0, 1], [0, -1]], i, l; for (i = 0; i < 4; i++){ l = DGL.get(dgKey(ix + d[i][0], iy + d[i][1])); if (l !== undefined) return l; }
+  if (typeof world !== 'undefined' && world && world.water) for (i = 0; i < 4; i++) if (inWater((ix + d[i][0] + 0.5)*DGS, (iy + d[i][1] + 0.5)*DGS, 0)) return DG_RIVER_Y;
+  return null;
+}
+function dgSeed(ix, iy){ var v = DG.cols.get(dgKey(ix, iy)); if (!(v < 0) || DGL.has(dgKey(ix, iy))) return; var l = dgWetNb(ix, iy); if (l !== null && dgBase(ix, iy) + v*DGS < l - 0.02) DGF.push(ix, iy, l); }
+function dgSpread(budget){
+  var d = [[1, 0], [-1, 0], [0, 1], [0, -1]], n = 0, i;
+  while (DGF.length && n < budget){
+    var ix = DGF.shift(), iy = DGF.shift(), lev = DGF.shift(); n++; var k = dgKey(ix, iy), v = DG.cols.get(k);
+    if (!(v < 0) || DGL.has(k) || dgBase(ix, iy) + v*DGS >= lev - 0.02) continue;
+    DGL.set(k, lev); DG.dirty.add(dgKey(Math.floor(ix/DGN), Math.floor(iy/DGN)));
+    for (i = 0; i < 4; i++){ var jx = ix + d[i][0], jy = iy + d[i][1], v2 = DG.cols.get(dgKey(jx, jy)); if (v2 < 0 && !DGL.has(dgKey(jx, jy)) && dgBase(jx, jy) + v2*DGS < lev - 0.02) DGF.push(jx, jy, lev); }
+  }
+}
+
 function dgWater(ix, iy){
   var key = dgKey(ix, iy), c = DGW.get(key); if (c !== undefined) return c; var x = (ix + 0.5)*DGS, y = (iy + 0.5)*DGS, r, a, best = 99, RS = [0, 4, 8, 12, 18, 24];
   if (typeof world !== 'undefined' && world && world.water && world.water.length){
@@ -68,7 +90,7 @@ function dgBuild(ck){
     var v = DG.cols.get(dgKey(ix, iy)); if (!v) continue; any = true;
     var x0 = ix*DGS, z0 = iy*DGS, x1 = x0 + DGS, z1 = z0 + DGS, b = dgBase(ix, iy), top = b + v*DGS, hh = hash(ix, iy, 611), col = v < 0 ? dgLayer(-v*DGS, hh) : DG_FILL.map(function(q){ return q*(0.93 + hh*0.14); });
     g.quad(x0, top, z0, x1, top, z0, x1, top, z1, x0, top, z1, col, 255);
-    if (v < 0){ var wtd = dgWater(ix, iy); if (-v*DGS > wtd + 0.05){ var wy = b - wtd; g.quad(x0, wy, z0, x1, wy, z0, x1, wy, z1, x0, wy, z1, [56, 98, 116], 255); } }
+    if (v < 0){ var wtd = dgWater(ix, iy), fl = DGL.get(dgKey(ix, iy)); if (fl !== undefined){ g.quad(x0, fl, z0, x1, fl, z0, x1, fl, z1, x0, fl, z1, [56, 98, 116], 255); } else if (-v*DGS > wtd + 0.05){ var wy = b - wtd; g.quad(x0, wy, z0, x1, wy, z0, x1, wy, z1, x0, wy, z1, [56, 98, 116], 255); } }
     for (var n = 0; n < 4; n++){
       var dx = NB[n][0], dy = NB[n][1], vN = DG.cols.get(dgKey(ix + dx, iy + dy)) | 0;
       /* the shared edge's two ends */
@@ -118,6 +140,7 @@ function dgMask(px, py){
 /* once a frame before the ground is drawn: rebuild a couple of changed chunks and tell the shader about the mask */
 function dgPrep(px, py, U){
   if (!DG.cols.size && !SUNK){ gl.uniform1f(U.dmOn, 0); return; }
+  var tn = Date.now(); if (DGF.length && tn - DGLT > 90){ DGLT = tn; dgSpread(160); }   /* the water spreads a ring or so ten times a second */
   var n = 0; DG.dirty.forEach(function(ck){ if (n < 3){ DG.dirty.delete(ck); dgBuild(ck); n++; } });
   dgMask(px, py);
   gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, DG.mtex); gl.activeTexture(gl.TEXTURE0);
@@ -126,7 +149,7 @@ function dgPrep(px, py, U){
 function drawDig(px, py){ if (!DG.mesh.size) return; DG.mesh.forEach(function(o){ if (Math.abs(o.x - px) < 90 && Math.abs(o.y - py) < 90) drawMesh(o.g); }); }
 /* whether a spot may be dug or filled: bare ground only, not water, a building, a road, a bridge or a tree */
 function dgOk(x, y){
-  if (!world || !world.hg || buildingAt(x, y) || inWater(x, y, 0.6) || (world.roadOk && !world.roadOk(x, y, 1.2)) || (DK && deckBlock(x, y))) return false;
+  if (!world || !world.hg || buildingAt(x, y) || inWater(x, y, 0.3) || (world.roadOk && !world.roadOk(x, y, 1.2)) || (DK && deckBlock(x, y))) return false;
   if (world.trees){ var T = typeof nearTrees === 'function'; if (T){ var bad = false; nearTrees(x, y, 1.2, function(tr){ if (tr.alive && Math.hypot(tr.x - x, tr.y - y) < tr.r*0.5 + 0.5) bad = true; }); if (bad) return false; } }
   return true;
 }

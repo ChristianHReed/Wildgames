@@ -151,6 +151,10 @@ function collide(e, r){
   var cx0 = Math.floor(e.x/G), cy0 = Math.floor(e.y/G);
   for (var pass = 0; pass < 2; pass++){
     stampN++; if (world.wallSegs.length && !e.cl && !(e === P && P.jy > 0.3 && !P.inside)) pushSegs(e, r, world.wallSegs);   /* a clinger goes over fences and walls */
+    /* 0.114.54: trunks, street furniture, logs, stumps and the like are solid to anyone on foot (cars have their own check) */
+    if (r < 0.9 && !e.cl && typeof obstBuild === 'function' && world.trees){ var om = obstBuild(), ogx, ogy, ol, oi;
+      for (ogy = Math.floor((e.y - 2)/8); ogy <= Math.floor((e.y + 2)/8); ogy++) for (ogx = Math.floor((e.x - 2)/8); ogx <= Math.floor((e.x + 2)/8); ogx++){ ol = om.get(gk(ogx, ogy)); if (!ol) continue;
+        for (oi = 0; oi < ol.length; oi++){ var oo = ol[oi]; if (oo[3] && !oo[3].alive) continue; var odx = e.x - oo[0], ody = e.y - oo[1], od = Math.hypot(odx, ody), orr = r + oo[2]; if (od < orr && od > 1e-6){ e.x += odx/od*(orr - od); e.y += ody/od*(orr - od); } } } }
     for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){
       var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
       for (var i = 0; i < cell.length; i++){

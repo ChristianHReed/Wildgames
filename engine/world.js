@@ -492,6 +492,10 @@ function structModels(){
 function stPut(g, M, nm, x, z, dx, dz, sx, sy, y0){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
   for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sy; q[j*3 + 2] = z + sn*lx + cs*lz; }
     g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } return true; }
+/* 0.114.54: the same, draped over the ground: each vertex stands on the ground under it (plus its own height times sy), so a piece laid on a slope follows the slope instead of stepping */
+function stPutC(g, M, nm, x, z, dx, dz, sx, sy){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
+  for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 2] = z + sn*lx + cs*lz; q[j*3 + 1] = hAt(q[j*3], q[j*3 + 2]) + p[i*9 + j*3 + 1]*sy; }
+    g.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], 255); } return true; }
 /* a pack piece laid along (dx, dz) whose length (z, -2 to 2) climbs from y0 at its start to y1 at its end: the footbridge's deck and ramps */
 function stTilt(g, M, nm, x, z, dx, dz, sx, y0, y1){ var m = M[nm]; if (!m) return false; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, c = m.c, q = [0,0,0,0,0,0,0,0,0];
   for (var i = 0; i < m.n; i++){ for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + (y1 - y0)*(lz/4 + 0.5) + p[i*9 + j*3 + 1]; q[j*3 + 2] = z + sn*lx + cs*lz; }
@@ -503,10 +507,16 @@ function landModels(){
   if (LNM) return LNM; LNM = {}; var S = window.SHAPED && SHAPED.land; if (!S || typeof spModel !== 'function') return LNM;
   var col = spColour(S.palette), m = S.models.land || {}; for (var k in m) LNM[k] = spModel(m[k], col); return LNM;
 }
-function waterwaysBuild(g){
-  if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street) return; var w = world, M = landModels(); if (!M.bank_shelf_4 || !w.waterLines) return;
-  var Y0 = 0.05; BNKH.clear();
-  var put = function(nm, x, z, dx, dz, sx){ if (/^(bank_|outfall_)/.test(nm)) bankRaster(M, nm, x, z, dx, dz, sx || 1, 1, Y0); return stPut(g, M, nm, x, z, dx, dz, sx || 1, 1, Y0); };
+/* 0.114.54: the bank layout is planned once when the world is made (before any ground is drawn): each piece's top is stored for walking, and the ground beside the
+   outer edge of every bank piece is raised or lowered over 6 m to meet it, so banks and terrain are one surface. waterwaysBuild only draws the plan. */
+var OBW = {willow_whips:0.3, sycamore_lean:0.5, creek_junk_cart:0.7, creek_junk_tyres:0.5, creek_junk_pallet_a:0.5, creek_junk_bike:0.35, rock_wake_m:0.55, rock_wake_s:0.35, fallen_tree_bank:0.35};
+function wwPlan(w){
+  if (w.wwPlan) return w.wwPlan; w.wwPlan = []; BNKH.clear(); var M = landModels();
+  if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street || !M.bank_shelf_4 || !w.waterLines) return w.wwPlan;
+  var Y0 = 0.05, PL = w.wwPlan, ST = [];
+  var put = function(nm, x, z, dx, dz, sx){ sx = sx || 1; PL.push([nm, x, z, dx, dz, sx]);
+    if (/^(bank_|outfall_)/.test(nm)){ bankRaster(M, nm, x, z, dx, dz, sx, 1, Y0); if (/^bank_/.test(nm)) ST.push([x, z, dx, dz, sx]); }
+    var r = OBW[nm]; if (r){ var o = w.obstL = w.obstL || []; if (nm === 'fallen_tree_bank'){ for (var t = -1.5; t <= 1.5; t += 1.5) o.push([x + dx*t, z + dz*t, r]); } else o.push([x, z, r]); w.obst = null; } };
   var EAST = ['bank_shelf_4', 'bank_gravel_4', 'bank_roots_4', 'bank_shelf_4', 'bank_sand_4', 'bank_mud_4', 'bank_cut_clay_4', 'bank_gravel_4'],
       WEST = ['bank_gabion_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_stone_wall_4', 'bank_concrete_channel_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_gabion_4'];
   var cross = []; w.roads.forEach(function(r){ if (r.kind !== 'path') return; var p = r.pts; w.waterLines.forEach(function(wl){ var q = wl.pts;
@@ -534,6 +544,22 @@ function waterwaysBuild(g){
         if (run % 13 === 6) put(jk[Math.floor(h2*4) % 4], cx - nx*(hw - 1.5), cy - ny*(hw - 1.5), ux, uy, 1);
       }
     } });
+
+  /* the ground beside each bank's outer edge follows the piece, then eases back to the natural ground */
+  var g = w.hg; if (g){ var AP = new Map();
+    ST.forEach(function(q){ var yaw = Math.atan2(-q[2], q[3]), cs = Math.cos(yaw), sn = Math.sin(yaw), ho = 0, hn = 0, lx, lz;
+      for (lz = -1.5; lz <= 1.5; lz += 0.5){ var px = q[0] + cs*2.8*q[4] - sn*lz, pz = q[1] + sn*2.8*q[4] + cs*lz, v = BNKH.get(bnkKey(px, pz)); if (v !== undefined){ ho += v; hn++; } }
+      if (!hn) return; ho /= hn;
+      for (lx = 3.2; lx <= 9.2; lx += 0.6) for (lz = -2.2; lz <= 2.2; lz += 0.8){
+        var t = (lx - 3)/6.2, wt = 1 - t*t*(3 - 2*t), x = q[0] + cs*lx*q[4] - sn*lz, y = q[1] + sn*lx*q[4] + cs*lz, i = Math.round((x - g.x0)/g.cell), j = Math.round((y - g.y0)/g.cell); if (i < 0 || j < 0 || i >= g.cols || j >= g.rows) continue;
+        var k = j*g.cols + i, o = AP.get(k); if (!o || wt > o[0]) AP.set(k, [wt, ho]); } });
+    AP.forEach(function(o, k){ var h = g.d[k], tgt = Math.max(h - 1, Math.min(h + 1, o[1])); g.d[k] = h*(1 - o[0]) + tgt*o[0]; });
+  }
+  return PL;
+}
+function waterwaysBuild(g){
+  var w = world, M = landModels(), PL = wwPlan(w); if (!PL.length) return;
+  for (var i = 0; i < PL.length; i++){ var q = PL[i]; stPut(g, M, q[0], q[1], q[2], q[3], q[4], q[5], 1, 0.05); }
 }
 /* 0.114.49: the wall of hand-held items on the test street: a brick wall from the barriers pack with every weapon in the held pack hung on it at reaching height.
    Each weapon is laid flat against the wall with its length (the pack's z) along the wall, at its true size */
@@ -542,6 +568,7 @@ function testMainRoad(w){ return w.roads.filter(function(r){ return r.kind === '
 function rackData(w){
   if (w.rack) return; w.rack = []; if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street || !window.SHAPED || !SHAPED.held) return;
   var RK = Object.keys(SHAPED.held.models.weapons), rd = testMainRoad(w), rx = rd ? rd.pts[0] - 11 : -121; w.rackX = rx;
+  w.extraSegs = [rx, 56 - 1.7, rx, 56 - 1.7 + 4*(Math.ceil(11*1.7/4) + 1)]; if (w.wallSegs) w.wallSegs.push.apply(w.wallSegs, w.extraSegs);   /* the brick wall is solid */
   RK.forEach(function(k, ki){ var col = ki % 11, row = Math.floor(ki/11); w.rack.push({fix:'rack', key:k, name:k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }), x:rx + 1.6, y:56 + col*1.7, h:1.0 + row*0.62, wx:rx + 0.45}); });
 }
 function rackBuild(g){
@@ -549,7 +576,7 @@ function rackBuild(g){
   var w = world; if (!w.rack || !w.rack.length || !window.SHAPED || !SHAPED.barriers || !SHAPED.held || typeof spModel !== 'function') return;
   if (!BWM) BWM = spModel(SHAPED.barriers.models.barriers.fence_brick_wall_4, spColour(SHAPED.barriers.palette));
   var rx = w.rackX, z0 = w.rack[0].y - 1.7, n = Math.ceil(11*1.7/4) + 1, i, H = SHAPED.held, hc = spColour(H.palette, {}), HM = {}; g.pl = null;
-  for (i = 0; i < n; i++){ var z = z0 + 2 + i*4; stPut(g, {wall:BWM}, 'wall', rx, z, 1, 0, 1, 1, hAt(rx, z)); }
+  for (i = 0; i < n; i++){ var z = z0 + 2 + i*4; stPutC(g, {wall:BWM}, 'wall', rx, z, 1, 0, 1, 1); }
   w.rack.forEach(function(q){ var W = H.models.weapons[q.key], pcs = W && (W['new'] || W); if (!pcs) return; var M = HM[q.key] || (HM[q.key] = spModel(pcs, hc)); if (!M) return;
     var gy = hAt(q.wx, q.y) + q.h, p = M.p, c = M.c, a = [0,0,0,0,0,0,0,0,0], t, j;
     for (t = 0; t < M.n; t++){ for (j = 0; j < 3; j++){ a[j*3] = q.wx + p[t*9 + j*3]; a[j*3 + 1] = gy + p[t*9 + j*3 + 1]; a[j*3 + 2] = q.y + p[t*9 + j*3 + 2]; }
@@ -557,7 +584,7 @@ function rackBuild(g){
 }
 function structBuild(g){
   var w = world, L = w.structures, M = structModels(); if (!L || !L.length || !M.dam_end_wall) return; var n = 0;
-  var put = function(nm, x, z, dx, dz, sy){ if (stPut(g, M, nm, x, z, dx, dz, 1, sy, hAt(x, z))) n++; };
+  var put = function(nm, x, z, dx, dz, sy){ if (stPutC(g, M, nm, x, z, dx, dz, 1, sy)) n++; };
   g.pl = null;
   L.forEach(function(e){ try {
     var P = w.wpts && w.wpts[e.w]; if (!P || P.length < 4) return;

@@ -19,3 +19,6 @@ Boars, wolves and bears that attack; birds that fly and perch; fish and fishing;
 
 - Waterways pack in the real map: choose the bank piece from the data (bend inside or outside, town or country) per the guide's table, fit banks to the terrain, flow scrolling. Only the test street has it now (waterwaysBuild in engine/world.js).
 
+
+- Water: gradual depth, draining, running downhill over undug ground, current, boats and swimming in dug channels, the river as a deformable surface (see docs/WATER.md).
+- Bank pieces: place by real river data (bends, pools, riffles) on real maps; today the layout is only on the test sheet.
