@@ -385,6 +385,8 @@ var DK = null, LASTDECK = false, DKG = null, BRHW = {motorway:1, trunk:1};
 function roadLen(r){ if (r.cum) return r.cum; var c = [0], p = r.pts; for (var q = 0; q + 3 < p.length; q += 2) c.push(c[c.length - 1] + Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1])); return r.cum = c; }
 function roadPt(r, s){ var c = roadLen(r), n = c.length - 1, i = 0; s = Math.max(0, Math.min(c[n], s)); while (i < n - 1 && c[i+1] < s) i++; var l = c[i+1] - c[i] || 1, u = (s - c[i])/l, p = r.pts; return [p[i*2] + (p[i*2+2] - p[i*2])*u, p[i*2+1] + (p[i*2+3] - p[i*2+1])*u, i]; }
 function brH(sp, s, terr){ var k = s < sp.a ? Math.max(0, 1 - (sp.a - s)/sp.rs) : s > sp.b ? Math.max(0, 1 - (s - sp.b)/sp.re) : 1; k = k*k*(3 - 2*k); var base = sp.ba + (sp.bb - sp.ba)*Math.max(0, Math.min(1, (s - sp.a)/Math.max(1, sp.b - sp.a))); return terr + (base - terr)*k; }
+/* 0.114.64: a bridge pier in the water is solid to boats and swimmers: a row of circles across the deck's width */
+function pierObst(w, x, y, nx, ny, half){ var o = w.obstL = w.obstL || [], t; for (t = -half; t <= half + 0.01; t += 1.2) o.push([x + nx*t, y + ny*t, 0.7]); w.obst = null; }
 function bridgeScan(w){
   DK = null; DKG = null; if (!w.hg) return; var spans = {}, cand = [], mws = [], wcand = [];
   w.roads.forEach(function(r, ri){ r.br = null; r.gap = null; r.cum = null; if (r.kind === 'road' && r.w >= 6 && r.pts.length >= 4){ cand.push(ri); if (BRHW[r.hw]) mws.push(ri); } else if (r.kind === 'path' && r.pts.length >= 4 && !r.nobr) wcand.push(ri); });
@@ -468,8 +470,9 @@ function bridgeBuild(g){
       }
       if (sp.wet && SM['pier_cap_' + pw]){ var stp = Math.max(3, Math.round(Math.min(50, (gb - ga)/2)/3)); g.pl = null;
         for (i = Math.min(stp, 2 + Math.floor((n - 3)/2)); i < n - 1; i += stp){ var c = P[i], hb = hAt(c.x, c.y) - 1.5, tx = c.ny, tz = -c.nx, sxk = r.w/(pw === 'wide' ? 14 : 7);
-          stPut(g, SM, 'pier_shaft_' + pw + '_unit', c.x, c.y, tx, tz, sxk, Math.max(0.5, c.H - 1.0 - hb), hb); stPut(g, SM, 'pier_cap_' + pw, c.x, c.y, tx, tz, sxk, 1, c.H); } }
+          stPut(g, SM, 'pier_shaft_' + pw + '_unit', c.x, c.y, tx, tz, sxk, Math.max(0.5, c.H - 1.0 - hb), hb); stPut(g, SM, 'pier_cap_' + pw, c.x, c.y, tx, tz, sxk, 1, c.H); pierObst(w, c.x, c.y, c.nx, c.ny, hw*0.85); } }
       else       if (sp.wet) for (i = 2; i < n - 1; i += 4){ var c = P[i], hb = hAt(c.x, c.y) - 1.5, hx = hw*0.92, ux = -c.ny, uy = c.nx, o = 0.55;
+        pierObst(w, c.x, c.y, c.nx, c.ny, hx);
         var pc = function(sx, sy){ return [c.x + c.nx*hx*sx + ux*o*sy, c.y + c.ny*hx*sx + uy*o*sy]; }, p1 = pc(1, 1), p2 = pc(1, -1), p3 = pc(-1, -1), p4 = pc(-1, 1), col = [142, 140, 134];
         wall(p1[0], p1[1], p2[0], p2[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p2[0], p2[1], p3[0], p3[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p3[0], p3[1], p4[0], p4[1], hb, c.H - 0.7, hb, c.H - 0.7, col); wall(p4[0], p4[1], p1[0], p1[1], hb, c.H - 0.7, hb, c.H - 0.7, col); }
     }); });

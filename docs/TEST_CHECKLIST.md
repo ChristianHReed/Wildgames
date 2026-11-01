@@ -226,3 +226,5 @@ See ROADMAP.md "Still to do" lines and ART_REQUESTS.md section 11: boxes where p
 - 0.114.51: Test sheet tab: work down the tick list; in particular the steep Hill Road kerbs, the gorge bridge, frame rate on a phone (the sheet has a 2.5 m height grid, about 290,000 columns).
 - 0.114.53: Test sheet, river: walk both banks and into the shallows, drive and ride the boats along them; no clipping through bank pieces; banks meet the ground without gaps. Real map unchanged.
 - 0.114.54: Test sheet: walk into the item wall, trees, bushes, logs (blocked); drive a car onto the hill and the bank (it tilts, nothing clips); river banks blend into the grass; with no shovel look down and hold E (slow); dig a trench to the river and watch it fill; fill a column and the water leaves.
+- [ ] Boat: drive a canoe at the low footbridge on the river; it stops with "Too low to pass under." (id lowdeck)
+- [ ] Boat: pass under a high bridge; piers on a real-map river block the boat (not testable on the test sheet, which has no wet piers)
