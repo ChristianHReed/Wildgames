@@ -149,11 +149,14 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 - **Gaps**: an octagonal loft's top sits below its radius; leave room for that when touching pieces.
 - **Browsers on iPad**: `confirm()` and `prompt()` are blocked; use in-page "tap again" instead. Sliders snap their minimum and maximum to the step.
 - **The user's terms change** (the main chat renamed "Bonnet" to "Hood" and "Tyre" stays): match the strings in the file as it is now, don't assume.
+- **Survivor bodies are mostly clothes**: the body itself is only the head, neck and hands. The torso and limbs are the top, bottoms and shoes, and `spine_02` carries no pieces. Body shape has to scale every piece on a bone (clothes included), not just the body's own pieces.
 - **Test buttons break when labels change**: update the scratchpad tests (for example `ax.mjs` after "Blank car" went away).
 
 ## 7. Where things stand (update at the end of each task)
 
 **Done**
+
+- Character bodies: body shape per part on body types (exported as `bodyTypes[name].shape`, waiting on the main chat), and ring-by-ring sculpting of rounded pieces.
 
 - Cars (free build, automatic damage, packs).
 - W1–W15 support for every asset kind.

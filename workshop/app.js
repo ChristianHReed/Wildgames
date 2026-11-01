@@ -326,6 +326,8 @@
       if (S.layer === 'look') return;
       var h = hit(x, y);
       if (S.placing){ place(S.placing, h, x, y); return; }
+      if (!h && S.doc.bodyType && SH.survivor){ var best = null, bd = 70; M.BODY_REGIONS.forEach(function(R){ var B = regionBounds(R.k); if (!B) return; var q = view.project(B.c), d = Math.hypot(q[0] - x, q[1] - y); if (d < bd){ bd = d; best = R.k; } });
+        S.bodyRegion = best; S.sel = []; if (best) S.tab = 'model'; refresh(true); return; }
       if (!h){ if (!S.multi && !(ev && (ev.shiftKey || ev.metaKey || ev.ctrlKey))) S.sel = []; refresh(); return; }
       var add = S.multi || (ev && (ev.shiftKey || ev.metaKey || ev.ctrlKey));
       if (add){ var k = S.sel.indexOf(h.id); if (k >= 0) S.sel.splice(k, 1); else S.sel.push(h.id); }
@@ -633,6 +635,14 @@
     h += '<div class="card"><h3>Where (' + unitLabel() + ')</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return num(a, p.pos[i], 'len', function(v){ edit(function(q){ q.pos[i] = v; }); }, {ax:a}); }).join('') + '</div>' +
       '<p class="muted">X right, Y up, Z forward. The car\'s middle is X 0, the ground Y 0.</p></div>';
     h += '<div class="card"><h3>Size</h3>' + sizeFields(p) + '</div>';
+    if (p.s === 'loft' && p.r && p.r.length >= 2){ var rk = Math.max(0, Math.min(p.r.length - 1, S.ringIdx || 0)), rr = p.r[rk], RX = ringAxes(p), rsc = p.scl || [1, 1, 1], setr = function(i, half){ return function(val){ edit(function(q){ var k2 = Math.min(rk, q.r.length - 1); q.r[k2] = q.r[k2].slice(); q.r[k2][i] = r4(half ? Math.max(0, val/2) : val); }); }; };
+      h += '<div class="card"><h3>Shape ring by ring</h3><p class="muted">A rounded piece is rings joined together: shape each ring to sculpt it (a jaw, a nose, a muscle). Turn on <b>Rings</b> above the view to drag the ring\'s handles.</p>' +
+        '<div class="row"><button class="alt sm" data-a="ringStep" data-d="-1">◀</button><span class="grow" style="text-align:center">Ring ' + (rk + 1) + ' of ' + p.r.length + '</span><button class="alt sm" data-a="ringStep" data-d="1">▶</button></div>' +
+        '<div class="row"><label class="l">Width</label>' + num('ring width', rr[3]*2, 'len', setr(3, true), {min:0, ax:AXN[RX.a]}) + '</div>' +
+        '<div class="row"><label class="l">Depth</label>' + num('ring depth', rr[4]*2, 'len', setr(4, true), {min:0, ax:AXN[RX.b]}) + '</div>' +
+        '<div class="row"><label class="l">Along</label>' + num('ring along', rr[RX.n], 'len', setr(RX.n, false), {ax:AXN[RX.n]}) + '</div>' +
+        '<div class="row"><label class="l">Shift</label>' + num('ring shift a', rr[RX.a], 'len', setr(RX.a, false), {ax:AXN[RX.a]}) + num('ring shift b', rr[RX.b], 'len', setr(RX.b, false), {ax:AXN[RX.b]}) + '</div>' +
+        '<div class="row"><button class="alt sm" data-a="ringAdd">Add a ring after this one</button>' + (p.r.length > 2 ? '<button class="alt sm" data-a="ringDel">Remove this ring</button>' : '') + '</div></div>'; }
     h += '<div class="card"><h3>Turn (degrees)</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return num(a, p.rot[i], 'deg', function(v){ edit(function(q){ q.rot[i] = v; }); }, {ax:a}); }).join('') + '</div>' +
       '<div class="row"><button class="alt sm" data-a="turnY">Quarter turn</button><button class="alt sm" data-a="unturn">Square up</button></div>' +
       (p.rot[0] || p.rot[2] || (p.rot[1] % 90) ? '<p class="muted">A turn that is not a quarter turn about Y is saved as a shaped piece, exactly as you see it.</p>' : '') + '</div>';
@@ -839,6 +849,13 @@
   function dirIndex(d){ d = d || [0, 0, 1]; for (var i = 0; i < DIRS.length; i++) if (DIRS[i][1][0] === d[0] && DIRS[i][1][1] === d[1] && DIRS[i][1][2] === d[2]) return i; return 0; }
   function panelModel(){
     var d = S.doc, A = asset(), K = M.KINDS[d.kind] || M.KINDS.furniture, h = '<span class="stamp">Model</span>';
+    if (d.bodyType){ var shp = d.bodyType.shape || {}, rg = regionOf(S.bodyRegion);
+      h += '<div class="card"><h3>Body shape</h3><p class="muted">Tap a part of the body in the view (or pick it here), then drag its handles: red for width, blue for depth' + (rg && rg.size ? ', green for size' : '') + '. Left and right change together; clothes stretch with the body so they still fit.</p><div class="row" style="flex-wrap:wrap">' +
+        M.BODY_REGIONS.map(function(R){ var v = shp[R.k], ch = v && (v[0] !== 1 || v[1] !== 1 || (v[2] || 1) !== 1); return '<button class="sm ' + (S.bodyRegion === R.k ? 'on' : 'alt') + '" data-a="bregion" data-r="' + R.k + '">' + esc(R.label) + (ch ? ' •' : '') + '</button>'; }).join('') + '</div>';
+      if (rg){ var vv = shp[rg.k] || [1, 1, 1], setv = function(i){ return function(val){ commit(); var o = (S.doc.bodyType.shape = S.doc.bodyType.shape || {}); var w2 = (o[rg.k] || [1, 1, 1]).slice(); w2[i] = Math.max(0.4, Math.min(2.5, val)); o[rg.k] = w2; changed(true); }; };
+        h += '<div class="row"><label class="l">Width</label>' + num(rg.k + ' width', vv[0], 'pct', setv(0), {min:0.4, max:2.5, step:0.01}) + '</div><div class="row"><label class="l">Depth</label>' + num(rg.k + ' depth', vv[1], 'pct', setv(1), {min:0.4, max:2.5, step:0.01}) + '</div>' +
+          (rg.size ? '<div class="row"><label class="l">Size</label>' + num(rg.k + ' size', vv[2] || 1, 'pct', setv(2), {min:0.4, max:2.5, step:0.01}) + '</div>' : '') + '<div class="row"><button class="alt sm" data-a="bregionReset">Reset ' + esc(rg.label.toLowerCase()) + '</button><button class="alt sm" data-a="bregionAll">Reset the whole body</button></div>'; }
+      h += '</div>'; }
     if (d.bodyType) h += '<div class="card"><h3>Body type size</h3><p class="muted">The survivor under this body type is drawn this wide, deep and tall (1 is the average build; the head keeps its width). In the game the type shows in the creator\'s Build list. Make the other body (masculine or feminine) with the same name to give both the same size.</p>' + [['Width', 'w'], ['Depth', 'd'], ['Height', 'h']].map(function(r){ return '<div class="row"><label class="l">' + r[0] + '</label>' + num(r[0].toLowerCase(), d.bodyType[r[1]], 'n', function(v){ commit(); d.bodyType[r[1]] = Math.max(0.6, Math.min(1.5, v)); changed(true); }, {min:0.6, max:1.5}) + '</div>'; }).join('') + '</div>';
     h += '<div class="card"><h3>What it is</h3>' +
       '<div class="row"><label class="l">Kind</label><select class="grow" data-k="kind">' + Object.keys(M.KINDS).map(function(k){ return '<option value="' + k + '"' + (d.kind === k ? ' selected' : '') + '>' + esc(M.KINDS[k].label) + '</option>'; }).join('') + '</select></div>' +
@@ -993,6 +1010,8 @@
   var BUILD = {slim:[0.9, 0.93], average:[1, 1], broad:[1.14, 1.08]};
   /* a bone's mesh: stretched for the build (not the head and neck, as the game does), then posed */
   function skelMesh(m, bone, frame){
+    var shp = S.doc.bodyType && S.doc.bodyType.shape ? M.bodyShapeBones(S.doc.bodyType.shape)[bone] : null;
+    if (shp && S.doc.skeleton[bone]){ var pv = S.doc.skeleton[bone].pivot; m = xform(m, function(q, n){ return [[pv[0] + (q[0] - pv[0])*shp[0], pv[1] + (q[1] - pv[1])*shp[1], pv[2] + (q[2] - pv[2])*shp[2]], n]; }); }
     if (S.doc.bodyType){ var bt = S.doc.bodyType, hd = bone === 'Head' || bone === 'neck_01'; m = xform(m, function(q, n){ return [[hd ? q[0] : q[0]*bt.w, q[1]*bt.h, hd ? q[2] : q[2]*bt.d], n]; }); }
     else if (S.doc.garment && S.build !== 'average' && bone !== 'Head' && bone !== 'neck_01'){ var bb = BUILD[S.build]; m = xform(m, function(q, n){ return [[q[0]*bb[0], q[1], q[2]*bb[1]], n]; }); }
     var f = frame && M.skinFn(S.doc, bone, frame); return f ? xform(m, function(q, n){ return f(q, n); }) : m;
@@ -1193,8 +1212,47 @@
   function sub3(a, b){ return [a[0]-b[0], a[1]-b[1], a[2]-b[2]]; }
   function mul3(a, k){ return [a[0]*k, a[1]*k, a[2]*k]; }
   function selBounds(sel){ var all = []; sel.forEach(function(p){ all = all.concat(M.toNativeAlways(Object.assign(clone(p), {mx:false, mz:false}))); }); return M.boundsOf(all); }
+  /* ---- body regions (body types) and loft rings: handles of their own */
+  function regionOf(k){ return M.BODY_REGIONS.filter(function(r){ return r.k === k; })[0]; }
+  function bodyPoint(bone, q){
+    var bt = S.doc.bodyType, shp = M.bodyShapeBones(bt.shape)[bone], pv = (S.doc.skeleton[bone] || {}).pivot, hd = bone === 'Head' || bone === 'neck_01';
+    if (shp && pv) q = [pv[0] + (q[0] - pv[0])*shp[0], pv[1] + (q[1] - pv[1])*shp[1], pv[2] + (q[2] - pv[2])*shp[2]];
+    return [hd ? q[0] : q[0]*bt.w, q[1]*bt.h, hd ? q[2] : q[2]*bt.d];
+  }
+  /* the region's box in the view (the right-hand one of a pair), with the body and the plain outfit on it */
+  function regionBounds(k){
+    var R = regionOf(k); if (!R || !SH.survivor) return null;
+    var bones = R.bones.filter(function(b){ return !/_l$/.test(b); }), ref = refPieces(), mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], any = false;
+    bones.forEach(function(b){ var pcs = (ref[b] || []).slice(); S.doc.pieces.forEach(function(p){ if (p.g === b && !p.hidden) pcs = pcs.concat(nativesOf(p)); });
+      pcs.forEach(function(np){ M.faces(np).forEach(function(f){ f.pts.forEach(function(q){ var w = bodyPoint(b, q); any = true; for (var i = 0; i < 3; i++){ mn[i] = Math.min(mn[i], w[i]); mx[i] = Math.max(mx[i], w[i]); } }); }); }); });
+    return any ? {mn:mn, mx:mx, c:[(mn[0]+mx[0])/2, (mn[1]+mx[1])/2, (mn[2]+mx[2])/2]} : null;
+  }
+  function bodyHandles(){
+    var R = regionOf(S.bodyRegion), B = regionBounds(S.bodyRegion); if (!B) return [];
+    var c = B.c, H = [{type:'bshape', i:0, sg:1, pos:[B.mx[0], c[1], c[2]], dir:[1, 0, 0], col:GZC.x}, {type:'bshape', i:2, sg:1, pos:[c[0], c[1], B.mx[2]], dir:[0, 0, 1], col:GZC.z}];
+    if (R.size) H.push({type:'bshape', i:1, sg:1, pos:[c[0], B.mx[1], c[2]], dir:[0, 1, 0], col:GZC.y});
+    H.push({type:'outline', pts:[[B.mn[0], c[1], B.mn[2]], [B.mx[0], c[1], B.mn[2]], [B.mx[0], c[1], B.mx[2]], [B.mn[0], c[1], B.mx[2]], [B.mn[0], c[1], B.mn[2]]], col:GZC.hot, pos:c});
+    return H;
+  }
+  /* a loft's rings: which local axes the ring's two radii and its position run along */
+  function ringAxes(p){ var ax = p.ax || 'y'; return ax === 'z' ? {a:0, b:1, n:2} : ax === 'x' ? {a:2, b:1, n:0} : {a:0, b:2, n:1}; }
+  function ringWorld(p, L){ var sc = p.scl || [1, 1, 1]; return add3(M.app3(M.rotMat(p.rot || [0, 0, 0]), [L[0]*sc[0], L[1]*sc[1], L[2]*sc[2]]), p.pos); }
+  function ringHandles(p){
+    var k = Math.max(0, Math.min(p.r.length - 1, S.ringIdx || 0)), r = p.r[k], X = ringAxes(p), R = M.rotMat(p.rot || [0, 0, 0]), off = gzOff(), c = [r[0], r[1], r[2]];
+    var ea = [0, 0, 0], eb = [0, 0, 0], en = [0, 0, 0]; ea[X.a] = 1; eb[X.b] = 1; en[X.n] = 1;
+    var La = c.slice(), Lb = c.slice(); La[X.a] += r[3]; Lb[X.b] += r[4];
+    var C = add3(ringWorld(p, c), off), px = wpp(C), dirN = M.app3(R, en), H = [];
+    H.push({type:'ring', i:3, sg:1, pos:add3(ringWorld(p, La), off), dir:M.app3(R, ea), col:GZC[AXN[X.a]]});
+    H.push({type:'ring', i:4, sg:1, pos:add3(ringWorld(p, Lb), off), dir:M.app3(R, eb), col:GZC[AXN[X.b]]});
+    H.push({type:'ring', i:X.n, sg:1, pos:add3(C, mul3(dirN, Math.max(r[3], r[4])*0.3 + 26*px)), dir:dirN, col:GZC[AXN[X.n]], base:C});
+    var pts = []; for (var t = 0; t <= 24; t++){ var a = t/24*Math.PI*2, L = c.slice(); L[X.a] += Math.cos(a)*r[3]; L[X.b] += Math.sin(a)*r[4]; pts.push(add3(ringWorld(p, L), off)); }
+    H.push({type:'outline', pts:pts, col:GZC.hot, pos:C});
+    return H;
+  }
   function gzHandles(){
+    if (S.doc && S.doc.bodyType && S.bodyRegion && !S.sel.length && !S.placing && view && S.layer !== 'look') return bodyHandles();
     var sel = gzTarget(); if (!sel) return [];
+    if (S.gz.rings && sel.length === 1 && sel[0].s === 'loft' && S.gz.mode === 'shape') return ringHandles(sel[0]);
     var off = gzOff(), H = [], WB = selBounds(sel); if (!WB.ok) return [];
     var C = add3([(WB.mn[0]+WB.mx[0])/2, (WB.mn[1]+WB.mx[1])/2, (WB.mn[2]+WB.mx[2])/2], off), px = wpp(C);
     if (S.gz.mode === 'shape'){
@@ -1219,7 +1277,9 @@
     var line = function(a, b, hex){ var c = SH.hex(hex); pos.push(a[0], a[1], a[2], b[0], b[1], b[2]); col.push(c[0], c[1], c[2], 1, c[0], c[1], c[2], 1); };
     H.forEach(function(h){
       var isHot = hot && hot.type === h.type && hot.i === h.i && hot.sg === h.sg && hot.a === h.a, hex = isHot ? GZC.hot : h.col, px = wpp(h.pos), cn = M.customName(hex);
-      if (h.type === 'face'){ var sz = (isHot ? 20 : 16)*px; pcs.push({s:'bev', p:h.pos, d:[sz, sz, sz], c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[sz*0.55, sz*0.55, sz*0.55], c:'x' + 'fbf6ec', glow:true});
+      if (h.type === 'outline'){ for (var o2 = 0; o2 < h.pts.length - 1; o2++) line(h.pts[o2], h.pts[o2+1], h.col); return; }
+      if (h.type === 'ring' && h.base) line(h.base, h.pos, hex);
+      if (h.type === 'face' || h.type === 'bshape' || h.type === 'ring'){ var sz = (isHot ? 20 : 16)*px; pcs.push({s:'bev', p:h.pos, d:[sz, sz, sz], c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[sz*0.55, sz*0.55, sz*0.55], c:'x' + 'fbf6ec', glow:true});
         line(h.pos, add3(h.pos, mul3(h.dir, 14*px)), hex); }
       else if (h.type === 'move'){ line(h.base, h.pos, hex); var r = (isHot ? 10 : 8)*px, a = h.a, ax = AXN[a], rr = [[0, 0, 0, r, r], [0, 0, 0, 0, 0]]; var d2 = 22*px;
         rr[1][a === 0 ? 0 : a === 1 ? 1 : 2] = d2; pcs.push({s:'loft', p:h.pos, ax:ax, n:8, r:rr, c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[r*1.6, r*1.6, r*1.6], c:cn, glow:true}); }
@@ -1235,14 +1295,15 @@
     el.classList.toggle('hidden', !on); if (!on) return;
     var h = '<button class="sm ' + (S.gz.mode === 'shape' ? 'on' : 'alt') + '" data-gz="shape">Shape</button><button class="sm ' + (S.gz.mode === 'turn' ? 'on' : 'alt') + '" data-gz="turn">Turn</button>';
     if (S.gz.mode === 'shape' && selected().length === 1) h += '<button class="sm ' + (S.gz.both ? 'on' : 'alt') + '" data-gz="both" title="Stretch from the middle, both sides at once">Both sides</button>';
+    if (S.gz.mode === 'shape' && selected().length === 1 && selected()[0].s === 'loft') h += '<button class="sm ' + (S.gz.rings ? 'on' : 'alt') + '" data-gz="rings" title="Shape it ring by ring">Rings</button>';
     if (el.innerHTML !== h) el.innerHTML = h;
   }
-  $('gzBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; var g = b.dataset.gz; if (g === 'both') S.gz.both = !S.gz.both; else S.gz.mode = g; gzDraw(); });
+  $('gzBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; var g = b.dataset.gz; if (g === 'both') S.gz.both = !S.gz.both; else if (g === 'rings'){ S.gz.rings = !S.gz.rings; renderPanel(); } else S.gz.mode = g; gzDraw(); });
   /* the handle under a finger or the mouse, in screen space */
   function gzHit(x, y){
     var H = gzHandles(), best = null, bd = 30;
     H.forEach(function(h){
-      if (h.type === 'turn') return;
+      if (h.type === 'turn' || h.type === 'outline') return;
       var q = view.project(h.pos); if (q[2] > 1 || q[2] < -1) return; var d = Math.hypot(q[0]-x, q[1]-y); if (d < bd || (best && best.type === 'move' && h.type === 'face' && d < bd + 6)){ bd = d; best = h; } });
     if (best) return best;
     var bt = null, btd = 18;
@@ -1275,13 +1336,25 @@
   function gzStart(h, x, y){
     var sel = selected(); S.gzDrag = {h:h, sel:sel.map(function(p){ return {p:p, p0:clone(p)}; })}; S.liveCommitted = false; commit();
     var D = S.gzDrag;
-    if (h.type === 'face'){ var p = sel[0], B = localBounds(p); D.size0 = B.mx[h.i] - B.mn[h.i]; D.c = (B.mn[h.i] + B.mx[h.i])/2; D.half = D.size0/2; D.t0 = lineParam(h.pos, h.dir, x, y); D.R = M.rotMat(p.rot || [0, 0, 0]); }
+    if (h.type === 'bshape'){ var RB = regionBounds(S.bodyRegion), sh = S.doc.bodyType.shape = S.doc.bodyType.shape || {}; D.v0 = (sh[S.bodyRegion] || [1, 1, 1]).slice(); D.half = Math.max(0.01, RB.mx[h.i] - RB.c[h.i]); D.t0 = lineParam(h.pos, h.dir, x, y); }
+    else if (h.type === 'ring'){ var rp = sel[0]; D.k = Math.max(0, Math.min(rp.r.length - 1, S.ringIdx || 0)); D.v0 = rp.r[D.k][h.i]; D.t0 = lineParam(h.pos, h.dir, x, y); D.sc = (rp.scl || [1, 1, 1])[h.i < 3 ? h.i : ringAxes(rp)[h.i === 3 ? 'a' : 'b']] || 1; }
+    else if (h.type === 'face'){ var p = sel[0], B = localBounds(p); D.size0 = B.mx[h.i] - B.mn[h.i]; D.c = (B.mn[h.i] + B.mx[h.i])/2; D.half = D.size0/2; D.t0 = lineParam(h.pos, h.dir, x, y); D.R = M.rotMat(p.rot || [0, 0, 0]); }
     else if (h.type === 'move'){ D.t0 = lineParam(h.base, AXV[h.a], x, y); }
     else { var n = AXV[h.a], hit = WSV.hitPlane(view.ray(x, y).o, view.ray(x, y).d, h.centre, n); D.v0 = hit ? sub3(hit, h.centre) : null; D.C = sub3(h.centre, gzOff()); }
     gzDraw();
   }
   function gzMove(x, y){
     var D = S.gzDrag, h = D.h, st = S.snap;
+    if (h.type === 'bshape'){
+      var tb = lineParam(h.pos, h.dir, x, y); if (tb == null || D.t0 == null) return;
+      var idx = h.i === 0 ? 0 : h.i === 2 ? 1 : 2, f = Math.max(0.4, Math.min(2.5, Math.round(D.v0[idx]*(D.half + (tb - D.t0))/D.half*100)/100)), v = D.v0.slice(); v[idx] = f; S.doc.bodyType.shape[S.bodyRegion] = v;
+      gzLabel(regionOf(S.bodyRegion).label + ' ' + ['width', 'depth', 'size'][idx] + ' ' + Math.round(f*100) + '%', x, y); S.asset = null; rebuildScene(); return;
+    }
+    if (h.type === 'ring'){
+      var tr2 = lineParam(h.pos, h.dir, x, y); if (tr2 == null || D.t0 == null) return; var dv2 = (tr2 - D.t0)/D.sc; if (st) dv2 = Math.round(dv2/st)*st;
+      var it2 = D.sel[0], q2 = it2.p; q2.r = clone(it2.p0.r); var nv = r4(D.v0 + dv2); if (h.i >= 3) nv = Math.max(0, nv); q2.r[D.k][h.i] = nv;
+      gzLabel(h.i >= 3 ? 'Ring ' + (D.k + 1) + ' ' + (h.i === 3 ? 'width' : 'depth') + ' ' + fmtLen(nv*2*D.sc) : 'Ring ' + (D.k + 1) + ' moved ' + fmtLen(Math.abs(dv2*D.sc)), x, y); S.asset = null; rebuildScene(); return;
+    }
     if (h.type === 'face'){
       var t = lineParam(h.pos, h.dir, x, y); if (t == null || D.t0 == null) return;
       var size = D.size0 + (t - D.t0)*(S.gz.both ? 2 : 1); if (st) size = Math.round(size/st)*st; size = Math.max(st || 0.003, size);
@@ -1438,6 +1511,12 @@
     stockBack:function(){ stockBrowser(); },
     selAxle:function(b){ S.sel = [b.dataset.id]; S.tab = 'piece'; refresh(true); },
     addAxle:function(){ commit(); var A = M.axlesOf(S.doc), z = A.length ? r4(A[A.length - 1].z - 1.2) : 0; M.makeAxle(S.doc, z, {driven:true, name:'axle ' + (A.length + 1)}); S.sel = [S.doc.pieces[S.doc.pieces.length - 1].id]; changed(true); },
+    bregion:function(b){ S.bodyRegion = S.bodyRegion === b.dataset.r ? null : b.dataset.r; S.sel = []; refresh(true); },
+    bregionReset:function(){ if (!S.bodyRegion || !S.doc.bodyType.shape) return; commit(); delete S.doc.bodyType.shape[S.bodyRegion]; changed(true); },
+    bregionAll:function(){ commit(); S.doc.bodyType.shape = {}; changed(true); },
+    ringStep:function(b){ var p = selected()[0]; if (!p || !p.r) return; S.ringIdx = Math.max(0, Math.min(p.r.length - 1, (S.ringIdx || 0) + (+b.dataset.d))); S.gz.rings = true; refresh(); },
+    ringAdd:function(){ var p = selected()[0]; if (!p || !p.r) return; commit(); var k = Math.min(S.ringIdx || 0, p.r.length - 2), a = p.r[k], c = p.r[k + 1] || a, m = a.map(function(v, i){ return typeof v === 'number' && typeof c[i] === 'number' && i < 5 ? r4((v + c[i])/2) : v; }).slice(0, Math.max(5, a.length)); p.r.splice(k + 1, 0, m); S.ringIdx = k + 1; S.gz.rings = true; changed(true); },
+    ringDel:function(){ var p = selected()[0]; if (!p || !p.r || p.r.length <= 2) return; commit(); p.r.splice(Math.min(S.ringIdx || 0, p.r.length - 1), 1); S.ringIdx = Math.max(0, Math.min(S.ringIdx || 0, p.r.length - 1)); changed(true); },
     selLoose:function(){ S.sel = M.loosePieces(S.doc, ownerList()); if (!S.sel.length) toast('Every piece touches the rest.'); S.tab = 'piece'; refresh(true); },
     selHidden:function(){ S.sel = S.doc.pieces.filter(function(p){ return p.hidden; }).map(function(p){ return p.id; }); refresh(); },
     del:removeSel, dup:function(){ duplicate(false); }, mirrorCopy:function(){ duplicate(true); },
@@ -1781,5 +1860,5 @@
     else setTimeout(library, 300); }
   else if (cur && all[cur]) setDoc(clone(all[cur]));
   else { var first = M.fromStock(PROPS, 'pickup'); first.id = uniqueId('my_pickup'); first.name = 'My pickup'; setDoc(first); setTimeout(function(){ toast('Welcome! This is a copy of the pickup to try things on. Designs → Blank car to start from nothing.'); }, 400); }
-  window.WORKSHOP = {S:S, station:STATION, buildInGame:function(){ buildInGame(); }, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit, changed:changed, fitView:fitView};
+  window.WORKSHOP = {S:S, regionBounds:function(k){ return regionBounds(k); }, station:STATION, buildInGame:function(){ buildInGame(); }, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit, changed:changed, fitView:fitView};
 })();

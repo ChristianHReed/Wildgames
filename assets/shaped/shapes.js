@@ -229,5 +229,17 @@
       q.r=pc.r.map(function(r){ var o=[r[0]*bx, r[1], r[2]*bz, r[3]*(ax==='x'?bz:bx), r[4]*(ax==='y'?bz:1)]; if (r.length>5) o.push(r[5]); if (r.length>6) o.push(r[6]); return o; }); }
     return q;
   };
+  /* a copy scaled about a point c by s = [sx, sy, sz] (world axes). Body types use it per bone: survivor.bodyTypes[name].shape[bone] about that bone's pivot */
+  S.scaleAbout = function(pc, c, s){
+    var q={}; for (var k in pc) q[k]=pc[k];
+    var sw=((pc.ry||0)%2+2)%2===1, L=[sw?s[2]:s[0], s[1], sw?s[0]:s[2]];
+    q.p=[c[0]+(pc.p[0]-c[0])*s[0], c[1]+(pc.p[1]-c[1])*s[1], c[2]+(pc.p[2]-c[2])*s[2]];
+    if (pc.d) q.d=[pc.d[0]*L[0], pc.d[1]*L[1], pc.d[2]*L[2]];
+    if (pc.v) q.v=pc.v.map(function(v){ return [v[0]*L[0], v[1]*L[1], v[2]*L[2]]; });
+    if (pc.n && pc.v){ var n=[pc.n[0]/L[0], pc.n[1]/L[1], pc.n[2]/L[2]], l=Math.sqrt(n[0]*n[0]+n[1]*n[1]+n[2]*n[2])||1; q.n=[n[0]/l, n[1]/l, n[2]/l]; }
+    if (pc.r){ var ax=pc.ax||'y', ia=ax==='x'?0:ax==='y'?1:2, A=ax==='x'?L[2]:L[0], B=ax==='y'?L[2]:L[1];
+      q.r=pc.r.map(function(r){ var o=[r[0]*L[0], r[1]*L[1], r[2]*L[2], r[3]*A, r[4]*B]; if (r.length>5) o.push(r[5]); if (r.length>6) o.push(r[6]==null?r[6]:typeof r[6]==='number'?r[6]*L[ia]:r[6].map(function(t){ return t*L[ia]; })); return o; }); }
+    return q;
+  };
   S.hex = function(h){ h=parseInt(String(h).replace('#',''),16); return [((h>>16)&255)/255, ((h>>8)&255)/255, (h&255)/255]; };
 })();

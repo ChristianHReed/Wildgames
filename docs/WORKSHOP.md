@@ -52,6 +52,12 @@ Pack additions (all optional, older readers ignore them): vehicle `rig.wheels` l
 
 The Workshop chat's own working rules: `docs/WORKSHOP_CHAT.md`.
 
+## Reshaping character bodies and sculpting round pieces (1 November 2026)
+
+- **Body shape**: a body type (Designs → Open any model → survivor → Make a body type) has a width and depth for each part of the body: head, neck, shoulders and chest, belly and waist, hips, upper arms, forearms, hands, thighs, calves and feet. The head, hands and feet also have a size. Tap a part of the body in the view and drag its handles (red width, blue depth, green size), or use the sliders on the Model tab. Left and right change together. The clothes on that part stretch with it, so every outfit still fits.
+- Exported as `survivor.bodyTypes[name].shape = {bone: [sx, sy, sz]}`, scaled about that bone's pivot. The game applies it with the new `SHAPED.scaleAbout(piece, pivot, scale)` (in `assets/shaped/shapes.js`) to every piece on the bone, before the build's width and depth.
+- **Rings**: any rounded piece (a loft: heads, hands, limbs, tubes, hulls) can be shaped ring by ring. Select it, turn on **Rings** above the view, step through the rings, and drag a ring wider, deeper or along the piece. You can also add a ring between two others or remove one. The Piece tab has the same as sliders.
+
 ## Files
 
 | File | What it is |

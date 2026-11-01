@@ -432,6 +432,19 @@
     doc.garment = {slot:'body', body:b, choice:key}; doc.bodyType = {w:1, d:1, h:1};
     return doc;
   };
+  /* body shape by region: each region has [width, depth, size] (1 = as made); size (head, hands, feet) scales it all over.
+     Exported per bone as survivor.bodyTypes[name].shape[bone] = [sx, sy, sz], scaled about that bone's pivot (SHAPED.scaleAbout) before the build. Clothes on the bone scale too, so they fit. */
+  M.BODY_REGIONS = [
+    {k:'head', label:'Head', bones:['Head'], size:true}, {k:'neck', label:'Neck', bones:['neck_01']},
+    {k:'chest', label:'Shoulders and chest', bones:['spine_03']}, {k:'belly', label:'Belly and waist', bones:['spine_01', 'spine_02']}, {k:'hips', label:'Hips', bones:['pelvis']},
+    {k:'upperarm', label:'Upper arms', bones:['upperarm_l', 'upperarm_r']}, {k:'forearm', label:'Forearms', bones:['lowerarm_l', 'lowerarm_r']}, {k:'hand', label:'Hands', bones:['hand_l', 'hand_r'], size:true},
+    {k:'thigh', label:'Thighs', bones:['thigh_l', 'thigh_r']}, {k:'calf', label:'Calves', bones:['calf_l', 'calf_r']}, {k:'foot', label:'Feet', bones:['foot_l', 'foot_r', 'ball_l', 'ball_r'], size:true}];
+  M.bodyShapeBones = function(shape){
+    var out = {}; if (!shape) return out;
+    M.BODY_REGIONS.forEach(function(R){ var v = shape[R.k]; if (!v) return; var w = v[0] || 1, dd = v[1] || 1, sz = R.size ? (v[2] || 1) : 1, f = [Math.round(w*sz*1e4)/1e4, Math.round(sz*1e4)/1e4, Math.round(dd*sz*1e4)/1e4];
+      if (f[0] === 1 && f[1] === 1 && f[2] === 1) return; R.bones.forEach(function(b){ out[b] = f.slice(); }); });
+    return out;
+  };
   M.SURVIVOR_SLOTS = ['top','bottoms','worn','shoes','hair','hat','face','gear','npc','body'];
   M.survivorIndex = function(shaped){
     var V = shaped.survivor, out = []; if (!V) return out;
@@ -718,6 +731,7 @@
     var value = M.exportModel(doc), pal = {};
     (function walk(o){ if (isPieceList(o)) o.forEach(function(q){ var n = String(q.c).replace(/_D$/, ''); if (CUSTOM.test(n)) pal[n] = '#' + n.slice(1); else if (/^glass/.test(n) && doc.colours && doc.colours[n]) pal[n] = doc.colours[n]; /* a model's own tint of glass keeps its name (glass...) so the game draws it see-through */ }); else if (o && typeof o === 'object' && !Array.isArray(o)) for (var k in o) walk(o[k]); })(value);
     var extra = clone(doc.extra || []);
+    if (doc.bodyType && doc.target.path && doc.target.path[0] === 'bodyTypes'){ var shB = M.bodyShapeBones(doc.bodyType.shape); if (Object.keys(shB).length) extra.push({path:['bodyTypes', doc.target.path[1], 'shape'], value:shB}); }
     if (doc.bodyType && doc.target.path && doc.target.path[0] === 'bodyTypes') extra.push({path:['bodyTypes', doc.target.path[1], 'build'], value:[doc.bodyType.w, doc.bodyType.d, doc.bodyType.h].map(function(v){ return Math.round((+v || 1)*1e3)/1e3; })});
     /* points that came from the pack's tables go back to them, and so do moving parts and clips */
     M.writePoints(doc, extra);
