@@ -567,20 +567,22 @@ function waterwaysBuild(g){
 /* 0.114.49: the wall of hand-held items on the test street: a brick wall from the barriers pack with every weapon in the held pack hung on it at reaching height.
    Each weapon is laid flat against the wall with its length (the pack's z) along the wall, at its true size */
 var BWM = null;
-function testMainRoad(w){ return w.roads.filter(function(r){ return r.kind === 'road' && r.hw === 'residential' && r.pts.length === 4 && Math.abs(r.pts[0] - r.pts[2]) < 1 && Math.abs(r.pts[1] - r.pts[3]) > 300; })[0]; }
+function testMainRoad(w){ return w.roads.filter(function(r){ var p = r.pts, n = p.length; return r.kind === 'road' && r.hw === 'residential' && Math.abs(p[0] - p[n - 2]) < 1 && Math.abs(p[1] - p[n - 1]) > 300; })[0]; }
 function rackData(w){
   if (w.rack) return; w.rack = []; if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street || !window.SHAPED || !SHAPED.held) return;
-  var RK = Object.keys(SHAPED.held.models.weapons), rd = testMainRoad(w), rx = rd ? rd.pts[0] - 11 : -121; w.rackX = rx;
-  w.extraSegs = [rx, 56 - 1.7, rx, 56 - 1.7 + 4*(Math.ceil(11*1.7/4) + 1)]; if (w.wallSegs) w.wallSegs.push.apply(w.wallSegs, w.extraSegs);   /* the brick wall is solid */
-  RK.forEach(function(k, ki){ var col = ki % 11, row = Math.floor(ki/11); w.rack.push({fix:'rack', key:k, name:k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }), x:rx + 1.6, y:56 + col*1.7, h:1.0 + row*0.62, wx:rx + 0.45}); });
+  /* 0.114.73: the wall stands in the gap between the apartment block and the hospital (it was inside the hospital after the Test World was made compact), four rows high and as long as the items need: every held weapon and tool, then the ammunition and cases */
+  var HM = SHAPED.held.models, RK = []; ['weapons', 'ammo', 'cases'].forEach(function(gp){ Object.keys(HM[gp] || {}).forEach(function(k){ RK.push([gp, k]); }); });
+  var rd = testMainRoad(w), rx = rd ? rd.pts[0] - 11 : -121, y0 = rd ? Math.min(rd.pts[1], rd.pts[rd.pts.length - 1]) + 221 : 56, nc = Math.max(11, Math.ceil(RK.length/4)); w.rackX = rx; w.rackN = nc;
+  w.extraSegs = [rx, y0 - 1.7, rx, y0 - 1.7 + 4*(Math.ceil(nc*1.7/4) + 1), rx + 0.5, y0 - 1.7, rx + 0.5, y0 - 1.7 + 4*(Math.ceil(nc*1.7/4) + 1)]; if (w.wallSegs) w.wallSegs.push.apply(w.wallSegs, w.extraSegs);   /* the brick wall is solid: both faces */
+  RK.forEach(function(gk2, ki){ var k = gk2[1], col = ki % nc, row = Math.floor(ki/nc); w.rack.push({fix:'rack', grp:gk2[0], key:k, name:k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }), x:rx + 1.6, y:y0 + col*1.7, h:1.0 + row*0.62, wx:rx + 0.45}); });
 }
 function rackBuild(g){
   rackData(world);
   var w = world; if (!w.rack || !w.rack.length || !window.SHAPED || !SHAPED.barriers || !SHAPED.held || typeof spModel !== 'function') return;
   if (!BWM) BWM = spModel(SHAPED.barriers.models.barriers.fence_brick_wall_4, spColour(SHAPED.barriers.palette));
-  var rx = w.rackX, z0 = w.rack[0].y - 1.7, n = Math.ceil(11*1.7/4) + 1, i, H = SHAPED.held, hc = spColour(H.palette, {}), HM = {}; g.pl = null;
+  var rx = w.rackX, z0 = w.rack[0].y - 1.7, n = Math.ceil((w.rackN || 11)*1.7/4) + 1, i, H = SHAPED.held, hc = spColour(H.palette, {}), HM = {}; g.pl = null;
   for (i = 0; i < n; i++){ var z = z0 + 2 + i*4; stPutC(g, {wall:BWM}, 'wall', rx, z, 1, 0, 1, 1); }
-  w.rack.forEach(function(q){ var W = H.models.weapons[q.key], pcs = W && (W['new'] || W); if (!pcs) return; var M = HM[q.key] || (HM[q.key] = spModel(pcs, hc)); if (!M) return;
+  w.rack.forEach(function(q){ var W = H.models[q.grp || 'weapons'][q.key], pcs = W && (W['new'] || W); if (!pcs) return; var M = HM[q.key] || (HM[q.key] = spModel(pcs, hc)); if (!M) return;
     var gy = hAt(q.wx, q.y) + q.h, p = M.p, c = M.c, a = [0,0,0,0,0,0,0,0,0], t, j;
     for (t = 0; t < M.n; t++){ for (j = 0; j < 3; j++){ a[j*3] = q.wx + p[t*9 + j*3]; a[j*3 + 1] = gy + p[t*9 + j*3 + 1]; a[j*3 + 2] = q.y + p[t*9 + j*3 + 2]; }
       g.tri(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], [c[t*3], c[t*3 + 1], c[t*3 + 2]], 255); } });

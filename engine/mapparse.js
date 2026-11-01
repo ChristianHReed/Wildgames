@@ -152,7 +152,7 @@ function testStreetRaw(){
   var poly = function(pts, tags){ var c = pts.map(function(p){ return LL(p[0], p[1]); }); c.push(c[0]); ways.push({c:c, tags:tags}); };
   var rect = function(x, y, w, h, tags){ poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], tags); };
   var line = function(pts, tags){ ways.push({c:pts.map(function(p){ return LL(p[0], p[1]); }), tags:tags}); };
-  line([[0, -165], [0, 215]], {highway:'residential', name:'Test World'});
+  line([[0, -165], [0, -140], [0, 45], [0, 215]], {highway:'residential', name:'Test World'});   /* a point at each side road, so the junctions join cleanly */
   rect(-24, -64, 16, 14, {building:'house', name:'The house'});
   rect(-26, -30, 18, 20, {building:'yes', shop:'convenience', name:'Shop front'});
   rect(-30, 8, 22, 26, {building:'apartments', 'building:levels':'8', name:'Apartment block'});
