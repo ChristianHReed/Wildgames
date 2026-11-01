@@ -1,5 +1,6 @@
 /* Military vehicles built with the vehicle build library: jeep, humvee, 6x6 cargo truck (walk-in, canvas tilt), 8-wheel APC
    (walk-in with a rear ramp), armoured car, ammo trailer, patrol boat and a transport helicopter. Olive drab / sand paints. */
+var CK = require('../tools/cabin_kit.js'), CARS = require('./cars.js');
 var OD = ['#5a6040', '#2b2d26', '#8a8a78'], SAND = ['#a89870', '#3a3428', '#8a8a78'];
 function mk(WSB, id, name, domain, cls, paint, extra){ return WSB.create(Object.assign({id:id, name:name, domain:domain, cls:cls, paint:{paint1:paint[0], paint2:paint[1], paint3:paint[2]}}, extra || {})); }
 function body4x4(b, o){ /* jeep / humvee shape */
@@ -22,20 +23,18 @@ function body4x4(b, o){ /* jeep / humvee shape */
   b.seat([0.4, belt - 0.5, cabF - 0.5], {mx:true, name:'front seat'}); b.seat([0, belt - 0.5, cabB + 0.6], {size:[hw*1.5, 0.1, 0.45], name:'back seat'});
   b.engine([0, belt - 0.3, (cabF + F)/2], [hw*1.1, 0.5, Math.max(0.6, F - cabF - 0.2)]); b.tank([0, g + 0.3, B + 0.5], [0.7, 0.25, 0.5]); b.battery([hw - 0.35, belt - 0.2, F - 0.4]);
 }
-function jeep(WSB){ var b = mk(WSB, 'army_jeep', 'Army jeep', 'land', 'car', OD, {topSpeed:70}); body4x4(b, {hw:0.9, F:1.9, B:-1.7, belt:1.0, roof:1.12, cabF:0.45, cabB:-0.4, fz:1.15, rz:-1.0, r:0.36});
-  /* open top: remove nothing, the roof is a thin canvas bow */ b.box([-0.88, 1.0, -1.7], [0.88, 1.12, -1.2], {c:'paint3', m:'cloth', name:'spare wheel mount'}); return b; }
-function humvee(WSB){ var b = mk(WSB, 'humvee', 'Humvee', 'land', 'car', SAND, {topSpeed:65}); body4x4(b, {hw:1.1, F:2.3, B:-2.3, belt:1.25, roof:1.95, cabF:0.9, cabB:-1.8, fz:1.45, rz:-1.45, r:0.42});
-  b.door([-1.1, 0.9, -0.2], [-1.15, 1.8, 0.6], {c:'paint1', hinge:'front', name:'rear door'}); b.hitch([0, 0.55, -2.4], 'ball');
-  b.box([-0.3, 1.95, -0.6], [0.3, 2.1, 0.0], {c:'paint2', m:'steel', name:'gun ring'}); b.box([-0.05, 2.1, -0.7], [0.05, 2.25, 0.4], {c:'paint2', m:'steel', name:'mounted gun'}); return b; }
+function jeep(WSB){ var b = CARS.car(WSB, 'army_jeep', {name:'Army jeep', cls:'car', kind:'suv', front:1.9, back:-1.7, hw:0.9, belt:1.05, hood:1.15, roof:1.8, cabF:0.8, cabB:-1.55, floor:0.5, fz:1.15, rz:-1.0, r:0.36, paint:OD, top:70});
+  b.doc.id = 'army_jeep'; b.doc.name = 'Army jeep'; return b; }
+function humvee(WSB){ var b = CARS.car(WSB, 'humvee', {name:'Humvee', cls:'car', kind:'suv', front:2.3, back:-2.3, hw:1.1, belt:1.3, hood:1.4, roof:2.0, cabF:0.95, cabB:-1.95, floor:0.6, fz:1.45, rz:-1.45, r:0.42, paint:SAND, top:65});
+  b.doc.id = 'humvee'; b.doc.name = 'Humvee'; b.hitch([0, 0.6, -2.4], 'ball'); b.box([-0.3, 2.0, -0.6], [0.3, 2.12, 0.0], {c:'paint2', m:'steel', name:'gun ring'}); b.box([-0.05, 2.12, -0.7], [0.05, 2.25, 0.4], {c:'paint2', m:'steel', name:'mounted gun'}); return b; }
 function cargoTruck(WSB){ var b = mk(WSB, 'army_cargo_truck', 'Army 6x6 cargo truck', 'land', 'truck', OD, {tank:'large', topSpeed:60});
   b.wheels(0.5, 0.3); b.axle(2.6, {steer:true, track:1.0, name:'front axle'}); b.axle(-1.2, {driven:true, track:1.0, name:'rear axle 1'}); b.axle(-2.6, {driven:true, track:1.0, name:'rear axle 2'});
   b.box([0.35, 0.55, -4.0], [0.48, 0.85, 3.5], {c:'underside', m:'steel', mx:true, name:'chassis rail'}); b.box([-0.48, 0.8, -4.0], [0.48, 0.92, 0.4], {c:'underside', m:'steel', name:'subframe'});
-  b.box([-1.0, 0.9, 2.4], [1.0, 1.7, 3.5], {c:'paint1', name:'hood'}); b.box([-1.1, 0.9, 0.7], [1.1, 1.6, 2.4], {c:'paint1', name:'cab lower'});
-  b.box([-1.1, 1.6, 0.7], [1.1, 2.7, 1.4], {c:'paint1', name:'cab back'}); b.box([-1.05, 1.6, 2.26], [1.05, 2.65, 2.3], {c:'glass', m:'glass', name:'windscreen'}); b.box([1.01, 1.6, 1.4], [1.05, 2.65, 2.26], {c:'glass', m:'glass', mx:true, name:'cab side glass'}); b.box([-1.1, 2.65, 0.7], [1.1, 2.75, 2.35], {c:'paint1', name:'cab roof'});
-  b.door([1.1, 1.0, 1.3], [1.15, 2.6, 2.3], {c:'paint1', mx:true, hinge:'front', name:'cab door'});
+  b.box([-1.0, 0.9, 2.4], [1.0, 1.7, 3.5], {c:'paint1', name:'hood'}); b.box([-1.1, 0.9, 2.3], [1.1, 1.6, 2.4], {c:'paint1', name:'cowl'});
+  CK.truckCab(b, {hw:1.1, zB:0.55, zF:2.3, fl:1.0, belt:1.6, roof:2.7, seatY:1.3, driverX:-0.5});
   b.box([-1.1, 0.7, 3.5], [1.1, 1.0, 3.7], {c:'paint2', m:'steel', name:'bumper'}); b.box([-0.7, 1.0, 3.5], [0.7, 1.6, 3.55], {c:'black', m:'plastic', name:'grille'});
   b.light('headlight', [0.75, 1.3, 3.57], [0.24, 0.2, 0.04]); b.light('taillight', [1.0, 1.3, -4.05], [0.16, 0.24, 0.04]);
-  b.engine([0, 1.3, 2.9], [0.8, 0.6, 1.0]); b.tank([0.8, 0.65, -0.6], [0.4, 0.4, 0.9]); b.battery([0.6, 1.3, 3.2]); b.seat([0.45, 1.15, 1.0], {mx:true, name:'cab seat'});
+  b.engine([0, 1.3, 2.9], [0.8, 0.6, 1.0]); b.tank([0.8, 0.65, -0.6], [0.4, 0.4, 0.9]); b.battery([0.6, 1.3, 3.2]); 
   b.shell([-1.1, 1.0, -4.0], [1.1, 3.0, 0.5], {open:['back'], c:'paint3', floorC:'#6a5a3e', wall:0.05, floor:0.1, name:'tilt', room:'cargo'});
   b.door([-1.1, 1.0, -4.07], [1.1, 3.0, -4.02], {kind:'roll', c:'paint1', name:'tailgate flap'}); b.box([-1.1, 0.75, -4.2], [1.1, 1.0, -4.0], {c:'underside', m:'steel', name:'rear step'});
   b.hitch([0, 0.7, -4.25], 'pintle'); b.storage([-1.0, 1.02, -3.9], [1.0, 2.2, -2.0], 'load'); return b; }
@@ -51,13 +50,8 @@ function apc(WSB){ var b = mk(WSB, 'apc_8x8', 'Armoured personnel carrier 8x8', 
   b.light('headlight', [1.0, 1.0, 3.72], [0.2, 0.16, 0.04]); b.light('taillight', [1.1, 1.2, -4.58], [0.16, 0.2, 0.04]);
   b.engine([0, 1.2, 2.4], [1.2, 0.7, 0.8]); b.tank([-1.0, 0.95, 0.5], [0.4, 0.3, 1.2]); b.battery([0.8, 1.3, 2.6]);
   b.seat([0.55, 0.81, 2.4], {name:'driver seat'}); [0.8, -0.2, -1.2, -2.2, -3.2].forEach(function(z){ b.seat([1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); b.seat([-1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); }); return b; }
-function armouredCar(WSB){ var b = mk(WSB, 'armoured_car', 'Armoured car', 'land', 'car', SAND, {topSpeed:80});
-  b.wheels(0.45, 0.3); b.axle(1.7, {steer:true, track:1.05, name:'front axle'}); b.axle(-1.7, {driven:true, track:1.05, name:'rear axle'});
-  b.box([-1.15, 0.5, -2.8], [1.15, 0.7, 2.8], {c:'underside', m:'steel', name:'hull floor'}); b.box([-1.2, 0.7, -2.8], [1.2, 1.5, 2.4], {c:'paint1', m:'steel', name:'hull'}); b.block('wedge', [0, 1.1, 2.7], [2.4, 0.8, 0.6], {c:'paint1', m:'steel', name:'bonnet slope'});
-  b.box([-1.1, 1.5, -2.4], [1.1, 2.1, 1.0], {c:'paint1', m:'steel', name:'cabin'}); b.box([-1.0, 1.7, 1.0], [1.0, 2.0, 1.04], {c:'glass', m:'glass', name:'windscreen'}); b.box([-0.9, 2.1, -1.0], [0.9, 2.18, 0.8], {c:'paint1', m:'steel', name:'roof'});
-  b.door([1.2, 0.8, 0.0], [1.26, 1.95, 0.9], {mx:true, hinge:'front', c:'paint1', name:'door'});
-  b.light('headlight', [0.9, 1.0, 3.0], [0.2, 0.16, 0.04]); b.light('taillight', [1.0, 1.1, -2.8], [0.16, 0.2, 0.04]);
-  b.engine([0, 1.1, 2.0], [1.0, 0.6, 0.8]); b.tank([0, 0.8, -1.8], [0.8, 0.3, 0.6]); b.battery([0.8, 1.2, 2.2]); b.seat([0.45, 0.85, 0.4], {mx:true, name:'front seat'}); b.seat([0, 0.85, -0.8], {size:[1.6, 0.1, 0.45], name:'bench'}); return b; }
+function armouredCar(WSB){ var b = CARS.car(WSB, 'armoured_car', {name:'Armoured car', cls:'car', kind:'suv', front:2.8, back:-2.8, hw:1.15, belt:1.4, hood:1.5, roof:2.15, cabF:1.0, cabB:-2.3, floor:0.62, fz:1.7, rz:-1.7, r:0.45, paint:SAND, top:80});
+  b.doc.id = 'armoured_car'; b.doc.name = 'Armoured car'; b.block('wedge', [0, 1.5, 2.95], [2.3, 0.5, 0.3], {c:'paint1', m:'steel', name:'armour slope'}); return b; }
 function ammoTrailer(WSB){ var b = mk(WSB, 'ammo_trailer', 'Ammo trailer', 'land', 'trailer', OD, {topSpeed:50});
   b.wheels(0.4, 0.26); b.axle(-0.6, {driven:false, track:0.85, name:'trailer axle'});
   b.box([-0.95, 0.6, -1.9], [0.95, 0.72, 1.6], {c:'underside', m:'steel', name:'bed'});

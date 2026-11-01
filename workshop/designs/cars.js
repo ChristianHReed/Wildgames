@@ -85,4 +85,4 @@ function car(WSB, id, S){
   return b;
 }
 module.exports = function(WSB){ return Object.keys(SPEC).map(function(k){ return car(WSB, k, SPEC[k]); }); };
-module.exports.SPEC = SPEC;
+module.exports.SPEC = SPEC; module.exports.car = car;
