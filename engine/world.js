@@ -335,11 +335,26 @@ function buildHeights(w, raw, lon0, lat0, kx, ky){
   var z0 = samp(w.start.x, w.start.y), mn = 1e9, mx = -1e9;
   for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){ var h = samp(w.minx - M + i*cell, w.miny - M + j*cell) - z0; d[j*cols + i] = h; if (h < mn) mn = h; if (h > mx) mx = h; }
   if (mx - mn < 0.3) return;
-  w.hg = {x0:w.minx - M, y0:w.miny - M, cell:cell, cols:cols, rows:rows, d:d, min:mn, max:mx, vox:!!raw.voxel || /[?&]voxel/.test(location.search)};
+  w.hg = {x0:w.minx - M, y0:w.miny - M, cell:cell, cols:cols, rows:rows, d:d, min:mn, max:mx};
 }
 /* height of the ground: the bare ground (hAt0, each grid square two flat triangles, the same ones that are drawn) plus what has been dug or filled (dig.js; DIGN is 0 until something has) */
 var DIGN = 0;
-function hAt(x, y){ var h = DIGN ? hAt0(x, y) + digOff(x, y) : hAt0(x, y); return SUNK ? h + roadOff(x, y) : h; }
+/* 0.114.53: river bank pieces are walkable: the top surface of every placed bank piece is stored on a 0.25 m grid, and the ground there is whichever is higher, so you stand on a bank
+   instead of walking into it. */
+var BNKH = new Map();
+function bnkKey(x, z){ return (Math.floor(x*4) + 32768)*65536 + (Math.floor(z*4) + 32768); }
+function hAt(x, y){ var h = DIGN ? hAt0(x, y) + digOff(x, y) : hAt0(x, y); if (BNKH.size){ var bk = BNKH.get(bnkKey(x, y)); if (bk !== undefined && bk > h) h = bk; } return SUNK ? h + roadOff(x, y) : h; }
+/* lay the up-facing triangles of a placed piece onto the bank grid (same placement as stPut) */
+function bankRaster(M, nm, x, z, dx, dz, sx, sy, y0){
+  var m = M[nm]; if (!m) return; var yaw = Math.atan2(-dx, dz), cs = Math.cos(yaw), sn = Math.sin(yaw), p = m.p, i, j, q = [0,0,0,0,0,0,0,0,0];
+  for (i = 0; i < m.n; i++){
+    for (j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sx, lz = p[i*9 + j*3 + 2]; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sy; q[j*3 + 2] = z + sn*lx + cs*lz; }
+    var ux = q[3] - q[0], uy = q[4] - q[1], uz = q[5] - q[2], vx = q[6] - q[0], vy = q[7] - q[1], vz = q[8] - q[2], ny = uz*vx - ux*vz, nl = Math.hypot(uy*vz - uz*vy, ny, ux*vy - uy*vx) || 1; if (Math.abs(ny)/nl < 0.5) continue;
+    var x0 = Math.min(q[0], q[3], q[6]), x1 = Math.max(q[0], q[3], q[6]), z0 = Math.min(q[2], q[5], q[8]), z1 = Math.max(q[2], q[5], q[8]), d = (q[3] - q[0])*(q[8] - q[2]) - (q[6] - q[0])*(q[5] - q[2]); if (Math.abs(d) < 1e-9) continue;
+    for (var gx = Math.floor(x0*4); gx <= Math.floor(x1*4); gx++) for (var gz = Math.floor(z0*4); gz <= Math.floor(z1*4); gz++){
+      var px = (gx + 0.5)/4, pz = (gz + 0.5)/4, a = ((q[3] - px)*(q[8] - pz) - (q[6] - px)*(q[5] - pz))/d, b = ((q[6] - px)*(q[2] - pz) - (q[0] - px)*(q[8] - pz))/d, c = 1 - a - b; if (a < -0.02 || b < -0.02 || c < -0.02) continue;
+      var yy = a*q[1] + b*q[4] + c*q[7], k = (gx + 32768)*65536 + (gz + 32768), o = BNKH.get(k); if (o === undefined || yy > o) BNKH.set(k, yy); } }
+}
 /* 1.0 sunk roads: a paved street 6 m or wider lies ROAD_T (12 in, 0.3048 m) below its pavements, with a vertical kerb face on each side. The terrain is cut away over the road (the
    same mask the digging uses), the road is drawn at the lower level, and everything that stands on the ground asks hAt() or groundAt(), which know the road is lower.
    SUNK maps a 40 m cell to the road segments [x0, y0, x1, y1, half width] that are sunk (not the stretches on bridges or in tunnels); buildings.js builds it with the roads' geometry. */
@@ -359,13 +374,9 @@ function roadOff(x, y, e){
   var l = SUNK && SUNK.get(gk(Math.floor(x/40), Math.floor(y/40))); if (!l) return 0; e = e || 0;
   for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return -ROAD_T; } return 0;
 }
-/* 0.114.51: voxel ground. Each grid square is one flat column whose top is the average of its four corners in 0.5 m steps (the same size as the digging blocks); terrTile draws the column and its side faces */
-var VQ = 0.5;
-function voxH(g, i, j){ var d = g.d, k = j*g.cols + i; return Math.round((d[k] + d[k + 1] + d[k + g.cols] + d[k + g.cols + 1])/4/VQ)*VQ; }
 function hAt0(x, y){
   var g = world.hg; if (!g) return 0;
   var u = (x - g.x0)/g.cell, v = (y - g.y0)/g.cell; u = u < 0 ? 0 : u > g.cols - 1.001 ? g.cols - 1.001 : u; v = v < 0 ? 0 : v > g.rows - 1.001 ? g.rows - 1.001 : v;
-  if (g.vox) return voxH(g, Math.floor(u), Math.floor(v));
   var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*g.cols + i, d = g.d, a = d[k], b = d[k + 1], c = d[k + g.cols], e = d[k + g.cols + 1];
   return fu + fv <= 1 ? a + (b - a)*fu + (c - a)*fv : e + (c - e)*(1 - fu) + (b - e)*(1 - fv);
 }
@@ -494,7 +505,8 @@ function landModels(){
 }
 function waterwaysBuild(g){
   if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street) return; var w = world, M = landModels(); if (!M.bank_shelf_4 || !w.waterLines) return;
-  var Y0 = 0.05, put = function(nm, x, z, dx, dz, sx){ return stPut(g, M, nm, x, z, dx, dz, sx || 1, 1, Y0); };
+  var Y0 = 0.05; BNKH.clear();
+  var put = function(nm, x, z, dx, dz, sx){ if (/^(bank_|outfall_)/.test(nm)) bankRaster(M, nm, x, z, dx, dz, sx || 1, 1, Y0); return stPut(g, M, nm, x, z, dx, dz, sx || 1, 1, Y0); };
   var EAST = ['bank_shelf_4', 'bank_gravel_4', 'bank_roots_4', 'bank_shelf_4', 'bank_sand_4', 'bank_mud_4', 'bank_cut_clay_4', 'bank_gravel_4'],
       WEST = ['bank_gabion_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_stone_wall_4', 'bank_concrete_channel_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_gabion_4'];
   var cross = []; w.roads.forEach(function(r){ if (r.kind !== 'path') return; var p = r.pts; w.waterLines.forEach(function(wl){ var q = wl.pts;
@@ -656,7 +668,7 @@ function blur(d, cols, rows, r){
 }
 function buildCover(w){
   var hg = w.hg, sub = 1, cell, x0, y0, cols, rows;
-  if (hg){ sub = hg.cell >= 12 && !hg.vox && hg.cols*hg.rows*4 <= 2400000 ? 2 : 1;   /* 0.95.1: ground already finer than 12 m is not halved again */ cell = hg.cell/sub; x0 = hg.x0; y0 = hg.y0; cols = (hg.cols - 1)*sub + 1; rows = (hg.rows - 1)*sub + 1; }
+  if (hg){ sub = hg.cell >= 12 && hg.cols*hg.rows*4 <= 2400000 ? 2 : 1;   /* 0.95.1: ground already finer than 12 m is not halved again */ cell = hg.cell/sub; x0 = hg.x0; y0 = hg.y0; cols = (hg.cols - 1)*sub + 1; rows = (hg.rows - 1)*sub + 1; }
   else { var M = 300; cell = 10; x0 = w.minx - M; y0 = w.miny - M; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1;
     while (cols*rows > 2400000){ cell *= 1.5; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1; } }
   var n = cols*rows, BIG = 1e6, dev = new Float32Array(n).fill(BIG), wat = new Float32Array(n).fill(BIG), fm = new Float32Array(n), pk = new Uint8Array(n), fd = new Uint8Array(n);
@@ -712,19 +724,6 @@ function terrTile(ti, tj, lod){
     var x = g.x0 + i*g.cell, y = g.y0 + j*g.cell, o = (j*g.cols + i)*6, c = g.c;
     P.push(x, (fl ? 0 : hAt0(x, y)) - 0.03, y); C.push(c[o+3], c[o+4], c[o+5], 255); Tt.push(c[o+1]/255, c[o+2]/255, 45 + c[o]/255*1.2);
   };
-  var hg = world.hg;
-  if (hg && hg.vox && st === 1 && g.cols === hg.cols){   /* voxel ground: a flat top per column, and a wall wherever a neighbour is lower */
-    var cl = function(i, j, k, z){ var o = (j*g.cols + i)*6, c = g.c; P.push(g.x0 + i*g.cell, z, g.y0 + j*g.cell); C.push(c[o+3]*k, c[o+4]*k, c[o+5]*k, 255); Tt.push(c[o+1]/255, c[o+2]/255, 45 + c[o]/255*1.2); },
-        wl = function(x0, y0, x1, y1, za, zb, i, j){ var o = (j*g.cols + i)*6, c = g.c, r = c[o+3]*0.62, gg = c[o+4]*0.55, b = c[o+5]*0.5, q = [[x0, za, y0], [x1, za, y1], [x0, zb, y0], [x1, zb, y1], [x0, zb, y0], [x1, za, y1]];
-          for (var n = 0; n < 6; n++){ P.push(q[n][0], q[n][1], q[n][2]); C.push(r, gg, b, 255); Tt.push(0.9, 0.35, 45); } };
-    for (var j2 = tj*TT; j2 < (tj + 1)*TT && j2 + 1 < g.rows - 0; j2++) for (var i2 = ti*TT; i2 < (ti + 1)*TT && i2 + 1 < g.cols; i2++){
-      var H = voxH(hg, i2, j2) - 0.03; cl(i2, j2, 1, H); cl(i2 + 1, j2, 1, H); cl(i2, j2 + 1, 1, H); cl(i2 + 1, j2 + 1, 1, H); cl(i2, j2 + 1, 1, H); cl(i2 + 1, j2, 1, H);
-      var xe = g.x0 + (i2 + 1)*g.cell, ye = g.y0 + (j2 + 1)*g.cell, xs = g.x0 + i2*g.cell, ys = g.y0 + j2*g.cell;
-      if (i2 + 2 < g.cols){ var He = voxH(hg, i2 + 1, j2) - 0.03; if (He !== H) wl(xe, ys, xe, ye, Math.min(H, He), Math.max(H, He), i2, j2); }
-      if (j2 + 2 < g.rows){ var Hs = voxH(hg, i2, j2 + 1) - 0.03; if (Hs !== H) wl(xs, ye, xe, ye, Math.min(H, Hs), Math.max(H, Hs), i2, j2); }
-    }
-    return m;
-  }
   for (var j = tj*TT; j < (tj + 1)*TT && j + st < g.rows; j += st) for (var i = ti*TT; i < (ti + 1)*TT && i + st < g.cols; i += st){
     vx(i, j); vx(i + st, j); vx(i, j + st); vx(i + st, j + st); vx(i, j + st); vx(i + st, j);
   }

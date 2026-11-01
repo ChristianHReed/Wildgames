@@ -177,7 +177,7 @@ function testStreetRaw(){
   line([[0, 100], [60, 100], [140, 100], [230, 100]], {highway:'residential', name:'Gorge Road'});
   /* a gravel track through the wood and the mountain's foot */
   line([[0, -270], [-120, -270], [-230, -170], [-250, -60]], {highway:'track', name:'Mountain track'});
-  return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, voxel:true, spawn:LL(-3, -40), name:'Test Street'};
+  return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, spawn:LL(-3, -40), name:'Test Street'};
 }
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }
 function DEMO_CK(x){ return 470 + 26*Math.sin(x/95) + 10*Math.sin(x/37); }
