@@ -372,7 +372,7 @@ function buildSunk(w){
 /* how far below the pavement the road surface is at (x, y): -ROAD_T on a sunk road (e is how far outside the road edge still counts), 0 elsewhere */
 function roadOff(x, y, e){
   var l = SUNK && SUNK.get(gk(Math.floor(x/40), Math.floor(y/40))); if (!l) return 0; e = e || 0;
-  for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return -ROAD_T; } return 0;
+  for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return -ROAD_T + 0.062 + (world.liftY || 0); } return 0;   /* the surface the road is drawn at (0.114.57: not the bare pavement-less depth, so wheels and feet sit on it) */
 }
 function hAt0(x, y){
   var g = world.hg; if (!g) return 0;
@@ -868,6 +868,14 @@ function circ(x, y, r){
   return false;
 }
 /* the height of the water surface at a point (the river is drawn there): the test river stands at 0.05, anywhere else just above the ground */
+/* 0.114.57: the river's current at a point: the direction the river runs (its points are in flow order), fastest in the middle. Returns [dx, dy, metres per second] or null */
+function flowAt(x, y){
+  var L = world.waterLines, best = null, bd = 1e9, i, q, p; if (!L) return null;
+  for (i = 0; i < L.length; i++){ p = L[i].pts; var hw = L[i].w/2;
+    for (q = 0; q + 3 < p.length; q += 2){ var sx = p[q+2] - p[q], sy = p[q+3] - p[q+1], sl = sx*sx + sy*sy; if (sl < 1e-6) continue; var t = Math.max(0, Math.min(1, ((x - p[q])*sx + (y - p[q+1])*sy)/sl)), d = Math.hypot(x - p[q] - sx*t, y - p[q+1] - sy*t);
+      if (d < hw && d < bd){ bd = d; var l = Math.sqrt(sl); best = [sx/l, sy/l, 0.25 + 0.75*(1 - d/hw)]; } } }
+  return best;
+}
 function waterY(x, y){ return (typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) ? 0.05 : hAt0(x, y) + 0.05 + (world.liftY || 0); }
 function inWater(x, y, r){
   var i, a;

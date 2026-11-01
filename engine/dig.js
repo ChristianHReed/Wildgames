@@ -25,7 +25,7 @@ function digCol(x, y){ return DG.cols.get(dgKey(Math.floor(x/DGS), Math.floor(y/
 function dgApply(list){
   for (var i = 0; i + 2 < list.length; i += 3){
     var ix = list[i] | 0, iy = list[i+1] | 0, v = Math.max(DG_MIN, Math.min(DG_MAX, list[i+2] | 0)), k = dgKey(ix, iy);
-    if (v) DG.cols.set(k, v); else DG.cols.delete(k); DGL.delete(k);
+    if (v) DG.cols.set(k, v); else DG.cols.delete(k); if (v >= 0) DGL.delete(k); DGCHK = true;
     var cx = Math.floor(ix/DGN), cy = Math.floor(iy/DGN);
     for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) DG.dirty.add(dgKey(cx + dx, cy + dy));
   }
@@ -35,7 +35,7 @@ function dgApply(list){
 function DGN_ON(){ DIGN = DG.cols.size; }   /* DIGN is world.js's switch: 0 means hAt() skips the lookup */
 /* a saved map {"ix,iy": blocks} back into the world */
 function dgLoad(map){
-  DGW.clear(); DGL.clear(); DGF.length = 0; DG.cols.clear(); DG.mesh.forEach(function(o){ if (o.g) freeMesh(o.g); }); DG.mesh.clear(); DG.dirty.clear();
+  DGW.clear(); DGL.clear(); DGF.length = 0; DGDRY.clear(); DG.cols.clear(); DG.mesh.forEach(function(o){ if (o.g) freeMesh(o.g); }); DG.mesh.clear(); DG.dirty.clear();
   var list = [], k; for (k in (map || {})){ var p = k.split(','); if (p.length === 2 && isFinite(p[0]) && isFinite(p[1]) && isFinite(map[k])) list.push(p[0] | 0, p[1] | 0, map[k] | 0); }
   for (var i = 0; i + 2 < list.length; i += 3) DG.cols.set(dgKey(list[i], list[i+1]), Math.max(DG_MIN, Math.min(DG_MAX, list[i+2])));
   DG.cols.forEach(function(v, key){ var cx = Math.floor(dgIx(key)/DGN), cy = Math.floor(dgIy(key)/DGN); for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) DG.dirty.add(dgKey(cx + dx, cy + dy)); });
@@ -65,11 +65,24 @@ function dgSeed(ix, iy){ var v = DG.cols.get(dgKey(ix, iy)); if (!(v < 0) || DGL
 function dgSpread(budget){
   var d = [[1, 0], [-1, 0], [0, 1], [0, -1]], n = 0, i;
   while (DGF.length && n < budget){
-    var ix = DGF.shift(), iy = DGF.shift(), lev = DGF.shift(); n++; var k = dgKey(ix, iy), v = DG.cols.get(k);
-    if (!(v < 0) || DGL.has(k) || dgBase(ix, iy) + v*DGS >= lev - 0.02) continue;
-    DGL.set(k, lev); DG.dirty.add(dgKey(Math.floor(ix/DGN), Math.floor(iy/DGN)));
+    var ix = DGF.shift(), iy = DGF.shift(), lev = DGF.shift(); n++; var k = dgKey(ix, iy), v = DG.cols.get(k); if (!(v < 0)) continue;
+    var bed = dgBase(ix, iy) + v*DGS, cur = DGL.get(k); if (cur === undefined) cur = bed; if (bed >= lev - 0.02 || cur >= lev - 0.01) continue;
+    var nl = Math.min(lev, cur + 0.25); DGL.set(k, nl); DG.dirty.add(dgKey(Math.floor(ix/DGN), Math.floor(iy/DGN))); DGDRY.delete(k);
+    if (nl < lev){ DGF.push(ix, iy, lev); continue; }   /* still rising: come back to it */
     for (i = 0; i < 4; i++){ var jx = ix + d[i][0], jy = iy + d[i][1], v2 = DG.cols.get(dgKey(jx, jy)); if (v2 < 0 && !DGL.has(dgKey(jx, jy)) && dgBase(jx, jy) + v2*DGS < lev - 0.02) DGF.push(jx, jy, lev); }
   }
+}
+/* water that has lost its way to the river (a dam of soil in the channel) sinks 0.25 m a tick and is gone. DGDRY holds the columns found cut off at the last check. */
+var DGDRY = new Map(), DGCHK = false;
+function dgCheck(){
+  DGCHK = false; DGDRY.clear(); if (!DGL.size) return; var seen = new Set(), q = [], d = [[1, 0], [-1, 0], [0, 1], [0, -1]], i;
+  DGL.forEach(function(l, k){ var ix = dgIx(k), iy = dgIy(k); for (i = 0; i < 4; i++) if (inWater((ix + d[i][0] + 0.5)*DGS, (iy + d[i][1] + 0.5)*DGS, 0)){ seen.add(k); q.push(ix, iy); break; } });
+  while (q.length){ var jy = q.pop(), jx = q.pop(); for (i = 0; i < 4; i++){ var nk = dgKey(jx + d[i][0], jy + d[i][1]); if (DGL.has(nk) && !seen.has(nk)){ seen.add(nk); q.push(jx + d[i][0], jy + d[i][1]); } } }
+  DGL.forEach(function(l, k){ if (!seen.has(k)) DGDRY.set(k, 1); });
+}
+function dgDrain(){
+  if (!DGDRY.size) return; DGDRY.forEach(function(o, k){ var ix = dgIx(k), iy = dgIy(k), v = DG.cols.get(k), cur = DGL.get(k), bed = v < 0 ? dgBase(ix, iy) + v*DGS : -99;
+    var nl = cur - 0.25; if (cur === undefined || nl <= bed + 0.02){ DGL.delete(k); DGDRY.delete(k); } else DGL.set(k, nl); DG.dirty.add(dgKey(Math.floor(ix/DGN), Math.floor(iy/DGN))); });
 }
 
 function dgWater(ix, iy){
@@ -140,7 +153,7 @@ function dgMask(px, py){
 /* once a frame before the ground is drawn: rebuild a couple of changed chunks and tell the shader about the mask */
 function dgPrep(px, py, U){
   if (!DG.cols.size && !SUNK){ gl.uniform1f(U.dmOn, 0); return; }
-  var tn = Date.now(); if (DGF.length && tn - DGLT > 90){ DGLT = tn; dgSpread(160); }   /* the water spreads a ring or so ten times a second */
+  var tn = Date.now(); if ((DGF.length || DGDRY.size || DGCHK) && tn - DGLT > 90){ DGLT = tn; if (DGCHK && !DGF.length) dgCheck(); dgSpread(160); dgDrain(); }   /* the water spreads a ring or so ten times a second */
   var n = 0; DG.dirty.forEach(function(ck){ if (n < 3){ DG.dirty.delete(ck); dgBuild(ck); n++; } });
   dgMask(px, py);
   gl.activeTexture(gl.TEXTURE5); gl.bindTexture(gl.TEXTURE_2D, DG.mtex); gl.activeTexture(gl.TEXTURE0);

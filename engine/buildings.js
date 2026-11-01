@@ -688,7 +688,7 @@ function prep3D(){
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
   });
   bridgeScan(w); buildSunk(w); wwPlan(w);
-  var LIFT = w.hg ? 0.12 : 0, SWY = 0.062, RDY = SWY - ROAD_T;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
+  var LIFT = w.hg ? 0.12 : 0, SWY = 0.062, RDY = SWY - ROAD_T; w.liftY = LIFT;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
   /* sidewalk and road ribbons: cut = true leaves out the stretches that fall inside a sunk road (a path or lane meeting a sunk street stops at its kerb) */
   /* 0.114.55: a river is one surface: five strips across, flow along the river (the texture runs downstream), and the strip's distance from the bank goes to the shader in the uv
      so it can darken the deep middle and put foam on the edges. vt.z carries the half width: 19.05 + hw/100 */

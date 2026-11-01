@@ -4,4 +4,6 @@ How other games do it (researched 1 Nov 2026): Minecraft, Terraria and DwarfCorp
 
 What Afterstreet does (0.114.54, `engine/dig.js`): dug ground is already 0.5 m columns. A dug column beside open water and lower than its surface fills to that surface (`DGL`), and the water spreads on through any dug column lower than it, a ring at a time. Filling a column with soil removes its water. Pits away from water still hold groundwater at the old water-table depth.
 
-Not done yet (docs/STRETCH.md): water depth that rises gradually, draining when a dam is dug out, water running downhill over undug ground, current that pushes the player, boats and swimming in dug channels, the river itself as a deformable surface.
+Added 0.114.57: water rises 0.25 m per tick, drains when cut off from the river, and the river carries swimmers and boats downstream.
+
+Not done yet (docs/STRETCH.md): water running downhill over undug ground, boats and swimming in dug channels, the river itself as a deformable surface.
