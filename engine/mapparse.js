@@ -128,10 +128,21 @@ function parseText(text){
 /* 0.114.47: the test street (start screen, Test street tab). One street, flat, for trying a change before it goes into the main game. Only map tags that bring in the content chat's art:
    west side a house, a shop front and a tall apartment block; east side, across a river, a dense wood, a park and a field, with a footbridge over the river into the park.
    Nothing here is drawn by the engine's own art: every building, tree, bench, crop and bridge piece comes from the shaped packs. */
-var TEST_ST = {x0:-200, x1:250, y0:-200, y1:200};
+var TEST_ST = {x0:-430, x1:300, y0:-300, y1:300};
+/* the test sheet's ground (raw metres, x east, y south), in 2.5 m cells so the steep parts are crisp: flat by the street; the river in a real channel with a bank shelf at the height the waterways
+   pieces' lip stands (bed -0.9 m, shelf +0.5 m); a steep hill the hill road climbs; a mountain; a gorge 14 m deep across the field */
+function testSheetH(x, y){
+  var h = 0.4, dx = Math.abs(x - 30);
+  h += dx < 5.5 ? -0.9 : dx < 8.5 ? 0.5 : 0;
+  var r = Math.hypot(x + 170, y + 215); if (r < 42) h += 28*(1 - r/42)*(1 + 0.05*Math.sin(x/5)*Math.cos(y/6));
+  var m = Math.hypot(x + 300, y - 110)/130; if (m < 1) h += 85*Math.pow(1 - m, 1.25)*(1 + 0.12*Math.sin(x/9)*Math.cos(y/11));
+  var gx = Math.abs(x - 140), gy = y > 28 && y < 190 ? 1 : y >= 190 && y < 200 ? (200 - y)/10 : y > 18 && y <= 28 ? (y - 18)/10 : 0;
+  if (gy > 0 && gx < 8){ var dd = gx < 4 ? 1 : (8 - gx)/4; h -= 14*dd*gy; }
+  return h;
+}
 function testStreetElev(){
-  var u = 1/111320, v = 1/110540, cell = 10, cols = Math.round((TEST_ST.x1 - TEST_ST.x0)/cell) + 1, rows = Math.round((TEST_ST.y1 - TEST_ST.y0)/cell) + 1, d = new Int16Array(cols*rows);
-  for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){ var x = TEST_ST.x0 + i*cell, h = 0.4 - 3.2*Math.exp(-(x - 30)*(x - 30)/70); d[j*cols + i] = Math.round(h*10); }   /* flat, with the river's channel */
+  var u = 1/111320, v = 1/110540, cell = 2.5, cols = Math.round((TEST_ST.x1 - TEST_ST.x0)/cell) + 1, rows = Math.round((TEST_ST.y1 - TEST_ST.y0)/cell) + 1, d = new Int16Array(cols*rows);
+  for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++) d[j*cols + i] = Math.round(testSheetH(TEST_ST.x0 + i*cell, TEST_ST.y0 + j*cell)*10);
   return {s:-TEST_ST.y1*v, n:-TEST_ST.y0*v, w:TEST_ST.x0*u, e:TEST_ST.x1*u, cols:cols, rows:rows, d:b64of(new Uint8Array(d.buffer))};
 }
 function testStreetRaw(){
@@ -140,16 +151,33 @@ function testStreetRaw(){
   var poly = function(pts, tags){ var c = pts.map(function(p){ return LL(p[0], p[1]); }); c.push(c[0]); ways.push({c:c, tags:tags}); };
   var rect = function(x, y, w, h, tags){ poly([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], tags); };
   var line = function(pts, tags){ ways.push({c:pts.map(function(p){ return LL(p[0], p[1]); }), tags:tags}); };
-  line([[0, -190], [0, 190]], {highway:'residential', name:'Test Street'});
+  line([[0, -290], [0, 290]], {highway:'residential', name:'Test Street'});
   rect(-24, -64, 16, 14, {building:'house', name:'The house'});
   rect(-26, -30, 18, 20, {building:'yes', shop:'convenience', name:'Shop front'});
   rect(-30, 8, 22, 26, {building:'apartments', 'building:levels':'8', name:'Apartment block'});
-  line([[30, -190], [30, 190]], {waterway:'river', name:'Test River'});
-  poly([[44, -190], [250, -190], [250, -50], [44, -50]], {natural:'wood', name:'Dense forest'});
+  line([[30, -290], [30, 290]], {waterway:'river', name:'Test River'});
+  poly([[44, -290], [250, -290], [250, -50], [44, -50]], {natural:'wood', name:'Dense forest'});
   poly([[44, -46], [200, -46], [200, 24], [44, 24]], {leisure:'park', name:'Test Park'});
-  poly([[44, 28], [250, 28], [250, 190], [44, 190]], {landuse:'farmland', name:'Field'});
+  poly([[44, 28], [250, 28], [250, 290], [44, 290]], {landuse:'farmland', name:'Field'});
   line([[3.5, -12], [60, -12]], {highway:'footway', name:'Footbridge path'});
-  return {ways:ways, pois:pois, elev:testStreetElev(), spawn:LL(-3, -40), name:'Test Street'};
+  /* the test sheet: more of everything that needs checking. Buildings west of the street (the item wall stands at y 56 to 92) */
+  rect(-44, -150, 32, 22, {building:'school', amenity:'school', name:'School'});
+  rect(-30, -110, 14, 20, {building:'church', amenity:'place_of_worship', name:'Church'});
+  rect(-34, -260, 20, 16, {building:'yes', amenity:'fire_station', name:'Fire station'});
+  rect(-40, 100, 34, 26, {building:'hospital', amenity:'hospital', name:'Hospital'});
+  rect(-44, 140, 38, 26, {building:'warehouse', name:'Warehouse'});
+  rect(-24, 180, 14, 10, {building:'yes', amenity:'fuel', name:'Gas station'});
+  rect(-36, 200, 26, 18, {building:'yes', amenity:'police', name:'Police station'});
+  rect(-30, 230, 20, 14, {building:'yes', amenity:'restaurant', name:'Diner'});
+  rect(60, 60, 18, 12, {building:'barn', name:'Barn'});
+  rect(60, 110, 12, 10, {building:'house', name:'Farmhouse'});
+  /* the hill road: climbs the steep hill from the street (a steep street for the sunk-road kerbs) */
+  line([[0, -230], [-50, -229], [-100, -226], [-140, -218], [-170, -205]], {highway:'residential', name:'Hill Road'});
+  /* the gorge road: crosses the gorge on a bridge over dry ground */
+  line([[0, 100], [60, 100], [140, 100], [230, 100]], {highway:'residential', name:'Gorge Road'});
+  /* a gravel track through the wood and the mountain's foot */
+  line([[0, -270], [-120, -270], [-230, -170], [-250, -60]], {highway:'track', name:'Mountain track'});
+  return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, voxel:true, spawn:LL(-3, -40), name:'Test Street'};
 }
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }
 function DEMO_CK(x){ return 470 + 26*Math.sin(x/95) + 10*Math.sin(x/37); }

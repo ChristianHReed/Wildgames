@@ -326,7 +326,7 @@ function decodeElev(e){
 }
 function buildHeights(w, raw, lon0, lat0, kx, ky){
   w.hg = null; var E = decodeElev(raw.elev); if (!E) return;
-  var M = 400, wd = w.maxx - w.minx + 2*M, ht = w.maxy - w.miny + 2*M, cell = Math.max((window.QS && QS.hgCell) || 10, Math.ceil(Math.max(wd, ht)/1400)), cols = Math.ceil(wd/cell) + 1, rows = Math.ceil(ht/cell) + 1, d = new Float32Array(cols*rows);
+  var M = 400, wd = w.maxx - w.minx + 2*M, ht = w.maxy - w.miny + 2*M, cell = Math.max(raw.hgCell || (window.QS && QS.hgCell) || 10, Math.ceil(Math.max(wd, ht)/1400)), cols = Math.ceil(wd/cell) + 1, rows = Math.ceil(ht/cell) + 1, d = new Float32Array(cols*rows);
   var samp = function(x, y){
     var u = ((lon0 + x/kx) - E.w)/(E.e - E.w)*(E.cols - 1), v = (E.n - (lat0 - y/ky))/(E.n - E.s)*(E.rows - 1);
     u = Math.max(0, Math.min(E.cols - 1.001, u)); v = Math.max(0, Math.min(E.rows - 1.001, v)); var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*E.cols + i;
@@ -335,7 +335,7 @@ function buildHeights(w, raw, lon0, lat0, kx, ky){
   var z0 = samp(w.start.x, w.start.y), mn = 1e9, mx = -1e9;
   for (var j = 0; j < rows; j++) for (var i = 0; i < cols; i++){ var h = samp(w.minx - M + i*cell, w.miny - M + j*cell) - z0; d[j*cols + i] = h; if (h < mn) mn = h; if (h > mx) mx = h; }
   if (mx - mn < 0.3) return;
-  w.hg = {x0:w.minx - M, y0:w.miny - M, cell:cell, cols:cols, rows:rows, d:d, min:mn, max:mx};
+  w.hg = {x0:w.minx - M, y0:w.miny - M, cell:cell, cols:cols, rows:rows, d:d, min:mn, max:mx, vox:!!raw.voxel || /[?&]voxel/.test(location.search)};
 }
 /* height of the ground: the bare ground (hAt0, each grid square two flat triangles, the same ones that are drawn) plus what has been dug or filled (dig.js; DIGN is 0 until something has) */
 var DIGN = 0;
@@ -359,9 +359,13 @@ function roadOff(x, y, e){
   var l = SUNK && SUNK.get(gk(Math.floor(x/40), Math.floor(y/40))); if (!l) return 0; e = e || 0;
   for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return -ROAD_T; } return 0;
 }
+/* 0.114.51: voxel ground. Each grid square is one flat column whose top is the average of its four corners in 0.5 m steps (the same size as the digging blocks); terrTile draws the column and its side faces */
+var VQ = 0.5;
+function voxH(g, i, j){ var d = g.d, k = j*g.cols + i; return Math.round((d[k] + d[k + 1] + d[k + g.cols] + d[k + g.cols + 1])/4/VQ)*VQ; }
 function hAt0(x, y){
   var g = world.hg; if (!g) return 0;
   var u = (x - g.x0)/g.cell, v = (y - g.y0)/g.cell; u = u < 0 ? 0 : u > g.cols - 1.001 ? g.cols - 1.001 : u; v = v < 0 ? 0 : v > g.rows - 1.001 ? g.rows - 1.001 : v;
+  if (g.vox) return voxH(g, Math.floor(u), Math.floor(v));
   var i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j*g.cols + i, d = g.d, a = d[k], b = d[k + 1], c = d[k + g.cols], e = d[k + g.cols + 1];
   return fu + fv <= 1 ? a + (b - a)*fu + (c - a)*fv : e + (c - e)*(1 - fu) + (b - e)*(1 - fv);
 }
@@ -383,6 +387,11 @@ function bridgeScan(w){
     for (s = 0; s <= L + 3; s += 3){ var pt = roadPt(r, Math.min(s, L)), wet = s <= L && inWater(pt[0], pt[1], 0.4);
       if (wet && run < 0) run = s;
       if (!wet && run >= 0){ var e = s - 3; if (e - run >= 7 && e - run < 160){ var a = Math.max(0, run - 6), b = Math.min(L, e + 6), pa = roadPt(r, a), pb = roadPt(r, b); add(ri, a, b, hAt(pa[0], pa[1]) + 0.45, hAt(pb[0], pb[1]) + 0.45, 22, 1); } run = -1; } } });
+  /* 0.114.51: a road crossing a gorge goes over it on a bridge: a stretch where the ground falls more than 3.5 m below the highest ground within 45 m either way */
+  cand.forEach(function(ri){ var r = w.roads[ri], c = roadLen(r), L = c[c.length - 1], hs = [], n = Math.floor(L/3) + 1, k, q;
+    for (k = 0; k < n; k++){ var pt = roadPt(r, k*3); hs.push(hAt0(pt[0], pt[1])); }
+    var low = hs.map(function(h, k){ var mx = -1e9; for (var q2 = Math.max(0, k - 15); q2 <= Math.min(n - 1, k + 15); q2++) if (hs[q2] > mx) mx = hs[q2]; return mx - h > 3.5; }), run = -1;
+    for (k = 0; k <= n; k++){ var lw = k < n && low[k]; if (lw && run < 0) run = k; if (!lw && run >= 0){ var e = k - 1, a = Math.max(0, run*3 - 6), b = Math.min(L, e*3 + 6); if ((e - run)*3 >= 7 && (e - run)*3 < 160){ var pa = roadPt(r, a), pb = roadPt(r, b); add(ri, a, b, hAt(pa[0], pa[1]) + 0.45, hAt(pb[0], pb[1]) + 0.45, 22, 1); } run = -1; } } });
   /* 0.96.0: the map says which way goes over (builder 1.6 `structures`): an `overpass` entry has `w` over `u`, with the clearance `cl`. Pairs that have an entry are decided by it, not by the road class */
   var byWay = {}, told = {}; w.roads.forEach(function(r, ri){ if (r.wi !== undefined) byWay[r.wi] = ri; });
   (w.structures || []).forEach(function(e){ if (e.k !== 'overpass' && e.k !== 'underpass') return; var a = byWay[e.w], b = byWay[e.u]; if (a === undefined || b === undefined) return; told[a + ':' + b] = told[b + ':' + a] = 1;
@@ -485,7 +494,7 @@ function landModels(){
 }
 function waterwaysBuild(g){
   if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street) return; var w = world, M = landModels(); if (!M.bank_shelf_4 || !w.waterLines) return;
-  var Y0 = 0.05, put = function(nm, x, z, dx, dz, sx){ return stPut(g, M, nm, x, z, dx, dz, sx || 1, 0.55, Y0); };
+  var Y0 = 0.05, put = function(nm, x, z, dx, dz, sx){ return stPut(g, M, nm, x, z, dx, dz, sx || 1, 1, Y0); };
   var EAST = ['bank_shelf_4', 'bank_gravel_4', 'bank_roots_4', 'bank_shelf_4', 'bank_sand_4', 'bank_mud_4', 'bank_cut_clay_4', 'bank_gravel_4'],
       WEST = ['bank_gabion_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_stone_wall_4', 'bank_concrete_channel_4', 'bank_riprap_4', 'bank_shelf_4', 'bank_gabion_4'];
   var cross = []; w.roads.forEach(function(r){ if (r.kind !== 'path') return; var p = r.pts; w.waterLines.forEach(function(wl){ var q = wl.pts;
@@ -496,7 +505,7 @@ function waterwaysBuild(g){
       var ax = P[q], ay = P[q+1], L = Math.hypot(P[q+2] - ax, P[q+3] - ay); if (L < 1) continue; var ux = (P[q+2] - ax)/L, uy = (P[q+3] - ay)/L, nx = uy, ny = -ux;
       for (var u0 = 2; u0 < L; u0 += 4, run++){
         var cx = ax + ux*u0, cy = ay + uy*u0, near = cross.some(function(c){ return Math.hypot(c[0] - cx, c[1] - cy) < 8; }), h1 = hash(run, 5, 91), h2 = hash(run, 6, 92);
-        for (var si = 0; si < 2; si++){ var sd = si ? -1 : 1, bx = cx + nx*sd*(hw + 1.5), by = cy + ny*sd*(hw + 1.5), dx = ux*sd, dz = uy*sd, SQ = sd > 0 ? EAST : WEST, sc = 0.85 + hash(run, si, 93)*0.4;
+        for (var si = 0; si < 2; si++){ var sd = si ? -1 : 1, bx = cx + nx*sd*hw, by = cy + ny*sd*hw, dx = ux*sd, dz = uy*sd, SQ = sd > 0 ? EAST : WEST, sc = 0.85 + hash(run, si, 93)*0.4;
           if (near){ if (sd > 0) put('bank_landing_4', bx, by, dx, dz, 1); else put('bank_stairs_4', bx, by, dx, dz, 1); continue; }
           var nm = SQ[(run + si*3 + Math.floor(h1*3)) % SQ.length];
           if (sd < 0 && run % 17 === 5) nm = 'outfall_pipe_4'; else if (h2 < 0.07) nm = 'bank_slump_4';
@@ -517,9 +526,10 @@ function waterwaysBuild(g){
 /* 0.114.49: the wall of hand-held items on the test street: a brick wall from the barriers pack with every weapon in the held pack hung on it at reaching height.
    Each weapon is laid flat against the wall with its length (the pack's z) along the wall, at its true size */
 var BWM = null;
+function testMainRoad(w){ return w.roads.filter(function(r){ return r.kind === 'road' && r.hw === 'residential' && r.pts.length === 4 && Math.abs(r.pts[0] - r.pts[2]) < 1 && Math.abs(r.pts[1] - r.pts[3]) > 300; })[0]; }
 function rackData(w){
   if (w.rack) return; w.rack = []; if (typeof mapSrc === 'undefined' || !mapSrc || !mapSrc.street || !window.SHAPED || !SHAPED.held) return;
-  var RK = Object.keys(SHAPED.held.models.weapons), rd = w.roads.filter(function(r){ return r.hw === 'residential'; })[0], rx = rd ? rd.pts[0] - 11 : -121; w.rackX = rx;
+  var RK = Object.keys(SHAPED.held.models.weapons), rd = testMainRoad(w), rx = rd ? rd.pts[0] - 11 : -121; w.rackX = rx;
   RK.forEach(function(k, ki){ var col = ki % 11, row = Math.floor(ki/11); w.rack.push({fix:'rack', key:k, name:k.replace(/_/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); }), x:rx + 1.6, y:56 + col*1.7, h:1.0 + row*0.62, wx:rx + 0.45}); });
 }
 function rackBuild(g){
@@ -646,7 +656,7 @@ function blur(d, cols, rows, r){
 }
 function buildCover(w){
   var hg = w.hg, sub = 1, cell, x0, y0, cols, rows;
-  if (hg){ sub = hg.cell >= 12 && hg.cols*hg.rows*4 <= 2400000 ? 2 : 1;   /* 0.95.1: ground already finer than 12 m is not halved again */ cell = hg.cell/sub; x0 = hg.x0; y0 = hg.y0; cols = (hg.cols - 1)*sub + 1; rows = (hg.rows - 1)*sub + 1; }
+  if (hg){ sub = hg.cell >= 12 && !hg.vox && hg.cols*hg.rows*4 <= 2400000 ? 2 : 1;   /* 0.95.1: ground already finer than 12 m is not halved again */ cell = hg.cell/sub; x0 = hg.x0; y0 = hg.y0; cols = (hg.cols - 1)*sub + 1; rows = (hg.rows - 1)*sub + 1; }
   else { var M = 300; cell = 10; x0 = w.minx - M; y0 = w.miny - M; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1;
     while (cols*rows > 2400000){ cell *= 1.5; cols = Math.ceil((w.maxx - w.minx + 2*M)/cell) + 1; rows = Math.ceil((w.maxy - w.miny + 2*M)/cell) + 1; } }
   var n = cols*rows, BIG = 1e6, dev = new Float32Array(n).fill(BIG), wat = new Float32Array(n).fill(BIG), fm = new Float32Array(n), pk = new Uint8Array(n), fd = new Uint8Array(n);
@@ -702,6 +712,19 @@ function terrTile(ti, tj, lod){
     var x = g.x0 + i*g.cell, y = g.y0 + j*g.cell, o = (j*g.cols + i)*6, c = g.c;
     P.push(x, (fl ? 0 : hAt0(x, y)) - 0.03, y); C.push(c[o+3], c[o+4], c[o+5], 255); Tt.push(c[o+1]/255, c[o+2]/255, 45 + c[o]/255*1.2);
   };
+  var hg = world.hg;
+  if (hg && hg.vox && st === 1 && g.cols === hg.cols){   /* voxel ground: a flat top per column, and a wall wherever a neighbour is lower */
+    var cl = function(i, j, k, z){ var o = (j*g.cols + i)*6, c = g.c; P.push(g.x0 + i*g.cell, z, g.y0 + j*g.cell); C.push(c[o+3]*k, c[o+4]*k, c[o+5]*k, 255); Tt.push(c[o+1]/255, c[o+2]/255, 45 + c[o]/255*1.2); },
+        wl = function(x0, y0, x1, y1, za, zb, i, j){ var o = (j*g.cols + i)*6, c = g.c, r = c[o+3]*0.62, gg = c[o+4]*0.55, b = c[o+5]*0.5, q = [[x0, za, y0], [x1, za, y1], [x0, zb, y0], [x1, zb, y1], [x0, zb, y0], [x1, za, y1]];
+          for (var n = 0; n < 6; n++){ P.push(q[n][0], q[n][1], q[n][2]); C.push(r, gg, b, 255); Tt.push(0.9, 0.35, 45); } };
+    for (var j2 = tj*TT; j2 < (tj + 1)*TT && j2 + 1 < g.rows - 0; j2++) for (var i2 = ti*TT; i2 < (ti + 1)*TT && i2 + 1 < g.cols; i2++){
+      var H = voxH(hg, i2, j2) - 0.03; cl(i2, j2, 1, H); cl(i2 + 1, j2, 1, H); cl(i2, j2 + 1, 1, H); cl(i2 + 1, j2 + 1, 1, H); cl(i2, j2 + 1, 1, H); cl(i2 + 1, j2, 1, H);
+      var xe = g.x0 + (i2 + 1)*g.cell, ye = g.y0 + (j2 + 1)*g.cell, xs = g.x0 + i2*g.cell, ys = g.y0 + j2*g.cell;
+      if (i2 + 2 < g.cols){ var He = voxH(hg, i2 + 1, j2) - 0.03; if (He !== H) wl(xe, ys, xe, ye, Math.min(H, He), Math.max(H, He), i2, j2); }
+      if (j2 + 2 < g.rows){ var Hs = voxH(hg, i2, j2 + 1) - 0.03; if (Hs !== H) wl(xs, ye, xe, ye, Math.min(H, Hs), Math.max(H, Hs), i2, j2); }
+    }
+    return m;
+  }
   for (var j = tj*TT; j < (tj + 1)*TT && j + st < g.rows; j += st) for (var i = ti*TT; i < (ti + 1)*TT && i + st < g.cols; i += st){
     vx(i, j); vx(i + st, j); vx(i, j + st); vx(i + st, j + st); vx(i, j + st); vx(i + st, j);
   }
