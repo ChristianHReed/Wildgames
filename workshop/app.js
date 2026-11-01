@@ -19,6 +19,11 @@
   /* a design is a vehicle (the car editor) or a model (any other asset: see workshop/assets.js) */
   function isModel(){ return !!S.doc && S.doc.type === 'model'; }
   function isSound(){ return !!S.doc && S.doc.type === 'sound'; }
+  function dom(){ return (S.doc && M.domainOf(S.doc)) || 'land'; }
+  function isCraft(){ return !!S.doc && S.doc.type === 'vehicle' && dom() !== 'land'; }
+  var DOM_LABEL = {land:'Vehicle', air:'Aircraft', water:'Boat'};
+  var STN = window.AFTERSTREET_STATIONS || null, QS = (function(){ var o = {}; String(location.search || '').replace(/^\?/, '').split('&').forEach(function(kv){ var i = kv.indexOf('='); if (i > 0) o[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1)); }); return o; })();
+  var STATION = STN && STN[QS.station] && STN.list.indexOf(QS.station) >= 0 ? QS.station : null;
   function partNames(){ return isModel() ? Object.keys(S.doc.parts || {body:{}}) : ['body', 'bonnet', 'boot']; }
   function partOpts(){ return isModel() ? partNames().map(function(n){ return [n, n.replace(/_/g, ' ')]; }) : [['body', 'Body'], ['bonnet', 'Hood (opens)'], ['boot', 'Trunk lid (opens)']]; }
   var POINTC = {grip:'xff3b30', offhand:'xff8a30', seat:'x3b82ff', sit:'x3b82ff', saddle:'x3b82ff', thwart:'x3b82ff', hinge:'xffd23b', joint:'xffd23b', light:'xfff2b0', socket:'x35d07f', muzzle:'xff3b30', smoke:'xb0b0b0'};
@@ -58,7 +63,7 @@
     if (doc.type !== 'model' && doc.type !== 'sound' && doc.setup) M.ensureAxles(doc);
     S.doc = doc; S.sel = []; S.undo = []; S.redo = []; S.layer = 'car'; S.look = 'whole'; S.state = null; S.asset = null;
     $('docName').value = doc.name;
-    refresh(true); if (!keepView) fitView();
+    renderTools(); refresh(true); if (!keepView) fitView();
   }
   function uniqueId(base){ var d = drafts(), id = slug(base) || 'design', n = 2, b = id; while (d[id] && d[id] !== S.doc) id = b + '_' + n++; return id; }
   function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40); }
@@ -135,11 +140,14 @@
     return function(p, n){ var q = left ? [-p[0], p[1], -p[2]] : p, m = left ? [-n[0], n[1], -n[2]] : n; if (yaw){ q = ry(q); m = ry(m); } return [[q[0] + w[0], q[1] + w[1], q[2] + w[2]], m]; }; }
   /* where the wheels go: on the hubs at the ends of each axle block (older designs: the setup numbers) */
   function hubs(){ var A = M.axlesOf(S.doc), r = S.doc.setup.wheelR;
+    if (!A.length && dom() !== 'land') return [];
     if (!A.length) return S.doc.setup.axles.map(function(z){ return {z:z, track:S.doc.setup.track, y:r, steer:false}; });
     return A.map(function(a){ return {z:a.z, track:a.track, y:r, steer:a.steer}; }); }
   function groupBounds(g){ var pcs = []; S.doc.pieces.forEach(function(p){ if (p.g === g && !p.hidden) pcs = pcs.concat(nativesOf(p)); }); return M.boundsOf(pcs); }
   function openFn(p){
     if (S.layer !== 'car') return null;
+    if (p.g === 'part' && S.preview.doors && S.crig){ var R = S.crig, pose = S.cpose, memo = {};
+      return function(q, n){ var nm = M.partNameOf(p, q[0]); if (memo[nm] === undefined) memo[nm] = M.poseFn({rig:R}, nm, pose) || null; return memo[nm] ? memo[nm](q, n) : [q, n]; }; }
     if (p.g === 'bonnet' && S.preview.bonnet){ var b = groupBounds('bonnet'); if (b.ok) return hingeX([0, b.mx[1], b.mn[2]], -1.0); }
     if (p.g === 'boot' && S.preview.boot){ var t = groupBounds('boot'); if (t.ok) return hingeX([0, t.mx[1], t.mx[2]], 1.0); }
     return null;
@@ -157,7 +165,8 @@
     var tl = $('tools'); if (tl) tl.classList.toggle('hidden', isSound());
     if (isSound()){ ['solid','ghost','sel','selLines','pts','bones','person','shadow','planes','fx','grid'].forEach(function(k){ view.set(k, null); }); updateReadout(); drawWave(); return; }
     picks = [];
-    if (!isModel() && S.doc.setup) M.syncAxles(S.doc);   /* axles stay on the middle line at wheel height; only front/back moves */
+    if (!isModel() && S.doc.setup){ M.syncAxles(S.doc);   /* axles stay on the middle line at wheel height; only front/back moves */
+      S.crig = M.rigParts(S.doc); S.cpose = M.openPose(S.crig); }
     var solid = [], selM = [], ghost = [], lines = [], selIds = {}; S.sel.forEach(function(i){ selIds[i] = 1; });
     if (S.layer === 'look'){
       var A = asset(), L = D.LOOKS.filter(function(l){ return l.key === S.look; })[0] || D.LOOKS[0], pcs = [], wheel = A.model.wheel, drop = 0;
@@ -199,6 +208,11 @@
       if (S.onion && S.aClip && S.doc.frames[S.aClip] && S.doc.frames[S.aClip].length > 1){ var fr = S.doc.frames[S.aClip], pi = (S.aFrame - 1 + fr.length) % fr.length;
         S.doc.pieces.forEach(function(p){ ghost.push(skelMesh(trisOf(nativesOf(p), 'p:' + JSON.stringify(p)), p.g, fr[pi])); }); }
     }
+    var wpl = null;
+    if (isCraft() && dom() === 'water' && S.layer === 'car'){ var bu = M.buoyancyOf(S.doc), allB = M.boundsOf(S.doc.pieces.filter(function(q){ return !q.hidden && q.g !== 'wheel'; }).reduce(function(a, q){ return a.concat(nativesOf(q)); }, []));
+      if (bu && bu.waterlineCrewed != null && allB.ok){ var W2 = Math.max(2, (allB.mx[0] - allB.mn[0])*1.2), L2 = Math.max(3, (allB.mx[2] - allB.mn[2])*0.8), cz = (allB.mx[2] + allB.mn[2])/2;
+        wpl = trisOf([{s:'decal', p:[0, bu.waterlineCrewed, cz], v:[[-W2, 0, L2], [W2, 0, L2], [W2, 0, -L2], [-W2, 0, -L2]], n:[0, 1, 0], c:'x3a7aa8', both:true}], 'water:' + bu.waterlineCrewed + ':' + W2 + ':' + L2 + ':' + cz); } }
+    view.set('water', wpl ? {tris:wpl} : null, {order:6, alpha:0.38, depthWrite:false});
     view.set('solid', {tris:merge(solid)}, {order:1});
     view.set('ghost', ghost.length ? {tris:merge(ghost)} : null, {order:3, alpha:0.35, depthWrite:false});
     view.set('sel', selM.length ? {tris:merge(selM)} : null, {order:4, tint:[0.85, 0.45, 0.18, 0.38], offset:-1});
@@ -362,6 +376,13 @@
       if (S.layer !== 'state') {} /* addPiece pushed into ownerList */
       seat(p, at, n, !!h || x != null);
       made = [p];
+    } else if (kind.kind === 'job'){
+      /* a vehicle part: a block of a sensible size with its job set */
+      var T = JOB_TPL[kind.key] || ['box', [0.4, 0.4, 0.4]], jp = M.addPiece(S.doc, T[0], [0, 0, 0], Object.assign({g:'body', c:T[2] || S.brush, m:T[3] || M.guessMaterial(T[2] || S.brush), name:M.FUNCTIONS[kind.key].label.toLowerCase()}, T[1].length === 3 && T[0] !== 'ball' ? {d:T[1].slice()} : {scl:T[1].slice(3)}));
+      if (T[4]) T[4](jp);
+      M.setJob(jp, kind.key); seat(jp, at, n, !!h || x != null);
+      if (kind.key === 'room' || kind.key === 'hull' || kind.key === 'hitch' || kind.key === 'coupler' || kind.key === 'rotor' || kind.key === 'envelope'){ jp.pos[0] = 0; jp.mx = false; }
+      made = [jp];
     } else if (kind.kind === 'axle'){
       /* an axle goes under the car at the tapped front/back position; it sits at wheel height on the middle line */
       var nA = M.axlesOf(S.doc).length, ax = M.makeAxle(S.doc, r4(snapV(at[2])), {steer:false, driven:false, name:'axle ' + (nA + 1)});
@@ -413,6 +434,14 @@
   }
   function selectAll(){ S.sel = active().map(function(p){ return p.id; }); refresh(); }
 
+  /* ---------------------------------------------------------------- vehicle parts the toolbar offers, per domain, and their starting blocks */
+  var VEH_PARTS = {land:['axle', 'gearbox', 'room', 'door', 'hitch', 'coupler'], water:['room', 'door', 'hull', 'outboard', 'propeller', 'rudder', 'sail', 'oars'],
+    air:['room', 'door', 'rotor', 'tailrotor', 'propeller', 'wing', 'envelope', 'rudder', 'elevator', 'skid', 'axle']};
+  /* [shape, size or [1,1,1, scale x, y, z], colour, material, extra] */
+  var JOB_TPL = {room:['box', [1.4, 1.9, 2.0], 'x5a8ac8', 'sheet'], door:['box', [0.05, 1.9, 0.9], null, 'sheet'], hitch:['cyl', [0.9, 0.12, 0.9], 'underside', 'steel'], coupler:['cyl', [0.09, 0.12, 0.09], 'underside', 'steel'],
+    hull:['box', [1.3, 0.5, 3.4], 'x3a6a8a', 'sheet', function(p){ p.hidden = true; }], outboard:['box', [0.24, 0.7, 0.3], 'black', 'plastic'], propeller:['box', [1.2, 0.12, 0.04], 'black', 'wood'], rudder:['box', [0.05, 0.8, 0.45], null, 'sheet'],
+    sail:['box', [0.03, 3.2, 1.8], 'white', 'cloth'], oars:['box', [2.4, 0.04, 0.12], 'wood', 'wood'], rotor:['box', [8, 0.05, 0.26], 'black', 'steel'], tailrotor:['box', [0.03, 1.4, 0.14], 'black', 'steel'],
+    wing:['box', [9, 0.12, 1.6], null, 'sheet'], envelope:['ball', [1, 1, 1, 16, 16, 40], 'paint2', 'cloth'], elevator:['box', [2.6, 0.06, 0.3], null, 'sheet'], skid:['box', [0.08, 0.08, 2.4], 'underside', 'sheet', function(p){ p.mx = true; }]};
   /* ---------------------------------------------------------------- toolbar */
   var ICON = {
     box:'<svg viewBox="0 0 30 24"><path d="M6 8l9-4 9 4v9l-9 4-9-4z M6 8l9 4 9-4 M15 12v9" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
@@ -433,6 +462,23 @@
     quarter:'<svg viewBox="0 0 30 24"><path d="M4 20V10a10 10 0 0 1 10 10z M4 10l10-6a10 10 0 0 1 10 10l-10 6" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-linejoin="round"/></svg>',
     axle:'<svg viewBox="0 0 30 24"><path d="M7 12h16" stroke="#3d3029" stroke-width="2.4"/><ellipse cx="5" cy="12" rx="3" ry="7" fill="#57524c" stroke="#3d3029" stroke-width="1.3"/><ellipse cx="25" cy="12" rx="3" ry="7" fill="#57524c" stroke="#3d3029" stroke-width="1.3"/><rect x="12" y="9" width="6" height="6" rx="1" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.2"/></svg>',
     gearbox:'<svg viewBox="0 0 30 24"><circle cx="11" cy="12" r="6" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4" stroke-dasharray="2.2 1.2"/><circle cx="21" cy="9" r="4" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.4" stroke-dasharray="2 1"/><circle cx="11" cy="12" r="1.6" fill="#3d3029"/></svg>',
+    part:'<svg viewBox="0 0 30 24"><rect x="7" y="5" width="16" height="14" rx="2" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4"/><path d="M11 12h8M15 8v8" stroke="#3d3029" stroke-width="1.4"/></svg>',
+    room:'<svg viewBox="0 0 30 24"><path d="M5 8l10-4 10 4v10l-10 4-10-4z" fill="#cfe0f2" stroke="#3a6aa8" stroke-width="1.3" stroke-dasharray="2.5 1.5"/><path d="M13 21v-6h4v6" fill="#fff" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    door:'<svg viewBox="0 0 30 24"><path d="M8 3h11v18H8z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4"/><path d="M19 3l6 3v18l-6-3" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.2"/><circle cx="16" cy="12" r="1.2" fill="#3d3029"/></svg>',
+    hitch:'<svg viewBox="0 0 30 24"><ellipse cx="15" cy="12" rx="11" ry="5" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.4"/><path d="M15 12l-3-5h6z" fill="#3d3029"/></svg>',
+    coupler:'<svg viewBox="0 0 30 24"><path d="M4 6h22v5H4z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/><path d="M13 11h4v8h-4z" fill="#57524c" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    hull:'<svg viewBox="0 0 30 24"><path d="M3 8h24l-4 10H7z" fill="#cfe0f2" stroke="#3a6aa8" stroke-width="1.4" stroke-dasharray="2.5 1.5"/><path d="M1 14h28" stroke="#3a7aa8" stroke-width="1.6"/></svg>',
+    outboard:'<svg viewBox="0 0 30 24"><rect x="10" y="2" width="10" height="8" rx="2" fill="#57524c" stroke="#3d3029" stroke-width="1.3"/><path d="M14 10h2v10h-2z M10 19h10" stroke="#3d3029" stroke-width="1.5" fill="#57524c"/></svg>',
+    propeller:'<svg viewBox="0 0 30 24"><path d="M15 12c-2-6 2-10 2-10s2 6-2 10zM15 12c6-2 10 2 10 2s-6 2-10-2zM15 12c2 6-2 10-2 10s-2-6 2-10zM15 12c-6 2-10-2-10-2s6-2 10 2z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.1"/><circle cx="15" cy="12" r="2" fill="#3d3029"/></svg>',
+    rudder:'<svg viewBox="0 0 30 24"><path d="M10 3h4v18h-4z" fill="#57524c"/><path d="M14 4l11 3v12l-11 2z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/></svg>',
+    elevator:'<svg viewBox="0 0 30 24"><path d="M3 11h24v3H3z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/><path d="M5 15l20 0-2 4H7z" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    sail:'<svg viewBox="0 0 30 24"><path d="M12 2v20" stroke="#3d3029" stroke-width="1.6"/><path d="M13 3c8 5 10 11 10 16H13z" fill="#f6f1e6" stroke="#3d3029" stroke-width="1.3"/></svg>',
+    oars:'<svg viewBox="0 0 30 24"><path d="M4 20L22 6" stroke="#8a6a48" stroke-width="2"/><ellipse cx="24" cy="5" rx="3" ry="2" transform="rotate(-38 24 5)" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    rotor:'<svg viewBox="0 0 30 24"><path d="M2 9h26" stroke="#3d3029" stroke-width="2.2"/><path d="M15 9v8" stroke="#3d3029" stroke-width="2"/><rect x="11" y="15" width="8" height="5" rx="2" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    tailrotor:'<svg viewBox="0 0 30 24"><path d="M15 3v18M7 12h16" stroke="#3d3029" stroke-width="2"/><circle cx="15" cy="12" r="2.4" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    wing:'<svg viewBox="0 0 30 24"><path d="M2 12l13-3 13 3-13 2z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3" stroke-linejoin="round"/><path d="M13 6h4v12h-4z" fill="#57524c"/></svg>',
+    envelope:'<svg viewBox="0 0 30 24"><ellipse cx="15" cy="9" rx="13" ry="6" fill="#f6f1e6" stroke="#3d3029" stroke-width="1.3"/><path d="M11 15v4h8v-4" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.2"/></svg>',
+    skid:'<svg viewBox="0 0 30 24"><path d="M3 18h22c2 0 3-1 3-3" fill="none" stroke="#3d3029" stroke-width="2"/><path d="M9 18V9M20 18V9" stroke="#3d3029" stroke-width="1.6"/></svg>',
     prefab:'<svg viewBox="0 0 30 24"><path d="M5 8h9v9H5z M16 5h9v9h-9z M12 13h9v8h-9z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/></svg>'
   };
   function renderTools(){
@@ -442,9 +488,9 @@
     h += '<div class="grp">More blocks</div>';
     M.SHAPE_MORE.forEach(function(k){ var on = S.placing && S.placing.kind === 'shape' && S.placing.key === k;
       h += '<button class="tool' + (on ? ' on' : '') + '" data-add="' + k + '" title="Add a ' + M.SHAPES[k].label.toLowerCase() + '">' + ICON[k] + M.SHAPES[k].label + '</button>'; });
-    if (!isModel() && S.layer === 'car'){ h += '<div class="grp">Vehicle parts</div>';
-      [['axle', 'Axle', 'An axle: its wheels mount on its ends'], ['gearbox', 'Gearbox', 'Where the driveshaft leaves the engine']].forEach(function(v){ var on = S.placing && S.placing.kind === v[0];
-        h += '<button class="tool' + (on ? ' on' : '') + '" data-veh="' + v[0] + '" title="' + v[2] + '">' + ICON[v[0]] + v[1] + '</button>'; }); }
+    if (!isModel() && S.layer === 'car'){ h += '<div class="grp">' + {land:'Vehicle parts', air:'Aircraft parts', water:'Boat parts'}[dom()] + '</div>';
+      VEH_PARTS[dom()].forEach(function(k){ var on = S.placing && S.placing.key === k, lab = k === 'axle' ? (dom() === 'air' ? 'Gear' : 'Axle') : k === 'gearbox' ? 'Gearbox' : M.FUNCTIONS[k].label.replace(/ \(.*\)/, '').replace(/^Oars or paddles$/, 'Oars');
+        h += '<button class="tool' + (on ? ' on' : '') + '" data-veh="' + k + '" title="' + esc(M.FUNCTIONS[k] ? M.FUNCTIONS[k].hint : '') + '">' + (ICON[k] || ICON.part) + esc(lab) + '</button>'; }); }
     if (S.prefabs.length){ h += '<div class="grp">Prefabs</div>'; S.prefabs.forEach(function(pf){ var on = S.placing && S.placing.kind === 'prefab' && S.placing.key === pf.id;
       h += '<button class="tool' + (on ? ' on' : '') + '" data-pf="' + esc(pf.id) + '">' + ICON.prefab + esc(pf.name.slice(0, 12)) + '</button>'; }); }
     h += '<div class="grp">Build</div>';
@@ -459,7 +505,7 @@
   $('tools').addEventListener('click', function(e){
     var b = e.target.closest('button'); if (!b) return;
     if (b.dataset.add) return startPlacing({kind:'shape', key:b.dataset.add, label:M.SHAPES[b.dataset.add].label});
-    if (b.dataset.veh) return startPlacing({kind:b.dataset.veh, key:b.dataset.veh, label:b.dataset.veh === 'axle' ? 'Axle' : 'Gearbox'});
+    if (b.dataset.veh){ var vk = b.dataset.veh; return startPlacing({kind:vk === 'axle' || vk === 'gearbox' ? vk : 'job', key:vk, label:vk === 'axle' ? 'Axle' : vk === 'gearbox' ? 'Gearbox' : M.FUNCTIONS[vk].label}); }
     if (b.dataset.pf){ var pf = S.prefabs.filter(function(f){ return f.id === b.dataset.pf; })[0]; return startPlacing({kind:'prefab', key:pf.id, label:pf.name}); }
     var t = b.dataset.t;
     if (t === 'symx') S.sym.x = !S.sym.x;
@@ -481,12 +527,12 @@
       var bs = $('buildSel'); if (bs) bs.onchange = function(){ S.build = bs.value; manBoned = null; meshCache = {}; rebuildScene(); };
       return;
     }
-    var h = '<button class="sm ' + (S.layer === 'car' ? 'on' : 'alt') + '" data-l="car">Car</button><button class="sm ' + (S.layer === 'wheel' ? 'on' : 'alt') + '" data-l="wheel">Wheel</button>' +
-      '<button class="sm ' + (S.layer === 'look' ? 'on' : 'alt') + '" data-l="look">Damage</button>';
+    var h = '<button class="sm ' + (S.layer === 'car' ? 'on' : 'alt') + '" data-l="car">' + (dom() === 'land' ? 'Vehicle' : DOM_LABEL[dom()]) + '</button>' + (dom() === 'land' || M.axlesOf(S.doc).length ? '<button class="sm ' + (S.layer === 'wheel' ? 'on' : 'alt') + '" data-l="wheel">Wheel</button>' : '') +
+      (dom() === 'land' ? '<button class="sm ' + (S.layer === 'look' ? 'on' : 'alt') + '" data-l="look">Damage</button>' : '');
     if (S.layer === 'state') h += '<button class="sm on" data-l="state">Editing: ' + esc(stateLabel(S.state)) + '</button><button class="sm alt" data-l="car">Done</button>';
     $('layerBar').innerHTML = h;
     var p = '';
-    if (S.layer === 'car') p = tog('bonnet', 'Hood open') + tog('boot', 'Trunk open') + tog('steer', 'Steer') + tog('markers', 'Inside parts') + tog('person', 'Person') + tog('planes', 'Planes');
+    if (S.layer === 'car') p = (dom() === 'land' ? tog('bonnet', 'Hood open') + tog('boot', 'Trunk open') : '') + tog('doors', 'Doors open') + (M.axlesOf(S.doc).length ? tog('steer', 'Steer') : '') + tog('markers', 'Inside parts') + tog('person', 'Person') + tog('planes', 'Planes');
     else if (S.layer === 'look') p = '<select id="lookSel">' + D.LOOKS.map(function(l){ return '<option value="' + l.key + '"' + (l.key === S.look ? ' selected' : '') + '>' + l.label + '</option>'; }).join('') + '</select>';
     $('previewBar').innerHTML = p;
     var ls = $('lookSel'); if (ls) ls.onchange = function(){ S.look = ls.value; rebuildScene(); };
@@ -500,7 +546,7 @@
 
   /* ---------------------------------------------------------------- side panel */
   var TABS_CAR = [['piece', 'Piece'], ['car', 'Car'], ['paint', 'Paint'], ['damage', 'Damage'], ['check', 'Check']], TABS_MODEL = [['piece', 'Piece'], ['model', 'Model'], ['moves', 'Moves'], ['paint', 'Paint'], ['check', 'Check']], TABS_SKEL = [['piece', 'Piece'], ['anim', 'Animate'], ['model', 'Model'], ['paint', 'Paint'], ['check', 'Check']];
-  function renderTabs(){ $('tabs').innerHTML = (isSound() ? [['sound', 'Sound']] : isSkel() ? TABS_SKEL : isModel() ? TABS_MODEL : TABS_CAR).map(function(t){ return '<button class="' + (S.tab === t[0] ? 'on' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join(''); }
+  function renderTabs(){ if (!isModel() && !isSound() && (S.tab === 'damage' && dom() !== 'land')) S.tab = 'car'; $('tabs').innerHTML = (isSound() ? [['sound', 'Sound']] : isSkel() ? TABS_SKEL : isModel() ? TABS_MODEL : dom() !== 'land' ? [['piece', 'Piece'], ['car', DOM_LABEL[dom()]], ['paint', 'Paint'], ['check', 'Check']] : TABS_CAR.map(function(t){ return t[0] === 'car' ? ['car', 'Vehicle'] : t; })).map(function(t){ return '<button class="' + (S.tab === t[0] ? 'on' : '') + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join(''); }
   $('tabs').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; S.tab = b.dataset.tab; renderTabs(); renderPanel(); });
 
   /* a number field with - and + buttons, in the chosen units ('len'), degrees ('deg'), percent ('pct') or plain */
@@ -577,7 +623,7 @@
     if (sel.length > 1) return panelMany(sel);
     var p = sel[0], h = '<span class="stamp">' + esc(shapeName(p)) + '</span> <span class="muted">' + esc(p.name || p.id) + '</span>';
     h += '<div class="row"><label class="l">Name</label><input class="grow" type="text" data-k="name" value="' + esc(p.name || '') + '" placeholder="e.g. left door"></div>';
-    if (p.g !== 'wheel' && S.layer === 'car') h += '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g">' + partOpts().map(function(o){ return '<option value="' + o[0] + '"' + (p.g === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    if (p.g !== 'wheel' && p.g !== 'part' && S.layer === 'car') h += '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g">' + partOpts().map(function(o){ return '<option value="' + o[0] + '"' + (p.g === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
     if (p.fn === 'axle' && !isModel()){
       var ax1 = p.axle || {};
       h += '<div class="card"><h3>Axle</h3><div class="row"><label><input type="checkbox" data-k="asteer"' + (ax1.steer ? ' checked' : '') + '>Steers (its wheels turn)</label><label><input type="checkbox" data-k="adrive"' + (ax1.driven ? ' checked' : '') + '>Driven (the engine turns it)</label></div>' +
@@ -595,13 +641,29 @@
       '<div class="swatches">' + quickSwatches(p.c) + '</div>' +
       '<div class="row"><label><input type="checkbox" data-k="glow"' + (p.glow ? ' checked' : '') + '>Glows (lamps)</label></div></div>';
     h += '<div class="card"><h3>What it is</h3><div class="row"><label class="l">Material</label><select class="grow" data-k="m">' + Object.keys(M.MATERIALS).map(function(k){ return '<option value="' + k + '"' + ((p.m || M.guessMaterial(p.c)) === k ? ' selected' : '') + '>' + M.MATERIALS[k].label + '</option>'; }).join('') + '</select></div>' +
-      (p.g !== 'wheel' && !isModel() ? '<div class="row"><label class="l">Job</label><select class="grow" data-k="fn"><option value="">None</option>' + Object.keys(M.FUNCTIONS).map(function(k){ return '<option value="' + k + '"' + (p.fn === k ? ' selected' : '') + '>' + M.FUNCTIONS[k].label + '</option>'; }).join('') + '</select></div>' +
+      (p.g !== 'wheel' && !isModel() ? '<div class="row"><label class="l">Job</label><select class="grow" data-k="fn"><option value="">None</option>' + M.jobsFor(S.doc).concat(p.fn && M.jobsFor(S.doc).indexOf(p.fn) < 0 ? [p.fn] : []).map(function(k){ return '<option value="' + k + '"' + (p.fn === k ? ' selected' : '') + '>' + M.FUNCTIONS[k].label + '</option>'; }).join('') + '</select></div>' +
         (p.fn ? '<p class="muted">' + esc(M.FUNCTIONS[p.fn].hint) + '</p>' : '') +
-        '<div class="row"><label><input type="checkbox" data-k="hidden"' + (p.hidden ? ' checked' : '') + '>Inside part (not drawn in the game)</label></div>' : '') + '</div>';
+        '<div class="row"><label><input type="checkbox" data-k="hidden"' + (p.hidden ? ' checked' : '') + '>Inside part (not drawn in the game)</label></div>' +
+        (!p.fn || p.fn === 'seat' || p.fn === 'sleep' || p.fn === 'storage' ? '' : '') + (!p.fn ? '<div class="row"><label><input type="checkbox" data-k="fitting"' + (p.fitting ? ' checked' : '') + '>Furniture (allowed inside a room)</label></div>' : '') : '') + '</div>' + jobCard(p);
     if (S.layer !== 'state' && p.g !== 'wheel') h += '<div class="card"><h3>Symmetry</h3><div class="row"><label><input type="checkbox" data-k="mx"' + (p.mx ? ' checked' : '') + '>Mirror left / right</label><label><input type="checkbox" data-k="mz"' + (p.mz ? ' checked' : '') + '>Mirror front / back</label></div></div>';
     h += makeCard();
     h += actionsRow(1);
     return h;
+  }
+  /* settings for the vehicle jobs that have them */
+  function jobCard(p){
+    if (isModel() || !p.fn) return '';
+    var sel = function(k, L, cur){ return '<select class="grow" data-k="' + k + '">' + L.map(function(o){ return '<option value="' + o[0] + '"' + (cur === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; };
+    if (p.fn === 'door'){ var dd = p.door || {}; return '<div class="card"><h3>Door</h3><div class="row"><label class="l">Opens</label>' + sel('doorkind', M.DOOR_KINDS, dd.kind || 'swing') + '</div>' +
+      (dd.kind === 'roll' || dd.kind === 'slide' || dd.kind === 'ramp' ? '' : '<div class="row"><label class="l">Hinge</label>' + sel('doorhinge', M.HINGES, dd.hinge || 'front') + '</div>') +
+      '<p class="muted">Pieces with the same name open together as one door. Turn on <b>Doors open</b> below the view to check it. A door that touches a Room is a way in.</p></div>'; }
+    if (p.fn === 'hitch') return '<div class="card"><h3>Hitch</h3><div class="row"><label class="l">Type</label>' + sel('hitchtype', M.HITCHES, (p.hitch || {}).type || 'fifth') + '</div><p class="muted">A trailer with a matching coupling hooks on here: fifth wheel to kingpin, ball to tongue.</p></div>';
+    if (p.fn === 'coupler') return '<div class="card"><h3>Coupling</h3><div class="row"><label class="l">Type</label>' + sel('couptype', M.COUPLERS, (p.coupler || {}).type || 'kingpin') + '</div><p class="muted">Its bottom hooks onto the hitch: keep it at the same height as the tractor\'s hitch top.</p></div>';
+    if (p.fn === 'room'){ var R = (M.roomsOf(S.doc).filter(function(r){ return r.id === p.id; })[0]); if (!R) return '';
+      return '<div class="card"><h3>Room</h3><table>' + tr('Headroom', fmtLen(R.headroom) + (R.stand ? ' (stand up)' : R.crouch ? ' (crouch)' : ' (too low)')) + tr('Floor', Math.round(R.area*10.764) + ' sq ft, ' + Math.round(R.floor*100) + '% covered') +
+        tr('Way in', R.doors.length ? R.doors.map(function(k){ return k.replace(/_/g, ' '); }).join(', ') : R.open.length ? 'open ' + R.open.join(', ') : 'none') + tr('Mobile base', R.mobileBase ? R.baseSlots + ' spaces' : 'no') + '</table>' +
+        '<p class="muted">The box is the space people walk in, floor at its bottom. Stretch it to fill the inside; seats, beds, storage and furniture may sit in it.</p></div>'; }
+    return '';
   }
   function panelMany(sel){
     var h = '<span class="stamp">' + sel.length + ' pieces</span>';
@@ -650,10 +712,11 @@
   function colourLabel(c){ c = String(c).replace(/_D$/, ''); return {paint1:'Paint 1', paint2:'Paint 2', paint3:'Paint 3'}[c] || (M.isCustom(c) ? 'Your colour #' + c.slice(1) : c); }
 
   function panelCar(){
+    if (isCraft()) return panelCraft();
     var d = S.doc, s = d.setup, A = asset(), sp = A.spec, g = A.game;
-    var h = '<span class="stamp">Car</span>';
+    var h = '<span class="stamp">Vehicle</span>';
     h += '<div class="row"><label class="l">Name</label><input class="grow" type="text" data-k="docName" value="' + esc(d.name) + '"></div>';
-    h += '<div class="row"><label class="l">Kind</label><select class="grow" data-k="cls">' + [['car','Car'],['pickup','Pickup'],['van','Van'],['truck','Truck']].map(function(o){ return '<option value="' + o[0] + '"' + (d.cls === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="row"><label class="l">Kind</label><select class="grow" data-k="cls">' + M.CLASSES.land.map(function(o){ return '<option value="' + o[0] + '"' + (d.cls === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
     h += '<div class="row"><label class="l">Made by</label><input class="grow" type="text" data-k="author" value="' + esc(d.author || '') + '" placeholder="your name"></div>';
     h += '<div class="card"><h3>Wheels</h3>' +
       '<div class="row"><label class="l">Size across</label>' + num('wheel size', s.wheelR*2, 'len', function(v){ setup(function(st){ st.wheelR = r4(v/2); }); }, {min:0.2}) + '</div>' +
@@ -669,6 +732,7 @@
       '<table>' + tr('Drive', {FWD:'front-wheel drive', RWD:'rear-wheel drive', '4WD':'four-wheel drive', AWD:'all-wheel drive', none:'nothing driven'}[DT.layout]) + tr('Wheels', AX.length*2) + '</table>' +
       DT.issues.map(function(c){ return '<div class="msg ' + c[0] + '">' + esc(c[1]) + '</div>'; }).join('') +
       '<div class="row"><label><input type="checkbox" data-k="dshaft"' + (s.drawShaft === false ? '' : ' checked') + '>Draw the driveshaft and differentials in the game</label></div></div>';
+    h += insideCard(A) + couplingCard(A);
     h += '<div class="card"><h3>Load bed</h3><div class="row"><label><input type="checkbox" data-k="bed"' + (s.bed ? ' checked' : '') + '>Has an open load bed (pickups, flatbeds)</label></div>' +
       (s.bed ? '<div class="row"><label class="l">Floor height</label>' + num('bed y', s.bed.y, 'len', function(v){ setup(function(st){ st.bed.y = v; }); }) + '</div><div class="row"><label class="l">Middle</label>' + num('bed z', s.bed.z, 'len', function(v){ setup(function(st){ st.bed.z = v; }); }, {ax:'z'}) + '</div>' +
         '<div class="row"><label class="l">Size</label>' + num('bed width', s.bed.w, 'len', function(v){ setup(function(st){ st.bed.w = v; }); }, {ax:'x'}) + num('bed length', s.bed.d, 'len', function(v){ setup(function(st){ st.bed.d = v; }); }, {ax:'z'}) + '</div>' : '') + '</div>';
@@ -681,6 +745,42 @@
       '</table><p class="muted">Seats, range, cargo and lights come from the pieces you give a Job (Piece tab).</p></div>';
     h += '<div class="card"><h3>Salvage and build cost</h3><table>' + Object.keys(A.salvage).map(function(k){ return tr(k.replace(/_/g, ' '), A.salvage[k] + ' → ' + (A.buildCost[k] || '—')); }).join('') +
       '</table><p class="muted">Left: what taking it apart gives. Right: what building it from the design would cost (for the game to use).</p></div>';
+    return h;
+  }
+  /* walk-in rooms: what the game will let people do inside */
+  function insideCard(A){
+    var R = M.roomsOf(S.doc), h = '<div class="card"><h3>Inside</h3>';
+    if (!R.length) return h + '<p class="muted">No rooms. A <b>Room</b> (' + (dom() === 'land' ? 'Vehicle' : DOM_LABEL[dom()]) + ' parts) marks space people can walk into: the back of a box truck, a trailer, a cabin. With a door or an open side, players walk in when it is parked; a big one (5 ft 9 in of headroom, 43 sq ft) is a mobile base they can fill with beds, storage and benches.</p></div>';
+    h += '<div class="list">' + R.map(function(r){ return '<div class="it"><span class="nm">' + esc(r.name.replace(/_/g, ' ')) + ' <span class="muted">' + fmtLen(r.headroom) + ' tall · ' + Math.round(r.area*10.764) + ' sq ft · ' +
+      (r.walkIn ? (r.stand ? 'walk in' : 'crouch in') : 'no way in') + (r.mobileBase ? ' · mobile base, ' + r.baseSlots + ' spaces' : '') + '</span></span><button class="alt sm" data-a="selAxle" data-id="' + esc(r.id) + '">Select</button></div>'; }).join('') + '</div>';
+    return h + '<p class="muted">Doors touching a room are its way in; turn on <b>Doors open</b> to see them open.</p></div>';
+  }
+  function couplingCard(A){
+    var C = A.coupling; if (!C && S.doc.cls !== 'semi' && S.doc.cls !== 'trailer') return '';
+    var h = '<div class="card"><h3>Coupling</h3>';
+    if (!C) return h + '<p class="muted">' + (S.doc.cls === 'semi' ? 'Add a <b>Hitch</b> (fifth wheel) behind the cab.' : 'Add a <b>Coupling</b> (kingpin under the front, or a tongue).') + '</p></div>';
+    return h + '<table>' + (C.hitch ? tr('Hitch', ({fifth:'fifth wheel', ball:'tow ball', pintle:'pintle hook'})[C.hitch.type] + ', top ' + fmtLen(C.hitch.pos[1]) + ' up') : '') + (C.coupler ? tr('Coupling', C.coupler.type + ', ' + fmtLen(C.coupler.pos[1]) + ' up') : '') + '</table><p class="muted">A tractor\'s hitch and a trailer\'s coupling must match in type and height for the game to hook them up.</p></div>';
+  }
+  /* boats and aircraft */
+  function panelCraft(){
+    var d = S.doc, A = asset(), g = A.game, LBS = function(kg){ return Math.round(kg*2.20462).toLocaleString() + ' lb'; };
+    var h = '<span class="stamp">' + DOM_LABEL[dom()] + '</span>';
+    h += '<div class="row"><label class="l">Name</label><input class="grow" type="text" data-k="docName" value="' + esc(d.name) + '"></div>';
+    h += '<div class="row"><label class="l">Kind</label><select class="grow" data-k="cls">' + M.CLASSES[dom()].map(function(o){ return '<option value="' + o[0] + '"' + (d.cls === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    h += '<div class="row"><label class="l">Made by</label><input class="grow" type="text" data-k="author" value="' + esc(d.author || '') + '" placeholder="your name"></div>';
+    var ms = M.massOf(d);
+    if (A.water){ var W = A.water;
+      h += '<div class="card"><h3>On the water</h3><table>' + tr('Weight', LBS(ms.kg)) + tr('Floats', W.floats ? 'yes' : 'no: it sinks') +
+        (W.floats ? tr('Sits down (one aboard)', Math.round(W.draught*39.37) + ' in') + tr('Side above the water', Math.round(W.freeboard*39.37) + ' in') + tr('Carries', W.capacity + ' people') : '') + tr('Hull', W.guessed ? 'guessed from the body' : Math.round(W.volumeM3*35.3) + ' cu ft') + '</table>' +
+        '<p class="muted">The blue plane is the waterline with one person aboard. Mark the hull with a hidden <b>Hull</b> block filling the inside of it; an <b>Outboard</b> with a <b>Propeller</b> under it, a <b>Sail</b> or <b>Oars</b> move it. In the game it floats in water deeper than it sits down.</p></div>'; }
+    if (A.air){ var L = A.air;
+      h += '<div class="card"><h3>In the air</h3><table>' + tr('Weight with a pilot', LBS(L.needKg)) + tr('Lifts', LBS(L.liftKg)) + tr('To spare', LBS(Math.max(0, L.spare)) + (L.spare < 0 ? ' (too heavy)' : '')) +
+        (L.rotorR.length ? tr('Rotor', L.rotorR.map(function(r){ return fmtLen(r*2); }).join(', ') + ' across') : '') + (L.wingM2 ? tr('Wing', Math.round(L.wingM2*10.764) + ' sq ft') : '') + (L.gasM3 ? tr('Gas', Math.round(L.gasM3*35.3).toLocaleString() + ' cu ft') : '') + tr('Cruise', L.cruiseMph + ' mph') + '</table>' +
+        '<p class="muted">' + ({heli:'A helicopter lifts on its main rotor (about 3.7 lb per square foot of disc) and needs a tail rotor.', gyro:'A gyrocopter lifts on a free rotor and is pushed by a propeller.', plane:'A plane lifts on its wings at speed (about 12 lb per square foot) and needs a propeller or jet, an elevator and a rudder.', airship:'An airship floats on its gas (about 1 oz per cubic foot) and is pushed by propellers.'}[d.cls] || '') + ' Problems show on the Check tab.</p></div>'; }
+    if (M.axlesOf(d).length) h += '<div class="card"><h3>Landing gear</h3><div class="row"><label class="l">Wheel size</label>' + num('wheel size', d.setup.wheelR*2, 'len', function(v){ setup(function(st){ st.wheelR = r4(v/2); }); }, {min:0.1}) + '</div><p class="muted">Each <b>Gear</b> axle carries a pair of wheels; tick Steers on the nose gear.</p></div>';
+    h += insideCard(A);
+    h += '<div class="card"><h3>What the game will get</h3><table>' + tr('Seats', g.seats) + tr('Cargo', g.cargoSlots + ' slots') + tr('Sleeps', g.sleeps || '—') + tr('Size', A.size.map(fmtLen).join(' × ')) + '</table></div>';
+    h += '<div class="card"><h3>Salvage and build cost</h3><table>' + Object.keys(A.salvage).map(function(k){ return tr(k.replace(/_/g, ' '), A.salvage[k] + ' → ' + (A.buildCost[k] || '—')); }).join('') + '</table></div>';
     return h;
   }
   var sedanTris = 0;
@@ -1369,7 +1469,12 @@
     dark:function(t){ edit(function(p){ var b = p.c.replace(/_D$/, ''); p.c = t.checked ? b + '_D' : b; }); },
     glow:function(t){ edit(function(p){ if (t.checked) p.glow = true; else delete p.glow; }); },
     m:function(t){ if (t.value) edit(function(p){ p.m = t.value; p.mSet = true; }); },
-    fn:function(t){ edit(function(p){ if (t.value) p.fn = t.value; else delete p.fn; }); },
+    fn:function(t){ edit(function(p){ M.setJob(p, t.value || null); }, true); },
+    doorkind:function(t){ edit(function(p){ p.door = Object.assign({}, p.door, {kind:t.value}); }, true); },
+    doorhinge:function(t){ edit(function(p){ p.door = Object.assign({}, p.door, {hinge:t.value}); }, true); },
+    hitchtype:function(t){ edit(function(p){ p.hitch = {type:t.value}; }); },
+    couptype:function(t){ edit(function(p){ p.coupler = {type:t.value}; }); },
+    fitting:function(t){ edit(function(p){ if (t.checked) p.fitting = true; else delete p.fitting; }); },
     hidden:function(t){ edit(function(p){ if (t.checked) p.hidden = true; else delete p.hidden; }); },
     mx:function(t){ edit(function(p){ p.mx = t.checked; }); },
     mz:function(t){ edit(function(p){ p.mz = t.checked; }); },
@@ -1452,16 +1557,44 @@
   var STOCK = ['hatchback','sedan','wagon','suv','offroader','pickup','crew_pickup','flatbed','van','box_truck'];
   function library(){
     saveDraft();
-    var d = drafts(), ids = Object.keys(d).sort(function(a, b){ return (d[b].saved || 0) - (d[a].saved || 0); });
+    var d = drafts(), ids = Object.keys(d).filter(function(id){ return !STATION || STN.allows(STATION, d[id]) || id === S.doc.id; }).sort(function(a, b){ return (d[b].saved || 0) - (d[a].saved || 0); });
+    if (STATION) return stationLibrary(d, ids);
     var h = '<h2>Designs</h2><p>Your designs are kept in this browser. Export a pack to keep them on the drive or send them to a friend.</p>';
     h += '<div class="list">' + ids.map(function(id){ var x = d[id]; return '<div class="it"><input type="checkbox" class="pk" value="' + esc(id) + '"' + (id === S.doc.id ? ' checked' : '') + '><span class="nm">' + esc(x.name) + ' <span class="muted">' + (x.saved ? new Date(x.saved).toLocaleDateString() : '') + '</span></span>' +
       (id === S.doc.id ? '<span class="muted">open</span>' : '<button class="alt sm" data-m="open" data-id="' + esc(id) + '">Open</button>') + '<button class="alt sm" data-m="del" data-id="' + esc(id) + '">Delete</button></div>'; }).join('') + '</div>';
     h += '<div class="row" style="margin-top:12px"><button class="sm" data-m="exportSel">Export ticked as one pack</button><button class="alt sm" data-m="import">Import a pack file</button></div>';
-    h += '<div class="card"><h3>Start something new</h3><div class="row"><button class="alt sm" data-m="blank">Blank car</button>' + M.BLANK_KINDS.map(function(k){ return (k === 'creature' ? M.CREATURE_TEMPLATES.map(function(t){ return '<button class="alt sm" data-m="blankCreature" data-t="' + t + '">Creature: ' + esc(M.CREATURE_LABELS[t] || t) + '</button>'; }).join('') : '<button class="alt sm" data-m="blankKind" data-k="' + k + '">Blank ' + esc(k === 'sound' ? 'sound' : M.KINDS[k].label.toLowerCase()) + '</button>'); }).join('') + '</div><div class="row"><button class="sm" data-m="stockBrowser">Open any model in the game…</button></div><p class="muted">Or start from one of the design chat\'s cars (a copy; the game\'s own car is not changed):</p><div class="row">' +
+    h += '<div class="card"><h3>New vehicle</h3>' + startRows(['land', 'air', 'water']) + '<div class="row"><button class="alt sm" data-m="craftLib">Open a remade vehicle (walk-in trucks, semi and trailer, boats, aircraft)…</button></div></div>';
+    h += '<div class="card"><h3>Start something new</h3><div class="row">' + M.BLANK_KINDS.map(function(k){ return (k === 'creature' ? M.CREATURE_TEMPLATES.map(function(t){ return '<button class="alt sm" data-m="blankCreature" data-t="' + t + '">Creature: ' + esc(M.CREATURE_LABELS[t] || t) + '</button>'; }).join('') : '<button class="alt sm" data-m="blankKind" data-k="' + k + '">Blank ' + esc(k === 'sound' ? 'sound' : M.KINDS[k].label.toLowerCase()) + '</button>'); }).join('') + '</div><div class="row"><button class="sm" data-m="stockBrowser">Open any model in the game…</button></div><p class="muted">Or start from one of the design chat\'s cars (a copy; the game\'s own car is not changed):</p><div class="row">' +
       STOCK.map(function(n){ return '<button class="alt sm" data-m="stock" data-n="' + n + '">' + n.replace(/_/g, ' ') + '</button>'; }).join('') + '</div></div>';
     if (S.prefabs.length) h += '<div class="card"><h3>Prefabs</h3><div class="list">' + S.prefabs.map(function(pf){ return '<div class="it"><span class="nm">' + esc(pf.name) + ' <span class="muted">' + pf.pieces.length + ' pieces</span></span><button class="alt sm" data-m="pfdel" data-id="' + esc(pf.id) + '">Delete</button></div>'; }).join('') + '</div></div>';
     h += '<div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Close</button></div>';
     modal(h);
+  }
+  /* a row of start buttons per domain: one per class */
+  function startRows(doms){ return doms.map(function(dm){ return '<div class="muted" style="margin-top:6px">' + {land:'On land', air:'In the air', water:'On the water'}[dm] + '</div><div class="row" style="flex-wrap:wrap">' +
+    M.CLASSES[dm].map(function(c){ return '<button class="alt sm" data-m="blankCraft" data-d="' + dm + '" data-c="' + c[0] + '">' + esc(c[1]) + '</button>'; }).join('') + '</div>'; }).join(''); }
+  /* the library inside a station: only what this station makes */
+  function stationLibrary(d, ids){
+    var st = STN[STATION], h = '<h2>' + esc(st.label) + '</h2><p>' + esc(st.makes) + '. ' + esc(st.gives) + '</p>';
+    h += '<div class="list">' + (ids.length ? ids.map(function(id){ var x = d[id]; return '<div class="it"><span class="nm">' + esc(x.name) + '</span>' + (id === S.doc.id ? '<span class="muted">open</span>' : '<button class="alt sm" data-m="open" data-id="' + esc(id) + '">Open</button>') + '<button class="alt sm" data-m="del" data-id="' + esc(id) + '">Delete</button></div>'; }).join('') : '<p class="muted">No designs for here yet.</p>') + '</div>';
+    if (st.domain) h += '<div class="card"><h3>New</h3>' + startRows([st.domain]) + '<div class="row"><button class="alt sm" data-m="craftLib">Start from a remade one…</button></div>' + (st.domain === 'land' ? '<div class="row" style="flex-wrap:wrap">' + STOCK.map(function(n){ return '<button class="alt sm" data-m="stock" data-n="' + n + '">' + n.replace(/_/g, ' ') + '</button>'; }).join('') + '</div>' : '') + '</div>';
+    else if (STATION === 'workbench') h += '<div class="card"><h3>New</h3><div class="row"><button class="alt sm" data-m="blankKind" data-k="held">Weapon or tool</button><button class="alt sm" data-m="blankKind" data-k="item">Item</button><button class="alt sm" data-m="stockPack" data-n="held">Start from one in the game…</button></div></div>';
+    else if (STATION === 'wardrobe') h += '<div class="card"><h3>New</h3><div class="row"><button class="alt sm" data-m="stockPack" data-n="survivor">Start from clothes in the game…</button></div></div>';
+    h += '<div class="row" style="margin-top:12px"><button class="alt sm" data-m="import">Import a pack file</button><span class="sp"></span><button class="alt sm" data-m="close">Close</button></div>';
+    modal(h);
+  }
+  /* the vehicles remade with the build library (packs/workshop-crafts.js), opened as copies */
+  function craftLib(){
+    var box = $('modalBox'), show = function(){
+      var pk = (window.AFTERSTREET_PACKS || []).filter(function(p){ return p && p.id === 'workshop-crafts'; })[0];
+      if (!pk){ box.innerHTML = '<p>Could not load packs/workshop-crafts.js.</p><div class="row"><button class="alt sm" data-m="close">Close</button></div>'; return; }
+      var list = pk.assets.filter(function(a){ return a.source && (!STATION || STN[STATION].domain === (a.domain || 'land')); });
+      box.innerHTML = '<h2>Remade vehicles</h2><p>Built with the build library (workshop/build.js): wheels on axles, doors that open, rooms you walk into. Open a copy to change it.</p><div class="list">' +
+        list.map(function(a){ var g = a.game || {}; return '<div class="it"><span class="nm">' + esc(a.name) + ' <span class="muted">' + esc((M.CLASSES[a.domain || 'land'].filter(function(c){ return c[0] === a.cls; })[0] || ['', a.cls])[1]) + (g.mobileBase ? ' · mobile base' : g.walkIn ? ' · walk-in' : '') + '</span></span><button class="alt sm" data-m="openCraft" data-id="' + esc(a.id) + '">Open a copy</button></div>'; }).join('') +
+        '</div><div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Close</button></div>';
+    };
+    if ((window.AFTERSTREET_PACKS || []).some(function(p){ return p && p.id === 'workshop-crafts'; })) return show();
+    box.innerHTML = '<p>Loading…</p>'; var sc = document.createElement('script'); sc.src = 'packs/workshop-crafts.js'; sc.onload = sc.onerror = show; document.head.appendChild(sc);
   }
   /* every model of every pack the game has, opened as an editable copy */
   function stockBrowser(){
@@ -1498,6 +1631,11 @@
     open:function(b){ saveDraft(); setDoc(clone(drafts()[b.dataset.id])); closeModal(); },
     del:function(b){ if (b.dataset.sure !== '1'){ b.dataset.sure = '1'; b.textContent = 'Tap again to delete'; return; } var d = drafts(); delete d[b.dataset.id]; store.set('drafts', d); library(); },
     blank:function(){ saveDraft(); var d = M.blankDoc(); d.id = uniqueId('my_car'); d.name = 'My car'; setDoc(d); closeModal(); },
+    blankCraft:function(b){ saveDraft(); var d = M.blankCraft(b.dataset.d, b.dataset.c); d.id = uniqueId('my_' + b.dataset.c); setDoc(d); S.tab = 'car'; refresh(true); closeModal();
+      toast(b.dataset.d === 'land' ? 'A blank ' + (M.CLASSES.land.filter(function(c){ return c[0] === b.dataset.c; })[0] || ['', 'vehicle'])[1].toLowerCase() + ': two axles to start. Add a body, an engine and a seat.' : 'A starter ' + DOM_LABEL[b.dataset.d].toLowerCase() + ' that already ' + (b.dataset.d === 'water' ? 'floats' : 'flies') + ': change it as you like.'); },
+    craftLib:function(){ craftLib(); },
+    openCraft:function(b){ var pk = (window.AFTERSTREET_PACKS || []).filter(function(p){ return p && p.id === 'workshop-crafts'; })[0], a = pk && pk.assets.filter(function(x){ return x.id === b.dataset.id; })[0]; if (!a) return;
+      saveDraft(); var d = M.docFromAsset(a); d.id = uniqueId(a.id); setDoc(d); S.tab = 'car'; refresh(true); closeModal(); toast('Opened a copy of the ' + a.name + '. Turn on Doors open and Inside parts to see how it works.'); },
     blankKind:function(b){ saveDraft(); var k = b.dataset.k, d = M.blankOfKind(k, uniqueId('my_' + k)); d.name = 'My ' + (k === 'sound' ? 'sound' : M.KINDS[k].label.toLowerCase()); setDoc(d); S.tab = k === 'sound' ? 'sound' : k === 'creature' ? 'anim' : 'model'; refresh(true); closeModal(); },
     blankCreature:function(b){ saveDraft(); var d = M.blankCreature(b.dataset.t, uniqueId('my_' + b.dataset.t)); d.name = 'My creature'; setDoc(d); S.tab = 'anim'; refresh(true); closeModal(); toast('A starter creature: reshape its pieces, then pose its clips on the Animate tab.'); },
     stockBrowser:function(){ stockBrowser(); },
@@ -1595,12 +1733,53 @@
     else if (k === 'f' || k === 'F'){ fitView(true); }
   });
 
+  /* ---------------------------------------------------------------- stations: the Workshop opened from a workbench, car shop, hangar, dock or wardrobe in the game */
+  function blankForStation(){
+    if (STATION === 'carshop') return M.blankCraft('land', 'car'); if (STATION === 'hangar') return M.blankCraft('air', 'heli'); if (STATION === 'dock') return M.blankCraft('water', 'motorboat');
+    if (STATION === 'workbench') return M.blankOfKind('held', uniqueId('my_held'));
+    return null;
+  }
+  function stationSetup(){
+    if (!STATION) return;
+    var st = STN[STATION]; document.title = st.label + ' · AfterStreet Workshop';
+    var h1 = document.querySelector('header h1'); if (h1) h1.textContent = st.label;
+    var back = document.querySelector('header a.back'); if (back){ back.textContent = '◀ Back to the game'; back.href = QS['return'] || 'play.html'; }
+    [].slice.call(document.querySelectorAll('header a.back')).slice(1).forEach(function(a){ a.style.display = 'none'; });
+    var bb = $('bBuild'); if (bb){ bb.classList.remove('hidden'); bb.onclick = buildInGame; }
+  }
+  /* "Build in the game": check it, then hand the finished design to the game (the parent page if the Workshop is in a frame, else localStorage and back) */
+  function buildInGame(){
+    saveDraft();
+    if (!STN.allows(STATION, S.doc)) return modal('<h2>Not made here</h2><p>A ' + esc(STN[STATION].label.toLowerCase()) + ' makes ' + esc(STN[STATION].makes.toLowerCase()) + '. Open one from Designs.</p><div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Close</button></div>');
+    var A, C = [];
+    try { A = isModel() ? M.buildModelAsset(S.doc) : asset(); C = isModel() ? M.checkModel(S.doc, A) : M.check(S.doc, A); } catch (e){ return toast('Could not build it: ' + e.message); }
+    var bad = C.filter(function(c){ return c[0] === 'bad'; }), sz = A.size || null, fit = STN.fits(STATION, sz);
+    var cost = A.buildCost || (S.doc.item && S.doc.item.recipe) || (A.item && A.item.recipe) || {};
+    var h = '<h2>Build “' + esc(S.doc.name) + '”</h2>';
+    if (bad.length || !fit.ok){ h += '<p>It cannot be built yet:</p>' + bad.map(function(c){ return '<div class="msg bad">' + esc(c[1]) + '</div>'; }).join('') + (fit.ok ? '' : '<div class="msg bad">Too ' + fit.why.join(' and ') + ' for the ' + esc(STN[STATION].label.toLowerCase()) + '.</div>') +
+      '<div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Back to work</button></div>'; return modal(h); }
+    h += '<p>' + esc(STN[STATION].gives) + '</p><div class="card"><h3>It takes</h3><table>' + (Object.keys(cost).length ? Object.keys(cost).map(function(k){ return tr(k.replace(/_/g, ' '), cost[k]); }).join('') : tr('Nothing', '')) + '</table><p class="muted">The game takes these from your stores (or the nearby containers) when it is built.</p></div>' +
+      '<div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Not yet</button><button class="sm" data-m="sendBuild">Build it</button></div>';
+    modal(h);
+    MODAL.sendBuild = function(){
+      var pk = M.newPack({id:'station-' + slug(S.doc.id).replace(/_/g, '-'), name:S.doc.name, author:S.doc.author || ''}); pk.version = 2; pk.assets.push(A);
+      var msg = STN.handoff({station:STATION, stationId:QS.sid || '', name:S.doc.name, id:S.doc.id, kind:S.doc.type === 'model' ? S.doc.kind : 'vehicle', domain:M.domainOf(S.doc), size:sz, cost:cost, pack:pk});
+      if (window.parent && window.parent !== window){ window.parent.postMessage(msg, '*'); closeModal(); toast('Sent to the game.'); return; }
+      try { localStorage.setItem(STN.KEY, JSON.stringify(msg)); } catch (e){ closeModal(); toast('Could not hand it to the game (storage full): export a pack instead.'); return; }
+      closeModal(); toast('Built. Going back to the game…'); setTimeout(function(){ location.href = QS['return'] || 'play.html'; }, 700);
+    };
+  }
+
   /* ---------------------------------------------------------------- start */
   try { view = WSV.create($('cv'), hooks); }
   catch (e){ document.body.innerHTML = '<p style="padding:20px">The Workshop needs WebGL, which this browser has turned off: ' + esc(e.message) + '</p>'; return; }
   renderTools();
   var cur = store.get('current', null), all = drafts();
-  if (cur && all[cur]) setDoc(clone(all[cur]));
+  stationSetup();
+  if (STATION && !(cur && all[cur] && STN.allows(STATION, all[cur]))){ var sb = blankForStation(); if (sb){ sb.id = uniqueId(sb.id || 'my_design'); setDoc(sb); S.tab = sb.type === 'vehicle' ? 'car' : 'model'; refresh(true); } else { setDoc(M.blankDoc()); }
+    if (STATION === 'wardrobe'){ M.loadStock(['survivor'], 'assets/shaped/', function(){ try { var g = M.survivorIndex(SH).filter(function(x){ return /top|shirt/i.test(x.slot); })[0] || M.survivorIndex(SH)[0]; var gd = M.importGarment(SH, g.slot, g.body || null, g.choice); gd.id = uniqueId(gd.id); setDoc(gd); S.tab = 'model'; refresh(true); } catch (e){ console.error(e); } setTimeout(library, 200); }); }
+    else setTimeout(library, 300); }
+  else if (cur && all[cur]) setDoc(clone(all[cur]));
   else { var first = M.fromStock(PROPS, 'pickup'); first.id = uniqueId('my_pickup'); first.name = 'My pickup'; setDoc(first); setTimeout(function(){ toast('Welcome! This is a copy of the pickup to try things on. Designs → Blank car to start from nothing.'); }, 400); }
-  window.WORKSHOP = {S:S, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit, changed:changed, fitView:fitView};
+  window.WORKSHOP = {S:S, station:STATION, buildInGame:function(){ buildInGame(); }, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit, changed:changed, fitView:fitView};
 })();

@@ -40,12 +40,25 @@ How the building games do it: Space Engineers adds the wheel automatically when 
 
 Pack additions (all optional, older readers ignore them): vehicle `rig.wheels` lists every hub (left side first, back to front), `rig.drive {layout: FWD|RWD|4WD|AWD|none, axles:[{z, track, steer, driven}]}`, `game.drive` and `game.axles`; creature `info` gains `diet, eats[], temper, active, group [min, max], flies, water, tameable`.
 
+## Walk-in vehicles, trailers, boats, aircraft and build stations (1 November 2026)
+
+- **Three kinds of vehicle**: land, air and water, each with its classes (car to semi and trailer; helicopter, plane, gyrocopter, airship; rowboat to houseboat). Designs → New vehicle starts any of them; boats and aircraft start as working examples.
+- **Rooms**: a Room block marks walk-in space (the back of a box truck, a trailer, a cabin). The Workshop measures headroom, floor, the way in and what is in the way; one 5 ft 9 in tall with 43 sq ft of floor is a **mobile base** with floor spaces for beds, storage and benches.
+- **Moving parts**: doors (swing on any edge, roll up, slide, drop as a ramp), rotors, tail rotors, propellers, rudders, elevators, outboards, sails. **Doors open** below the view shows them open. Furniture inside a room can be ticked **Furniture**.
+- **Couplings**: fifth wheel, tow ball or pintle on a tractor; kingpin, tongue or ring on a trailer.
+- **Boats float and aircraft fly**: weight from the blocks, waterline and capacity from the Hull, lift from rotor, wings or gas. The boat's waterline shows as a blue plane.
+- **Build stations**: `workshop.html?station=workbench|carshop|hangar|dock|wardrobe` opens the Workshop for one kind of thing, with a **Build in the game** button that hands the design back to the game. See `docs/STATIONS.md`.
+- **Build library** for making vehicles from scripts, with tests: see `docs/VEHICLE_BUILD.md`.
+
 ## Files
 
 | File | What it is |
 | --- | --- |
 | `workshop.html` | the page and its styles |
 | `workshop/model.js` | the design format, shapes to game pieces, measurements, rig, vehicle kit mounts, jobs, salvage, packs (runs in Node too) |
+| `workshop/craft.js` | land, air and water vehicles: rooms, moving parts, couplings, weight, floating and lift, boat and aircraft exports |
+| `workshop/stations.js` | the build stations (shared with the game) |
+| `workshop/build.js`, `workshop/designs/`, `workshop/tools/test_crafts.js` | the build library, sample vehicles and their tests (docs/VEHICLE_BUILD.md) |
 | `workshop/damage.js` | the damage, wreck and burnt-shell generator (runs in Node too) |
 | `workshop/view.js` | the 3D view: plain WebGL 1, touch and mouse |
 | `workshop/app.js` | the editor |

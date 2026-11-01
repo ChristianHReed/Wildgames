@@ -16,13 +16,16 @@
      SHAPED.props.vehicleSpec[key]                                      measurements
      SHAPED.props.palette                                               plus the pack's own colours (named x + hex, so they never clash)
      SHAPED.vehiclekit.vehicles[key]                                    mounts and wheels for tyres, rims and bolt-on parts
-   and lists them in AfterstreetPacks.vehicles: [{key, name, cls, pack, paint, game, functions, salvage, buildCost, stats}].
+   and lists them in AfterstreetPacks.vehicles: [{key, name, cls, pack, paint, game, functions, salvage, buildCost, stats, interior, coupling, size}].
+  Moving parts (doors) are in models.vehicles[key].parts with vehicleRig[key].parts; walk-in rooms in the list entry's interior.
+  Boats from the Workshop go into SHAPED.boats (models, rig, seats, helm, buoy, draught: the boats pack's own tables) and
+  AfterstreetPacks.boats; aircraft into SHAPED.aircraft (models, rig, seats, pilot, wheels, flight) and AfterstreetPacks.aircraft.
    The game's own car code then treats a pack car like the stock ones: draw body + bonnet with the wheel at each rig point,
    paint with entry.paint as the paint1..3 override, switch to damage looks by health. AfterstreetPacks.prefabs holds shared prefabs. */
 (function(root){
   var P = root.AfterstreetPacks = root.AfterstreetPacks || {};
   P.FORMAT = 'afterstreet-pack'; P.VERSION = 2;
-  P.vehicles = P.vehicles || []; P.models = P.models || []; P.designs = P.designs || []; P.items = P.items || []; P.sounds = P.sounds || []; P.prefabs = P.prefabs || []; P.installed = P.installed || {}; P.errors = P.errors || [];
+  P.vehicles = P.vehicles || []; P.boats = P.boats || []; P.aircraft = P.aircraft || []; P.models = P.models || []; P.designs = P.designs || []; P.items = P.items || []; P.sounds = P.sounds || []; P.prefabs = P.prefabs || []; P.installed = P.installed || {}; P.errors = P.errors || [];
   function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'x'; }
   P.keyOf = function(pack, asset){ return 'pk_' + slug(pack.id) + '_' + slug(asset.id); };
 
@@ -96,18 +99,34 @@
           if (a.type === 'clips'){ var SC = SH.survivor; if (!SC || !a.clips){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no survivor pack for clips'); return; } SC.clips = SC.clips || {}; SC.clipAnchor = SC.clipAnchor || {}; P.clips = P.clips || []; Object.keys(a.clips).forEach(function(cn){ var ck = SC.clips[cn] ? 'pk_' + pack.id.replace(/[^a-z0-9]/gi, '_') + '_' + cn : cn; SC.clips[ck] = JSON.parse(JSON.stringify(a.clips[cn])); if (a.anchors && a.anchors[cn]) SC.clipAnchor[ck] = JSON.parse(JSON.stringify(a.anchors[cn])); P.clips.push({key:ck, name:cn, frames:a.clips[cn].length, packId:pack.id, note:(a.notes || {})[cn] || ''}); }); return; }
           if (a.type === 'look'){ var SV = SH.survivor; if (!SV || !a.look){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': no survivor pack for a look'); return; } SV.npcLooks = SV.npcLooks || {}; var lk = a.id; if (SV.npcLooks[lk]) lk = P.keyOf(pack, a); SV.npcLooks[lk] = JSON.parse(JSON.stringify(a.look)); SV.presets = SV.presets || []; SV.presets.push({name:a.name, look:{build:a.look.build, skin:a.look.skin, body:a.look.body, hair:a.look.hair, hc:a.look.hairColour, shirt:a.look.shirt, pants:a.look.pants, hat:a.look.hat, top:a.look.top, bot:a.look.bottoms, shoe:a.look.shoes, face:a.look.face, acc:a.look.acc, gx:(a.look.gear || [])[0] || '', ow:(a.look.worn || [])[0] || ''}});
             (P.looks = P.looks || []).push({key:lk, name:a.name, packId:pack.id, author:a.author || pack.author}); return; }
+          /* a boat from the Workshop: into the boats pack's tables under its pk_ key, so the game's boat code floats and drives it */
+          if (a.type === 'vehicle' && a.domain === 'water' && a.boat){ var BK = P.keyOf(pack, a); if (P.installed[BK]) return; var SB = SH.boats = SH.boats || {models:{}, rig:{}, clips:{}, notes:{}, seats:{}, helm:{}, buoy:{}, draught:{}, paint:{}, palette:{}, stats:{}};
+            ['models', 'rig', 'seats', 'helm', 'buoy', 'draught', 'paint', 'notes', 'stats', 'clips'].forEach(function(t){ SB[t] = SB[t] || {}; });
+            SB.models[BK] = a.boat.models; SB.rig[BK] = a.boat.rig; SB.seats[BK] = a.boat.seats; SB.helm[BK] = a.boat.helm; SB.buoy[BK] = a.boat.buoy; SB.draught[BK] = a.boat.draught; SB.notes[BK] = a.notes || ''; SB.stats[BK] = [a.stats.total, 0, 0];
+            for (var bc in (a.boat.palette || {})) SB.palette[bc] = a.boat.palette[bc];
+            (P.boats = P.boats || []).push({key:BK, name:a.name, cls:a.cls, pack:pack.id, game:a.game || {}, interior:a.interior || null, water:a.water || null, buildCost:a.buildCost || {}, size:a.size || null});
+            P.installed[BK] = true; return; }
+          /* an aircraft: a new aircraft table of the same shape (models of parts, rig, seats, pilot, wheels, kind, lift) */
+          if (a.type === 'vehicle' && a.domain === 'air' && a.aircraft){ var AK = P.keyOf(pack, a); if (P.installed[AK]) return; var SA = SH.aircraft = SH.aircraft || {models:{}, rig:{}, seats:{}, pilot:{}, wheels:{}, flight:{}, palette:{}};
+            SA.models[AK] = a.aircraft.models; SA.rig[AK] = a.aircraft.rig; SA.seats[AK] = a.aircraft.seats; SA.pilot[AK] = a.aircraft.pilot; SA.wheels[AK] = a.aircraft.wheels;
+            SA.flight[AK] = {kind:a.aircraft.kind, liftKg:a.aircraft.liftKg, massKg:a.aircraft.massKg, cruiseMph:a.aircraft.cruiseMph}; SA.rule = a.aircraft.rule;
+            for (var ac in (a.aircraft.palette || {})) SA.palette[ac] = a.aircraft.palette[ac];
+            (P.aircraft = P.aircraft || []).push({key:AK, name:a.name, cls:a.cls, pack:pack.id, game:a.game || {}, interior:a.interior || null, air:a.air ? {liftKg:a.air.liftKg, needKg:a.air.needKg, flies:a.air.flies} : null, buildCost:a.buildCost || {}, size:a.size || null});
+            P.installed[AK] = true; return; }
           if (a.type !== 'vehicle' || !a.model || !a.model.body) return;
           var key = P.keyOf(pack, a);
           if (P.installed[key]) return;
           var m = a.model;
           PR.models.vehicles[key] = {body:m.body, bonnet:m.bonnet || [], boot:m.boot || [], wheel:m.wheel, damage:m.damage || {}};
+          if (m.parts) PR.models.vehicles[key].parts = m.parts;   /* doors and other moving parts: rig.parts says how each moves */
           PR.vehicleRig[key] = a.rig; PR.vehicleSpec[key] = a.spec;
           if (a.wreck){ PR.models.vehicles[key + '_wreck'] = a.wreck; PR.vehicleRig[key + '_wreck'] = a.rigWreck; }
           if (a.burnt){ PR.models.vehicles[key + '_burnt'] = a.burnt; PR.vehicleRig[key + '_burnt'] = a.rigBurnt; }
           for (var c in (a.palette || {})) if (/^x[0-9a-f]{6}$/i.test(c)) PR.palette[c] = a.palette[c];
           if (K && K.vehicles && a.kit) K.vehicles[key] = a.kit;
           P.vehicles.push({key:key, name:a.name, cls:a.cls || 'car', pack:pack.id, packName:pack.name, author:a.author || pack.author, paint:a.paint || {},
-            game:a.game || {}, functions:a.functions || {}, salvage:a.salvage || {}, buildCost:a.buildCost || {}, stats:a.stats || {}});
+            game:a.game || {}, functions:a.functions || {}, salvage:a.salvage || {}, buildCost:a.buildCost || {}, stats:a.stats || {},
+            interior:a.interior || null, coupling:a.coupling || null, size:a.size || null});
           P.installed[key] = true;
         } catch (e){ P.errors.push('pack ' + pack.id + ', ' + a.id + ': ' + e.message); }
       });

@@ -434,6 +434,7 @@
   /* older designs kept the axles as numbers: make them axle blocks */
   M.ensureAxles = function(doc){
     if (doc.type && doc.type !== 'vehicle') return;
+    if (doc.domain && doc.domain !== 'land') return;
     if (doc.pieces.some(function(p){ return p.fn === 'axle'; })) return;
     var S = doc.setup, a = S.axles || [1.4, -1.4];
     if (doc.from && S.drawShaft === undefined) S.drawShaft = false;   /* a stock car opened unchanged exports exactly as it was */
