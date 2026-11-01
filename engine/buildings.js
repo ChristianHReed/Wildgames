@@ -58,7 +58,7 @@ var FRON = !!(window.SHAPED && SHAPED.build && SHAPED.buildings) && !/[?&]oldbld
 function frMod(name, cut){
   var key = name + (cut ? ':' + cut : ''); if (FRM[key]) return FRM[key]; var BK = SHAPED.buildings, pcs = BK.models.modules[name]; if (!pcs) return null;
   var out = []; pcs.forEach(function(q){
-    if (cut === 'win' && (q.c === 'glass' || q.c === 'glassLit' || q.c === 'glassCold' || (q.c === 'TRIM' && q.p[2] < 0 && q.s === 'decal'))) return;
+    if (cut === 'win' && q.c === 'TRIM' && q.p[2] < 0 && q.s === 'decal') return;
     if (cut === 'door' && (q.c === 'knob' || (q.c === 'TRIM' && q.s === 'box' && q.p[2] < -0.03))) return;
     var o = SHAPED.build([q], function(){ return [0, 0, 0]; }, null, {}), P0 = o.pos, glass = /^glass/.test(q.c), fr = name.slice(0, 5) === 'frame' || name.slice(0, 6) === 'corner', pl = name === 'plinth';
     for (var t = 0; t < P0.length; t += 9){ var ux = P0[t+3] - P0[t], uy = P0[t+4] - P0[t+1], uz = P0[t+5] - P0[t+2], vx = P0[t+6] - P0[t], vy = P0[t+7] - P0[t+1], vz = P0[t+8] - P0[t+2];
@@ -69,8 +69,8 @@ function frMod(name, cut){
       if (ny > 0.5 && cy > (fr ? 2.99 : 2.74)) continue;
       if (fr && (Math.abs(ny) > 0.5 || (Math.abs(nx) > 0.5 && Math.abs(cx) < 1.05))) continue;
       if (!fr && Math.abs(nx) > 0.5 && Math.abs(cx) > (pl ? 1.15 : 1.04)) continue;
-      out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, f:fr || pl || (q.c.slice(0, 4) === 'TRIM' && q.p[2] >= 0)}); } });
-  return FRM[key] = out;
+      out.push({p:P0.slice(t, t + 9), c:q.c, g:glass, pn:glass && cut === 'win', f:fr || pl || (q.c.slice(0, 4) === 'TRIM' && q.p[2] >= 0)}); } });
+  out.np = out.filter(function(t){ return !t.pn; }).length; return FRM[key] = out;
 }
 /* a piecewise-straight stretch through knots [[from, to], ...] (from 0 up), mirrored for negative values, carried on at slope 1 past the last knot */
 function frMap(K){ return function(v){ var a = Math.abs(v), sg = v < 0 ? -1 : 1, x0 = 0, y0 = 0; for (var i = 0; i < K.length; i++){ var k = K[i]; if (a <= k[0]) return sg*(y0 + (a - x0)*(k[1] - y0)/((k[0] - x0) || 1)); x0 = k[0]; y0 = k[1]; } return sg*(y0 + a - x0); }; }
@@ -86,9 +86,10 @@ function frStyle(ST, tint, rcol){
 /* put one module into the mesh: bay centre (cx, cz) on the wall line, e along the wall (bay x), o out of the wall, storey from y0; fx, fy bend it to the bay.
    Colours darken toward the building's corners and the ground (as the painted walls did), and that shading goes in alpha for the inside face */
 function frPut(m, M, FS, cx, cz, ex, ez, ox, oz, y0, fx, fy, ao, gid){
-  if (!M || !M.length) return; var P = m.p, Cc = m.c, T = m.t, CC = FS.cc || (FS.cc = {}), np = P.length, nc = Cc.length, nt = T.length, n3 = M.length*9;
-  P.length = np + n3; Cc.length = nc + M.length*12; T.length = nt + n3;
+  if (!M || !M.length) return; var P = m.p, Cc = m.c, T = m.t, CC = FS.cc || (FS.cc = {}), np = P.length, nc = Cc.length, nt = T.length, nn = M.np === undefined ? M.length : M.np, n3 = nn*9;
+  P.length = np + n3; Cc.length = nc + nn*12; T.length = nt + n3;
   for (var i = 0; i < M.length; i++){ var tr = M[i], col = CC[tr.c] || (CC[tr.c] = FS.col(tr.c)), q = tr.p, g = tr.g, ff = tr.f;
+    if (tr.pn){ if (m === NULLM) continue; var gm = m.gm || (m.gm = new Mesh()); for (var v = 0; v < 3; v++){ var lx = fx(q[v*3]), ly = y0 + fy(q[v*3+1]), lz = q[v*3+2] - 0.04; gm.p.push(cx + ex*lx + ox*lz, ly, cz + ez*lx + oz*lz); gm.c.push(col[0], col[1], col[2], 255); gm.t.push(gid, 0, 190); } continue; }
     for (var v = 0; v < 3; v++){ var lx = fx(q[v*3]), ly = y0 + fy(q[v*3+1]), lz = q[v*3+2] - 0.04, wx = cx + ex*lx + ox*lz, wz = cz + ez*lx + oz*lz;
       if (ff && lz < 0){ wx -= ox*lz; wz -= oz*lz; }   /* posts, beams and the plinth stop at the wall, so they do not stick into the rooms */
       P[np++] = wx; P[np++] = ly; P[np++] = wz;
@@ -198,11 +199,13 @@ function shell(b, m, lm){
             m.quad(ax0, yb, az0, ax0 + inx, yb, az0 + inz, bx0 + inx, yb, bz0 + inz, bx0, yb, bz0, rc, 255); m.quad(ax0, ya, az0, bx0, ya, bz0, bx0 + inx, ya, bz0 + inz, ax0 + inx, ya, az0 + inz, rc, 255);
             if (sill){ var ex0 = ux0*0.09, ez0 = uz0*0.09, sx0 = ax0 - ex0 - inx*0.6, sz0 = az0 - ez0 - inz*0.6, sx1 = bx0 + ex0 - inx*0.6, sz1 = bz0 + ez0 - inz*0.6, sc0 = [232,228,218];
               m.quad(sx0, ya, sz0, sx1, ya, sz1, sx1 + inx*0.6, ya, sz1 + inz*0.6, sx0 + inx*0.6, ya, sz0 + inz*0.6, sc0, 255); m.quad(sx0, ya - 0.09, sz0, sx1, ya - 0.09, sz1, sx1, ya, sz1, sx0, ya, sz0, sc0, 255); } };
+          var ulen = Math.hypot(xR - xL, zR - zL), inxG = function(){ return (zR - zL)/ulen*0.1; }, inzG = function(){ return -(xR - xL)/ulen*0.1; };
           var hk = lhg/3.2, piece = function(sa, sb, ya, yb){ if (sb - sa < 0.005 || yb - ya < 0.005) return; var fa = (sa - sL)/lenS, fb = (sb - sL)/lenS;
             m.wallT(xL + (xR - xL)*fa, zL + (zR - zL)*fa, xL + (xR - xL)*fb, zL + (zR - zL)*fb, ya, yb, (sa - l/2)/4, (sb - l/2)/4, 1 - ya/lhg, 1 - yb/lhg, 200 + tg, tint, 0, CAO(sa, l), CAO(sb, l), GAO(ya)); };
           var sc = s0;
           for (var hi = 0; hi < hl.length; hi++){ var H0 = hl[hi], ha = bc - 2 + H0[0] - H0[1], hb = bc - 2 + H0[0] + H0[1], ya = Math.max(y0, H0[2]*hk), yb = H0[3]*hk;
-            piece(sc, ha, y0, lhg); piece(ha, hb, y0, ya); piece(ha, hb, yb, lhg); sc = hb; reveal(ha, hb, ya, yb, H0[2] > 0.45); }
+            piece(sc, ha, y0, lhg); piece(ha, hb, y0, ya); piece(ha, hb, yb, lhg); sc = hb; reveal(ha, hb, ya, yb, H0[2] > 0.45);
+            if (m !== NULLM){ var gm = m.gm || (m.gm = new Mesh()), fa2 = (ha - sL)/lenS, fb2 = (hb - sL)/lenS, gx0 = xL + (xR - xL)*fa2 + inxG(), gz0 = zL + (zR - zL)*fa2 + inzG(), gx1 = xL + (xR - xL)*fb2 + inxG(), gz1 = zL + (zR - zL)*fb2 + inzG(); gm.quad(gx0, ya, gz0, gx1, ya, gz1, gx1, yb, gz1, gx0, yb, gz0, [150, 190, 205], 255); } }
           piece(sc, s1, y0, lhg);
         } }
       if (Ht > lhg + 0.01){ var yb = Math.max(y0, lhg); m.wallT(x0,z0,x1,z1, yb, Ht, u0, u1, 1 - (yb - lhg)/3.2, 1 - (Ht - lhg)/3.2, 200 + (win ? ST.u : ST.gp), tint, 0, CAO(s0, l), CAO(s1, l), 1); }
@@ -354,9 +357,9 @@ function manageChunks(budget){
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
-    if (c.g && FRON && c.frm !== wantF && (wantF || d > FRD + 40) && n < budget){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; }
-    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); FRNOW = wantF; for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } FRNOW = false; c.frm = wantF; c.g = upload(m); c.l = upload(lm); n++; } }
-    else if (d > R + 150){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; }
+    if (c.g && FRON && c.frm !== wantF && (wantF || d > FRD + 40) && n < budget){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; if (c.gg){ freeMesh(c.gg); c.gg = null; } }
+    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); FRNOW = wantF; for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } FRNOW = false; c.frm = wantF; c.g = upload(m); c.l = upload(lm); if (c.gg){ freeMesh(c.gg); c.gg = null; } c.gg = m.gm ? upload(m.gm) : null; n++; } }
+    else if (d > R + 150){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; if (c.gg){ freeMesh(c.gg); c.gg = null; } }
     if (!c.far){ if (d < QS.far + CH && nf < Math.min(budget*3, 90)){ var fm = new Mesh(); for (var q = 0; q < c.list.length; q++) shellFar(c.list[q], fm); c.far = upload(fm); nf++; } }
     else if (d > QS.far + CH + 300){ freeMesh(c.far); c.far = null; }
   }

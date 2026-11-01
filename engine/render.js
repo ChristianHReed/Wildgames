@@ -29,7 +29,7 @@ function initGL(){
     'if(we>0.004){vec4 l=samp(2.0,uv*1.07+0.53);float f=lay(we,l.a,1.0-m);c=mix(c,l.rgb,f);hh=mix(hh,l.a,f);}' +
     'if(wr>0.004){vec4 l=samp(3.0,uv*0.5+0.11);float f=lay(wr,l.a,m);c=mix(c,l.rgb,f);hh=mix(hh,0.4,f);}' +
     'return vec4(c,hh);}' +
-    'void main(){vec3 V=wp-cam;float d=length(V);' +
+    'uniform float gA;void main(){vec3 V=wp-cam;float d=length(V);' +
     'bool unlit=vc.a>0.6&&vc.a<0.9;bool emis=vc.a>0.25&&vc.a<0.6;bool back=(vc.a<0.25&&!gl_FrontFacing)||(vt.z>190.5&&vt.z<191.5);' +
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
     'vec3 col=vc.rgb;float glow=0.0;vec3 winc=vec3(1.0,0.8,0.48);float k=floor(vt.z+0.5);' +
@@ -51,13 +51,13 @@ function initGL(){
     'col=mix(col,vec3(1.0),hurtU);vec3 outc=col*min(lit,vec3(1.15));vec3 gl2=winc*glow*dark*0.85;' +
     /* the mood fog is darkness at night: lamp pools, a flashlight beam and lit windows show through it */
     'float mf=fogN.z*smoothstep(fogN.x,fogN.y,d)*(1.0-clamp(dot(lamp,vec3(0.33))*0.9+dark*spot*flash*0.8+(emis?0.6:0.0),0.0,0.85));' +
-    'float fog=max(max(smoothstep(fade.x,fade.y,d),1.0-exp(-pow(d*fogK,2.0))),mf);gl_FragColor=vec4(mix(outc,sky,fog)+gl2*(1.0-0.55*fog),1.0);}';
+    'float fog=max(max(smoothstep(fade.x,fade.y,d),1.0-exp(-pow(d*fogK,2.0))),mf);gl_FragColor=vec4(mix(outc,sky,fog)+gl2*(1.0-0.55*fog),gA);}';
   var mk = function(type, src){ var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
-  gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0);
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF','gA'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0); gl.uniform1f(U.gA, 1);
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); (typeof loadCreatures === 'function' && loadCreatures()); (typeof loadPeople === 'function' && loadPeople());
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
   dyn = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; vmb = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0};
@@ -244,6 +244,9 @@ function drawScene(cam, env){
     if (ch.g && cdx < NR && cdy < NR){ drawMesh(ch.g); if (cdx < 170 && cdy < 170) drawMesh(ch.l, gl.LINES); }
     else if (ch.far && cdx < FRR && cdy < FRR) drawMesh(ch.far);
   }
+  /* see-through window glass (0.114.48): drawn after the solid world, blended, and it does not write depth so what is behind still shows */
+  var gls = false; for (i = 0; i < world.gl.chunks.length; i++){ var gc = world.gl.chunks[i]; if (gc.gg && gc.g && Math.abs(gc.x - cx) < 150 && Math.abs(gc.y - cy) < 150){ if (!gls){ gls = true; gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(U.gA, 0.26); } drawMesh(gc.gg); } }
+  if (gls){ gl.depthMask(true); gl.disable(gl.BLEND); gl.uniform1f(U.gA, 1); }
   if (world.gl.det) world.gl.det.forEach(function(o){ if (o.g && Math.abs(o.x - cx) < QS.clutR*0.8 + 10 + DT && Math.abs(o.y - cy) < QS.clutR*0.8 + 10 + DT) drawMesh(o.g); });
   if (world.gl.trees) world.gl.trees.forEach(function(o){ if (o.g && Math.abs(o.x - cx) < FRR + 130 && Math.abs(o.y - cy) < FRR + 130) drawMesh(o.g); });
   if (world.fence && Math.abs(world.fence.x - cx) < 400 && Math.abs(world.fence.y - cy) < 400) drawMesh(world.fence.g);
