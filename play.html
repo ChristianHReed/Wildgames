@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Afterstreet">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#f5ead8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <style>
   /* Afterstreet "field journal" look, from design/afterstreet_handoff/design_tokens.json */
   :root{--cream:#f5ead8;--paper:#fbf3e4;--paper2:#fff8ee;--sand:#ebddc5;--sandDeep:#e0cfb2;--edge:#d9c7a8;--ink:#201e1d;--inkSoft:#3d3833;--muted:#6b5e50;--outline:#3d3029;
@@ -208,7 +208,17 @@
   #plbar .plb{display:flex;gap:6px;flex-wrap:wrap;justify-content:center} #plbar button{padding:7px 12px;font-size:13px;border-radius:999px} #plbar button:disabled{opacity:.45}
   #tRun{left:22px;bottom:208px;width:52px;height:52px} #tDuck{left:82px;bottom:208px;width:52px;height:52px}
   #touch button.on{background:var(--ochre);color:#fff}
-  /* 0.114.82: in a vehicle the on-foot buttons give way to the vehicle's own: brake, lights, view, get out (the stick steers and drives) */
+  /* 0.114.83 HUD pass (docs/HUD.md): a press state you can see round your thumb; clear of the iPhone home bar and notch; low needs pulse; the gun readout and the vehicle panel only when they matter */
+  #touch button{transition:transform .08s,box-shadow .08s,filter .08s}
+  #touch button:active,#touch button.pr{transform:scale(.9);filter:brightness(1.12);box-shadow:0 0 0 5px rgba(255,244,214,.45),0 1px 0 rgba(61,48,41,.35)}
+  #touch button,#stick{margin-bottom:env(safe-area-inset-bottom,0px)}
+  #vitals,#hud,#miniWrap,#hudMenu{margin-top:env(safe-area-inset-top,0px)}
+  #inv,#carHud{margin-bottom:env(safe-area-inset-bottom,0px)}
+  .vs.low .bar,.vmain.low .bar{animation:lowPulse .8s ease-in-out infinite alternate;box-shadow:0 0 0 2px rgba(214,72,52,.7)} .vs.low,.vmain.low span{color:#ffb4a4} @keyframes lowPulse{to{box-shadow:0 0 0 2px rgba(214,72,52,0)}}
+  #gunHud{transition:opacity .4s} #gunHud.idle{opacity:0}
+  .inveh #goalLine,.inveh #stats,.inveh #gunHud{display:none}
+  .touchmode.inveh #carHud{bottom:206px;width:176px;padding:6px 10px}
+  /* 0.114.83: in a vehicle the on-foot buttons give way to the vehicle's own: brake, lights, view, get out (the stick steers and drives) */
   #touch .mv{display:none} #touch.vmode .mv{display:block} #touch.vmode #tAtk,#touch.vmode #tJump,#touch.vmode #tMode,#touch.vmode .m1,#touch.vmode .m2,#touch.vmode #tTake,#touch.vmode #tRun,#touch.vmode #tDuck{display:none}
   #touch #tVBrake{right:22px;bottom:78px;width:84px;height:84px;background:var(--clay);color:#fff} #tVLight{right:30px;bottom:176px;width:62px;height:62px} #tVView{right:34px;bottom:248px;width:54px;height:54px;font-size:11px !important} #tVOut{left:22px;bottom:208px;width:72px;height:52px}
   .touchmode #help,.touchmode #lockhint{display:none !important}
@@ -460,7 +470,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.82</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.83</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -486,7 +496,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.82', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.83', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -654,7 +664,7 @@ function lightOn(){ return !!(P.light && inv.flashlight > 0 && P.fl > 0); }
 function radioOn(){ return inv.radio > 0 && P.rd > 0; }
 function reload(key, what){ if (P[key] > 0) return true; if (inv.battery > 0){ inv.battery--; P[key] = 1; feed('Put fresh batteries in the ' + what, ITEMS.battery[1]); updateHud(); return true; } return false; }
 function toggleLight(){
-  if (P.veh && (P.veh.t || P.veh.moto || P.veh.boat)){ P.veh.hl = !P.veh.hl; feed(P.veh.hl ? 'Headlights on' : 'Headlights off', '#cfd5db'); updateHud(); return; }   /* 0.114.82: in a vehicle the light key and button work its headlights */
+  if (P.veh && (P.veh.t || P.veh.moto || P.veh.boat)){ P.veh.hl = !P.veh.hl; feed(P.veh.hl ? 'Headlights on' : 'Headlights off', '#cfd5db'); updateHud(); return; }   /* 0.114.83: in a vehicle the light key and button work its headlights */
   if (!(inv.flashlight > 0)){ toast('You have no flashlight.', 2.5); return; }
   if (!P.light && !reload('fl', 'flashlight')){ toast('Your flashlight is dead. Find batteries.', 3); return; }
   P.light = !P.light; feed(P.light ? 'Flashlight on' : 'Flashlight off', '#cfd5db'); updateHud();
@@ -915,7 +925,7 @@ function gridTick(){
   if ((P.gridWas & 2) && !(gs & 2)){ feed('The water mains have failed.', '#ff8f7a'); toast('The taps have run dry for good. Toilet cisterns, rivers, ponds and rain are what is left.', 7); }
   P.gridWas = gs;
 }
-/* ---- 0.99.0 digging: (0.114.82: with bare hands too, three times slower) look down at open ground and hold E to dig a 1 m square half a metre deeper (it gives soil, and stone deeper down);
+/* ---- 0.99.0 digging: (0.114.83: with bare hands too, three times slower) look down at open ground and hold E to dig a 1 m square half a metre deeper (it gives soil, and stone deeper down);
    hold Shift and E to put soil back, 1 soil per half metre. Holes hold what walks in: a step up of more than 0.9 m stops you (2.1 m while jumping), so dig steps to get out ---- */
 var DIGT = {dig:true, name:'ground', x:0, y:0};
 function digTarget(){
@@ -932,7 +942,7 @@ function digText(){
 function digHold(dt){
   digActT = time;
   var fill = digFill(), dsec = 1.1; if (!fill && DIGT){ var sq0 = dgSquare(DIGT.x, DIGT.y), lo0 = 0, q0; for (q0 = 0; q0 < 8; q0 += 2) lo0 = Math.min(lo0, dgVal(sq0[q0], sq0[q0 + 1])); var dd0 = -lo0*0.5; dsec = dd0 < 0.5 ? 1.1 : dd0 < 1.5 ? 1.6 : dd0 < 3 ? 2.6 : dd0 < 4.5 ? 3.4 : 4.2; }   /* 0.109.0: the deeper layers are harder (the digging pack's soil[].seconds) */
-  prog += dt/((fill ? 0.7 : dsec)*(inv.shovel > 0 ? 1 : 3)); if (prog < 1) return; prog = 0;   /* 0.114.82: no shovel: you can dig with your hands, three times slower and more tiring */
+  prog += dt/((fill ? 0.7 : dsec)*(inv.shovel > 0 ? 1 : 3)); if (prog < 1) return; prog = 0;   /* 0.114.83: no shovel: you can dig with your hands, three times slower and more tiring */
   var c = dgSquare(DIGT.x, DIGT.y), out = [], i, v;
   if (fill){ if (!(inv.soil > 0)){ toast('You have no soil. Dig some first.', 2.5); return; }
     for (i = 0; i < 8; i += 2){ v = dgVal(c[i], c[i+1]); if (v >= DG_MAX){ toast('That is as high as it goes.', 2); return; } out.push(c[i], c[i+1], v + 1); }
@@ -1304,7 +1314,7 @@ function fixText(o){
   var left = o.taps - (world.edits.taps[o.b.id + ':' + o.ii] || 0); return left > 0 ? E + 'fill a bottle at the ' + o.name : 'The ' + o.name + ' is dry';
 }
 function useFix(o){
-  if (o.fix === 'rack'){   /* 0.114.82: the test street's wall of hand-held items: take one to try it */
+  if (o.fix === 'rack'){   /* 0.114.83: the test street's wall of hand-held items: take one to try it */
     if (GUNS[o.key]){ inv[o.key] = Math.max(1, inv[o.key] | 0); var am = GUNS[o.key].am; inv[am] = Math.max(inv[am] | 0, 24); P.gun = o.key; P.rl = null; P.gunT = 3; gunHud(); updateHud(); toast('You take the ' + o.name.toLowerCase() + ' with some ammunition.', 2.2); return; }
     var did = 'st-' + o.key.replace(/_/g, '-'); if (DESIGNS[did]){ P.items[did] = 1; P.weapon = did; updateHud(); toast('You take the ' + o.name.toLowerCase() + ' and hold it.', 2.2); return; }
     if (ITEMS[o.key]){ inv[o.key] = (inv[o.key] | 0) + (o.grp === 'ammo' ? 24 : 1); updateHud(); toast('You take the ' + o.name.toLowerCase() + '.', 2.2); return; }
@@ -1388,7 +1398,7 @@ function drawStones(m){ for (var i = 0; i < stones.length; i++){ var s = stones[
 function hearR(t){ return t.loud ? 45 : !t.mv ? 0 : (t.vis < 1 ? 2.5 : t.vis > 1 ? 18 : 7)*(t.sm || 1); }
 function senses(z, A, tg, dt, night){
   var i, t, dd;
-  if (mapSrc && mapSrc.street && !z.prov){ if (z.hurt > 0) z.prov = true; else { if (z.st === 2 || z.st === 1) z.st = 0; return; } }   /* 0.114.82: in the Test World an alien never notices you, hears you or chases you until you have hurt it */
+  if (mapSrc && mapSrc.street && !z.prov){ if (z.hurt > 0) z.prov = true; else { if (z.st === 2 || z.st === 1) z.st = 0; return; } }   /* 0.114.83: in the Test World an alien never notices you, hears you or chases you until you have hurt it */
   if (z.hurt > 0 && z.st !== 2){ var nb = null, nd = 60; for (i = 0; i < tg.length; i++){ t = tg[i]; dd = Math.hypot(t.x - z.x, t.y - z.y); if (!t.safe && dd < nd){ nd = dd; nb = t; } } if (nb) alert(z, nb); }
   z.pt = (z.pt || 0) - dt;
   if (z.pt <= 0){
@@ -2023,10 +2033,10 @@ function update(dt){
   if (P.climbL){ climbTick(dt); mf = ms = 0; }
   if (P.veh && P.veh.t && !P.sleep && !P.hide){ carDrive(P.veh, dt, mf, ms, !!(keys.Space || keys.HB)); mf = ms = 0; } else if (!P.veh) el('carHud').classList.add('hidden');
   var wasSwim = P.swim; P.swim = !P.roof && !P.climbL && !(P.veh && P.veh.boat) && wet(P.x, P.y) && !(DK && P.gy !== undefined && deckHit(P.x, P.y, P.gy, 0.4)); if (P.swim && !wasSwim) fxAdd('effects.water_splash', P.x, P.y, P.gy || 0, {life:0.5, s0:0.8, s1:1, up:0.1}); P.inside = P.roof || P.climbL ? null : buildingAt(P.x, P.y);
-  if ((P.swim || (P.veh && P.veh.boat)) && !P.inside && !P.roof && !P.climbL && world.waterLines && world.waterLines.length){ var cf = flowAt(P.x, P.y); if (cf){ var cs0 = P.swim ? 0.9 : 0.5; stepMove(P, cf[0]*cf[2]*cs0*dt, cf[1]*cf[2]*cs0*dt, 0.35); } }   /* 0.114.82: the river carries you downstream */
+  if ((P.swim || (P.veh && P.veh.boat)) && !P.inside && !P.roof && !P.climbL && world.waterLines && world.waterLines.length){ var cf = flowAt(P.x, P.y); if (cf){ var cs0 = P.swim ? 0.9 : 0.5; stepMove(P, cf[0]*cf[2]*cs0*dt, cf[1]*cf[2]*cs0*dt, 0.35); } }   /* 0.114.83: the river carries you downstream */
   setLvl(P); if (!P.inside) P.lvl = 0;
   var tgy = P.climbL ? climbH() : P.roof ? roofY(P.roof) : (world.hg ? (P.inside ? P.inside.base : baseAt(P.x, P.y, P.gy, (P.veh && P.veh.boat) || P.swim ? 0.4 : P.veh ? 1.4 : 0)) : P.inside ? 0 : groundAt(P.x, P.y)) + (P.inside ? lvlY(P.inside, P) : 0); if (P.veh) P.veh.gh = !P.inside && LASTDECK ? tgy : undefined;
-  if (!P.inside && !P.roof && !P.climbL && !LASTDECK && ((P.veh && P.veh.boat) || P.swim) && wet(P.x, P.y)) tgy = Math.max(tgy, waterY(P.x, P.y) - (P.swim ? 0.55 : 0));   /* 0.114.82: afloat, you ride the water's surface, not the river bed */
+  if (!P.inside && !P.roof && !P.climbL && !LASTDECK && ((P.veh && P.veh.boat) || P.swim) && wet(P.x, P.y)) tgy = Math.max(tgy, waterY(P.x, P.y) - (P.swim ? 0.55 : 0));   /* 0.114.83: afloat, you ride the water's surface, not the river bed */
   /* 0.99.1: stepping off the edge of a hole drops you: a fall of more than 2 m hurts (and from 3.5 m can break a leg) */
   if (!P.fall && DIGN && !P.inside && !P.climbL && !P.roof && !P.veh && !P.swim && P.gy !== undefined && P.gy - tgy > 0.9 && P.gy - tgy < 12){ P.fall = 0.1; P.fy0 = P.gy; }
   if (P.fall){ P.fall += 9.8*dt; P.gy -= P.fall*dt; if (P.gy <= tgy){ P.gy = tgy; P.fall = 0; if (P.fy0 !== undefined){ var fd = P.fy0 - tgy; P.fy0 = undefined; if (fd > 2.1){ P.hp -= (fd - 2)*11; P.cause = 'a fall'; P.hurt = 0.3; sfx('stone', P.x, P.y, 0.8, 0.6); P.noise = Math.max(P.noise || 0, 4); if (fd > 3.4 && !P.leg && Math.random() < 0.55) breakLeg(); } } } } else P.gy = P.gy === undefined || P.climbL || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
@@ -2042,7 +2052,7 @@ function update(dt){
     if (P.roof) roofMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp); else stepMove(P, (cy*mf - sy*ms)*sp, (sy*mf + cy*ms)*sp, V ? (V.t ? 1.0 : 0.6) : 0.35);
     if (!V) footVeh();
     if (V && V.boat && !wet(P.x, P.y)){ var bx1 = P.x, by1 = P.y; if (inWater(bx1, vy0, 0)){ P.y = vy0; } else if (inWater(vx0, by1, 0)){ P.x = vx0; } else { P.x = vx0; P.y = vy0; } }
-    if (V && V.boat){ var dkB = deckHit(P.x, P.y, 'hi'); if (dkB){ var wyB = waterY(P.x, P.y), kB = spBoat(V.boat), hB = Math.max(1.4, boatTop(kB) + 0.9); if (dkB.h - 0.8 - wyB < hB){ P.x = vx0; P.y = vy0; V.spd = 0; if (time > (V.lowT || 0)){ V.lowT = time + 3; toast('Too low to pass under.', 2); } } } }   /* 0.114.82: a deck too low for the boat and rider stops it */
+    if (V && V.boat){ var dkB = deckHit(P.x, P.y, 'hi'); if (dkB){ var wyB = waterY(P.x, P.y), kB = spBoat(V.boat), hB = Math.max(1.4, boatTop(kB) + 0.9); if (dkB.h - 0.8 - wyB < hB){ P.x = vx0; P.y = vy0; V.spd = 0; if (time > (V.lowT || 0)){ V.lowT = time + 3; toast('Too low to pass under.', 2); } } } }   /* 0.114.83: a deck too low for the boat and rider stops it */
     P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V){ if (!(P.jy > 0)) P.bob += (P.mvD || 0)*(gt === 2 ? 1.4 : gt === 0 ? 2.9 : 2.0); } else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
   pitTick(dt); surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.jy > 0 ? 0 : P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms)); camTick(dt);
@@ -2095,6 +2105,7 @@ function update(dt){
   } else prog = 0;
   var pr = el('prompt');
   if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Search to come out' : 'move or press E to come out'); }
+  else if (P.veh && document.body.classList.contains('touchmode')){ pr.classList.add('hidden'); }   /* 0.114.83: the Get out button does this on touch */
   else if (P.veh){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = (document.body.classList.contains('touchmode') ? 'Tap here to get ' : 'Press E to get ') + (P.veh.t ? 'out' : 'off'); }
   else if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
@@ -2242,7 +2253,7 @@ var hudKey = '', hudPeek = 0;
 function updateHud(){
   el('bTemp').style.width = (P.body + 100)/2 + '%'; el('bTemp').style.background = P.body < -55 ? '#5f8a9a' : P.body > 55 ? '#c67139' : '#7a8a5e';
   el('tTemp').textContent = P.body < -70 ? 'Freezing' : P.body < -55 ? 'Cold' : P.body > 85 ? 'Overheating' : P.body > 55 ? 'Hot' : 'Warmth'; el('vTemp').textContent = Math.round(P.feel) + '\u00b0F';
-  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !((P.mag && P.mag[P.gun] > 0) || inv[gunNow().am] > 0)); el('tGun').classList.toggle('nx', GORDER.filter(gunOwned).length < 2); el('tCar').classList.toggle('nx', !(carNear() || P.carry || carryTarget())); el('tCar').textContent = P.carry ? 'Put down' : carryTarget() && !carNear() ? 'Carry' : 'Trunk'; gunHud(); el('tLight').classList.toggle('nx', !(inv.flashlight > 0)); el('tRun').classList.toggle('on', !!P.run); el('touch').classList.toggle('vmode', !!P.veh); el('tVLight').classList.toggle('on', !!(P.veh && P.veh.hl)); el('tVBrake').classList.toggle('nx', !(P.veh && P.veh.t)); el('tDuck').classList.toggle('on', !!P.crouch);
+  awareHud(); el('bStam').style.width = P.stam + '%'; el('bStam').style.opacity = P.tired ? 0.45 : 1; el('tShoot').classList.toggle('nx', !((P.mag && P.mag[P.gun] > 0) || inv[gunNow().am] > 0)); el('tGun').classList.toggle('nx', GORDER.filter(gunOwned).length < 2); el('tCar').classList.toggle('nx', !(carNear() || P.carry || carryTarget())); el('tCar').textContent = P.carry ? 'Put down' : carryTarget() && !carNear() ? 'Carry' : 'Trunk'; gunHud(); el('tLight').classList.toggle('nx', !(inv.flashlight > 0) || !(P.light || dark > 0.25 || P.inside));   /* 0.114.83: the flashlight button shows when it is dark, indoors, or already on */ el('tRun').classList.toggle('on', !!P.run); document.body.classList.toggle('inveh', !!P.veh); el('gunHud').classList.toggle('idle', !(P.gunT > 0 || P.rl || (P.gun && keys.KeyF)) && !P.aim); ['Food', 'Water', 'Rest'].forEach(function(n){ var bb = el('b' + n), vs = bb && bb.parentElement && bb.parentElement.parentElement; if (vs) vs.classList.toggle('low', parseFloat(bb.style.width) < 22); }); var vm = el('bHp').parentElement.parentElement; vm.classList.toggle('low', P.hp < 30); el('touch').classList.toggle('vmode', !!P.veh); el('tVLight').classList.toggle('on', !!(P.veh && P.veh.hl)); el('tVBrake').classList.toggle('nx', !(P.veh && P.veh.t)); el('tDuck').classList.toggle('on', !!P.crouch);
   el('bHp').style.width = Math.max(0, P.hp) + '%'; el('bFood').style.width = P.hunger + '%'; el('bWater').style.width = P.thirst + '%';
   el('lowhp').style.opacity = P.hp < 25 ? Math.min(1, (25 - P.hp)/15) : 0; el('vHp').textContent = Math.max(0, Math.round(P.hp)); el('vFood').textContent = Math.round(P.hunger); el('bRest').style.width = Math.max(0, P.rest) + '%'; el('conds').innerHTML = condText().map(function(t){ return '<span' + (/^(Tired|Splinted|Open|Damp|Cold|Hot|Hungry|Thirsty)/.test(t) ? ' class="mild"' : '') + '>' + condIcon(t) + t + '</span>'; }).join(''); el('vWater').textContent = Math.round(P.thirst);
   var hrs = 8 + time/DAY*24, hour = Math.floor(hrs % 24), min = Math.floor((hrs % 1)*6)*10, pb = buildingAt(P.x, P.y);
@@ -2565,7 +2576,7 @@ function svParts(PK, look){
   (look.npc || []).forEach(function(k){ add(P0.npc && P0.npc[k]); });   /* a recruitable survivor's own pieces: hat, vest, bag, cane */
   if (look.gloves){ delete out.hand_l; delete out.hand_r; add(P0.gear.gloves); }
   if ((look.hat !== 'none' || (look.npc || []).some(function(k){ return k === 'wide_brim' || k === 'hood_up'; })) && out.Head) out.Head = out.Head.filter(function(q){ return q.hat !== 'hide'; });
-  var SHP = BTY && BTY.shape;   /* 0.114.82: a body type's shape for each bone (head, chest, hands...), clothes included so outfits keep fitting */
+  var SHP = BTY && BTY.shape;   /* 0.114.83: a body type's shape for each bone (head, chest, hands...), clothes included so outfits keep fitting */
   if (SHP && SHAPED.scaleAbout) for (var sb in SHP){ var pv = PK.bones[sb] && PK.bones[sb].pivot; if (pv && out[sb]) out[sb] = out[sb].map(function(q){ return SHAPED.scaleAbout(q, pv, SHP[sb]); }); }
   var bs = PK.builds[look.build]; if (bs[0] !== 1 || bs[1] !== 1) for (var b in out){ if (b === 'Head' || b === 'neck_01') continue; out[b] = out[b].map(function(q){ return SHAPED.scaleXZ(q, bs[0], bs[1]); }); }
   if (look.wpn && window.SHAPED.held){ var wp = look.wpn.split(':'), WS = SHAPED.held.models.weapons[wp[0]], gp = SHAPED.held.grip.pos, ws = WS && (WS[wp[1]] || WS.new);   /* a weapon rides the right hand: its origin on the grip point */
@@ -2972,7 +2983,7 @@ function render(){
   var sl = Math.hypot(f[0], f[2]), s = [-f[2]/sl, 0, f[0]/sl], u = [s[1]*f[2] - s[2]*f[1], s[2]*f[0] - s[0]*f[2], s[0]*f[1] - s[1]*f[0]];
   var e = [P.x, P.veh ? (P.veh.t ? 1.35 : P.veh.boat ? 1.35 : P.veh.mach ? 2.4 : 1.75) : (P.swim ? 0.85 : 1.65 + (P.eyeD || 0)), P.y]; e[1] += (P.gy || 0) + (P.jy || 0);
   var tp = VIEW === 1 && !P.cop && !P.hide;
-  var ceye = !tp && P.veh && P.veh.t ? cabinEye(P.veh) : null;   /* 0.114.82: driving a pack car that has a cabin: the camera sits at the driver's eye point inside it */
+  var ceye = !tp && P.veh && P.veh.t ? cabinEye(P.veh) : null;   /* 0.114.83: driving a pack car that has a cabin: the camera sits at the driver's eye point inside it */
   if (ceye){ var cq = tpt(P.veh, ceye[2], -ceye[0]); e = [cq.x, (P.gy || 0) + ceye[1] + (P.veh.tiltY || 0), cq.y]; }
   if (tp){   /* over the shoulder: back off behind the head, pulled in where a wall is in the way */
     var rf = P.roof || (P.climbL ? P.climbL.L.b : null), ib = rf ? null : buildingAt(P.x, P.y), hx = P.x + s[0]*0.45, hy = P.y + s[2]*0.45, dist = ib ? 2.2 : 3.2;
@@ -3001,7 +3012,7 @@ function render(){
   var sc = drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:FOVT}, {hour:hour0, wd:wd, fl:fl, wtype:wx.w, dark:dark, grid:gridOn() && !(P.inside && typeof disused === 'function' && disused(P.inside)), season:season(), lightOn:lightOn() || !!(P.veh && P.veh.hl && P.veh.fuel > 0) || !!(P.veh && P.veh.t && (carSt(P.veh).light || 0) >= 15 && dark > 0.3 && P.veh.fuel > 0), lights:near, now:now}), md = sc.md, sky = sc.sky;
   var vg = el('vig'); if (vg){ var vo = (md.vig*(P.inside ? 0.7 : 1)).toFixed(2); if (vg.style.opacity !== vo) vg.style.opacity = vo; }
   var m = new Mesh(), x, y, far = farGround(); m.gm = new Mesh();
-  m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400, bi = world.tg ? QS.far*0.8 : 0, fc = [228,236,214];   /* 0.114.82: a frame, not a sheet: inside the range where the ground is drawn there is no far plane, so it cannot show through lakes and rivers */
+  m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400, bi = world.tg ? QS.far*0.8 : 0, fc = [228,236,214];   /* 0.114.83: a frame, not a sheet: inside the range where the ground is drawn there is no far plane, so it cannot show through lakes and rivers */
   if (bi > 0){ var X0 = P.x - bq, X1 = P.x + bq, Y0 = P.y - bq, Y1 = P.y + bq, x0 = P.x - bi, x1 = P.x + bi, y0 = P.y - bi, y1 = P.y + bi;
     m.quad(X0, far, Y0, X1, far, Y0, X1, far, y0, X0, far, y0, fc, 255); m.quad(X0, far, y1, X1, far, y1, X1, far, Y1, X0, far, Y1, fc, 255);
     m.quad(X0, far, y0, x0, far, y0, x0, far, y1, X0, far, y1, fc, 255); m.quad(x1, far, y0, X1, far, y0, X1, far, y1, x1, far, y1, fc, 255); }
@@ -3050,7 +3061,7 @@ function render(){
   if (tp && (!P.veh || rv)){ var rdz = rv ? rideOf(rv) : null; m.yo = (P.gy || 0) + (P.jy || 0) + (rv && !rdz ? (rv.boat ? 0.1 : rv.moto ? 0.2 : 0.32) : rv && rv.boat ? -0.05 : 0); queuePerson(m, {x:P.x, y:P.y, yaw:rv ? rv.yaw : P.yaw, id:0, worn:P.worn, pack:true, mv:rv ? 0 : P.mv, vis:P.vis, sw:P.swing > 0 || dgNow, swk:P.swing > 0 ? 1 - P.swing/0.22 : dgNow ? Math.min(0.99, prog) : undefined, hp:P.hp, shk:P.shootCd > 0 ? 1 - P.shootCd/0.3 : undefined, lit:lightOn(), wpn:dgNow ? 'shovel' : heldWpn(), atk:dgNow ? 'attack_dig' : heldAtk(), ak:rdz ? rdz.ak : pAct()[1], rd:rdz ? rdz.rd : undefined,
       act:rdz ? rdz.clip : pAct()[0] || (time - (P.thrT || -9) < 0.5 ? 'throw' : P.shootCd > 0 ? 'shoot' : prog > 0 && target && target !== 'water' && !target.port ? (target.plant ? 'eat' : 'search') : null), swim:P.swim}, me.look, now); }
   m.yo = 0; upload(m, dyn); drawMesh(dyn); drawCreatures(); drawPeople(); drawNature();
-  if (m.gm && m.gm.p.length){ if (!GDYN) GDYN = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; upload(m.gm, GDYN);   /* 0.114.82: vehicle glass, see-through like the building windows (0.114.80: back on the world's own shader first; people and plants switch it) */
+  if (m.gm && m.gm.p.length){ if (!GDYN) GDYN = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; upload(m.gm, GDYN);   /* 0.114.83: vehicle glass, see-through like the building windows (0.114.80: back on the world's own shader first; people and plants switch it) */
     gl.useProgram(prog3); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(U.gA, 0.14); drawMesh(GDYN); gl.uniform1f(U.gA, 1); gl.depthMask(true); gl.disable(gl.BLEND); }
 
   /* held items */
@@ -4184,16 +4195,16 @@ function makeVehicles(saved){
       if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(cx, cy, 33) - 0.5)*0.5, fuel:0}); rc++; } return; }
     list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(cx, cy, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, cx, cy)}); rc++;
   });
-  /* 0.114.82: the test street has working cars parked along both kerbs, one of every kind the fleet has, so any change to cars can be looked at straight away */
+  /* 0.114.83: the test street has working cars parked along both kerbs, one of every kind the fleet has, so any change to cars can be looked at straight away */
   if (mapSrc && mapSrc.street){ var TS = [].concat((PACKK || []).filter(function(k){ return /afterstreet|workshop_crafts|workshop_sample/.test(k) && !/trailer|_ws$/.test(k) && !/crafts_(box_truck|semi_tractor)/.test(k); })), tn = 0;
     var mr = testMainRoad(w); [mr].forEach(function(r){ if (!r) return; var p = r.pts, y0 = p[1], y1 = p[p.length - 1], sx = p[0], lo = Math.min(y0, y1), hi = Math.max(y0, y1);
       for (var yy = lo + 10; yy < hi - 6; yy += 8, tn++){ var side = tn % 2 ? 1 : -1, bk3 = TS[tn % TS.length], x = sx + side*r.w*0.27, y = yy + (tn % 3)*2; if (Math.abs(y - w.spawn.y) < 7 || circ(x, y, 1.6)) continue;
         list.push({veh:true, id:'ts' + tn, t:1, name:'the ' + (PACKE[bk3] && PACKE[bk3].name ? PACKE[bk3].name.replace(/\s*\(remade\)/i, '').toLowerCase() : bk3.replace(/_/g, ' ')), dead:0, kind:bk3, hp:100, x:x, y:y, yaw:(side > 0 ? Math.PI/2 : -Math.PI/2) + (hash(tn, 3, 5) - 0.5)*0.08, fuel:fuelRoll(bk3, tn, 7)}); } }); }
   rackData(w);
-  /* 0.114.82: boats afloat in the Test World: small ones in the river, the larger ones in the lake the river runs into */
+  /* 0.114.83: boats afloat in the Test World: small ones in the river, the larger ones in the lake the river runs into */
   if (mapSrc && mapSrc.street){ var mr2 = testMainRoad(w), ox = mr2 ? mr2.pts[0] : 0, oy = mr2 ? mr2.pts[1] + 165 : 0, TB = [['kayak', 30, -140], ['rowboat', 31, -110], ['canoe', 29, -80], ['jon_boat', 31, -50], ['sailing_dinghy', 60, 100], ['bass_boat', 75, 92], ['pontoon_boat', 90, 104], ['runabout', 105, 94], ['fishing_boat', 120, 108], ['jet_ski', 135, 100], ['ferry_barge', 85, 120], ['pk_workshop_crafts_houseboat_ws', 115, 122], ['pk_workshop_crafts_jon_boat_ws', 50, 112], ['pk_workshop_crafts_houseboat_remade', 150, 112], ['pk_workshop_crafts_ferry_barge_remade', 70, 128], ['pk_workshop_crafts_pontoon_boat_remade', 130, 90], ['pk_workshop_crafts_sailing_dinghy_remade', 62, 112]];
     TB.forEach(function(b4, bi){ list.push({veh:true, id:'tb' + bi, t:0, boat:b4[0], name:'the ' + b4[0].replace(/^pk_workshop_crafts_/, '').replace(/_/g, ' '), x:b4[1] + ox, y:b4[2] + oy, yaw:Math.PI/2 + (bi % 3 - 1)*0.3, fuel:Math.round(CAN_M*0.5)}); });
-    var BX = Object.keys(SHAPED.boats.models).filter(function(k){ return !/wake|bow_wave|prop_wash|splash/.test(k) && !TB.some(function(t){ return t[0] === k; }); }), bj;   /* 0.114.82: every other boat in the game too: rafts and paddle craft in the river, the rest in the lake */
+    var BX = Object.keys(SHAPED.boats.models).filter(function(k){ return !/wake|bow_wave|prop_wash|splash/.test(k) && !TB.some(function(t){ return t[0] === k; }); }), bj;   /* 0.114.83: every other boat in the game too: rafts and paddle craft in the river, the rest in the lake */
     BX.forEach(function(k, bj2){ var small = /kayak|canoe|paddleboard|raft/.test(k), lx = small ? 30 + (bj2 % 2 ? 1.4 : -1.4) : 68 + (bj2 % 7)*14, ly = small ? -125 + (bj2 % 9)*10 + (bj2 % 9 > 4 ? 14 : 0) : 88 + (Math.floor(bj2/7) % 3)*14;
       if (small && Math.abs(ly + 12) < 8) ly -= 16; list.push({veh:true, id:'tx' + bj2, t:0, boat:k, name:'the ' + k.replace(/^pk_workshop_crafts_/, '').replace(/_/g, ' '), x:lx + ox, y:ly + oy, yaw:Math.PI/2 + (bj2 % 3 - 1)*0.3, fuel:Math.round(CAN_M*0.5)}); });
     /* the digging machines, in rows in the park, and every bike beside the street's far end */
@@ -4204,7 +4215,7 @@ function makeVehicles(saved){
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck', sck = typeof saved[sid][5] === 'string' && !tk ? saved[sid][5] : undefined; list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : sck, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
   if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
-  /* 0.114.82: cars only start on roads: a land vehicle whose middle is not on a drivable road is dropped (the player's own truck, saved vehicles and machines are kept) */
+  /* 0.114.83: cars only start on roads: a land vehicle whose middle is not on a drivable road is dropped (the player's own truck, saved vehicles and machines are kept) */
   list = list.filter(function(v){ if (!v.t || v.id === 'truck' || v.kind === 'truck' || (saved && saved[v.id]) || /^m_/.test(v.kind || '')) return true; return onDriveRoad(w, v.x, v.y); });
   w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = (+s2[3] || 0)*(saved._u ? 1 : CAN_M/60); if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); if (s2[7]){ var dh0 = deckHit(v.x, v.y, 'hi'); if (dh0) v.gh = dh0.h; } if (s2[8]){ v.cu = cleanCu(s2[8]); if (v.cu) carName(v); } } });
   bedChest();
@@ -4359,10 +4370,10 @@ function carObst(V, ux, uy){
     if (dh && dh.e > 0.5){ var over = Math.abs(dh.lat) - (dh.hw - 1.05); if (over > 0){ var ln = Math.hypot(dh.dx, dh.dy) || 1, sg = dh.lat < 0 ? -1 : 1; P.x -= sg*over*dh.dy/ln; P.y += sg*over*dh.dx/ln; hit = Math.max(hit, over); } } }
   return hit;
 }
-/* 0.114.82: the car's body, not just its middle, stops at fences, walls and buildings: three circles along its length are pushed out of them (the middle one was all there was) */
-/* 0.114.82: a person on foot cannot walk through a parked car, truck or wreck: the body is a box the length and width of the model, and the walker is pushed out along the nearer side */
+/* 0.114.83: the car's body, not just its middle, stops at fences, walls and buildings: three circles along its length are pushed out of them (the middle one was all there was) */
+/* 0.114.83: a person on foot cannot walk through a parked car, truck or wreck: the body is a box the length and width of the model, and the walker is pushed out along the nearer side */
 function cabinEye(v){ var pe = PACKE[baseKind(carKind(v))], pts = pe && pe.points, i; if (!pts) return null; for (i = 0; i < pts.length; i++) if (pts[i].name === 'cabin.eye' && pts[i].pos) return pts[i].pos; return null; }
-/* 0.114.82: the plane drawn beyond the ground's draw range sits just under the ground at that range, not at the lowest point of the whole map (a deep lake or gorge put it metres down, and the edge of the ground showed as a cliff with a second ground far below) */
+/* 0.114.83: the plane drawn beyond the ground's draw range sits just under the ground at that range, not at the lowest point of the whole map (a deep lake or gorge put it metres down, and the edge of the ground showed as a cliff with a second ground far below) */
 var FARG = {t:-9, y:0, k:''}, GDYN = null;
 function farGround(){
   if (!world.tg) return 0; var key = Math.round(P.x/40) + ',' + Math.round(P.y/40); if (FARG.k === key && time - FARG.t < 3) return FARG.y;
@@ -4385,7 +4396,7 @@ function footVeh(){
     P.x += c*a - s*b; P.y += s*a + c*b; }
 }
 function boatTop(K){ return K && K.B ? K.B.h || 0 : 0; }
-/* 0.114.82: a vehicle's real footprint: front and back ends measured from its model (many are longer at one end: an excavator's arm, a crane's boom, a semi's cab), width clamped so mirrors do not count */
+/* 0.114.83: a vehicle's real footprint: front and back ends measured from its model (many are longer at one end: an excavator's arm, a crane's boom, a semi's cab), width clamped so mirrors do not count */
 var VBOX = {};
 function vehBox(k){
   if (VBOX[k]) return VBOX[k]; var M = VMOD[k], b = {x0:-2.1, x1:2.1, hw:0.95};
@@ -4410,7 +4421,7 @@ function carDrive(V, dt, thr, str, hb){
   if (vs > top) vs = Math.max(top, vs - 10*dt); if (vs < -Math.max(2, top*0.28)) vs = Math.min(-Math.max(2, top*0.28), vs + 10*dt);
   V.sw += (Math.max(-1, Math.min(1, str)) - V.sw)*Math.min(1, dt*7);
   var ang = V.sw*0.62/(1 + Math.abs(vs)/9), rate = vs/2.7*Math.tan(ang)*(hb && Math.abs(vs) > 5 ? 1.5 : 1);
-  var lkO = Math.atan2(Math.sin(P.yaw - V.hd), Math.cos(P.yaw - V.hd)); lkO = Math.max(-2.4, Math.min(2.4, lkO));   /* 0.114.82: the driver can turn their head; the look keeps its angle to the car as it turns */
+  var lkO = Math.atan2(Math.sin(P.yaw - V.hd), Math.cos(P.yaw - V.hd)); lkO = Math.max(-2.4, Math.min(2.4, lkO));   /* 0.114.83: the driver can turn their head; the look keeps its angle to the car as it turns */
   V.hd += rate*dt; V.yaw = V.hd; P.yaw = V.hd + lkO; V.fuel = Math.max(0, V.fuel - dt*3);
   var d = vs*dt, ux = Math.cos(V.hd), uy = Math.sin(V.hd), x0 = P.x, y0 = P.y;
   if (Math.abs(d) > 0.0005){
@@ -4489,12 +4500,12 @@ function vehMoved(v, dx, dy, dt){
   if (v.t){ v.fuel = Math.max(0, v.fuel - d); P.noise = Math.max(P.noise, 1); for (var i = 0; i < zombies.length; i++){ var z = zombies[i], zx = z.x - P.x, zy = z.y - P.y, zd = Math.hypot(zx, zy) || 0.001; if (zd < 1.3 + AK[z.k].r && z.hurt <= 0){ var rmk = carSt(v).ramDamage || 1; hitZombie(z, 6*rmk, zx/zd*12*rmk, zy/zd*12*rmk); } } }
 }
 /* ---- cars on screen (0.39): the Kenney Car Kit models, with wheels that roll with the ground covered and front wheels that steer ---- */
-/* 0.114.82: the stock cars are drawn with the content chat's rebuilt models (the reference look, cabins, see-through glass); wrecks and burnt shells use the rebuilt ones' damage models */
+/* 0.114.83: the stock cars are drawn with the content chat's rebuilt models (the reference look, cabins, see-through glass); wrecks and burnt shells use the rebuilt ones' damage models */
 var STOCKPK = {sedan:'sedan_remade', hatch:'hatchback_remade', wagon:'wagon_remade', suv:'suv_remade', offroad:'offroader_remade', crew:'crew_pickup_remade', flatbed:'flatbed_remade', van:'van_remade', boxtruck:'box_truck_walkin', taxi:'sedan_remade', police:'police'};
 function carKind(v){ var k = carKind0(v), m = /^([a-z]+)(_wreck|_burnt)?$/.exec(k || ''); if (!m || !STOCKPK[m[1]] || v.id === 'truck' || el('packCars').value === 'off') return k;
   var nk = 'pk_workshop_crafts_' + STOCKPK[m[1]] + (m[2] || ''); if (!VMOD[nk]) return k; v.kind = nk; return nk; }
 function carKind0(v){
-  if (v.kind && /^pk_(afterstreet_fleet|workshop_sample)_/.test(v.kind)) v.kind = v.kind.replace(/^pk_(afterstreet_fleet|workshop_sample)_/, 'pk_workshop_crafts_');   /* 0.114.82: the old fleet and sample packs moved into the Workshop pack under the same names; saved cars follow */
+  if (v.kind && /^pk_(afterstreet_fleet|workshop_sample)_/.test(v.kind)) v.kind = v.kind.replace(/^pk_(afterstreet_fleet|workshop_sample)_/, 'pk_workshop_crafts_');   /* 0.114.83: the old fleet and sample packs moved into the Workshop pack under the same names; saved cars follow */
   if (v.kind) return v.kind; var b = v.id[0] === 'c' ? world.buildings[+v.id.slice(1)] : null;
   if (v.dead){ var bk = ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'sedan'][Math.floor(hash(b ? b.id : 1, 3, 8)*12)]; return v.kind = bk + '_' + v.dead; }
   if (!(b && b.kind === 'police') && PACKK.length && el('packCars').value !== 'off' && hash(b ? b.id : v.id.length, 5, 77) < 0.12) return v.kind = PACKK[Math.floor(hash(b ? b.id : v.id.length, 6, 78)*PACKK.length) % PACKK.length];
@@ -4851,7 +4862,7 @@ function engHum(){
   if (!SND.eng){ if (!on) return; try { var o = SND.ctx.createOscillator(), f = SND.ctx.createBiquadFilter(), g = SND.ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = 40; f.type = 'lowpass'; f.frequency.value = 240; g.gain.value = 0; o.connect(f); f.connect(g); g.connect(SND.out); o.start(); SND.eng = {o:o, g:g, f:f}; } catch (e){ SND.eng = {dead:1}; } }
   if (SND.eng.dead) return; var t = SND.ctx.currentTime; SND.eng.g.gain.setTargetAtTime(on ? 0.05 + sp*0.08 : 0, t, 0.15); SND.eng.o.frequency.setTargetAtTime(bf + sp*bs, t, 0.25); SND.eng.f.frequency.setTargetAtTime(200 + sp*300, t, 0.25);
 }
-/* 0.114.82: a car or bike lies on the ground under it: the vertices it just drew are turned to the slope under its wheels (front to back, left to right) */
+/* 0.114.83: a car or bike lies on the ground under it: the vertices it just drew are turned to the slope under its wheels (front to back, left to right) */
 function tiltCar(m, n0, v){
   var cs = Math.cos(v.yaw), sn = Math.sin(v.yaw), L = v.t ? 1.5 : 0.8, Wd = v.t ? 0.9 : 0.1, gs = function(x, y){ return v.gh !== undefined ? baseAt(x, y, v.gh) : groundAt(x, y); }, gF = gs(v.x + cs*L, v.y + sn*L), gB = gs(v.x - cs*L, v.y - sn*L), gR = gs(v.x - sn*Wd, v.y + cs*Wd), gL = gs(v.x + sn*Wd, v.y - cs*Wd);
   var pit = Math.atan2(gF - gB, 2*L), rol = Wd > 0.2 ? Math.atan2(gR - gL, 2*Wd) : 0; pit = Math.max(-0.7, Math.min(0.7, pit)); rol = Math.max(-0.5, Math.min(0.5, rol));
@@ -4877,7 +4888,7 @@ function drawExtras(m, now){
       m.ybox(v.x, v.y, v.yaw, 0, 0, 0.62, 2.0, 0.34, 0.85, cc); m.ybox(v.x, v.y, v.yaw, -0.2, 0, 1.2, 1.0, 0.26, 0.78, C('#2f4558'));
       for (var q = 0; q < 4; q++) m.ybox(v.x, v.y, v.yaw, q < 2 ? 1.25 : -1.25, q % 2 ? 0.86 : -0.86, 0.32, 0.32, 0.32, 0.1, C('#16181c')); }
     if (!v.boat && !v.mach && m.p.length > tn0) tiltCar(m, tn0, v);
-    if (!v.boat && !v.mach && m.gm.p.length > gn0){ m.gm.yo = m.yo; tiltCar(m.gm, gn0, v); }   /* 0.114.82: the glass tilts about the car's own ground height (it had none, so on a bump it flew up off the car) */
+    if (!v.boat && !v.mach && m.gm.p.length > gn0){ m.gm.yo = m.yo; tiltCar(m.gm, gn0, v); }   /* 0.114.83: the glass tilts about the car's own ground height (it had none, so on a bump it flew up off the car) */
   }
   engHum();
   for (i = 0; i < w.traders.length; i++){ var t = w.traders[i]; if (Math.abs(t.x - P.x) > 120 || Math.abs(t.y - P.y) > 120) continue; m.yo = groundAt(t.x, t.y); queuePerson(m, {x:t.x, y:t.y, yaw:t.yaw, id:t.id, mv:0, sw:0, talk:1}, {build:1, skin:(t.id*2) % 5, shirt:['#3f8f5a', '#8a3a3a', '#c9a24a', '#3a5f8a'][t.id % 4], pants:'#3a3f47', hat:1, body:t.id % 2, hair:1 + t.id % 5, hc:t.id % 5, face:(t.id*3) % 8, top:(t.id*5 + 2) % 8, bot:t.id % 6, shoe:t.id % 3, acc:['#e9dab0', '#2f3a4a', '#d9603a'][t.id % 3]}, now); m.al = 128; m.ybox(t.x, t.y, now*2, 0, 0, 2.5, 0.1, 0.1, 0.1, C('#5dff8a')); m.al = 255; }
