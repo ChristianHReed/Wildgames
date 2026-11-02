@@ -1,6 +1,6 @@
 /* Cabin parts for the vehicle designs (car interiors request, 1 Nov 2026): dashboard with instrument binnacle, steering wheel, centre console and
    gearstick, door cards, floor, headliner and seats with backrests. Used by workshop/designs/*.js.
-   Driver is on the LEFT (x < 0), the first Seat piece. Points written for the game: 'cabin.eye' (kind eye, the driver's eye) and 'steer.wheel'
+   Driver is on the LEFT (x > 0: the models face +z, so left is +x), the first Seat piece. Points written for the game: 'cabin.eye' (kind eye, the driver's eye) and 'steer.wheel'
    (kind hinge: pivot at the wheel centre, dir = the column axis, so the game turns the wheel piece named 'steering wheel' about it). */
 var M = require('../model.js');
 var DARK = '#2c2c30', DASH = '#34343a', TRIM = '#4a4640', CARPET = '#3a3733', LINER = '#b9b3a3';
@@ -30,7 +30,7 @@ function wheelRing(b, cx, cy, cz, phiDeg){
 }
 /* dashboard with vents, glovebox, centre stack and round gauges; the wheel, column and the eye point */
 function driverKit(b, o){
-  var hw = o.hw, belt = o.belt, zF = o.cabF, dx = o.driverX == null ? -0.4 : o.driverX, seatY = o.seatY, dep = o.dashDepth || 0.38, top = o.dashTop || belt + 0.02, rake = o.rake == null ? -62 : o.rake;
+  var hw = o.hw, belt = o.belt, zF = o.cabF, dx = o.driverX == null ? 0.4 : o.driverX, seatY = o.seatY, dep = o.dashDepth || 0.38, top = o.dashTop || belt + 0.02, rake = o.rake == null ? -62 : o.rake;
   var fit = {fitting:true, m:'plastic'}, F = function(c, name){ return Object.assign({c:c, name:name}, fit); };
   b.box([-hw + 0.08, top - 0.32, zF - dep], [hw - 0.08, top, zF - 0.01], F(DASH, 'dashboard'));
   b.box([-hw + 0.08, top - 0.05, zF - dep - 0.02], [hw - 0.08, top - 0.01, zF - dep], F('#2a2a30', 'dash pad lip'));
@@ -54,8 +54,7 @@ function driverKit(b, o){
 /* a seat: pedestal, cushion (the Seat job) and backrest */
 function seat(b, o, x, z, w, name, floorTop){
   b.box([x - 0.1, floorTop, z - 0.1], [x + 0.1, o.seatY - 0.06, z + 0.1], {fitting:true, c:TRIM, m:'plastic', name:'seat rail'});
-  var sc = o.seatC || '#4a4a44'; /* the engine lists seats front to back, then right before left; nudging left-hand seats 1 cm forward lists the driver (left) first and left before right in every row */
-  b.seat([x, o.seatY, z + (x < 0 ? 0.01 : 0)], {size:[w, 0.12, 0.5], c:sc, name:name});
+  var sc = o.seatC || '#4a4a44'; b.seat([x, o.seatY, z], {size:[w, 0.12, 0.5], c:sc, name:name});
   b.block('box', [x, o.seatY + 0.33, z - 0.33], [w, 0.55, 0.1], {fitting:true, c:sc, m:'cloth', rot:[-9, 0, 0], name:name + ' back'});
   [-1, 1].forEach(function(k){ b.box([x + k*w/2 - 0.03 - (k > 0 ? 0 : -0.0), o.seatY, z - 0.25], [x + k*w/2 + 0.03, o.seatY + 0.14, z + 0.25], {fitting:true, c:sc, m:'cloth', name:name + ' bolster'}); });
   b.block('box', [x, o.seatY + 0.69, z - 0.37], [0.24, 0.13, 0.08], {fitting:true, c:sc, m:'cloth', rot:[-9, 0, 0], name:name + ' headrest'});
@@ -72,8 +71,8 @@ function carCabin(b, o){
   b.block('cyl', [0, floorTop + 0.34, zF - 0.55], [0.05, 0.2, 0.05], {fitting:true, c:DARK, m:'plastic', name:'gear lever'});
   driverKit(b, o);
   var sz = zF - 0.78;
-  seat(b, o, -0.4, sz, 0.5, 'driver seat', floorTop); seat(b, o, 0.4, sz, 0.5, 'passenger seat', floorTop);
-  (o.rear || []).forEach(function(z, i){ seat(b, o, i % 2 ? 0.4 : -0.4, z, 0.5, 'rear seat ' + (i + 1), floorTop); });
+  seat(b, o, 0.4, sz, 0.5, 'driver seat', floorTop); seat(b, o, -0.4, sz, 0.5, 'passenger seat', floorTop);
+  (o.rear || []).forEach(function(z, i){ seat(b, o, i % 2 ? -0.4 : 0.4, z, 0.5, 'rear seat ' + (i + 1), floorTop); });
 }
 module.exports = {driverKit:driverKit, seat:seat, carCabin:carCabin, COLORS:{DARK:DARK, DASH:DASH, TRIM:TRIM, CARPET:CARPET, LINER:LINER}};
 
@@ -81,7 +80,7 @@ module.exports = {driverKit:driverKit, seat:seat, carCabin:carCabin, COLORS:{DAR
    windscreen pane, doors with their own glass, door cards, dashboard, wheel, console, two seats and the cabin.eye point.
    o: {hw, zB, zF, fl (floor top), belt (sill), roof, seatY, driverX} */
 function truckCab(b, o){
-  var hw = o.hw, zB = o.zB, zF = o.zF, fl = o.fl, belt = o.belt, roof = o.roof, seatY = o.seatY || fl + 0.3, dx = o.driverX == null ? -0.45 : o.driverX, c = o.c || 'paint1';
+  var hw = o.hw, zB = o.zB, zF = o.zF, fl = o.fl, belt = o.belt, roof = o.roof, seatY = o.seatY || fl + 0.3, dx = o.driverX == null ? 0.45 : o.driverX, c = o.c || 'paint1';
   b.box([-hw + 0.1, fl - 0.12, zB], [hw - 0.1, fl - 0.05, zF], {fitting:true, c:'underside', m:'steel', name:'cab floor pan'});
   b.box([-hw + 0.08, fl - 0.05, zB + 0.05], [hw - 0.08, fl, zF - 0.02], {fitting:true, c:CARPET, m:'cloth', name:'floor carpet'});
   b.box([hw - 0.06, fl - 0.12, zB], [hw, belt, zF], {fitting:true, c:c, mx:true, name:'cab side skin'});

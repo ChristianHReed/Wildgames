@@ -170,20 +170,20 @@ function bus(WSB, S){
   b.shell([-hw + 0.06, fl, zb], [hw - 0.06, rf - 0.06, zf], {open:['left', 'right', 'front'], c:'paint1', floorC:'underside', wall:0.06, floor:0.1, name:'bus', room:'cabin'});
   /* lower body with wheel openings, window band with pillars, belt and roof rails */
   var sk = {c:'paint1', name:'skirt'};
-  wall(b, -hw, -hw + 0.06, fl - 0.12, wb, zb, zf, {c:'paint1', name:'left skirt'}, ops);
-  wall(b, hw - 0.06, hw, fl - 0.12, wb, zb, dA, {c:'paint1', name:'right skirt back'}, ops);
-  b.box([hw - 0.06, fl - 0.12, dB], [hw, wb, zf], {c:'paint1', name:'right skirt front'});
-  b.box([-hw + 0.02, wb, zb], [-hw + 0.06, rf - 0.3, zf], {c:'glassL', m:'glass', name:'left windows'});
-  b.box([hw - 0.06, wb, zb], [hw - 0.02, rf - 0.3, dA], {c:'glassL', m:'glass', name:'right windows'});
-  b.box([hw - 0.06, wb, dB], [hw - 0.02, rf - 0.3, zf], {c:'glassL', m:'glass', name:'right front windows'});
-  for (var z = zb + 0.5; z < zf - 0.3; z += 1.15){ b.box([-hw, wb, z - 0.04], [-hw + 0.08, rf - 0.3, z + 0.04], {c:'paint1', name:'window pillar'}); if (z < dA - 0.1 || z > dB + 0.1) b.box([hw - 0.08, wb, z - 0.04], [hw, rf - 0.3, z + 0.04], {c:'paint1', name:'window pillar'}); }
+  wall(b, hw - 0.06, hw, fl - 0.12, wb, zb, zf, {c:'paint1', name:'driver skirt'}, ops);
+  wall(b, -hw, -hw + 0.06, fl - 0.12, wb, zb, dA, {c:'paint1', name:'door-side skirt back'}, ops);
+  b.box([-hw, fl - 0.12, dB], [-hw + 0.06, wb, zf], {c:'paint1', name:'door-side skirt front'});
+  b.box([hw - 0.06, wb, zb], [hw - 0.02, rf - 0.3, zf], {c:'glassL', m:'glass', name:'driver-side windows'});
+  b.box([-hw + 0.02, wb, zb], [-hw + 0.06, rf - 0.3, dA], {c:'glassL', m:'glass', name:'door-side windows'});
+  b.box([-hw + 0.02, wb, dB], [-hw + 0.06, rf - 0.3, zf], {c:'glassL', m:'glass', name:'door-side front windows'});
+  for (var z = zb + 0.5; z < zf - 0.3; z += 1.15){ b.box([hw - 0.08, wb, z - 0.04], [hw, rf - 0.3, z + 0.04], {c:'paint1', name:'window pillar'}); if (z < dA - 0.1 || z > dB + 0.1) b.box([-hw, wb, z - 0.04], [-hw + 0.08, rf - 0.3, z + 0.04], {c:'paint1', name:'window pillar'}); }
   b.box([-hw, rf - 0.3, zb], [-hw + 0.06, rf, zf], {c:'paint1', name:'left rail'}); b.box([hw - 0.06, rf - 0.3, zb], [hw, rf, zf], {c:'paint1', name:'right rail'});
   b.box([-hw - 0.01, wb - 0.05, zb], [-hw + 0.06, wb + 0.07, zf], {c:S.stripeCol || 'paint2', name:'belt stripe'}); b.box([hw - 0.06, wb - 0.05, zb], [hw + 0.01, wb + 0.07, zf], {c:S.stripeCol || 'paint2', name:'belt stripe'});
-  b.box([hw - 0.06, fl - 0.12, dA], [hw, fl - 0.02, dB], {c:'underside', m:'steel', name:'door sill'});
-  b.box([hw - 0.06, wb + 1.0, dA], [hw, rf - 0.3, dB], {c:'paint1', name:'door header'});
-  b.door([hw - 0.04, fl - 0.05, dA], [hw, wb + 1.0, dB], {kind:'slide', c:'paint2', name:'passenger door'});
-  b.box([hw - 0.02, fl + 0.2, dA + 0.05], [hw + 0.015, wb + 0.95, dB - 0.05], {c:'glassL', m:'glass', name:'passenger door glass'});
-  b.box([hw - 0.06, fl - 0.2, dA + 0.1], [hw + 0.25, fl - 0.1, dB - 0.05], {c:DK, m:'steel', name:'entry step'});
+  b.box([-hw, fl - 0.12, dA], [-hw + 0.06, fl - 0.02, dB], {c:'underside', m:'steel', name:'door sill'});
+  b.box([-hw, wb + 1.0, dA], [-hw + 0.06, rf - 0.3, dB], {c:'paint1', name:'door header'});
+  b.door([-hw, fl - 0.05, dA], [-hw + 0.04, wb + 1.0, dB], {kind:'slide', c:'paint2', name:'passenger door'});
+  b.box([-hw - 0.015, fl + 0.2, dA + 0.05], [-hw + 0.02, wb + 0.95, dB - 0.05], {c:'glassL', m:'glass', name:'passenger door glass'});
+  b.box([-hw - 0.25, fl - 0.2, dA + 0.1], [-hw + 0.06, fl - 0.1, dB - 0.05], {c:DK, m:'steel', name:'entry step'});
   /* nose: header, destination sign or hood stripe, face */
   b.box([-hw + 0.06, rf - 0.32, zf - 0.04], [hw - 0.06, rf, zf + 0.06], {c:'paint1', name:'front header'});
   if (!S.school){ b.box([-hw + 0.3, rf - 0.3, zf + 0.04], [hw - 0.3, rf - 0.08, zf + 0.09], {c:'#241a08', m:'plastic', name:'destination board'}); b.box([-hw + 0.5, rf - 0.26, zf + 0.09], [hw - 0.5, rf - 0.12, zf + 0.11], {c:AMB, m:'plastic', name:'destination text'}); }
@@ -195,7 +195,7 @@ function bus(WSB, S){
   quad(b, [[-hw + 0.3, wb + 0.1, zb - 0.02], [hw - 0.3, wb + 0.1, zb - 0.02], [hw - 0.3, rf - 0.35, zb - 0.02], [-hw + 0.3, rf - 0.35, zb - 0.02]], [0, 0, -0.03], {c:'glassL', m:'glass', name:'rear window'});
   b.box([-hw + 0.06, wb, zb - 0.06], [-hw + 0.3, rf - 0.3, zb], {c:'paint1', name:'rear corner'}); b.box([hw - 0.3, wb, zb - 0.06], [hw - 0.06, rf - 0.3, zb], {c:'paint1', name:'rear corner'});
   b.box([-hw - 0.03, fl - 0.4, zb - 0.2], [hw + 0.03, fl - 0.12, zb - 0.02], {c:BUMP, m:'steel', name:'rear bumper'});
-  if (S.rearDoor){ b.door([hw - 0.04, fl - 0.05, S.rearDoor[0]], [hw, wb + 1.0, S.rearDoor[1]], {kind:'slide', c:'paint1', name:'rear door'}); b.box([hw - 0.02, fl + 0.3, S.rearDoor[0] + 0.08], [hw + 0.015, wb + 0.95, S.rearDoor[1] - 0.08], {c:'glassL', m:'glass', name:'rear door glass'}); }
+  if (S.rearDoor){ b.door([-hw, fl - 0.05, S.rearDoor[0]], [-hw + 0.04, wb + 1.0, S.rearDoor[1]], {kind:'slide', c:'paint1', name:'rear door'}); b.box([-hw - 0.015, fl + 0.3, S.rearDoor[0] + 0.08], [-hw + 0.02, wb + 0.95, S.rearDoor[1] - 0.08], {c:'glassL', m:'glass', name:'rear door glass'}); }
   [[-1, 1]].forEach(function(){}); [-1, 1].forEach(function(sx){ b.box([sx*(hw - 0.25) - 0.1, fl + 0.45, zb - 0.06], [sx*(hw - 0.25) + 0.1, fl + 0.8, zb - 0.02], {c:RED, m:'plastic', name:'tail lamp'}); });
   b.light('taillight', [hw - 0.25, fl + 0.6, zb - 0.04], [0.2, 0.3, 0.04]);
   /* roof fittings, mirrors, lettering */
@@ -203,11 +203,11 @@ function bus(WSB, S){
   b.box([hw - 0.03, wb + 0.3, zf - 0.1], [hw + 0.17, wb + 0.36, zf - 0.04], {c:DK, m:'plastic', mx:true, name:'mirror arm'}); b.box([hw + 0.12, wb - 0.1, zf - 0.18], [hw + 0.22, wb + 0.5, zf - 0.02], {c:DK, m:'plastic', mx:true, name:'wing mirror'});
   (S.words || []).forEach(function(w){ var len = textLen(w.t, w.px), zr = w.z; text(b, w.t, {side:1, x:hw + 0.0, y:w.y, z:zr, px:w.px, c:w.c, name:'lettering'}); text(b, w.t, {side:-1, x:hw + 0.0, y:w.y, z:zr - len, px:w.px, c:w.c, name:'lettering'}); });
   (S.bands || []).forEach(function(q){ b.box([hw - 0.02, q[0], zb], [hw + 0.012, q[1], zf], {c:q[2], mx:true, name:'band'}); });
-  if (S.school){ b.box([-hw - 0.2, wb - 0.1, zf - 2.2], [-hw, wb + 0.4, zf - 2.14], {c:RED, m:'plastic', name:'stop sign arm'}); }
+  if (S.school){ b.box([hw, wb - 0.1, zf - 2.2], [hw + 0.2, wb + 0.4, zf - 2.14], {c:RED, m:'plastic', name:'stop sign arm'}); }
   /* seats and driver */
-  CK.driverKit(b, {hw:hw, belt:fl + 0.95, cabF:zf, driverX:-(hw - 0.55), seatY:fl + 0.36, dashDepth:0.5, dashTop:fl + 0.97});
-  b.box([-(hw - 0.55) - 0.1, fl, zf - 1.0], [-(hw - 0.55) + 0.1, fl + 0.3, zf - 0.6], {fitting:true, c:'#4a4640', m:'plastic', name:'driver seat rail'}); b.seat([-(hw - 0.55), fl + 0.36, zf - 0.78], {size:[0.5, 0.12, 0.5], c:'#4a4a44', name:'driver seat'}); b.box([-(hw - 0.55) - 0.25, fl + 0.4, zf - 1.14], [-(hw - 0.55) + 0.25, fl + 0.95, zf - 1.04], {fitting:true, c:'#4a4a44', m:'cloth', name:'driver seat back'});
-  for (var zz = dA - 0.9; zz > zb + 0.8; zz -= 1.0){ b.seat([hw - 0.6, fl + 0.06, zz], {size:[0.8, 0.1, 0.45], name:'seat'}); b.seat([-hw + 0.6, fl + 0.06, zz + 0.01], {size:[0.8, 0.1, 0.45], name:'seat'}); }
+  CK.driverKit(b, {hw:hw, belt:fl + 0.95, cabF:zf, driverX:(hw - 0.55), seatY:fl + 0.36, dashDepth:0.5, dashTop:fl + 0.97});
+  b.box([(hw - 0.55) - 0.1, fl, zf - 1.0], [(hw - 0.55) + 0.1, fl + 0.3, zf - 0.6], {fitting:true, c:'#4a4640', m:'plastic', name:'driver seat rail'}); b.seat([(hw - 0.55), fl + 0.36, zf - 0.78], {size:[0.5, 0.12, 0.5], c:'#4a4a44', name:'driver seat'}); b.box([(hw - 0.55) - 0.25, fl + 0.4, zf - 1.14], [(hw - 0.55) + 0.25, fl + 0.95, zf - 1.04], {fitting:true, c:'#4a4a44', m:'cloth', name:'driver seat back'});
+  for (var zz = dA - 0.9; zz > zb + 0.8; zz -= 1.0){ b.seat([hw - 0.6, fl + 0.06, zz], {size:[0.8, 0.1, 0.45], name:'seat'}); b.seat([-hw + 0.6, fl + 0.06, zz], {size:[0.8, 0.1, 0.45], name:'seat'}); }
   b.box([-hw, fl - 0.25, zb - 0.15], [hw, fl - 0.12, zf + 0.15], {c:'underside', m:'steel', name:'frame'});
   b.light('headlight', [hw - 0.35, fl + 0.3, zf + 0.1], [0.3, 0.2, 0.04]);
   b.engine([0, fl - 0.1, zb + 1.0], [1.2, 0.5, 1.2]); b.tank([-hw + 0.5, fl - 0.4, (zf + zb)/2], [0.5, 0.35, 1.2]); b.battery([0, fl - 0.3, zf - 1.0]);
@@ -268,14 +268,14 @@ function apc(WSB){
   /* driver compartment: hollow, open to the troop bay, with a vision block at the front left, a raised seat, dash, wheel and the eye point */
   b.shell([-hw, 0.8, 1.8], [hw, 2.3, 3.1], {open:['back', 'front'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'driver compartment', room:'driver compartment'});
   b.box([-hw, 0.8, 3.0], [hw, 1.65, 3.1], {c:'paint1', m:'steel', name:'front plate lower'}); b.box([-hw, 2.05, 3.0], [hw, 2.3, 3.1], {c:'paint1', m:'steel', name:'front plate upper'});
-  b.box([-hw, 1.65, 3.0], [-0.98, 2.05, 3.1], {c:'paint1', m:'steel', name:'front plate left'}); b.box([-0.12, 1.65, 3.0], [hw, 2.05, 3.1], {c:'paint1', m:'steel', name:'front plate right'});
-  quad(b, [[-0.96, 1.67, 3.08], [-0.14, 1.67, 3.08], [-0.14, 2.03, 3.08], [-0.96, 2.03, 3.08]], [0, 0, 0.03], {c:'glassL', m:'glass', name:'driver vision block'});
-  b.box([-1.0, 2.03, 3.1], [-0.1, 2.12, 3.2], {c:'paint2', m:'steel', name:'vision hood'}); b.box([-1.0, 1.58, 3.1], [-0.1, 1.67, 3.18], {c:'paint2', m:'steel', name:'vision sill'});
-  b.box([-0.9, 1.0, 2.0], [-0.2, 1.1, 2.7], {fitting:true, c:'#2c2c30', m:'steel', name:'driver pedestal'});
-  CK.driverKit(b, {hw:hw, belt:1.62, cabF:3.0, driverX:-0.55, seatY:1.2, dashDepth:0.45, dashTop:1.64, rake:-70});
-  b.seat([-0.55, 1.2, 2.31], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'driver seat'}); b.box([-0.8, 1.25, 2.02], [-0.3, 1.8, 2.1], {fitting:true, c:'#6a4a34', m:'cloth', name:'driver seat back'});
-  b.seat([0.55, 0.9, 2.3], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'commander seat'});
-  b.box([-0.5, 2.3, 2.1], [0.1, 2.4, 2.7], {c:'paint1', m:'steel', name:'driver hatch'}); b.block('cyl', [-0.2, 2.45, 2.4], [0.55, 0.1, 0.55], {c:'paint2', m:'steel', name:'driver hatch ring'});
+  b.box([0.98, 1.65, 3.0], [hw, 2.05, 3.1], {c:'paint1', m:'steel', name:'front plate left'}); b.box([-hw, 1.65, 3.0], [0.12, 2.05, 3.1], {c:'paint1', m:'steel', name:'front plate right'});
+  quad(b, [[0.14, 1.67, 3.08], [0.96, 1.67, 3.08], [0.96, 2.03, 3.08], [0.14, 2.03, 3.08]], [0, 0, 0.03], {c:'glassL', m:'glass', name:'driver vision block'});
+  b.box([0.1, 2.03, 3.1], [1.0, 2.12, 3.2], {c:'paint2', m:'steel', name:'vision hood'}); b.box([0.1, 1.58, 3.1], [1.0, 1.67, 3.18], {c:'paint2', m:'steel', name:'vision sill'});
+  b.box([0.2, 1.0, 2.0], [0.9, 1.1, 2.7], {fitting:true, c:'#2c2c30', m:'steel', name:'driver pedestal'});
+  CK.driverKit(b, {hw:hw, belt:1.62, cabF:3.0, driverX:0.55, seatY:1.2, dashDepth:0.45, dashTop:1.64, rake:-70});
+  b.seat([0.55, 1.2, 2.3], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'driver seat'}); b.box([0.3, 1.25, 2.02], [0.8, 1.8, 2.1], {fitting:true, c:'#6a4a34', m:'cloth', name:'driver seat back'});
+  b.seat([-0.55, 0.9, 2.3], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'commander seat'});
+  b.box([-0.1, 2.3, 2.1], [0.5, 2.4, 2.7], {c:'paint1', m:'steel', name:'driver hatch'}); b.block('cyl', [0.2, 2.45, 2.4], [0.55, 0.1, 0.55], {c:'paint2', m:'steel', name:'driver hatch ring'});
   b.shell([-hw, 0.8, -4.4], [hw, 2.45, 1.8], {open:['back', 'front'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'troop bay', room:'troop bay'});
   b.door([-hw, 0.8, -4.55], [hw, 2.45, -4.5], {kind:'ramp', c:'paint1', name:'rear ramp'});
   b.box([-0.5, 2.45, -1.0], [0.5, 2.55, 1.4], {c:'paint1', m:'steel', name:'roof hatch plate'}); b.box([-0.45, 2.55, -0.3], [0.45, 3.0, 0.7], {c:'paint1', m:'steel', name:'turret'}); b.box([-0.2, 2.7, 0.7], [0.2, 2.82, 0.8], {c:'paint2', m:'steel', name:'gun mantlet'}); b.box([-0.05, 2.74, 0.8], [0.05, 2.8, 2.4], {c:'black', m:'steel', name:'autocannon'});
@@ -283,7 +283,7 @@ function apc(WSB){
   b.box([-0.03, 2.55, -1.6], [0.03, 3.6, -1.56], {c:DK, m:'steel', name:'antenna'});
   b.light('headlight', [1.0, 1.0, 3.72], [0.2, 0.16, 0.04]); b.light('taillight', [1.1, 1.2, -4.58], [0.16, 0.2, 0.04]);
   b.engine([0, 1.2, 2.4], [1.2, 0.7, 0.8]); b.tank([-1.0, 0.95, 0.5], [0.4, 0.3, 1.2]); b.battery([0.8, 1.3, 2.6]);
-  [0.8, -0.2, -1.2, -2.2, -3.2].forEach(function(z){ b.seat([1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); b.seat([-1.0, 0.9, z + 0.01], {size:[0.4, 0.08, 0.45], name:'bench'}); });
+  [0.8, -0.2, -1.2, -2.2, -3.2].forEach(function(z){ b.seat([1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); b.seat([-1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); });
   return b;
 }
 /* ---------- trailers ---------- */

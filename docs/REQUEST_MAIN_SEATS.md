@@ -1,12 +1,12 @@
 # Request to main chat: seat sides, switching seats and multiplayer seating
 
-From the Content chat. Every land vehicle now lists its seats in one fixed order in `asset.functions.seats` (each `[x, y, z]`, x negative = left of the direction of travel):
+From the Content chat. Every land vehicle now lists its seats in one fixed order in `asset.functions.seats` (each `[x, y, z]`, x POSITIVE = left of the direction of travel, because models face +z):
 
-1. `seats[0]` is the **driver**, on the **left** (x < 0). `cabin.eye` and `steer.wheel` are on the same side.
-2. `seats[1]` is the **front passenger**, on the **right** (x > 0). Trucks, vans and fire engines have only these two.
+1. `seats[0]` is the **driver**, on the **left** (x > 0). `cabin.eye` and `steer.wheel` are on the same side.
+2. `seats[1]` is the **front passenger**, on the **right** (x < 0). Trucks, vans and fire engines have only these two.
 3. After that come the rear rows, front to back, left seat before right seat in each row. Buses list the driver, then passenger rows left then right. The APC lists the driver, the commander and then the benches.
 
-The order is a convention the Workshop's `functions()` sort (front to back, right before left) would otherwise reverse. I nudge each left seat 1 cm forward to get this order, so please don't re-sort seats in the game.
+The Workshop's `functions()` sort (front to back, then larger x first) gives exactly this order, so please don't re-sort seats in the game.
 
 ## What the game needs
 

@@ -32,7 +32,7 @@ function cargoTruck(WSB){ var b = mk(WSB, 'army_cargo_truck', 'Army 6x6 cargo tr
   b.wheels(0.5, 0.3); b.axle(2.6, {steer:true, track:1.0, name:'front axle'}); b.axle(-1.2, {driven:true, track:1.0, name:'rear axle 1'}); b.axle(-2.6, {driven:true, track:1.0, name:'rear axle 2'});
   b.box([0.35, 0.55, -4.0], [0.48, 0.85, 3.5], {c:'underside', m:'steel', mx:true, name:'chassis rail'}); b.box([-0.48, 0.8, -4.0], [0.48, 0.92, 0.4], {c:'underside', m:'steel', name:'subframe'});
   b.box([-1.0, 0.9, 2.4], [1.0, 1.7, 3.5], {c:'paint1', name:'hood'}); b.box([-1.1, 0.9, 2.3], [1.1, 1.6, 2.4], {c:'paint1', name:'cowl'});
-  CK.truckCab(b, {hw:1.1, zB:0.55, zF:2.3, fl:1.0, belt:1.6, roof:2.7, seatY:1.3, driverX:-0.5});
+  CK.truckCab(b, {hw:1.1, zB:0.55, zF:2.3, fl:1.0, belt:1.6, roof:2.7, seatY:1.3, driverX:0.5});
   b.box([-1.1, 0.7, 3.5], [1.1, 1.0, 3.7], {c:'paint2', m:'steel', name:'bumper'}); b.box([-0.7, 1.0, 3.5], [0.7, 1.6, 3.55], {c:'black', m:'plastic', name:'grille'});
   b.light('headlight', [0.75, 1.3, 3.57], [0.24, 0.2, 0.04]); b.light('taillight', [1.0, 1.3, -4.05], [0.16, 0.24, 0.04]);
   b.engine([0, 1.3, 2.9], [0.8, 0.6, 1.0]); b.tank([0.8, 0.65, -0.6], [0.4, 0.4, 0.9]); b.battery([0.6, 1.3, 3.2]); 

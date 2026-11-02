@@ -98,7 +98,7 @@ Lessons:
 - Aircraft are still the weakest: blocky fuselages, no rotor or propeller in the preview (they are separate parts). Next pass should loft the fuselage and cowl.
 
 ## Seat order (driver on the left)
-`functions.seats[0]` is the driver on the left (x < 0), `seats[1]` the front passenger on the right, then rear rows front to back, left before right. The engine sorts seats right before left, so `cabin_kit.js` nudges every left seat 1 cm forward. Use `seat()` from `cabin_kit.js` or add the same nudge when placing seats by hand.
+Models face +z, so a driver's LEFT is +x. `functions.seats[0]` is the driver at x > 0, `seats[1]` the front passenger at x < 0, then rear rows front to back, left (+x) before right. The engine's own sort (front to back, larger x first) gives this order with no tricks. Wheel, gauges, `cabin.eye` and `steer.wheel` sit at +x. Buses have the driver at +x and the entrance door on the -x side. Earlier versions had these on -x, which showed the wheel on the right in the game.
 
 ## Eye height in low-roof cars
 The driver's `cabin.eye` is clamped to at most 0.30 m below the roof, and cars with a roof under 1.65 m get a seat 8 cm lower. Before this the headliner sat about 4 cm above the eye in the Ozark, wagon, sedan and hatchback, and filled the top of the view.

@@ -261,7 +261,7 @@ function fireEngine(WSB, id, nm){
   b.wheels(0.6, 0.3); wheelLook(b, 0.6, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
   b.box([-0.45, 0.7, -4.8], [0.45, 0.9, 4.0], {c:'underside', m:'steel', name:'chassis'});
   b.box([-1.3, 0.9, 3.3], [1.3, 1.9, 4.1], {c:'paint1', name:'nose'});
-  CK.truckCab(b, {hw:1.3, zB:1.4, zF:3.3, fl:1.0, belt:1.85, roof:2.9, seatY:1.3, driverX:-0.55});
+  CK.truckCab(b, {hw:1.3, zB:1.4, zF:3.3, fl:1.0, belt:1.85, roof:2.9, seatY:1.3, driverX:0.55});
   b.box([-1.31, 1.35, 3.25], [1.31, 1.6, 4.12], {c:'paint3', name:'front stripe'});
   b.box([-1.31, 1.0, 3.3], [1.31, 1.35, 4.1], {c:'paint1', name:'nose lower'});
   b.box([-1.31, 2.5, 3.2], [1.31, 2.9, 3.4], {c:'paint3', name:'cab header'});
