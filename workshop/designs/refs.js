@@ -1,7 +1,7 @@
 /* Reference-matched vehicles (user reference pictures, 1 Nov 2026): 90s boxy low-poly look. Raked windscreen on slim pillars, sloping hood,
    slatted grille flanked by square headlights with amber indicators, chunky grey-blue bumper with two black bull-bar posts, dark arch frames,
    dark lower cladding, big black mirrors, tinted glass. Police SUV, green SUV, red and orange pickups, green van, ambulance, fire engine. */
-var CK = require('../tools/cabin_kit.js');
+var CK = require('../tools/cabin_kit.js'), WM = require('../model.js');
 var DK = '#23262b', BUMP = '#5d6d7b', HL = '#ecece4', AMB = '#e8941c', SLAT = '#3b4048', RED = '#d2342b', BLUE = '#3a7ae0';
 function rx(deg){ return [deg, 0, 0]; }
 
@@ -69,22 +69,39 @@ function text(b, str, o){
   });
 }
 
-/* a flat slab with four corners given as [z, y] (a trapezoid: window glass that follows a raked pillar), from x0 to x1 */
-function trap(b, x0, x1, p, opt){
-  var cz = (p[0][0] + p[1][0] + p[2][0] + p[3][0])/4, cy = (p[0][1] + p[1][1] + p[2][1] + p[3][1])/4, cx = (x0 + x1)/2, v = [], f = [[0, 3, 2, 1], [4, 5, 6, 7]], i;
-  [x0, x1].forEach(function(x){ p.forEach(function(q){ v.push([x - cx, q[1] - cy, q[0] - cz]); }); });
+/* a slab from four corner points [x, y, z] pushed by a vector d (a trapezoid pane that can lean in and rake back) */
+function quad(b, c, d, opt){
+  var pts = c.concat(c.map(function(q){ return [q[0] + d[0], q[1] + d[1], q[2] + d[2]]; })), cx = 0, cy = 0, cz = 0, i;
+  pts.forEach(function(q){ cx += q[0]/8; cy += q[1]/8; cz += q[2]/8; });
+  var v = pts.map(function(q){ return [q[0] - cx, q[1] - cy, q[2] - cz]; }), f = [[0, 3, 2, 1], [4, 5, 6, 7]];
   for (i = 0; i < 4; i++) f.push([i, (i + 1) % 4, (i + 1) % 4 + 4, i + 4]);
-  return b_block(b, [cx, cy, cz], v, f, opt);
+  opt.v = v; opt.f = f;
+  return b.block('corner', [cx, cy, cz], null, opt);
 }
-function b_block(b, pos, v, f, opt){ opt.v = v; opt.f = f; return b.block('corner', pos, null, opt); }
+/* a post that leans in by L over its height: base centre x, from y0 to y1, z0..z1, thickness in x */
+function post(b, x, y0, y1, z0, z1, th, L, opt){
+  var h = y1 - y0, len = Math.sqrt(h*h + L*L), ang = Math.atan2(L, h)*180/Math.PI;
+  opt.rot = [opt.rx || 0, 0, ang]; opt.mx = true;
+  return b.block('box', [x - L/2, (y0 + y1)/2, (z0 + z1)/2], [th, len, z1 - z0], opt);
+}
 
+/* round tyres and a grey hub disc with a darker cap, as in the references */
+function wheelLook(b, r, w){
+  b.doc.pieces.forEach(function(p){
+    if (p.g !== 'wheel') return;
+    if (p.name === 'tyre') p.n = 12;
+    if (p.name === 'hub'){ p.n = 10; var h = '#8f9aa5'; p.c = WM.customName(h); b.doc.colours[p.c] = h; }
+  });
+  b.block('cyl', [w/2 + 0.012, 0, 0], [0.03, r*0.5, r*0.5], {c:'#59626b', m:'steel', ax:'x', g:'wheel', name:'hub cap'});
+}
 function refcar(WSB, id, S){
   var b = WSB.create({id:id, name:S.name, domain:'land', cls:S.cls, paint:{paint1:S.paint[0], paint2:S.paint[1], paint3:S.paint[2]}, topSpeed:S.top});
   var hw = S.hw, F = S.F, B = S.B, belt = S.belt, roof = S.roof, fl = S.floor, bb = fl - 0.04, cabF = S.cabF, cb = S.cabB, r = S.r, g = 0.32, k = S.kind;
+  var L = S.lean == null ? (S.kind === 'van' ? 0 : 0.11) : S.lean, la = Math.atan2(L, 1)*0;
   var fc = S.frontCol || 'paint1', cc = S.cladCol || 'paint2', al = S.alpha || 28, A = al*Math.PI/180;
   var ops = [S.fz, S.rz].map(function(az){ return {a:az - r - 0.08, b:az + r + 0.08, top:2*r + 0.08}; });
   var dz1 = cabF - 0.12, dz0 = Math.max(cb + 0.15, dz1 - 1.1);
-  b.wheels(r, 0.26); b.axle(S.fz, {steer:true, track:hw - 0.13, name:'front axle'}); b.axle(S.rz, {driven:true, track:hw - 0.13, name:'rear axle'});
+  b.wheels(r, 0.26); wheelLook(b, r, 0.26); b.axle(S.fz, {steer:true, track:hw - 0.13, name:'front axle'}); b.axle(S.rz, {driven:true, track:hw - 0.13, name:'rear axle'});
   b.box([hw - 0.5, g, B + 0.1], [hw - 0.38, g + 0.14, F - 0.1], {c:'underside', m:'steel', mx:true, name:'chassis rail'});
   b.box([-hw + 0.1, fl - 0.14, B + 0.05], [hw - 0.1, fl - 0.05, cabF], {c:'underside', m:'steel', name:'floor pan'});
   /* front: bay, sloping hood, raked windscreen on slim pillars */
@@ -93,11 +110,12 @@ function refcar(WSB, id, S){
   var Lh = F - cabF + 0.02, drop = S.drop || 0.16, th = 0.16;
   b.block('box', [0, belt + 0.1 - drop/2 - th/2, (cabF + F + 0.02)/2], [2*hw - 0.1, th, Lh], {c:fc, rot:rx(Math.atan(drop/Lh)*180/Math.PI), name:'hood'});
   var wy0 = belt + 0.08, wy1 = roof - 0.08, wh = wy1 - wy0, dz = wh*Math.tan(A), wl = wh/Math.cos(A), wz = cabF + 0.04 - dz/2, wy = (wy0 + wy1)/2;
-  b.block('box', [0, wy, wz], [2*hw - 0.16, wl, 0.04], {c:'glassL', m:'glass', rot:rx(-al), name:'windscreen'});
-  b.block('box', [hw - 0.06, wy, wz - 0.01], [0.06, wl + 0.05, 0.07], {c:'paint1', mx:true, rot:rx(-al), name:'A pillar'});
+  var zb0 = cabF + 0.04, zt0 = zb0 - dz, nx = [0, Math.sin(A), Math.cos(A)], wxw = hw - 0.08;
+  quad(b, [[-wxw, wy0, zb0], [wxw, wy0, zb0], [wxw - L, wy1, zt0], [-wxw + L, wy1, zt0]], [0, -0.04*nx[1], -0.04*nx[2]], {c:'glassL', m:'glass', name:'windscreen'});
+  b.block('box', [hw - 0.04 - L/2, wy, wz - 0.01], [0.07, wl + 0.05, 0.07], {c:'paint1', mx:true, rot:[-al, 0, Math.atan2(L, wh)*180/Math.PI], name:'A pillar'});
   b.box([hw - 0.06, belt, cabF - 0.04], [hw, wy0 + 0.04, cabF + 0.08], {c:'paint1', mx:true, name:'cowl post'});
   var rf = cabF + 0.04 - dz + 0.06;
-  b.box([-hw + 0.04, roof - 0.1, cb - 0.05], [hw - 0.04, roof, rf], {c:'paint1', name:'roof'});
+  b.box([-hw + 0.04 + L, roof - 0.1, cb - 0.05], [hw - 0.04 - L, roof, rf], {c:'paint1', name:'roof'});
   b.box([-hw + 0.04, belt + 0.03, cabF - 0.02], [hw - 0.04, belt + 0.12, cabF + 0.1], {c:'paint1', name:'scuttle'});
   /* sides and rear */
   var tail = B + 0.1, open = (k === 'suv');
@@ -105,15 +123,14 @@ function refcar(WSB, id, S){
   if (k === 'van'){ b.box([hw - 0.06, belt, B], [hw, roof - 0.1, cb], {c:'paint1', mx:true, name:'van side'}); b.box([-hw + 0.04, roof - 0.1, B], [hw - 0.04, roof, cb], {c:'paint1', name:'van roof'}); }
   b.box([-hw, bb, B], [hw, belt, B + 0.1], {c:'paint1', name:'rear panel'});
   if (k === 'suv'){
-    b.box([-hw + 0.08, belt + 0.04, tail - 0.03], [hw - 0.08, roof - 0.1, tail], {c:'glassL', m:'glass', name:'rear window'});
-    b.box([hw - 0.09, belt, tail - 0.04], [hw - 0.01, roof - 0.1, tail + 0.12], {c:'paint1', mx:true, name:'C pillar'});
-    b.box([hw - 0.05, belt + 0.03, tail + 0.3], [hw - 0.02, roof - 0.12, dz0 - 0.14], {c:'glassL', m:'glass', mx:true, name:'quarter window'});
-    b.box([hw - 0.09, belt, dz0 - 0.16], [hw, roof - 0.1, dz0 - 0.02], {c:'paint1', mx:true, name:'B pillar'});
-    b.box([hw - 0.09, belt, tail - 0.04], [hw, roof - 0.1, tail + 0.32], {c:'paint1', mx:true, name:'C pillar thick'});
+    quad(b, [[-hw + 0.08, belt + 0.04, tail], [hw - 0.08, belt + 0.04, tail], [hw - 0.08 - L, roof - 0.1, tail], [-hw + 0.08 + L, roof - 0.1, tail]], [0, 0, 0.03], {c:'glassL', m:'glass', name:'rear window'});
+    post(b, hw - 0.04, belt, roof - 0.1, tail - 0.04, tail + 0.32, 0.09, L, {c:'paint1', name:'C pillar thick'});
+    quad(b, [[hw - 0.03, belt + 0.03, tail + 0.3], [hw - 0.03, belt + 0.03, dz0 - 0.14], [hw - 0.03 - L, roof - 0.12, dz0 - 0.14], [hw - 0.03 - L, roof - 0.12, tail + 0.3]], [-0.03, 0, 0], {c:'glassL', m:'glass', mx:true, name:'quarter window'});
+    post(b, hw - 0.04, belt, roof - 0.1, dz0 - 0.16, dz0 - 0.02, 0.09, L, {c:'paint1', name:'B pillar'});
   } else if (k === 'pickup'){
     b.box([-hw + 0.04, belt, cb - 0.05], [hw - 0.04, belt + 0.14, cb], {c:'paint1', name:'cab back lower'});
-    b.box([-hw + 0.1, belt + 0.14, cb - 0.05], [hw - 0.1, roof - 0.12, cb - 0.02], {c:'glassL', m:'glass', name:'rear window'});
-    b.box([hw - 0.09, belt, cb - 0.05], [hw - 0.01, roof - 0.1, cb + 0.08], {c:'paint1', mx:true, name:'C pillar'});
+    quad(b, [[-hw + 0.1, belt + 0.14, cb - 0.03], [hw - 0.1, belt + 0.14, cb - 0.03], [hw - 0.1 - L, roof - 0.12, cb - 0.03], [-hw + 0.1 + L, roof - 0.12, cb - 0.03]], [0, 0, 0.03], {c:'glassL', m:'glass', name:'rear window'});
+    post(b, hw - 0.04, belt, roof - 0.1, cb - 0.05, dz0, 0.09, L, {c:'paint1', name:'C pillar'});
     b.box([-hw + 0.3, bb, B], [hw - 0.3, belt - 0.3, cb - 0.05], {c:'paint1', name:'bed floor'});
     wall(b, hw - 0.3, hw, bb, belt - 0.3, B, cb - 0.05, {c:'paint1', mx:true, name:'bed floor'}, ops);
     wall(b, hw - 0.1, hw, belt - 0.3, belt + 0.1, B, cb - 0.05, {c:'paint1', mx:true, name:'bed side'}, ops);
@@ -122,18 +139,18 @@ function refcar(WSB, id, S){
     b.box([-hw + 0.12, belt - 0.3, B + 0.1], [hw - 0.12, belt - 0.26, cb - 0.15], {c:'#2b2622', m:'plastic', name:'bed liner'});
   } else {
     b.box([-hw + 0.04, belt, cb - 0.05], [hw - 0.04, roof - 0.12, cb], {c:'paint1', name:'bulkhead'});
-    b.box([hw - 0.09, belt, cb - 0.05], [hw, roof - 0.1, dz0], {c:'paint1', mx:true, name:'B pillar'});
+    post(b, hw - 0.04, belt, roof - 0.1, cb - 0.05, dz0, 0.09, L, {c:'paint1', name:'B pillar'});
     b.box([-hw + 0.04, belt, B], [hw - 0.04, roof - 0.1, B + 0.1], {c:'paint1', name:'van back'});
   }
   /* doors */
   var tA = Math.tan(A), zp = function(y){ return cabF + 0.04 - (y - wy0)*tA; };
   var gy0 = belt, gy1 = roof - 0.12, gf0 = zp(gy0) - 0.07, gf1 = zp(gy1) - 0.07, gr = dz0 + 0.04;
   b.door([hw, bb + 0.04, dz0], [hw + 0.05, belt, dz1], {c:'paint1', mx:true, hinge:'front', name:'front door'});
-  trap(b, hw + 0.01, hw + 0.04, [[gr, gy0], [gf0, gy0], [gf1, gy1], [gr, gy1]], {c:'glassL', m:'glass', mx:true, name:'front door'});
-  b.box([hw, roof - 0.12, dz0], [hw + 0.05, roof - 0.1, gf1 + 0.04], {c:'paint1', mx:true, name:'front door'});
-  b.box([hw, belt, dz0], [hw + 0.05, roof - 0.12, dz0 + 0.04], {c:'paint1', mx:true, name:'front door'});
+  quad(b, [[hw + 0.04, gy0, gr], [hw + 0.04, gy0, gf0], [hw + 0.04 - L, gy1, gf1], [hw + 0.04 - L, gy1, gr]], [-0.03, 0, 0], {c:'glassL', m:'glass', mx:true, name:'front door'});
+  b.box([hw - L, roof - 0.12, dz0], [hw + 0.05 - L, roof - 0.1, gf1 + 0.04], {c:'paint1', mx:true, name:'front door'});
+  post(b, hw + 0.025, belt, roof - 0.1, dz0, dz0 + 0.05, 0.05, L, {c:'paint1', name:'front door'});
   var fl_ = Math.sqrt((gf0 - gf1)*(gf0 - gf1) + (gy1 - gy0)*(gy1 - gy0)), fang = Math.atan2(gf0 - gf1, gy1 - gy0)*180/Math.PI;
-  b.block('box', [hw + 0.025, (gy0 + gy1)/2, (gf0 + gf1)/2 + 0.035], [0.05, fl_ + 0.04, 0.05], {c:'paint1', mx:true, rot:[-fang, 0, 0], name:'front door'});
+  b.block('box', [hw + 0.025 - L/2, (gy0 + gy1)/2, (gf0 + gf1)/2 + 0.035], [0.05, fl_ + 0.04, 0.05], {c:'paint1', mx:true, rot:[-fang, 0, Math.atan2(L, gy1 - gy0)*180/Math.PI], name:'front door'});
   b.box([hw, belt - 0.02, dz1 - 0.02], [hw + 0.05, belt + 0.02, gf0 + 0.06], {c:'paint1', mx:true, name:'front door'});
   b.box([hw + 0.05, belt - 0.12, dz0 + 0.06], [hw + 0.08, belt - 0.08, dz0 + 0.26], {c:'chrome', m:'chrome', mx:true, name:'door handle'});
   /* face, arches, cladding, mirrors, tail */
@@ -171,7 +188,7 @@ var P = {
 };
 function fireEngine(WSB){
   var b = WSB.create({id:'fire_engine_city', name:'Fire engine (city)', domain:'land', cls:'truck', paint:{paint1:'#c4302a', paint2:'#6b7078', paint3:'#ecece6'}, topSpeed:65, tank:'large'});
-  b.wheels(0.6, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
+  b.wheels(0.6, 0.3); wheelLook(b, 0.6, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
   b.box([-0.45, 0.7, -4.8], [0.45, 0.9, 4.0], {c:'underside', m:'steel', name:'chassis'});
   b.box([-1.3, 0.9, 3.3], [1.3, 1.9, 4.1], {c:'paint1', name:'nose'});
   CK.truckCab(b, {hw:1.3, zB:1.4, zF:3.3, fl:1.0, belt:1.85, roof:2.9, seatY:1.3, driverX:-0.55});
