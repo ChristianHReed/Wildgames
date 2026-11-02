@@ -58,6 +58,10 @@ Skip underside detail beyond the chassis rail and axles. Cabin interiors stay si
 - Always render and look before calling a vehicle done; the tests cannot see proportion. First look showed small, low wheels, so the red truck got radius 0.5 and a higher floor (0.66).
 - Big wheels need the body raised with them (floor and arches), or the tyre cuts through the hood line.
 
+## The reference look (user pictures, 1 Nov 2026) - recipe in workshop/designs/refs.js
+Chunky 90s low-poly: raked windscreen on slim pillars; sloping hood; slatted dark grille flanked by square white headlights with an amber indicator under each; wide grey-blue bumper with two black bull-bar posts; dark arch frames; dark lower cladding between the wheels; big black mirrors on arms; tinted glass with seats visible; two-tone paint and simple livery (stripes, light bars). Raked glass is a vertical pane rotated about X by -alpha (size [w, length, 0.04]); a hood that slopes down to the nose is a box rotated +deg about X. Rotated pieces still need to touch their neighbours.
+Vehicles built: police SUV, green SUV, red and orange pickups, green van, ambulance, fire engine (city).
+
 ## Sources
 - [Car design essentials part 1: bones (Car Design News)](https://www.cardesignnews.com/cars/car-design-essentials-part-1-bones/482965)
 - [Greenhouse (car), Wikipedia](https://en.wikipedia.org/wiki/Greenhouse_(car))
