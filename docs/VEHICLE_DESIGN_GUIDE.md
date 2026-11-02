@@ -60,6 +60,7 @@ Skip underside detail beyond the chassis rail and axles. Cabin interiors stay si
 
 ## The reference look (user pictures, 1 Nov 2026) - recipe in workshop/designs/refs.js
 Chunky 90s low-poly: raked windscreen on slim pillars; sloping hood; slatted dark grille flanked by square white headlights with an amber indicator under each; wide grey-blue bumper with two black bull-bar posts; dark arch frames; dark lower cladding between the wheels; big black mirrors on arms; tinted glass with seats visible; two-tone paint and simple livery (stripes, light bars). Raked glass is a vertical pane rotated about X by -alpha (size [w, length, 0.04]); a hood that slopes down to the nose is a box rotated +deg about X. Rotated pieces still need to touch their neighbours.
+Second pass, what the comparison taught: (1) glass must be light enough to show the interior (stock `glassL`, not the dark `glass`); (2) seats brown, not dark grey, so they read through the glass; (3) lettering sells a vehicle - `text()` in refs.js builds 3x5 block letters as merged boxes (right side reads front to back, left side the reverse), keep it to about 40 boxes per word; (4) headlights pure white, indicators amber; (5) the headliner must stop where the raked roof starts (`headF` option in cabin_kit) or it sticks out over the windscreen.
 Vehicles built: police SUV, green SUV, red and orange pickups, green van, ambulance, fire engine (city).
 
 ## Sources

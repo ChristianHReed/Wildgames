@@ -21,15 +21,15 @@ function driverKit(b, o){
 /* a seat: pedestal, cushion (the Seat job) and backrest */
 function seat(b, o, x, z, w, name, floorTop){
   b.box([x - 0.1, floorTop, z - 0.1], [x + 0.1, o.seatY - 0.06, z + 0.1], {fitting:true, c:TRIM, m:'plastic', name:'seat rail'});
-  b.seat([x, o.seatY, z], {size:[w, 0.12, 0.5], c:'#4a4a44', name:name});
-  b.box([x - w/2, o.seatY + 0.05, z - 0.36], [x + w/2, o.seatY + 0.6, z - 0.26], {fitting:true, c:'#4a4a44', m:'cloth', name:name + ' back'});
-  b.box([x - 0.12, o.seatY + 0.6, z - 0.35], [x + 0.12, o.seatY + 0.72, z - 0.28], {fitting:true, c:'#4a4a44', m:'cloth', name:name + ' headrest'});
+  var sc = o.seatC || '#4a4a44'; b.seat([x, o.seatY, z], {size:[w, 0.12, 0.5], c:sc, name:name});
+  b.box([x - w/2, o.seatY + 0.05, z - 0.36], [x + w/2, o.seatY + 0.6, z - 0.26], {fitting:true, c:sc, m:'cloth', name:name + ' back'});
+  b.box([x - 0.12, o.seatY + 0.6, z - 0.35], [x + 0.12, o.seatY + 0.72, z - 0.28], {fitting:true, c:sc, m:'cloth', name:name + ' headrest'});
 }
 /* the whole cabin of a car or pickup */
 function carCabin(b, o){
   var hw = o.hw, belt = o.belt, roof = o.roof, zF = o.cabF, zB = o.cabB, g = o.g, floorTop = g + 0.28;
   b.box([-hw + 0.08, g + 0.22, zB + 0.04], [hw - 0.08, floorTop, zF - 0.02], {fitting:true, c:CARPET, m:'cloth', name:'floor carpet'});
-  b.box([-hw + 0.1, roof - 0.14, zB + 0.05], [hw - 0.1, roof - 0.1, zF - 0.02], {fitting:true, c:LINER, m:'cloth', name:'headliner'});
+  b.box([-hw + 0.1, roof - 0.14, zB + 0.05], [hw - 0.1, roof - 0.1, o.headF == null ? zF - 0.02 : o.headF], {fitting:true, c:LINER, m:'cloth', name:'headliner'});
   b.box([hw - 0.12, g + 0.3, zB + 0.1], [hw - 0.07, belt + 0.02, zF - 0.1], {fitting:true, c:TRIM, m:'plastic', mx:true, name:'door card'});
   b.box([-0.1, floorTop, zF - 0.95], [0.1, floorTop + 0.22, zF - 0.1], {fitting:true, c:DASH, m:'plastic', name:'centre console'});
   b.block('cyl', [0, floorTop + 0.34, zF - 0.55], [0.05, 0.2, 0.05], {fitting:true, c:DARK, m:'plastic', name:'gear lever'});
@@ -51,7 +51,7 @@ function truckCab(b, o){
   b.box([-hw + 0.04, fl - 0.12, zB - 0.06], [hw - 0.04, roof - 0.1, zB], {fitting:true, c:c, name:'cab back wall'});
   b.box([hw - 0.07, belt, zF - 0.04], [hw - 0.01, roof - 0.1, zF + 0.1], {fitting:true, c:c, mx:true, name:'A pillar'});
   b.box([-hw + 0.02, roof - 0.1, zB - 0.06], [hw - 0.02, roof, zF + 0.12], {fitting:true, c:c, name:'cab roof'});
-  b.box([-hw + 0.1, roof - 0.14, zB + 0.05], [hw - 0.1, roof - 0.1, zF - 0.02], {fitting:true, c:LINER, m:'cloth', name:'headliner'});
+  b.box([-hw + 0.1, roof - 0.14, zB + 0.05], [hw - 0.1, roof - 0.1, o.headF == null ? zF - 0.02 : o.headF], {fitting:true, c:LINER, m:'cloth', name:'headliner'});
   b.box([-hw + 0.08, belt + 0.04, zF + 0.03], [hw - 0.08, roof - 0.1, zF + 0.07], {fitting:true, c:'glass', m:'glass', name:'windscreen'});
   b.box([hw - 0.12, fl + 0.05, zB + 0.1], [hw - 0.07, belt + 0.02, zF - 0.1], {fitting:true, c:TRIM, m:'plastic', mx:true, name:'door card'});
   var z0 = zB + 0.25, z1 = zF - 0.1;
