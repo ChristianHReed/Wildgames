@@ -82,3 +82,17 @@ Vehicles built: police SUV, green SUV, red and orange pickups, green van, ambula
 - Cargo interiors (ambulance stretcher, bench, cabinet, oxygen; van shelves and crates) cost about 400 triangles; check the budget after adding them.
 - Glass is see-through and slightly tinted: names start `glass`, tint #9bb3ba, drawn at alpha about 0.26. The album shows this; the game only does it for building glass today, so vehicle glass needs the main chat.
 - Known gaps: fire engine cab not checked from the eye, seats are blocky, the wheel does not turn (needs a Workshop rig job).
+
+## Fleet rebuild (pass 7, 2 Nov 2026)
+Every vehicle and craft was rebuilt with the recipe above. Where things live now:
+- `workshop/designs/refs.js`: car builder (`refcar`) for cars, pickups, vans, SUVs, ambulance, police; table `P` (reference vehicles) and `Q` (the stock `*_remade` cars). Supports `doors4`, `kind:'sedan'`, `flat` (flatbed), `rack`, `extra(b, ctx)` hook for military fittings. Exports helpers as `.H`.
+- `workshop/designs/heavy.js`: truck cab builder (`cab`), chassis, buses, motorhome, box truck, semi, army trucks and cars, APC, trailers.
+- `boats.js`, `aircraft.js`, `bush_plane.js`, `helicopter.js`, `military.js`: shaped boat hulls, tinted glass, details.
+- Old files kept as `old_*.js.txt` for reference; their ids now come from the new files, so no id changed.
+Lessons:
+- Width budget: the car shop is 3.2 m wide, mirrors included. Keep mirror arms short (about 0.2 m) on wide buses.
+- A walk-in way in needs a door at least 1.6 m tall (a 1.45 m door made the motorhome fail the RV rule).
+- Pieces laid on a shell wall need to sit 0.04 to 0.1 m proud of it: flush ones z-fight (dithered), too far ones count as loose (lettering above 0.06 m off failed).
+- Wheel openings: cut with `wall()` and finish with `arch()`; add `wheelLook()`. Floors must clear wheel tops or the wheel pokes into the cabin.
+- Lettering font now has A B C D E F G H I K L M N O P R S T U V W Y and space.
+- Aircraft are still the weakest: blocky fuselages, no rotor or propeller in the preview (they are separate parts). Next pass should loft the fuselage and cowl.

@@ -82,8 +82,8 @@ function boxTruck(WSB){
   b.box([-bx - 0.03, 0.72, -4.1], [bx + 0.03, 0.95, -3.85], {c:BUMP, m:'steel', name:'rear bumper'});
   for (var z = -3.45; z < 0.3; z += 0.85) b.box([bx, 1.0, z], [bx + 0.03, 3.0, z + 0.07], {c:'paint3', mx:true, name:'body rib'});
   b.box([bx, 2.9, -3.85], [bx + 0.03, 3.0, 0.45], {c:'paint3', mx:true, name:'roof edge'}); b.box([bx, 1.0, -3.85], [bx + 0.03, 1.1, 0.45], {c:'paint3', mx:true, name:'side rail'});
-  b.box([bx + 0.03, 1.6, -3.0], [bx + 0.05, 2.35, -0.6], {c:'paint2', mx:true, name:'side stripe'});
-  text(b, 'MOVERS', {side:1, x:bx + 0.06, y:1.75, z:-0.8, px:0.07, c:'#e8e4da', name:'lettering'}); text(b, 'MOVERS', {side:-1, x:bx + 0.06, y:1.75, z:-0.8 - textLen('MOVERS', 0.07), px:0.07, c:'#e8e4da', name:'lettering'});
+  b.box([bx + 0.08, 1.6, -3.0], [bx + 0.095, 2.35, -0.6], {c:'paint2', mx:true, name:'side stripe'});
+  text(b, 'MOVERS', {side:1, x:bx + 0.105, y:1.75, z:-0.8, px:0.07, c:'#e8e4da', name:'lettering'}); text(b, 'MOVERS', {side:-1, x:bx + 0.105, y:1.75, z:-0.8 - textLen('MOVERS', 0.07), px:0.07, c:'#e8e4da', name:'lettering'});
   [[-1, 1].map(function(s){ return s; })];
   b.box([-bx, 0.96, 0.4], [bx, 1.0, 0.5], {c:'underside', m:'steel', name:'box front frame'});
   /* rear fenders and mud flaps */
@@ -143,7 +143,7 @@ function cargo(WSB){
   b.hitch([0, 0.7, -4.25], 'pintle'); b.storage([-1.0, 1.1, -3.9], [1.0, 2.2, -2.0], 'load');
   b.light('headlight', [0.75, 1.3, 3.72], [0.24, 0.2, 0.04]); b.light('taillight', [1.0, 1.3, -4.05], [0.16, 0.24, 0.04]);
   b.engine([0, 1.3, 3.0], [0.8, 0.6, 1.0]); b.tank([0.8, 0.65, -0.6], [0.4, 0.4, 0.9]); b.battery([0.6, 1.3, 3.3]);
-  text(b, 'ARMY', {side:1, x:hw + 0.06, y:1.8, z:-1.0, px:0.12, c:'#d8d4b8', name:'lettering'}); text(b, 'ARMY', {side:-1, x:hw + 0.06, y:1.8, z:-1.0 - textLen('ARMY', 0.12), px:0.12, c:'#d8d4b8', name:'lettering'});
+  text(b, 'ARMY', {side:1, x:hw + 0.055, y:1.8, z:-1.0, px:0.12, c:'#d8d4b8', name:'lettering'}); text(b, 'ARMY', {side:-1, x:hw + 0.055, y:1.8, z:-1.0 - textLen('ARMY', 0.12), px:0.12, c:'#d8d4b8', name:'lettering'});
   return b;
 }
 

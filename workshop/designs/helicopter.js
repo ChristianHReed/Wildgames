@@ -1,9 +1,10 @@
 /* A light utility helicopter: main rotor and tail rotor, skids, sliding cabin doors on both sides and a crouch-in cabin. */
+var AH = require('./refs.js').H, aq = AH.quad, ADK = AH.DK, ARED = AH.RED;
 module.exports = function(WSB){
   var b = WSB.create({id:'utility_heli', name:'Utility helicopter', domain:'air', cls:'heli', paint:{paint1:'#3e5a3a', paint2:'#c9c3b6', paint3:'#2a2a2a'}});
   b.box([-0.8, 0.5, -1.2], [0.8, 0.65, 1.4], {c:'underside', m:'sheet', name:'floor'});
   b.box([-0.8, 0.65, 0.3], [0.8, 1.95, 1.4], {c:'paint1', m:'sheet', name:'cockpit'});
-  b.box([-0.75, 1.0, 1.91], [0.75, 1.9, 1.95], {c:'glass', m:'glass', name:'nose glass'}); b.box([0.71, 1.0, 1.4], [0.75, 1.9, 1.91], {c:'glass', m:'glass', mx:true, name:'nose side glass'});
+  b.box([-0.75, 1.0, 1.91], [0.75, 1.9, 1.95], {c:'glassL', m:'glass', name:'nose glass'}); b.box([0.71, 1.0, 1.4], [0.75, 1.9, 1.91], {c:'glassL', m:'glass', mx:true, name:'nose side glass'});
   b.box([-0.8, 1.95, -1.2], [0.8, 2.05, 1.4], {c:'paint1', m:'sheet', name:'roof'});
   b.box([-0.8, 0.65, -1.3], [0.8, 1.95, -1.2], {c:'paint1', m:'sheet', name:'cabin back'});
   b.box([0.8, 0.65, 0.3], [0.85, 1.95, 1.4], {c:'paint1', m:'sheet', mx:true, name:'pilot side'});
@@ -21,5 +22,14 @@ module.exports = function(WSB){
   b.seat([0.35, 0.9, 0.85], {mx:true, name:'pilot seat'});
   b.seat([0, 0.85, -0.95], {size:[1.4, 0.1, 0.4], name:'cabin bench'});
   b.engine([0, 2.25, -0.4], [0.7, 0.35, 1.2]); b.tank([0, 0.55, -0.4], [1.0, 0.1, 0.6]);
+  aq(b, [[-0.72, 1.0, 1.4], [0.72, 1.0, 1.4], [0.6, 1.9, 1.95], [-0.6, 1.9, 1.95]], [0, -0.03, 0.0], {c:'glassL', m:'glass', name:'windscreen'});
+  b.box([-0.05, 0.9, 1.4], [0.05, 1.95, 1.5], {c:ADK, m:'plastic', name:'windscreen post'});
+  [-1, 1].forEach(function(sx){ b.box([sx*0.8 - 0.01, 1.1, 0.4], [sx*0.8 + 0.01, 1.8, 1.3], {c:'glassL', m:'glass', name:'pilot window'}); });
+  b.box([-0.8, 0.65, 1.4], [0.8, 1.0, 1.92], {c:'paint1', m:'sheet', name:'chin'});
+  b.box([-0.45, 1.0, -6.0], [0.45, 1.05, -1.3], {c:'paint2', name:'belly strip'});
+  b.box([0.795, 1.3, -1.2], [0.815, 1.8, 0.3], {c:'glassL', m:'glass', mx:true, name:'cabin window'});
+  b.box([-0.05, 2.5, -6.0], [0.05, 2.6, -5.85], {c:ARED, m:'plastic', name:'tail light'}); b.box([-0.12, 2.0, 1.0], [0.12, 2.06, 1.45], {c:'#f2f2ea', m:'plastic', name:'searchlight'});
+  b.box([-0.62, 0.08, -0.9], [0.62, 0.14, -0.8], {c:'underside', m:'steel', name:'skid cross tube'}); b.box([-0.62, 0.08, 0.9], [0.62, 0.14, 1.0], {c:'underside', m:'steel', name:'skid cross tube'});
+  b.box([-0.1, 2.05, -1.3], [0.1, 2.3, -0.6], {c:'paint2', name:'cowl fin'});
   return b;
 };
