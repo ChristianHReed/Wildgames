@@ -9,7 +9,8 @@ Sources: Apple Human Interface Guidelines (Game controls), Epic's "Designing for
 4. **Size and feedback.** Frequent buttons at least 44 pt (most are 52 to 84), less used ones at least 28. Every button shows a press state that is visible round the thumb (it shrinks and glows).
 5. **Hierarchy.** Critical things are big, high contrast and moving: low health and needs pulse red. Important things are medium (prompts at the crosshair). Information is small (clock, compass). Ambient things are in the world (time of day, weather).
 6. **Placement.** Persistent information in the corners (vitals top left, map top right). Momentary information at the centre (prompt, crosshair). Messages at the top centre (toasts).
-7. **One way to do a thing.** No prompt that repeats a button that is already on screen (the "Tap here to get out" pill is hidden on touch, because Get out is a button).
+7. **Actions are buttons on touch.** What you can do with the thing in front of you is a button beside Build (a verb such as Drink, Drive, Open, with the object under it in small type), not words in the middle of the screen. Hold actions fill the button as they progress.
+8. **One way to do a thing.** No prompt that repeats a button that is already on screen (the "Tap here to get out" pill is hidden on touch, because Get out is a button).
 
 ## Applied in 0.114.83
 - Press states and safe-area insets on every touch button, the stick, the hotbar and the vehicle panel.

@@ -245,7 +245,12 @@
   .touchmode .slot .cnt{font-size:11px}
   .touchmode .slot .key{display:none}
   .touchmode #toast{top:74px;font-size:12px}
-  .touchmode #prompt{top:44%}
+  .touchmode #prompt{display:none !important}
+  /* 0.114.87: on touch the thing in front of you is an action button beside Build, not words in the middle of the screen */
+  #tAct{display:none;right:98px;bottom:248px;min-width:84px;max-width:150px;height:54px;padding:0 14px !important;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(90deg,rgba(122,138,94,.55) var(--pg,0%),rgba(245,234,216,.92) var(--pg,0%)) !important;border-radius:27px !important}
+  #tAct.on{display:flex} #tAct b{color:var(--ink);font-size:15px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} #tAct i{font-style:normal;font-weight:600;font-size:10px;line-height:1.15;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  #tAct i:empty{display:none} #tAct.info{opacity:.72;border-style:dashed !important} #touch.vmode #tAct{display:none}
+  body.hc #tAct{background:#000 !important;color:#fff;border-color:#fff} body.hc #tAct i{color:#ddd}
   .touchmode #chatIn{bottom:210px;left:160px}
   @media (max-width:560px){
     .touchmode #hud{top:112px;width:240px}
@@ -322,7 +327,7 @@
     <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
     <button id="tShoot" class="m1">Shoot</button><button id="tGun" class="m1">Gun</button><button id="tCar" class="m1 nx">Trunk</button><button id="tThrow" class="m1">Throw</button><button id="tLight" class="m1">Light</button>
     <button id="tCade" class="m2">Wall</button><button id="tFire" class="m2">Fire</button><button id="tPing" class="m2">Mark</button><button id="tBuild" class="m2">Build menu</button>
-    <button id="tTake" class="nx">Take apart</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
+    <button id="tAct" class="act"><b id="tActM"></b><i id="tActS"></i></button><button id="tTake" class="nx">Take apart</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
     <button id="tVBrake" class="mv">Brake</button><button id="tVLight" class="mv">Lights</button><button id="tVView" class="mv">View</button><button id="tVOut" class="mv">Get out</button><button id="tVSeat" class="mv">Seat</button>
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)">Esc frees the mouse &middot; H shows the controls</span></div>
@@ -504,7 +509,7 @@
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.86', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.87', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -659,6 +664,7 @@ hold('tAtk', function(){ keys.Swing = true; }, function(){ keys.Swing = false; }
 hold('tJump', function(){ wantJump = true; keys.HB = true; }, function(){ keys.HB = false; });
 hold('tMode', function(){ el('touch').classList.toggle('bmode'); el('tMode').innerHTML = '<img src="assets/ui/' + (el('touch').classList.contains('bmode') ? 'back' : 'build') + '.svg" alt="">'; });
 hold('tBuild', function(){ el('buildBtn').click(); });
+hold('tAct', function(){ if (running) tapUse = true; });
 hold('tTake', function(){ keys.Take = true; }, function(){ keys.Take = false; });
 el('plrot').addEventListener('click', plRotate); el('plsn').addEventListener('click', function(){ if (PL) PL.grid = !PL.grid; }); el('plok').addEventListener('click', plConfirm); el('plno').addEventListener('click', endPlace);
 cv.addEventListener('wheel', function(e){ if (PL){ PL.dist = Math.max(1.4, Math.min(6, PL.dist + (e.deltaY < 0 ? 0.3 : -0.3))); e.preventDefault(); } }, {passive:false});
@@ -2121,7 +2127,7 @@ function update(dt){
     else { prog += dt/(target.nest ? 4 : target.plant ? (target.nm === 'rock' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
   } else prog = 0;
   var pr = el('prompt');
-  if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Search to come out' : 'move or press E to come out'); }
+  if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Come out' : 'move or press E to come out'); }
   else if (P.veh && document.body.classList.contains('touchmode')){ pr.classList.add('hidden'); }   /* 0.114.86: the Get out button does this on touch */
   else if (P.veh){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = (document.body.classList.contains('touchmode') ? 'Tap here to get ' : 'Press E to get ') + (P.veh.t ? 'out' : 'off'); }
   else if (target){
@@ -2140,6 +2146,7 @@ function update(dt){
     else if (target.fix) el('ptxt').textContent = fixText(target);
     else if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
   } else pr.classList.add('hidden');
+  actButton(pr);
 
   if (PL){ if (wantSwing) plConfirm(); if (wantShoot) endPlace(); wantSwing = wantShoot = false; keys.Swing = false; }
   if ((wantSwing || keys.Swing) && P.atkCd <= 0 && !P.veh) swing();
@@ -4635,6 +4642,26 @@ function truckSpots(v){
   s.forEach(function(o){ var q = tpt(v, o.lx, o.lz); o.x = q.x; o.y = q.y; }); return s;
 }
 function fitting(){ return target && target.truckSpot && target.act === 'work' && prog > 0 && truckJob() ? {j:truckJob()[0], t:prog} : null; }
+/* 0.114.87: the touch action button. The prompt's words become a short verb on the button (Drink, Drive, Open...) with the rest in small type under it; hold progress fills it */
+var ACT = {t:null, p:-1};
+function actLabel(t){
+  var busy = /\u2026$/.test(String(t || '')); t = String(t || '').replace(/\u2026$/, '');
+  if (/^Hiding/.test(t)) return ['Come out', 'hiding in the dark', 0];
+  if (/^Press E:/.test(t)) return ['Talk', t.replace(/^Press E:\s*/, ''), 0];
+  var m = /^(?:Tap here to|Tap to|Press E to|Hold E to)\s*(.*)$/.exec(t);
+  if (!m && !autoUse){ var seg = t.split(/ \u00b7 /); return [seg[0], seg.slice(1).join(' \u00b7 '), 1]; }
+  var r = m ? m[1] : t, det = [], seg2 = r.split(/ \u00b7 /); r = seg2.shift(); det = det.concat(seg2);
+  r = r.replace(/\s*\(([^)]*)\)/g, function(x, a){ det.unshift(a); return ''; }).trim();
+  var w = r.split(' '), n = 1; if (w.length > 1 && /^(up|out|off|apart|down|back|over|on|away)$/i.test(w[1])) n = 2;
+  var main = w.slice(0, n).join(' '), obj = w.slice(n).join(' ');
+  return [main.charAt(0).toUpperCase() + main.slice(1) + (busy ? '\u2026' : ''), obj || det.join(' \u00b7 '), 0];
+}
+function actButton(pr){
+  var b = el('tAct'); if (!b) return; var on = document.body.classList.contains('touchmode') && !pr.classList.contains('hidden') && !P.veh;
+  var t = on ? el('ptxt').textContent : '';
+  if (t !== ACT.t){ ACT.t = t; b.classList.toggle('on', on); if (on){ var L = actLabel(t); el('tActM').textContent = L[0]; el('tActS').textContent = L[1]; b.classList.toggle('info', !!L[2]); } }
+  var pg = on ? Math.round(prog*100) : 0; if (pg !== ACT.p){ ACT.p = pg; b.style.setProperty('--pg', pg + '%'); }
+}
 function tchE(t){ return document.body.classList.contains('touchmode') ? t.replace(/^(Hold|Press) E to/, 'Tap to') : t; }
 function truckText(o){
   var v = o.v, fixed = truckFixed(v), fuelTxt = v.fuel > 0 ? ' (fuel for about ' + Math.round(v.fuel/MILE) + ' miles)' : inv.fuel > 0 ? ' (the tank is empty; a can of yours goes in)' : ' · the tank is empty: bring fuel';
