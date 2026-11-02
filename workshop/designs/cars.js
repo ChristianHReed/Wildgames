@@ -66,6 +66,13 @@ function car(WSB, id, S){
   }
   door(dz0, dz1, 'front door');
   if (four) door(rz0, rz1, 'rear door');
+  /* looks rules (docs/VEHICLE_DESIGN_GUIDE.md): dark arch trims frame each wheel, a sill closes the gap under the doors, mirrors and handles break the flat side */
+  [S.fz, S.rz].forEach(function(az, i){
+    b.box([hw - 0.02, 2*r - 0.06, az - r - 0.08], [hw + 0.05, 2*r + 0.08, az + r + 0.08], {c:'black', m:'plastic', mx:true, name:i ? 'rear arch trim' : 'front arch trim'});
+  });
+  b.box([hw - 0.02, bb, S.rz + r + 0.08], [hw + 0.04, bb + 0.1, S.fz - r - 0.08], {c:'underside', m:'plastic', mx:true, name:'sill'});
+  b.box([hw - 0.02, belt - 0.05, dz0 + 0.05], [hw + 0.12, belt + 0.05, dz0 + 0.1], {c:'black', m:'plastic', mx:true, name:'wing mirror'});
+  b.box([hw + 0.05, belt - 0.12, dz0 + 0.08], [hw + 0.08, belt - 0.08, dz0 + 0.28], {c:'chrome', m:'chrome', mx:true, name:'door handle'});
   /* nose and tail fittings */
   b.box([-hw - 0.02, bb, F - 0.05], [hw + 0.02, bb + 0.2, F + 0.1], {c:'chrome', m:'chrome', name:'front bumper'});
   b.box([-hw - 0.02, bb, B - 0.1], [hw + 0.02, bb + 0.2, B + 0.05], {c:'chrome', m:'chrome', name:'rear bumper'});

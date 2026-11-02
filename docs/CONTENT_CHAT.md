@@ -40,3 +40,6 @@ From `ART_REQUESTS_FINISH.md` (section 2 held tools done, 1 Nov 2026): sounds, w
 
 ## What exists (map of my work)
 Packs in `packs/`: tools (`make_held_tools.js`), bridges, survivors, fleet, clips, waterways, military, crafts (generated from `workshop/designs/`). Docs: `docs/WATERWAYS.md`, `docs/VEHICLE_BUILD.md`, `docs/ROAD_THICKNESS.md`, `docs/CONTENT_NOTE_VEHICLES_REMADE.md`, this file.
+
+## Vehicle look rules (see docs/VEHICLE_DESIGN_GUIDE.md)
+Silhouette first; short overhangs; close wheel arches with dark arch trims; detail priority front face > wheels > side (mirror, handles, sill) > rear > roof; value contrast; low centre of mass; same wheel/light/mirror shapes across a pack; thumbnail test before shipping. Reference games: Stormworks, Space Engineers, Starbase (build hull for looks, fit working blocks inside, no plating gaps, keep to the fit-station size).
