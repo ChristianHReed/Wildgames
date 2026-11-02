@@ -170,9 +170,38 @@ function refcar(WSB, id, S){
   });
   var rear = (k === 'suv') ? [cabF - 0.78 - 0.95, cabF - 0.78 - 0.95] : [];
   CK.carCabin(b, {hw:hw, belt:belt, roof:roof, cabF:cabF, cabB:cb, g:g, floor:fl, seatY:fl + 0.18, rear:rear, seatC:'#7a4e34', headF:rf - 0.04});
+  /* the roof of the cabin: rear-view mirror, sun visors and a dome light, all within the driver's view */
+  var fi = {fitting:true, m:'plastic'};
+  b.box([-0.012, wy1 - 0.09, zt0 - 0.07], [0.012, roof - 0.1, zt0 - 0.04], Object.assign({c:DK, name:'mirror arm'}, fi));
+  b.box([-0.16, wy1 - 0.17, zt0 - 0.09], [0.16, wy1 - 0.09, zt0 - 0.03], Object.assign({c:DK, name:'rear-view mirror'}, fi));
+  b.box([-0.14, wy1 - 0.16, zt0 - 0.095], [0.14, wy1 - 0.1, zt0 - 0.09], Object.assign({c:'#a9bac2', name:'mirror glass'}, fi));
+  [[-0.58, -0.06], [0.06, 0.58]].forEach(function(x){ b.box([x[0], roof - 0.17, zt0 - 0.46], [x[1], roof - 0.1, zt0 - 0.06], Object.assign({c:'#3d3d46', name:'sun visor'}, fi)); });
+  var dzm = (cabF + cb)/2;
+  b.box([-0.1, roof - 0.13, dzm - 0.07], [0.1, roof - 0.1, dzm + 0.07], Object.assign({c:'#dcd8c8', name:'dome light'}, fi));
+  if (S.inside === 'ambulance'){
+    var cz0 = B + 0.12, cz1 = cb - 0.05, cm = (cz0 + cz1)/2;
+    b.box([0.1, fl + 0.4, cz0 + 0.15], [0.7, fl + 0.5, cz1 - 0.1], Object.assign({c:'#6f8fb0', m:'cloth', name:'stretcher mattress'}, fi));
+    b.box([0.1, fl + 0.34, cz0 + 0.15], [0.7, fl + 0.4, cz1 - 0.1], Object.assign({c:'#cfd3d6', m:'steel', name:'stretcher frame'}, fi));
+    [cz0 + 0.3, cz1 - 0.25].forEach(function(z){ b.box([0.15, fl, z - 0.03], [0.65, fl + 0.34, z + 0.03], Object.assign({c:'#cfd3d6', m:'steel', name:'stretcher leg'}, fi)); });
+    b.box([-hw + 0.08, fl + 0.38, cz0 + 0.2], [-0.45, fl + 0.45, cz1 - 0.6], Object.assign({c:'#4a4a44', m:'cloth', name:'attendant bench'}, fi));
+    b.box([-hw + 0.08, fl + 0.45, cz0 + 0.2], [-hw + 0.16, fl + 0.9, cz1 - 0.6], Object.assign({c:'#4a4a44', m:'cloth', name:'attendant bench back'}, fi));
+    b.box([-hw + 0.08, fl, cz0 + 0.2], [-0.45, fl + 0.38, cz1 - 0.6], Object.assign({c:'#d8dcde', m:'sheet', name:'bench storage'}, fi));
+    b.box([-hw + 0.08, fl + 1.1, cz0 + 0.1], [-hw + 0.42, roof - 0.2, cz1 - 0.2], Object.assign({c:'#d8dcde', m:'sheet', name:'wall cabinet'}, fi));
+    b.box([-hw + 0.1, fl + 0.55, cz1 - 0.55], [-hw + 0.5, fl + 1.05, cz1 - 0.15], Object.assign({c:'#2f5fb0', m:'sheet', name:'equipment bag'}, fi));
+    b.block('cyl', [0.8, fl + 0.45, cz0 + 0.3], [0.2, 0.9, 0.2], {fitting:true, c:'#2f9a55', m:'steel', name:'oxygen cylinder'});
+    b.box([-0.5, roof - 0.14, cm - 0.5], [0.5, roof - 0.12, cm + 0.5], Object.assign({c:'#f2f2ea', name:'ceiling light'}, fi));
+  }
+  if (S.inside === 'van'){
+    var cz2 = B + 0.12, cz3 = cb - 0.05;
+    [[-hw + 0.08, -hw + 0.5], [hw - 0.5, hw - 0.08]].forEach(function(x){
+      [0.4, 0.95, 1.5].forEach(function(h){ b.box([x[0], fl + h, cz2 + 0.1], [x[1], fl + h + 0.04, cz3 - 0.3], Object.assign({c:'#8a8a84', m:'steel', name:'shelf'}, fi)); });
+      [cz2 + 0.1, cz3 - 0.34].forEach(function(z){ b.box([x[0], fl, z], [x[1], fl + 1.54, z + 0.04], Object.assign({c:'#8a8a84', m:'steel', name:'shelf upright'}, fi)); });
+      [0.04, 0.99].forEach(function(h){ b.box([x[0] + 0.04, fl + h, cz2 + 0.2], [x[1] - 0.04, fl + h + 0.3, cz2 + 0.8], Object.assign({c:'#a8865a', m:'cardboard', name:'crate'}, fi)); });
+    });
+  }
   b.engine([0, belt - 0.3, (cabF + F)/2 + 0.1], [hw*1.1, 0.5, Math.max(0.5, F - cabF - 0.2)]); b.tank([0, bb + 0.2, B + 0.6], [0.7, 0.25, 0.5]); b.battery([hw - 0.35, belt - 0.2, F - 0.4]);
   if (k === 'van'){
-    b.shell([-hw + 0.06, fl, B + 0.12], [hw - 0.06, roof - 0.12, cb - 0.05], {open:['back'], c:'paint1', wall:0.04, floor:0.06, name:'cargo', room:'cargo'});
+    b.shell([-hw + 0.06, fl, B + 0.12], [hw - 0.06, roof - 0.12, cb - 0.05], {open:['back'], c:'paint1', floorC:(S.inside === 'van' ? '#7a6a52' : '#9a9da0'), wall:0.04, floor:0.06, name:'cargo', room:'cargo'});
     b.door([-hw + 0.04, fl - 0.06, B - 0.06], [hw - 0.04, roof - 0.1, B + 0.1], {kind:'swing', hinge:'outer', c:'paint1', name:'rear doors'});
   }
   return b;
@@ -183,8 +212,8 @@ var P = {
   green_suv: {name:'Green SUV', cls:'car', kind:'suv', F:2.3, B:-2.3, hw:0.93, belt:1.2, roof:1.9, cabF:0.95, cabB:-2.15, floor:0.6, fz:1.42, rz:-1.38, r:0.45, alpha:28, paint:['#4c7a4a', '#2c4a2c', '#8a8a86'], top:60},
   red_pickup: {name:'Red pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-0.2, floor:0.6, fz:1.6, rz:-1.5, r:0.45, alpha:30, paint:['#c23a2c', '#7a2a20', '#8a8a86'], top:58},
   orange_pickup: {name:'Orange pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-0.2, floor:0.6, fz:1.6, rz:-1.5, r:0.45, alpha:30, paint:['#c9784a', '#8a4a2c', '#8a8a86'], cladCol:'paint2', top:58},
-  green_van: {name:'Green van', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, rack:true, paint:['#8ab84a', '#4c6a2a', '#8a8a86'], top:50},
-  ambulance: {name:'Ambulance', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.35, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, bar:'ambulance', cladCol:'paint3', paint:['#eeeeea', '#c9302a', '#7a7e84'], stripes:[[1.0, -2.45, 1.4, 0.0, '#c9302a'], [0.85, 1.15, 1.2, 2.45, '#c9302a']], words:[{t:'AMBULANCE', y:1.58, px:0.05, c:'#2f5fb0'}], top:60}
+  green_van: {name:'Green van', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, rack:true, inside:'van', paint:['#8ab84a', '#4c6a2a', '#8a8a86'], top:50},
+  ambulance: {name:'Ambulance', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.35, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, bar:'ambulance', inside:'ambulance', cladCol:'paint3', paint:['#eeeeea', '#c9302a', '#7a7e84'], stripes:[[1.0, -2.45, 1.4, 0.0, '#c9302a'], [0.85, 1.15, 1.2, 2.45, '#c9302a']], words:[{t:'AMBULANCE', y:1.58, px:0.05, c:'#2f5fb0'}], top:60}
 };
 function fireEngine(WSB){
   var b = WSB.create({id:'fire_engine_city', name:'Fire engine (city)', domain:'land', cls:'truck', paint:{paint1:'#c4302a', paint2:'#6b7078', paint3:'#ecece6'}, topSpeed:65, tank:'large'});

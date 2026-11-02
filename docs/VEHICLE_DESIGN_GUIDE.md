@@ -74,3 +74,11 @@ Vehicles built: police SUV, green SUV, red and orange pickups, green van, ambula
 - [Building Tips, Space Engineers wiki](https://spaceengineers.wiki.gg/wiki/Building_Tips)
 - [Center of Mass, Stormworks wiki](https://stormworks.fandom.com/wiki/Gameplay/Mechanics/Center_of_Mass)
 - [Spaceship Assembly Guide, Starbase wiki](https://wiki.starbasegame.com/index.php/Spaceship_Assembly_Guide)
+
+## Interiors and the driver's view (pass 6)
+- Always judge a cab from the real `cabin.eye` point (seat height + 0.66 m), looking slightly down. A guessed camera height gives a false picture.
+- Driver view needs, in order: windscreen with pillars, bonnet line, dash top, small binnacle with gauges, wheel ring in front of the gauges, mirror and visors above. Keep gauges small or they fill the screen.
+- Wheel ring must touch its column (a floating ring fails the loose-piece test).
+- Cargo interiors (ambulance stretcher, bench, cabinet, oxygen; van shelves and crates) cost about 400 triangles; check the budget after adding them.
+- Glass is see-through and slightly tinted: names start `glass`, tint #9bb3ba, drawn at alpha about 0.26. The album shows this; the game only does it for building glass today, so vehicle glass needs the main chat.
+- Known gaps: fire engine cab not checked from the eye, seats are blocky, the wheel does not turn (needs a Workshop rig job).

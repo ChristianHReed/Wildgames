@@ -51,9 +51,13 @@ function colourer(pal, slots, darker){
     const h=slots[k]||pal[k]||'#ff00ff'; const c=hex(h); return d?dark(c,darker||0.78):c; };
 }
 function mesh(pieces, colourOf, opt){
-  const m=S.buildIndexed(pieces, colourOf, null, Object.assign({splitGlow:true},opt||{}));
+  /* glass* pieces are drawn see-through (alpha 0.26 like the game's window glass), everything else solid */
+  const isG=q=>q&&typeof q.c==='string'&&/^glass/.test(q.c), gl=(pieces||[]).filter(isG), solid=(pieces||[]).filter(q=>!isG(q));
+  const m=S.buildIndexed(solid, colourOf, null, Object.assign({splitGlow:true},opt||{}));
   stats.tris+=m.idx.length/3+(m.glow?m.glow.idx.length/3:0); stats.verts+=m.pos.length/3+(m.glow?m.glow.pos.length/3:0);
-  const g=new THREE.Group(); g.add(toMesh(m,false)); if (m.glow && m.glow.idx.length) g.add(toMesh(m.glow,true)); return g;
+  const g=new THREE.Group(); g.add(toMesh(m,false)); if (m.glow && m.glow.idx.length) g.add(toMesh(m.glow,true));
+  if (gl.length){ const mg=S.buildIndexed(gl, colourOf, null, {}); const gm=toMesh(mg,false); gm.material=new THREE.MeshLambertMaterial({vertexColors:true,transparent:true,opacity:0.26,depthWrite:false,side:THREE.DoubleSide}); gm.castShadow=false; gm.renderOrder=2; g.add(gm); }
+  return g;
 }
 function toMesh(o, glow){
   const g=new THREE.BufferGeometry(), c=new Float32Array(o.col.length), t=new THREE.Color();
