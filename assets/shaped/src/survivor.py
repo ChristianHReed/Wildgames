@@ -100,15 +100,16 @@ def head(fem):
             *[flat(on_face([(sg*0.016, EYE_Y - 0.007), (sg*0.05, EYE_Y - 0.007), (sg*0.05, EYE_Y + 0.007), (sg*0.016, EYE_Y + 0.007)], 0.004), 'eye') for sg in (1, -1)],   # eyes
             flat(on_face([(-0.058, EYE_Y + 0.02), (0.058, EYE_Y + 0.02), (0.058, EYE_Y + 0.03), (-0.058, EYE_Y + 0.03)], 0.004), 'brow'),  # brow
             flat(on_face([(-0.022, 1.608), (0.022, 1.608), (0.022, 1.616), (-0.022, 1.616)], 0.004), 'lip')]                         # mouth
+    feat = []   # blank face: players project themselves onto it (3 November 2026)
     return {'Head': [loft(rows, 'SKIN', ang=HEAD_ANG)] + feat, 'neck_01': [neck]}
 
 # ================= torso: square shoulders, one wedge to the waist =================
 TORSO = {  # y, half-width, half-depth, z
-  False: [(0.92, 0.135, 0.09, 0.0), (1.08, 0.118, 0.086, 0.0), (1.3, 0.17, 0.1, 0.006), (1.425, 0.205, 0.1, 0.002), (1.455, 0.198, 0.092, 0.0)],
-  True:  [(0.92, 0.145, 0.094, 0.0), (1.08, 0.108, 0.08, 0.0), (1.3, 0.146, 0.1, 0.01), (1.415, 0.175, 0.09, 0.004), (1.445, 0.168, 0.084, 0.0)]}
+  False: [(0.92, 0.13, 0.088, 0.0), (1.08, 0.112, 0.084, 0.0), (1.3, 0.18, 0.1, 0.006), (1.425, 0.215, 0.1, 0.002), (1.455, 0.205, 0.09, 0.0)],
+  True:  [(0.92, 0.15, 0.094, 0.0), (1.08, 0.098, 0.078, 0.0), (1.3, 0.145, 0.1, 0.01), (1.415, 0.172, 0.088, 0.004), (1.445, 0.162, 0.082, 0.0)]}
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
-LW = 1.3     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
+LW = 1.1     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
 def t_at(fem, y):
     T = TORSO[fem]
     if y <= T[0][0]: return T[0][1:]
@@ -153,7 +154,7 @@ def lower(sd, g=0.0, t0=0.0, t1=1.0):
     return [[*a, lerp(0.035, 0.024, t0)*w + g, lerp(0.038, 0.026, t0)*w + g], [*b, lerp(0.035, 0.024, t1)*w + g, lerp(0.038, 0.026, t1)*w + g]]
 def hand(sd, col='SKIN', g=0.0):
     W, F = J['wr' + sd], J['ft' + sd]
-    w = 1.7
+    w = 1.25
     sg = 1 if sd == 'l' else -1
     return [frustum([[W[0], W[1] + 0.02, W[2], 0.022*w + g, 0.028*w + g], [*mixp(W, F, 0.45), 0.021*w + g, 0.034*w + g]], col, caps=[True, False]),
             frustum([[*mixp(W, F, 0.45), 0.021*w + g, 0.034*w + g], [*mixp(W, F, 0.85), 0.017*w + g, 0.03*w + g], [*F, 0.008*w + g, 0.014*w + g]], col),   # a blunt mitten, not a spike
@@ -215,7 +216,7 @@ def tops(fem):
 
 # ================= bottoms: straight columns =================
 def bottoms(fem):
-    hip = 0.146 if fem else 0.138
+    hip = 0.15 if fem else 0.132
     def pelvis(col, g=0.008):
         return {'pelvis': [frustum([[0, 0.84, 0.0, 0.115 + g, 0.082 + g], [0, 0.94, 0.0, hip + g, 0.094 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.092 + g]], col)]}
     belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.014, 0.092], [0, 0.985, 0.0, hip + 0.012, 0.09]], 'belt', caps=[False, False]), box([0, 0.97, 0.096], [0.054, 0.034, 0.008], 'buckle')]}
@@ -249,7 +250,7 @@ def bottoms(fem):
 # ================= shoes: small dark blocks =================
 def shoe(sd, col, sole=None, h=0.085):
     x = J['an' + sd][0]
-    h *= 1.3
+    h *= 1.12
     pts = [(x - 0.054, 0.0, -0.07), (x + 0.054, 0.0, -0.07), (x + 0.054, 0.0, 0.175), (x - 0.054, 0.0, 0.175),
            (x - 0.046, h, -0.06), (x + 0.046, h, -0.06), (x + 0.046, h*0.6, 0.15), (x - 0.046, h*0.6, 0.15)]
     o = [hull(pts, col)]
@@ -460,7 +461,7 @@ CLIPS.update({
 import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
 def body(fem): return join(head(fem), hands())
-HEAD_S = (1.6, 1.34, 1.6); HEAD_O = (0.0, 1.548, 0.0)
+HEAD_S = (1.22, 1.1, 1.22); HEAD_O = (0.0, 1.548, 0.0)
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S
     q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]

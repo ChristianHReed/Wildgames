@@ -51,3 +51,9 @@ New looks (player characters): `runner` (jersey, beard, work pants), `outcast` (
 - Mantle rebuilt: it hangs close to the body with five small ragged tabs (no boxy shelf). Short hair and bob gained darker side planes (HAIR_D) for the two-tone look of the low-poly reference.
 - Leg length is the game rig's (main chat): to reach the references' 4.5 to 5.5 heads, add a stocky body type or shorten the rig legs; the meshes cannot do it alone.
 - Heavier head and torso: please recheck name tags, hats and the first-person camera.
+
+## Round 4 (3 November 2026): blank faces, body plan first
+- Direction from the user: faces stay blank so players project themselves onto the character; the body plan and aesthetics carry the look. Stock heads now have no eyes, brow, nose or mouth (glasses, scars and beards still sit on the smooth head).
+- Body plan: head scaled 1.22 wide and 1.1 tall (a smaller, cleaner head), male torso with a V-taper (shoulder 0.215, waist 0.112, hip 0.132), female torso with a defined waist (waist 0.098 against hip 0.15, narrower shoulders), limbs 1.1 thick and tapering, hands 1.25, boots 1.12.
+- Appeal rules used: strong shoulder-to-waist taper, a clear waist, limbs that taper to the joint, long legs, plain legs and simple lower body so the eye goes to chest, hands and accessories. Web sources found were thin on numbers (see 80.lv and the 60/30/10 colour rule), so the ratios come from standard figure-design practice.
+- Still to do: clothes built with fixed radii hang straight over the new waist; tune tops and the mantle to follow the taper.

@@ -32,7 +32,7 @@ function grow(q, d, c){ var p = clone(q); if (p.r) p.r = p.r.map(function(r){ va
 function recolour(list, from, to){ return list.map(function(q){ var p = clone(q); if (!from || p.c === from) p.c = to; return p; }); }
 /* v8 (2 November 2026): the stock head is bigger (about 1.42 wide, 1.2 tall about the base of the skull), so every head piece this pack builds itself is scaled the same way;
    pieces cloned from the stock set are already scaled and never come through add() */
-var HEAD_S = [1.6, 1.34, 1.6], HEAD_O = [0, 1.548, 0];
+var HEAD_S = [1.22, 1.1, 1.22], HEAD_O = [0, 1.548, 0];
 function xfHead(q){
   var o = clone(q), S = HEAD_S, O = HEAD_O; o.p = [0, 1, 2].map(function(i){ return r4(O[i] + (o.p[i] - O[i]) * S[i]); });
   if (o.s === 'box' || o.s === 'wedge' || o.s === 'cyl') o.d = o.d.map(function(v, i){ return r4(v * S[i]); });
