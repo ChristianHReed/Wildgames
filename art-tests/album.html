@@ -737,6 +737,14 @@ const SCENES={
         for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
         g.position.set(window.__only?0:(i%2)*7, 0, window.__only?0:-Math.floor(i/2)*7); scene.add(g); });
       if(window.__only){} cam.position.set(11,4,9); ctl.target.set(3.5,1,0); if(window.__cam){ cam.position.set(...window.__cam[0]); ctl.target.set(...window.__cam[1]); }}},
+  fleet:{t:'Fleet view (generated)',d:'Vehicles listed in window.__ids, painted from window.__paints.',
+    make(){ lights('day'); scene.background=new THREE.Color(0x4d7184); scene.fog=null; ground(80,80,0x4d7184);
+      const ids=window.__ids||[], PT=window.__paints||{};
+      ids.forEach((n,i)=>{ const m=PR.models.vehicles['pk_workshop_crafts_'+n], rg=PR.vehicleRig['pk_workshop_crafts_'+n], g=new THREE.Group(), pn=PT[n]||['#888','#222','#999']; if(!m){console.log('missing',n);return;} const col=colourer(PR.palette,{paint1:pn[0],paint2:pn[1],paint3:pn[2]});
+        g.add(mesh(m.body,col)); g.add(mesh(m.bonnet,col)); if (m.boot&&m.boot.length) g.add(mesh(m.boot,col)); Object.values(m.parts||{}).forEach(q=>{ const pp=Array.isArray(q)?q:(q.pieces||q.model||[]); if(pp.length) g.add(mesh(pp,col)); });
+        for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
+        g.position.set(window.__spread?i*(window.__spread):0, 0, 0); scene.add(g); });
+      cam.position.set(11,4,9); ctl.target.set(0,1,0); if(window.__cam){ cam.position.set(...window.__cam[0]); ctl.target.set(...window.__cam[1]); }}},
   ref_side:{t:'Reference: ambulance and police from the side',d:'Reference-matched vehicles.',
     make(){ lights('day'); scene.background=new THREE.Color(0x4d7184); scene.fog=null; ground(60,60,0x4d7184);
       const PAINT={police:['#ecece6','#17181b','#8a8a86'],green_suv:['#4c7a4a','#2c4a2c','#8a8a86'],red_pickup:['#c23a2c','#7a2a20','#8a8a86'],orange_pickup:['#c9784a','#8a4a2c','#8a8a86'],green_van:['#8ab84a','#4c6a2a','#8a8a86'],ambulance:['#eeeeea','#c9302a','#7a7e84'],fire_engine_city:['#c4302a','#6b7078','#ecece6']};

@@ -94,5 +94,5 @@ function car(WSB, id, S){
   }
   return b;
 }
-module.exports = function(WSB){ return Object.keys(SPEC).map(function(k){ return car(WSB, k, SPEC[k]); }); };
+module.exports = function(WSB){ return []; }; /* the stock cars are rebuilt in refs.js (Q table); car() stays for red_truck */
 module.exports.SPEC = SPEC; module.exports.car = car;
