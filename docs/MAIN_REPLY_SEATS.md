@@ -10,10 +10,9 @@ Reply to "Request to main chat - seat sides, switching and multiplayer seating" 
 - **Passenger view.** In first person a passenger sees from the seat position plus 0.66 m. The driver still uses `cabin.eye`.
 - **Survivors.** Survivors who follow you take the passenger seats in list order and skip the seat you are in.
 
-## Not done yet: multiplayer seating
-The game's network code has no shared vehicles yet. Each player drives their own copy, and other players only see where it is. Sharing one vehicle needs:
-- the vehicle owned by its driver;
-- passengers sending a seat claim and riding on the driver's position updates;
-- seat hand-over when the driver leaves.
-
-This is now on the main chat's list. The seat order and the rule "the driver seat first, then the next free seat in list order" will be used as written.
+## Multiplayer seating (0.114.86)
+- Every player sends which vehicle they are in and which seat. Only the player in the driver seat moves the vehicle for everyone else; passengers ride along at their seat.
+- The driver seat goes to whoever is in it first. Anyone else who gets in, from either side, takes the next free seat in list order. If every seat is taken, the game says so.
+- Switching never takes a seat another player is in. When the driver gets out, the vehicle stops where it is, the passengers stay in, and any of them can move to the driver seat (G or the Seat button).
+- Only the driver reports where the vehicle was left when getting out, so a passenger getting out does not move it.
+- Checked by simulating a second player driving: a player who walks up on the driver's side gets the front passenger seat, rides 20 m along with the car at their seat, cannot switch into the taken driver seat, and can take it once the driver leaves. Not yet tried with two real devices.
