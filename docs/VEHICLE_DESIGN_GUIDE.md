@@ -96,3 +96,6 @@ Lessons:
 - Wheel openings: cut with `wall()` and finish with `arch()`; add `wheelLook()`. Floors must clear wheel tops or the wheel pokes into the cabin.
 - Lettering font now has A B C D E F G H I K L M N O P R S T U V W Y and space.
 - Aircraft are still the weakest: blocky fuselages, no rotor or propeller in the preview (they are separate parts). Next pass should loft the fuselage and cowl.
+
+## Seat order (driver on the left)
+`functions.seats[0]` is the driver on the left (x < 0), `seats[1]` the front passenger on the right, then rear rows front to back, left before right. The engine sorts seats right before left, so `cabin_kit.js` nudges every left seat 1 cm forward. Use `seat()` from `cabin_kit.js` or add the same nudge when placing seats by hand.
