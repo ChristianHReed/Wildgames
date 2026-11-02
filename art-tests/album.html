@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-fleet','../packs/afterstreet-clips','../packs/afterstreet-waterways','../packs/afterstreet-military','../packs/afterstreet-tools','../packs/workshop-crafts'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-fleet','../packs/afterstreet-clips','../packs/afterstreet-waterways','../packs/afterstreet-stations','../packs/afterstreet-military','../packs/afterstreet-tools','../packs/workshop-crafts'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve()).then(function(){ if(window.AfterstreetPacks) window.AfterstreetPacks.install(window.SHAPED); });
@@ -158,7 +158,7 @@ function packGrid(P, group, names, cols, pad, ground0, cpos, ctgt, opts){ opts=o
   const holes=[], put=[]; let zz=0; rows.forEach(r=>{ const rd=Math.max(...r.map(i=>i.d)); const tw=r.reduce((a,i)=>a+i.w,0); let xx=-tw/2; r.forEach(it=>{ const cx=xx+it.w/2, cz=zz-rd/2; put.push([it.n,cx,cz]); if(opts.sunk&&opts.sunk(it.n)) holes.push([it.n,(I[it.n]&&I[it.n].h)||0]); xx+=it.w; }); zz-=rd; });
   ground(400,400,opts.ground||0x6d7a4f);
   put.forEach(([n,cx,cz])=>{ const g=mesh(M[n],col); const hh=holes.find(h=>h[0]===n); g.position.set(cx,(hh?hh[1]:0)+((opts.lift&&opts.lift(n))||0),cz); if(opts.rot) g.rotation.y=opts.rot; scene.add(g); });
-  cam.position.set(...cpos); ctl.target.set(...ctgt); }
+  cam.position.set(...cpos); ctl.target.set(...ctgt); if(window.__cam2){ cam.position.set(...window.__cam2[0]); ctl.target.set(...window.__cam2[1]); } }
 function grid(list, cols, dx, dz, cpos, ctgt, gcol){
   lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(80,60,gcol||0xd8d2c6);
   list.forEach(([c,n],i)=>at(prop(c,n),(i%cols-(cols-1)/2)*dx,0,-Math.floor(i/cols)*dz,0)); cam.position.set(...cpos); ctl.target.set(...ctgt);
@@ -771,6 +771,14 @@ const SCENES={
     make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; ground(40,40,0x6d7a4f); const col=colourer(HE.palette||PR.palette,{}), M=HE.models.weapons;
       ['pickaxe','trowel','jerry_can','wrench_big','rifle_magazine','smg_magazine','rocket_round','ammo_crate_mil','belt_box'].forEach((n,i)=>{ const g=mesh(M[n].new,col); g.rotation.y=Math.PI/2; g.position.set(0,0.4,-i*0.6); scene.add(g); });
       cam.position.set(3.2,1.4,-2.4); ctl.target.set(0,0.3,-2.4); }},
+  stations_carshop:{t:'Stations: car shop, three stages',d:'Frame, half built and done: the survivor-built garage bay with its roll-up door coiled over the opening, the lift, tool wall and bench terminal.',
+    make(){ packGrid(ST,'structures',['station_carshop_s1','station_carshop_s2','station_carshop'],40,4,0,[0,22,34],[0,1.5,-10],{}); }},
+  stations_boat:{t:'Stations: boathouse, stages and plain dock',d:'Piles and deck, roof frame, the built boathouse and the plain dock. Water line is y = 0.',
+    make(){ packGrid(ST,'structures',['station_boathouse_s1','station_boathouse_s2','station_boathouse','station_dock'],60,3,0,[0,26,34],[0,0,-10],{}); }},
+  stations_hangar:{t:'Stations: air hangar, three stages',d:'Columns, trusses and half walls, and the built hangar with apron marking and windsock.',
+    make(){ packGrid(ST,'structures',['station_hangar_s1','station_hangar_s2','station_hangar'],80,4,0,[0,50,70],[0,3,-25],{}); }},
+  stations_wardrobe:{t:'Stations: open wardrobe',d:'The wardrobe with its doors open, hangers and a mirror.',
+    make(){ packGrid(ST,'structures',['station_wardrobe_open'],10,1,0,[0,1.8,4],[0,1.0,0],{}); }},
   waterways_banks:{t:'Waterways: bank profiles',d:'Fourteen bank types from the water (left), the bank rising to the right: shelf, gravel, sand, mud, cut clay, slump, roots, rip-rap, gabion, stone wall, concrete channel, timber crib, stairs, landing.',
     make(){ waterRows(S.land,['bank_shelf_4','bank_gravel_4','bank_sand_4','bank_mud_4','bank_cut_clay_4','bank_slump_4','bank_roots_4','bank_riprap_4','bank_gabion_4','bank_stone_wall_4','bank_concrete_channel_4','bank_timber_crib_4','bank_stairs_4','bank_landing_4'],7,5.2,6.5,[16,9,24],[16,0.6,-4]); }},
   waterways_shore:{t:'Waterways: shore plants, drift and built edges',d:'Sedge, cattail, cane, willow, sycamore, drift line, fallen tree, outfalls, culvert, seep and city junk.',
