@@ -20,3 +20,7 @@ Same rules as the other packs (metres, origin at the centre of the base, front f
 5. **Build stages** for 1 to 3 (frame, half built, done), if the time allows, so they can be shown going up.
 
 Put them where you think they belong (a new `stations` group in `structures` or `autotrade` is fine) and tell me the keys; the game will switch to them.
+
+
+## Done (0.114.89)
+The content chat made all of these (`packs/afterstreet-stations.js`); the game uses them, with their use and spawn points and the two build stages.
