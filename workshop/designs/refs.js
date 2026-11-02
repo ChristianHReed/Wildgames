@@ -59,6 +59,15 @@ function text(b, str, o){
   });
 }
 
+/* a flat slab with four corners given as [z, y] (a trapezoid: window glass that follows a raked pillar), from x0 to x1 */
+function trap(b, x0, x1, p, opt){
+  var cz = (p[0][0] + p[1][0] + p[2][0] + p[3][0])/4, cy = (p[0][1] + p[1][1] + p[2][1] + p[3][1])/4, cx = (x0 + x1)/2, v = [], f = [[0, 3, 2, 1], [4, 5, 6, 7]], i;
+  [x0, x1].forEach(function(x){ p.forEach(function(q){ v.push([x - cx, q[1] - cy, q[0] - cz]); }); });
+  for (i = 0; i < 4; i++) f.push([i, (i + 1) % 4, (i + 1) % 4 + 4, i + 4]);
+  return b_block(b, [cx, cy, cz], v, f, opt);
+}
+function b_block(b, pos, v, f, opt){ opt.v = v; opt.f = f; return b.block('corner', pos, null, opt); }
+
 function refcar(WSB, id, S){
   var b = WSB.create({id:id, name:S.name, domain:'land', cls:S.cls, paint:{paint1:S.paint[0], paint2:S.paint[1], paint3:S.paint[2]}, topSpeed:S.top});
   var hw = S.hw, F = S.F, B = S.B, belt = S.belt, roof = S.roof, fl = S.floor, bb = fl - 0.04, cabF = S.cabF, cb = S.cabB, r = S.r, g = 0.32, k = S.kind;
@@ -101,10 +110,15 @@ function refcar(WSB, id, S){
   }
   /* doors */
   var dz1 = cabF - 0.12, dz0 = Math.max(cb + 0.15, dz1 - 1.1);
+  var tA = Math.tan(A), zp = function(y){ return cabF + 0.04 - (y - wy0)*tA; };
+  var gy0 = belt, gy1 = roof - 0.12, gf0 = zp(gy0) - 0.07, gf1 = zp(gy1) - 0.07, gr = dz0 + 0.04;
   b.door([hw, bb + 0.04, dz0], [hw + 0.05, belt, dz1], {c:'paint1', mx:true, hinge:'front', name:'front door'});
-  b.box([hw + 0.01, belt, dz0 + 0.04], [hw + 0.04, roof - 0.12, dz1 - 0.04], {c:'glassL', m:'glass', mx:true, name:'front door'});
-  b.box([hw, roof - 0.12, dz0], [hw + 0.05, roof - 0.1, dz1], {c:'paint1', mx:true, name:'front door'});
+  trap(b, hw + 0.01, hw + 0.04, [[gr, gy0], [gf0, gy0], [gf1, gy1], [gr, gy1]], {c:'glassL', m:'glass', mx:true, name:'front door'});
+  b.box([hw, roof - 0.12, dz0], [hw + 0.05, roof - 0.1, gf1 + 0.04], {c:'paint1', mx:true, name:'front door'});
   b.box([hw, belt, dz0], [hw + 0.05, roof - 0.12, dz0 + 0.04], {c:'paint1', mx:true, name:'front door'});
+  var fl_ = Math.sqrt((gf0 - gf1)*(gf0 - gf1) + (gy1 - gy0)*(gy1 - gy0)), fang = Math.atan2(gf0 - gf1, gy1 - gy0)*180/Math.PI;
+  b.block('box', [hw + 0.025, (gy0 + gy1)/2, (gf0 + gf1)/2 + 0.035], [0.05, fl_ + 0.04, 0.05], {c:'paint1', mx:true, rot:[-fang, 0, 0], name:'front door'});
+  b.box([hw, belt - 0.02, dz1 - 0.02], [hw + 0.05, belt + 0.02, gf0 + 0.06], {c:'paint1', mx:true, name:'front door'});
   b.box([hw + 0.05, belt - 0.12, dz0 + 0.06], [hw + 0.08, belt - 0.08, dz0 + 0.26], {c:'chrome', m:'chrome', mx:true, name:'door handle'});
   /* face, arches, cladding, mirrors, tail */
   face(b, {hw:hw, F:F, bb:bb, belt:belt});
@@ -136,8 +150,8 @@ var P = {
   green_suv: {name:'Green SUV', cls:'car', kind:'suv', F:2.3, B:-2.3, hw:0.93, belt:1.15, roof:1.86, cabF:0.95, cabB:-2.15, floor:0.55, fz:1.42, rz:-1.38, r:0.4, alpha:28, paint:['#4c7a4a', '#2c4a2c', '#8a8a86'], top:60},
   red_pickup: {name:'Red pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.12, roof:1.74, cabF:1.0, cabB:-0.2, floor:0.54, fz:1.6, rz:-1.5, r:0.4, alpha:30, paint:['#c23a2c', '#7a2a20', '#8a8a86'], top:58},
   orange_pickup: {name:'Orange pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.12, roof:1.74, cabF:1.0, cabB:-0.2, floor:0.54, fz:1.6, rz:-1.5, r:0.4, alpha:30, paint:['#c9784a', '#8a4a2c', '#8a8a86'], cladCol:'paint2', top:58},
-  green_van: {name:'Green van', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.55, fz:1.5, rz:-1.5, r:0.36, alpha:36, drop:0.3, rack:true, paint:['#8ab84a', '#4c6a2a', '#8a8a86'], top:50},
-  ambulance: {name:'Ambulance', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.35, cabF:1.15, cabB:0.0, floor:0.55, fz:1.5, rz:-1.5, r:0.36, alpha:36, drop:0.3, bar:'ambulance', cladCol:'paint3', paint:['#eeeeea', '#c9302a', '#7a7e84'], stripes:[[1.0, -2.45, 1.4, 0.0, '#c9302a'], [0.85, 1.15, 1.2, 2.45, '#c9302a']], words:[{t:'AMBULANCE', y:1.58, px:0.05, c:'#2f5fb0'}], top:60}
+  green_van: {name:'Green van', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, rack:true, paint:['#8ab84a', '#4c6a2a', '#8a8a86'], top:50},
+  ambulance: {name:'Ambulance', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.35, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, bar:'ambulance', cladCol:'paint3', paint:['#eeeeea', '#c9302a', '#7a7e84'], stripes:[[1.0, -2.45, 1.4, 0.0, '#c9302a'], [0.85, 1.15, 1.2, 2.45, '#c9302a']], words:[{t:'AMBULANCE', y:1.58, px:0.05, c:'#2f5fb0'}], top:60}
 };
 function fireEngine(WSB){
   var b = WSB.create({id:'fire_engine_city', name:'Fire engine (city)', domain:'land', cls:'truck', paint:{paint1:'#c4302a', paint2:'#6b7078', paint3:'#ecece6'}, topSpeed:65, tank:'large'});
