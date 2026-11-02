@@ -295,7 +295,7 @@ const CARS10=['hatchback','sedan','wagon','suv','offroader','pickup','crew_picku
 const SCENES={
   survivors:{t:'Survivors',d:'Silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small heads with no eyes. 300 to 820 triangles each.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xe2ddd2);
-      LOOKS.forEach((L,i)=>at(survivor(L),(i-3.5)*0.95,0,0,0)); cam.position.set(0,1.2,8.4); ctl.target.set(0,0.95,0); }},
+      LOOKS.forEach((L,i)=>at(survivor(L),(i-3.5)*0.95,0,0,0)); cam.position.set(0,1.2,8.4); ctl.target.set(0,0.95,0); if(window.__cam2){ cam.position.set(...window.__cam2[0]); ctl.target.set(...window.__cam2[1]); } }},
   survivors_side:{t:'Survivors from the side and back',d:'Long straight legs, square shoulders and small dark feet read from every side.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xe2ddd2);
       LOOKS.forEach((L,i)=>at(survivor(L),(i-3.5)*0.95,0,0,i%2?Math.PI/2:Math.PI)); cam.position.set(0,1.2,8.4); ctl.target.set(0,0.95,0); }},
@@ -785,11 +785,16 @@ const SCENES={
     make(){ waterRows(S.land,['sedge_edge_4','cattail_edge_4','cane_brake_4','willow_whips','sycamore_lean','drift_line_4','fallen_tree_bank','outfall_pipe_4','culvert_mouth_4','seep_bank_4','creek_junk_cart','creek_junk_tyres','creek_junk_pallet_a','creek_junk_bike','wet_margin_4','mud_prints_4','mud_cracks_4'],6,6.5,8,[18,12,28],[18,1.2,-8],{water:0x6d7a4f}); }},
   waterways_flow:{t:'Waterways: flow cues',d:'Rocks with wakes, a chute, current streaks, rapids, an eddy, foam line, a ledge drop and a creek mouth, laid on a water tile.',
     make(){ waterRows(S.land,['rock_wake_s','rock_wake_m','rock_pair_chute','flow_streaks_4','rapids_4','eddy_4','foam_scum_4','ledge_drop_4','stream_mouth_4'],5,6.5,7,[13,12,16],[13,0,-3.5]); }},
+  survivors_refs:{t:'Survivors: characters from the new references',d:'Runner (numbered jersey in two colours), Outcast (shoulder mantle, wrapped forearms, sash skirt) and Street kid (cropped green jacket over an orange top): bigger heads with brow, nose and eyes, chunkier hands and boots, brass accents.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xe2ddd2);
+      const N=SV.npcLooks, ks=['runner','outcast','streetwise'];
+      ks.forEach((n,i)=>{ const L=N[n]; at(survivor({body:L.body,build:L.build,skin:L.skin,hc:L.hairColour,hair:L.hair,hat:L.hat,face:L.face,top:L.top,bot:L.bottoms,shoe:L.shoes,shirt:L.shirt,pants:L.pants,acc:L.acc,npc:L.npc,worn:L.worn||[],gear:L.gear||[]}),(i-1)*1.2,0,0,0.35); });
+      cam.position.set(0,1.1,5.2); ctl.target.set(0,0.95,0); if(window.__cam2){ cam.position.set(...window.__cam2[0]); ctl.target.set(...window.__cam2[1]); } }},
   survivors_new:{t:'Workshop: new player characters',d:'Eight ready-made characters from the Workshop (mechanic, courier, hiker, scavenger, nurse, wanderer, foreman, librarian) wearing the new tops, bottoms, shoes, hair, hats, faces, gear and outer layers.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(40,40,0xe2ddd2);
       const N=SV.npcLooks, ks=['mechanic','courier','hiker','scavenger','nurse','wanderer','foreman','librarian'];
       ks.forEach((n,i)=>{ const L=N[n]; at(survivor({body:L.body,build:L.build,skin:L.skin,hc:L.hairColour,hair:L.hair,hat:L.hat,face:L.face,top:L.top,bot:L.bottoms,shoe:L.shoes,shirt:L.shirt,pants:L.pants,acc:L.acc,npc:L.npc,worn:L.worn||[],gear:L.gear||[]}),(i-3.5)*1.0,0,0,0.3); });
-      cam.position.set(0,1.9,9.5); ctl.target.set(0,0.95,0); }},
+      cam.position.set(0,1.9,9.5); ctl.target.set(0,0.95,0); if(window.__cam2){ cam.position.set(...window.__cam2[0]); ctl.target.set(...window.__cam2[1]); } }},
   survivors_new_clothes:{t:'Workshop: new clothes',d:'New tops, bottoms and outer layers on a plain survivor, masculine then feminine. Rows: tops, bottoms, outer layers.',
     make(){ survSheet([['masculine','top',['polo_shirt','tank_top','henley','fleece_vest','cardigan','scrubs']],['feminine','top',['polo_shirt','tank_top','henley','fleece_vest','cardigan','scrubs']],['masculine','bot',['skirt','leggings','cargo_shorts','work_pants']],['feminine','bot',['skirt','leggings','cargo_shorts','work_pants']],['masculine','worn',['duster','parka','apron','hi_vis_vest']],['feminine','worn',['duster','parka','apron','hi_vis_vest']]],2.0,1.05); }},
   survivors_new_heads:{t:'Workshop: new hair, hats and faces',d:'Close views of the new hair, hats, faces and gear.',

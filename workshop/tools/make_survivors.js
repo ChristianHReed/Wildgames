@@ -23,13 +23,25 @@ function tube(bone, t0, t1, ra, rb, c, o){
 }
 function loft(p, rows, c, o){ return Object.assign({s:'loft', p:p, r:rows, c:c}, o || {}); }
 function box(p, d, c, o){ return Object.assign({s:'box', p:p, d:d, c:c}, o || {}); }
+function wedge(p, d, c, o){ return Object.assign({s:'wedge', p:p, d:d, c:c}, o || {}); }
 function decal(p, v, c, o){ return Object.assign({s:'decal', p:p, v:v, n:[0, 0, 1], c:c}, o || {}); }
 function sq(w, h, cx, cy){ cx = cx || 0; cy = cy || 0; return [[cx - w/2, cy - h/2, 0], [cx + w/2, cy - h/2, 0], [cx + w/2, cy + h/2, 0], [cx - w/2, cy + h/2, 0]]; }
 var SQ4 = {ang:[45, 135, 225, 315]};
 /* a loft grown outwards (a layer over a layer) */
 function grow(q, d, c){ var p = clone(q); if (p.r) p.r = p.r.map(function(r){ var o = r.slice(); o[3] = r4(o[3] + d); o[4] = r4(o[4] + d); return o; }); if (c) p.c = c; return p; }
 function recolour(list, from, to){ return list.map(function(q){ var p = clone(q); if (!from || p.c === from) p.c = to; return p; }); }
-function add(by, bone, q){ (by[bone] = by[bone] || []).push(q); return by; }
+/* v8 (2 November 2026): the stock head is bigger (about 1.42 wide, 1.2 tall about the base of the skull), so every head piece this pack builds itself is scaled the same way;
+   pieces cloned from the stock set are already scaled and never come through add() */
+var HEAD_S = [1.42, 1.2, 1.42], HEAD_O = [0, 1.548, 0];
+function xfHead(q){
+  var o = clone(q), S = HEAD_S, O = HEAD_O; o.p = [0, 1, 2].map(function(i){ return r4(O[i] + (o.p[i] - O[i]) * S[i]); });
+  if (o.s === 'box' || o.s === 'wedge' || o.s === 'cyl') o.d = o.d.map(function(v, i){ return r4(v * S[i]); });
+  else if (o.s === 'poly' || o.s === 'decal') o.v = o.v.map(function(v){ return v.map(function(c, i){ return r4(c * S[i]); }); });
+  else if (o.s === 'loft'){ var ax = o.ax || 'y', fa = ax === 'y' ? S[0] : ax === 'x' ? S[1] : S[0], fb = ax === 'y' ? S[2] : ax === 'x' ? S[2] : S[1];
+    o.r = o.r.map(function(r){ var n = r.slice(); n[0] = r4(r[0] * S[0]); n[1] = r4(r[1] * S[1]); n[2] = r4(r[2] * S[2]); n[3] = r4(r[3] * fa); n[4] = r4(r[4] * fb); return n; }); }
+  return o;
+}
+function add(by, bone, q){ (by[bone] = by[bone] || []).push(bone === 'Head' ? xfHead(q) : q); return by; }
 function addAll(by, bone, list){ list.forEach(function(q){ add(by, bone, q); }); return by; }
 function sides(by, bones, fn){ [['_l', 1], ['_r', -1]].forEach(function(s){ bones.forEach(function(b){ var piece = fn(b + s[0], s[1], b); if (piece) add(by, b + s[0], piece); }); }); }
 
@@ -100,6 +112,16 @@ var BOTTOMS = {
     add(by, 'pelvis', J.pelvis[1]);
     add(by, 'pelvis', loft([0, 0.82, 0], [[0, 0.16, 0, 0.185, 0.132], [0, 0.04, 0, 0.215, 0.152], [0, -0.1, 0, 0.255, 0.19], [0, -0.2, 0, 0.275, 0.21]], 'PANTS', SQ4));
     add(by, 'pelvis', loft([0, 0.625, 0], [[0, -0.008, 0, 0.275, 0.21], [0, 0.008, 0, 0.275, 0.21]], 'PANTS_D', SQ4));
+    ['thigh_l', 'thigh_r', 'calf_l', 'calf_r'].forEach(function(bn){ S[bn].filter(function(q){ return q.c === 'SKIN'; }).forEach(function(q){ add(by, bn, q); }); });
+    return by; }},
+  /* a short skirt with a wide sash tied at the left hip, one end hanging low (the painterly reference) */
+  wrap_skirt: {label:'Wrap skirt', build:function(b){
+    var by = {}, S = stock('bottoms', b, 'shorts'), J = stock('bottoms', b, 'jeans');
+    add(by, 'pelvis', J.pelvis[1]);
+    add(by, 'pelvis', loft([0, 0.84, 0], [[0, 0.12, 0, 0.18, 0.13], [0, 0.0, 0, 0.215, 0.15], [0, -0.14, 0, 0.245, 0.18]], 'PANTS', SQ4));
+    add(by, 'pelvis', loft([0, 0.97, 0], [[0, -0.02, 0, 0.19, 0.136], [0, 0.02, 0, 0.19, 0.136]], 'ACC', SQ4));
+    add(by, 'pelvis', loft([0, 0.78, 0.12], [[0, 0.18, 0, 0.12, 0.02], [0, 0.0, 0.006, 0.17, 0.024], [0, -0.14, 0.012, 0.15, 0.02]], 'ACC', SQ4));
+    add(by, 'pelvis', box([0.17, 0.95, 0.08], [0.07, 0.07, 0.07], 'ACC_D')); add(by, 'pelvis', box([0.2, 0.84, 0.09], [0.06, 0.22, 0.03], 'ACC_D'));
     ['thigh_l', 'thigh_r', 'calf_l', 'calf_r'].forEach(function(bn){ S[bn].filter(function(q){ return q.c === 'SKIN'; }).forEach(function(q){ add(by, bn, q); }); });
     return by; }},
   leggings: {label:'Leggings', build:function(b){
@@ -243,6 +265,12 @@ var FACES = {
 };
 
 var GEARS = {
+  /* leather forearm wraps with a buckle strap (the painterly reference) */
+  bracers: {label:'Forearm wraps', build:function(){
+    var by = {}; [['lowerarm_l', 1], ['lowerarm_r', -1]].forEach(function(s){
+      add(by, s[0], tube(s[0], 0.3, 0.92, 0.056, 0.044, 'x5a4332')); add(by, s[0], tube(s[0], 0.5, 0.56, 0.06, 0.05, 'x3a2a1f')); add(by, s[0], tube(s[0], 0.74, 0.8, 0.054, 0.046, 'x3a2a1f'));
+      add(by, s[0], box([r4(s[1] * 0.213), 0.99, 0.0], [0.014, 0.03, 0.03], 'buckle')); });
+    return by; }},
   tool_belt: {label:'Tool belt', build:function(){
     var by = {};
     add(by, 'pelvis', loft([0, 0.945, 0], [[0, -0.022, 0, 0.198, 0.136], [0, 0.022, 0, 0.198, 0.136]], 'belt', SQ4));
@@ -270,6 +298,19 @@ var GEARS = {
 
 /* outer layers keep the stock coat's proportions */
 var WORN = {
+  /* a ragged shoulder mantle with a fur collar (the painterly reference): sits over any top */
+  mantle: {label:'Shoulder mantle', build:function(b){
+    var by = {}, c = 'x6a4a34', cd = 'x4a3322';
+    add(by, 'spine_03', loft([0, 1.4, 0.0], [[0, 0.07, 0, 0.2, 0.125], [0, 0.0, 0, 0.255, 0.15], [0, -0.1, 0, 0.27, 0.16]], c, SQ4));
+    add(by, 'spine_03', loft([0, 1.46, 0.0], [[0, -0.03, 0, 0.17, 0.13], [0, 0.03, 0, 0.12, 0.095]], 'fur', SQ4));
+    for (var i = 0; i < 7; i++){ var x = r4(-0.24 + i * 0.08), ex = Math.abs(x) / 0.24; add(by, 'spine_03', box([x, 1.29 - (i % 2) * 0.03, 0.0], [0.078, 0.05 + (i % 2) * 0.05, r4(0.27 - ex * 0.05)], cd)); }
+    [1, -1].forEach(function(sg){ add(by, 'upperarm_' + (sg > 0 ? 'l' : 'r'), tube('upperarm_' + (sg > 0 ? 'l' : 'r'), 0, 0.32, 0.075, 0.07, c)); });
+    return by; }},
+  /* a cropped jacket, short at the waist with wide collar wedges and a bright top showing under it (the low-poly reference) */
+  crop_jacket: {label:'Cropped jacket', build:function(b){
+    var by = stock('worn', b, 'leather');
+    Object.keys(by).forEach(function(bn){ by[bn] = by[bn].map(function(q){ var p = clone(q); if (p.c === 'leather') p.c = 'x3d5a3a'; else if (p.c === 'leather_D') p.c = 'x2b4229'; else if (p.c === 'zip') p.c = 'buckle'; return p; }); });
+    return by; }},
   duster: {label:'Duster coat', build:function(b){
     var by = stock('worn', b, 'coat'), c = 'x7a6446', cd = 'x5a4630';
     Object.keys(by).forEach(function(bn){ by[bn] = by[bn].filter(function(q){ return q.c !== 'fur'; }).map(function(q){ var p = clone(q); if (p.c === 'coat') p.c = c; else if (p.c === 'coat_D') p.c = cd; else if (p.c === 'toggle') p.c = 'buckle'; return p; }); });
@@ -295,7 +336,19 @@ var WORN = {
     [1.08, 1.27].forEach(function(y){ add(by, y > 1.18 ? 'spine_03' : 'spine_01', loft([0, y, 0.002], [[0, -0.018, 0, 0.26, 0.17], [0, 0.018, 0, 0.26, 0.17]], r, SQ4)); });
     [0.07, -0.07].forEach(function(x){ add(by, 'spine_03', decal([x, 1.3, 0.1745], sq(0.03, 0.26), r)); });
     return by; }}
+
 };
+
+TOPS.jersey = {label:'Numbered jersey', build:function(b){
+    var by = torso(b, 0.008, 'SHIRT'), z = 0.1;
+    add(by, 'spine_03', collarRing('SHIRT_D', 1.462, 0.13, 0.092, 0.03));
+    bothArms(by, function(bone, sg, base){ return base === 'upperarm' ? tube(bone, 0, 1, 0.066, 0.058, 'SHIRT') : tube(bone, 0, 0.9, 0.056, 0.04, 'ACC'); });
+    sides(by, ['lowerarm'], function(bone){ return tube(bone, 0.88, 1, 0.044, 0.036, 'ACC_D'); });
+    var n = 'xe6e0cf', cx = 0, cy = 1.32, zz = 0.1;                                    /* the numeral 8: two stacked rings made of bars */
+    [[0, cy + 0.045, 0.07, 0.018], [0, cy - 0.005, 0.07, 0.018], [0, cy - 0.055, 0.07, 0.018]].forEach(function(r){ add(by, 'spine_03', decal([r[0], r[1], 0.1445], sq(r[2], r[3]), n)); });
+    [[-0.04, cy + 0.02], [0.04, cy + 0.02], [-0.04, cy - 0.03], [0.04, cy - 0.03]].forEach(function(r){ add(by, 'spine_03', decal([r[0], r[1], 0.1445], sq(0.016, 0.05), n)); });
+    [1, -1].forEach(function(sg){ add(by, 'spine_01', decal([r4(sg * 0.118), 1.07, 0.1145], sq(0.026, 0.24), 'SHIRT_D')); });
+    return by; }};
 
 /* ---- documents ---- */
 function layoutOf(by){ var L = {}; Object.keys(by).forEach(function(b){ L[b] = {$part:b}; }); return L; }
@@ -327,6 +380,9 @@ var LOOKS = {
   nurse: {label:'Nurse', body:'feminine', build:'average', skin:1, hairColour:2, hair:'top_knot', hat:'none', face:'calm', top:'scrubs', bottoms:'track_pants', shoes:'high_tops', shirt:'#4a8a96', pants:'#4a8a96', acc:'#e2ddd2', gear:['hip_pack'], worn:[], npc:[], note:'scrubs, hair up and a small pack of supplies'},
   wanderer: {label:'Wanderer', body:'masculine', build:'average', skin:2, hairColour:1, hair:'short', hat:'flat_cap', face:'stubble', top:'henley', bottoms:'jeans', shoes:'boots', shirt:'#8a7a62', pants:'#4a5666', acc:'#5a4a3a', gear:[], worn:['duster'], npc:[], note:'a long dusty coat over a work shirt: someone who walked here'},
   foreman: {label:'Foreman', body:'masculine', build:'broad', skin:1, hairColour:4, hair:'none', hat:'hard_hat', face:'moustache', top:'henley', bottoms:'work_pants', shoes:'work_boots', shirt:'#7a8a98', pants:'#4a4a3e', acc:'#c9a23a', gear:['tool_belt'], worn:['hi_vis_vest'], npc:[], note:'hard hat, hi-vis vest and a tool belt: runs a crew'},
+  runner: {label:'Runner', body:'masculine', build:'average', skin:2, hairColour:1, hair:'beard', hat:'none', face:'calm', top:'jersey', bottoms:'work_pants', shoes:'high_tops', shirt:'#3f7a9a', pants:'#6a6e78', acc:'#e08a2a', gear:[], worn:[], npc:[], note:'a numbered jersey in two colours, brass belt buckle: reads from across a street'},
+  outcast: {label:'Outcast', body:'feminine', build:'slim', skin:4, hairColour:0, hair:'braids', hat:'bandana', face:'calm', top:'tank_top', bottoms:'wrap_skirt', shoes:'boots', shirt:'#cdc6dc', pants:'#6a4a8a', acc:'#8a6aa8', gear:['bracers'], worn:['mantle'], npc:[], note:'ragged mantle, wrapped forearms, a sash skirt: a wanderer who has made her own clothes'},
+  streetwise: {label:'Street kid', body:'feminine', build:'average', skin:1, hairColour:2, hair:'long_hair', hat:'none', face:'calm', top:'tank_top', bottoms:'work_pants', shoes:'high_tops', shirt:'#e0902a', pants:'#4a3238', acc:'#c9a64a', gear:[], worn:['crop_jacket'], npc:[], note:'green cropped jacket over an orange top, long hair: strong colour, simple shapes'},
   librarian: {label:'Librarian', body:'feminine', build:'slim', skin:0, hairColour:4, hair:'long_hair', hat:'none', face:'glasses', top:'cardigan', bottoms:'skirt', shoes:'trainers', shirt:'#7a6a8a', pants:'#4a4a56', acc:'#e0d8c8', gear:[], worn:[], npc:[], note:'long grey hair, glasses, cardigan and skirt: knows where everything is'}
 };
 Object.keys(LOOKS).forEach(function(k){

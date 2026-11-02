@@ -36,7 +36,7 @@ for sg, sd in ((1, 'l'), (-1, 'r')):
 
 PALETTE = {
   'frame': '#a84a36', 'shades': '#16171a', 'lens': '#8fa7ad', 'freckle': '#a8694e', 'scar': '#c48a7a', 'lip': '#7e4840',
-  'helmet': '#55603e', 'helmetD': '#3f4830', 'belt': '#2a221d', 'buckle': '#a39a86', 'fur': '#d8ccb4', 'tie': '#8c3a3a',
+  'helmet': '#55603e', 'helmetD': '#3f4830', 'belt': '#2a221d', 'buckle': '#c9a64a', 'bootCuff': '#6a5a48', 'eye': '#1d1a19', 'brow': '#3a2a22', 'fur': '#d8ccb4', 'tie': '#8c3a3a',
   'trainer': '#5b5f66', 'trainerSole': '#e2ddd2', 'boot': '#3a2a22', 'bootD': '#261b16', 'rainboot': '#c99a3a', 'rainbootD': '#9c7429',
   'sole': '#1d1a18', 'pack': '#6e5a3c', 'packD': '#4f412b', 'strap': '#2b2d33', 'roll': '#8c6a3a', 'bottle': '#5b7f86',
   'glove': '#4a3328', 'gloveD': '#33231b', 'denimRoll': '#6b84a6',
@@ -49,7 +49,7 @@ SLOTS = {
   'HAIR':  ['#1d1a19', '#4a3426', '#86412a', '#c4a066', '#b4b1ab'],
   'SHIRT': 'player colour', 'PANTS': 'player colour', 'ACC': 'player second colour'
 }
-TONE = {'y0': 0.0, 'y1': 1.8, 'lo': 0.8, 'hi': 1.04, 'jitter': 0.0}
+TONE = {'y0': 0.0, 'y1': 1.8, 'lo': 0.74, 'hi': 1.08, 'jitter': 0.0}
 
 # ================= head: small, sharp profile, no eyes =================
 HEAD_ANG = [30, 90, 150, 210, 270, 330]          # a corner straight ahead makes the profile's nose line
@@ -95,15 +95,20 @@ def head(fem):
             r[5][1] = 1 + (r[5][1] - 1)*0.6
     nw = 0.038 if fem else 0.044
     neck = seg([0, 1.43, 0.0], [0, 1.575, 0.03], nw, nw, nw - 0.004, nw - 0.006, 'SKIN', caps=(False, False))
-    return {'Head': [loft(rows, 'SKIN', ang=HEAD_ANG)], 'neck_01': [neck]}
+    fzn = face_z(0, EYE_Y - 0.03)
+    feat = [wedge([0, EYE_Y - 0.03, fzn + 0.004], [0.026 if fem else 0.03, 0.05, 0.034], 'SKIN', fy=True),                      # nose
+            *[flat(on_face([(sg*0.016, EYE_Y - 0.007), (sg*0.05, EYE_Y - 0.007), (sg*0.05, EYE_Y + 0.007), (sg*0.016, EYE_Y + 0.007)], 0.004), 'eye') for sg in (1, -1)],   # eyes
+            flat(on_face([(-0.058, EYE_Y + 0.02), (0.058, EYE_Y + 0.02), (0.058, EYE_Y + 0.03), (-0.058, EYE_Y + 0.03)], 0.004), 'brow'),  # brow
+            flat(on_face([(-0.022, 1.608), (0.022, 1.608), (0.022, 1.616), (-0.022, 1.616)], 0.004), 'lip')]                         # mouth
+    return {'Head': [loft(rows, 'SKIN', ang=HEAD_ANG)] + feat, 'neck_01': [neck]}
 
 # ================= torso: square shoulders, one wedge to the waist =================
 TORSO = {  # y, half-width, half-depth, z
-  False: [(0.92, 0.12, 0.08, 0.0), (1.08, 0.104, 0.076, 0.0), (1.3, 0.15, 0.09, 0.006), (1.425, 0.18, 0.086, 0.002), (1.455, 0.175, 0.08, 0.0)],
-  True:  [(0.92, 0.13, 0.084, 0.0), (1.08, 0.098, 0.072, 0.0), (1.3, 0.128, 0.09, 0.01), (1.415, 0.156, 0.08, 0.004), (1.445, 0.15, 0.075, 0.0)]}
+  False: [(0.92, 0.12, 0.08, 0.0), (1.08, 0.104, 0.076, 0.0), (1.3, 0.15, 0.09, 0.006), (1.425, 0.19, 0.09, 0.002), (1.455, 0.184, 0.084, 0.0)],
+  True:  [(0.92, 0.13, 0.084, 0.0), (1.08, 0.098, 0.072, 0.0), (1.3, 0.132, 0.094, 0.01), (1.415, 0.16, 0.084, 0.004), (1.445, 0.154, 0.078, 0.0)]}
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
-LW = 0.8     # limb thickness
+LW = 1.12     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
 def t_at(fem, y):
     T = TORSO[fem]
     if y <= T[0][0]: return T[0][1:]
@@ -148,9 +153,11 @@ def lower(sd, g=0.0, t0=0.0, t1=1.0):
     return [[*a, lerp(0.035, 0.024, t0)*w + g, lerp(0.038, 0.026, t0)*w + g], [*b, lerp(0.035, 0.024, t1)*w + g, lerp(0.038, 0.026, t1)*w + g]]
 def hand(sd, col='SKIN', g=0.0):
     W, F = J['wr' + sd], J['ft' + sd]
-    w = 0.85
-    return [frustum([[W[0], W[1] + 0.02, W[2], 0.022*w + g, 0.028*w + g], [*mixp(W, F, 0.4), 0.02*w + g, 0.032*w + g]], col, caps=[True, False]),
-            tip(mixp(W, F, 0.4), F, 0.02*w*math.sqrt(2) + g, 0.032*w*math.sqrt(2) + g, col)]
+    w = 1.3
+    sg = 1 if sd == 'l' else -1
+    return [frustum([[W[0], W[1] + 0.02, W[2], 0.022*w + g, 0.028*w + g], [*mixp(W, F, 0.45), 0.021*w + g, 0.034*w + g]], col, caps=[True, False]),
+            frustum([[*mixp(W, F, 0.45), 0.021*w + g, 0.034*w + g], [*mixp(W, F, 0.85), 0.017*w + g, 0.03*w + g], [*F, 0.008*w + g, 0.014*w + g]], col),   # a blunt mitten, not a spike
+            box([W[0] - sg*0.02, W[1] - 0.045, W[2] + 0.02 + g], [0.018, 0.05, 0.022], col)]    # thumb
 def hands(): return both_sides(lambda sg, sd: {'hand_' + sd: hand(sd)})
 def sleeves(col, style='long', g=0.014, cuff=None):
     """style: 'long' (to the wrist, with a cuff), 'short' (to mid upper arm) or 'rolled' (to mid forearm, rolled cuff)"""
@@ -211,7 +218,7 @@ def bottoms(fem):
     hip = 0.13 if fem else 0.122
     def pelvis(col, g=0.008):
         return {'pelvis': [frustum([[0, 0.84, 0.0, 0.098 + g, 0.072 + g], [0, 0.94, 0.0, hip + g, 0.084 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.082 + g]], col)]}
-    belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.014, 0.092], [0, 0.985, 0.0, hip + 0.012, 0.09]], 'belt', caps=[False, False]), box([0, 0.97, 0.094], [0.034, 0.024, 0.006], 'buckle')]}
+    belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.014, 0.092], [0, 0.985, 0.0, hip + 0.012, 0.09]], 'belt', caps=[False, False]), box([0, 0.97, 0.096], [0.054, 0.034, 0.008], 'buckle')]}
     def legs(col, g=0.008, knee=None, calf_to=None, cuff=None, hem=0.1):
         def f(sg, sd):
             K, A = J['kn' + sd], J['an' + sd]
@@ -242,19 +249,21 @@ def bottoms(fem):
 # ================= shoes: small dark blocks =================
 def shoe(sd, col, sole=None, h=0.085):
     x = J['an' + sd][0]
-    pts = [(x - 0.04, 0.0, -0.065), (x + 0.04, 0.0, -0.065), (x + 0.04, 0.0, 0.14), (x - 0.04, 0.0, 0.14),
-           (x - 0.034, h, -0.055), (x + 0.034, h, -0.055), (x + 0.034, h*0.55, 0.12), (x - 0.034, h*0.55, 0.12)]
+    h *= 1.3
+    pts = [(x - 0.054, 0.0, -0.07), (x + 0.054, 0.0, -0.07), (x + 0.054, 0.0, 0.175), (x - 0.054, 0.0, 0.175),
+           (x - 0.046, h, -0.06), (x + 0.046, h, -0.06), (x + 0.046, h*0.6, 0.15), (x - 0.046, h*0.6, 0.15)]
     o = [hull(pts, col)]
-    if sole: o.append(box([x, 0.008, 0.037], [0.084, 0.016, 0.21], sole))
+    if sole: o.append(box([x, 0.011, 0.052], [0.112, 0.022, 0.255], sole))
     return o
 def shoes():
     S = {}
     S['trainers'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'trainer', 'trainerSole', 0.08)})
     S['boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'boot', 'sole', 0.09),
-                                            'calf_' + sd: [frustum([[J['an' + sd][0], 0.07, -0.01, 0.04, 0.045], [J['an' + sd][0], 0.17, -0.008, 0.038, 0.043]], 'boot')]})
+                                            'calf_' + sd: [frustum([[J['an' + sd][0], 0.08, -0.01, 0.054, 0.06], [J['an' + sd][0], 0.21, -0.008, 0.05, 0.056]], 'boot'),
+                                            frustum([[J['an' + sd][0], 0.2, -0.008, 0.056, 0.062], [J['an' + sd][0], 0.235, -0.008, 0.056, 0.062]], 'bootCuff', caps=[False, False])]})
     S['rain_boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'rainboot', 'sole', 0.09),
-                                                 'calf_' + sd: [frustum([[J['an' + sd][0], 0.07, -0.01, 0.044, 0.05], [J['an' + sd][0], 0.33, -0.006, 0.05, 0.056]], 'rainboot'),
-                                                                frustum([[J['an' + sd][0], 0.31, -0.006, 0.054, 0.06], [J['an' + sd][0], 0.34, -0.006, 0.054, 0.06]], 'rainbootD', caps=[False, False])]})
+                                                 'calf_' + sd: [frustum([[J['an' + sd][0], 0.08, -0.01, 0.056, 0.062], [J['an' + sd][0], 0.33, -0.006, 0.062, 0.068]], 'rainboot'),
+                                                                frustum([[J['an' + sd][0], 0.31, -0.006, 0.066, 0.072], [J['an' + sd][0], 0.345, -0.006, 0.066, 0.072]], 'rainbootD', caps=[False, False])]})
     return S
 
 # ================= faces: no eyes; glasses and hair carry the character =================
@@ -448,8 +457,33 @@ CLIPS.update({
 import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
 def body(fem): return join(head(fem), hands())
+HEAD_S = (1.42, 1.2, 1.42); HEAD_O = (0.0, 1.548, 0.0)
+def xf(q, S, O):
+    q = dict(q); sx, sy, sz = S
+    q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]
+    if q['s'] in ('box', 'wedge', 'cyl'): q['d'] = [R4(q['d'][i]*S[i]) for i in range(3)]
+    elif q['s'] in ('poly', 'decal'): q['v'] = [[R4(v[i]*S[i]) for i in range(3)] for v in q['v']]
+    elif q['s'] == 'loft':
+        ax = q.get('ax', 'y'); fa, fb = {'y': (sx, sz), 'x': (sy, sz), 'z': (sx, sy)}[ax]
+        rows = []
+        for r in q['r']:
+            r = list(r); r[0], r[1], r[2] = R4(r[0]*sx), R4(r[1]*sy), R4(r[2]*sz); r[3] = R4(r[3]*fa); r[4] = R4(r[4]*fb); rows.append(r)
+        q['r'] = rows
+    return q
+def scale_bone(parts, bone, S, O):
+    # parts: {slot: {body?: {name: {bone: [pieces]}}}}: walk every dict that maps bone names to piece lists
+    if isinstance(parts, dict):
+        for k, v in parts.items():
+            if k == bone and isinstance(v, list): parts[k] = [xf(q, S, O) for q in v]
+            else: scale_bone(v, bone, S, O)
+def fat(parts, bone, f):
+    if isinstance(parts, dict):
+        for k, v in parts.items():
+            if k == bone and isinstance(v, list):
+                parts[k] = [dict(q, r=[[*r[:3], R4(r[3]*f), R4(r[4]*f), *r[5:]] for r in q['r']]) if q['s'] == 'loft' else q for q in v]
+            else: fat(v, bone, f)
 pack = {
-  'name': 'survivor', 'version': 7, 'style': 'silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small featureless heads (18 October 2026)',
+  'name': 'survivor', 'version': 8, 'style': 'silhouette first: square-shouldered wedge torsos, arms tapering to points, straight column legs, small featureless heads (18 October 2026)',
   'about': 'Every character creator choice as faceted pieces, grouped by skeleton bone. See docs/SHAPED.md.',
   'units': 'metres', 'facing': '+Z', 'left': '+X', 'height': 1.80,
   'bones': BONES, 'palette': PALETTE, 'slots': SLOTS,
@@ -490,6 +524,9 @@ pack = {
   'npcRule': 'Six ready-made recruitable survivors. Build each from its creator choices as usual, add parts.worn[body][k] for every k in worn, and parts.npc[k] for every k in npc '
              '(wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.',
 }
+scale_bone(pack['parts'], 'Head', HEAD_S, HEAD_O)
+fat(pack['parts'], 'neck_01', 1.3)
+pack['style'] = 'v8 (2 November 2026): a stronger silhouette from the new references: bigger head with brow, nose and eyes, chunky hands and boots, thicker limbs, brass accents, higher value contrast'
 out, st = write_pack('survivor', pack, __file__)
 mx = lambda pre, i: max(v[i] for k, v in st.items() if k.startswith(pre))
 for i, nm in ((0, 'triangles'), (1, 'vertices'), (2, 'welded vertices')):
