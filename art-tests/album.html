@@ -701,6 +701,14 @@ const SCENES={
         for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
         g.position.set((i%3)*5, 0, -Math.floor(i/3)*7); scene.add(g); });
       cam.position.set(14,9,6); ctl.target.set(5,0.8,-3); }},
+  red_truck:{t:'Vehicles: red truck',d:'New red work truck built with the vehicle look rules, beside the stock pickup for scale.',
+    make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; ground(40,40,0x8a8a84);
+      const col=colourer(PR.palette,{paint1:'#b3261e',paint2:'#25272a',paint3:'#d4d4cc'});
+      ['red_truck'].forEach((n,i)=>{ const m=PR.models.vehicles['pk_workshop_crafts_'+n], rg=PR.vehicleRig['pk_workshop_crafts_'+n], g=new THREE.Group();
+        g.add(mesh(m.body,col)); g.add(mesh(m.bonnet,col)); if (m.boot&&m.boot.length) g.add(mesh(m.boot,col)); Object.values(m.parts||{}).forEach(q=>{ const pp=Array.isArray(q)?q:(q.pieces||q.model||[]); if(pp.length) g.add(mesh(pp,col)); });
+        for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
+        scene.add(g); });
+      cam.position.set(7.5,3.4,5.5); ctl.target.set(0,0.9,0); }},
   tools_held:{t:'Held tools: pickaxe, trowel, jerry can, big wrench; military magazines',d:'The new held items (new state) side by side.',
     make(){ lights('day'); scene.background=new THREE.Color(0xdde6ea); scene.fog=null; ground(40,40,0x6d7a4f); const col=colourer(HE.palette||PR.palette,{}), M=HE.models.weapons;
       ['pickaxe','trowel','jerry_can','wrench_big','rifle_magazine','smg_magazine','rocket_round','ammo_crate_mil','belt_box'].forEach((n,i)=>{ const g=mesh(M[n].new,col); g.rotation.y=Math.PI/2; g.position.set(0,0.4,-i*0.6); scene.add(g); });
