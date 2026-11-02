@@ -619,6 +619,78 @@
     return pf.pieces.map(function(q){ var p = clone(q); p.id = M.newId(doc); p.pos = [q.pos[0]+at[0], q.pos[1]+at[1], q.pos[2]+at[2]]; if (g && p.g !== 'wheel') p.g = g; doc.pieces.push(p); return p; });
   };
 
+  /* ------------------------------------------------------------------ snapping that lines up
+     What building games and editors do, and what this follows:
+     - absolute, not relative: a piece snaps onto grid lines, not by grid steps from wherever it was (Unity's increment snap
+       leaves a piece at 1.6 going 2.6, 3.6 ...);
+     - the closest edge of the piece's box snaps, not its centre (Blender's "Closest" snap base), so a 7 in block lines up
+       its sides with a 1 in grid instead of sitting half an inch off;
+     - block sizes are whole grid steps (Space Engineers: every block fills whole cells of one grid, so faces always meet);
+     - neighbours first: within a few pixels, an edge sticks to the face or edge of a nearby piece (or the middle line when the
+       piece is mirrored) before the grid, so pieces touch without gaps or overlaps. */
+  M.SNAP_NEAR = 0.15;   /* a neighbour counts if its box comes this close across the other two directions */
+  function boxOf(p, mirrorCopies){ var nat = mirrorCopies ? baseToNative(Object.assign(clone(p), {hidden:false})) : baseToNative(Object.assign(clone(p), {mx:false, mz:false, hidden:false})); var B = boundsOf(nat); return B.ok ? {mn:B.mn, mx:B.mx} : null; }
+  M.boxOf = function(p){ return boxOf(p, false); };
+  M.boxesOf = function(p){ return baseToNative(Object.assign(clone(p), {hidden:false})).map(function(np){ var B = boundsOf([np]); return B.ok ? {mn:B.mn, mx:B.mx, id:p.id, name:p.name || ''} : null; }).filter(Boolean); };
+  /* the boxes a moving set can stick to: every other visible piece, each mirrored copy on its own */
+  M.snapTargets = function(pieces, skipIds){ var skip = {}, out = []; (skipIds || []).forEach(function(i){ skip[i] = 1; });
+    pieces.forEach(function(p){ if (skip[p.id] || p.hidden || p.g === 'wheel') return; out = out.concat(M.boxesOf(p)); }); return out; };
+  /* move box B by d along the given axes so its closest edge lands on a neighbour's face or edge (within tol) or else on a grid line.
+     o: {step, tol, targets, mirror (snap the inner side to x = 0)}; returns {d, how:[per axis: 'piece' name | 'middle' | 'grid' | null]} */
+  M.snapMove = function(B, d, axes, o){
+    d = d.slice(); var how = [null, null, null], st = o.step || 0, tol = o.tol || 0;
+    axes.forEach(function(i){
+      var lo = B.mn[i] + d[i], hi = B.mx[i] + d[i], best = null, u = [0, 1, 2].filter(function(j){ return j !== i; });
+      (o.targets || []).forEach(function(T){
+        var near = u.every(function(j){ return T.mn[j] <= B.mx[j] + d[j] + M.SNAP_NEAR && T.mx[j] >= B.mn[j] + d[j] - M.SNAP_NEAR; }); if (!near) return;
+        [T.mn[i], T.mx[i]].forEach(function(t){ [lo, hi].forEach(function(e){ var c = t - e; if (Math.abs(c) <= tol && (!best || Math.abs(c) < Math.abs(best.c) - 1e-9)) best = {c:c, how:T.name || 'piece'}; }); });
+      });
+      if (o.mirror && i === 0){ var mc = lo + hi >= 0 ? -lo : -hi; if (Math.abs(mc) <= Math.max(tol, 0) && (!best || Math.abs(mc) < Math.abs(best.c))) best = {c:mc, how:'middle'};
+        if (lo < 0 && hi > 0) best = {c:lo + hi >= 0 ? -lo : -hi, how:'middle'}; }   /* a mirrored piece that overlaps its own copy is pushed out to touch it */
+      if (!best && st){ var cl = Math.round(lo/st)*st - lo, ch = Math.round(hi/st)*st - hi; best = {c:Math.abs(cl) <= Math.abs(ch) ? cl : ch, how:'grid'}; }
+      if (best){ d[i] += best.c; how[i] = best.how; }
+    });
+    return {d:d.map(r4), how:how};
+  };
+  /* a face being dragged (resize): where it lands */
+  M.snapFace = function(f, i, B, o){
+    var best = null, u = [0, 1, 2].filter(function(j){ return j !== i; });
+    (o.targets || []).forEach(function(T){ if (!u.every(function(j){ return T.mn[j] <= B.mx[j] + M.SNAP_NEAR && T.mx[j] >= B.mn[j] - M.SNAP_NEAR; })) return;
+      [T.mn[i], T.mx[i]].forEach(function(t){ var c = t - f; if (Math.abs(c) <= (o.tol || 0) && (!best || Math.abs(c) < Math.abs(best.c))) best = {c:c, how:T.name || 'piece'}; }); });
+    if (!best && o.mirror && i === 0 && Math.abs(f) <= (o.tol || 0)) best = {c:-f, how:'middle'};
+    if (!best && o.step) best = {c:Math.round(f/o.step)*o.step - f, how:'grid'};
+    return best ? {f:r4(f + best.c), how:best.how} : {f:f, how:null};
+  };
+  /* sizes in whole grid steps (blocks and the like; rounded shapes keep theirs) */
+  M.SIZED = {box:1, bev:1, wedge:1, cyl:1};
+  M.sizeToGrid = function(p, step){ if (!step || !p.d || !M.SIZED[p.s]) return p; p.d = p.d.map(function(v){ return r4(Math.max(step, Math.round(v/step)*step)); }); return p; };
+  /* tidy up: whole-step sizes and every box edge on the grid (pieces not square to the axes only move) */
+  M.alignToGrid = function(pieces, step){
+    var n = 0; if (!step) return 0;
+    pieces.forEach(function(p){ if (p.g === 'wheel') return; var sq = !p.rot || (!p.rot[0] && !p.rot[2] && !((p.rot[1] || 0) % 90));
+      var before = JSON.stringify([p.pos, p.d]); if (sq) M.sizeToGrid(p, step);
+      var B = boxOf(p, false); if (!B) return; for (var i = 0; i < 3; i++){ var c = Math.round(B.mn[i]/step)*step - B.mn[i]; p.pos[i] = r4(p.pos[i] + c); }
+      if (p.mx && p.pos[0] !== 0){ var B2 = boxOf(p, false); if (B2.mn[0] < 0 && B2.mx[0] > 0) p.pos[0] = r4(p.pos[0] - (p.pos[0] > 0 ? B2.mn[0] : B2.mx[0])); }
+      if (JSON.stringify([p.pos, p.d]) !== before) n++; });
+    return n;
+  };
+  /* close small gaps: a piece within tol of a neighbour (and beside it across the other two directions) moves to touch it.
+     Smaller pieces move to bigger ones; a mirrored piece and its own copy each move half the gap. */
+  M.closeGaps = function(pieces, tol, onlyIds){
+    tol = tol || 0.0127; var list = pieces.filter(function(p){ return !p.hidden && p.g !== 'wheel'; }), moved = 0, only = onlyIds ? {} : null; (onlyIds || []).forEach(function(i){ only[i] = 1; });
+    var vol = function(B){ return (B.mx[0]-B.mn[0])*(B.mx[1]-B.mn[1])*(B.mx[2]-B.mn[2]); };
+    list.filter(function(p){ return !only || only[p.id]; }).map(function(p){ return {p:p, B:boxOf(p, false)}; }).filter(function(x){ return x.B; }).sort(function(a, b){ return vol(a.B) - vol(b.B); }).forEach(function(A){
+      var B = boxOf(A.p, false), best = null;
+      list.forEach(function(q){ M.boxesOf(q).forEach(function(T){ if (q === A.p && !(A.p.mx && Math.sign(T.mn[0] + T.mx[0]) !== Math.sign(B.mn[0] + B.mx[0]))) return;
+        if (vol(T) < vol(B) * 0.999 && q !== A.p) return;   /* only move toward something at least as big */
+        for (var i = 0; i < 3; i++){ var u = [0, 1, 2].filter(function(j){ return j !== i; }); if (!u.every(function(j){ return T.mn[j] < B.mx[j] - 1e-4 && T.mx[j] > B.mn[j] + 1e-4; })) continue;
+          var g1 = T.mn[i] - B.mx[i], g2 = B.mn[i] - T.mx[i];
+          [[g1, 1], [g2, -1]].forEach(function(g){ if (g[0] > 0.0004 && g[0] <= tol && (!best || g[0] < best.gap)) best = {gap:g[0], i:i, dir:g[1], self:q === A.p}; }); } }); });
+      if (best){ A.p.pos[best.i] = r4(A.p.pos[best.i] + best.dir*(best.self ? best.gap/2 : best.gap)); moved++; }
+    });
+    return moved;
+  };
+
   /* ------------------------------------------------------------------ checks a builder should know about */
   M.check = function(doc, A){
     var out = [], s = A.spec, S = doc.setup;

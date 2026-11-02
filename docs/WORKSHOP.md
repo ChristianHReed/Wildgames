@@ -58,6 +58,22 @@ The Workshop chat's own working rules: `docs/WORKSHOP_CHAT.md`.
 - Exported as `survivor.bodyTypes[name].shape = {bone: [sx, sy, sz]}`, scaled about that bone's pivot. The game applies it with the new `SHAPED.scaleAbout(piece, pivot, scale)` (in `assets/shaped/shapes.js`) to every piece on the bone, before the build's width and depth.
 - **Rings**: any rounded piece (a loft: heads, hands, limbs, tubes, hulls) can be shaped ring by ring. Select it, turn on **Rings** above the view, step through the rings, and drag a ring wider, deeper or along the piece. You can also add a ring between two others or remove one. The Piece tab has the same as sliders.
 
+## Snapping that lines up (1 November 2026)
+
+Gaps and misaligned blocks came from four things, now fixed the way building games and editors do it:
+
+- **Snapping was relative.** Moving snapped the distance moved, so a piece that started off the grid stayed off it (the same complaint people have about Unity's increment snap). Now moves are **absolute**: the piece lands on grid lines.
+- **The middle snapped, not the sides.** A 15¾ in block centred on the inch grid had its sides ⅞ in off. Now the **nearest side of the piece's box** snaps (Blender's "Closest" snap). New blocks come in **whole grid steps** (as every Space Engineers block fills whole cells of one grid), so both sides land on lines.
+- **Shapes not centred on their position sank or floated.** A dome, quarter round or arch dropped onto a face sat half inside it. Now the shape's own bottom (or side) goes flush on the face.
+- **Neighbours win over the grid.** With **Stick** on (toolbar), an edge within a few pixels of a nearby piece's face or edge sticks to it, so pieces touch with no gap or overlap. A mirrored piece's inner side sticks to the middle line, so the two halves meet. The move label says "lined up with …" when it sticks.
+
+The same rules apply when placing, dragging, using the move arrows, dragging a face to resize it (the face itself lands on a neighbour or a grid line), and nudging. Two tidy-up tools fix older designs:
+
+- **Line up with the grid** (a selection or everything) makes block sizes whole grid steps and puts every side on a grid line.
+- **Close small gaps** moves pieces less than ½ in apart so they touch.
+
+Typed numbers are never snapped.
+
 ## Files
 
 | File | What it is |

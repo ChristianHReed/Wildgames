@@ -31,7 +31,7 @@
   /* ---------------------------------------------------------------- state */
   var S = {
     doc:null, sel:[], layer:'car', look:'whole', state:null,
-    units:store.get('units', 'imp'), snap:store.get('snap', null), faceSnap:store.get('faceSnap', true),
+    units:store.get('units', 'imp'), snap:store.get('snap', null), faceSnap:store.get('faceSnap', true), stick:store.get('stick', true),
     sym:{x:true, z:false}, lock:null, placing:null, multi:false, tab:'piece',
     preview:{bonnet:false, boot:false, markers:true, person:true, planes:true, hand:true, bones:true, fx:true, guides:true},
     brush:'paint1', prefabs:store.get('prefabs', []), undo:[], redo:[], asset:null, assetFor:null, part:null, hideParts:{}, selPoint:-1, pose:{}, clip:null, clipT:0, variant:null, aClip:null, aFrame:0, aBone:null, onion:false, build:'average', aPlay:false
@@ -343,7 +343,8 @@
       var h = hit(x, y); if (!h || S.sel.indexOf(h.id) < 0) return false;
       var pl = dragPlane(h.p), start = WSV.hitPlane(view.ray(x, y).o, view.ray(x, y).d, h.p, pl.n); if (!start) return false;
       commit();
-      drag = {pl:pl, at:h.p, start:start, orig:selected().map(function(p){ return {p:p, pos:p.pos.slice()}; })};
+      var sl = selected(), B0 = selBox(sl);
+      drag = {pl:pl, at:h.p, start:start, B0:B0, ctx:snapCtx(S.sel, B0, 12, sl.some(function(p){ return p.mx; })), orig:sl.map(function(p){ return {p:p, pos:p.pos.slice()}; })};
       return true;
     },
     drag:function(x, y){
@@ -351,9 +352,10 @@
       if (!drag) return; var R = view.ray(x, y), q = WSV.hitPlane(R.o, R.d, drag.at, drag.pl.n); if (!q) return;
       var dv = [q[0]-drag.start[0], q[1]-drag.start[1], q[2]-drag.start[2]];
       if (drag.pl.ax){ var t = WSV.dot(dv, drag.pl.ax); dv = [drag.pl.ax[0]*t, drag.pl.ax[1]*t, drag.pl.ax[2]*t]; }
-      dv = dv.map(function(v){ return snapV(v); });
+      var axes = drag.pl.ax ? [Math.abs(drag.pl.ax[0]) > 0.5 ? 0 : Math.abs(drag.pl.ax[1]) > 0.5 ? 1 : 2] : [0, 1, 2].filter(function(i){ return Math.abs(drag.pl.n[i]) < 0.5; });
+      if (drag.B0){ var sm = M.snapMove(drag.B0, dv, axes, drag.ctx); dv = sm.d; snapSaid(sm.how); } else dv = dv.map(function(v){ return snapV(v); });
       drag.orig.forEach(function(o){ o.p.pos = [r4(o.pos[0]+dv[0]), r4(o.pos[1]+dv[1]), r4(o.pos[2]+dv[2])]; });
-      banner('Moved ' + ['x','y','z'].map(function(a, i){ return a.toUpperCase() + ' ' + (dv[i] >= 0 ? '+' : '') + fmtNum(toUnit(dv[i])); }).join('  ') + ' ' + unitLabel());
+      banner('Moved ' + ['x','y','z'].map(function(a, i){ return a.toUpperCase() + ' ' + (dv[i] >= 0 ? '+' : '') + fmtNum(toUnit(dv[i])); }).join('  ') + ' ' + unitLabel() + (S.snapNote ? ' · ' + S.snapNote : ''));
       rebuildScene();
     },
     dragEnd:function(tapped){ if (S.gzDrag){ gzEnd(!tapped); return; } if (!drag) return; drag = null; banner(null); if (tapped){ S.undo.pop(); return; } changed(false); }
@@ -404,21 +406,37 @@
   }
   /* put a new piece flush on the face it was dropped on, snapped to the grid; mirrored when it sits off the symmetry plane */
   function seat(p, at, n, onSurface){
-    var B = M.boundsOf(M.toNativeAlways(p)), half = [(B.mx[0]-B.mn[0])/2, (B.mx[1]-B.mn[1])/2, (B.mx[2]-B.mn[2])/2];
+    if (S.snap) M.sizeToGrid(p, S.snap);   /* blocks come in whole grid steps, so their sides meet the grid (as Space Engineers' cells) */
+    var B = M.boundsOf(M.toNativeAlways(Object.assign(clone(p), {mx:false, mz:false}))), o = [0, 1, 2].map(function(i){ return (B.mn[i] + B.mx[i])/2 - p.pos[i]; }), half = [(B.mx[0]-B.mn[0])/2, (B.mx[1]-B.mn[1])/2, (B.mx[2]-B.mn[2])/2];
     var a = [Math.abs(n[0]), Math.abs(n[1]), Math.abs(n[2])], k = a[0] > a[1] && a[0] > a[2] ? 0 : a[1] > a[2] ? 1 : 2, s = n[k] >= 0 ? 1 : -1;
-    var pos = [snapV(at[0]), snapV(at[1]), snapV(at[2])];
-    if (S.faceSnap && onSurface){ pos[k] = at[k] + s*half[k]; if (S.snap) pos[k] = r4(pos[k]); }
-    else if (!onSurface) pos[1] = p.g === 'wheel' ? pos[1] : half[1];   /* dropped in the middle: it sits on the ground */
+    /* the box's middle goes where it was tapped; then its side (not its middle) goes flush on the face: shapes like a dome or a quarter round are not centred on their position */
+    var c = at.slice();
+    if (S.faceSnap && onSurface) c[k] = at[k] + s*half[k];
+    else if (!onSurface && p.g !== 'wheel') c[1] = half[1];   /* dropped in the middle: it sits on the ground */
+    var centred = false;
     if (p.g !== 'wheel' && S.layer !== 'state'){
-      if (S.sym.x && Math.abs(pos[0]) < Math.max(0.04, half[0]*0.6)) pos[0] = 0; else if (S.sym.x) p.mx = true;
-      if (S.sym.z && Math.abs(pos[2]) > 0.04) p.mz = true;
+      if (S.sym.x && Math.abs(c[0]) < Math.max(0.04, half[0]*0.6)){ c[0] = 0; centred = true; } else if (S.sym.x) p.mx = true;
+      if (S.sym.z && Math.abs(c[2]) > 0.04) p.mz = true;
     }
-    p.pos = pos.map(r4);
+    var Bc = {mn:[c[0] - half[0], c[1] - half[1], c[2] - half[2]], mx:[c[0] + half[0], c[1] + half[1], c[2] + half[2]]};
+    var axes = [0, 1, 2].filter(function(i){ return !(i === k && (onSurface || i === 1)) && !(i === 1 && !onSurface) && !(i === 0 && centred); });
+    var sn = M.snapMove(Bc, [0, 0, 0], axes, snapCtx([p.id], Bc, 20, !!p.mx));
+    p.pos = [0, 1, 2].map(function(i){ return r4(c[i] + sn.d[i] - o[i]); });
+    snapSaid(sn.how);
   }
+  /* what to snap to: the grid, and (Stick on) the faces and edges of the other pieces near enough on screen */
+  function snapCtx(ids, B, px, mirror){
+    var at = B ? [(B.mn[0]+B.mx[0])/2, (B.mn[1]+B.mx[1])/2, (B.mn[2]+B.mx[2])/2] : view.cam.target, w = view ? wpp(at) : 0.002;
+    return {step:S.snap || 0, tol:S.stick ? Math.max(w*(px || 12), S.snap ? S.snap*0.45 : 0.004) : 0, targets:S.stick ? M.snapTargets(ownerList(), ids) : [], mirror:!!mirror};
+  }
+  function selBox(list){ var mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; list.forEach(function(p){ var B = M.boxOf(p); if (!B) return; for (var i = 0; i < 3; i++){ mn[i] = Math.min(mn[i], B.mn[i]); mx[i] = Math.max(mx[i], B.mx[i]); } }); return mn[0] < 1e9 ? {mn:mn, mx:mx} : null; }
+  function snapSaid(how){ var w = how.filter(Boolean); S.snapNote = !w.length ? '' : w.some(function(h){ return h !== 'grid' && h !== 'middle'; }) ? 'lined up with ' + (w.filter(function(h){ return h !== 'grid' && h !== 'middle'; })[0] === 'piece' ? 'a piece' : w.filter(function(h){ return h !== 'grid' && h !== 'middle'; })[0]) : w.indexOf('middle') >= 0 ? 'touching its mirror' : 'on the grid'; return S.snapNote; }
 
   /* ---------------------------------------------------------------- editing the selection */
   function edit(fn, full){ var sel = selected(); if (!sel.length) return; commit(); sel.forEach(fn); changed(full); }
-  function nudge(i, dir){ var st = S.snap || (S.units === 'imp' ? IN : 0.01); edit(function(p){ p.pos[i] = r4(p.pos[i] + dir*st); }); }
+  function nudge(i, dir){ var st = S.snap || (S.units === 'imp' ? IN : 0.01), sel = selected(); if (!sel.length) return; commit();
+    var B = selBox(sel), d = [0, 0, 0]; d[i] = dir*st; if (B && S.snap){ var e = dir > 0 ? B.mx[i] + d[i] : B.mn[i] + d[i]; d[i] += Math.round(e/st)*st - e; }
+    sel.forEach(function(p){ p.pos[i] = r4(p.pos[i] + d[i]); }); changed(false); }
   function removeSel(){ if (!S.sel.length) return; commit(); var ids = {}; S.sel.forEach(function(i){ ids[i] = 1; }); var L = ownerList();
     for (var i = L.length - 1; i >= 0; i--) if (ids[L[i].id]) L.splice(i, 1); S.sel = []; changed(true); }
   function duplicate(mirrorCopy){
@@ -499,6 +517,7 @@
     h += '<button class="tool' + (S.sym.x ? ' on' : '') + '" data-t="symx" title="Mirror new pieces left and right">' + '<svg viewBox="0 0 30 24"><path d="M15 2v20" stroke="#b5523d" stroke-width="2" stroke-dasharray="3 2"/><path d="M4 8h7v8H4z M19 8h7v8h-7z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/></svg>L | R</button>';
     h += '<button class="tool' + (S.sym.z ? ' on' : '') + '" data-t="symz" title="Mirror new pieces front and back">' + '<svg viewBox="0 0 30 24"><path d="M3 12h24" stroke="#4e7393" stroke-width="2" stroke-dasharray="3 2"/><path d="M11 2h8v7h-8z M11 15h8v7h-8z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/></svg>F | B</button>';
     h += '<button class="tool' + (S.faceSnap ? ' on' : '') + '" data-t="face" title="New pieces land flush on the face you tap">' + '<svg viewBox="0 0 30 24"><path d="M4 16h22v5H4z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/><path d="M10 6h10v10H10z" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.3"/><path d="M15 1v4" stroke="#c67139" stroke-width="2"/></svg>Face snap</button>';
+    h += '<button class="tool' + (S.stick ? ' on' : '') + '" data-t="stick" title="Edges stick to nearby pieces so they touch without gaps">' + '<svg viewBox="0 0 30 24"><path d="M3 6h10v12H3z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/><path d="M17 6h10v12H17z" fill="#f3dcc4" stroke="#3d3029" stroke-width="1.3"/><path d="M15 3v18" stroke="#c67139" stroke-width="2" stroke-dasharray="2 2"/></svg>Stick</button>';
     h += '<button class="tool" data-t="snap" title="Grid step for moving">' + '<svg viewBox="0 0 30 24"><path d="M5 4v16M11 4v16M17 4v16M23 4v16M3 6h24M3 12h24M3 18h24" stroke="#3d3029" stroke-width="1"/></svg>Grid ' + (SNAPS[S.units].filter(function(s){ return Math.abs(s[0] - S.snap) < 1e-9; })[0] || [0, '?'])[1] + '</button>';
     h += '<button class="tool" data-t="lock" title="Lock dragging to one direction">' + '<svg viewBox="0 0 30 24"><path d="M4 12h22M22 8l4 4-4 4M8 8l-4 4 4 4" fill="none" stroke="' + (S.lock ? '#c67139' : '#3d3029') + '" stroke-width="1.8"/></svg>' + (S.lock ? 'Move ' + S.lock.toUpperCase() : 'Move free') + '</button>';
     h += '<button class="tool' + (S.multi ? ' on' : '') + '" data-t="multi" title="Tap several pieces to select them together">' + '<svg viewBox="0 0 30 24"><path d="M4 4h9v9H4z M17 11h9v9h-9z" fill="none" stroke="#3d3029" stroke-width="1.4" stroke-dasharray="2 1.5"/><path d="M7 7l3 3M20 14l3 3" stroke="#c67139" stroke-width="2"/></svg>Pick many</button>';
@@ -513,6 +532,7 @@
     if (t === 'symx') S.sym.x = !S.sym.x;
     else if (t === 'symz') S.sym.z = !S.sym.z;
     else if (t === 'face'){ S.faceSnap = !S.faceSnap; store.set('faceSnap', S.faceSnap); }
+    else if (t === 'stick'){ S.stick = !S.stick; store.set('stick', S.stick); toast(S.stick ? 'Edges stick to nearby pieces.' : 'Only the grid snaps now.'); }
     else if (t === 'snap'){ var L = SNAPS[S.units], i = 0; L.forEach(function(s, k){ if (Math.abs(s[0] - S.snap) < 1e-9) i = k; }); S.snap = L[(i + 1) % L.length][0]; store.set('snap', S.snap); }
     else if (t === 'lock'){ S.lock = S.lock === null ? 'x' : S.lock === 'x' ? 'y' : S.lock === 'y' ? 'z' : null; }
     else if (t === 'multi') S.multi = !S.multi;
@@ -633,7 +653,7 @@
         '<p class="muted">Its wheels sit on its two ends, so moving it moves them. It stays on the middle line at wheel height; drag it forward or back. Turn on <b>Steer</b> below the view to see the steering wheels turn.</p></div>';
     }
     h += '<div class="card"><h3>Where (' + unitLabel() + ')</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return num(a, p.pos[i], 'len', function(v){ edit(function(q){ q.pos[i] = v; }); }, {ax:a}); }).join('') + '</div>' +
-      '<p class="muted">X right, Y up, Z forward. The car\'s middle is X 0, the ground Y 0.</p></div>';
+      '<p class="muted">X right, Y up, Z forward. The car\'s middle is X 0, the ground Y 0.</p>' + (S.snap ? '<div class="row"><button class="alt sm" data-a="toGrid">Line up with the grid</button></div>' : '') + '</div>';
     h += '<div class="card"><h3>Size</h3>' + sizeFields(p) + '</div>';
     if (p.s === 'loft' && p.r && p.r.length >= 2){ var rk = Math.max(0, Math.min(p.r.length - 1, S.ringIdx || 0)), rr = p.r[rk], RX = ringAxes(p), rsc = p.scl || [1, 1, 1], setr = function(i, half){ return function(val){ edit(function(q){ var k2 = Math.min(rk, q.r.length - 1); q.r[k2] = q.r[k2].slice(); q.r[k2][i] = r4(half ? Math.max(0, val/2) : val); }); }; };
       h += '<div class="card"><h3>Shape ring by ring</h3><p class="muted">A rounded piece is rings joined together: shape each ring to sculpt it (a jaw, a nose, a muscle). Turn on <b>Rings</b> above the view to drag the ring\'s handles.</p>' +
@@ -677,7 +697,7 @@
   }
   function panelMany(sel){
     var h = '<span class="stamp">' + sel.length + ' pieces</span>';
-    h += '<div class="card"><h3>Move together</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return '<div class="num"><span class="ax ' + a + '">' + a.toUpperCase() + '</span><button data-a="nudge" data-i="' + i + '" data-d="-1">−</button><button data-a="nudge" data-i="' + i + '" data-d="1">+</button></div>'; }).join('') + '</div><p class="muted">Each tap moves one grid step. Or drag any selected piece.</p></div>';
+    h += '<div class="card"><h3>Move together</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return '<div class="num"><span class="ax ' + a + '">' + a.toUpperCase() + '</span><button data-a="nudge" data-i="' + i + '" data-d="-1">−</button><button data-a="nudge" data-i="' + i + '" data-d="1">+</button></div>'; }).join('') + '</div><p class="muted">Each tap moves one grid step. Or drag any selected piece.</p>' + (S.snap ? '<div class="row"><button class="alt sm" data-a="toGrid">Line up with the grid</button><button class="alt sm" data-a="closeGaps">Close small gaps</button></div>' : '') + '</div>';
     h += '<div class="card"><h3>Look</h3><div class="swatches">' + quickSwatches(null) + '</div></div>';
     h += '<div class="card"><h3>What they are</h3><div class="row"><label class="l">Material</label><select class="grow" data-k="m"><option value="">(mixed)</option>' + Object.keys(M.MATERIALS).map(function(k){ return '<option value="' + k + '">' + M.MATERIALS[k].label + '</option>'; }).join('') + '</select></div>' +
       (S.layer === 'car' ? '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g"><option value="">(mixed)</option>' + partOpts().map(function(o){ return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select></div>' : '') + '</div>';
@@ -837,7 +857,7 @@
     h += '<div class="card"><h3>Detail budget</h3><div class="meter"><i style="width:' + Math.min(100, tot/30) + '%;background:' + (tot > 3000 ? 'var(--bad)' : tot > 1500 ? 'var(--ochre)' : 'var(--sage)') + '"></i></div>' +
       '<table>' + tr('Body, bonnet, boot', A.stats.body + ' triangles') + tr('Each wheel', A.stats.wheel + ' triangles') + tr('Whole car', tot + ' triangles') + tr('Stock sedan for comparison', stockSedanTris() + ' triangles') + '</table>' +
       '<p class="muted">Like the performance limits in building games: towns park dozens of cars, so lighter cars keep phones smooth.</p></div>';
-    h += '<div class="card"><h3>Joined up</h3><p class="muted">As in Space Engineers, every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button></div></div>';
+    h += '<div class="card"><h3>Joined up</h3><p class="muted">As in Space Engineers, every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button><button class="alt sm" data-a="closeGapsAll">Close small gaps</button>' + (S.snap ? '<button class="alt sm" data-a="toGridAll">Line everything up with the grid</button>' : '') + '</div><p class="muted">Close small gaps moves pieces less than ½ in apart to touch. Lining up makes block sizes whole grid steps and puts every edge on a grid line.</p></div>';
     h += '<div class="card"><h3>Pieces</h3><table>' + tr('Pieces you placed', S.doc.pieces.filter(function(p){ return !p.hidden; }).length) + tr('Inside parts', S.doc.pieces.filter(function(p){ return p.hidden; }).length) +
       tr('Mirrored', S.doc.pieces.filter(function(p){ return p.mx || p.mz; }).length) + tr('Pack size', Math.round(JSON.stringify(A).length/1024) + ' KB') + '</table></div>';
     h += '<div class="card"><h3>Units</h3><div class="row"><button class="' + (S.units === 'imp' ? 'on' : 'alt') + ' sm" data-a="units" data-u="imp">Inches and feet</button><button class="' + (S.units === 'met' ? 'on' : 'alt') + ' sm" data-a="units" data-u="met">Centimetres and metres</button></div></div>';
@@ -1338,8 +1358,9 @@
     var D = S.gzDrag;
     if (h.type === 'bshape'){ var RB = regionBounds(S.bodyRegion), sh = S.doc.bodyType.shape = S.doc.bodyType.shape || {}; D.v0 = (sh[S.bodyRegion] || [1, 1, 1]).slice(); D.half = Math.max(0.01, RB.mx[h.i] - RB.c[h.i]); D.t0 = lineParam(h.pos, h.dir, x, y); }
     else if (h.type === 'ring'){ var rp = sel[0]; D.k = Math.max(0, Math.min(rp.r.length - 1, S.ringIdx || 0)); D.v0 = rp.r[D.k][h.i]; D.t0 = lineParam(h.pos, h.dir, x, y); D.sc = (rp.scl || [1, 1, 1])[h.i < 3 ? h.i : ringAxes(rp)[h.i === 3 ? 'a' : 'b']] || 1; }
-    else if (h.type === 'face'){ var p = sel[0], B = localBounds(p); D.size0 = B.mx[h.i] - B.mn[h.i]; D.c = (B.mn[h.i] + B.mx[h.i])/2; D.half = D.size0/2; D.t0 = lineParam(h.pos, h.dir, x, y); D.R = M.rotMat(p.rot || [0, 0, 0]); }
-    else if (h.type === 'move'){ D.t0 = lineParam(h.base, AXV[h.a], x, y); }
+    else if (h.type === 'face'){ var p = sel[0], B = localBounds(p); D.size0 = B.mx[h.i] - B.mn[h.i]; D.c = (B.mn[h.i] + B.mx[h.i])/2; D.half = D.size0/2; D.t0 = lineParam(h.pos, h.dir, x, y); D.R = M.rotMat(p.rot || [0, 0, 0]);
+      D.square = !p.rot || (!p.rot[0] && !p.rot[1] && !p.rot[2]); if (D.square){ D.Bw = M.boxOf(p); D.ctx = snapCtx(S.sel, D.Bw, 12, !!p.mx); } }
+    else if (h.type === 'move'){ D.t0 = lineParam(h.base, AXV[h.a], x, y); D.B0 = selBox(sel); D.ctx = snapCtx(S.sel, D.B0, 12, sel.some(function(p){ return p.mx; })); }
     else { var n = AXV[h.a], hit = WSV.hitPlane(view.ray(x, y).o, view.ray(x, y).d, h.centre, n); D.v0 = hit ? sub3(hit, h.centre) : null; D.C = sub3(h.centre, gzOff()); }
     gzDraw();
   }
@@ -1357,15 +1378,21 @@
     }
     if (h.type === 'face'){
       var t = lineParam(h.pos, h.dir, x, y); if (t == null || D.t0 == null) return;
-      var size = D.size0 + (t - D.t0)*(S.gz.both ? 2 : 1); if (st) size = Math.round(size/st)*st; size = Math.max(st || 0.003, size);
+      var size = D.size0 + (t - D.t0)*(S.gz.both ? 2 : 1);
+      if (D.square && D.Bw){   /* the face itself lands on a neighbour's face or a grid line (absolute), not the size on a step */
+        var wc = (D.Bw.mn[h.i] + D.Bw.mx[h.i])/2, f0 = h.sg > 0 ? D.Bw.mx[h.i] : D.Bw.mn[h.i], f1 = S.gz.both ? wc + h.sg*size/2 : f0 + h.sg*(size - D.size0), sf = M.snapFace(f1, h.i, D.Bw, D.ctx);
+        size = S.gz.both ? 2*Math.abs(sf.f - wc) : D.size0 + h.sg*(sf.f - f0); snapSaid([sf.how]); }
+      else if (st) size = Math.round(size/st)*st;
+      size = Math.max(st || 0.003, size);
       var k = size/D.size0, it = D.sel[0], p = it.p; Object.assign(p, clone(it.p0)); setSize(p, h.i, k);
       var fixed = S.gz.both ? D.c : D.c - h.sg*D.half, shift = -fixed*(k - 1), e = [0, 0, 0]; e[h.i] = 1; var w = M.app3(D.R, e);
       p.pos = [0, 1, 2].map(function(j){ return r4(it.p0.pos[j] + w[j]*shift); });
-      gzLabel(AXWORD[h.i] + ' ' + fmtLen(size), x, y);
+      gzLabel(AXWORD[h.i] + ' ' + fmtLen(size) + (S.snapNote && S.snapNote !== 'on the grid' ? ' · ' + S.snapNote : ''), x, y);
     } else if (h.type === 'move'){
-      var t2 = lineParam(h.base, AXV[h.a], x, y); if (t2 == null || D.t0 == null) return; var dv = t2 - D.t0; if (st) dv = Math.round(dv/st)*st;
+      var t2 = lineParam(h.base, AXV[h.a], x, y); if (t2 == null || D.t0 == null) return; var dv = t2 - D.t0;
+      if (D.B0){ var dd = [0, 0, 0]; dd[h.a] = dv; var smv = M.snapMove(D.B0, dd, [h.a], D.ctx); dv = smv.d[h.a]; snapSaid(smv.how); } else if (st) dv = Math.round(dv/st)*st;
       D.sel.forEach(function(it){ it.p.pos = it.p0.pos.slice(); it.p.pos[h.a] = r4(it.p0.pos[h.a] + dv); });
-      gzLabel('Move ' + AXN[h.a].toUpperCase() + ' ' + (dv >= 0 ? '+' : '−') + fmtLen(Math.abs(dv)), x, y);
+      gzLabel('Move ' + AXN[h.a].toUpperCase() + ' ' + (dv >= 0 ? '+' : '−') + fmtLen(Math.abs(dv)) + (S.snapNote && S.snapNote !== 'on the grid' ? ' · ' + S.snapNote : ''), x, y);
     } else {
       if (!D.v0) return; var n = AXV[h.a], hit = WSV.hitPlane(view.ray(x, y).o, view.ray(x, y).d, h.centre, n); if (!hit) return;
       var v = sub3(hit, h.centre), ang = Math.atan2(WSV.dot(WSV.cross(D.v0, v), n), WSV.dot(D.v0, v))*180/Math.PI, step = st ? 15 : 1; ang = Math.round(ang/step)*step;
@@ -1445,7 +1472,7 @@
     h += C.length ? C.map(function(c){ return '<div class="msg ' + c[0] + '">' + esc(c[1]) + '</div>'; }).join('') : '<div class="msg info">Ready for the game.</div>';
     h += '<div class="card"><h3>Detail budget</h3><div class="meter"><i style="width:' + Math.min(100, tot/40) + '%;background:' + (tot > 4000 ? 'var(--bad)' : tot > 2000 ? 'var(--ochre)' : 'var(--sage)') + '"></i></div>' +
       '<table>' + tr('Whole model', tot + ' triangles') + A.parts.map(function(n){ return tr('Part: ' + n, S.doc.pieces.filter(function(p){ return p.g === n; }).length + ' pieces'); }).join('') + tr('Points', (S.doc.points || []).length) + tr('Pack size', Math.round(JSON.stringify(A).length/1024) + ' KB') + '</table></div>';
-    if (!isSkel()) h += '<div class="card"><h3>Joined up</h3><p class="muted">Every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button></div></div>';
+    if (!isSkel()) h += '<div class="card"><h3>Joined up</h3><p class="muted">Every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button><button class="alt sm" data-a="closeGapsAll">Close small gaps</button>' + (S.snap ? '<button class="alt sm" data-a="toGridAll">Line everything up with the grid</button>' : '') + '</div><p class="muted">Close small gaps moves pieces less than ½ in apart to touch. Lining up makes block sizes whole grid steps and puts every edge on a grid line.</p></div>';
     h += '<div class="card"><h3>Units</h3><div class="row"><button class="' + (S.units === 'imp' ? 'on' : 'alt') + ' sm" data-a="units" data-u="imp">Inches and feet</button><button class="' + (S.units === 'met' ? 'on' : 'alt') + ' sm" data-a="units" data-u="met">Centimetres and metres</button></div></div>';
     return h;
   }
@@ -1517,6 +1544,10 @@
     ringStep:function(b){ var p = selected()[0]; if (!p || !p.r) return; S.ringIdx = Math.max(0, Math.min(p.r.length - 1, (S.ringIdx || 0) + (+b.dataset.d))); S.gz.rings = true; refresh(); },
     ringAdd:function(){ var p = selected()[0]; if (!p || !p.r) return; commit(); var k = Math.min(S.ringIdx || 0, p.r.length - 2), a = p.r[k], c = p.r[k + 1] || a, m = a.map(function(v, i){ return typeof v === 'number' && typeof c[i] === 'number' && i < 5 ? r4((v + c[i])/2) : v; }).slice(0, Math.max(5, a.length)); p.r.splice(k + 1, 0, m); S.ringIdx = k + 1; S.gz.rings = true; changed(true); },
     ringDel:function(){ var p = selected()[0]; if (!p || !p.r || p.r.length <= 2) return; commit(); p.r.splice(Math.min(S.ringIdx || 0, p.r.length - 1), 1); S.ringIdx = Math.max(0, Math.min(S.ringIdx || 0, p.r.length - 1)); changed(true); },
+    toGrid:function(){ var sel = selected(); if (!sel.length) return; commit(); var n = M.alignToGrid(sel, S.snap); changed(true); toast(n ? 'Lined up ' + n + ' piece' + (n > 1 ? 's' : '') + ' with the grid.' : 'Already on the grid.'); },
+    toGridAll:function(){ commit(); var n = M.alignToGrid(active().filter(function(p){ return !p.hidden; }), S.snap); changed(true); toast(n ? 'Lined up ' + n + ' piece' + (n > 1 ? 's' : '') + ' with the grid.' : 'Already on the grid.'); },
+    closeGaps:function(){ var sel = selected(); if (!sel.length) return; commit(); var n = M.closeGaps(ownerList(), 0.0127, S.sel); changed(true); toast(n ? 'Closed ' + n + ' gap' + (n > 1 ? 's' : '') + '.' : 'No gaps under ½ in.'); },
+    closeGapsAll:function(){ commit(); var n = 0, k = 0, pass = 0; do { k = M.closeGaps(active(), 0.0127); n += k; } while (k && ++pass < 4); changed(true); toast(n ? 'Closed ' + n + ' gap' + (n > 1 ? 's' : '') + '.' : 'No gaps under ½ in.'); },
     selLoose:function(){ S.sel = M.loosePieces(S.doc, ownerList()); if (!S.sel.length) toast('Every piece touches the rest.'); S.tab = 'piece'; refresh(true); },
     selHidden:function(){ S.sel = S.doc.pieces.filter(function(p){ return p.hidden; }).map(function(p){ return p.id; }); refresh(); },
     del:removeSel, dup:function(){ duplicate(false); }, mirrorCopy:function(){ duplicate(true); },
