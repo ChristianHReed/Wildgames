@@ -18,9 +18,12 @@ Sources: Apple Human Interface Guidelines (Game controls), Epic's "Designing for
 - The flashlight button shows only in the dark, indoors, or while the light is on.
 - Food, water and rest pulse red under 22 %, health under 30 %.
 
-## Next, if wanted
-- A floating stick that appears where the left thumb lands (Apple recommends it).
-- Icons instead of words on the action buttons (needs art from the content chat).
-- A HUD scale setting (0.75x to 1.5x) and a high-contrast option.
-- Fade the vitals panel when everything is above 60 % and nothing has changed for a while.
-- Haptics on button press where the browser supports it.
+## Applied in 0.114.84
+- Floating stick: touch anywhere in the lower two thirds of the left half and the stick appears under your thumb; let go and it goes back to its corner, dimmed.
+- Settings: "Screen controls and readouts size" (small, normal, large, extra large) scales every button, the stick, the vitals, the top HUD, the map, the vehicle panel and the hotbar; "High-contrast screen controls" makes buttons black with white edges and puts dark backing behind the readouts.
+- The vitals panel fades back to about a third after 8 s with health, food, water, rest and stamina all comfortable and no conditions; it comes back as soon as anything changes.
+- A short vibration on button press on phones that allow it (Android; iPhone browsers do not).
+- Words stay on the buttons (the user prefers words to icons for now).
+
+## Still to do
+- Haptics on iPhone need a home-screen app wrapper; browsers there do not vibrate.
