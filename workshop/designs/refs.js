@@ -16,12 +16,22 @@ function face(b, o){
   b.box([-hw - 0.04, bb - 0.12, F - 0.05], [hw + 0.04, bb + 0.2, F + 0.14], {c:BUMP, m:'steel', name:'front bumper'});
   b.box([0.34, bb + 0.2, F + 0.06], [0.44, bb + 0.64, F + 0.15], {c:DK, m:'steel', mx:true, name:'bull bar post'});
 }
-/* arch frame around a wheel: a lip over the tyre and a post each side */
-function arch(b, hw, r, az, nm){
-  var t = 2*r + 0.1, c = {c:DK, m:'plastic', mx:true, name:nm};
-  b.box([hw - 0.02, 2*r + 0.02, az - r - 0.1], [hw + 0.06, t, az + r + 0.1], c);
-  b.box([hw - 0.02, r + 0.15, az + r + 0.04], [hw + 0.06, t, az + r + 0.1], c);
-  b.box([hw - 0.02, r + 0.15, az - r - 0.1], [hw + 0.06, t, az - r - 0.04], c);
+/* a wall box with the wheel openings cut out of it: in each opening zone only the part above the opening top is kept */
+function wall(b, x0, x1, y0, y1, z0, z1, opt, ops){
+  var cur = z0, cuts = ops.filter(function(o){ return o.b > z0 && o.a < z1; }).sort(function(p, q){ return p.a - q.a; });
+  function put(ya, yb, za, zb){ if (yb - ya > 0.02 && zb - za > 0.02) b.box([x0, ya, za], [x1, yb, zb], opt); }
+  cuts.forEach(function(o){ var a = Math.max(o.a, z0), bz = Math.min(o.b, z1); put(y0, y1, cur, a); put(Math.max(y0, o.top), y1, a, bz); cur = bz; });
+  put(y0, y1, cur, z1);
+}
+/* the wheel opening finish: a flare lip over and beside it, a dark well behind and a dark roof above */
+function arch(b, hw, o, bb, nm){
+  var c = {c:DK, m:'plastic', mx:true, name:nm}, t = o.top;
+  b.box([hw - 0.01, t, o.a - 0.05], [hw + 0.04, t + 0.07, o.b + 0.05], c);
+  b.box([hw - 0.01, bb, o.a - 0.05], [hw + 0.04, t + 0.07, o.a], c);
+  b.box([hw - 0.01, bb, o.b], [hw + 0.04, t + 0.07, o.b + 0.05], c);
+  var wx = o.wx == null ? hw - 0.34 : o.wx;
+  b.box([wx, bb, o.a], [wx + 0.04, t, o.b], {c:'#15171a', m:'plastic', mx:true, fitting:true, name:nm});
+  b.box([wx, t - 0.04, o.a], [hw, t, o.b], {c:'#15171a', m:'plastic', mx:true, fitting:true, name:nm});
 }
 function mirror(b, hw, belt, z){
   b.box([hw - 0.03, belt + 0.18, z - 0.03], [hw + 0.08, belt + 0.23, z + 0.03], {c:DK, m:'plastic', mx:true, name:'mirror arm'});
@@ -72,11 +82,14 @@ function refcar(WSB, id, S){
   var b = WSB.create({id:id, name:S.name, domain:'land', cls:S.cls, paint:{paint1:S.paint[0], paint2:S.paint[1], paint3:S.paint[2]}, topSpeed:S.top});
   var hw = S.hw, F = S.F, B = S.B, belt = S.belt, roof = S.roof, fl = S.floor, bb = fl - 0.04, cabF = S.cabF, cb = S.cabB, r = S.r, g = 0.32, k = S.kind;
   var fc = S.frontCol || 'paint1', cc = S.cladCol || 'paint2', al = S.alpha || 28, A = al*Math.PI/180;
+  var ops = [S.fz, S.rz].map(function(az){ return {a:az - r - 0.08, b:az + r + 0.08, top:2*r + 0.08}; });
+  var dz1 = cabF - 0.12, dz0 = Math.max(cb + 0.15, dz1 - 1.1);
   b.wheels(r, 0.26); b.axle(S.fz, {steer:true, track:hw - 0.13, name:'front axle'}); b.axle(S.rz, {driven:true, track:hw - 0.13, name:'rear axle'});
   b.box([hw - 0.5, g, B + 0.1], [hw - 0.38, g + 0.14, F - 0.1], {c:'underside', m:'steel', mx:true, name:'chassis rail'});
   b.box([-hw + 0.1, fl - 0.14, B + 0.05], [hw - 0.1, fl - 0.05, cabF], {c:'underside', m:'steel', name:'floor pan'});
   /* front: bay, sloping hood, raked windscreen on slim pillars */
-  b.box([-hw, bb, cabF], [hw, belt - 0.05, F], {c:fc, name:'engine bay'});
+  b.box([-hw + 0.3, bb, cabF], [hw - 0.3, belt - 0.05, F], {c:fc, name:'engine bay'});
+  wall(b, hw - 0.3, hw, bb, belt - 0.05, cabF, F, {c:fc, mx:true, name:'fender'}, ops);
   var Lh = F - cabF + 0.02, drop = S.drop || 0.16, th = 0.16;
   b.block('box', [0, belt + 0.1 - drop/2 - th/2, (cabF + F + 0.02)/2], [2*hw - 0.1, th, Lh], {c:fc, rot:rx(Math.atan(drop/Lh)*180/Math.PI), name:'hood'});
   var wy0 = belt + 0.08, wy1 = roof - 0.08, wh = wy1 - wy0, dz = wh*Math.tan(A), wl = wh/Math.cos(A), wz = cabF + 0.04 - dz/2, wy = (wy0 + wy1)/2;
@@ -88,28 +101,31 @@ function refcar(WSB, id, S){
   b.box([-hw + 0.04, belt + 0.03, cabF - 0.02], [hw - 0.04, belt + 0.12, cabF + 0.1], {c:'paint1', name:'scuttle'});
   /* sides and rear */
   var tail = B + 0.1, open = (k === 'suv');
-  b.box([hw - 0.06, bb, B], [hw, belt, cabF], {c:'paint1', mx:true, name:'side skin'});
+  wall(b, hw - 0.06, hw, bb, belt, B, cabF, {c:'paint1', mx:true, name:'side skin'}, ops);
   if (k === 'van'){ b.box([hw - 0.06, belt, B], [hw, roof - 0.1, cb], {c:'paint1', mx:true, name:'van side'}); b.box([-hw + 0.04, roof - 0.1, B], [hw - 0.04, roof, cb], {c:'paint1', name:'van roof'}); }
   b.box([-hw, bb, B], [hw, belt, B + 0.1], {c:'paint1', name:'rear panel'});
   if (k === 'suv'){
     b.box([-hw + 0.08, belt + 0.04, tail - 0.03], [hw - 0.08, roof - 0.1, tail], {c:'glassL', m:'glass', name:'rear window'});
     b.box([hw - 0.09, belt, tail - 0.04], [hw - 0.01, roof - 0.1, tail + 0.12], {c:'paint1', mx:true, name:'C pillar'});
-    b.box([hw - 0.05, belt + 0.03, tail + 0.12], [hw - 0.02, roof - 0.12, S.rz + 0.15 - 0.4], {c:'glassL', m:'glass', mx:true, name:'quarter window'});
+    b.box([hw - 0.05, belt + 0.03, tail + 0.3], [hw - 0.02, roof - 0.12, dz0 - 0.14], {c:'glassL', m:'glass', mx:true, name:'quarter window'});
+    b.box([hw - 0.09, belt, dz0 - 0.16], [hw, roof - 0.1, dz0 - 0.02], {c:'paint1', mx:true, name:'B pillar'});
+    b.box([hw - 0.09, belt, tail - 0.04], [hw, roof - 0.1, tail + 0.32], {c:'paint1', mx:true, name:'C pillar thick'});
   } else if (k === 'pickup'){
     b.box([-hw + 0.04, belt, cb - 0.05], [hw - 0.04, belt + 0.14, cb], {c:'paint1', name:'cab back lower'});
     b.box([-hw + 0.1, belt + 0.14, cb - 0.05], [hw - 0.1, roof - 0.12, cb - 0.02], {c:'glassL', m:'glass', name:'rear window'});
     b.box([hw - 0.09, belt, cb - 0.05], [hw - 0.01, roof - 0.1, cb + 0.08], {c:'paint1', mx:true, name:'C pillar'});
-    b.box([-hw, bb, B], [hw, belt - 0.3, cb - 0.05], {c:'paint1', name:'bed floor'});
-    b.box([hw - 0.1, belt - 0.3, B], [hw, belt + 0.1, cb - 0.05], {c:'paint1', mx:true, name:'bed side'});
+    b.box([-hw + 0.3, bb, B], [hw - 0.3, belt - 0.3, cb - 0.05], {c:'paint1', name:'bed floor'});
+    wall(b, hw - 0.3, hw, bb, belt - 0.3, B, cb - 0.05, {c:'paint1', mx:true, name:'bed floor'}, ops);
+    wall(b, hw - 0.1, hw, belt - 0.3, belt + 0.1, B, cb - 0.05, {c:'paint1', mx:true, name:'bed side'}, ops);
     b.box([-hw + 0.1, belt - 0.3, B], [hw - 0.1, belt + 0.1, B + 0.1], {c:'paint1', name:'tailgate'});
     b.box([-hw + 0.1, belt - 0.3, cb - 0.15], [hw - 0.1, belt + 0.1, cb - 0.05], {c:'paint1', name:'bed front'});
     b.box([-hw + 0.12, belt - 0.3, B + 0.1], [hw - 0.12, belt - 0.26, cb - 0.15], {c:'#2b2622', m:'plastic', name:'bed liner'});
   } else {
     b.box([-hw + 0.04, belt, cb - 0.05], [hw - 0.04, roof - 0.12, cb], {c:'paint1', name:'bulkhead'});
+    b.box([hw - 0.09, belt, cb - 0.05], [hw, roof - 0.1, dz0], {c:'paint1', mx:true, name:'B pillar'});
     b.box([-hw + 0.04, belt, B], [hw - 0.04, roof - 0.1, B + 0.1], {c:'paint1', name:'van back'});
   }
   /* doors */
-  var dz1 = cabF - 0.12, dz0 = Math.max(cb + 0.15, dz1 - 1.1);
   var tA = Math.tan(A), zp = function(y){ return cabF + 0.04 - (y - wy0)*tA; };
   var gy0 = belt, gy1 = roof - 0.12, gf0 = zp(gy0) - 0.07, gf1 = zp(gy1) - 0.07, gr = dz0 + 0.04;
   b.door([hw, bb + 0.04, dz0], [hw + 0.05, belt, dz1], {c:'paint1', mx:true, hinge:'front', name:'front door'});
@@ -122,7 +138,7 @@ function refcar(WSB, id, S){
   b.box([hw + 0.05, belt - 0.12, dz0 + 0.06], [hw + 0.08, belt - 0.08, dz0 + 0.26], {c:'chrome', m:'chrome', mx:true, name:'door handle'});
   /* face, arches, cladding, mirrors, tail */
   face(b, {hw:hw, F:F, bb:bb, belt:belt});
-  arch(b, hw, r, S.fz, 'front arch trim'); arch(b, hw, r, S.rz, 'rear arch trim');
+  arch(b, hw, ops[0], bb, 'front arch trim'); arch(b, hw, ops[1], bb, 'rear arch trim');
   var segs = [[S.rz + r + 0.12, S.fz - r - 0.12], [S.fz + r + 0.12, F - 0.05], [B + 0.1, S.rz - r - 0.12]];
   segs.forEach(function(s){ if (s[1] - s[0] > 0.2) b.box([hw - 0.02, bb, s[0]], [hw + 0.04, bb + 0.28, s[1]], {c:cc, mx:true, name:'cladding'}); });
   mirror(b, hw, belt, cabF - 0.12);
@@ -146,16 +162,16 @@ function refcar(WSB, id, S){
 }
 
 var P = {
-  police: {name:'Police SUV', cls:'car', kind:'suv', F:2.3, B:-2.3, hw:0.93, belt:1.15, roof:1.86, cabF:0.95, cabB:-2.15, floor:0.55, fz:1.42, rz:-1.38, r:0.4, alpha:28, paint:['#ecece6', '#17181b', '#8a8a86'], frontCol:'paint2', cladCol:'paint2', bar:'police', words:[{t:'POLICE', onDoor:true, y:0.86, px:0.034, c:'#17181b'}], top:70},
-  green_suv: {name:'Green SUV', cls:'car', kind:'suv', F:2.3, B:-2.3, hw:0.93, belt:1.15, roof:1.86, cabF:0.95, cabB:-2.15, floor:0.55, fz:1.42, rz:-1.38, r:0.4, alpha:28, paint:['#4c7a4a', '#2c4a2c', '#8a8a86'], top:60},
-  red_pickup: {name:'Red pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.12, roof:1.74, cabF:1.0, cabB:-0.2, floor:0.54, fz:1.6, rz:-1.5, r:0.4, alpha:30, paint:['#c23a2c', '#7a2a20', '#8a8a86'], top:58},
-  orange_pickup: {name:'Orange pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.12, roof:1.74, cabF:1.0, cabB:-0.2, floor:0.54, fz:1.6, rz:-1.5, r:0.4, alpha:30, paint:['#c9784a', '#8a4a2c', '#8a8a86'], cladCol:'paint2', top:58},
+  police: {name:'Police SUV', cls:'car', kind:'suv', F:2.3, B:-2.3, hw:0.93, belt:1.2, roof:1.9, cabF:0.95, cabB:-2.15, floor:0.6, fz:1.42, rz:-1.38, r:0.45, alpha:28, paint:['#ecece6', '#17181b', '#8a8a86'], frontCol:'paint2', cladCol:'paint2', bar:'police', words:[{t:'POLICE', onDoor:true, y:0.86, px:0.034, c:'#17181b'}], top:70},
+  green_suv: {name:'Green SUV', cls:'car', kind:'suv', F:2.3, B:-2.3, hw:0.93, belt:1.2, roof:1.9, cabF:0.95, cabB:-2.15, floor:0.6, fz:1.42, rz:-1.38, r:0.45, alpha:28, paint:['#4c7a4a', '#2c4a2c', '#8a8a86'], top:60},
+  red_pickup: {name:'Red pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-0.2, floor:0.6, fz:1.6, rz:-1.5, r:0.45, alpha:30, paint:['#c23a2c', '#7a2a20', '#8a8a86'], top:58},
+  orange_pickup: {name:'Orange pickup', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-0.2, floor:0.6, fz:1.6, rz:-1.5, r:0.45, alpha:30, paint:['#c9784a', '#8a4a2c', '#8a8a86'], cladCol:'paint2', top:58},
   green_van: {name:'Green van', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, rack:true, paint:['#8ab84a', '#4c6a2a', '#8a8a86'], top:50},
   ambulance: {name:'Ambulance', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.35, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, bar:'ambulance', cladCol:'paint3', paint:['#eeeeea', '#c9302a', '#7a7e84'], stripes:[[1.0, -2.45, 1.4, 0.0, '#c9302a'], [0.85, 1.15, 1.2, 2.45, '#c9302a']], words:[{t:'AMBULANCE', y:1.58, px:0.05, c:'#2f5fb0'}], top:60}
 };
 function fireEngine(WSB){
   var b = WSB.create({id:'fire_engine_city', name:'Fire engine (city)', domain:'land', cls:'truck', paint:{paint1:'#c4302a', paint2:'#6b7078', paint3:'#ecece6'}, topSpeed:65, tank:'large'});
-  b.wheels(0.52, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
+  b.wheels(0.6, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
   b.box([-0.45, 0.7, -4.8], [0.45, 0.9, 4.0], {c:'underside', m:'steel', name:'chassis'});
   b.box([-1.3, 0.9, 3.3], [1.3, 1.9, 4.1], {c:'paint1', name:'nose'});
   CK.truckCab(b, {hw:1.3, zB:1.4, zF:3.3, fl:1.0, belt:1.85, roof:2.9, seatY:1.3, driverX:-0.55});
@@ -164,7 +180,11 @@ function fireEngine(WSB){
   b.box([-1.31, 2.5, 3.2], [1.31, 2.9, 3.4], {c:'paint3', name:'cab header'});
   face(b, {hw:1.3, F:4.1, bb:0.78, belt:1.9, gw:0.4});
   b.box([-1.4, 0.55, 4.0], [1.4, 0.92, 4.5], {c:BUMP, m:'steel', name:'front bumper'});
-  arch(b, 1.3, 0.52, 2.7, 'front arch trim'); arch(b, 1.3, 0.52, -2.4, 'rear arch trim');
+  var fops = [2.7, -2.4].map(function(z){ return {a:z - 0.68, b:z + 0.68, top:1.28, wx:0.86}; });
+  arch(b, 1.3, fops[0], 0.62, 'front arch trim'); arch(b, 1.3, fops[1], 0.62, 'rear arch trim');
+  wall(b, 1.24, 1.3, 0.62, 1.0, -4.9, 4.1, {c:'paint2', mx:true, name:'side skirt'}, fops);
+  wall(b, 0.9, 1.24, 0.62, 0.7, -4.9, 4.1, {c:'underside', m:'steel', mx:true, name:'under plate'}, fops);
+  b.box([-0.9, 0.62, -4.9], [0.9, 0.7, 4.1], {c:'underside', m:'steel', name:'under plate'});
   b.box([-0.04, 1.85, 3.33], [0.04, 2.8, 3.39], {c:'paint3', name:'windscreen post'});
   [[-1.25, -1.05], [1.05, 1.25], [-0.55, -0.35], [0.35, 0.55]].forEach(function(x){ b.box([x[0], 2.6, 3.4], [x[1], 2.72, 3.45], {c:AMB, m:'plastic', name:'cab lamp'}); });
   [-1.2, 1.2].forEach(function(x){ b.box([x - 0.1, 2.95, -4.8], [x + 0.1, 3.1, -4.6], {c:RED, m:'plastic', name:'beacon'}); });
