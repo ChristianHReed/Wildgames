@@ -73,4 +73,4 @@ function transportHeli(WSB){ var b = mk(WSB, 'transport_heli', 'Transport helico
   b.skid([0.8, 0, -2.2], [0.9, 0.1, 2.4], {mx:true, name:'skid'}); b.box([0.8, 0.1, -1.4], [0.9, 0.7, -1.3], {c:'underside', m:'steel', mx:true, name:'skid strut'}); b.box([0.8, 0.1, 1.4], [0.9, 0.7, 1.5], {c:'underside', m:'steel', mx:true, name:'skid strut'});
   b.seat([0.5, 0.88, 1.6], {mx:true, name:'pilot seat'}); b.seat([0, 0.88, -0.7], {size:[2.0, 0.1, 0.4], name:'troop bench'}); b.seat([0, 0.88, -2.0], {size:[2.0, 0.1, 0.4], name:'rear bench'});
   b.engine([0, 2.7, -0.8], [0.9, 0.5, 1.2]); b.tank([0, 0.62, 0], [1.4, 0.1, 1.0]); return b; }
-module.exports = function(WSB){ return [jeep, humvee, cargoTruck, apc, armouredCar, ammoTrailer, patrolBoat, transportHeli].map(function(f){ return f(WSB); }); };
+module.exports = function(WSB){ return [patrolBoat, transportHeli].map(function(f){ return f(WSB); }); };

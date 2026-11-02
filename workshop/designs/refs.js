@@ -45,7 +45,7 @@ function bar(b, kind, z, y){
 
 
 /* block lettering: 3x5 pixel letters as runs of thin boxes on the side of a vehicle; side +1 reads from the front (+z) to the back, side -1 the other way */
-var FONT = {A:['.#.','#.#','###','#.#','#.#'], B:['##.','#.#','##.','#.#','##.'], C:['.##','#..','#..','#..','.##'], D:['##.','#.#','#.#','#.#','##.'], E:['###','#..','##.','#..','###'], F:['###','#..','##.','#..','#..'], I:['###','.#.','.#.','.#.','###'], L:['#..','#..','#..','#..','###'], M:['#.#','###','###','#.#','#.#'], N:['##.','#.#','#.#','#.#','#.#'], O:['###','#.#','#.#','#.#','###'], P:['##.','#.#','##.','#..','#..'], R:['##.','#.#','##.','#.#','#.#'], S:['.##','#..','.#.','..#','##.'], U:['#.#','#.#','#.#','#.#','###'], Y:['#.#','#.#','.#.','.#.','.#.'], '1':['.#.','##.','.#.','.#.','###'], '9':['###','#.#','###','..#','###'], ' ':['...','...','...','...','...']};
+var FONT = {H:['#.#','#.#','###','#.#','#.#'], T:['###','.#.','.#.','.#.','.#.'], K:['#.#','#.#','##.','#.#','#.#'], G:['.##','#..','#.#','#.#','.##'], W:['#.#','#.#','#.#','###','#.#'], V:['#.#','#.#','#.#','#.#','.#.'], ' ':['...','...','...','...','...'], A:['.#.','#.#','###','#.#','#.#'], B:['##.','#.#','##.','#.#','##.'], C:['.##','#..','#..','#..','.##'], D:['##.','#.#','#.#','#.#','##.'], E:['###','#..','##.','#..','###'], F:['###','#..','##.','#..','#..'], I:['###','.#.','.#.','.#.','###'], L:['#..','#..','#..','#..','###'], M:['#.#','###','###','#.#','#.#'], N:['##.','#.#','#.#','#.#','#.#'], O:['###','#.#','#.#','#.#','###'], P:['##.','#.#','##.','#..','#..'], R:['##.','#.#','##.','#.#','#.#'], S:['.##','#..','.#.','..#','##.'], U:['#.#','#.#','#.#','#.#','###'], Y:['#.#','#.#','.#.','.#.','.#.'], '1':['.#.','##.','.#.','.#.','###'], '9':['###','#.#','###','..#','###'], ' ':['...','...','...','...','...']};
 function textLen(str, px){ return (str.length*4 - 1)*px; }
 function text(b, str, o){
   var px = o.px, cols = [], r, c, i;
@@ -227,6 +227,7 @@ function refcar(WSB, id, S){
     b.shell([-hw + 0.06, fl, B + 0.12], [hw - 0.06, roof - 0.12, cb - 0.05], {open:['back'], c:'paint1', floorC:(S.inside === 'van' ? '#7a6a52' : '#9a9da0'), wall:0.04, floor:0.06, name:'cargo', room:'cargo'});
     b.door([-hw + 0.04, fl - 0.06, B - 0.06], [hw - 0.04, roof - 0.1, B + 0.1], {kind:'swing', hinge:'outer', c:'paint1', name:'rear doors'});
   }
+  if (S.extra) S.extra(b, {hw:hw, F:F, B:B, belt:belt, roof:roof, cabF:cabF, cb:cb, fl:fl, bb:bb, rf:rf, r:r, ops:ops});
   return b;
 }
 
@@ -250,8 +251,8 @@ var Q = {
   flatbed_remade: {name:'Flatbed truck (remade)', cls:'pickup', kind:'pickup', flat:true, F:2.55, B:-3.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-0.2, floor:0.6, fz:1.6, rz:-2.5, r:0.45, alpha:30, paint:['#c9a23a', '#6a5420', '#8a8a86'], top:50},
   van_remade: {name:'Van (remade)', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, inside:'van', paint:['#dcdcd2', '#7a7e84', '#8a8a86'], top:50}
 };
-function fireEngine(WSB){
-  var b = WSB.create({id:'fire_engine_city', name:'Fire engine (city)', domain:'land', cls:'truck', paint:{paint1:'#c4302a', paint2:'#6b7078', paint3:'#ecece6'}, topSpeed:65, tank:'large'});
+function fireEngine(WSB, id, nm){
+  var b = WSB.create({id:id || 'fire_engine_city', name:nm || 'Fire engine (city)', domain:'land', cls:'truck', paint:{paint1:'#c4302a', paint2:'#6b7078', paint3:'#ecece6'}, topSpeed:65, tank:'large'});
   b.wheels(0.6, 0.3); wheelLook(b, 0.6, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
   b.box([-0.45, 0.7, -4.8], [0.45, 0.9, 4.0], {c:'underside', m:'steel', name:'chassis'});
   b.box([-1.3, 0.9, 3.3], [1.3, 1.9, 4.1], {c:'paint1', name:'nose'});
@@ -282,5 +283,6 @@ function fireEngine(WSB){
   b.engine([0, 1.4, 3.0], [1.2, 0.7, 1.0]); b.tank([0, 0.95, -1.5], [0.8, 0.25, 1.5]); b.battery([0.9, 1.3, 3.6]); b.storage([-1.1, 1.05, -4.6], [1.1, 2.4, -2.0], 'hose lockers');
   return b;
 }
-module.exports = function(WSB){ var out = Object.keys(P).map(function(k){ return refcar(WSB, k, P[k]); }); Object.keys(Q).forEach(function(k){ out.push(refcar(WSB, k, Q[k])); }); out.push(fireEngine(WSB)); return out; };
+module.exports = function(WSB){ var out = Object.keys(P).map(function(k){ return refcar(WSB, k, P[k]); }); Object.keys(Q).forEach(function(k){ out.push(refcar(WSB, k, Q[k])); }); out.push(fireEngine(WSB)); out.push(fireEngine(WSB, 'fire_engine_remade', 'Fire engine (remade)')); return out; };
 module.exports.P = P; module.exports.Q = Q;
+module.exports.H = {face:face, wall:wall, arch:arch, mirror:mirror, bar:bar, text:text, textLen:textLen, quad:quad, post:post, wheelLook:wheelLook, refcar:refcar, fireEngine:fireEngine, DK:DK, BUMP:BUMP, AMB:AMB, RED:RED, BLUE:BLUE, HL:HL, SLAT:SLAT};
