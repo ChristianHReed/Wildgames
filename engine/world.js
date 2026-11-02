@@ -364,15 +364,16 @@ function buildSunk(w){
   SUNK = null; var G = new Map(), n = 0;
   w.roads.forEach(function(r){
     if (r.kind !== 'road' || r.w < 6) return; var p = r.pts, hw = r.w/2, gp = (r.gap || []).concat(r.tun || []);
-    for (var q = 0; q + 3 < p.length; q += 2){ if (inRanges(gp, q)) continue; var sg = [p[q], p[q+1], p[q+2], p[q+3], hw]; n++;
+    for (var q = 0; q + 3 < p.length; q += 2){ if (inRanges(gp, q)) continue; var sg = [p[q], p[q+1], p[q+2], p[q+3], hw, q === 0 ? 1 : 0, q + 4 >= p.length ? 1 : 0]; n++;   /* 0.114.77: the road's own two ends are cut square, not rounded */
       for (var cy = Math.floor((Math.min(p[q+1], p[q+3]) - hw)/40); cy <= Math.floor((Math.max(p[q+1], p[q+3]) + hw)/40); cy++)
         for (var cx = Math.floor((Math.min(p[q], p[q+2]) - hw)/40); cx <= Math.floor((Math.max(p[q], p[q+2]) + hw)/40); cx++){ var k = gk(cx, cy), l = G.get(k); if (!l) G.set(k, l = []); l.push(sg); } } });
   w.sunk = n; if (n) SUNK = G;
 }
 /* how far below the pavement the road surface is at (x, y): -ROAD_T on a sunk road (e is how far outside the road edge still counts), 0 elsewhere */
+function roadEndOk(x, y, s){ var dx = s[2] - s[0], dy = s[3] - s[1], t = ((x - s[0])*dx + (y - s[1])*dy)/(dx*dx + dy*dy || 1); return !((s[5] && t < 0) || (s[6] && t > 1)); }
 function roadOff(x, y, e){
   var l = SUNK && SUNK.get(gk(Math.floor(x/40), Math.floor(y/40))); if (!l) return 0; e = e || 0;
-  for (var i = 0; i < l.length; i++){ var s = l[i]; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return -ROAD_T + 0.062 + (world.liftY || 0); } return 0;   /* the surface the road is drawn at (0.114.57: not the bare pavement-less depth, so wheels and feet sit on it) */
+  for (var i = 0; i < l.length; i++){ var s = l[i]; if ((s[5] || s[6]) && !roadEndOk(x, y, s)) continue; if (segDist(x, y, s[0], s[1], s[2], s[3]) < s[4] + e) return -ROAD_T + 0.062 + (world.liftY || 0); } return 0;   /* the surface the road is drawn at (0.114.57: not the bare pavement-less depth, so wheels and feet sit on it) */
 }
 function hAt0(x, y){
   var g = world.hg; if (!g) return 0;
@@ -525,12 +526,15 @@ function wwPlan(w){
   var cross = []; w.roads.forEach(function(r){ if (r.kind !== 'path') return; var p = r.pts; w.waterLines.forEach(function(wl){ var q = wl.pts;
     for (var a = 0; a + 3 < p.length; a += 2) for (var b = 0; b + 3 < q.length; b += 2){ var rx = p[a+2] - p[a], ry = p[a+3] - p[a+1], sx = q[b+2] - q[b], sy = q[b+3] - q[b+1], den = rx*sy - ry*sx; if (Math.abs(den) < 1e-6) continue;
       var t = ((q[b] - p[a])*sy - (q[b+1] - p[a+1])*sx)/den, u = ((q[b] - p[a])*ry - (q[b+1] - p[a+1])*rx)/den; if (t >= 0 && t <= 1 && u >= 0 && u <= 1) cross.push([p[a] + rx*t, p[a+1] + ry*t]); } }); });
+  var inLake = function(x, y){ for (var a = 0; a < (w.water || []).length; a++){ var A = w.water[a], p = A.pts, n = p.length/2, c = false, i, j; if (x < A.minx || x > A.maxx || y < A.miny || y > A.maxy) continue;
+    for (i = 0, j = n - 1; i < n; j = i++){ var yi = p[i*2 + 1], yj = p[j*2 + 1]; if ((yi > y) !== (yj > y) && x < (p[j*2] - p[i*2])*(y - yi)/(yj - yi) + p[i*2]) c = !c; } if (c) return true; } return false; };   /* 0.114.77: the river's banks stop where it meets a lake */
   w.waterLines.forEach(function(wl, wi){ var P = wl.pts, hw = wl.w/2, run = 0;
     for (var q = 0; q + 3 < P.length; q += 2){
       var ax = P[q], ay = P[q+1], L = Math.hypot(P[q+2] - ax, P[q+3] - ay); if (L < 1) continue; var ux = (P[q+2] - ax)/L, uy = (P[q+3] - ay)/L, nx = uy, ny = -ux;
       for (var u0 = 2; u0 < L; u0 += 4, run++){
+        if (inLake(ax + ux*u0, ay + uy*u0)){ continue; }
         var cx = ax + ux*u0, cy = ay + uy*u0, near = cross.some(function(c){ return Math.hypot(c[0] - cx, c[1] - cy) < 8; }), h1 = hash(run, 5, 91), h2 = hash(run, 6, 92);
-        for (var si = 0; si < 2; si++){ var sd = si ? -1 : 1, bx = cx + nx*sd*hw, by = cy + ny*sd*hw, dx = ux*sd, dz = uy*sd, SQ = sd > 0 ? EAST : WEST, sc = 0.85 + hash(run, si, 93)*0.4;
+        for (var si = 0; si < 2; si++){ var sd = si ? -1 : 1, bx = cx + nx*sd*hw, by = cy + ny*sd*hw, dx = ux*sd, dz = uy*sd, SQ = sd > 0 ? EAST : WEST, sc = 0.85 + hash(run, si, 93)*0.4; if (inLake(bx, by)) continue;
           if (near){ if (sd > 0) put('bank_landing_4', bx, by, dx, dz, 1); else put('bank_stairs_4', bx, by, dx, dz, 1); continue; }
           var nm = SQ[(run + si*3 + Math.floor(h1*3)) % SQ.length];
           if (sd < 0 && run % 17 === 5) nm = 'outfall_pipe_4'; else if (h2 < 0.07) nm = 'bank_slump_4';
@@ -547,6 +551,16 @@ function wwPlan(w){
         if (run % 13 === 6) put(jk[Math.floor(h2*4) % 4], cx - nx*(hw - 1.5), cy - ny*(hw - 1.5), ux, uy, 1);
       }
     } });
+
+  /* 0.114.77: lakes get the same bank pieces round their shore, facing out of the water: natural banks with reeds, a landing now and then, and none where the river comes in */
+  (w.water || []).forEach(function(A, ai){ var p = A.pts, n = p.length/2, cxm = (A.minx + A.maxx)/2, cym = (A.miny + A.maxy)/2, run2 = 0, k;
+    for (k = 0; k < n; k++){ var ax = p[k*2], ay = p[k*2 + 1], bx2 = p[((k + 1) % n)*2], by2 = p[((k + 1) % n)*2 + 1], L = Math.hypot(bx2 - ax, by2 - ay); if (L < 1) continue; var ux = (bx2 - ax)/L, uy = (by2 - ay)/L, ox2 = uy, oy2 = -ux;
+      if (ox2*((ax + bx2)/2 - cxm) + oy2*((ay + by2)/2 - cym) < 0){ ox2 = -ox2; oy2 = -oy2; }
+      for (var u1 = 2; u1 < L; u1 += 4, run2++){ var x = ax + ux*u1, y = ay + uy*u1, dx = -oy2, dz = ox2, h1 = hash(run2, ai, 95);
+        if (w.waterLines.some(function(wl){ var P = wl.pts; return Math.hypot(P[P.length - 2] - x, P[P.length - 1] - y) < 26 || (function(){ for (var q = 0; q + 3 < P.length; q += 2){ var sx = P[q+2] - P[q], sy = P[q+3] - P[q+1], t = Math.max(0, Math.min(1, ((x - P[q])*sx + (y - P[q+1])*sy)/(sx*sx + sy*sy || 1))); if (Math.hypot(x - P[q] - t*sx, y - P[q+1] - t*sy) < wl.w/2 + 4) return true; } return false; })(); })) continue;
+        var nm = run2 % 23 === 11 ? 'bank_landing_4' : EAST[(run2 + Math.floor(h1*3)) % EAST.length]; if (nm !== 'bank_landing_4' && h1 < 0.06) nm = 'bank_slump_4';
+        put(nm, x, y, dx, dz, nm === 'bank_landing_4' ? 1 : 0.9 + h1*0.3); put('wet_margin_4', x, y, dx, dz, 1); put(h1 < 0.4 ? 'cattail_edge_4' : 'sedge_edge_4', x, y, dx, dz, 1);
+        if (run2 % 9 === 4) put('willow_whips', x + ox2*3.2, y + oy2*3.2, dx, dz, 1); else if (run2 % 13 === 7) put('sycamore_lean', x + ox2*2.6, y + oy2*2.6, dx, dz, 1); } } });
 
   /* the ground beside each bank's outer edge follows the piece, then eases back to the natural ground */
   var g = w.hg; if (g){ var AP = new Map();

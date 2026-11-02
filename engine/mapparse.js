@@ -131,10 +131,14 @@ function parseText(text){
 var TEST_ST = {x0:-310, x1:270, y0:-190, y1:240};   /* 0.114.66: the Test World is compact: everything within about 200 m of the spawn, a lake where the river ends */
 /* the test sheet's ground (raw metres, x east, y south), in 2.5 m cells so the steep parts are crisp: flat by the street; the river in a real channel with a bank shelf at the height the waterways
    pieces' lip stands (bed -0.9 m, shelf +0.5 m); a steep hill the hill road climbs; a mountain; a gorge 14 m deep across the field */
+var TS_RIV = [[30, -165], [30, 60], [48, 82], [62, 95]], TS_LAKE = {x:112, y:112, rx:62, ry:34, e:1.18};   /* 0.114.77: the river bends into the lake from its north-west shore */
+function tsRivD(x, y){ var d = 1e9; for (var k = 0; k + 1 < TS_RIV.length; k++){ var a = TS_RIV[k], b = TS_RIV[k + 1], dx = b[0] - a[0], dy = b[1] - a[1], t = Math.max(0, Math.min(1, ((x - a[0])*dx + (y - a[1])*dy)/(dx*dx + dy*dy))); d = Math.min(d, Math.hypot(x - a[0] - t*dx, y - a[1] - t*dy)); } return d; }
 function testSheetH(x, y){
-  var h = 0.4, dx = Math.abs(x - 30);
-  if (y < 110) h += dx < 5.5 ? -0.9 : dx < 8.5 ? 0.5 : 0;
-  var q = Math.hypot((x - 112)/70, (y - 108)/36); if (q < 1.25){ var tq = q < 0.85 ? 1 : (1.25 - q)/0.4; h += -2.4*tq*tq*(3 - 2*tq); }   /* smooth bowl: the water's edge (q 1.18) is where the ground meets the water level, so no dry pit shows beside the lake */   /* the lake: a bowl 2.4 m deep, the river runs into it */
+  var h = 0.4, dr = tsRivD(x, y), L = TS_LAKE, q = Math.hypot((x - L.x)/L.rx, (y - L.y)/L.ry);
+  /* water: the river's bed is 0.9 m down with a shelf 0.5 m up for 3 m beside it (where the bank pieces' lip stands); the lake is a bowl 2.4 m deep with the same bed and shelf at its shore (q 1.18) */
+  if (q < L.e){ var tq = q < 0.85 ? 1 : (L.e - q)/(L.e - 0.85); h += -0.9 - 1.5*tq*tq*(3 - 2*tq); }
+  else if (dr < 5.5) h += -0.9;
+  else if (dr < 8.5 || q < L.e + 0.07) h += 0.5;
   var r = Math.hypot(x + 130, y + 110); if (r < 42) h += 28*(1 - r/42)*(1 + 0.05*Math.sin(x/5)*Math.cos(y/6));
   var m = Math.hypot(x + 205, y - 100)/100; if (m < 1) h += 85*Math.pow(1 - m, 1.25)*(1 + 0.12*Math.sin(x/9)*Math.cos(y/11));
   var gx = Math.abs(x - 215), gy = y > 58 && y < 140 ? 1 : y >= 140 && y < 150 ? (150 - y)/10 : y > 48 && y <= 58 ? (y - 48)/10 : 0;
@@ -156,12 +160,13 @@ function testStreetRaw(){
   rect(-24, -64, 16, 14, {building:'house', name:'The house'});
   rect(-26, -30, 18, 20, {building:'yes', shop:'convenience', name:'Shop front'});
   rect(-30, 8, 22, 26, {building:'apartments', 'building:levels':'8', name:'Apartment block'});
-  line([[30, -165], [30, 108]], {waterway:'river', name:'Test River'});
-  var lk = []; for (var li = 0; li < 28; li++){ var la = li/28*Math.PI*2; lk.push([112 + Math.cos(la)*70*1.18, 108 + Math.sin(la)*36*1.18]);   /* west shore at x 29, clear of the street and its pavement */ }
+  line(TS_RIV, {waterway:'river', name:'Test River'});
+  var lk = []; for (var li = 0; li < 48; li++){ var la = li/48*Math.PI*2; lk.push([TS_LAKE.x + Math.cos(la)*TS_LAKE.rx*TS_LAKE.e, TS_LAKE.y + Math.sin(la)*TS_LAKE.ry*TS_LAKE.e]);   /* west shore at x 29, clear of the street and its pavement */ }
   poly(lk, {natural:'water', name:'Test Lake'});
   poly([[44, -165], [250, -165], [250, -50], [44, -50]], {natural:'wood', name:'Dense forest'});
   poly([[44, -46], [200, -46], [200, 24], [44, 24]], {leisure:'park', name:'Test Park'});
-  poly([[44, 28], [250, 28], [250, 235], [44, 235]], {landuse:'farmland', name:'Field'});
+  poly([[196, 28], [250, 28], [250, 235], [196, 235]], {landuse:'farmland', name:'Field'});   /* 0.114.77: fields east and south of the lake, not under it */
+  poly([[44, 160], [196, 160], [196, 235], [44, 235]], {landuse:'farmland', name:'South field'});
   line([[3.5, -12], [60, -12]], {highway:'footway', name:'Footbridge path'});
   /* the test sheet: more of everything that needs checking. Buildings west of the street (the item wall stands at y 56 to 92) */
   rect(-34, -158, 20, 16, {building:'yes', amenity:'fire_station', name:'Fire station'});
