@@ -32,7 +32,7 @@ function grow(q, d, c){ var p = clone(q); if (p.r) p.r = p.r.map(function(r){ va
 function recolour(list, from, to){ return list.map(function(q){ var p = clone(q); if (!from || p.c === from) p.c = to; return p; }); }
 /* v8 (2 November 2026): the stock head is bigger (about 1.42 wide, 1.2 tall about the base of the skull), so every head piece this pack builds itself is scaled the same way;
    pieces cloned from the stock set are already scaled and never come through add() */
-var HEAD_S = [1.42, 1.2, 1.42], HEAD_O = [0, 1.548, 0];
+var HEAD_S = [1.6, 1.34, 1.6], HEAD_O = [0, 1.548, 0];
 function xfHead(q){
   var o = clone(q), S = HEAD_S, O = HEAD_O; o.p = [0, 1, 2].map(function(i){ return r4(O[i] + (o.p[i] - O[i]) * S[i]); });
   if (o.s === 'box' || o.s === 'wedge' || o.s === 'cyl') o.d = o.d.map(function(v, i){ return r4(v * S[i]); });
@@ -301,9 +301,10 @@ var WORN = {
   /* a ragged shoulder mantle with a fur collar (the painterly reference): sits over any top */
   mantle: {label:'Shoulder mantle', build:function(b){
     var by = {}, c = 'x6a4a34', cd = 'x4a3322';
-    add(by, 'spine_03', loft([0, 1.4, 0.0], [[0, 0.07, 0, 0.2, 0.125], [0, 0.0, 0, 0.255, 0.15], [0, -0.1, 0, 0.27, 0.16]], c, SQ4));
+    add(by, 'spine_03', loft([0, 1.4, 0.0], [[0, 0.07, 0, 0.2, 0.125], [0, 0.0, 0, 0.245, 0.15], [0, -0.14, 0, 0.235, 0.158], [0, -0.2, 0, 0.215, 0.152]], c, SQ4));
     add(by, 'spine_03', loft([0, 1.46, 0.0], [[0, -0.03, 0, 0.17, 0.13], [0, 0.03, 0, 0.12, 0.095]], 'fur', SQ4));
-    for (var i = 0; i < 7; i++){ var x = r4(-0.24 + i * 0.08), ex = Math.abs(x) / 0.24; add(by, 'spine_03', box([x, 1.29 - (i % 2) * 0.03, 0.0], [0.078, 0.05 + (i % 2) * 0.05, r4(0.27 - ex * 0.05)], cd)); }
+    /* ragged tabs hang from the hem, snug to the cape so the edge reads as cloth, not boxes */
+    for (var i = 0; i < 5; i++){ var x = r4(-0.17 + i * 0.085), ex = Math.abs(x) / 0.2; add(by, 'spine_03', box([x, 1.17 - (i % 2) * 0.045, r4(0.002)], [0.044, 0.05 + (i % 2) * 0.045, r4(0.152 - ex * 0.03)], cd)); }
     [1, -1].forEach(function(sg){ add(by, 'upperarm_' + (sg > 0 ? 'l' : 'r'), tube('upperarm_' + (sg > 0 ? 'l' : 'r'), 0, 0.32, 0.075, 0.07, c)); });
     return by; }},
   /* a cropped jacket, short at the waist with wide collar wedges and a bright top showing under it (the low-poly reference) */

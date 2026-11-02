@@ -104,11 +104,11 @@ def head(fem):
 
 # ================= torso: square shoulders, one wedge to the waist =================
 TORSO = {  # y, half-width, half-depth, z
-  False: [(0.92, 0.12, 0.08, 0.0), (1.08, 0.104, 0.076, 0.0), (1.3, 0.15, 0.09, 0.006), (1.425, 0.19, 0.09, 0.002), (1.455, 0.184, 0.084, 0.0)],
-  True:  [(0.92, 0.13, 0.084, 0.0), (1.08, 0.098, 0.072, 0.0), (1.3, 0.132, 0.094, 0.01), (1.415, 0.16, 0.084, 0.004), (1.445, 0.154, 0.078, 0.0)]}
+  False: [(0.92, 0.135, 0.09, 0.0), (1.08, 0.118, 0.086, 0.0), (1.3, 0.17, 0.1, 0.006), (1.425, 0.205, 0.1, 0.002), (1.455, 0.198, 0.092, 0.0)],
+  True:  [(0.92, 0.145, 0.094, 0.0), (1.08, 0.108, 0.08, 0.0), (1.3, 0.146, 0.1, 0.01), (1.415, 0.175, 0.09, 0.004), (1.445, 0.168, 0.084, 0.0)]}
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
-LW = 1.12     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
+LW = 1.3     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
 def t_at(fem, y):
     T = TORSO[fem]
     if y <= T[0][0]: return T[0][1:]
@@ -153,7 +153,7 @@ def lower(sd, g=0.0, t0=0.0, t1=1.0):
     return [[*a, lerp(0.035, 0.024, t0)*w + g, lerp(0.038, 0.026, t0)*w + g], [*b, lerp(0.035, 0.024, t1)*w + g, lerp(0.038, 0.026, t1)*w + g]]
 def hand(sd, col='SKIN', g=0.0):
     W, F = J['wr' + sd], J['ft' + sd]
-    w = 1.3
+    w = 1.7
     sg = 1 if sd == 'l' else -1
     return [frustum([[W[0], W[1] + 0.02, W[2], 0.022*w + g, 0.028*w + g], [*mixp(W, F, 0.45), 0.021*w + g, 0.034*w + g]], col, caps=[True, False]),
             frustum([[*mixp(W, F, 0.45), 0.021*w + g, 0.034*w + g], [*mixp(W, F, 0.85), 0.017*w + g, 0.03*w + g], [*F, 0.008*w + g, 0.014*w + g]], col),   # a blunt mitten, not a spike
@@ -215,9 +215,9 @@ def tops(fem):
 
 # ================= bottoms: straight columns =================
 def bottoms(fem):
-    hip = 0.13 if fem else 0.122
+    hip = 0.146 if fem else 0.138
     def pelvis(col, g=0.008):
-        return {'pelvis': [frustum([[0, 0.84, 0.0, 0.098 + g, 0.072 + g], [0, 0.94, 0.0, hip + g, 0.084 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.082 + g]], col)]}
+        return {'pelvis': [frustum([[0, 0.84, 0.0, 0.115 + g, 0.082 + g], [0, 0.94, 0.0, hip + g, 0.094 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.092 + g]], col)]}
     belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.014, 0.092], [0, 0.985, 0.0, hip + 0.012, 0.09]], 'belt', caps=[False, False]), box([0, 0.97, 0.096], [0.054, 0.034, 0.008], 'buckle')]}
     def legs(col, g=0.008, knee=None, calf_to=None, cuff=None, hem=0.1):
         def f(sg, sd):
@@ -259,8 +259,8 @@ def shoes():
     S = {}
     S['trainers'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'trainer', 'trainerSole', 0.08)})
     S['boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'boot', 'sole', 0.09),
-                                            'calf_' + sd: [frustum([[J['an' + sd][0], 0.08, -0.01, 0.054, 0.06], [J['an' + sd][0], 0.21, -0.008, 0.05, 0.056]], 'boot'),
-                                            frustum([[J['an' + sd][0], 0.2, -0.008, 0.056, 0.062], [J['an' + sd][0], 0.235, -0.008, 0.056, 0.062]], 'bootCuff', caps=[False, False])]})
+                                            'calf_' + sd: [frustum([[J['an' + sd][0], 0.08, -0.01, 0.054, 0.06], [J['an' + sd][0], 0.27, -0.008, 0.058, 0.064]], 'boot'),
+                                            frustum([[J['an' + sd][0], 0.255, -0.008, 0.064, 0.07], [J['an' + sd][0], 0.3, -0.008, 0.064, 0.07]], 'bootCuff', caps=[False, False])]})
     S['rain_boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'rainboot', 'sole', 0.09),
                                                  'calf_' + sd: [frustum([[J['an' + sd][0], 0.08, -0.01, 0.056, 0.062], [J['an' + sd][0], 0.33, -0.006, 0.062, 0.068]], 'rainboot'),
                                                                 frustum([[J['an' + sd][0], 0.31, -0.006, 0.066, 0.072], [J['an' + sd][0], 0.345, -0.006, 0.066, 0.072]], 'rainbootD', caps=[False, False])]})
@@ -308,6 +308,9 @@ def hair():
     sides = loft(back_rows(0.03, 1.57, 1.72), 'HAIR', ang=[150, 210, 270, 330, 390], closed=False, both=True, cin='HAIR_D')
     fringe = box([0, 1.715, face_z(0, 1.715) + 0.01], [0.13, 0.04, 0.05], 'HAIR')
     H['bob'] = [sides] + under_hat([cap(0.03, 0.032, hairline(0.0, -0.01, -0.01), top=(1.8, 0.06, 0.075, 0.01)), fringe])
+    # two-tone planes (the low-poly reference): a darker side-sweep slab under the pompadour and the bob fringe
+    H['short'] += under_hat([box([0.058, 1.74, face_z(0, 1.755) - 0.06], [0.018, 0.04, 0.06], 'HAIR_D'), box([-0.058, 1.74, face_z(0, 1.755) - 0.06], [0.018, 0.04, 0.06], 'HAIR_D')])
+    H['bob'] += [box([0.092, 1.66, -0.02], [0.016, 0.075, 0.09], 'HAIR_D'), box([-0.092, 1.66, -0.02], [0.016, 0.075, 0.09], 'HAIR_D')]
     H['buns'] = H['buzzed'] + under_hat([box([0, 1.8, -0.03], [0.07, 0.06, 0.07], 'HAIR')])
     beard = [r[:5] + [[r[5][i] for i in (0, 1, 2)]] for r in head_rings(0.008, 1.548, 1.6)]
     H['beard'] = H['short'] + [loft(beard, 'HAIR', ang=[30, 90, 150], closed=False, both=True, cin='HAIR_D'),
@@ -457,7 +460,7 @@ CLIPS.update({
 import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
 def body(fem): return join(head(fem), hands())
-HEAD_S = (1.42, 1.2, 1.42); HEAD_O = (0.0, 1.548, 0.0)
+HEAD_S = (1.6, 1.34, 1.6); HEAD_O = (0.0, 1.548, 0.0)
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S
     q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]

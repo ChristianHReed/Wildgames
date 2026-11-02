@@ -45,3 +45,9 @@ New looks (player characters): `runner` (jersey, beard, work pants), `outcast` (
 - A taller leg-to-head change (shorter legs) needs the skeleton changed; the figures are still tall (about 7 heads) compared with the vector reference (about 5.5).
 - Hair is still built from the old flat masses. The low-poly reference suggests bigger two-tone hair planes.
 - The mantle's ragged hem is boxy. It could use shaped wedges.
+
+## Round 2 and 3 (2 November 2026)
+- Head is now scaled 1.6 wide and 1.34 tall, limbs 1.3 thick, hands 1.7 wide, hips and shoulders broader, boots 1.3 taller.
+- Mantle rebuilt: it hangs close to the body with five small ragged tabs (no boxy shelf). Short hair and bob gained darker side planes (HAIR_D) for the two-tone look of the low-poly reference.
+- Leg length is the game rig's (main chat): to reach the references' 4.5 to 5.5 heads, add a stocky body type or shorten the rig legs; the meshes cannot do it alone.
+- Heavier head and torso: please recheck name tags, hats and the first-person camera.
