@@ -40,7 +40,7 @@ PALETTE = {
   'trainer': '#5b5f66', 'trainerSole': '#e2ddd2', 'boot': '#3a2a22', 'bootD': '#261b16', 'rainboot': '#c99a3a', 'rainbootD': '#9c7429',
   'sole': '#1d1a18', 'pack': '#6e5a3c', 'packD': '#4f412b', 'strap': '#2b2d33', 'roll': '#8c6a3a', 'bottle': '#5b7f86',
   'glove': '#4a3328', 'gloveD': '#33231b', 'denimRoll': '#6b84a6',
-  'sweater': '#7a8a5e', 'coat': '#8a6f5a', 'raincoat': '#c8a23a', 'leather': '#4a3a32', 'trousers': '#5d6670', 'thermals': '#c9b8a0',
+  'sweater': '#7a8a5e', 'coat': '#8a6f5a', 'raincoat': '#c8a23a', 'leather': '#4a3a32', 'trousers': '#5d6670', 'thermals': '#c9b8a0', 'puffer': '#d0582c', 'vest': '#5a6a48', 'pad': '#7a7f86', 'padD': '#565b62',
   'toggle': '#d8ccb4', 'zip': '#2a2b2e', 'stripe': '#d8dcd6',
   'hatBrown': '#5a4030', 'hoodShadow': '#1d1a19', 'hatBand': '#2a221d', 'ponchoC': '#8a6a4a', 'ponchoS': '#c8a26a', 'vestC': '#4a5a3a', 'vestD': '#3a4a2e', 'strapS': '#4a3a2a', 'satchelC': '#6a4a30', 'crateC': '#9a7a52', 'crateD': '#7a5a3a'
 }
@@ -317,7 +317,7 @@ def hair():
     # short: a fuller crown with a side parting (two tones) and a back that comes low on the neck
     H['short'] = under_hat([skull(0.014, 0.02), box([0.03, 1.765, 0.052], [0.05, 0.016, 0.05], 'HAIR_D'), curtain(1.66, 1.6, 0.074, 0.066, -0.07, -0.074, 0.02)])
     # afro: one huge round mass, the widest silhouette
-    H['afro'] = under_hat([blob('HAIR', 0.128, 0.132, cy=1.7, ry=0.125, cz=0.0, lo=-0.25, rows=7, n=12)])
+    H['afro'] = under_hat([blob('HAIR', 0.128, 0.132, cy=1.69, ry=0.13, cz=0.0, lo=-0.6, rows=8, n=12)])
     # bob: round crown, chin-length curtains on every side, a heavy fringe
     H['bob'] = under_hat([blob('HAIR', 0.092, 0.1, lo=-0.1, cz=0.015),
         box([0, 1.713, 0.09], [0.08, 0.034, 0.025], 'HAIR_D')]) + [curtain(1.66, 1.52, 0.092, 0.095, -0.07, -0.074, 0.03), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=0.083), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=-0.083)]
@@ -392,6 +392,14 @@ def worn(fem):
     trousers = {k: v for k, v in bottoms(fem)['jeans'].items()}
     W['trousers'] = recolour(join(bottoms(fem)['cargo_trousers']), {'PANTS': 'trousers', 'PANTS_D': 'trousers_D'})
     W['trousers'] = join(W['trousers'], both_sides(lambda sg, sd: {'calf_' + sd: [frustum(calf(sd, 0.024, 0.0, 0.16, straight=True), 'trousers_D')]}))
+    # puffer jacket (outer, v9): quilted bands, a tall collar and big cuffs, the bulkiest shape in the set
+    pcol = {'spine_03': [frustum([[0, ty - 0.04, 0.0, t_at(fem, ty)[0] + 0.04, t_at(fem, ty)[1] + 0.06], [0, ty + 0.075, -0.004, 0.1, 0.09]], 'puffer_D', caps=[False, False])]}
+    W['puffer'] = join(chest(fem, 'puffer', 0.056, hem=0.82, flare=0.03), sleeves('puffer', 'long', 0.056, cuff='puffer_D'), pcol,
+                       *[band(fem, y, 0.035, 0.07, 'puffer_D') for y in (0.96, 1.08, 1.2, 1.32)], front(fem, -0.006, 0.006, 0.82, ty, 0.058, 'zip', 0.004))
+    # utility vest (outer, v9): sleeveless, chest pockets and shoulder straps
+    vp = [front(fem, x0, x0 + 0.075, y, y + 0.075, 0.058, 'vest_D', 0.004) for x0 in (-0.14, 0.065) for y in (1.2,)] + [front(fem, x0, x0 + 0.075, 0.99, 1.06, 0.058, 'vest_D', 0.004) for x0 in (-0.14, 0.065)]
+    W['vest'] = join(chest(fem, 'vest', 0.052, hem=0.94), band(fem, 0.94, 0.04, 0.058, 'vest_D'), front(fem, -0.006, 0.006, 0.94, ty - 0.02, 0.054, 'zip', 0.004), *vp,
+                     both_sides(lambda sg, sd: {'spine_03': [box([sg*0.1, ty + 0.012, 0.0], [0.045, 0.016, 0.1], 'vest_D')]}))
     # thermals (legs): close-fitting long johns with ribbed ankles
     W['thermals'] = recolour(join(bottoms(fem)['track_pants']), {'PANTS': 'thermals', 'PANTS_D': 'thermals_D', 'ACC': 'thermals'})
     return W
@@ -527,10 +535,10 @@ pack = {
     'hat': ['none', 'cap', 'beanie', 'helmet', 'wide_brim'],
     'face': ['calm', 'glasses', 'stubble', 'freckles', 'tired', 'moustache', 'dark_glasses', 'scar'],
     'top': ['tshirt', 'striped_tee', 'flannel_shirt', 'spotted_top', 'hoodie', 'open_jacket', 'jumper', 'dungarees'],
-    'bottoms': ['jeans', 'shorts', 'cargo_trousers', 'capri_trousers', 'track_pants', 'rolled_jeans'],
+    'bottoms': ['jeans', 'shorts', 'cargo_trousers', 'combat_trousers', 'capri_trousers', 'track_pants', 'rolled_jeans'],
     'shoes': ['trainers', 'boots', 'rain_boots'],
     'gear': ['backpack', 'scarf', 'gloves'],
-    'worn': ['sweater', 'coat', 'raincoat', 'leather', 'trousers', 'thermals']},
+    'worn': ['sweater', 'coat', 'raincoat', 'leather', 'trousers', 'thermals', 'puffer', 'vest']},
   'wornRule': 'Clothes the survivor wears in the game (0.40 keys). sweater (top slot) is a layer drawn over the creator top; coat, raincoat and leather '
               '(outer slot) are layers drawn over the top and the sweater; trousers and thermals (legs slot) replace the creator bottoms. Their colours are fixed '
               '(palette entries with the same names, _D darker).',

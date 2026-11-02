@@ -70,3 +70,8 @@ New looks (player characters): `runner` (jersey, beard, work pants), `outcast` (
 - What this changed in our generator: the stock head is rounder and bigger (scaled 1.3 by 1.14); hair and hats are rebuilt from 10-sided domes (`blob`) instead of hexagonal cones. New stock hair styles: afro, long, ponytail, mohawk, top knot, slick (plus rebuilt short, bob, buzzed, buns, beard) and a new wide-brim hat; beanie, cap and helmet are round. Creator choices list them all.
 - New album scene `survivors_hair`: twelve heads on the same body.
 - Next: bulkier layered clothing (vests, knee pads, pockets) on the stock tops and bottoms so bodies differ as much as heads do.
+
+## Round 7 (3 November 2026): bulkier, layered clothing
+- New stock outer layers: `puffer` (quilted bands, tall collar, big cuffs) and `vest` (sleeveless, chest and waist pockets, shoulder straps). New bottoms: `combat_trousers` (thigh pockets, knee pads, blousing at the boot). All are in the creator choices.
+- New album scene `survivors_bulk` shows eight different builds, hair and layers side by side. Afro is fuller.
+- Still open: shaped hands, more varied faces/skin patterns, and per-preset build variety in the stock presets.
