@@ -2,7 +2,7 @@
    chunky nose (tough read), bull bar, side steps, bed rails, a toolbox, a roof light bar and a tow hook. Built on the shared car() builder. */
 var CARS = require('./cars.js');
 module.exports = function(WSB){
-  var S = {name:'Red truck', cls:'pickup', kind:'pickup', front:2.7, back:-3.0, hw:1.0, belt:1.15, hood:1.25, roof:1.85, cabF:1.05, cabB:-0.35, floor:0.58, fz:1.8, rz:-1.6, r:0.42, paint:['#b3261e', '#25272a', '#d4d4cc'], top:60};
+  var S = {name:'Red truck', cls:'pickup', kind:'pickup', front:2.7, back:-3.0, hw:1.0, belt:1.15, hood:1.25, roof:1.85, cabF:1.05, cabB:-0.35, floor:0.66, fz:1.8, rz:-1.6, r:0.5, paint:['#b3261e', '#25272a', '#d4d4cc'], top:60};
   var b = CARS.car(WSB, 'red_truck', S);
   b.doc.id = 'red_truck'; b.doc.name = 'Red truck';
   var hw = S.hw, F = S.front, B = S.back, belt = S.belt, roof = S.roof, bb = S.floor - 0.04, cb = S.cabB;

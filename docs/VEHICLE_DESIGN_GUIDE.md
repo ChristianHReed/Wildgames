@@ -50,8 +50,13 @@ Skip underside detail beyond the chassis rail and axles. Cabin interiors stay si
 1. Profile reads at thumbnail size. 2. Overhangs short, arches close. 3. Dark arch trims, sill, mirrors, handles, lights both ends. 4. Value contrast (tyres/glass dark, trim light). 5. Low COM, eye point and steering wheel points present. 6. Tests pass (`node workshop/tools/test_crafts.js`). 7. Album render checked.
 
 ## Applied so far
-- cars.js: arch trims, sills, wing mirrors and door handles added to all 9 stock cars/trucks and the 3 military cars that reuse it.
+- cars.js: arch frames (lip + two posts), sills, wing mirrors and door handles added to all 9 stock cars/trucks and the 3 military cars that reuse it.
 - Still to apply: roof inset (tumblehome) on cars, front/rear light pairs on buses and trucks, arch trims on buses/trucks/APC, two-tone sills.
+
+## Lessons from rendering (red truck, 1 Nov 2026)
+- A single dark bar over a wheel reads as a stripe, not an arch. Build the arch as a frame: a lip over the tyre plus a post at each side, outside the wheel's face so it never hides the wheel.
+- Always render and look before calling a vehicle done; the tests cannot see proportion. First look showed small, low wheels, so the red truck got radius 0.5 and a higher floor (0.66).
+- Big wheels need the body raised with them (floor and arches), or the tyre cuts through the hood line.
 
 ## Sources
 - [Car design essentials part 1: bones (Car Design News)](https://www.cardesignnews.com/cars/car-design-essentials-part-1-bones/482965)

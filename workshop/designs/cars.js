@@ -67,8 +67,11 @@ function car(WSB, id, S){
   door(dz0, dz1, 'front door');
   if (four) door(rz0, rz1, 'rear door');
   /* looks rules (docs/VEHICLE_DESIGN_GUIDE.md): dark arch trims frame each wheel, a sill closes the gap under the doors, mirrors and handles break the flat side */
-  [S.fz, S.rz].forEach(function(az, i){
-    b.box([hw - 0.02, 2*r - 0.06, az - r - 0.08], [hw + 0.05, 2*r + 0.08, az + r + 0.08], {c:'black', m:'plastic', mx:true, name:i ? 'rear arch trim' : 'front arch trim'});
+  [S.fz, S.rz].forEach(function(az, i){ /* an arch frame: a lip over the tyre and a post each side, so it reads as an opening the wheel sits in */
+    var nm = i ? 'rear arch trim' : 'front arch trim', t = 2*r + 0.1;
+    b.box([hw - 0.02, 2*r + 0.02, az - r - 0.1], [hw + 0.06, t, az + r + 0.1], {c:'black', m:'plastic', mx:true, name:nm});
+    b.box([hw - 0.02, r + 0.15, az + r + 0.04], [hw + 0.06, t, az + r + 0.1], {c:'black', m:'plastic', mx:true, name:nm});
+    b.box([hw - 0.02, r + 0.15, az - r - 0.1], [hw + 0.06, t, az - r - 0.04], {c:'black', m:'plastic', mx:true, name:nm});
   });
   b.box([hw - 0.02, bb, S.rz + r + 0.08], [hw + 0.04, bb + 0.1, S.fz - r - 0.08], {c:'underside', m:'plastic', mx:true, name:'sill'});
   b.box([hw - 0.02, belt - 0.05, dz0 + 0.05], [hw + 0.12, belt + 0.05, dz0 + 0.1], {c:'black', m:'plastic', mx:true, name:'wing mirror'});
