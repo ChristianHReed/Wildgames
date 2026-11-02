@@ -63,3 +63,10 @@ New looks (player characters): `runner` (jersey, beard, work pants), `outcast` (
 - Limbs have profiles (`prof_rows`): shoulder cap and biceps, forearm swell to a slim wrist, fuller thigh narrowing to the knee, calf muscle and slim ankle. Trouser legs narrow to the hem.
 - Cost: the heaviest outfit mix is about 1,100 triangles (was 960). The pack is 10.5k triangles for 60 parts.
 - Faces stay blank. Still to do: shaped hands, glute/back shaping in the clothes, hair with more volume.
+
+## Round 6 (3 November 2026): learned from free CC0 models on GitHub
+- Found and studied: the Quaternius Modular Men and Modular Women packs (21 characters, CC0; mirrored in `trebeljahr/quaternius-showcase`, whose licence table lists every pack as CC0) and the KayKit Adventurers pack (CC0, `KayKit-Game-Assets`). All are free for commercial use, so they are safe references for an open-source game. Not imported: they use their own skeletons.
+- Measured the Quaternius figures (height scaled to 1.8 m): head half-width about 0.105 and half-depth 0.12 to 0.14, waist half-width 0.10 to 0.125, hips 0.15 to 0.17, a clearly separate head shape per character (hair or hat) and bulky layered clothing (vests, knee pads, pockets) for the silhouette.
+- What this changed in our generator: the stock head is rounder and bigger (scaled 1.3 by 1.14); hair and hats are rebuilt from 10-sided domes (`blob`) instead of hexagonal cones. New stock hair styles: afro, long, ponytail, mohawk, top knot, slick (plus rebuilt short, bob, buzzed, buns, beard) and a new wide-brim hat; beanie, cap and helmet are round. Creator choices list them all.
+- New album scene `survivors_hair`: twelve heads on the same body.
+- Next: bulkier layered clothing (vests, knee pads, pockets) on the stock tops and bottoms so bodies differ as much as heads do.

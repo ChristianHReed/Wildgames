@@ -297,32 +297,43 @@ def faces():
     F['scar'] = [flat(on_face([(0.026, 1.72), (0.032, 1.72), (0.048, 1.645), (0.042, 1.645)]), 'scar')]
     return F
 
-# ================= hair: flat angular masses =================
-def hairline(front, side, back):
-    return [{30: side, 90: front, 150: side, 210: (side + back)/2, 270: back, 330: (side + back)/2}[t] for t in HEAD_ANG]
-def cap(g_lo, g_hi, d, y_lo=1.7, y_mid=1.745, top=(1.79, 0.048, 0.062, 0.012), kf=1.0):
-    lo = head_rings(g_lo, y_lo, y_lo)[0]; lo = lo[:6] + [d]
-    mid = head_rings(g_hi, y_mid, y_mid)[0]; mid[5] = [1, kf, 1, 1, 1, 1]
-    ty, ta, tb, tz = top
-    return loft([lo, mid, [0, ty, tz, ta, tb, [1, kf, 1, 1, 1, 1]]], 'HAIR', ang=HEAD_ANG, caps=[False, True])
-def back_rows(g, y0, y1): return [r[:5] + [[r[5][i] for i in (2, 3, 4, 5, 0)]] for r in head_rings(g, y0, y1)]
-def nape(g): return loft(back_rows(g, 1.62, 1.7), 'HAIR', ang=[150, 210, 270, 330, 390], closed=False, both=True, cin='HAIR_D')
+# ================= hair and hats: round masses with different silhouettes (v9) =================
+def blob(c, a, b, cy=1.665, ry=0.105, cz=0.022, cx=0.0, lo=0.0, rows=6, n=10, **k):
+    """a rounded dome: an ellipsoid from sin(phi) = lo up to the crown, n-sided so it reads round, not square"""
+    p0 = math.asin(max(-0.95, min(0.95, lo))); rr = []
+    for i in range(rows + 1):
+        ph = lerp(p0, math.pi/2, i/rows); sc = max(math.cos(ph), 0.12)
+        rr.append([cx, cy + ry*math.sin(ph), cz, a*sc, b*sc])
+    return loft(rr, c, n=n, caps=[False, True], **k)
 def under_hat(ps):
     for q in ps: q['hat'] = 'hide'
     return ps
+def curtain(y_top, y_bot, w_top, w_bot, z_top, z_bot, d, c='HAIR', x=0.0):
+    return frustum([[x, y_top, z_top, w_top, d], [x, y_bot, z_bot, w_bot, d]], c)
 def hair():
     H = {'none': []}
-    H['buzzed'] = under_hat([cap(0.004, 0.006, hairline(-0.004, -0.04, -0.07), top=(1.775, 0.044, 0.056, 0.012))])
-    # a pompadour: one swept wedge, high at the front (the first figure of the reference)
-    H['short'] = under_hat([cap(0.012, 0.02, hairline(-0.004, -0.045, -0.08), top=(1.825, 0.05, 0.07, 0.03), kf=1.08)]) + [nape(0.012)]
-    # a blunt bob: one big block around the head, open at the face, square fringe (the third figure)
-    sides = loft(back_rows(0.03, 1.57, 1.72), 'HAIR', ang=[150, 210, 270, 330, 390], closed=False, both=True, cin='HAIR_D')
-    fringe = box([0, 1.715, face_z(0, 1.715) + 0.01], [0.13, 0.04, 0.05], 'HAIR')
-    H['bob'] = [sides] + under_hat([cap(0.03, 0.032, hairline(0.0, -0.01, -0.01), top=(1.8, 0.06, 0.075, 0.01)), fringe])
-    # two-tone planes (the low-poly reference): a darker side-sweep slab under the pompadour and the bob fringe
-    H['short'] += under_hat([box([0.058, 1.74, face_z(0, 1.755) - 0.06], [0.018, 0.04, 0.06], 'HAIR_D'), box([-0.058, 1.74, face_z(0, 1.755) - 0.06], [0.018, 0.04, 0.06], 'HAIR_D')])
-    H['bob'] += [box([0.092, 1.66, -0.02], [0.016, 0.075, 0.09], 'HAIR_D'), box([-0.092, 1.66, -0.02], [0.016, 0.075, 0.09], 'HAIR_D')]
-    H['buns'] = H['buzzed'] + under_hat([box([0, 1.8, -0.03], [0.07, 0.06, 0.07], 'HAIR')])
+    skull = lambda g=0.008, lo=0.2, **k: blob('HAIR', 0.075 + g, 0.087 + g, lo=lo, **k)
+    H['buzzed'] = under_hat([skull(0.004, 0.22)])
+    # short: a fuller crown with a side parting (two tones) and a back that comes low on the neck
+    H['short'] = under_hat([skull(0.014, 0.02), box([0.03, 1.765, 0.052], [0.05, 0.016, 0.05], 'HAIR_D'), curtain(1.66, 1.6, 0.074, 0.066, -0.07, -0.074, 0.02)])
+    # afro: one huge round mass, the widest silhouette
+    H['afro'] = under_hat([blob('HAIR', 0.128, 0.132, cy=1.7, ry=0.125, cz=0.0, lo=-0.25, rows=7, n=12)])
+    # bob: round crown, chin-length curtains on every side, a heavy fringe
+    H['bob'] = under_hat([blob('HAIR', 0.092, 0.1, lo=-0.1, cz=0.015),
+        box([0, 1.713, 0.09], [0.08, 0.034, 0.025], 'HAIR_D')]) + [curtain(1.66, 1.52, 0.092, 0.095, -0.07, -0.074, 0.03), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=0.083), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=-0.083)]
+    # long: like the bob but falling to the shoulder blades, wider at the end
+    H['long'] = under_hat([blob('HAIR', 0.09, 0.098, lo=-0.1, cz=0.015), box([0, 1.715, 0.088], [0.045, 0.03, 0.025], 'HAIR_D')]) + [
+        curtain(1.68, 1.36, 0.09, 0.105, -0.07, -0.085, 0.034), curtain(1.66, 1.46, 0.016, 0.02, 0.0, -0.015, 0.07, x=0.088), curtain(1.66, 1.46, 0.016, 0.02, 0.0, -0.015, 0.07, x=-0.088)]
+    # ponytail: tight skull cap, tied high at the back, a tail swinging out and down
+    H['ponytail'] = under_hat([skull(0.006, 0.12), box([0, 1.74, -0.083], [0.03, 0.026, 0.026], 'ACC')]) + [
+        loft([[0, 1.74, -0.095, 0.03, 0.03], [0, 1.65, -0.14, 0.036, 0.036], [0, 1.52, -0.158, 0.028, 0.028], [0, 1.44, -0.152, 0.012, 0.012]], 'HAIR', n=7)]
+    # mohawk: shaved sides, a tall ridge of blocks
+    H['mohawk'] = under_hat([skull(0.0, 0.3)]) + under_hat([box([0, 1.775 + 0.024*(i % 2 + (1 - abs(i - 2.5)/3)), 0.075 - i*0.03], [0.02, 0.04 + 0.03*(1 - abs(i - 2.5)/3), 0.016], 'HAIR_D' if i % 2 else 'HAIR') for i in range(6)])
+    # top knot: tight sides, one round bun
+    H['topknot'] = under_hat([skull(0.004, 0.2), blob('HAIR', 0.042, 0.042, cy=1.8, ry=0.045, cz=-0.01, lo=-0.9, rows=5, n=8)])
+    H['buns'] = H['topknot']
+    # slick: swept back, a quiff blob at the front and the back flowing to the nape
+    H['slick'] = under_hat([skull(0.012, 0.0), blob('HAIR', 0.064, 0.05, cy=1.745, ry=0.05, cz=0.056, lo=-0.1, rows=5), curtain(1.66, 1.6, 0.072, 0.064, -0.07, -0.076, 0.022)])
     beard = [r[:5] + [[r[5][i] for i in (0, 1, 2)]] for r in head_rings(0.008, 1.548, 1.6)]
     H['beard'] = H['short'] + [loft(beard, 'HAIR', ang=[30, 90, 150], closed=False, both=True, cin='HAIR_D'),
                                box([0, 1.55, face_z(0, 1.56) - 0.01], [0.06, 0.026, 0.04], 'HAIR')]
@@ -331,13 +342,13 @@ def hair():
 # ================= hats =================
 def hats():
     H = {'none': []}
-    H['beanie'] = [frustum([[0, 1.69, 0.016, 0.08, 0.09], [0, 1.77, 0.014, 0.076, 0.088], [0, 1.82, 0.01, 0.05, 0.06]], 'ACC', caps=[False, True]),
-                   frustum([[0, 1.68, 0.016, 0.084, 0.094], [0, 1.71, 0.016, 0.084, 0.094]], 'ACC_D', caps=[False, False])]
+    H['beanie'] = [blob('ACC', 0.085, 0.097, cy=1.672, ry=0.118, lo=-0.1, rows=6), loft([[0, 1.665, 0.02, 0.089, 0.1], [0, 1.715, 0.02, 0.089, 0.1]], 'ACC_D', n=10),
+                   blob('ACC_D', 0.022, 0.022, cy=1.78, ry=0.026, cz=0.02, lo=-0.7, rows=3, n=8)]
     fzb = face_z(0, 1.72)
-    H['cap'] = [frustum([[0, 1.7, 0.016, 0.076, 0.088], [0, 1.77, 0.014, 0.074, 0.086], [0, 1.8, 0.01, 0.05, 0.06]], 'ACC', caps=[False, True]),
-                wedge([0, 1.705, fzb + 0.04], [0.15, 0.014, 0.1], 'ACC_D', fy=True)]
-    H['helmet'] = [loft([[0, 1.69, 0.014, 0.1, 0.11], [0, 1.78, 0.012, 0.096, 0.106], [0, 1.83, 0.01, 0.05, 0.06]], 'helmet', n=6, caps=[False, True]),
-                   loft([[0, 1.68, 0.014, 0.115, 0.125], [0, 1.695, 0.014, 0.115, 0.125]], 'helmetD', n=6)]
+    H['cap'] = [blob('ACC', 0.082, 0.094, cy=1.68, ry=0.1, lo=0.0), wedge([0, 1.712, fzb + 0.045], [0.15, 0.014, 0.1], 'ACC_D', fy=True)]
+    H['helmet'] = [blob('helmet', 0.098, 0.11, cy=1.675, ry=0.115, lo=-0.1, rows=6), loft([[0, 1.665, 0.02, 0.105, 0.116], [0, 1.69, 0.02, 0.105, 0.116]], 'helmetD', n=10)]
+    H['wide_brim'] = [blob('ACC', 0.078, 0.09, cy=1.7, ry=0.07, lo=0.1, rows=4), loft([[0, 1.703, 0.02, 0.082, 0.094], [0, 1.74, 0.02, 0.084, 0.096]], 'ACC_D', n=10),
+                      loft([[0, 1.704, 0.02, 0.17, 0.18], [0, 1.708, 0.02, 0.17, 0.18]], 'ACC', n=12)]
     return H
 
 # ================= gear =================
@@ -453,11 +464,11 @@ def npc_parts():
     N['crate'] = {'spine_03': [box([0, 1.12, 0.32], [0.5, 0.36, 0.36], 'crateC'), *[flat([(-0.25, y, 0.501), (0.25, y, 0.501), (0.25, y + 0.03, 0.501), (-0.25, y + 0.03, 0.501)], 'crateD') for y in (1.0, 1.22)]]}
     return N
 NPC_LOOKS = {   # creator choices plus npc pieces; colours fixed so each one is recognisable
-  'old_ranger':  {'body': 'masculine', 'build': 'slim', 'skin': 1, 'hairColour': 4, 'hair': 'beard', 'hat': 'none', 'face': 'glasses', 'top': 'flannel_shirt', 'bottoms': 'cargo_trousers', 'shoes': 'boots', 'shirt': '#5a6a4a', 'pants': '#4a4436', 'acc': '#2a2b2e', 'npc': ['wide_brim', 'vest', 'cane'], 'note': 'wide hat, vest and a cane: the tall slow silhouette'},
-  'medic':       {'body': 'feminine', 'build': 'average', 'skin': 3, 'hairColour': 0, 'hair': 'buns', 'hat': 'none', 'face': 'calm', 'top': 'tshirt', 'bottoms': 'jeans', 'shoes': 'trainers', 'shirt': '#e2ddd2', 'pants': '#3e5a7a', 'acc': '#9a3a30', 'npc': ['satchel'], 'worn': ['coat'], 'note': 'long pale coat, bun and a bag across the body'},
-  'kid_hoodie':  {'body': 'masculine', 'build': 'slim', 'skin': 2, 'hairColour': 1, 'hair': 'short', 'hat': 'none', 'face': 'calm', 'top': 'hoodie', 'bottoms': 'track_pants', 'shoes': 'trainers', 'shirt': '#c06a2a', 'pants': '#2a2b2e', 'acc': '#e2ddd2', 'npc': ['hood_up'], 'note': 'hood up, hands low: small and hunched'},
-  'farmer':      {'body': 'masculine', 'build': 'broad', 'skin': 0, 'hairColour': 2, 'hair': 'short', 'hat': 'cap', 'face': 'stubble', 'top': 'dungarees', 'bottoms': 'jeans', 'shoes': 'rain_boots', 'shirt': '#c9b48a', 'pants': '#4a5a7a', 'acc': '#8a3e30', 'npc': [], 'note': 'broad, dungarees and tall yellow boots'},
-  'drifter':     {'body': 'feminine', 'build': 'slim', 'skin': 4, 'hairColour': 0, 'hair': 'bob', 'hat': 'none', 'face': 'dark_glasses', 'top': 'striped_tee', 'bottoms': 'rolled_jeans', 'shoes': 'boots', 'shirt': '#2a2b2e', 'pants': '#3a3d42', 'acc': '#d8cfbd', 'npc': ['poncho'], 'note': 'a wide poncho makes a triangle'},
+  'old_ranger':  {'body': 'masculine', 'build': 'slim', 'skin': 1, 'hairColour': 4, 'hair': 'beard', 'hat': 'wide_brim', 'face': 'glasses', 'top': 'flannel_shirt', 'bottoms': 'cargo_trousers', 'shoes': 'boots', 'shirt': '#5a6a4a', 'pants': '#4a4436', 'acc': '#2a2b2e', 'npc': ['wide_brim', 'vest', 'cane'], 'note': 'wide hat, vest and a cane: the tall slow silhouette'},
+  'medic':       {'body': 'feminine', 'build': 'average', 'skin': 3, 'hairColour': 0, 'hair': 'topknot', 'hat': 'none', 'face': 'calm', 'top': 'tshirt', 'bottoms': 'jeans', 'shoes': 'trainers', 'shirt': '#e2ddd2', 'pants': '#3e5a7a', 'acc': '#9a3a30', 'npc': ['satchel'], 'worn': ['coat'], 'note': 'long pale coat, bun and a bag across the body'},
+  'kid_hoodie':  {'body': 'masculine', 'build': 'slim', 'skin': 2, 'hairColour': 1, 'hair': 'afro', 'hat': 'none', 'face': 'calm', 'top': 'hoodie', 'bottoms': 'track_pants', 'shoes': 'trainers', 'shirt': '#c06a2a', 'pants': '#2a2b2e', 'acc': '#e2ddd2', 'npc': ['hood_up'], 'note': 'hood up, hands low: small and hunched'},
+  'farmer':      {'body': 'masculine', 'build': 'broad', 'skin': 0, 'hairColour': 2, 'hair': 'short', 'hat': 'wide_brim', 'face': 'stubble', 'top': 'dungarees', 'bottoms': 'jeans', 'shoes': 'rain_boots', 'shirt': '#c9b48a', 'pants': '#4a5a7a', 'acc': '#8a3e30', 'npc': [], 'note': 'broad, dungarees and tall yellow boots'},
+  'drifter':     {'body': 'feminine', 'build': 'slim', 'skin': 4, 'hairColour': 0, 'hair': 'long', 'hat': 'none', 'face': 'dark_glasses', 'top': 'striped_tee', 'bottoms': 'rolled_jeans', 'shoes': 'boots', 'shirt': '#2a2b2e', 'pants': '#3a3d42', 'acc': '#d8cfbd', 'npc': ['poncho'], 'note': 'a wide poncho makes a triangle'},
   'mechanic':    {'body': 'masculine', 'build': 'average', 'skin': 3, 'hairColour': 0, 'hair': 'buzzed', 'hat': 'beanie', 'face': 'moustache', 'top': 'tshirt', 'bottoms': 'cargo_trousers', 'shoes': 'boots', 'shirt': '#4a5a6a', 'pants': '#4a5a6a', 'acc': '#c46a2a', 'npc': ['crate'], 'worn': ['leather'], 'note': 'leather jacket and a crate carried in front'},
 }
 CLIPS.update({
@@ -471,7 +482,7 @@ CLIPS.update({
 import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
 def body(fem): return join(head(fem), hands())
-HEAD_S = (1.22, 1.1, 1.22); HEAD_O = (0.0, 1.548, 0.0)
+HEAD_S = (1.3, 1.14, 1.3); HEAD_O = (0.0, 1.548, 0.0)
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S
     q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]
@@ -512,8 +523,8 @@ pack = {
   'buildRule': 'For every bone except Head and neck_01, stretch each piece with SHAPED.scaleXZ(piece, first, second).',
   'choices': {
     'build': ['slim', 'average', 'broad'], 'skin': [1, 2, 3, 4, 5], 'body': ['masculine', 'feminine'],
-    'hair': ['none', 'buzzed', 'short', 'bob', 'buns', 'beard'], 'hairColour': ['black', 'brown', 'auburn', 'blond', 'grey'],
-    'hat': ['none', 'cap', 'beanie', 'helmet'],
+    'hair': ['none', 'buzzed', 'short', 'afro', 'bob', 'long', 'ponytail', 'mohawk', 'topknot', 'slick', 'buns', 'beard'], 'hairColour': ['black', 'brown', 'auburn', 'blond', 'grey'],
+    'hat': ['none', 'cap', 'beanie', 'helmet', 'wide_brim'],
     'face': ['calm', 'glasses', 'stubble', 'freckles', 'tired', 'moustache', 'dark_glasses', 'scar'],
     'top': ['tshirt', 'striped_tee', 'flannel_shirt', 'spotted_top', 'hoodie', 'open_jacket', 'jumper', 'dungarees'],
     'bottoms': ['jeans', 'shorts', 'cargo_trousers', 'capri_trousers', 'track_pants', 'rolled_jeans'],
