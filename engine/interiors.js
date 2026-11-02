@@ -38,7 +38,7 @@ Mesh.prototype.modelS = function(M, x, z, yaw, y0, sc){
   var cs = Math.cos(yaw), sn = Math.sin(yaw), p = M.p, c = M.c, q = [0,0,0,0,0,0,0,0,0];
   for (var i = 0; i < M.n; i++){
     for (var j = 0; j < 3; j++){ var lx = p[i*9 + j*3]*sc, lz = p[i*9 + j*3 + 2]*sc; q[j*3] = x + cs*lx - sn*lz; q[j*3 + 1] = y0 + p[i*9 + j*3 + 1]*sc; q[j*3 + 2] = z + sn*lx + cs*lz; }
-    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
+    (M.g0 >= 0 && i >= M.g0 && this.gm ? this.gm : this).tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
   }
 };
 Mesh.prototype.model = function(M, x, z, yaw, y0){
@@ -67,18 +67,18 @@ function spColour(pal, over, dk){ return function(name){ var d = name.slice(-2) 
 /* pieces to a triangle model {n, p, c, a, hx, hz, h}. opt.q: quarter turns; opt.car: turn a +z-facing model to face +x (the cars' frame);
    opt.fit {hx, hz, h}: stretch to that size, keeping the shape's proportions within a quarter. Glowing pieces (lamps) get alpha 128 so they stay bright */
 function spModel(pieces, colourOf, opt){
-  opt = opt || {}; var all = [], glo = [], i, k;
-  pieces.forEach(function(q){ (q.glow ? glo : all).push(q); });
-  var A = SHAPED.build(all, colourOf, null, {}), G = glo.length ? SHAPED.build(glo, colourOf, null, {}) : {pos:[], col:[]}, ng = A.pos.length/9;
-  var pos = A.pos.concat(G.pos), col = A.col.concat(G.col), nv = pos.length/3, n = nv/3, P0 = new Float32Array(nv*3), C0 = new Uint8Array(n*3), A0 = new Uint8Array(n), mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+  opt = opt || {}; var all = [], glo = [], gls = [], i, k;
+  pieces.forEach(function(q){ (q.glow ? glo : /^glass/i.test(String(q.c || '')) ? gls : all).push(q); });   /* 0.114.78: glass pieces kept apart, so the game can draw them see-through */
+  var A = SHAPED.build(all, colourOf, null, {}), G = glo.length ? SHAPED.build(glo, colourOf, null, {}) : {pos:[], col:[]}, GS = gls.length ? SHAPED.build(gls, colourOf, null, {}) : {pos:[], col:[]}, ng = A.pos.length/9, ngl = ng + G.pos.length/9;
+  var pos = A.pos.concat(G.pos, GS.pos), col = A.col.concat(G.col, GS.col), nv = pos.length/3, n = nv/3, P0 = new Float32Array(nv*3), C0 = new Uint8Array(n*3), A0 = new Uint8Array(n), mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
   for (i = 0; i < nv; i++){ var x = pos[i*3], y = pos[i*3+1], z = pos[i*3+2], t;
     for (k = 0; k < (opt.q || 0) + (opt.car ? 1 : 0); k++){ t = x; x = z; z = -t; }
     P0[i*3] = x; P0[i*3+1] = y; P0[i*3+2] = z; for (k = 0; k < 3; k++){ mn[k] = Math.min(mn[k], P0[i*3+k]); mx[k] = Math.max(mx[k], P0[i*3+k]); } }
-  var M = {n:n, p:P0, c:C0, a:A0, sp:1, hx:Math.max(-mn[0], mx[0]), hz:Math.max(-mn[2], mx[2]), h:mx[1]};
+  var M = {n:n, p:P0, c:C0, a:A0, sp:1, g0:GS.pos.length ? ngl : -1, hx:Math.max(-mn[0], mx[0]), hz:Math.max(-mn[2], mx[2]), h:mx[1]};
   if (opt.fit){ var f = opt.fit, sx = f.hx/(M.hx || 1), sz = f.hz/(M.hz || 1), sy = f.h ? f.h/(M.h || 1) : (sx + sz)/2, kk = Math.max(0.3, Math.min(2, (sx + sz)/2)), cl = function(v){ return Math.max(kk*0.8, Math.min(kk*1.25, v)); };
     sx = cl(sx); sz = cl(sz); sy = cl(sy); for (i = 0; i < nv; i++){ P0[i*3] *= sx; P0[i*3+1] *= sy; P0[i*3+2] *= sz; } M.hx *= sx; M.hz *= sz; M.h *= sy; }
   if (opt.s){ for (i = 0; i < nv; i++){ P0[i*3] *= opt.s[0]; P0[i*3+1] *= opt.s[1]; P0[i*3+2] *= opt.s[2]; } M.hx *= opt.s[0]; M.hz *= opt.s[2]; M.h *= opt.s[1]; }
-  for (i = 0; i < n; i++){ for (k = 0; k < 3; k++) C0[i*3+k] = Math.round(Math.max(0, Math.min(1, col[i*9+k]))*255); A0[i] = i < ng ? 255 : 128; }
+  for (i = 0; i < n; i++){ for (k = 0; k < 3; k++) C0[i*3+k] = Math.round(Math.max(0, Math.min(1, col[i*9+k]))*255); A0[i] = i < ng || i >= ngl ? 255 : 128; }
   return M;
 }
 /* which old model each shaped prop replaces (old name: [category, model]); quarter turn when the long side runs the other way */
