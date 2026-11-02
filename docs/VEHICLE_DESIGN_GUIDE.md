@@ -99,3 +99,6 @@ Lessons:
 
 ## Seat order (driver on the left)
 `functions.seats[0]` is the driver on the left (x < 0), `seats[1]` the front passenger on the right, then rear rows front to back, left before right. The engine sorts seats right before left, so `cabin_kit.js` nudges every left seat 1 cm forward. Use `seat()` from `cabin_kit.js` or add the same nudge when placing seats by hand.
+
+## Eye height in low-roof cars
+The driver's `cabin.eye` is clamped to at most 0.30 m below the roof, and cars with a roof under 1.65 m get a seat 8 cm lower. Before this the headliner sat about 4 cm above the eye in the Ozark, wagon, sedan and hatchback, and filled the top of the view.

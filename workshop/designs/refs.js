@@ -193,7 +193,7 @@ function refcar(WSB, id, S){
     text(b, w.t, {side:1, x:x, y:w.y, z:zr, px:w.px, c:w.c, name:'lettering'}); text(b, w.t, {side:-1, x:x, y:w.y, z:zr - L, px:w.px, c:w.c, name:'lettering'});
   });
   var rear = (k === 'suv') ? [cabF - 0.78 - 0.95, cabF - 0.78 - 0.95] : (S.doors4 ? [cb + 0.5, cb + 0.5] : []);
-  CK.carCabin(b, {hw:hw, belt:belt, roof:roof, cabF:cabF, cabB:cb, g:g, floor:fl, seatY:fl + 0.18, rear:rear, seatC:'#7a4e34', headF:rf - 0.04});
+  CK.carCabin(b, {hw:hw, belt:belt, roof:roof, cabF:cabF, cabB:cb, g:g, floor:fl, seatY:fl + (roof < 1.65 ? 0.1 : 0.18), rear:rear, seatC:'#7a4e34', headF:rf - 0.04});
   /* the roof of the cabin: rear-view mirror, sun visors and a dome light, all within the driver's view */
   var fi = {fitting:true, m:'plastic'};
   b.box([-0.012, wy1 - 0.09, zt0 - 0.07], [0.012, roof - 0.1, zt0 - 0.04], Object.assign({c:DK, name:'mirror arm'}, fi));

@@ -49,7 +49,7 @@ function driverKit(b, o){
   b.box([dx - 0.025, wy - 0.08, wz + 0.04], [dx + 0.025, wy + 0.05, zF - dep + 0.05], F(DARK, 'steering column'));
   wheelRing(b, dx, wy + 0.03, wz, ph);
   M.addPoint(b.doc, 'steer.wheel', 'hinge', [dx, sy(wy + 0.03), sy(wz)], [0, 0.4, -0.9]);
-  M.addPoint(b.doc, 'cabin.eye', 'eye', [dx, sy(seatY + 0.66), sy(wz - 0.42)], [0, -0.06, 1]);
+  M.addPoint(b.doc, 'cabin.eye', 'eye', [dx, sy(o.roof ? Math.min(seatY + 0.66, o.roof - 0.3) : seatY + 0.66), sy(wz - 0.42)], [0, -0.06, 1]);
 }
 /* a seat: pedestal, cushion (the Seat job) and backrest */
 function seat(b, o, x, z, w, name, floorTop){
