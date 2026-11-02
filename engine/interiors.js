@@ -138,7 +138,7 @@ Mesh.prototype.part = function(M, x, z, yaw, y0, ox, oy, oz, rz, ry){
   for (var i = 0; i < M.n; i++){
     for (var j = 0; j < 3; j++){ var o = i*9 + j*3, lx = p[o], ly = p[o + 1], lz = p[o + 2], ax = lx*cz + ly*sz, ay = -lx*sz + ly*cz, bx = ax*cy - lz*sy + ox, bz = ax*sy + lz*cy + oz;
       q[j*3] = x + cs*bx - sn*bz; q[j*3 + 1] = yb + ay + oy; q[j*3 + 2] = z + sn*bx + cs*bz; }
-    this.tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
+    (M.g0 >= 0 && i >= M.g0 && this.gm ? this.gm : this).tri(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7], q[8], [c[i*3], c[i*3 + 1], c[i*3 + 2]], M.a ? M.a[i] : 255);
   }
 };
 /* a flat quad given by four corners in a car's frame */
