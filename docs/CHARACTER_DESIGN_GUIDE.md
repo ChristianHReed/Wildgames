@@ -57,3 +57,9 @@ New looks (player characters): `runner` (jersey, beard, work pants), `outcast` (
 - Body plan: head scaled 1.22 wide and 1.1 tall (a smaller, cleaner head), male torso with a V-taper (shoulder 0.215, waist 0.112, hip 0.132), female torso with a defined waist (waist 0.098 against hip 0.15, narrower shoulders), limbs 1.1 thick and tapering, hands 1.25, boots 1.12.
 - Appeal rules used: strong shoulder-to-waist taper, a clear waist, limbs that taper to the joint, long legs, plain legs and simple lower body so the eye goes to chest, hands and accessories. Web sources found were thin on numbers (see 80.lv and the 60/30/10 colour rule), so the ratios come from standard figure-design practice.
 - Still to do: clothes built with fixed radii hang straight over the new waist; tune tops and the mantle to follow the taper.
+
+## Round 5 (3 November 2026): a real body plan
+- Round 4 only scaled things. Round 5 changes the shapes themselves. Torso table now has eight rows (hips, waist, ribs, chest, shoulder girth) with a z shift for bust and glutes: women waist 0.088 against hips 0.166, men shoulder 0.228 against waist 0.104. Tops, jackets and belts follow it automatically.
+- Limbs have profiles (`prof_rows`): shoulder cap and biceps, forearm swell to a slim wrist, fuller thigh narrowing to the knee, calf muscle and slim ankle. Trouser legs narrow to the hem.
+- Cost: the heaviest outfit mix is about 1,100 triangles (was 960). The pack is 10.5k triangles for 60 parts.
+- Faces stay blank. Still to do: shaped hands, glute/back shaping in the clothes, hair with more volume.

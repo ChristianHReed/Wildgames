@@ -104,12 +104,12 @@ def head(fem):
     return {'Head': [loft(rows, 'SKIN', ang=HEAD_ANG)] + feat, 'neck_01': [neck]}
 
 # ================= torso: square shoulders, one wedge to the waist =================
-TORSO = {  # y, half-width, half-depth, z
-  False: [(0.92, 0.13, 0.088, 0.0), (1.08, 0.112, 0.084, 0.0), (1.3, 0.18, 0.1, 0.006), (1.425, 0.215, 0.1, 0.002), (1.455, 0.205, 0.09, 0.0)],
-  True:  [(0.92, 0.15, 0.094, 0.0), (1.08, 0.098, 0.078, 0.0), (1.3, 0.145, 0.1, 0.01), (1.415, 0.172, 0.088, 0.004), (1.445, 0.162, 0.082, 0.0)]}
+TORSO = {  # y, half-width, half-depth, z : hips, waist, ribs, chest, shoulder girth (v9: nine rows so the outline curves)
+  False: [(0.92, 0.138, 0.092, -0.004), (1.0, 0.13, 0.088, -0.002), (1.08, 0.104, 0.08, 0.0), (1.16, 0.142, 0.092, 0.004), (1.24, 0.184, 0.108, 0.008), (1.32, 0.212, 0.108, 0.006), (1.40, 0.228, 0.098, 0.002), (1.455, 0.205, 0.09, 0.0)],
+  True:  [(0.92, 0.166, 0.104, -0.014), (1.0, 0.146, 0.092, -0.006), (1.08, 0.088, 0.072, 0.0), (1.16, 0.108, 0.086, 0.012), (1.24, 0.142, 0.112, 0.026), (1.32, 0.15, 0.1, 0.014), (1.40, 0.174, 0.088, 0.004), (1.445, 0.16, 0.082, 0.0)]}
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
-LW = 1.1     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
+LW = 1.15     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
 def t_at(fem, y):
     T = TORSO[fem]
     if y <= T[0][0]: return T[0][1:]
@@ -143,15 +143,28 @@ def vee(fem, g, col, w=0.07, y0=1.24, top=None):
     return {'spine_03': [flat([(-w, top, fz(fem, top, g, 0.004)), (w, top, fz(fem, top, g, 0.004)), (0, y0, fz(fem, y0, g, 0.004))], col)]}
 
 # ================= limbs: tapering to points =================
+def prof_rows(P, Q, prof, t0, t1, g, first_off=None):
+    """rows along P->Q following a profile [(t, rx, rz)] scaled by LW; breakpoints between t0 and t1 are kept"""
+    def at(t):
+        for (ta, xa, za), (tb, xb, zb) in zip(prof, prof[1:]):
+            if ta <= t <= tb:
+                f = (t - ta)/(tb - ta) if tb > ta else 0; return lerp(xa, xb, f), lerp(za, zb, f)
+        return prof[-1][1:] if t > prof[-1][0] else prof[0][1:]
+    ts = [t0] + [p[0] for p in prof if t0 < p[0] < t1] + [t1]
+    rows = []
+    for i, t in enumerate(ts):
+        pt = mixp(P, Q, t)
+        if i == 0 and first_off: pt = [pt[0] + first_off[0], pt[1] + first_off[1], pt[2] + first_off[2]]
+        x, z = at(t); rows.append([*pt, x*LW + g, z*LW + g])
+    return rows
+UP = [(0, 0.05, 0.054), (0.14, 0.057, 0.06), (0.55, 0.043, 0.047), (1.0, 0.033, 0.037)]          # shoulder cap, biceps, elbow
+LO = [(0, 0.036, 0.04), (0.22, 0.04, 0.043), (0.7, 0.027, 0.03), (1.0, 0.021, 0.025)]               # forearm swell to a slim wrist
+TH = [(0, 0.09, 0.094), (0.3, 0.08, 0.088), (0.75, 0.058, 0.064), (1.0, 0.049, 0.054)]               # fuller thigh down to the knee
+CA = [(0, 0.05, 0.056), (0.22, 0.056, 0.064), (0.6, 0.04, 0.046), (1.0, 0.03, 0.034)]               # calf muscle, slim ankle
 def upper(sd, g=0.0, t1=1.0):
-    S, E = J['sh' + sd], J['el' + sd]; e = mixp(S, E, t1); g *= GK; w = LW
-    return [[S[0], S[1] + 0.03, S[2], 0.046*w + g, 0.05*w + g], [*e, lerp(0.046, 0.034, t1)*w + g, lerp(0.05, 0.038, t1)*w + g]]
+    S, E = J['sh' + sd], J['el' + sd]; return prof_rows(S, E, UP, 0.0, t1, g*GK, (0, 0.03, 0))
 def lower(sd, g=0.0, t0=0.0, t1=1.0):
-    E, W = J['el' + sd], J['wr' + sd]
-    a = mixp(E, W, t0); b = mixp(E, W, t1)
-    if t0 == 0.0: a = [E[0], E[1] + 0.03, E[2]]
-    g *= GK; w = LW
-    return [[*a, lerp(0.035, 0.024, t0)*w + g, lerp(0.038, 0.026, t0)*w + g], [*b, lerp(0.035, 0.024, t1)*w + g, lerp(0.038, 0.026, t1)*w + g]]
+    E, W = J['el' + sd], J['wr' + sd]; return prof_rows(E, W, LO, t0, t1, g*GK, (0, 0.03, 0) if t0 == 0.0 else None)
 def hand(sd, col='SKIN', g=0.0):
     W, F = J['wr' + sd], J['ft' + sd]
     w = 1.25
@@ -174,15 +187,12 @@ def sleeves(col, style='long', g=0.014, cuff=None):
         return o
     return both_sides(f)
 def thigh(sd, g=0.0, t1=1.0):
-    H, K = J['hp' + sd], J['kn' + sd]; e = mixp(H, K, t1)
-    g *= GK; w = LW
-    return [[H[0], H[1] + 0.04, H[2], 0.075*w + g, 0.08*w + g], [*e, lerp(0.075, 0.056, t1)*w + g, lerp(0.08, 0.06, t1)*w + g]]
+    H, K = J['hp' + sd], J['kn' + sd]; return prof_rows(H, K, TH, 0.0, t1, g*GK, (0, 0.04, 0))
 def calf(sd, g=0.0, t0=0.0, t1=1.0, straight=False):
     K, A = J['kn' + sd], J['an' + sd]
-    a = mixp(K, A, t0) if t0 else [K[0], K[1] + 0.03, K[2]]; b = mixp(K, A, t1); g *= GK; w = LW
-    if straight:   # trouser legs fall as straight columns
-        return [[*a, 0.056*w + g, 0.06*w + g], [*b, 0.052*w + g, 0.056*w + g]]
-    return [[*a, lerp(0.056, 0.038, t0)*w + g, lerp(0.06, 0.042, t0)*w + g], [*b, lerp(0.056, 0.038, t1)*w + g, lerp(0.06, 0.042, t1)*w + g]]
+    if straight:   # trouser legs fall as straight columns, but still narrow a little to the hem
+        return [[*mixp(K, A, t0), 0.05*LW + g*GK, 0.056*LW + g*GK], [*mixp(K, A, t1), 0.04*LW + g*GK, 0.046*LW + g*GK]]
+    return prof_rows(K, A, CA, t0, t1, g*GK, (0, 0.03, 0) if t0 == 0 else None)
 
 # ================= tops =================
 def tops(fem):
@@ -216,7 +226,7 @@ def tops(fem):
 
 # ================= bottoms: straight columns =================
 def bottoms(fem):
-    hip = 0.15 if fem else 0.132
+    hip = 0.16 if fem else 0.134
     def pelvis(col, g=0.008):
         return {'pelvis': [frustum([[0, 0.84, 0.0, 0.115 + g, 0.082 + g], [0, 0.94, 0.0, hip + g, 0.094 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.092 + g]], col)]}
     belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.014, 0.092], [0, 0.985, 0.0, hip + 0.012, 0.09]], 'belt', caps=[False, False]), box([0, 0.97, 0.096], [0.054, 0.034, 0.008], 'buckle')]}
