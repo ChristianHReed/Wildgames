@@ -265,18 +265,25 @@ function apc(WSB){
   wall(b, hw - 0.1, hw, 0.62, 1.7, -4.4, 3.7, {c:'paint1', m:'steel', mx:true, name:'hull side'}, ops);
   ops.forEach(function(o, i){ arch(b, hw, o, 0.62, 'wheel well'); });
   quad(b, [[-hw, 0.8, 4.4], [hw, 0.8, 4.4], [hw, 1.75, 3.7], [-hw, 1.75, 3.7]], [0, 0.1, 0.07], {c:'paint1', m:'steel', name:'glacis'}); b.box([-hw, 0.62, 4.0], [hw, 0.8, 4.4], {c:'paint1', m:'steel', name:'glacis lower'}); b.box([-hw, 0.8, 3.0], [hw, 1.7, 3.7], {c:'paint1', m:'steel', name:'nose block'});
-  b.box([-hw, 1.7, 1.8], [hw, 2.3, 3.0], {c:'paint1', m:'steel', name:'driver hump'});
-  b.box([-0.9, 1.9, 3.0], [0.9, 2.1, 3.04], {c:'#16191d', m:'glass', name:'driver visor'}); b.box([-0.9, 2.1, 3.0], [0.9, 2.14, 3.06], {c:'paint2', m:'steel', name:'visor hood'});
-  [-0.9, 0.9].forEach(function(x){ b.box([x - 0.12, 2.3, 2.1], [x + 0.12, 2.42, 2.4], {c:'#16191d', m:'glass', name:'periscope'}); });
-  b.shell([-hw, 0.8, -4.4], [hw, 2.45, 1.8], {open:['back'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'troop bay', room:'troop bay'});
+  /* driver compartment: hollow, open to the troop bay, with a vision block at the front left, a raised seat, dash, wheel and the eye point */
+  b.shell([-hw, 0.8, 1.8], [hw, 2.3, 3.1], {open:['back', 'front'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'driver compartment', room:'driver compartment'});
+  b.box([-hw, 0.8, 3.0], [hw, 1.65, 3.1], {c:'paint1', m:'steel', name:'front plate lower'}); b.box([-hw, 2.05, 3.0], [hw, 2.3, 3.1], {c:'paint1', m:'steel', name:'front plate upper'});
+  b.box([-hw, 1.65, 3.0], [-0.98, 2.05, 3.1], {c:'paint1', m:'steel', name:'front plate left'}); b.box([-0.12, 1.65, 3.0], [hw, 2.05, 3.1], {c:'paint1', m:'steel', name:'front plate right'});
+  quad(b, [[-0.96, 1.67, 3.08], [-0.14, 1.67, 3.08], [-0.14, 2.03, 3.08], [-0.96, 2.03, 3.08]], [0, 0, 0.03], {c:'glassL', m:'glass', name:'driver vision block'});
+  b.box([-1.0, 2.03, 3.1], [-0.1, 2.12, 3.2], {c:'paint2', m:'steel', name:'vision hood'}); b.box([-1.0, 1.58, 3.1], [-0.1, 1.67, 3.18], {c:'paint2', m:'steel', name:'vision sill'});
+  b.box([-0.9, 1.0, 2.0], [-0.2, 1.1, 2.7], {fitting:true, c:'#2c2c30', m:'steel', name:'driver pedestal'});
+  CK.driverKit(b, {hw:hw, belt:1.62, cabF:3.0, driverX:-0.55, seatY:1.2, dashDepth:0.45, dashTop:1.64, rake:-70});
+  b.seat([-0.55, 1.2, 2.3], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'driver seat'}); b.box([-0.8, 1.25, 2.02], [-0.3, 1.8, 2.1], {fitting:true, c:'#6a4a34', m:'cloth', name:'driver seat back'});
+  b.seat([0.55, 0.9, 2.3], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'commander seat'});
+  b.box([-0.5, 2.3, 2.1], [0.1, 2.4, 2.7], {c:'paint1', m:'steel', name:'driver hatch'}); b.block('cyl', [-0.2, 2.45, 2.4], [0.55, 0.1, 0.55], {c:'paint2', m:'steel', name:'driver hatch ring'});
+  b.shell([-hw, 0.8, -4.4], [hw, 2.45, 1.8], {open:['back', 'front'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'troop bay', room:'troop bay'});
   b.door([-hw, 0.8, -4.55], [hw, 2.45, -4.5], {kind:'ramp', c:'paint1', name:'rear ramp'});
-  b.box([-hw, 0.62, 1.8], [hw, 1.7, 3.0], {c:'paint1', m:'steel', name:'cab lower'});
   b.box([-0.5, 2.45, -1.0], [0.5, 2.55, 1.4], {c:'paint1', m:'steel', name:'roof hatch plate'}); b.box([-0.45, 2.55, -0.3], [0.45, 3.0, 0.7], {c:'paint1', m:'steel', name:'turret'}); b.box([-0.2, 2.7, 0.7], [0.2, 2.82, 0.8], {c:'paint2', m:'steel', name:'gun mantlet'}); b.box([-0.05, 2.74, 0.8], [0.05, 2.8, 2.4], {c:'black', m:'steel', name:'autocannon'});
   [-1, 1].forEach(function(sx){ b.box([sx*0.3 - 0.06, 2.45, -2.2], [sx*0.3 + 0.06, 2.6, -1.9], {c:'paint2', m:'steel', name:'hatch ring'}); b.box([sx*(hw + 0.02) - 0.01, 1.4, -3.2], [sx*(hw + 0.02) + 0.01, 1.52, -2.5], {c:'#16191d', m:'glass', name:'vision slit'}); b.box([sx*(hw + 0.02) - 0.01, 1.4, -2.0], [sx*(hw + 0.02) + 0.01, 1.52, -1.3], {c:'#16191d', m:'glass', name:'vision slit'}); b.box([sx*0.9 - 0.12, 2.45, 1.0], [sx*0.9 + 0.12, 2.6, 1.4], {c:'paint2', m:'steel', name:'smoke launcher'}); });
   b.box([-0.03, 2.55, -1.6], [0.03, 3.6, -1.56], {c:DK, m:'steel', name:'antenna'});
   b.light('headlight', [1.0, 1.0, 3.72], [0.2, 0.16, 0.04]); b.light('taillight', [1.1, 1.2, -4.58], [0.16, 0.2, 0.04]);
   b.engine([0, 1.2, 2.4], [1.2, 0.7, 0.8]); b.tank([-1.0, 0.95, 0.5], [0.4, 0.3, 1.2]); b.battery([0.8, 1.3, 2.6]);
-  b.seat([0.55, 0.81, 2.4], {name:'driver seat'}); [0.8, -0.2, -1.2, -2.2, -3.2].forEach(function(z){ b.seat([1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); b.seat([-1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); });
+  [0.8, -0.2, -1.2, -2.2, -3.2].forEach(function(z){ b.seat([1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); b.seat([-1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); });
   return b;
 }
 /* ---------- trailers ---------- */
@@ -294,7 +301,7 @@ function boxTrailer(WSB){
   text(b, 'FREIGHT', {side:1, x:1.31, y:2.4, z:6.4, px:0.12, c:'#dcd8ce', name:'lettering'}); text(b, 'FREIGHT', {side:-1, x:1.31, y:2.4, z:6.4 - textLen('FREIGHT', 0.12), px:0.12, c:'#dcd8ce', name:'lettering'});
   b.box([1.0, 0.95, -7.7], [1.26, 1.32, -5.5], {c:DK, m:'plastic', mx:true, name:'side skirt'});
   [-6.0, -7.25].forEach(function(z){ b.box([1.0, 0.2, z - 0.5], [1.3, 0.28, z + 0.5], {c:DK, m:'steel', mx:true, name:'wheel guard'}); });
-  markers(b, 1.24, 1.4, -7.8, 7.6, 9); b.box([-1.0, 4.0, -8.1], [1.0, 4.05, -8.05], {c:RED, m:'plastic', name:'marker bar'});
+  markers(b, 1.24, 1.4, -7.8, 7.6, 9); [-1, 1].forEach(function(sx){ b.box([sx*1.1 - 0.1, 3.9, 7.95], [sx*1.1 + 0.1, 4.0, 8.03], {c:AMB, m:'plastic', name:'front clearance lamp'}); b.box([sx*1.1 - 0.1, 1.4, 7.95], [sx*1.1 + 0.1, 1.5, 8.03], {c:AMB, m:'plastic', name:'front marker lamp'}); }); b.box([-1.0, 4.0, -8.1], [1.0, 4.05, -8.05], {c:RED, m:'plastic', name:'marker bar'});
   [-1, 1].forEach(function(sx){ b.box([sx*0.9 - 0.12, 1.4, -8.12], [sx*0.9 + 0.12, 1.6, -8.07], {c:RED, m:'plastic', name:'tail lamp'}); });
   b.light('taillight', [1.05, 1.45, -8.1], [0.16, 0.12, 0.04]);
   return b;
@@ -310,7 +317,8 @@ function ammoTrailer(WSB){
   b.box([0.95, 1.8, -1.9], [0.98, 1.9, 1.3], {c:'paint2', mx:true, name:'top rail'});
   [-1, 1].forEach(function(sx){ b.box([sx*0.85 - 0.5, 0.95, -1.9 - 0.0], [sx*0.85 + 0.5, 1.0, -1.88], {c:RED, m:'plastic', name:'tail lamp'}); });
   b.box([0.7, 0.75, -0.6 - 0.55], [1.0, 0.82, -0.6 + 0.55], {c:DK, m:'steel', mx:true, name:'wheel guard'});
-  b.box([0.95, 0.15, 1.3], [1.0, 0.72, 1.35], {c:'paint2', m:'steel', mx:true, name:'jack'});
+  b.box([0.95, 0.15, 1.3], [1.0, 0.72, 1.35], {c:'paint2', m:'steel', mx:true, name:'jack'}); [-1, 1].forEach(function(sx){ b.box([sx*0.8 - 0.1, 1.75, 1.3], [sx*0.8 + 0.1, 1.85, 1.36], {c:AMB, m:'plastic', name:'front lamp'}); });
   return b;
 }
-module.exports = function(WSB){ return [motorhome, apc, boxTrailer, ammoTrailer, boxTruck, semi, cargo, jeep, humvee, armoured, cityBus, schoolBus].map(function(f){ return f(WSB); }); };
+function cityBusOld(WSB){ var b = cityBus(WSB); b.doc.id = 'city_bus'; b.doc.name = 'City bus'; return b; }
+module.exports = function(WSB){ return [cityBusOld, motorhome, apc, boxTrailer, ammoTrailer, boxTruck, semi, cargo, jeep, humvee, armoured, cityBus, schoolBus].map(function(f){ return f(WSB); }); };

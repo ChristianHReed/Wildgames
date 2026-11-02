@@ -96,6 +96,7 @@ function wheelLook(b, r, w){
 }
 function refcar(WSB, id, S){
   var b = WSB.create({id:id, name:S.name, domain:'land', cls:S.cls, paint:{paint1:S.paint[0], paint2:S.paint[1], paint3:S.paint[2]}, topSpeed:S.top});
+  if (S.author) b.doc.author = S.author; if (S.notes) b.doc.notes = S.notes;
   var hw = S.hw, F = S.F, B = S.B, belt = S.belt, roof = S.roof, fl = S.floor, bb = fl - 0.04, cabF = S.cabF, cb = S.cabB, r = S.r, g = 0.32, k = S.kind;
   var L = S.lean == null ? (S.kind === 'van' ? 0 : 0.11) : S.lean, la = Math.atan2(L, 1)*0;
   var fc = S.frontCol || 'paint1', cc = S.cladCol || 'paint2', al = S.alpha || 28, A = al*Math.PI/180;
@@ -240,6 +241,7 @@ var P = {
   ambulance: {name:'Ambulance', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.35, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, bar:'ambulance', inside:'ambulance', cladCol:'paint3', paint:['#eeeeea', '#c9302a', '#7a7e84'], stripes:[[1.0, -2.45, 1.4, 0.0, '#c9302a'], [0.85, 1.15, 1.2, 2.45, '#c9302a']], words:[{t:'AMBULANCE', y:1.58, px:0.05, c:'#2f5fb0'}], top:60}
 };
 
+function H_wall(){ return wall.apply(null, arguments); }
 var Q = {
   hatchback_remade: {name:'Hatchback (remade)', cls:'car', kind:'suv', F:1.95, B:-1.95, hw:0.85, belt:0.98, roof:1.5, cabF:0.8, cabB:-1.85, floor:0.46, fz:1.25, rz:-1.2, r:0.33, alpha:30, drop:0.12, paint:['#b8453a', '#2b2b2b', '#c9c9c9'], cladCol:'paint2', top:55},
   sedan_remade: {name:'Sedan (remade)', cls:'car', kind:'sedan', F:2.3, B:-2.3, hw:0.88, belt:1.0, roof:1.5, cabF:0.95, cabB:-1.0, floor:0.46, fz:1.4, rz:-1.4, r:0.33, alpha:30, drop:0.12, doors4:true, paint:['#3f5f86', '#2b2b2b', '#c9c9c9'], top:60},
@@ -249,6 +251,9 @@ var Q = {
   pickup_remade: {name:'Pickup (remade)', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-0.2, floor:0.6, fz:1.6, rz:-1.5, r:0.45, alpha:30, paint:['#8a3a2a', '#4a2018', '#8a8a86'], top:55},
   crew_pickup_remade: {name:'Crew pickup (remade)', cls:'pickup', kind:'pickup', F:2.55, B:-2.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-1.15, floor:0.6, fz:1.6, rz:-1.85, r:0.45, alpha:30, doors4:true, paint:['#2f3f5f', '#1c2638', '#8a8a86'], top:55},
   flatbed_remade: {name:'Flatbed truck (remade)', cls:'pickup', kind:'pickup', flat:true, F:2.55, B:-3.85, hw:0.93, belt:1.18, roof:1.82, cabF:1.0, cabB:-0.2, floor:0.6, fz:1.6, rz:-2.5, r:0.45, alpha:30, paint:['#c9a23a', '#6a5420', '#8a8a86'], top:50},
+  ozark_rambler: {name:'Ozark Rambler', cls:'car', kind:'suv', F:2.3, B:-2.34, hw:0.88, belt:1.0, roof:1.48, cabF:0.85, cabB:-2.2, floor:0.47, fz:1.45, rz:-1.5, r:0.34, alpha:30, drop:0.12, doors4:true, rack:true, paint:['#7d8a6a', '#e2ddd2', '#3e5a7a'], cladCol:'paint2', top:80,
+    author:'AfterStreet Workshop sample', notes:'A 1970s wood-panelled family wagon: raked glass, wood side panels, a roof rack.',
+    extra:function(b, c){ var W = '#8a5a34'; H_wall(b, c.hw, c.hw + 0.02, c.bb + 0.18, c.belt - 0.1, c.B + 0.2, c.cabF - 0.05, {c:W, m:'wood', mx:true, name:'wood panel'}, c.ops); }},
   van_remade: {name:'Van (remade)', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, inside:'van', paint:['#dcdcd2', '#7a7e84', '#8a8a86'], top:50}
 };
 function fireEngine(WSB, id, nm){
