@@ -54,7 +54,8 @@ function driverKit(b, o){
 /* a seat: pedestal, cushion (the Seat job) and backrest */
 function seat(b, o, x, z, w, name, floorTop){
   b.box([x - 0.1, floorTop, z - 0.1], [x + 0.1, o.seatY - 0.06, z + 0.1], {fitting:true, c:TRIM, m:'plastic', name:'seat rail'});
-  var sc = o.seatC || '#4a4a44'; b.seat([x, o.seatY, z], {size:[w, 0.12, 0.5], c:sc, name:name});
+  var sc = o.seatC || '#4a4a44'; /* the engine lists seats front to back, then right before left; nudging left-hand seats 1 cm forward lists the driver (left) first and left before right in every row */
+  b.seat([x, o.seatY, z + (x < 0 ? 0.01 : 0)], {size:[w, 0.12, 0.5], c:sc, name:name});
   b.block('box', [x, o.seatY + 0.33, z - 0.33], [w, 0.55, 0.1], {fitting:true, c:sc, m:'cloth', rot:[-9, 0, 0], name:name + ' back'});
   [-1, 1].forEach(function(k){ b.box([x + k*w/2 - 0.03 - (k > 0 ? 0 : -0.0), o.seatY, z - 0.25], [x + k*w/2 + 0.03, o.seatY + 0.14, z + 0.25], {fitting:true, c:sc, m:'cloth', name:name + ' bolster'}); });
   b.block('box', [x, o.seatY + 0.69, z - 0.37], [0.24, 0.13, 0.08], {fitting:true, c:sc, m:'cloth', rot:[-9, 0, 0], name:name + ' headrest'});

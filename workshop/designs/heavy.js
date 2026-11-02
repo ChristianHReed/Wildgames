@@ -207,7 +207,7 @@ function bus(WSB, S){
   /* seats and driver */
   CK.driverKit(b, {hw:hw, belt:fl + 0.95, cabF:zf, driverX:-(hw - 0.55), seatY:fl + 0.36, dashDepth:0.5, dashTop:fl + 0.97});
   b.box([-(hw - 0.55) - 0.1, fl, zf - 1.0], [-(hw - 0.55) + 0.1, fl + 0.3, zf - 0.6], {fitting:true, c:'#4a4640', m:'plastic', name:'driver seat rail'}); b.seat([-(hw - 0.55), fl + 0.36, zf - 0.78], {size:[0.5, 0.12, 0.5], c:'#4a4a44', name:'driver seat'}); b.box([-(hw - 0.55) - 0.25, fl + 0.4, zf - 1.14], [-(hw - 0.55) + 0.25, fl + 0.95, zf - 1.04], {fitting:true, c:'#4a4a44', m:'cloth', name:'driver seat back'});
-  for (var zz = dA - 0.9; zz > zb + 0.8; zz -= 1.0){ b.seat([hw - 0.6, fl + 0.06, zz], {size:[0.8, 0.1, 0.45], name:'seat'}); b.seat([-hw + 0.6, fl + 0.06, zz], {size:[0.8, 0.1, 0.45], name:'seat'}); }
+  for (var zz = dA - 0.9; zz > zb + 0.8; zz -= 1.0){ b.seat([hw - 0.6, fl + 0.06, zz], {size:[0.8, 0.1, 0.45], name:'seat'}); b.seat([-hw + 0.6, fl + 0.06, zz + 0.01], {size:[0.8, 0.1, 0.45], name:'seat'}); }
   b.box([-hw, fl - 0.25, zb - 0.15], [hw, fl - 0.12, zf + 0.15], {c:'underside', m:'steel', name:'frame'});
   b.light('headlight', [hw - 0.35, fl + 0.3, zf + 0.1], [0.3, 0.2, 0.04]);
   b.engine([0, fl - 0.1, zb + 1.0], [1.2, 0.5, 1.2]); b.tank([-hw + 0.5, fl - 0.4, (zf + zb)/2], [0.5, 0.35, 1.2]); b.battery([0, fl - 0.3, zf - 1.0]);
@@ -273,7 +273,7 @@ function apc(WSB){
   b.box([-1.0, 2.03, 3.1], [-0.1, 2.12, 3.2], {c:'paint2', m:'steel', name:'vision hood'}); b.box([-1.0, 1.58, 3.1], [-0.1, 1.67, 3.18], {c:'paint2', m:'steel', name:'vision sill'});
   b.box([-0.9, 1.0, 2.0], [-0.2, 1.1, 2.7], {fitting:true, c:'#2c2c30', m:'steel', name:'driver pedestal'});
   CK.driverKit(b, {hw:hw, belt:1.62, cabF:3.0, driverX:-0.55, seatY:1.2, dashDepth:0.45, dashTop:1.64, rake:-70});
-  b.seat([-0.55, 1.2, 2.3], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'driver seat'}); b.box([-0.8, 1.25, 2.02], [-0.3, 1.8, 2.1], {fitting:true, c:'#6a4a34', m:'cloth', name:'driver seat back'});
+  b.seat([-0.55, 1.2, 2.31], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'driver seat'}); b.box([-0.8, 1.25, 2.02], [-0.3, 1.8, 2.1], {fitting:true, c:'#6a4a34', m:'cloth', name:'driver seat back'});
   b.seat([0.55, 0.9, 2.3], {size:[0.5, 0.1, 0.5], c:'#6a4a34', name:'commander seat'});
   b.box([-0.5, 2.3, 2.1], [0.1, 2.4, 2.7], {c:'paint1', m:'steel', name:'driver hatch'}); b.block('cyl', [-0.2, 2.45, 2.4], [0.55, 0.1, 0.55], {c:'paint2', m:'steel', name:'driver hatch ring'});
   b.shell([-hw, 0.8, -4.4], [hw, 2.45, 1.8], {open:['back', 'front'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'troop bay', room:'troop bay'});
@@ -283,7 +283,7 @@ function apc(WSB){
   b.box([-0.03, 2.55, -1.6], [0.03, 3.6, -1.56], {c:DK, m:'steel', name:'antenna'});
   b.light('headlight', [1.0, 1.0, 3.72], [0.2, 0.16, 0.04]); b.light('taillight', [1.1, 1.2, -4.58], [0.16, 0.2, 0.04]);
   b.engine([0, 1.2, 2.4], [1.2, 0.7, 0.8]); b.tank([-1.0, 0.95, 0.5], [0.4, 0.3, 1.2]); b.battery([0.8, 1.3, 2.6]);
-  [0.8, -0.2, -1.2, -2.2, -3.2].forEach(function(z){ b.seat([1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); b.seat([-1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); });
+  [0.8, -0.2, -1.2, -2.2, -3.2].forEach(function(z){ b.seat([1.0, 0.9, z], {size:[0.4, 0.08, 0.45], name:'bench'}); b.seat([-1.0, 0.9, z + 0.01], {size:[0.4, 0.08, 0.45], name:'bench'}); });
   return b;
 }
 /* ---------- trailers ---------- */
