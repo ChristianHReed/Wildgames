@@ -533,6 +533,44 @@ def ring_loft(rings, c='SKIN', caps=(True, True)):
         a, b2, c2 = P[f[0]], P[f[1]], P[f[2]]; sg += float(np.cross(b2 - a, c2 - a) @ (P[f].mean(0) - mid))
     if sg < 0: Fc = [f[::-1] for f in Fc]
     q = solid([tuple(map(float, p)) for p in V], Fc, c); q['winding'] = True; return q
+def head_design(fem):
+    """a faceted head built from references: a side profile (face plane, nose, brow, forehead), a width curve, a jaw, 12 corners per loop with one vertex dead front so
+    the nose and brow read as ridges, and a disc ear each side. Returns (rings, ears); front is +z, up is +y."""
+    import math
+    # y, half-width, face plane z, nose z (centre front vertex), back z
+    prof = [(1.535, 0.030, 0.062, 0.070, -0.040), (1.546, 0.052, 0.088, 0.096, -0.060), (1.566, 0.074, 0.094, 0.098, -0.078), (1.584, 0.083, 0.096, 0.103, -0.086),
+            (1.602, 0.088, 0.100, 0.127, -0.090), (1.622, 0.090, 0.102, 0.116, -0.092), (1.645, 0.091, 0.098, 0.106, -0.092), (1.666, 0.091, 0.108, 0.114, -0.090),
+            (1.692, 0.089, 0.100, 0.102, -0.086), (1.718, 0.082, 0.088, 0.090, -0.078), (1.742, 0.064, 0.062, 0.064, -0.058), (1.757, 0.030, 0.030, 0.030, -0.028)]
+    jaw = 0.93 if fem else 1.04      # lower face width
+    brow = 0.55 if fem else 1.0      # brow ridge strength
+    nose = 0.88 if fem else 1.0
+    wid = 0.95 if fem else 1.0
+    # the references build a head as stacked planes, not an egg: a flat narrow face plane, flat side planes, hard corners between them, a brow shelf, recessed eyes,
+    # a nose block and a chin block. Each loop here is a chamfered box: (y, half-width W, face-plane half-width a, face plane z F, centre z Fc, chamfer c, back z B)
+    rows = [(1.535, 0.040, 0.022, 0.066, 0.070, 0.018, -0.030), (1.552, 0.060, 0.030, 0.084, 0.093, 0.030, -0.052), (1.575, 0.080, 0.034, 0.088, 0.094, 0.040, -0.076),
+            (1.600, 0.088, 0.036, 0.084, 0.126, 0.046, -0.088), (1.620, 0.091, 0.040, 0.076, 0.100, 0.036, -0.092), (1.643, 0.090, 0.046, 0.102, 0.108, 0.034, -0.094),
+            (1.668, 0.088, 0.044, 0.099, 0.101, 0.040, -0.092), (1.700, 0.082, 0.038, 0.088, 0.090, 0.046, -0.085), (1.730, 0.068, 0.030, 0.066, 0.068, 0.050, -0.068),
+            (1.757, 0.030, 0.015, 0.028, 0.030, 0.020, -0.030)]
+    rings = []
+    for (y, w, a, zf, zn, c, zb) in rows:
+        w *= wid*(jaw if y < 1.6 else 1.0); a *= wid
+        if abs(y - 1.643) < 1e-6: zf = 0.100 + (zf - 0.100)*brow; zn = 0.100 + (zn - 0.100)*brow     # brow shelf
+        if abs(y - 1.600) < 1e-6: zn = zf + (zn - zf)*nose
+        zm = (zf + zb)/2
+        half = [(a, zf), (w, zf - c), (w, zm), (w*0.95, zb + c), (w*0.5, zb)]
+        ring = [[0.0, y, zn]] + [[round(x, 4), y, round(z, 4)] for x, z in half] + [[0.0, y, zb]] + [[round(-x, 4), y, round(z, 4)] for x, z in reversed(half)]
+        rings.append(ring)
+    # ears: a flat disc standing off each side, a little behind the middle of the head
+    ears = {}
+    for sg in (1, -1):
+        e = []
+        for dx in (0.088, 0.104):
+            r = []
+            for k in range(8):
+                a = 2*math.pi*k/8; r.append([round(sg*dx, 4), round(1.636 + 0.036*math.cos(a), 4), round(-0.016 + 0.021*math.sin(a), 4)])
+            e.append(r)
+        ears[sg] = e
+    return rings, ears
 def foot_rings(R, sd, g=0.0):
     """a blocky designed foot (heel block, instep, ball, toe box), placed under the calf's last ring; g grows it for a shoe"""
     import numpy as np
@@ -549,7 +587,7 @@ def body(fem):
     R = _RINGS['feminine' if fem else 'masculine']; out = {}
     out['pelvis'] = [ring_loft(R['pelvis'], caps=(True, False))]
     out['spine_01'] = [ring_loft(R['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(R['spine_02'], caps=(False, False))]; out['spine_03'] = [ring_loft(R['spine_03'], caps=(False, True))]
-    out['neck_01'] = [ring_loft(R['neck_01'], caps=(False, False))]; out['Head'] = [ring_loft(R['Head'], caps=(True, True))]
+    out['neck_01'] = [ring_loft(R['neck_01'], caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True))] + [ring_loft(ears[sg], caps=(True, True)) for sg in (1, -1)]
     for b in R:
         if b.split('_')[0] in ('upperarm', 'lowerarm', 'thigh', 'calf'): out[b] = [ring_loft(R[b], caps=(b.startswith('upperarm'), b.startswith('calf')))]
         elif b.startswith('hand'): out[b] = [ring_loft(R[b], caps=(True, True))]
