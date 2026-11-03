@@ -95,3 +95,11 @@ What went wrong first and how it was fixed (worth knowing before anyone touches 
 - Simplification: the head collapses faster (`HEADW`) so the face stays a blank egg with a nose; hands, feet and neck resist. Surface error against the full mesh is about 1 cm at the 95th percentile.
 
 Clothing was refitted to the measured body: TORSO rows, UP/LO/TH/CA limb profiles (LW is now 1.0), straight trouser legs, HEAD_S (1.16, 0.97, 1.2) for hair and hats. Still to polish: sleeves and puffer layers read heavy, the knee shows a seam between thigh and calf shells, and make_survivors.js still carries the old HEAD_S for pack garments.
+
+### Round 9b: clothes fit on the base body (4 November 2026)
+- New album scene `survivors_fit` (tee, jeans, hoodie, puffer and vest on both bodies, front, side, back) shows where skin pokes through or cloth floats. Check it after any body or table change.
+- Torso rows hug the average outline (the widest extent made sacks); chest and shoulder rows are narrower so sleeves no longer merge with the torso.
+- Limb profiles are narrower, and thigh and calf share the same radius at the knee so there is no step there.
+- `FIT` in `survivor.py` is now per body: the female thighs sit about 2 cm further forward than the male ones, the calves further back. Neutral values apply to shoes and anything with no body level.
+- `make_survivors.js` applies the same shift to the pack garments it builds itself (pieces copied from the stock body are tagged and not shifted twice), and uses the new HEAD_S.
+- Known small leftovers: tiny skin flecks behind the knees, hands rest against the front of the thighs.

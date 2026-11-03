@@ -11,7 +11,9 @@ var pack = M.newPack({id:'afterstreet-survivors', name:'AfterStreet survivors: m
 
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function r4(v){ return Math.round(v * 1e4) / 1e4; }
-function stock(slot, body, name){ var o = V.parts[slot]; return clone(body ? o[body][name] : o[name]); }
+function stock(slot, body, name){ var o = V.parts[slot], c = clone(body ? o[body][name] : o[name]); for (var b in c) c[b].forEach(function(q){ q._st = 1; }); return c; }
+/* the base body's arms and legs sit off our skeleton line (see FIT in survivor.py): pieces the pack builds itself follow; stock pieces already do */
+var FIT = {upperarm: [0.012, 0.0], lowerarm: [0.012, -0.002], thigh: [0.04, 0.018], calf: [0.045, -0.026], foot: [0.05, -0.01], ball: [0.05, -0.006]};
 
 /* ---- pieces ---- */
 function along(bone, t){ var b = BONES[bone]; return [0, 1, 2].map(function(i){ return b.pivot[i] + (b.tip[i] - b.pivot[i]) * t; }); }
@@ -32,7 +34,7 @@ function grow(q, d, c){ var p = clone(q); if (p.r) p.r = p.r.map(function(r){ va
 function recolour(list, from, to){ return list.map(function(q){ var p = clone(q); if (!from || p.c === from) p.c = to; return p; }); }
 /* v8 (2 November 2026): the stock head is bigger (about 1.42 wide, 1.2 tall about the base of the skull), so every head piece this pack builds itself is scaled the same way;
    pieces cloned from the stock set are already scaled and never come through add() */
-var HEAD_S = [1.22, 1.1, 1.22], HEAD_O = [0, 1.548, 0];
+var HEAD_S = [1.16, 0.97, 1.2], HEAD_O = [0, 1.548, 0];
 function xfHead(q){
   var o = clone(q), S = HEAD_S, O = HEAD_O; o.p = [0, 1, 2].map(function(i){ return r4(O[i] + (o.p[i] - O[i]) * S[i]); });
   if (o.s === 'box' || o.s === 'wedge' || o.s === 'cyl') o.d = o.d.map(function(v, i){ return r4(v * S[i]); });
@@ -41,7 +43,11 @@ function xfHead(q){
     o.r = o.r.map(function(r){ var n = r.slice(); n[0] = r4(r[0] * S[0]); n[1] = r4(r[1] * S[1]); n[2] = r4(r[2] * S[2]); n[3] = r4(r[3] * fa); n[4] = r4(r[4] * fb); return n; }); }
   return o;
 }
-function add(by, bone, q){ (by[bone] = by[bone] || []).push(bone === 'Head' ? xfHead(q) : q); return by; }
+function add(by, bone, q){
+  var m = /^(\w+)_([lr])$/.exec(bone);
+  if (q._st) delete q._st;
+  else if (m && FIT[m[1]]){ q = clone(q); var f = FIT[m[1]], dx = m[2] === 'l' ? f[0] : -f[0]; q.p = [r4(q.p[0] + dx), q.p[1], r4(q.p[2] + f[1])]; }
+  (by[bone] = by[bone] || []).push(bone === 'Head' ? xfHead(q) : q); return by; }
 function addAll(by, bone, list){ list.forEach(function(q){ add(by, bone, q); }); return by; }
 function sides(by, bones, fn){ [['_l', 1], ['_r', -1]].forEach(function(s){ bones.forEach(function(b){ var piece = fn(b + s[0], s[1], b); if (piece) add(by, b + s[0], piece); }); }); }
 
