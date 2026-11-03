@@ -40,7 +40,7 @@ try { await window.packsReady; } catch(e){ document.getElementById('status').tex
 const S=window.SHAPED, IN=S.interiors, AN=S.animals, MC=S.machines, WD=S.world, WA=S.walls, PW=S.power, SV=S.survivor, AL=S.aliens, BU=S.buildings, PR=S.props, FL=S.flora, F2=S.furniture2, ST=S.structures, LD=S.land, WO=S.woods, FA=S.farm, WS=S.waterside, FS=S.foodservice, BK=S.bikes, BT=S.boats, PK=S.parks, KT=S.vehiclekit, AT=S.autotrade, SV2=S.services, SF=S.shopfit, HE=S.held, FX=S.fx, GR=S.ground;
 const canvas=document.createElement('canvas'); document.body.prepend(canvas);
 const R=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(Math.min(devicePixelRatio,2)); R.shadowMap.enabled=true; R.shadowMap.type=THREE.PCFSoftShadowMap;
-const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true;
+const cam=new THREE.PerspectiveCamera(35,1,0.05,400); const ctl=new OrbitControls(cam,canvas); ctl.enableDamping=true; window.__camera=cam; window.__ctl=ctl;
 let scene, stats={tris:0,verts:0};
 
 /* ---------- colours ---------- */
@@ -785,6 +785,13 @@ const SCENES={
         for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
         g.position.set(window.__spread?i*(window.__spread):0, 0, 0); scene.add(g); });
       cam.position.set(11,4,9); ctl.target.set(0,1,0); if(window.__cam){ cam.position.set(...window.__cam[0]); ctl.target.set(...window.__cam[1]); }}},
+  craftgrid:{t:'Crafts from the pack, in a row',d:'Renders every id in window.__ids side by side (spacing window.__spread) straight from the workshop-crafts pack, for four-view checks.',
+    make(){ lights('day'); scene.background=new THREE.Color(0x6e8795); scene.fog=null; ground(400,400,0x56748a);
+      const pk=(window.AFTERSTREET_PACKS||[]).find(q=>q.id==='workshop-crafts'); const ids=window.__ids||[]; const sp=window.__spread||12;
+      ids.forEach((id,i)=>{ const a=pk&&pk.assets.find(q=>q.id===id); if(!a){console.log('missing',id);return;}
+        const ap=a.paint||{}, pn=(window.__paints||{})[id]||(ap.paint1?[ap.paint1,ap.paint2,ap.paint3]:null)||(typeof PAINT!=='undefined'&&PAINT[id])||['#9aa3a8','#2a2d30','#d8d8d0']; const col=colourer(Object.assign({},PR.palette,a.palette||{}),{paint1:pn[0],paint2:pn[1],paint3:pn[2]});
+        const g=new THREE.Group(); g.add(mesh(a.model.body,col)); g.position.set((i-(ids.length-1)/2)*sp,0,0); scene.add(g); });
+      cam.position.set(0,6,sp*1.2); ctl.target.set(0,1.2,0); if(window.__cam){ cam.position.set(...window.__cam[0]); ctl.target.set(...window.__cam[1]); } cam.lookAt(ctl.target); }},
   craftraw:{t:'Craft from the pack (any domain)',d:'Renders window.__ids[0] straight from the workshop-crafts pack.',
     make(){ lights('day'); scene.background=new THREE.Color(0x4d7184); scene.fog=null; ground(80,80,0x3d6a8a);
       const pk=(window.AFTERSTREET_PACKS||[]).find(q=>q.id==='workshop-crafts'); const id=(window.__ids||[])[0]; const a=pk&&pk.assets.find(q=>q.id===id); if(!a){console.log('missing',id);return;}
@@ -1118,7 +1125,7 @@ bar.append(prevB, sel, nextB, num);
 const capEl=document.getElementById('cap'); capEl.onclick=()=>capEl.classList.toggle('min'); if (innerWidth<700) capEl.classList.add('min');
 function show(k){
   if (scene) scene.traverse(o=>{ if(o.geometry) o.geometry.dispose(); });
-  scene=new THREE.Scene(); stats={tris:0,verts:0}; cam.fov=35; cam.updateProjectionMatrix(); SCENES[k].make();
+  scene=new THREE.Scene(); window.__scene=scene; stats={tris:0,verts:0}; cam.fov=35; cam.updateProjectionMatrix(); SCENES[k].make();
   capEl.hidden=false; document.getElementById('capT').textContent=SCENES[k].t;
   document.getElementById('capD').textContent=SCENES[k].d+' Scene: '+stats.tris.toLocaleString('en-US')+' triangles, '+stats.verts.toLocaleString('en-US')+' vertices.';
   baseFov=cam.fov; fitFov(); sel.value=k; num.textContent=(KEYS.indexOf(k)+1)+' / '+KEYS.length;

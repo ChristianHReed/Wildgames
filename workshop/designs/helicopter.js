@@ -1,18 +1,17 @@
 /* A light utility helicopter: main rotor and tail rotor, skids, sliding cabin doors on both sides and a crouch-in cabin. */
-var AH = require('./refs.js').H, aq = AH.quad, ADK = AH.DK, ARED = AH.RED;
+var AK = require('./parts/air_kit.js'), AH = require('./refs.js').H, aq = AH.quad, ADK = AH.DK, ARED = AH.RED;
 module.exports = function(WSB){
   var b = WSB.create({id:'utility_heli', name:'Utility helicopter', domain:'air', cls:'heli', paint:{paint1:'#3e5a3a', paint2:'#c9c3b6', paint3:'#2a2a2a'}});
   b.box([-0.8, 0.5, -1.2], [0.8, 0.65, 1.4], {c:'underside', m:'sheet', name:'floor'});
-  b.box([-0.8, 0.65, 0.3], [0.8, 1.95, 1.4], {c:'paint1', m:'sheet', name:'cockpit'});
-  b.box([-0.75, 1.0, 1.91], [0.75, 1.9, 1.95], {c:'glassL', m:'glass', name:'nose glass'}); b.box([0.71, 1.0, 1.4], [0.75, 1.9, 1.91], {c:'glassL', m:'glass', mx:true, name:'nose side glass'});
-  b.box([-0.8, 1.95, -1.2], [0.8, 2.05, 1.4], {c:'paint1', m:'sheet', name:'roof'});
+  AK.tube(b, [[0.3, 1.30, 0.80, 0.64], [1.0, 1.25, 0.78, 0.58], [1.5, 1.15, 0.62, 0.46], [1.85, 1.02, 0.40, 0.30], [2.0, 0.98, 0.26, 0.20]], {c:'paint1', name:'nose'});
+  b.box([-0.8, 1.95, -1.2], [0.8, 2.05, 1.0], {c:'paint1', m:'sheet', name:'roof'});
   b.box([-0.8, 0.65, -1.3], [0.8, 1.95, -1.2], {c:'paint1', m:'sheet', name:'cabin back'});
-  b.box([0.8, 0.65, 0.3], [0.85, 1.95, 1.4], {c:'paint1', m:'sheet', mx:true, name:'pilot side'});
   b.room([-0.78, 0.65, -1.2], [0.78, 1.95, 0.3], 'cabin');
   b.door([0.82, 0.65, -1.2], [0.86, 1.9, 0.3], {kind:'slide', c:'paint1', mx:true, name:'cabin door'});
-  b.box([-0.45, 2.05, -1.3], [0.45, 2.45, 0.6], {c:'paint1', name:'engine cowl'});
-  b.box([-0.2, 1.4, -6.0], [0.2, 1.75, -1.3], {c:'paint1', name:'tail boom'});
-  b.box([-0.04, 1.6, -6.3], [0.04, 2.6, -5.8], {c:'paint1', name:'fin'});
+  AK.tube(b, [[-1.4, 2.17, 0.28, 0.12], [-0.9, 2.25, 0.44, 0.2], [0.0, 2.27, 0.46, 0.2], [0.6, 2.14, 0.34, 0.1]], {c:'paint1', name:'engine cowl'});
+  AK.tube(b, [[-1.3, 1.62, 0.34, 0.30], [-3.0, 1.62, 0.22, 0.2], [-4.6, 1.66, 0.14, 0.14], [-6.0, 1.7, 0.09, 0.1]], {c:'paint1', name:'tail boom'});
+  AK.slab(b, [[-0.04, 1.62, -5.2], [-0.04, 1.62, -6.2], [-0.04, 2.65, -6.2], [-0.04, 2.65, -5.85]], [0.08, 0, 0], {c:'paint1', name:'fin'});
+  AK.slab(b, [[-0.04, 1.62, -5.2], [0.04, 1.62, -5.2], [0.04, 1.62, -5.9], [-0.04, 1.62, -5.9]], [0, 0.0, 0], {c:'paint1', name:'fin root'});
   b.block('cyl', [0, 2.6, -0.3], [0.2, 0.3, 0.2], {c:'underside', m:'steel', name:'mast'});
   b.rotor([0, 2.8, -0.3], 5.0, {blades:2});
   b.tailRotor([0.09, 2.2, -6.05], 0.75);
@@ -22,10 +21,8 @@ module.exports = function(WSB){
   b.seat([0.35, 0.9, 0.85], {mx:true, name:'pilot seat'});
   b.seat([0, 0.85, -0.95], {size:[1.4, 0.1, 0.4], name:'cabin bench'});
   b.engine([0, 2.25, -0.4], [0.7, 0.35, 1.2]); b.tank([0, 0.55, -0.4], [1.0, 0.1, 0.6]);
-  aq(b, [[-0.72, 1.0, 1.4], [0.72, 1.0, 1.4], [0.6, 1.9, 1.95], [-0.6, 1.9, 1.95]], [0, -0.03, 0.0], {c:'glassL', m:'glass', name:'windscreen'});
-  b.box([-0.05, 0.9, 1.4], [0.05, 1.95, 1.5], {c:ADK, m:'plastic', name:'windscreen post'});
-  [-1, 1].forEach(function(sx){ b.box([sx*0.8 - 0.01, 1.1, 0.4], [sx*0.8 + 0.01, 1.8, 1.3], {c:'glassL', m:'glass', name:'pilot window'}); });
-  b.box([-0.8, 0.65, 1.4], [0.8, 1.0, 1.92], {c:'paint1', m:'sheet', name:'chin'});
+  aq(b, [[-0.52, 1.56, 1.62], [0.52, 1.56, 1.62], [0.76, 1.95, 0.95], [-0.76, 1.95, 0.95]], [0, 0.03, 0.03], {c:'glassL', m:'glass', name:'windscreen'});
+  b.box([-0.04, 1.58, 1.0], [0.04, 1.95, 1.62], {c:ADK, m:'plastic', name:'windscreen post'}); [-1, 1].forEach(function(sx){ b.box([sx*0.79 - 0.01, 1.2, 0.35], [sx*0.79 + 0.01, 1.72, 1.1], {c:'glassL', m:'glass', name:'pilot window'}); });
   b.box([-0.45, 1.0, -6.0], [0.45, 1.05, -1.3], {c:'paint2', name:'belly strip'});
   b.box([0.795, 1.3, -1.2], [0.815, 1.8, 0.3], {c:'glassL', m:'glass', mx:true, name:'cabin window'});
   b.box([-0.05, 2.5, -6.0], [0.05, 2.6, -5.85], {c:ARED, m:'plastic', name:'tail light'}); b.box([-0.12, 2.0, 1.0], [0.12, 2.06, 1.45], {c:'#f2f2ea', m:'plastic', name:'searchlight'});
