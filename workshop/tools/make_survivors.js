@@ -397,6 +397,6 @@ Object.keys(LOOKS).forEach(function(k){
   pack.assets.push({type:'look', id:k, name:label, kind:'character', author:'AfterStreet content chat', look:L});
 });
 
-fs.writeFileSync(root + 'packs/afterstreet-survivors.js', M.packToJS(pack));
+fs.writeFileSync(root + 'packs/afterstreet-survivors.js', M.packToJS(pack).replace(/,"_st":1/g, ''));   // drop the stock-piece tags
 var n = pack.assets.filter(function(a){ return a.type === 'model'; });
 console.log('wrote packs/afterstreet-survivors.js:', n.length, 'parts,', pack.assets.length - n.length, 'looks,', n.reduce(function(t, a){ return t + a.stats.total; }, 0), 'triangles');
