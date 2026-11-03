@@ -518,12 +518,13 @@ import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
 import json as _json
 _RINGS = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/body_rings.json')))
-def ring_loft(rings, c='SKIN', caps=(True, True), ngon=False):
+def ring_loft(rings, c='SKIN', caps=(True, True), ngon=False, skip=()):
     """a clean quad-loop solid from rings of equal corner counts (workshop/tools/fit_rings.py): flat faces between loops, fans at the ends"""
     import numpy as np
     R = np.array(rings, float); m, n, _ = R.shape; V = [tuple(p) for r in R for p in r]; Fc = []
     for i in range(m - 1):
-        for k in range(n): Fc.append([i*n + k, i*n + (k + 1) % n, (i + 1)*n + (k + 1) % n, (i + 1)*n + k])
+        for k in range(n):
+            if (i, k) not in skip: Fc.append([i*n + k, i*n + (k + 1) % n, (i + 1)*n + (k + 1) % n, (i + 1)*n + k])
     for end, ri in ((0, 0), (1, m - 1)):
         if not caps[end]: continue
         if ngon: Fc.append(list(range(ri*n, ri*n + n))[::-1] if end == 0 else list(range(ri*n, ri*n + n))); continue
@@ -613,21 +614,118 @@ def foot_rings(R, sd, g=0.0):
         pts = [(0, top), (w*0.62, top*0.97), (w, m + h*0.25), (w*0.92, bot + h*0.18), (0, bot), (-w*0.92, bot + h*0.18), (-w, m + h*0.25), (-w*0.62, top*0.97)]
         rings.append([[cx + px, py, cz + z] for px, py in pts])
     return rings
+# body proportions measured off the reference sheets (metres): torso loops y -> (half width, front z, back z); leg loops y -> (width, depth)
+TORSO_SHAPE = {False: {0.93: (0.158, 0.100, -0.110), 0.99: (0.150, 0.100, -0.115), 1.04: (0.140, 0.095, -0.100), 1.07: (0.132, 0.095, -0.090), 1.12: (0.132, 0.100, -0.088),
+                       1.17: (0.138, 0.105, -0.090), 1.22: (0.148, 0.110, -0.095), 1.28: (0.152, 0.118, -0.100), 1.33: (0.156, 0.120, -0.105), 1.385: (0.160, 0.110, -0.100),
+                       1.43: (0.160, 0.085, -0.090), 1.465: (0.110, 0.055, -0.070)},
+               True:  {0.93: (0.170, 0.100, -0.120), 0.99: (0.165, 0.095, -0.125), 1.04: (0.150, 0.085, -0.105), 1.07: (0.132, 0.080, -0.090), 1.12: (0.115, 0.080, -0.080),
+                       1.17: (0.112, 0.085, -0.080), 1.22: (0.120, 0.100, -0.085), 1.28: (0.130, 0.125, -0.090), 1.33: (0.138, 0.115, -0.090), 1.385: (0.142, 0.095, -0.085),
+                       1.43: (0.132, 0.070, -0.075), 1.465: (0.098, 0.050, -0.060)}}
+LEG_SHAPE = {False: {0.85: (0.150, 0.160), 0.74: (0.140, 0.150), 0.63: (0.125, 0.135), 0.55: (0.105, 0.120), 0.51: (0.095, 0.110), 0.485: (0.090, 0.105),
+                     0.45: (0.095, 0.110), 0.38: (0.110, 0.120), 0.29: (0.095, 0.100), 0.2: (0.070, 0.080), 0.12: (0.055, 0.065), 0.075: (0.050, 0.055)},
+             True:  {0.85: (0.155, 0.160), 0.74: (0.140, 0.145), 0.63: (0.120, 0.125), 0.55: (0.100, 0.110), 0.51: (0.088, 0.100), 0.485: (0.084, 0.095),
+                     0.45: (0.088, 0.100), 0.38: (0.100, 0.108), 0.29: (0.088, 0.092), 0.2: (0.065, 0.072), 0.12: (0.050, 0.058), 0.075: (0.046, 0.050)}}
+def reshape(R, fem):
+    """rescale the fitted loops to the reference proportions, keeping each loop's own cross-section"""
+    import copy, numpy as np
+    R = copy.deepcopy(R); TS = TORSO_SHAPE[fem]; LS = LEG_SHAPE[fem]
+    for b in ('pelvis', 'spine_01', 'spine_02', 'spine_03'):
+        for r in R[b]:
+            y = round(r[0][1], 3); t = TS.get(y)
+            if not t: continue
+            P = np.array(r); hw = P[:, 0].max(); zf = P[:, 2].max(); zb = P[:, 2].min()
+            for p in r: p[0] = p[0]*t[0]/hw; p[2] = p[2]*t[1]/zf if p[2] >= 0 else p[2]*t[2]/zb
+    for sd in ('l', 'r'):
+        for b in ('thigh_', 'calf_'):
+            for r in R[b + sd]:
+                y = round(r[0][1], 3); t = LS.get(y)
+                if not t: continue
+                P = np.array(r); c = P.mean(0); w = P[:, 0].max() - P[:, 0].min(); d = P[:, 2].max() - P[:, 2].min()
+                for p in r: p[0] = c[0] + (p[0] - c[0])*t[0]/w; p[2] = c[2] + (p[2] - c[2])*t[1]/d
+    return R
+ARM_SHAPE = [(1.30, 0.100, 0.105), (1.22, 0.092, 0.095), (1.15, 0.078, 0.085), (1.10, 0.085, 0.080), (1.03, 0.078, 0.070), (0.96, 0.062, 0.055), (0.905, 0.055, 0.042)]
+def arm_join(T3, sd, fem):
+    """the arm grows out of a hole in the side of the chest like the references: the hole is the border of four chest faces (three loops by three columns),
+    a deltoid loop bulges out over the shoulder, then the arm loops run down to the wrist. All loops have the hole's 8 corners, so every face is a quad."""
+    import math
+    n = len(T3[0]); cols = (3, 4, 5) if sd == 'l' else (n - 3, n - 4, n - 5); sg = 1 if sd == 'l' else -1
+    a, b, c = cols
+    hole = [T3[2][a], T3[2][b], T3[2][c], T3[1][c], T3[0][c], T3[0][b], T3[0][a], T3[1][a]]
+    yc = sum(p[1] for p in hole)/8; zc = sum(p[2] for p in hole)/8
+    th = [math.atan2(p[1] - yc, p[2] - zc) for p in hole]        # up on the hole = the outside of the arm
+    k = 0.86 if fem else 1.0
+    xs = (0.172, 0.176, 0.190) if fem else (0.200, 0.204, 0.220)
+    def cx(y): return xs[0] + (xs[1] - xs[0])*(1.30 - y)/0.15 if y >= 1.15 else xs[1] + (xs[2] - xs[1])*(1.15 - y)/0.245
+    def cz(y): return -0.01*(1.30 - y)/0.15 if y >= 1.15 else -0.01 + 0.02*(1.15 - y)/0.245
+    rings = []
+    for y, w, d in ARM_SHAPE:
+        w *= k; d *= k
+        rings.append([[round(sg*(cx(y) + 0.5*w*math.sin(t)), 4), y, round(cz(y) + 0.5*d*math.cos(t), 4)] for t in th])
+    # the deltoid: halfway between the hole and the first arm loop, pushed out and up over the shoulder
+    delt = [[round((h[0] + r[0])/2 + sg*0.020*max(0.0, math.sin(t)), 4), round((h[1] + r[1])/2 + 0.012*max(0.0, math.sin(t)), 4), round((h[2] + r[2])/2, 4)]
+            for h, r, t in zip(hole, rings[0], th)]
+    skip = {(0, a if sd == 'l' else c), (0, b if sd == 'l' else b), (1, a if sd == 'l' else c), (1, b if sd == 'l' else b)}
+    return [hole, delt] + rings[:3], rings[2:], skip
+TORSO_ANG = [0, 22, 45, 67, 90, 113, 140, 165, 180]     # 16 corners round the torso like the references: denser over the chest and the sides where the arms join
+def smooth_resample(ring, angs, centre=None, mirror=True):
+    """a smooth closed curve through a ring's corners (periodic Catmull-Rom), sampled at the given angles (degrees from the front, +x side first, mirrored)"""
+    import numpy as np, math
+    P = np.array(ring, float); n = len(P); y = float(P[:, 1].mean())
+    c = np.array(centre, float) if centre is not None else P.mean(0)
+    D = []
+    for i in range(n):
+        p0, p1, p2, p3 = P[i - 1], P[i], P[(i + 1) % n], P[(i + 2) % n]
+        for t in np.linspace(0, 1, 24, endpoint=False):
+            D.append(0.5*((2*p1) + (-p0 + p2)*t + (2*p0 - 5*p1 + 4*p2 - p3)*t*t + (-p0 + 3*p1 - 3*p2 + p3)*t**3))
+    D = np.array(D); A = np.degrees(np.arctan2(D[:, 0] - c[0], D[:, 2] - c[2])) % 360
+    full = list(angs) + [360 - a for a in reversed(angs[1:-1])] if mirror else list(angs)
+    out = []
+    for a in full:
+        j = int(np.argmin(np.abs((A - a + 180) % 360 - 180))); out.append([round(float(D[j, 0]), 4), round(y, 4), round(float(D[j, 2]), 4)])
+    return out
+def leg_join(R, sd, hip):
+    """the hip loop splits into the two legs at the crotch, like the references: each leg's first loop is half the hip loop plus one crotch corner shared by both legs.
+    The thigh and calf loops are resampled to the same 10 corners so every face is a quad."""
+    import numpy as np, math
+    n = len(hip); h = n//2
+    zc = (hip[0][2] + hip[h][2])/2; crotch = [0.0, round(hip[0][1] - 0.055, 4), round(zc, 4)]
+    side = hip[0:h + 1] if sd == 'l' else [hip[0]] + [hip[(n - j) % n] for j in range(1, h + 1)]
+    r0 = [list(p) for p in side] + [crotch]
+    th = R['thigh_' + sd]; ca = R['calf_' + sd]
+    cen = np.array(th[2]).mean(0)
+    angs = [math.degrees(math.atan2(p[0] - cen[0], p[2] - cen[2])) % 360 for p in r0]
+    def rs(ring):
+        c = np.array(ring).mean(0); return smooth_resample(ring, angs, c, mirror=False)
+    # smooth_resample mirrors when the list stops at 180: pass the full list (it ends past 180)
+    thigh = [r0] + [rs(r) for r in th[3:]]
+    calf = [rs(r) for r in ca]
+    return thigh, calf
 def body(fem):
-    R = _RINGS['feminine' if fem else 'masculine']; out = {}
-    out['pelvis'] = [ring_loft(R['pelvis'], caps=(True, False))]
-    out['spine_01'] = [ring_loft(R['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(R['spine_02'], caps=(False, False))]
-    # no flat shelf at the collar: the chest's top loop slopes down to the shoulders (trapezius), then one loop climbs into the neck - all quads
-    import copy; sp = copy.deepcopy(R['spine_03']); top = sp[-1]; nk = copy.deepcopy(R['neck_01'])
+    R = reshape(_RINGS['feminine' if fem else 'masculine'], fem); out = {}
+    # one joined torso: every loop resampled to 16 corners on a smooth curve through the fitted corners
+    import copy
+    T = {b: [smooth_resample(r, TORSO_ANG) for r in R[b]] for b in ('pelvis', 'spine_01', 'spine_02', 'spine_03', 'neck_01')}
+    out['pelvis'] = [ring_loft(T['pelvis'][1:], caps=(False, False))]
+    out['spine_01'] = [ring_loft(T['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(T['spine_02'], caps=(False, False))]
+    for sd in ('l', 'r'):
+        th, ca = leg_join(R, sd, T['pelvis'][1])
+        out['thigh_' + sd] = [ring_loft(th, caps=(False, False))]; out['calf_' + sd] = [ring_loft([th[-1]] + ca, caps=(False, True), ngon=True)]
+    sp = copy.deepcopy(T['spine_03']); top = sp[-1]; nk = copy.deepcopy(T['neck_01'])
     for p in top: p[1] = round(p[1] - 0.30*max(0.0, abs(p[0]) - 0.055), 4)
     trap = [[round(a[0]*0.55 + b[0]*0.45, 4), round(max(a[1], b[1]) + 0.012, 4), round(a[2]*0.55 + b[2]*0.45, 4)] for a, b in zip(nk[0], top)]
     for i, r in enumerate(nk):
-        for p in r: p[2] = round(p[2] + 0.010*i, 4)                                  # the neck leans forward a little into the head
-    out['spine_03'] = [ring_loft(sp, caps=(False, False))]
+        for p in r: p[2] = round(p[2] + 0.010*i, 4)
+    skip = set(); wrist = {}
+    for sd in ('l', 'r'):
+        up, lo, sk = arm_join(sp, sd, fem); skip |= sk; wrist[sd] = lo[-1]
+        out['upperarm_' + sd] = [ring_loft(up, caps=(False, False))]; out['lowerarm_' + sd] = [ring_loft(lo, caps=(False, False))]
+    out['spine_03'] = [ring_loft(sp, caps=(False, False), skip=skip)]
     out['neck_01'] = [ring_loft([top, trap] + nk[1:], caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True), ngon=True)] + [ring_loft(ears[sg], caps=(True, True), ngon=True) for sg in (1, -1)]
     for b in R:
-        if b.split('_')[0] in ('upperarm', 'lowerarm', 'thigh', 'calf'): out[b] = [ring_loft(R[b], caps=(b.startswith('upperarm'), b.startswith('calf')))]
-        elif b.startswith('hand'): out[b] = [ring_loft(R[b], caps=(True, True))]
+        if b.startswith('hand'):
+            import numpy as np
+            sd = b[-1]; d = np.array(wrist[sd]).mean(0) - np.array(R[b][0]).mean(0)
+            out[b] = [ring_loft([[[round(p[0] + d[0], 4), p[1], round(p[2] + d[2], 4)] for p in r] for r in R[b]], caps=(True, True))]
     for sd in ('l', 'r'): out['foot_' + sd] = [ring_loft(foot_rings(R, sd), caps=(True, True))]
     return out
 HEAD_S = (1.16, 0.97, 1.2); HEAD_O = (0.0, 1.548, 0.0)

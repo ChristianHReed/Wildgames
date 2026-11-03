@@ -311,6 +311,16 @@ const SCENES={
       const V=[['masculine',0,'tshirt','jeans',[]],['masculine',Math.PI/2,'tshirt','jeans',[]],['masculine',Math.PI,'hoodie','cargo_trousers',['puffer']],['feminine',0,'tshirt','jeans',[]],['feminine',Math.PI/2,'tshirt','jeans',[]],['feminine',Math.PI,'hoodie','cargo_trousers',['vest']]];
       V.forEach((v,i)=>{const L=Object.assign({},LOOKS[0],{worn:v[4],top:v[2],bot:v[3],shoe:'boots',hair:i%3==0?'short':'none',hat:'none',hc:1,body:v[0],build:'average',npc:[]});const g=survivor(L);g.rotation.y=v[1];at(g,(i-2.5)*0.8,0,0,0);});
       cam.position.set(0,1.0,5.2); ctl.target.set(0,0.9,0); if(window.__cam2){ cam.position.set(...window.__cam2[0]); ctl.target.set(...window.__cam2[1]); } }},
+  survivors_compare:{t:'Survivors: base body against the references',d:'Masculine and feminine base body in plain grey with the quad edges drawn, front and three-quarter, the way the reference sheets are shown.',
+    make(){ lights('day'); scene.background=new THREE.Color(0x5a5a5e); scene.fog=null;
+      [['masculine',-0.75,0],['masculine',-0.25,-0.6],['feminine',0.25,0],['feminine',0.75,-0.6]].forEach(v=>{const L=Object.assign({},LOOKS[0],{worn:[],top:'x',bot:'x',shoe:'x',face:'x',hair:'none',hat:'none',hc:0,body:v[0],build:'average',npc:[]});const g=survivor(L);g.rotation.y=v[2];at(g,v[1],0,0,0);
+        const ms=[];g.traverse(o=>{if(o.isMesh)ms.push(o);});ms.forEach(o=>{o.material=new THREE.MeshLambertMaterial({color:0xc8c8cc,flatShading:true});const PA=o.geometry.attributes.position.array,I=o.geometry.index,IA=I?I.array:null,n=IA?IA.length:PA.length/3,ix=k=>IA?IA[k]:k,M=new Map(),V=i=>[PA[3*i],PA[3*i+1],PA[3*i+2]],
+            key=(a,b)=>{const A=V(a).map(v=>v.toFixed(4)).join(','),B=V(b).map(v=>v.toFixed(4)).join(',');return A<B?A+'|'+B:B+'|'+A;},sub=(p,q)=>[p[0]-q[0],p[1]-q[1],p[2]-q[2]],
+            crs=(p,q)=>[p[1]*q[2]-p[2]*q[1],p[2]*q[0]-p[0]*q[2],p[0]*q[1]-p[1]*q[0]],nrm=p=>{const l=Math.hypot(...p)||1;return p.map(v=>v/l);};
+          for(let t=0;t<n;t+=3){const a=ix(t),b=ix(t+1),c=ix(t+2);const nr=nrm(crs(sub(V(b),V(a)),sub(V(c),V(a))));[[a,b],[b,c],[c,a]].forEach(([x,y])=>{const k=key(x,y);if(!M.has(k))M.set(k,{p:[x,y],n:[]});M.get(k).n.push(nr);});}
+          const pts=[];M.forEach(v=>{const d=v.n.length>1?v.n[0][0]*v.n[1][0]+v.n[0][1]*v.n[1][1]+v.n[0][2]*v.n[1][2]:0;if(v.n.length===1||d<0.995)pts.push(...V(v.p[0]),...V(v.p[1]));});
+          const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));o.add(new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:0x202024})));});});
+      cam.position.set(0,1.0,3.6); ctl.target.set(0,0.92,0); if(window.__cam2){ cam.position.set(...window.__cam2[0]); ctl.target.set(...window.__cam2[1]); } }},
   survivors_heads:{t:'Survivors: base heads',d:'Masculine then feminine base head, profile and 3/4, no hair, hat or clothes, for judging the face planes.',
     make(){ lights('day'); scene.background=new THREE.Color(0xeeeae2); scene.fog=null; ground(60,60,0xe2ddd2);
       [['masculine',-0.42,Math.PI/2],['masculine',-0.14,Math.PI/4],['feminine',0.14,Math.PI/4],['feminine',0.42,Math.PI/2]].forEach(v=>{const L=Object.assign({},LOOKS[0],{worn:[],top:'x',bot:'x',shoe:'x',face:'x',hair:'none',hat:'none',hc:0,body:v[0],build:'average',npc:[]});const g=survivor(L);g.rotation.y=v[2];at(g,v[1],0,0,0);});
