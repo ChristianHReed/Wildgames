@@ -92,6 +92,15 @@ if __name__ == '__main__':
             sl = posed[(abs(posed[:, 1] - y) < 0.02) & (abs(posed[:, 0]) < 0.3)]
             if len(sl) > 3: rows[round(float(y), 2)] = [round(float((sl[:, 0].max() - sl[:, 0].min())/2), 3), round(float((sl[:, 2].max() - sl[:, 2].min())/2), 3), round(float((sl[:, 2].max() + sl[:, 2].min())/2), 3)]
         meas[body] = rows
+        # the torso silhouette for the clothing tables: every 6 cm from hip to shoulder, arms and head left out, lightly smoothed
+        lab = LAB; nm = np.array(ob)[lab]; core = ~np.isin(nm, ['upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'hand_l', 'hand_r', 'Head', 'neck_01', 'foot_l', 'foot_r', 'ball_l', 'ball_r', 'calf_l', 'calf_r'])
+        ys = [0.92, 0.98, 1.04, 1.10, 1.16, 1.22, 1.28, 1.34, 1.40, 1.455]; tr = []
+        for y in ys:
+            q = posed[core & (abs(posed[:, 1] - y) < 0.025)]
+            hw = float(np.percentile(abs(q[:, 0]), 99)); zlo, zhi = float(np.percentile(q[:, 2], 1)), float(np.percentile(q[:, 2], 99)); tr.append([y, hw, (zhi - zlo)/2, (zhi + zlo)/2])
+        tr = np.array(tr); sm = tr.copy()
+        for i in range(1, len(tr) - 1): sm[i, 1:] = 0.25*tr[i - 1, 1:] + 0.5*tr[i, 1:] + 0.25*tr[i + 1, 1:]
+        meas.setdefault('torso', {})[body] = [[round(float(v), 3) for v in r] for r in np.maximum(sm, tr*0.0 + sm)]
         # head box
         hd = posed[posed[:, 1] > 1.58]; meas[body]['head'] = [round(float(x), 3) for x in (hd[:, 0].min(), hd[:, 0].max(), hd[:, 1].min(), hd[:, 1].max(), hd[:, 2].min(), hd[:, 2].max())]
-    json.dump(res, open(os.path.join(HERE, 'data/superhero_body.json'), 'w'), separators=(',', ':')); json.dump(meas, open(os.path.join(HERE, 'data/superhero_measure.json'), 'w'), indent=1)
+    json.dump(res, open(os.path.join(HERE, 'data/superhero_body.json'), 'w'), separators=(',', ':')); json.dump(meas, open(os.path.join(HERE, 'data/superhero_measure.json'), 'w'), indent=1); json.dump(meas['torso'], open(os.path.join(HERE, 'data/superhero_torso.json'), 'w'))

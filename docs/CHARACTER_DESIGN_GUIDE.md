@@ -103,3 +103,8 @@ Clothing was refitted to the measured body: TORSO rows, UP/LO/TH/CA limb profile
 - `FIT` in `survivor.py` is now per body: the female thighs sit about 2 cm further forward than the male ones, the calves further back. Neutral values apply to shoes and anything with no body level.
 - `make_survivors.js` applies the same shift to the pack garments it builds itself (pieces copied from the stock body are tagged and not shifted twice), and uses the new HEAD_S.
 - Known small leftovers: tiny skin flecks behind the knees, hands rest against the front of the thighs.
+
+### Round 9c: torso rows measured from the body (4 November 2026)
+- All clothing shells are four-sided frustums sized by the TORSO table, so the table is what makes them boxy or shapely. It is now written by `import_superhero.py` (`workshop/tools/data/superhero_torso.json`): ten rows every 6 cm from hip to shoulder, measured from the base body with arms, head, neck and lower legs left out, then lightly smoothed. `survivor.py` loads it; the top two rows slope in (the sleeve caps cover the shoulder points) and the feminine bust rows get 1 cm more depth.
+- Result: a proper V taper on the masculine torso (waist 0.14, chest 0.19, shoulders 0.22) and an hourglass on the feminine one, where the older hand-set rows gave a barrel.
+- Idea not done yet: build base layers (tee, jeans) as an outward offset of the body's own surface, so they fit by construction. Worth it if the box-built shells still read heavy.

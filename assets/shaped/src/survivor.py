@@ -10,7 +10,8 @@ joints (collars, cuffs, belts, rolled hems), after Jumpship.
 Fewest vertices: every body part is a rectangular frustum, so each side is one flat face (4 corners); limbs end in points;
 no ears, no eye shapes. Coordinates: metres, facing +Z, the survivor's left is +X. Each bone lists its pivot (joint) and
 tip (next joint) so the game can fit the pieces to its own skeleton."""
-import math
+import math, os
+import json as _json
 from kit import *
 
 # ================= skeleton (1.80 m, standing straight and relaxed) =================
@@ -104,10 +105,12 @@ def head(fem):
     return {'Head': [loft(rows, 'SKIN', ang=HEAD_ANG)] + feat, 'neck_01': [neck]}
 
 # ================= torso: square shoulders, one wedge to the waist =================
-TORSO = {  # y, half-width, half-depth, z: measured from the Quaternius Superhero base body on our skeleton (4 November 2026), hips to shoulder girth
-  False: [(0.92, 0.17, 0.105, 0.0), (1.0, 0.158, 0.114, -0.004), (1.08, 0.152, 0.104, 0.005), (1.16, 0.142, 0.092, 0.007), (1.24, 0.145, 0.12, -0.004), (1.32, 0.19, 0.137, -0.012), (1.40, 0.2, 0.132, -0.002), (1.455, 0.2, 0.1, -0.01)],
-  True:  [(0.92, 0.2, 0.11, -0.006), (1.0, 0.178, 0.117, -0.007), (1.08, 0.147, 0.095, 0.01), (1.16, 0.117, 0.087, 0.023), (1.24, 0.121, 0.098, 0.02), (1.32, 0.144, 0.124, 0.026), (1.40, 0.163, 0.119, 0.016), (1.445, 0.16, 0.08, 0.0)],
-}
+def _torso_rows(rows, fem=False):   # measured silhouette of the base body (workshop/tools/import_superhero.py); the top rows slope in, since the sleeve caps cover the shoulder points
+    out = [tuple(r) for r in rows]; y, hw, hd, z = out[-1]; out[-1] = (y, round(hw*0.86, 3), hd, z); y, hw, hd, z = out[-2]; out[-2] = (y, round(hw*0.95, 3), hd, z)
+    if fem: out = [(y, hw, round(hd + 0.01, 3) if 1.26 < y < 1.42 else hd, z) for y, hw, hd, z in out]   # the bust reaches forward of the measured outline
+    return out
+_TT = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/superhero_torso.json')))
+TORSO = {False: _torso_rows(_TT['masculine']), True: _torso_rows(_TT['feminine'], True)}   # y, half-width, half-depth, z: hips to shoulder girth
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
 LW = 1.0      # limb thickness: the profiles below are measured from the base body
