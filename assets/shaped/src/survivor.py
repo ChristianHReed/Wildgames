@@ -489,7 +489,9 @@ CLIPS.update({
 
 import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
-def body(fem): return join(head(fem), hands())
+import json as _json
+_SH = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/superhero_body.json')))
+def body(fem): return {b: [dict(q) for q in qs] for b, qs in _SH['feminine' if fem else 'masculine'].items()}   # Quaternius Superhero (CC0) retargeted
 HEAD_S = (1.3, 1.14, 1.3); HEAD_O = (0.0, 1.548, 0.0)
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S

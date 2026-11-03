@@ -16,6 +16,8 @@ def our_bones():
 BONES = our_bones()
 
 def load_glb(path):
+    if path.endswith('.gltf'):      # a .gltf with its .bin beside it
+        j = json.load(open(path)); return j, open(os.path.join(os.path.dirname(path), j['buffers'][0]['uri']), 'rb').read()
     b = open(path, 'rb').read(); l = struct.unpack('<I', b[12:16])[0]; j = json.loads(b[20:20 + l]); o = 20 + l
     bl = struct.unpack('<I', b[o:o + 4])[0]; binb = b[o + 8:o + 8 + bl]; return j, binb
 CT = {5126: ('f4', 4), 5123: ('u2', 2), 5125: ('u4', 4), 5121: ('u1', 1), 5120: ('i1', 1), 5122: ('i2', 2)}
@@ -195,6 +197,11 @@ def convert(path, body, budget):
         lab = Wb.argmax(1)
         tgt = max(12, int(len(F0)*budget.get((p['part'], p['mat']), budget.get(p['part'], 0.4))))
         V1, F1, L1 = decimate(posed, F0, lab.copy(), tgt)
+        # the collapse can leave a triangle wound the wrong way (a see-through hole): turn every face to match the nearest original face
+        o0 = np.cross(posed[F0[:, 1]] - posed[F0[:, 0]], posed[F0[:, 2]] - posed[F0[:, 0]]); o0 /= np.maximum(np.linalg.norm(o0, axis=1, keepdims=True), 1e-12); c0 = posed[F0].mean(1)
+        n1 = np.cross(V1[F1[:, 1]] - V1[F1[:, 0]], V1[F1[:, 2]] - V1[F1[:, 0]]); c1 = V1[F1].mean(1)
+        near = np.argmin(((c1[:, None, :] - c0[None, :, :])**2).sum(2), axis=1)
+        flip = (n1*o0[near]).sum(1) < 0; F1 = F1.copy(); F1[flip] = F1[flip][:, ::-1]
         p['out'] = (V1, F1, L1)
     return prims, obones
 
@@ -211,13 +218,14 @@ def pieces(prims, obones, slots):
         for k in set(owner):
             fs = F[owner == k]; used = sorted(set(fs.ravel())); m = {u: i for i, u in enumerate(used)}; pts = V[used]
             cen = (pts.min(0) + pts.max(0))/2
-            piece = {'s': 'poly', 'p': [round(float(x), 3) for x in cen], 'v': [[round(float(x), 3) for x in (q - cen)] for q in pts], 'f': [[m[a] for a in f] for f in fs.tolist()], 'c': c}
+            piece = {'s': 'poly', 'p': [round(float(x), 3) for x in cen], 'v': [[round(float(x), 3) for x in (q - cen)] for q in pts], 'f': [[m[a] for a in f] for f in fs.tolist()] + ([[m[a] for a in f[::-1]] for f in fs.tolist()] if os.environ.get('DOUBLE') else []), 'c': c}
             res.setdefault(part, {}).setdefault(obones[k], []).append(piece)
     return res
 
 if __name__ == '__main__':
     root = sys.argv[1]; names = sys.argv[2:] or None
     BUDGET = {('Body', 'Skin'): 0.15, 'Body': 0.34, ('Legs', 'Skin'): 0.3, 'Legs': 0.36, 'Feet': 0.4, ('Head', 'Skin'): 0.35, ('Head', 'Hair'): 0.18, 'Head': 0.3, 'Backpack': 0.4}
+    SCALE = float(os.environ.get('BUDGET_SCALE', '1')); BUDGET = {k: min(1.0, v*SCALE) for k, v in BUDGET.items()}
     data = {}
     for body, folder in (('masculine', 'modular_men'), ('feminine', 'modular_women')):
         for fn in sorted(os.listdir(os.path.join(root, folder))):
