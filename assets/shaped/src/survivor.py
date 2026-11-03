@@ -570,8 +570,8 @@ def head_design(fem):
     f = 0.0002097                       # metres per reference pixel (the reference head is 176 px tall = 0.222 m)
     # reference loops: y px, front z px, back z px, half width px, face-plane half width px, nose-side half width px, nose z px (None = same as the face)
     ref = [(75, 560, 480, 40, 20, 10, None), (160, 880, 200, 215, 110, 55, None), (290, 880, 130, 300, 150, 75, None), (430, 925, 100, 310, 210, 105, None),
-           (545, 890, 110, 290, 200, 60, 935), (610, 905, 130, 305, 150, 60, 950), (745, 950, 150, 270, 110, 60, 1040), (850, 950, 170, 235, 100, 55, 965),
-           (1015, 915, 200, 175, 90, 45, 925), (1135, 720, 400, 70, 40, 20, None)]
+           (545, 862, 110, 290, 200, 55, 930), (610, 900, 130, 305, 150, 55, 950), (745, 950, 150, 270, 78, 52, 1055), (850, 955, 170, 235, 190, 55, 968),
+           (1015, 915, 200, 175, 85, 45, 925), (1135, 720, 400, 70, 40, 20, None)]
     wid = 1.0 if not fem else 0.95; hs = 1.12                       # a touch wider than the reference so it sits on the shoulders
     rings = []
     for (py, pf, pb, hw, a, ns, pn) in ref:
@@ -581,7 +581,8 @@ def head_design(fem):
         if fem and py == 430: zf -= 0.006                                  # a softer brow
         zm = (zf + zb)/2; c = min(0.05, w*0.45)
         zc = lambda x: zf if x <= a else zf - (x - a)*(c/max(w - a, 1e-6))   # the face plane, then round the front corner
-        half = [(ns, zn if pn else zf), (a, zf), (w, zf - c), (w, zm), (w*0.95, zb + c*0.6), (w*0.5, zb)]
+        if pn and py in (545, 610, 745): half = [(ns, zn), (a, zf), (w, zf - c), (w, zm), (w*0.95, zb + c*0.6), (w*0.5, zb)]            # the nose block has its own side columns
+        else: half = [(a, zf), ((a + w)/2, zf - c*0.2), (w, zf - c), (w, zm), (w*0.95, zb + c*0.6), (w*0.5, zb)]                  # elsewhere: wide quads, a column at the face edge
         ring = [[0.0, y, zn]] + [[round(x, 4), round(y, 4), round(z, 4)] for x, z in half] + [[0.0, y, zb]] + [[round(-x, 4), round(y, 4), round(z, 4)] for x, z in reversed(half)]
         rings.append(ring)
     rings, bend = planarize(rings); print('head quad bend (m):', round(bend, 5))
