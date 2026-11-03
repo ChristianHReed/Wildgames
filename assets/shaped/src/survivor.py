@@ -535,7 +535,7 @@ def ring_loft(rings, c='SKIN', caps=(True, True), ngon=False, skip=()):
         a, b2, c2 = P[f[0]], P[f[1]], P[f[2]]; sg += float(np.cross(b2 - a, c2 - a) @ (P[f].mean(0) - mid))
     if sg < 0: Fc = [f[::-1] for f in Fc]
     q = solid([tuple(map(float, p)) for p in V], Fc, c); q['winding'] = True; return q
-def planarize(rings, iters=400, anchor=0.15, fixed=(0, -1)):
+def planarize(rings, iters=400, anchor=0.15, fixed=(0, -1), sym=True):
     """nudge loop corners until every quad between two loops lies in one flat plane (the references are all flat quads); returns the worst bend left, in metres"""
     import numpy as np
     R = [np.array(r, float) for r in rings]; R0 = [r.copy() for r in R]; n = len(R[0]); m = len(R)
@@ -557,7 +557,7 @@ def planarize(rings, iters=400, anchor=0.15, fixed=(0, -1)):
                 if C[i][k]: R[i][k] += 0.5*D[i][k]/C[i][k]
                 R[i][k] += anchor*(R0[i][k] - R[i][k])
         # keep the two halves mirrored and the centre line on x = 0
-        for i in range(m):
+        for i in (range(m) if sym else ()):
             for k in range(1, n//2):
                 a, b = R[i][k], R[i][n - k]; x = (a[0] - b[0])/2; y = (a[1] + b[1])/2; z = (a[2] + b[2])/2
                 a[:] = (x, y, z); b[:] = (-x, y, z)
@@ -705,22 +705,36 @@ def body(fem):
     # one joined torso: every loop resampled to 16 corners on a smooth curve through the fitted corners
     import copy
     T = {b: [smooth_resample(r, TORSO_ANG) for r in R[b]] for b in ('pelvis', 'spine_01', 'spine_02', 'spine_03', 'neck_01')}
+    # flatten every torso quad (the references are all flat quads; a twisted quad renders as two triangles)
+    for p in T['spine_03'][-1]: p[1] = round(p[1] - 0.30*max(0.0, abs(p[0]) - 0.055), 4)     # the shoulder line slopes down from the neck
+    stack = T['pelvis'][1:] + T['spine_01'][1:] + T['spine_02'][1:] + T['spine_03'][1:]
+    stack, bend = planarize(stack, fixed=(0,), anchor=0.04, iters=900); print('torso quad bend (m):', round(bend, 4))
+    T['pelvis'][1:] = stack[0:4]; T['spine_01'][0] = stack[3]; T['spine_01'][1:] = stack[4:6]; T['spine_02'][0] = stack[5]; T['spine_02'][1:] = stack[6:9]
+    T['spine_03'][0] = stack[8]; T['spine_03'][1:] = stack[9:12]; T['neck_01'][0] = stack[11]
     out['pelvis'] = [ring_loft(T['pelvis'][1:], caps=(False, False))]
     out['spine_01'] = [ring_loft(T['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(T['spine_02'], caps=(False, False))]
     for sd in ('l', 'r'):
         th, ca = leg_join(R, sd, T['pelvis'][1])
-        out['thigh_' + sd] = [ring_loft(th, caps=(False, False))]; out['calf_' + sd] = [ring_loft([th[-1]] + ca, caps=(False, True), ngon=True)]
+        lg, b2 = planarize(th + ca[1:], fixed=(0,), sym=False); th = lg[:len(th)]; ca = [lg[len(th) - 1]] + lg[len(th):] if False else lg[len(th) - 1:]
+        out['thigh_' + sd] = [ring_loft(th, caps=(False, False))]; out['calf_' + sd] = [ring_loft(ca, caps=(False, True), ngon=True)]
     sp = copy.deepcopy(T['spine_03']); top = sp[-1]; nk = copy.deepcopy(T['neck_01'])
-    for p in top: p[1] = round(p[1] - 0.30*max(0.0, abs(p[0]) - 0.055), 4)
-    trap = [[round(a[0]*0.55 + b[0]*0.45, 4), round(max(a[1], b[1]) + 0.012, 4), round(a[2]*0.55 + b[2]*0.45, 4)] for a, b in zip(nk[0], top)]
+    # the trapezius climbs the side of the neck (short thick neck in the references); front and back stay low so the throat and nape still read
+    import math as _m
+    trap = []
+    for j, (a, b) in enumerate(zip(nk[0], top)):
+        side = abs(_m.sin(_m.radians(([*TORSO_ANG] + [360 - x for x in reversed(TORSO_ANG[1:-1])])[j])))
+        f = 0.30*side                                        # blend from the neck toward the shoulder: more at the sides (trapezius), little at throat and nape
+        trap.append([round(a[0] + (b[0] - a[0])*f, 4), round(a[1] + 0.010 + 0.016*side, 4), round(a[2] + (b[2] - a[2])*f, 4)])
+    for p in nk[1]: p[0] = round(p[0]*1.04, 4); p[2] = round(p[2]*1.03, 4)
     for i, r in enumerate(nk):
         for p in r: p[2] = round(p[2] + 0.010*i, 4)
     skip = set(); wrist = {}
     for sd in ('l', 'r'):
         up, lo, sk = arm_join(sp, sd, fem); skip |= sk; wrist[sd] = lo[-1]
+        al, b3 = planarize(up + lo[1:], fixed=(0,), sym=False); up = al[:len(up)]; lo = al[len(up) - 1:]; wrist[sd] = lo[-1]
         out['upperarm_' + sd] = [ring_loft(up, caps=(False, False))]; out['lowerarm_' + sd] = [ring_loft(lo, caps=(False, False))]
     out['spine_03'] = [ring_loft(sp, caps=(False, False), skip=skip)]
-    out['neck_01'] = [ring_loft([top, trap] + nk[1:], caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True), ngon=True)] + [ring_loft(ears[sg], caps=(True, True), ngon=True) for sg in (1, -1)]
+    nkr, _ = planarize([top, trap] + nk[1:], fixed=(0,), anchor=0.04, iters=900); out['neck_01'] = [ring_loft(nkr, caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True), ngon=True)] + [ring_loft(ears[sg], caps=(True, True), ngon=True) for sg in (1, -1)]
     for b in R:
         if b.startswith('hand'):
             import numpy as np
