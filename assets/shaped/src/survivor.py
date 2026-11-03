@@ -586,7 +586,7 @@ def head_design(fem):
         else: half = [(a, zf), ((a + w)/2, zf - c*0.2), (w, zf - c), (w, zm), (w*0.95, zb + c*0.6), (w*0.5, zb)]                  # elsewhere: wide quads, a column at the face edge
         ring = [[0.0, y, zn]] + [[round(x, 4), round(y, 4), round(z, 4)] for x, z in half] + [[0.0, y, zb]] + [[round(-x, 4), round(y, 4), round(z, 4)] for x, z in reversed(half)]
         rings.append(ring)
-    rings, bend = planarize(rings); print('head quad bend (m):', round(bend, 5))
+    rings, bend = planarize(rings, anchor=0.04, iters=900)
     # ears: a flat disc standing off each side, a little behind the middle of the head
     ears = {}
     for sg in (1, -1):
@@ -736,6 +736,10 @@ def body(fem):
         lg, b2 = planarize(th + ca[1:], fixed=(0,), sym=False); th = lg[:len(th)]; ca = [lg[len(th) - 1]] + lg[len(th):] if False else lg[len(th) - 1:]
         out['thigh_' + sd] = [ring_loft(th, caps=(False, False))]; out['calf_' + sd] = [ring_loft(ca, caps=(False, True), ngon=True)]
     sp = copy.deepcopy(T['spine_03']); top = sp[-1]; nk = copy.deepcopy(T['neck_01'])
+    # neck about 0.6 of the head's width like the references (slimmer on the feminine body): half widths at the base, middle and top
+    for r, hw in zip(nk, ((0.050, 0.042, 0.040) if fem else (0.062, 0.054, 0.052))):
+        cur = max(abs(p[0]) for p in r); zc = sum(p[2] for p in r)/len(r)
+        for p in r: p[0] = round(p[0]*hw/cur, 4); p[2] = round(zc + (p[2] - zc)*hw/cur*1.05, 4)
     # the trapezius climbs the side of the neck (short thick neck in the references); front and back stay low so the throat and nape still read
     import math as _m
     trap = []
