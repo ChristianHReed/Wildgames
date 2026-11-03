@@ -510,7 +510,7 @@ def scale_bone(parts, bone, S, O):
     # parts: {slot: {body?: {name: {bone: [pieces]}}}}: walk every dict that maps bone names to piece lists
     if isinstance(parts, dict):
         for k, v in parts.items():
-            if k == bone and isinstance(v, list): parts[k] = [q if q.get('keep') else xf(q, S, O) for q in v]
+            if k == bone and isinstance(v, list): parts[k] = [q if q.get('winding') else xf(q, S, O) for q in v]
             else: scale_bone(v, bone, S, O)
 def fat(parts, bone, f):
     if isinstance(parts, dict):
@@ -572,7 +572,7 @@ def shift_limbs(parts, sex=None):
             base, _, sd = k.rpartition('_')
             if base in FIT[None] and sd in ('l', 'r') and isinstance(v, list):
                 dx, dz = FIT[sex if sex in FIT else None][base]; dx = dx if sd == 'l' else -dx
-                parts[k] = [q if q.get('keep') else dict(q, p=[R4(q['p'][0] + dx), q['p'][1], R4(q['p'][2] + dz)]) for q in v]
+                parts[k] = [q if q.get('winding') else dict(q, p=[R4(q['p'][0] + dx), q['p'][1], R4(q['p'][2] + dz)]) for q in v]
             else: shift_limbs(v, k if k in ('masculine', 'feminine') else sex)
 shift_limbs(pack['parts'])
 fat(pack['parts'], 'neck_01', 1.3)

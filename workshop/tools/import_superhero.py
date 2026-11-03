@@ -78,7 +78,7 @@ def cut(V, F, L, obones):
     owner = np.array([np.bincount(L[f], minlength=len(obones)).argmax() for f in F]); out = {}
     for k in set(owner):
         fs = F[owner == k]; fs = np.vstack([fs, fs[:, ::-1]]) if os.environ.get('DOUBLE', '0') == '1' else fs; used = sorted(set(fs.ravel())); m = {u: i for i, u in enumerate(used)}; pts = V[used]; cen = (pts.min(0) + pts.max(0))/2
-        out.setdefault(obones[k], []).append({'s': 'poly', 'p': [round(float(x), 4) for x in cen], 'v': [[round(float(x), 4) for x in (q - cen)] for q in pts], 'f': [[m[a] for a in f] for f in fs.tolist()], 'c': 'SKIN', 'keep': True})
+        out.setdefault(obones[k], []).append({'s': 'poly', 'p': [round(float(x), 4) for x in cen], 'v': [[round(float(x), 4) for x in (q - cen)] for q in pts], 'f': [[m[a] for a in f] for f in fs.tolist()], 'c': 'SKIN', 'winding': True})
     return out
 
 if __name__ == '__main__':

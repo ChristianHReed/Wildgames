@@ -27,7 +27,7 @@
      'decal'  one flat polygon, v: [[x,y,z], ...] relative to p, facing n: [nx,ny,nz]. Eyes, brows, stripes.
               both: true draws the back too (fletching, flags, thin sheets seen from either side).
      'poly'   small solid from corners v and faces f: [[i,j,k,...], ...]; faces are turned to face away from its middle,
-             unless keep:true, which trusts the winding (counter-clockwise seen from outside) for bent or hollow shapes.
+             unless winding:true, which trusts the winding (counter-clockwise seen from outside) for bent or hollow shapes.
 
    Two ways to build, same picture:
    SHAPED.build(pieces, colourOf, out?, opt?)         every triangle has its own three corners: {pos, nor, col}.
@@ -156,7 +156,7 @@
     for (var i=0;i<v.length;i++){ c[0]+=v[i][0]/v.length; c[1]+=v[i][1]/v.length; c[2]+=v[i][2]/v.length; }
     for (var f=0; f<pc.f.length; f++){
       var fp=pc.f[f].map(function(k){ return v[k]; }), cc=c;
-      if (pc.keep && fp.length>=3){      /* keep: trust the winding (counter-clockwise = outward), for bent or hollow shapes whose faces cannot be turned from the middle */
+      if (pc.winding && fp.length>=3){      /* winding: trust the stored winding (counter-clockwise = outward), for bent or hollow shapes whose faces cannot be turned from the middle */
         var a=fp[0], b=fp[1], d=fp[2], ux=b[0]-a[0], uy=b[1]-a[1], uz=b[2]-a[2], wx=d[0]-a[0], wy=d[1]-a[1], wz=d[2]-a[2];
         var nx=uy*wz-uz*wy, ny=uz*wx-ux*wz, nz=ux*wy-uy*wx, l=Math.sqrt(nx*nx+ny*ny+nz*nz)||1, g=[0,0,0];
         for (var q=0;q<fp.length;q++){ g[0]+=fp[q][0]/fp.length; g[1]+=fp[q][1]/fp.length; g[2]+=fp[q][2]/fp.length; }
