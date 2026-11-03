@@ -666,6 +666,23 @@ def arm_join(T3, sd, fem):
             for h, r, t in zip(hole, rings[0], th)]
     skip = {(0, a if sd == 'l' else c), (0, b if sd == 'l' else b), (1, a if sd == 'l' else c), (1, b if sd == 'l' else b)}
     return [hole, delt] + rings[:3], rings[2:], skip
+HAND_SHAPE = [(0.875, 0.034, 0.072), (0.835, 0.030, 0.090), (0.800, 0.028, 0.088), (0.765, 0.022, 0.078), (0.735, 0.014, 0.056)]   # y, thickness, width
+def hand_join(wrist, sd, fem):
+    """the hand grows from the wrist loop: flat palm, knuckle loop, a tapered mitten for the fingers curling slightly in, and a thumb on the front-inner edge.
+    Same 8 corners as the wrist, so it is one quad skin with the arm."""
+    import math, numpy as np
+    W = np.array(wrist); c = W.mean(0); sg = 1 if sd == 'l' else -1; k = 0.88 if fem else 1.0
+    th = [math.atan2(sg*(p[0] - c[0]), p[2] - c[2]) for p in W]
+    rings = [wrist]
+    for i, (y, t, w) in enumerate(HAND_SHAPE):
+        t *= k; w *= k; curl = 0.010*max(0, i - 1)              # fingers curl in toward the thigh and a little forward
+        cx = c[0] - sg*curl; cz = c[2] + 0.006 + 0.004*max(0, i - 1)
+        rings.append([[round(cx + sg*0.5*t*math.sin(a), 4), y, round(cz + 0.5*w*math.cos(a), 4)] for a in th])
+    # the thumb: a short loft from the front-inner side of the palm, angled down and forward
+    tb = []
+    for j, (y, dx, dz, r) in enumerate([(0.865, -0.006, 0.030, 0.013), (0.835, -0.014, 0.046, 0.011), (0.805, -0.018, 0.054, 0.008)]):
+        r *= k; tb.append([[round(c[0] + sg*(dx + r*math.cos(a)), 4), y - 0.004*math.sin(a), round(c[2] + dz*k + r*math.sin(a), 4)] for a in [2*math.pi*q/6 for q in range(6)]])
+    return rings, tb
 TORSO_ANG = [0, 22, 45, 67, 90, 113, 140, 165, 180]     # 16 corners round the torso like the references: denser over the chest and the sides where the arms join
 def smooth_resample(ring, angs, centre=None, mirror=True):
     """a smooth closed curve through a ring's corners (periodic Catmull-Rom), sampled at the given angles (degrees from the front, +x side first, mirrored)"""
@@ -688,7 +705,7 @@ def leg_join(R, sd, hip):
     The thigh and calf loops are resampled to the same 10 corners so every face is a quad."""
     import numpy as np, math
     n = len(hip); h = n//2
-    zc = (hip[0][2] + hip[h][2])/2; crotch = [0.0, round(hip[0][1] - 0.055, 4), round(zc, 4)]
+    zc = (hip[0][2] + hip[h][2])/2; crotch = [0.0, round(hip[0][1] - 0.075, 4), round(zc - 0.005, 4)]
     side = hip[0:h + 1] if sd == 'l' else [hip[0]] + [hip[(n - j) % n] for j in range(1, h + 1)]
     r0 = [list(p) for p in side] + [crotch]
     th = R['thigh_' + sd]; ca = R['calf_' + sd]
@@ -697,7 +714,8 @@ def leg_join(R, sd, hip):
     def rs(ring):
         c = np.array(ring).mean(0); return smooth_resample(ring, angs, c, mirror=False)
     # smooth_resample mirrors when the list stops at 180: pass the full list (it ends past 180)
-    thigh = [r0] + [rs(r) for r in th[3:]]
+    mid = [[(a[0] + b[0])/2, 0.80, (a[2] + b[2])/2] for a, b in zip(th[2], th[3])]      # first thigh loop just under the crotch
+    thigh = [r0] + [rs(mid)] + [rs(r) for r in th[3:]]
     calf = [rs(r) for r in ca]
     return thigh, calf
 def body(fem):
@@ -737,9 +755,8 @@ def body(fem):
     nkr, _ = planarize([top, trap] + nk[1:], fixed=(0,), anchor=0.04, iters=900); out['neck_01'] = [ring_loft(nkr, caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True), ngon=True)] + [ring_loft(ears[sg], caps=(True, True), ngon=True) for sg in (1, -1)]
     for b in R:
         if b.startswith('hand'):
-            import numpy as np
-            sd = b[-1]; d = np.array(wrist[sd]).mean(0) - np.array(R[b][0]).mean(0)
-            out[b] = [ring_loft([[[round(p[0] + d[0], 4), p[1], round(p[2] + d[2], 4)] for p in r] for r in R[b]], caps=(True, True))]
+            hr2, tb = hand_join(wrist[b[-1]], b[-1], fem)
+            out[b] = [ring_loft(hr2, caps=(False, True), ngon=True), ring_loft(tb, caps=(True, True), ngon=True)]
     for sd in ('l', 'r'): out['foot_' + sd] = [ring_loft(foot_rings(R, sd), caps=(True, True))]
     return out
 HEAD_S = (1.16, 0.97, 1.2); HEAD_O = (0.0, 1.548, 0.0)
