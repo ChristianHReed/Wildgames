@@ -590,10 +590,14 @@ def head_design(fem):
     ears = {}
     for sg in (1, -1):
         e = []
-        for dx in (0.088, 0.104):
+        # seated on the side plane: the ear runs from the brow line down to the nose base, just behind the jaw hinge, and leans back a little
+        ey, ez = 1.648, -0.012
+        sx = min(max(abs(p[0]) for p in r if abs(p[1] - ey) < 0.03) for r in rings if any(abs(p[1] - ey) < 0.03 for p in r))
+        for dx in (sx - 0.006, sx + 0.008):
             r = []
             for k in range(8):
-                a = 2*math.pi*k/8; r.append([round(sg*dx, 4), round(1.636 + 0.036*math.cos(a), 4), round(-0.016 + 0.021*math.sin(a), 4)])
+                a = 2*math.pi*k/8; yy = 0.031*math.cos(a); zz = 0.017*math.sin(a) - 0.25*yy
+                r.append([round(sg*dx, 4), round(ey + yy, 4), round(ez + zz, 4)])
             e.append(r)
         ears[sg] = e
     return rings, ears
@@ -612,8 +616,15 @@ def foot_rings(R, sd, g=0.0):
 def body(fem):
     R = _RINGS['feminine' if fem else 'masculine']; out = {}
     out['pelvis'] = [ring_loft(R['pelvis'], caps=(True, False))]
-    out['spine_01'] = [ring_loft(R['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(R['spine_02'], caps=(False, False))]; out['spine_03'] = [ring_loft(R['spine_03'], caps=(False, True))]
-    out['neck_01'] = [ring_loft(R['neck_01'], caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True), ngon=True)] + [ring_loft(ears[sg], caps=(True, True), ngon=True) for sg in (1, -1)]
+    out['spine_01'] = [ring_loft(R['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(R['spine_02'], caps=(False, False))]
+    # no flat shelf at the collar: the chest's top loop slopes down to the shoulders (trapezius), then one loop climbs into the neck - all quads
+    import copy; sp = copy.deepcopy(R['spine_03']); top = sp[-1]; nk = copy.deepcopy(R['neck_01'])
+    for p in top: p[1] = round(p[1] - 0.30*max(0.0, abs(p[0]) - 0.055), 4)
+    trap = [[round(a[0]*0.55 + b[0]*0.45, 4), round(max(a[1], b[1]) + 0.012, 4), round(a[2]*0.55 + b[2]*0.45, 4)] for a, b in zip(nk[0], top)]
+    for i, r in enumerate(nk):
+        for p in r: p[2] = round(p[2] + 0.010*i, 4)                                  # the neck leans forward a little into the head
+    out['spine_03'] = [ring_loft(sp, caps=(False, False))]
+    out['neck_01'] = [ring_loft([top, trap] + nk[1:], caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True), ngon=True)] + [ring_loft(ears[sg], caps=(True, True), ngon=True) for sg in (1, -1)]
     for b in R:
         if b.split('_')[0] in ('upperarm', 'lowerarm', 'thigh', 'calf'): out[b] = [ring_loft(R[b], caps=(b.startswith('upperarm'), b.startswith('calf')))]
         elif b.startswith('hand'): out[b] = [ring_loft(R[b], caps=(True, True))]
