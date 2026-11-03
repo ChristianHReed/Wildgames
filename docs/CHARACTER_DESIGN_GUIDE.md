@@ -82,3 +82,17 @@ New looks (player characters): `runner` (jersey, beard, work pants), `outcast` (
 - Result: for each character a top, trousers, shoes and head with hair (plus a backpack for the adventurer) as creator parts, and 21 ready-made looks (`qm_*` men, `qw_*` women). Skin takes the player's skin tone, hair takes the hair colour, the main shirt and trousers colours take the player's shirt and trousers colours; everything else keeps the original colours.
 - Cost: about 1,900 triangles per character, 41k triangles and 3.3 MB for the whole pack. The default pack list loads it; the main chat can drop it from `packs/index.js` if load time matters.
 - Known flaws: small gaps at the armpits and the odd seam speckle (rigid per-bone pieces after a big T-pose to hanging-arms pose change), the head sits a little larger than the stock head, and the poly pieces are not yet checked against the game's body-type shapes. Album scene: `survivors_modular`.
+
+## Round 10: a clean start, built from loops (4 November 2026)
+
+The decimated-scan approach (Round 9) was dropped. The reference set (low-poly base meshes, face studies, the knee and elbow loop study, the Ashen characters) all share one thing: **clean quad loops that follow the form, large flat planes, and a few deliberate extra loops at joints**. A scan crunched to a triangle budget gives noisy triangle soup, so the Quaternius Superhero (CC0) is now only a ruler.
+
+What the pipeline does (`python3 workshop/tools/fit_rings.py <folder with the Superhero gltf files>`; it uses `import_superhero.py` to retarget the mesh to our skeleton first):
+- slices the retargeted mesh at chosen heights and keeps one ring of 8 corners per station (12 for the head), smoothed, mirrored for the left-right pairs; one shared ring wherever two segments meet, so there is no step at a joint (`data/body_rings.json`);
+- the clothing tables are **read off those rings**: the torso table (`data/superhero_torso.json`), the limb profiles and the per-body limb offsets from our skeleton line (`data/limb_fit.json`). Nothing is hand-set any more, so clothes fit the loops they sit on;
+- the shoulder tops belong to the arms and the torso slopes in to the neck (the trapezius slope in the references), the torso top is capped and the neck sits into it;
+- the foot is designed, not measured (heel block, instep, ball, toe box); shoes are that foot grown by a few millimetres, boots add a shaft from the calf rings.
+
+`survivor.py` builds the rings into `poly` pieces flagged `winding: true` (see `shapes.js`: faces keep their stored direction instead of being turned away from the piece's middle). The last passes (head scale, neck thickening, limb offsets) skip those pieces.
+
+Still to do from the references: knee and elbow loops tuned 3 outside / 2 inside, a planar faceted face (brow shelf, nose wedge, jaw plane, disc ears), clothes as ring offsets (Ashen-style big layers: tunic, mantle, belt, wraps, ragged hems), and hair and hats refitted to the new head.

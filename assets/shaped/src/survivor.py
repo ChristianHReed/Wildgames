@@ -10,7 +10,8 @@ joints (collars, cuffs, belts, rolled hems), after Jumpship.
 Fewest vertices: every body part is a rectangular frustum, so each side is one flat face (4 corners); limbs end in points;
 no ears, no eye shapes. Coordinates: metres, facing +Z, the survivor's left is +X. Each bone lists its pivot (joint) and
 tip (next joint) so the game can fit the pieces to its own skeleton."""
-import math
+import math, os
+import json as _json
 from kit import *
 
 # ================= skeleton (1.80 m, standing straight and relaxed) =================
@@ -104,12 +105,13 @@ def head(fem):
     return {'Head': [loft(rows, 'SKIN', ang=HEAD_ANG)] + feat, 'neck_01': [neck]}
 
 # ================= torso: square shoulders, one wedge to the waist =================
-TORSO = {  # y, half-width, half-depth, z : hips, waist, ribs, chest, shoulder girth (v9: nine rows so the outline curves)
-  False: [(0.92, 0.138, 0.092, -0.004), (1.0, 0.13, 0.088, -0.002), (1.08, 0.104, 0.08, 0.0), (1.16, 0.142, 0.092, 0.004), (1.24, 0.184, 0.108, 0.008), (1.32, 0.212, 0.108, 0.006), (1.40, 0.228, 0.098, 0.002), (1.455, 0.205, 0.09, 0.0)],
-  True:  [(0.92, 0.166, 0.104, -0.014), (1.0, 0.146, 0.092, -0.006), (1.08, 0.088, 0.072, 0.0), (1.16, 0.108, 0.086, 0.012), (1.24, 0.142, 0.112, 0.026), (1.32, 0.15, 0.1, 0.014), (1.40, 0.174, 0.088, 0.004), (1.445, 0.16, 0.082, 0.0)]}
+def _torso_rows(rows, fem=False): return [tuple(r) for r in rows]   # read off the body's own torso rings (workshop/tools/fit_rings.py), so clothes fit the loops they sit on
+_LF = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/limb_fit.json')))
+_TT = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/superhero_torso.json')))
+TORSO = {False: _torso_rows(_TT['masculine']), True: _torso_rows(_TT['feminine'], True)}   # y, half-width, half-depth, z: hips to shoulder girth
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
-LW = 1.15     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
+LW = 1.0      # limb thickness: the profiles below are measured from the base body
 def t_at(fem, y):
     T = TORSO[fem]
     if y <= T[0][0]: return T[0][1:]
@@ -157,10 +159,10 @@ def prof_rows(P, Q, prof, t0, t1, g, first_off=None):
         if i == 0 and first_off: pt = [pt[0] + first_off[0], pt[1] + first_off[1], pt[2] + first_off[2]]
         x, z = at(t); rows.append([*pt, x*LW + g, z*LW + g])
     return rows
-UP = [(0, 0.05, 0.054), (0.14, 0.057, 0.06), (0.55, 0.043, 0.047), (1.0, 0.033, 0.037)]          # shoulder cap, biceps, elbow
-LO = [(0, 0.036, 0.04), (0.22, 0.04, 0.043), (0.7, 0.027, 0.03), (1.0, 0.021, 0.025)]               # forearm swell to a slim wrist
-TH = [(0, 0.09, 0.094), (0.3, 0.08, 0.088), (0.75, 0.058, 0.064), (1.0, 0.049, 0.054)]               # fuller thigh down to the knee
-CA = [(0, 0.05, 0.056), (0.22, 0.056, 0.064), (0.6, 0.04, 0.046), (1.0, 0.03, 0.034)]               # calf muscle, slim ankle
+UP = [tuple(r) for r in _LF['profiles']['UP']]   # measured from the limb rings
+LO = [tuple(r) for r in _LF['profiles']['LO']]   # measured from the limb rings
+TH = [tuple(r) for r in _LF['profiles']['TH']]   # measured from the limb rings
+CA = [tuple(r) for r in _LF['profiles']['CA']]   # measured from the limb rings
 def upper(sd, g=0.0, t1=1.0):
     S, E = J['sh' + sd], J['el' + sd]; return prof_rows(S, E, UP, 0.0, t1, g*GK, (0, 0.03, 0))
 def lower(sd, g=0.0, t0=0.0, t1=1.0):
@@ -191,7 +193,7 @@ def thigh(sd, g=0.0, t1=1.0):
 def calf(sd, g=0.0, t0=0.0, t1=1.0, straight=False):
     K, A = J['kn' + sd], J['an' + sd]
     if straight:   # trouser legs fall as straight columns, but still narrow a little to the hem
-        return [[*mixp(K, A, t0), 0.05*LW + g*GK, 0.056*LW + g*GK], [*mixp(K, A, t1), 0.04*LW + g*GK, 0.046*LW + g*GK]]
+        return [[*mixp(K, A, t0), 0.065*LW + g*GK, 0.074*LW + g*GK], [*mixp(K, A, t1), 0.048*LW + g*GK, 0.056*LW + g*GK]]
     return prof_rows(K, A, CA, t0, t1, g*GK, (0, 0.03, 0) if t0 == 0 else None)
 
 # ================= tops =================
@@ -266,6 +268,28 @@ def shoe(sd, col, sole=None, h=0.085):
     o = [hull(pts, col)]
     if sole: o.append(box([x, 0.011, 0.052], [0.112, 0.022, 0.255], sole))
     return o
+def _grow(rings, g, up=0.0):
+    import numpy as np
+    R = np.array(rings, float); out = R.copy()
+    for i, r in enumerate(R):
+        c = r.mean(0)
+        for k in range(len(r)): v = r[k] - c; v[1 if False else 1] = v[1]; out[i, k] = c + v*(1 + g/max(np.hypot(v[0], v[2]) if abs(v[2]) > 1e-6 or True else 1, 1e-3))
+    return out
+def _grow_xy(rings, g):   # foot rings lie across z: grow in the x-y plane
+    import numpy as np
+    R = np.array(rings, float); out = R.copy()
+    for i, r in enumerate(R):
+        c = r.mean(0)
+        for k in range(len(r)): v = r[k] - c; v[2] = 0; out[i, k] = r[k] + v/max(np.hypot(v[0], v[1]), 1e-3)*g
+    return out
+def ring_shoe(sd, col, sole, shaft=None, scol=None, g=0.012):
+    R = _RINGS['masculine']; side = 'foot_' + sd; o = {side: [ring_loft(foot_rings(R, sd, g), col, caps=(True, True))]}
+    x = J['an' + sd][0]   # the sole box follows the foot through shift_limbs like every other loose piece
+    if sole: o[side].append(box([x, 0.006, 0.05], [0.115, 0.012, 0.3], sole))
+    if shaft:
+        rc = R['calf_' + sd]; rr = [r for r in rc if r[0][1] <= shaft + 0.001]
+        if len(rr) >= 2: o['calf_' + sd] = [ring_loft(_grow(rr, 0.005).tolist(), col, caps=(False, False))]
+    return o
 def shoes():
     S = {}
     S['trainers'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'trainer', 'trainerSole', 0.08)})
@@ -275,6 +299,9 @@ def shoes():
     S['rain_boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'rainboot', 'sole', 0.09),
                                                  'calf_' + sd: [frustum([[J['an' + sd][0], 0.08, -0.01, 0.056, 0.062], [J['an' + sd][0], 0.33, -0.006, 0.062, 0.068]], 'rainboot'),
                                                                 frustum([[J['an' + sd][0], 0.31, -0.006, 0.066, 0.072], [J['an' + sd][0], 0.345, -0.006, 0.066, 0.072]], 'rainbootD', caps=[False, False])]})
+    S['trainers'] = both_sides(lambda sg, sd: ring_shoe(sd, 'trainer', 'trainerSole'))
+    S['boots'] = both_sides(lambda sg, sd: ring_shoe(sd, 'boot', 'sole', shaft=0.29))
+    S['rain_boots'] = both_sides(lambda sg, sd: ring_shoe(sd, 'rainboot', 'sole', shaft=0.34, g=0.014))
     return S
 
 # ================= faces: no eyes; glasses and hair carry the character =================
@@ -489,8 +516,46 @@ CLIPS.update({
 
 import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
-def body(fem): return join(head(fem), hands())
-HEAD_S = (1.3, 1.14, 1.3); HEAD_O = (0.0, 1.548, 0.0)
+import json as _json
+_RINGS = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/body_rings.json')))
+def ring_loft(rings, c='SKIN', caps=(True, True)):
+    """a clean quad-loop solid from rings of equal corner counts (workshop/tools/fit_rings.py): flat faces between loops, fans at the ends"""
+    import numpy as np
+    R = np.array(rings, float); m, n, _ = R.shape; V = [tuple(p) for r in R for p in r]; Fc = []
+    for i in range(m - 1):
+        for k in range(n): Fc.append([i*n + k, i*n + (k + 1) % n, (i + 1)*n + (k + 1) % n, (i + 1)*n + k])
+    for end, ri in ((0, 0), (1, m - 1)):
+        if not caps[end]: continue
+        cen = R[ri].mean(0); V.append(tuple(cen)); ci = len(V) - 1
+        for k in range(n): Fc.append([ri*n + (k + 1) % n, ri*n + k, ci] if end == 0 else [ri*n + k, ri*n + (k + 1) % n, ci])
+    P = np.array(V); mid = P.mean(0); sg = 0.0
+    for f in Fc:
+        a, b2, c2 = P[f[0]], P[f[1]], P[f[2]]; sg += float(np.cross(b2 - a, c2 - a) @ (P[f].mean(0) - mid))
+    if sg < 0: Fc = [f[::-1] for f in Fc]
+    q = solid([tuple(map(float, p)) for p in V], Fc, c); q['winding'] = True; return q
+def foot_rings(R, sd, g=0.0):
+    """a blocky designed foot (heel block, instep, ball, toe box), placed under the calf's last ring; g grows it for a shoe"""
+    import numpy as np
+    c = np.array(R['calf_' + sd][-1]).mean(0); cx, cz = float(c[0]), float(c[2])
+    # z from the heel, half-width, top height, bottom height (the toe lifts a little)
+    st = [(-0.075, 0.030, 0.062, 0.012), (-0.045, 0.038, 0.088, 0.004), (0.0, 0.041, 0.078, 0.0), (0.06, 0.047, 0.056, 0.0), (0.12, 0.049, 0.040, 0.0), (0.17, 0.043, 0.031, 0.004), (0.2, 0.026, 0.022, 0.01)]
+    rings = []
+    for z, w, top, bot in st:
+        w += g; top += g; bot = max(bot - g*0.4, 0.0) if g else bot; m = (top + bot)/2; h = (top - bot)/2
+        pts = [(0, top), (w*0.62, top*0.97), (w, m + h*0.25), (w*0.92, bot + h*0.18), (0, bot), (-w*0.92, bot + h*0.18), (-w, m + h*0.25), (-w*0.62, top*0.97)]
+        rings.append([[cx + px, py, cz + z] for px, py in pts])
+    return rings
+def body(fem):
+    R = _RINGS['feminine' if fem else 'masculine']; out = {}
+    out['pelvis'] = [ring_loft(R['pelvis'], caps=(True, False))]
+    out['spine_01'] = [ring_loft(R['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(R['spine_02'], caps=(False, False))]; out['spine_03'] = [ring_loft(R['spine_03'], caps=(False, True))]
+    out['neck_01'] = [ring_loft(R['neck_01'], caps=(False, False))]; out['Head'] = [ring_loft(R['Head'], caps=(True, True))]
+    for b in R:
+        if b.split('_')[0] in ('upperarm', 'lowerarm', 'thigh', 'calf'): out[b] = [ring_loft(R[b], caps=(b.startswith('upperarm'), b.startswith('calf')))]
+        elif b.startswith('hand'): out[b] = [ring_loft(R[b], caps=(True, True))]
+    for sd in ('l', 'r'): out['foot_' + sd] = [ring_loft(foot_rings(R, sd), caps=(True, True))]
+    return out
+HEAD_S = (1.16, 0.97, 1.2); HEAD_O = (0.0, 1.548, 0.0)
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S
     q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]
@@ -507,7 +572,7 @@ def scale_bone(parts, bone, S, O):
     # parts: {slot: {body?: {name: {bone: [pieces]}}}}: walk every dict that maps bone names to piece lists
     if isinstance(parts, dict):
         for k, v in parts.items():
-            if k == bone and isinstance(v, list): parts[k] = [xf(q, S, O) for q in v]
+            if k == bone and isinstance(v, list): parts[k] = [q if q.get('winding') else xf(q, S, O) for q in v]
             else: scale_bone(v, bone, S, O)
 def fat(parts, bone, f):
     if isinstance(parts, dict):
@@ -558,6 +623,21 @@ pack = {
              '(wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.',
 }
 scale_bone(pack['parts'], 'Head', HEAD_S, HEAD_O)
+# the base body's arms and legs sit off our skeleton line (measured): clothes and shoes follow them. left is +X, the right side mirrors
+_ft = _LF['fit']
+def _fitrow(sex):
+    d = {k: tuple(v) for k, v in _ft[sex].items()}; d.update({'foot': (0.05, -0.01), 'ball': (0.05, -0.006)}); return d
+FIT = {'masculine': _fitrow('masculine'), 'feminine': _fitrow('feminine')}   # where each body's limbs sit against our skeleton line, measured from the rings
+FIT[None] = {k: tuple(round((FIT['masculine'][k][i] + FIT['feminine'][k][i])/2, 3) for i in (0, 1)) for k in FIT['masculine']}
+def shift_limbs(parts, sex=None):
+    if isinstance(parts, dict):
+        for k, v in parts.items():
+            base, _, sd = k.rpartition('_')
+            if base in FIT[None] and sd in ('l', 'r') and isinstance(v, list):
+                dx, dz = FIT[sex if sex in FIT else None][base]; dx = dx if sd == 'l' else -dx
+                parts[k] = [q if q.get('winding') else dict(q, p=[R4(q['p'][0] + dx), q['p'][1], R4(q['p'][2] + dz)]) for q in v]
+            else: shift_limbs(v, k if k in ('masculine', 'feminine') else sex)
+shift_limbs(pack['parts'])
 fat(pack['parts'], 'neck_01', 1.3)
 pack['style'] = 'v8 (2 November 2026): a stronger silhouette from the new references: bigger head with brow, nose and eyes, chunky hands and boots, thicker limbs, brass accents, higher value contrast'
 out, st = write_pack('survivor', pack, __file__)
