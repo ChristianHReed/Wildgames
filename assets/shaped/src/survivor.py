@@ -518,7 +518,7 @@ import os
 exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.py')).read())
 import json as _json
 _RINGS = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/body_rings.json')))
-def ring_loft(rings, c='SKIN', caps=(True, True)):
+def ring_loft(rings, c='SKIN', caps=(True, True), ngon=False):
     """a clean quad-loop solid from rings of equal corner counts (workshop/tools/fit_rings.py): flat faces between loops, fans at the ends"""
     import numpy as np
     R = np.array(rings, float); m, n, _ = R.shape; V = [tuple(p) for r in R for p in r]; Fc = []
@@ -526,6 +526,7 @@ def ring_loft(rings, c='SKIN', caps=(True, True)):
         for k in range(n): Fc.append([i*n + k, i*n + (k + 1) % n, (i + 1)*n + (k + 1) % n, (i + 1)*n + k])
     for end, ri in ((0, 0), (1, m - 1)):
         if not caps[end]: continue
+        if ngon: Fc.append(list(range(ri*n, ri*n + n))[::-1] if end == 0 else list(range(ri*n, ri*n + n))); continue
         cen = R[ri].mean(0); V.append(tuple(cen)); ci = len(V) - 1
         for k in range(n): Fc.append([ri*n + (k + 1) % n, ri*n + k, ci] if end == 0 else [ri*n + k, ri*n + (k + 1) % n, ci])
     P = np.array(V); mid = P.mean(0); sg = 0.0
@@ -533,33 +534,57 @@ def ring_loft(rings, c='SKIN', caps=(True, True)):
         a, b2, c2 = P[f[0]], P[f[1]], P[f[2]]; sg += float(np.cross(b2 - a, c2 - a) @ (P[f].mean(0) - mid))
     if sg < 0: Fc = [f[::-1] for f in Fc]
     q = solid([tuple(map(float, p)) for p in V], Fc, c); q['winding'] = True; return q
+def planarize(rings, iters=400, anchor=0.15, fixed=(0, -1)):
+    """nudge loop corners until every quad between two loops lies in one flat plane (the references are all flat quads); returns the worst bend left, in metres"""
+    import numpy as np
+    R = [np.array(r, float) for r in rings]; R0 = [r.copy() for r in R]; n = len(R[0]); m = len(R)
+    fx = set(i % m for i in fixed)
+    def quads():
+        for i in range(m - 1):
+            for k in range(n): yield [(i, k), (i, (k + 1) % n), (i + 1, (k + 1) % n), (i + 1, k)]
+    worst = 0
+    for it in range(iters):
+        D = [np.zeros_like(r) for r in R]; C = [np.zeros(n) for _ in R]; worst = 0
+        for q in quads():
+            P = np.array([R[i][k] for i, k in q]); c = P.mean(0)
+            u, sv, vt = np.linalg.svd(P - c); nr = vt[2]
+            for (i, k), p in zip(q, P):
+                d = -np.dot(p - c, nr)*nr; D[i][k] += d; C[i][k] += 1; worst = max(worst, abs(np.dot(p - c, nr)))
+        for i in range(m):
+            if i in fx: continue
+            for k in range(n):
+                if C[i][k]: R[i][k] += 0.5*D[i][k]/C[i][k]
+                R[i][k] += anchor*(R0[i][k] - R[i][k])
+        # keep the two halves mirrored and the centre line on x = 0
+        for i in range(m):
+            for k in range(1, n//2):
+                a, b = R[i][k], R[i][n - k]; x = (a[0] - b[0])/2; y = (a[1] + b[1])/2; z = (a[2] + b[2])/2
+                a[:] = (x, y, z); b[:] = (-x, y, z)
+            R[i][0][0] = 0; R[i][n//2][0] = 0
+    return [[[round(float(v), 4) for v in p] for p in r] for r in R], worst
 def head_design(fem):
-    """a faceted head built from references: a side profile (face plane, nose, brow, forehead), a width curve, a jaw, 12 corners per loop with one vertex dead front so
-    the nose and brow read as ridges, and a disc ear each side. Returns (rings, ears); front is +z, up is +y."""
+    """the head rebuilt from the clean face-mask reference (measured off it): tall and narrow, a flat forehead plateau, a brow shelf, recessed eyes, a nose block,
+    a V-shaped jaw that tapers to a chin, all in quads. 14 corners per loop: dead-front ridge, nose side, face edge, front corner, ear side, back corner, back side, dead-back.
+    Returns (rings, ears); front is +z, up is +y."""
     import math
-    # y, half-width, face plane z, nose z (centre front vertex), back z
-    prof = [(1.535, 0.030, 0.062, 0.070, -0.040), (1.546, 0.052, 0.088, 0.096, -0.060), (1.566, 0.074, 0.094, 0.098, -0.078), (1.584, 0.083, 0.096, 0.103, -0.086),
-            (1.602, 0.088, 0.100, 0.127, -0.090), (1.622, 0.090, 0.102, 0.116, -0.092), (1.645, 0.091, 0.098, 0.106, -0.092), (1.666, 0.091, 0.108, 0.114, -0.090),
-            (1.692, 0.089, 0.100, 0.102, -0.086), (1.718, 0.082, 0.088, 0.090, -0.078), (1.742, 0.064, 0.062, 0.064, -0.058), (1.757, 0.030, 0.030, 0.030, -0.028)]
-    jaw = 0.93 if fem else 1.04      # lower face width
-    brow = 0.55 if fem else 1.0      # brow ridge strength
-    nose = 0.88 if fem else 1.0
-    wid = 0.95 if fem else 1.0
-    # the references build a head as stacked planes, not an egg: a flat narrow face plane, flat side planes, hard corners between them, a brow shelf, recessed eyes,
-    # a nose block and a chin block. Each loop here is a chamfered box: (y, half-width W, face-plane half-width a, face plane z F, centre z Fc, chamfer c, back z B)
-    rows = [(1.535, 0.040, 0.022, 0.066, 0.070, 0.018, -0.030), (1.552, 0.060, 0.030, 0.084, 0.093, 0.030, -0.052), (1.575, 0.080, 0.034, 0.088, 0.094, 0.040, -0.076),
-            (1.600, 0.088, 0.036, 0.084, 0.126, 0.046, -0.088), (1.620, 0.091, 0.040, 0.076, 0.100, 0.036, -0.092), (1.643, 0.090, 0.046, 0.102, 0.108, 0.034, -0.094),
-            (1.668, 0.088, 0.044, 0.099, 0.101, 0.040, -0.092), (1.700, 0.082, 0.038, 0.088, 0.090, 0.046, -0.085), (1.730, 0.068, 0.030, 0.066, 0.068, 0.050, -0.068),
-            (1.757, 0.030, 0.015, 0.028, 0.030, 0.020, -0.030)]
+    f = 0.0002097                       # metres per reference pixel (the reference head is 176 px tall = 0.222 m)
+    # reference loops: y px, front z px, back z px, half width px, face-plane half width px, nose-side half width px, nose z px (None = same as the face)
+    ref = [(75, 560, 480, 40, 20, 10, None), (160, 880, 200, 215, 110, 55, None), (290, 880, 130, 300, 150, 75, None), (430, 925, 100, 310, 210, 105, None),
+           (545, 890, 110, 290, 200, 60, 935), (610, 905, 130, 305, 150, 60, 950), (745, 950, 150, 270, 110, 60, 1040), (850, 950, 170, 235, 100, 55, 965),
+           (1015, 915, 200, 175, 90, 45, 925), (1135, 720, 400, 70, 40, 20, None)]
+    wid = 1.0 if not fem else 0.95; hs = 1.12                       # a touch wider than the reference so it sits on the shoulders
     rings = []
-    for (y, w, a, zf, zn, c, zb) in rows:
-        w *= wid*(jaw if y < 1.6 else 1.0); a *= wid
-        if abs(y - 1.643) < 1e-6: zf = 0.100 + (zf - 0.100)*brow; zn = 0.100 + (zn - 0.100)*brow     # brow shelf
-        if abs(y - 1.600) < 1e-6: zn = zf + (zn - zf)*nose
-        zm = (zf + zb)/2
-        half = [(a, zf), (w, zf - c), (w, zm), (w*0.95, zb + c), (w*0.5, zb)]
-        ring = [[0.0, y, zn]] + [[round(x, 4), y, round(z, 4)] for x, z in half] + [[0.0, y, zb]] + [[round(-x, 4), y, round(z, 4)] for x, z in reversed(half)]
+    for (py, pf, pb, hw, a, ns, pn) in ref:
+        y = 1.757 - (py - 75)*f; zf = (pf - 540)*f; zb = (pb - 540)*f; w = hw*f*hs*wid; a = a*f*hs*wid; ns = ns*f*hs*wid
+        zn = (pn - 540)*f if pn else zf
+        if fem and pn and py == 745: zn = zf + (zn - zf)*0.85
+        if fem and py == 430: zf -= 0.006                                  # a softer brow
+        zm = (zf + zb)/2; c = min(0.05, w*0.45)
+        zc = lambda x: zf if x <= a else zf - (x - a)*(c/max(w - a, 1e-6))   # the face plane, then round the front corner
+        half = [(ns, zn if pn else zf), (a, zf), (w, zf - c), (w, zm), (w*0.95, zb + c*0.6), (w*0.5, zb)]
+        ring = [[0.0, y, zn]] + [[round(x, 4), round(y, 4), round(z, 4)] for x, z in half] + [[0.0, y, zb]] + [[round(-x, 4), round(y, 4), round(z, 4)] for x, z in reversed(half)]
         rings.append(ring)
+    rings, bend = planarize(rings); print('head quad bend (m):', round(bend, 5))
     # ears: a flat disc standing off each side, a little behind the middle of the head
     ears = {}
     for sg in (1, -1):
@@ -587,7 +612,7 @@ def body(fem):
     R = _RINGS['feminine' if fem else 'masculine']; out = {}
     out['pelvis'] = [ring_loft(R['pelvis'], caps=(True, False))]
     out['spine_01'] = [ring_loft(R['spine_01'], caps=(False, False))]; out['spine_02'] = [ring_loft(R['spine_02'], caps=(False, False))]; out['spine_03'] = [ring_loft(R['spine_03'], caps=(False, True))]
-    out['neck_01'] = [ring_loft(R['neck_01'], caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True))] + [ring_loft(ears[sg], caps=(True, True)) for sg in (1, -1)]
+    out['neck_01'] = [ring_loft(R['neck_01'], caps=(False, False))]; hr, ears = head_design(fem); out['Head'] = [ring_loft(hr, caps=(True, True), ngon=True)] + [ring_loft(ears[sg], caps=(True, True), ngon=True) for sg in (1, -1)]
     for b in R:
         if b.split('_')[0] in ('upperarm', 'lowerarm', 'thigh', 'calf'): out[b] = [ring_loft(R[b], caps=(b.startswith('upperarm'), b.startswith('calf')))]
         elif b.startswith('hand'): out[b] = [ring_loft(R[b], caps=(True, True))]
