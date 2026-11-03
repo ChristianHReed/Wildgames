@@ -82,3 +82,16 @@ New looks (player characters): `runner` (jersey, beard, work pants), `outcast` (
 - Result: for each character a top, trousers, shoes and head with hair (plus a backpack for the adventurer) as creator parts, and 21 ready-made looks (`qm_*` men, `qw_*` women). Skin takes the player's skin tone, hair takes the hair colour, the main shirt and trousers colours take the player's shirt and trousers colours; everything else keeps the original colours.
 - Cost: about 1,900 triangles per character, 41k triangles and 3.3 MB for the whole pack. The default pack list loads it; the main chat can drop it from `packs/index.js` if load time matters.
 - Known flaws: small gaps at the armpits and the odd seam speckle (rigid per-bone pieces after a big T-pose to hanging-arms pose change), the head sits a little larger than the stock head, and the poly pieces are not yet checked against the game's body-type shapes. Album scene: `survivors_modular`.
+
+## Round 9: the Quaternius Superhero base body (4 November 2026)
+
+The stock body is now the CC0 Quaternius Universal Base Characters "Superhero" male and female, retargeted onto our skeleton and simplified. Run `python3 workshop/tools/import_superhero.py <folder with the two .gltf/.bin>` (writes `workshop/tools/data/superhero_body.json`, 900 triangles per body, was 2,200 in the first try; `TRIS`, `HEADW`, `LEGX` env knobs). `survivor.py` loads that file in `body(fem)`.
+
+What went wrong first and how it was fixed (worth knowing before anyone touches this again):
+- **Holes at elbows and armpits**: `shapes.js` turned every `poly` face to point away from the piece's middle, which flips faces on bent limbs. Pieces now carry `keep: true`, which trusts the stored winding (backwards compatible: other pieces are unchanged). The importer no longer re-orients faces after simplifying (edge collapses keep the winding; the old nearest-face guess flipped 39 faces).
+- **A comb of slivers under the jaw**: the last pass in `survivor.py` scaled every Head piece by HEAD_S and thickened every neck loft, tearing the imported head from the neck. Both passes now skip `keep` pieces.
+- **Fused thighs**: our hip pivots are 14 cm apart, the model's legs 20+ cm. The retarget keeps the model's own leg spacing (only the pivot x moves, so fore-and-aft swings are unchanged), and clothes and shoes on arm and leg bones are shifted by `FIT` in `survivor.py` to follow.
+- **Neck**: the source neck leans forward, ours is upright; the spine and neck are sheared, not rotated, so the head stays level.
+- Simplification: the head collapses faster (`HEADW`) so the face stays a blank egg with a nose; hands, feet and neck resist. Surface error against the full mesh is about 1 cm at the 95th percentile.
+
+Clothing was refitted to the measured body: TORSO rows, UP/LO/TH/CA limb profiles (LW is now 1.0), straight trouser legs, HEAD_S (1.16, 0.97, 1.2) for hair and hats. Still to polish: sleeves and puffer layers read heavy, the knee shows a seam between thigh and calf shells, and make_survivors.js still carries the old HEAD_S for pack garments.

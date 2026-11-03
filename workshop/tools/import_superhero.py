@@ -24,6 +24,7 @@ for s_ in 'lr':
     PAIR.update({'upperarm_' + s_: ('upperarm_' + s_, 'lowerarm_' + s_), 'lowerarm_' + s_: ('lowerarm_' + s_, 'hand_' + s_), 'hand_' + s_: ('hand_' + s_, 'middle_02_' + s_),
                  'thigh_' + s_: ('thigh_' + s_, 'calf_' + s_), 'calf_' + s_: ('calf_' + s_, 'foot_' + s_), 'foot_' + s_: ('foot_' + s_, 'ball_' + s_), 'ball_' + s_: ('ball_' + s_, 'ball_leaf_' + s_)})
 
+LEGX = float(os.environ.get('LEGX', '1'))
 def convert_body(path, budget_tris):
     j, binb = load_glb(path); W = world(j); nodes = j['nodes']; sk = j['skins'][0]; jn = [nodes[i]['name'] for i in sk['joints']]
     jw = {nodes[i]['name']: W[i] for i in sk['joints']}
@@ -43,13 +44,19 @@ def convert_body(path, budget_tris):
         a, b = PAIR.get(ob, (ob, None)); piv = np.array(BONES[ob]['pivot'], float); tip = np.array(BONES[ob]['tip'], float); dO = tip - piv; qp = qj[a]
         dQ = (qj[b] - qp) if b else (np.array([0, 1.78 - qp[1], 0]) if ob == 'Head' else dO.copy())
         lq, lo = np.linalg.norm(dQ), np.linalg.norm(dO); d = dQ/lq; k = lo/lq if ob not in ('Head', 'ball_l', 'ball_r') else 1.0
-        A[ob] = (rot_between(d, dO) @ (np.eye(3) + (k - 1)*np.outer(d, d)), qp, piv)
+        if ob.split('_')[0] in ('thigh', 'calf', 'foot', 'ball') and LEGX > 0:   # keep the model's own leg spacing: only the pivot's x moves, so fore-and-aft swings are unchanged
+            piv = piv.copy(); piv[0] = np.sign(piv[0])*(abs(piv[0])*(1 - LEGX) + abs(qp[0])*LEGX)
+        if ob in ('pelvis', 'spine_01', 'spine_02', 'spine_03', 'neck_01'):   # a shear, not a turn: the source neck leans, ours is upright, and the head must stay level on it
+            M = np.eye(3) + np.outer(dO - dQ, dQ)/(dQ @ dQ)
+        else: M = rot_between(d, dO) @ (np.eye(3) + (k - 1)*np.outer(d, d))
+        A[ob] = (M, qp, piv)
     # weld
     key = {}; remap = np.zeros(len(pos), int); keep = []
     for i, v in enumerate(pos):
         kk = tuple(np.round(v, 4))
         if kk not in key: key[kk] = len(keep); keep.append(i)
         remap[i] = key[kk]
+    global SRC, LAB; SRC = pos[keep]
     V0 = pos[keep]; F0 = remap[F]; F0 = F0[(F0[:, 0] != F0[:, 1]) & (F0[:, 1] != F0[:, 2]) & (F0[:, 0] != F0[:, 2])]
     Wb = np.zeros((len(keep), len(obones)))
     for r, i in enumerate(keep):
@@ -59,23 +66,23 @@ def convert_body(path, budget_tris):
     for ob in obones:
         M, qp, piv = A[ob]; w = Wb[:, oi[ob]:oi[ob] + 1]
         if w.max() > 0: posed += w*((V0 - qp) @ M.T + piv)
-    lab = Wb.argmax(1)
+    lab = Wb.argmax(1); LAB = lab
     print(path.split('/')[-1], 'tris', len(F0), '->', budget_tris)
-    V1, F1, L1 = decimate(posed, F0, lab.copy(), budget_tris, boundary_w=500.0)
-    o0 = np.cross(posed[F0[:, 1]] - posed[F0[:, 0]], posed[F0[:, 2]] - posed[F0[:, 0]]); o0 /= np.maximum(np.linalg.norm(o0, axis=1, keepdims=True), 1e-12); c0 = posed[F0].mean(1)
-    n1 = np.cross(V1[F1[:, 1]] - V1[F1[:, 0]], V1[F1[:, 2]] - V1[F1[:, 0]]); c1 = V1[F1].mean(1)
-    near = np.argmin(((c1[:, None, :] - c0[None, :, :])**2).sum(2), axis=1); flip = (n1*o0[near]).sum(1) < 0; F1 = F1.copy(); F1[flip] = F1[flip][:, ::-1]
+    IMP = {'Head': float(os.environ.get('HEADW', '0.6')), 'neck_01': 2.0, 'hand_l': 5.0, 'hand_r': 5.0, 'foot_l': 3.0, 'foot_r': 3.0, 'ball_l': 3.0, 'ball_r': 3.0}
+    wt = np.array([IMP.get(obones[k], 1.0) for k in lab])
+    V1, F1, L1 = decimate(posed, F0, lab.copy(), budget_tris, boundary_w=500.0, wt=wt)
+    # edge collapses keep each face's winding, and the source winding is outward, so no re-orienting is needed
     return V1, F1, L1, obones, posed, F0
 
 def cut(V, F, L, obones):
     owner = np.array([np.bincount(L[f], minlength=len(obones)).argmax() for f in F]); out = {}
     for k in set(owner):
-        fs = F[owner == k]; fs = np.vstack([fs, fs[:, ::-1]]) if os.environ.get('DOUBLE', '1') == '1' else fs; used = sorted(set(fs.ravel())); m = {u: i for i, u in enumerate(used)}; pts = V[used]; cen = (pts.min(0) + pts.max(0))/2
-        out.setdefault(obones[k], []).append({'s': 'poly', 'p': [round(float(x), 3) for x in cen], 'v': [[round(float(x), 3) for x in (q - cen)] for q in pts], 'f': [[m[a] for a in f] for f in fs.tolist()], 'c': 'SKIN'})
+        fs = F[owner == k]; fs = np.vstack([fs, fs[:, ::-1]]) if os.environ.get('DOUBLE', '0') == '1' else fs; used = sorted(set(fs.ravel())); m = {u: i for i, u in enumerate(used)}; pts = V[used]; cen = (pts.min(0) + pts.max(0))/2
+        out.setdefault(obones[k], []).append({'s': 'poly', 'p': [round(float(x), 4) for x in cen], 'v': [[round(float(x), 4) for x in (q - cen)] for q in pts], 'f': [[m[a] for a in f] for f in fs.tolist()], 'c': 'SKIN', 'keep': True})
     return out
 
 if __name__ == '__main__':
-    root = sys.argv[1]; tris = int(os.environ.get('TRIS', '2200')); res = {}; meas = {}
+    root = sys.argv[1]; tris = int(os.environ.get('TRIS', '900')); res = {}; meas = {}
     for body, fn in (('masculine', 'Superhero_Male_FullBody.gltf'), ('feminine', 'Superhero_Female_FullBody.gltf')):
         V, F, L, ob, posed, F0 = convert_body(os.path.join(root, fn), tris)
         res[body] = cut(V, F, L, ob); print(body, 'out tris', len(F))

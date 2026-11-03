@@ -75,7 +75,7 @@ def rot_between(a, b):
     if c < -0.9999: return np.diag([1, -1, -1.0])
     K = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]]); return np.eye(3) + K + K @ K/(1 + c)
 
-def decimate(V, F, lab, target, boundary_w=2000.0):
+def decimate(V, F, lab, target, boundary_w=2000.0, wt=None):
     """quadric edge collapse. V (n,3), F (m,3), lab (n,) per-vertex labels kept from the surviving vertex. returns V, F, lab (compacted)"""
     V = V.copy(); F = [tuple(f) for f in F]; n = len(V)
     alive_f = [True]*len(F); vf = [set() for _ in range(n)]
@@ -102,6 +102,8 @@ def decimate(V, F, lab, target, boundary_w=2000.0):
                 if l > 1e-12:
                     pn = pn/l; pp = np.append(pn, -pn @ V[a]); K2 = np.outer(pp, pp)*boundary_w*np.linalg.norm(ed)
                     Q[a] += K2; Q[b] += K2
+    if wt is not None:   # per-vertex importance: a heavier vertex resists being collapsed (head, hands)
+        for i in range(n): Q[i] = Q[i]*wt[i]
     ver = [0]*n; alive_v = [True]*n
     def cost(a, b):
         Qs = Q[a] + Q[b]; best = None

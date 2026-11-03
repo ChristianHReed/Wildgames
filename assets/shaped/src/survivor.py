@@ -104,12 +104,13 @@ def head(fem):
     return {'Head': [loft(rows, 'SKIN', ang=HEAD_ANG)] + feat, 'neck_01': [neck]}
 
 # ================= torso: square shoulders, one wedge to the waist =================
-TORSO = {  # y, half-width, half-depth, z : hips, waist, ribs, chest, shoulder girth (v9: nine rows so the outline curves)
-  False: [(0.92, 0.138, 0.092, -0.004), (1.0, 0.13, 0.088, -0.002), (1.08, 0.104, 0.08, 0.0), (1.16, 0.142, 0.092, 0.004), (1.24, 0.184, 0.108, 0.008), (1.32, 0.212, 0.108, 0.006), (1.40, 0.228, 0.098, 0.002), (1.455, 0.205, 0.09, 0.0)],
-  True:  [(0.92, 0.166, 0.104, -0.014), (1.0, 0.146, 0.092, -0.006), (1.08, 0.088, 0.072, 0.0), (1.16, 0.108, 0.086, 0.012), (1.24, 0.142, 0.112, 0.026), (1.32, 0.15, 0.1, 0.014), (1.40, 0.174, 0.088, 0.004), (1.445, 0.16, 0.082, 0.0)]}
+TORSO = {  # y, half-width, half-depth, z: measured from the Quaternius Superhero base body on our skeleton (4 November 2026), hips to shoulder girth
+  False: [(0.92, 0.17, 0.105, 0.0), (1.0, 0.158, 0.114, -0.004), (1.08, 0.152, 0.104, 0.005), (1.16, 0.142, 0.092, 0.007), (1.24, 0.145, 0.12, -0.004), (1.32, 0.19, 0.137, -0.012), (1.40, 0.2, 0.132, -0.002), (1.455, 0.2, 0.1, -0.01)],
+  True:  [(0.92, 0.2, 0.11, -0.006), (1.0, 0.178, 0.117, -0.007), (1.08, 0.147, 0.095, 0.01), (1.16, 0.117, 0.087, 0.023), (1.24, 0.121, 0.098, 0.02), (1.32, 0.144, 0.124, 0.026), (1.40, 0.163, 0.119, 0.016), (1.445, 0.16, 0.08, 0.0)],
+}
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
-LW = 1.15     # limb thickness (v8: was 0.8; chunkier limbs read at a distance)
+LW = 1.0      # limb thickness: the profiles below are measured from the base body
 def t_at(fem, y):
     T = TORSO[fem]
     if y <= T[0][0]: return T[0][1:]
@@ -157,10 +158,10 @@ def prof_rows(P, Q, prof, t0, t1, g, first_off=None):
         if i == 0 and first_off: pt = [pt[0] + first_off[0], pt[1] + first_off[1], pt[2] + first_off[2]]
         x, z = at(t); rows.append([*pt, x*LW + g, z*LW + g])
     return rows
-UP = [(0, 0.05, 0.054), (0.14, 0.057, 0.06), (0.55, 0.043, 0.047), (1.0, 0.033, 0.037)]          # shoulder cap, biceps, elbow
-LO = [(0, 0.036, 0.04), (0.22, 0.04, 0.043), (0.7, 0.027, 0.03), (1.0, 0.021, 0.025)]               # forearm swell to a slim wrist
-TH = [(0, 0.09, 0.094), (0.3, 0.08, 0.088), (0.75, 0.058, 0.064), (1.0, 0.049, 0.054)]               # fuller thigh down to the knee
-CA = [(0, 0.05, 0.056), (0.22, 0.056, 0.064), (0.6, 0.04, 0.046), (1.0, 0.03, 0.034)]               # calf muscle, slim ankle
+UP = [(0, 0.066, 0.072), (0.2, 0.08, 0.077), (0.4, 0.073, 0.076), (0.6, 0.066, 0.068), (0.8, 0.064, 0.065), (1.0, 0.048, 0.046)]          # shoulder cap, biceps, elbow (base body, wider of the two)
+LO = [(0, 0.068, 0.056), (0.2, 0.068, 0.059), (0.4, 0.059, 0.054), (0.6, 0.045, 0.046), (0.8, 0.038, 0.041), (1.0, 0.027, 0.033)]               # forearm swell to the wrist
+TH = [(0, 0.096, 0.111), (0.2, 0.103, 0.113), (0.4, 0.1, 0.104), (0.6, 0.091, 0.097), (0.8, 0.075, 0.081), (1.0, 0.062, 0.07)]               # thigh down to the knee
+CA = [(0, 0.058, 0.077), (0.2, 0.067, 0.082), (0.4, 0.067, 0.078), (0.6, 0.06, 0.063), (0.8, 0.043, 0.054), (1.0, 0.04, 0.046)]               # calf muscle, slim ankle
 def upper(sd, g=0.0, t1=1.0):
     S, E = J['sh' + sd], J['el' + sd]; return prof_rows(S, E, UP, 0.0, t1, g*GK, (0, 0.03, 0))
 def lower(sd, g=0.0, t0=0.0, t1=1.0):
@@ -191,7 +192,7 @@ def thigh(sd, g=0.0, t1=1.0):
 def calf(sd, g=0.0, t0=0.0, t1=1.0, straight=False):
     K, A = J['kn' + sd], J['an' + sd]
     if straight:   # trouser legs fall as straight columns, but still narrow a little to the hem
-        return [[*mixp(K, A, t0), 0.05*LW + g*GK, 0.056*LW + g*GK], [*mixp(K, A, t1), 0.04*LW + g*GK, 0.046*LW + g*GK]]
+        return [[*mixp(K, A, t0), 0.068*LW + g*GK, 0.082*LW + g*GK], [*mixp(K, A, t1), 0.054*LW + g*GK, 0.062*LW + g*GK]]
     return prof_rows(K, A, CA, t0, t1, g*GK, (0, 0.03, 0) if t0 == 0 else None)
 
 # ================= tops =================
@@ -492,7 +493,7 @@ exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'survivor_x.p
 import json as _json
 _SH = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/superhero_body.json')))
 def body(fem): return {b: [dict(q) for q in qs] for b, qs in _SH['feminine' if fem else 'masculine'].items()}   # Quaternius Superhero (CC0) retargeted
-HEAD_S = (1.3, 1.14, 1.3); HEAD_O = (0.0, 1.548, 0.0)
+HEAD_S = (1.16, 0.97, 1.2); HEAD_O = (0.0, 1.548, 0.0)
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S
     q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]
@@ -509,7 +510,7 @@ def scale_bone(parts, bone, S, O):
     # parts: {slot: {body?: {name: {bone: [pieces]}}}}: walk every dict that maps bone names to piece lists
     if isinstance(parts, dict):
         for k, v in parts.items():
-            if k == bone and isinstance(v, list): parts[k] = [xf(q, S, O) for q in v]
+            if k == bone and isinstance(v, list): parts[k] = [q if q.get('keep') else xf(q, S, O) for q in v]
             else: scale_bone(v, bone, S, O)
 def fat(parts, bone, f):
     if isinstance(parts, dict):
@@ -560,6 +561,17 @@ pack = {
              '(wide_brim and hood_up replace the hat and hide hat:"hide" hair; crate is carried with the carry_crate clip; cane is held by hand_r). Clips sit, lean_wall, wave and carry_crate are in clips.',
 }
 scale_bone(pack['parts'], 'Head', HEAD_S, HEAD_O)
+# the base body's arms and legs sit off our skeleton line (measured): clothes and shoes follow them. left is +X, the right side mirrors
+FIT = {'upperarm': (-0.015, 0.0), 'lowerarm': (-0.008, -0.005), 'thigh': (0.035, 0.015), 'calf': (0.047, -0.03), 'foot': (0.05, -0.01), 'ball': (0.05, -0.006)}
+def shift_limbs(parts):
+    if isinstance(parts, dict):
+        for k, v in parts.items():
+            base, _, sd = k.rpartition('_')
+            if base in FIT and sd in ('l', 'r') and isinstance(v, list):
+                dx, dz = FIT[base]; dx = dx if sd == 'l' else -dx
+                parts[k] = [q if q.get('keep') else dict(q, p=[R4(q['p'][0] + dx), q['p'][1], R4(q['p'][2] + dz)]) for q in v]
+            else: shift_limbs(v)
+shift_limbs(pack['parts'])
 fat(pack['parts'], 'neck_01', 1.3)
 pack['style'] = 'v8 (2 November 2026): a stronger silhouette from the new references: bigger head with brow, nose and eyes, chunky hands and boots, thicker limbs, brass accents, higher value contrast'
 out, st = write_pack('survivor', pack, __file__)
