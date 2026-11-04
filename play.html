@@ -393,6 +393,22 @@
         <label>Searched loot<select id="lootRule"><option value="refill">Refills after about five days</option><option value="never">Never comes back</option></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
       </div>
+      <details id="lootEd" style="margin-top:10px"><summary><b>What is inside things (loot)</b></summary>
+        <div style="margin:6px 0">Pick something you can search, and where it is. Change what it can hold and how likely each thing is (a bigger number means it turns up more; none means nothing is there). Your changes stay on this device and apply to your own searches.</div>
+        <div class="prow">
+          <label>Homes with weapons<select id="lcGuns"><option value="0">None</option><option value="0.5">Few</option><option value="1">Normal</option><option value="1.6">Many</option></select></label>
+          <label>North side of town<select id="lcNorth"><option value="1">Homes there keep more weapons; city homes keep fewer</option><option value="0">City homes and north-side homes alike</option></select></label>
+          <label>Searchable thing<select id="leThing"></select></label>
+          <label>Where it is<select id="leScope"></select></label>
+        </div>
+        <div id="leRows" style="margin:8px 0"></div>
+        <div class="prow">
+          <label>Add something<select id="leAdd"></select></label>
+          <label>Searches each time you open it<input id="leN" type="number" min="1" max="8" step="1"></label>
+          <label>Add another place for this thing<select id="leNewSc"></select></label>
+        </div>
+        <div class="row"><button id="leNewBtn" class="alt">Add that place</button><button id="leReset" class="alt">Put this list back</button><button id="leResetAll" class="alt">Put everything back</button></div>
+      </details>
     </div>
     <div class="row">
       <label class="btn">Load map file<input id="file" type="file" accept=".osm,.xml,.json,.geojson" hidden></label>
@@ -516,7 +532,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.94', ART = {}, ARTSET = (function(){
+var BUILD = '0.115.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -524,7 +540,7 @@ var BUILD = '0.114.94', ART = {}, ARTSET = (function(){
   return set;
 })();
 /* shared engine files (also loaded by the Maps Builder): same ?v=BUILD rule as the art */
-['core', 'core_wasm', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'collision', 'render'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+['core', 'core_wasm', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'loot', 'collision', 'render'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
 </script>
 <script>
 'use strict';
@@ -1029,14 +1045,17 @@ function findTarget(){
 var corpses = [], corpseN = 1, curLoot = null;
 var ANAME = ['swarmer', 'stalker', 'giant', 'spitter', 'clinger'], AROLL = [1, 2, 5, 2, 2];
 var ALOOT = [{scrap:2, water:1, none:4}, {ammo:3, medkit:2, bandage:1, scrap:2, fuel:1, battery:2, none:1}, {scrap:3, fuel:2, medkit:2, ammo:2, radio:1, battery:2}, {scrap:3, water:1, battery:1, fuel:1, none:2}];
+/* how many of a thing one find gives: rounds come in handfuls, a gun is one gun */
+var AMT = {ammo:[3, 6], rifle:[2, 5], shell:[2, 5], arrow:[2, 4], bolt:[2, 4], flareshell:[1, 2]}, ONEOF = {revolver:1, hunting_rifle:1, pump_shotgun:1, double_barrel:1, carbine:1, crossbow:1, recurve_bow:1, flare_gun:1, quiver:1, radio:1, flashlight:1, lantern:1, generator:1, splint:1, antibio:1, shovel:1, toolkit:1, carbat:1};
 function rollStash(tab, rolls){
-  var tot = 0, got = {}, k; for (k in tab) tot += tab[k];
-  for (var i = 0; i < rolls; i++){
+  var tot = 0, got = {}, its = {}, k; for (k in tab) tot += tab[k];
+  for (var i = 0; i < rolls && tot > 0; i++){
     var r = Math.random()*tot; for (k in tab){ r -= tab[k]; if (r <= 0) break; }
     if (k === 'none') continue;
-    got[k] = (got[k] || 0) + (k === 'ammo' ? 3 + Math.floor(Math.random()*4) : (CLOTHES[k] || k === 'radio' || k === 'flashlight' || k === 'lantern' || k === 'generator' || k === 'splint' || k === 'antibio') ? 1 : 1 + (Math.random() < 0.35 ? 1 : 0));
+    if (!(k in ITEMS)){ if (DESIGNS[k] && !(PACKS.street && PACKS.street.on === false && /^st-/.test(k))) its[k] = 1; continue; }
+    var am = AMT[k]; got[k] = (got[k] || 0) + (am ? am[0] + Math.floor(Math.random()*(am[1] - am[0] + 1)) : (CLOTHES[k] || ONEOF[k]) ? 1 : 1 + (Math.random() < 0.35 ? 1 : 0));
   }
-  return {inv:got, items:{}};
+  return {inv:got, items:its};
 }
 function rollCustom(st, chance){
   if (Math.random() > chance) return;
@@ -1059,7 +1078,7 @@ function loot(o){
     var cat, rolls;
     if (o.b){ o.b.got[o.i] = 1; gotMark(o.b, o.i); cat = o.b.cat; rolls = 1; emit({k:'got', b:o.b.id, i:o.i}); findPart(o.b); } else { o.looted = true; cat = o.cat; rolls = 2; emit({k:'crate', i:world.crates.indexOf(o)}); }
     searched++; addXp('scav', 5); sfx(/locker|safe|filing|cabinet/.test(o.name || '') ? 'latch' : /fridge|stove/.test(o.name || '') ? 'pot' : 'search', o.x, o.y, 0.7);
-    if (o.poor && Math.random() < 0.6) o.stash = rollStash({none:1}, 1); else { o.stash = rollStash(o.lt && Math.random() < 0.65 ? o.lt : o.b && LOOTK[o.b.kind] || LOOT[cat], rolls); rollCustom(o.stash, 0.06); }
+    if (o.poor && Math.random() < 0.6) o.stash = rollStash({none:1}, 1); else { var LT = lootTable(o); if (LT){ o.stash = rollStash(LT.tab, LT.n); if (LT.cust) rollCustom(o.stash, LT.cust); } else { o.stash = rollStash(o.lt && Math.random() < 0.65 ? o.lt : o.b && LOOTK[o.b.kind] || LOOT[cat], rolls); rollCustom(o.stash, 0.03); } }
   }
   if (!stashLeft(o)){ feed('Nothing useful', '#c0c6cc'); o.stash = null; updateHud(); return; }
   curLoot = o; el('loot').classList.remove('hidden'); if (document.exitPointerLock) document.exitPointerLock(); renderLoot(); updateHud();
@@ -4404,7 +4423,7 @@ function carUse(){
   var v = carNear(); if (!v || P.sleep || P.hide){ if (!v) toast('No car close enough.', 1.8); return; }
   var E = world.edits;
   if (!(E.boots && E.boots[v.id]) && v.dead !== 'burnt'){
-    doEdit({a:'boot', id:v.id}); var army = v.dead && hash(Math.round(v.x), Math.round(v.y), 61) < 0.08, r = rollStash(army ? ARMYBOOT : BOOT, army ? 5 : v.dead ? 2 : 3), got = [], k; for (k in r.inv){ inv[k] = (inv[k] || 0) + r.inv[k]; got.push('+' + r.inv[k] + ' ' + (ITEMS[k] ? ITEMS[k][0].toLowerCase() : k)); }
+    doEdit({a:'boot', id:v.id}); var vk, LT, army = v.dead && hash(Math.round(v.x), Math.round(v.y), 61) < 0.08, vk = army ? 'military' : lootVehKind(v, carKind(v)), LT = lootTable({trunk:1}, vk === 'any' ? null : vk) || {tab:BOOT, n:3}, r = rollStash(LT.tab, LT.n), got = [], k; for (k in r.inv){ inv[k] = (inv[k] || 0) + r.inv[k]; got.push('+' + r.inv[k] + ' ' + (ITEMS[k] ? ITEMS[k][0].toLowerCase() : k)); } for (k in r.items){ P.items[k] = Math.min(99, (P.items[k] || 0) + r.items[k]); got.push('+1 ' + DESIGNS[k].name.toLowerCase()); }
     sfx('plank', v.x, v.y, 0.8, 0.7); makeNoise(v.x, v.y, 8); feed(got.length ? 'Searched the trunk: ' + got.join(', ') : 'The trunk is empty', ITEMS.wood[1]); updateHud(); return; }
   var can = v.dead ? (v.siph ? 0 : (hash(v.id.length*7 + (v.x | 0), v.y | 0, 5) < 0.25 ? 1 : 0)) : Math.floor((v.fuel || 0)/CAN_M);
   if (can < 1){ toast(v.dead === 'burnt' ? 'A burnt-out shell. Nothing left in it.' : 'No fuel left to siphon.', 2.5); return; }
@@ -5924,6 +5943,43 @@ function syncChar(fromRoster){
 el('roster').addEventListener('change', function(){ syncChar(true); });
 el('pname').addEventListener('input', function(){ syncChar(false); });
 ['cBuild', 'cSkin', 'cShirt', 'cPants', 'cHat', 'cBody', 'cHair', 'cHairC', 'cFace', 'cTop', 'cBot', 'cShoe', 'cAcc', 'cGear', 'cOuter'].forEach(function(id){ el(id).addEventListener('input', drawPrev); });
+/* ---- 0.115.0: the loot editor in Settings: choose a searchable thing and a place, then set what it can hold ---- */
+function lootUI(){
+  var thS = el('leThing'), scS = el('leScope'), addS = el('leAdd'), nwS = el('leNewSc'), rows = el('leRows'), nIn = el('leN'), resetAll = 0;
+  var TN = {trunk:'Car or truck boot', 'supply stash':'Supply stash out in the open'};
+  var tname = function(k){ return TN[k] || lootThingName(k); }, iname = function(k){ return k === 'none' ? 'Nothing' : ITEMS[k] ? ITEMS[k][0] : STREETW[k] || k; };
+  var order = function(a, b){ return (a === 'any' ? 0 : a.charAt(0) === 'k' ? 1 : 2) - (b === 'any' ? 0 : b.charAt(0) === 'k' ? 1 : 2) || lootScopeName(a).localeCompare(lootScopeName(b)); };
+  var cur = function(){ return {t:thS.value, s:scS.value}; };
+  var tableNow = function(){ var c = cur(); return lootScope(c.t, c.s) || {}; };
+  var writeTab = function(tab){ var c = cur(); var u = LOOTUSER[c.t] = LOOTUSER[c.t] || {s:{}}; u.s = u.s || {}; u.s[c.s] = tab; lootSave(); };
+  var fillThings = function(){ var keep = thS.value; thS.innerHTML = Object.keys(LOOTDEF).sort(function(a, b){ return tname(a).localeCompare(tname(b)); }).map(function(k){ return '<option value="' + esc(k) + '">' + esc(tname(k)) + '</option>'; }).join(''); if (keep && LOOTDEF[keep]) thS.value = keep; };
+  var fillScopes = function(){
+    var t = thS.value, keep = scS.value, all = lootScopes(t).sort(order); scS.innerHTML = all.map(function(k){ return '<option value="' + esc(k) + '">' + esc(lootScopeName(k) + (LOOTUSER[t] && LOOTUSER[t].s && LOOTUSER[t].s[k] ? ' (changed)' : '')) + '</option>'; }).join(''); if (keep && all.indexOf(keep) >= 0) scS.value = keep;
+    var isV = t === 'trunk', isC = t === 'supply stash', want = isV ? Object.keys(LOOTVEH) : isC ? Object.keys(LOOTCAT) : LOOTKINDS.concat(Object.keys(HHN));
+    nwS.innerHTML = want.map(function(k){ var sc = (HHN[k] ? 'h:' : 'k:') + k; return all.indexOf(sc) >= 0 ? '' : '<option value="' + sc + '">' + esc(lootScopeName(sc)) + '</option>'; }).join('');
+  };
+  var draw = function(){
+    var tab = tableNow(), ks = Object.keys(tab).filter(function(k){ return k !== '_n'; }).sort(function(a, b){ return tab[b] - tab[a]; }), tot = 0; ks.forEach(function(k){ tot += tab[k]; });
+    rows.innerHTML = ks.map(function(k){ return '<div class="irow" style="display:flex;gap:8px;align-items:center;margin:2px 0"><span class="n" style="flex:1">' + esc(iname(k)) + '</span><input type="number" min="0" max="50" step="0.1" value="' + tab[k] + '" data-k="' + esc(k) + '" style="width:70px"><span style="width:44px;text-align:right">' + (tot ? Math.round(tab[k]/tot*100) : 0) + '%</span><button class="alt" data-x="' + esc(k) + '">Remove</button></div>'; }).join('') || '<i>Nothing can be found here.</i>';
+    var have = {}; ks.forEach(function(k){ have[k] = 1; }); var opts = ['none'].concat(Object.keys(ITEMS), Object.keys(STREETW)).filter(function(k){ return !have[k]; });
+    addS.innerHTML = '<option value="">Choose...</option>' + opts.map(function(k){ return '<option value="' + esc(k) + '">' + esc(iname(k)) + '</option>'; }).join('');
+    var c = cur(); nIn.value = tab._n || lootRolls(c.t);
+  };
+  var all2 = function(){ fillScopes(); draw(); };
+  rows.addEventListener('change', function(e){ var t = e.target, k = t.getAttribute && t.getAttribute('data-k'); if (!k) return; var tab = Object.assign({}, tableNow()); tab[k] = Math.max(0, Math.min(50, +t.value || 0)); writeTab(tab); fillScopes(); draw(); });
+  rows.addEventListener('click', function(e){ var k = e.target.getAttribute && e.target.getAttribute('data-x'); if (!k) return; var tab = Object.assign({}, tableNow()); delete tab[k]; writeTab(tab); fillScopes(); draw(); });
+  addS.addEventListener('change', function(){ var k = addS.value; if (!k) return; var tab = Object.assign({}, tableNow()); tab[k] = 1; writeTab(tab); fillScopes(); draw(); });
+  nIn.addEventListener('change', function(){ var tab = Object.assign({}, tableNow()); tab._n = Math.max(1, Math.min(8, Math.round(+nIn.value) || 1)); writeTab(tab); fillScopes(); draw(); });
+  el('leNewBtn').addEventListener('click', function(){ var sc = nwS.value; if (!sc) return; var t = thS.value; var u = LOOTUSER[t] = LOOTUSER[t] || {s:{}}; u.s = u.s || {}; u.s[sc] = {none:1}; lootSave(); fillScopes(); scS.value = sc; draw(); });
+  el('leReset').addEventListener('click', function(){ var c = cur(), u = LOOTUSER[c.t]; if (u && u.s) delete u.s[c.s]; if (u && !Object.keys(u.s || {}).length) delete LOOTUSER[c.t]; lootSave(); fillScopes(); if (!scS.value) scS.selectedIndex = 0; draw(); });
+  el('leResetAll').addEventListener('click', function(){ var b = el('leResetAll'); if (!resetAll){ resetAll = 1; b.textContent = 'Really put everything back?'; setTimeout(function(){ resetAll = 0; b.textContent = 'Put everything back'; }, 4000); return; } resetAll = 0; b.textContent = 'Put everything back'; LOOTUSER = {}; lootSave(); fillScopes(); draw(); });
+  thS.addEventListener('change', function(){ scS.value = ''; fillScopes(); if (!scS.value) scS.selectedIndex = 0; draw(); }); scS.addEventListener('change', draw);
+  el('lcGuns').value = String(LOOTCFG.guns); if (el('lcGuns').value !== String(LOOTCFG.guns)) el('lcGuns').value = '1'; el('lcNorth').value = LOOTCFG.north ? '1' : '0';
+  var cfg = function(){ LOOTCFG.guns = +el('lcGuns').value; LOOTCFG.north = el('lcNorth').value === '1'; lootSave(); if (window.world) world.buildings.forEach(function(b){ b.hh = null; }); };
+  el('lcGuns').addEventListener('change', cfg); el('lcNorth').addEventListener('change', cfg);
+  fillThings(); thS.value = 'nightstand'; fillScopes(); scS.selectedIndex = 0; draw();
+}
+lootLoadUser(); lootUI();
 (function(){
   var n = lsGet('lastblock:name'), q = lsGet('lastblock:quality'), vr = lsGet('lastblock:vrule');
   if (n) el('pname').value = n; if (vr) el('vRule').value = vr; var lr = lsGet('lastblock:loot'); if (lr) el('lootRule').value = lr; el('lootRule').addEventListener('change', function(){ lsSet('lastblock:loot', el('lootRule').value); });
