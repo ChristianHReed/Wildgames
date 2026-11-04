@@ -1,6 +1,6 @@
 # Game loops by mode (decided 4 November 2026, from the owner's answers)
 
-Nothing here is built yet. Build order is at the end.
+Step 1 is built (0.116.0): the new-world difficulty settings (alien pressure, nest push-back, survivors can die for good) and the Endless settlement meter. The rest is not built. Build order is at the end. "Base can be lost" is held back until the raids on the settlement exist (step 2), since it has nothing to act on yet. Stretch goals paired with each mode are in docs/STRETCH.md.
 
 ## Endless: build a settlement
 Loop: scavenge by day, fortify and grow by night, survive the raids.
