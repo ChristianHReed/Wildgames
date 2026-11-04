@@ -25,6 +25,7 @@ Sources: Apple Human Interface Guidelines (Game controls), Epic's "Designing for
 - The vitals panel fades back to about a third after 8 s with health, food, water, rest and stamina all comfortable and no conditions; it comes back as soon as anything changes.
 - A short vibration on button press on phones that allow it (Android; iPhone browsers do not).
 - Words stay on the buttons (the user prefers words to icons for now).
+- Menu > Move buttons: drag any touch button (and the move stick) to a new place; tabs for On foot, Building, Driving; saved per orientation (`lastblock:btnpos`, fractions of the screen so it survives size changes).
 
 ## Still to do
 - Haptics on iPhone need a home-screen app wrapper; browsers there do not vibrate.

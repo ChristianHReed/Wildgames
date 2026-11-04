@@ -254,6 +254,14 @@
   #tAct.on{display:flex} #tAct b{color:var(--ink);font-size:15px;font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%} #tAct i{font-style:normal;font-weight:600;font-size:10px;line-height:1.15;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
   #tAct i:empty{display:none} #tAct.info{opacity:.72;border-style:dashed !important} #touch.vmode #tAct{display:none}
   body.hc #tAct{background:#000 !important;color:#fff;border-color:#fff} body.hc #tAct i{color:#ddd}
+  /* 0.116.1: move the touch buttons (Menu > Move buttons); one saved layout for upright and one for sideways */
+  #btnMove{display:none} .touchmode #btnMove{display:block}
+  #touch button,#stick{translate:var(--bx,0) var(--by,0)} #stick.float{translate:none}
+  #bedit{position:fixed;left:50%;top:34%;transform:translateX(-50%);z-index:90;width:min(92vw,360px);padding:10px 12px;background:rgba(32,30,29,.9);color:#fff;border-radius:12px;font-size:13px;box-shadow:0 0 0 1px rgba(245,234,216,.3);display:flex;flex-direction:column;gap:8px;text-align:center} #bedit.hidden{display:none}
+  #bedit .row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap} #bedit button{padding:7px 12px;font-size:13px;border-radius:999px;background:rgba(245,234,216,.16);color:#fff;box-shadow:none} #bedit button.on{background:var(--ochre)} #bedit #beDone{background:var(--moss,#6f8a4f)}
+  #bedit small{opacity:.8;font-size:11px}
+  #touch.edit button,#touch.edit #stick{outline:2px dashed rgba(255,244,214,.9);outline-offset:2px;cursor:grab}
+  #touch.edit button.nx{display:block !important} #touch.edit #tAct{display:flex !important} #touch.edit #stick{opacity:.8 !important}
   .touchmode #chatIn{bottom:210px;left:160px}
   @media (max-width:560px){
     .touchmode #hud{top:112px;width:240px}
@@ -293,7 +301,7 @@
   <div id="carHud" class="hidden"><div class="chTop"><b id="chSpd">0</b><span>mph</span><em id="chGear">N</em></div><div class="chFuel"><span>E</span><div class="chBar"><i id="chFuelB"></i></div><span>F</span></div><div class="chSub"><span id="chMi"></span><span class="chHpW"><i id="chHp"></i></span></div><button id="chShop" class="hidden" style="pointer-events:auto;margin-top:6px;width:100%;font-size:12px;padding:5px">Car shop: name, paint, tune, repair</button><div class="chHint">W gas &middot; S brake/reverse &middot; A D steer &middot; Space handbrake &middot; E out</div></div>
   <div id="miniWrap"><canvas id="mini" width="200" height="200"></canvas><div id="osm">&copy; OpenStreetMap contributors</div></div>
   <button id="hudMenu" title="Menu">&#9776;</button>
-  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
+  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="btnMove">Move buttons</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
   <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car trunk, siphon fuel, or pick up and put down furniture &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="salv" class="hidden"><span id="stxt"></span><div id="sbar"></div></div>
@@ -335,6 +343,7 @@
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)">Esc frees the mouse &middot; H shows the controls</span></div>
 </div>
+<div id="bedit" class="hidden"><b id="beTitle">Move buttons</b><small id="beSub"></small><div class="row"><button id="beFoot" class="on">On foot</button><button id="beBuild">Building</button><button id="beDrive">Driving</button></div><div class="row"><button id="beReset">Reset this layout</button><button id="beAll">Reset both</button><button id="beDone">Done</button></div></div>
 <div id="toast"></div>
 <div id="stnWrap" class="hidden"><div id="stnBar"><b id="stnTitle">Workshop</b><button id="stnClose" class="alt">Back to the game</button></div><iframe id="stnFrame" title="Workshop"></iframe></div>
 
@@ -535,7 +544,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.116.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.116.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -704,6 +713,36 @@ hold('tPing', function(){ pingAhead(); });
 hold('tRun', function(){ P.run = !P.run; if (P.run) P.crouch = false; });
 hold('tDuck', toggleCrouch);
 hold('tThrow', throwStone);
+/* 0.116.1: custom touch button placement. Offsets are saved as fractions of the screen, one set for upright and one for sideways. */
+var BPOS = (function(){ try { return JSON.parse(localStorage.getItem('lastblock:btnpos')) || {}; } catch (e){ return {}; } })(), BED = null;
+function bOri(){ return innerHeight > innerWidth ? 'p' : 'l'; }
+function bSave(){ try { localStorage.setItem('lastblock:btnpos', JSON.stringify(BPOS)); } catch (e){} }
+function bZoom(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hs')) || 1; }
+function bItems(){ return Array.prototype.slice.call(el('touch').querySelectorAll('button')).concat([el('stick')]); }
+function bSet(n, fx, fy){ var z = bZoom(); n.style.setProperty('--bx', (fx*innerWidth/z) + 'px'); n.style.setProperty('--by', (fy*innerHeight/z) + 'px'); }
+function bClamp(n){ var r = n.getBoundingClientRect(); if (!r.width) return; var o = (BPOS[bOri()] || {})[n.id]; if (!o) return; var dx = 0, dy = 0;
+  if (r.left < 0) dx = -r.left; else if (r.right > innerWidth) dx = innerWidth - r.right; if (r.top < 0) dy = -r.top; else if (r.bottom > innerHeight) dy = innerHeight - r.bottom;
+  if (dx || dy){ o[0] += dx/innerWidth; o[1] += dy/innerHeight; bSet(n, o[0], o[1]); } }
+function bApply(){ var L = BPOS[bOri()] || {}; bItems().forEach(function(n){ var o = L[n.id]; if (o) bSet(n, o[0], o[1]); else { n.style.removeProperty('--bx'); n.style.removeProperty('--by'); } }); bItems().forEach(bClamp); }
+window.addEventListener('resize', function(){ bApply(); if (BED) bLabel(); });
+window.addEventListener('orientationchange', function(){ setTimeout(function(){ bApply(); if (BED) bLabel(); }, 250); });
+function bLabel(){ el('beSub').textContent = (bOri() === 'p' ? 'Upright (vertical) layout' : 'Sideways (horizontal) layout') + ' \u2013 drag each button where you want it. Turn the phone to set the other layout.'; }
+function bTab(m){ var t = el('touch'); t.classList.remove('bmode', 'vmode'); if (m === 1) t.classList.add('bmode'); if (m === 2) t.classList.add('vmode'); el('tMode').innerHTML = '<img src="assets/ui/' + (m === 1 ? 'back' : 'build') + '.svg" alt="">';
+  [['beFoot', 0], ['beBuild', 1], ['beDrive', 2]].forEach(function(a){ el(a[0]).classList.toggle('on', a[1] === m); }); setTimeout(function(){ bItems().forEach(bClamp); bSave(); }, 30); }
+['touchstart', 'touchend', 'touchcancel', 'mousedown', 'click'].forEach(function(ev){ el('touch').addEventListener(ev, function(e){ if (BED){ e.stopPropagation(); if (e.cancelable) e.preventDefault(); } }, true); });
+['touchstart', 'touchend', 'touchcancel', 'touchmove'].forEach(function(ev){ cv.addEventListener(ev, function(e){ if (BED){ e.stopPropagation(); e.preventDefault(); } }, true); });
+var bDrag = null;
+el('touch').addEventListener('pointerdown', function(e){ if (!BED) return; var n = e.target.closest && e.target.closest('button, #stick'); if (!n) return; var o = ((BPOS[bOri()] = BPOS[bOri()] || {})[n.id] = BPOS[bOri()][n.id] || [0, 0]);
+  bDrag = {n:n, id:e.pointerId, x:e.clientX, y:e.clientY, ox:o[0], oy:o[1]}; try { n.setPointerCapture(e.pointerId); } catch (er){} e.preventDefault(); }, true);
+window.addEventListener('pointermove', function(e){ if (!bDrag || e.pointerId !== bDrag.id) return; var o = BPOS[bOri()][bDrag.n.id]; o[0] = bDrag.ox + (e.clientX - bDrag.x)/innerWidth; o[1] = bDrag.oy + (e.clientY - bDrag.y)/innerHeight; bSet(bDrag.n, o[0], o[1]); bClamp(bDrag.n); });
+function bUp(e){ if (!bDrag || e.pointerId !== bDrag.id) return; bDrag = null; bSave(); }
+window.addEventListener('pointerup', bUp); window.addEventListener('pointercancel', bUp);
+function bStart(){ if (BED || !touchMode) return; BED = {m: el('touch').classList.contains('vmode') ? 2 : el('touch').classList.contains('bmode') ? 1 : 0}; el('touch').classList.add('edit'); el('bedit').classList.remove('hidden'); el('hudBtns').classList.add('hidden'); el('tActM').textContent = 'Action'; el('tAct').classList.add('on'); bLabel(); bTab(BED.m); }
+function bEnd(){ if (!BED) return; var m = BED.m; BED = null; bDrag = null; el('touch').classList.remove('edit'); el('bedit').classList.add('hidden'); el('tAct').classList.remove('on'); el('tActM').textContent = ''; bTab(m === 2 ? 0 : m); bSave(); }
+el('btnMove').addEventListener('click', bStart); el('beDone').addEventListener('click', bEnd);
+el('beFoot').addEventListener('click', function(){ bTab(0); }); el('beBuild').addEventListener('click', function(){ bTab(1); }); el('beDrive').addEventListener('click', function(){ bTab(2); });
+el('beReset').addEventListener('click', function(){ delete BPOS[bOri()]; bSave(); bApply(); }); el('beAll').addEventListener('click', function(){ BPOS = {}; bSave(); bApply(); });
+bApply();
 el('viewBtn').addEventListener('click', function(){ toggleView(); el('hudBtns').classList.add('hidden'); });
 el('inv').addEventListener('click', function(e){ var n = e.target; if (running && n.closest && n.closest('[data-pack]')){ togglePack(); return; } while (n && n !== this && !(n.getAttribute && n.getAttribute('data-u'))) n = n.parentNode; if (running && n && n !== this) useItem(n.getAttribute('data-u')); });
 /* ---- batteries power the flashlight, the radio and lanterns ---- */
@@ -4371,7 +4410,7 @@ function makeVehicles(saved){
   /* 0.50.3: a working bicycle leans on the safe house's front porch */
   var sh = w.safe >= 0 ? w.buildings[w.safe] : null; if (sh && sh.door){ var sd = sh.door, stx = -sd.ny, sty = sd.nx; var so9 = doorOut(sh); list.push({veh:true, id:'bsafe', t:0, name:'the bicycle', x:sd.x + so9[0]*1.6 + stx*1.8, y:sd.y + so9[1]*1.6 + sty*1.8, yaw:Math.atan2(sty, stx), fuel:0}); }
   /* abandoned traffic (0.49.1): cars left on the roads, thickest on the highways, mostly wrecked or burnt out */
-  var RD = {motorway:[14, 0.85], trunk:[18, 0.85], primary:[30, 0.75], secondary:[55, 0.55], tertiary:[110, 0.4], unclassified:[200, 0.3], residential:[260, 0.25]}, rc = 0, RMAX = 1800;
+  var RD = {motorway:[14, 0.85], trunk:[18, 0.85], primary:[30, 0.75], secondary:[55, 0.55], tertiary:[70, 0.5], unclassified:[90, 0.5], residential:[85, 0.5]}, rc = 0, RMAX = 3000;   /* 0.116.1: side roads were thin (one cell per 200 to 260 m): now about three times as many */
   /* 0.90.1: road cars are placed by real-world position (cells of the road class's spacing), not by this zone's road numbers, so the same road shows the same cars from either map square */
   var GK = 111320*Math.cos(37.2*Math.PI/180), GL = 110574, GG = w.geo, cells = {}, cellL = [];
   w.roads.map(function(r, ri){ return [r, ri]; }).sort(function(a, b){ return b[0].w - a[0].w; }).forEach(function(e){
