@@ -516,7 +516,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.90', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.91', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -5436,20 +5436,61 @@ function zoneGet(R, i, j){ return idbDo('readonly', function(s){ return s.get(R.
 function zonePut(R, i, j, text){ return idbDo('readwrite', function(s){ return s.put(text, R.id + ':' + i + ':' + j); }); }
 function zoneKeys(R){ return idbDo('readonly', function(s){ return s.getAllKeys(IDBKeyRange.bound(R.id + ':', R.id + ':￿')); }).catch(function(){ return []; }); }
 function zoneWipe(R){ return idbDo('readwrite', function(s){ return s.delete(IDBKeyRange.bound(R.id + ':', R.id + ':￿')); }).catch(function(){}); }
-async function overpassRaw(s, w, n, e){
-  var r = await fetch('https://overpass-api.de/api/interpreter', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'data=' + encodeURIComponent('[out:json][timeout:240][bbox:' + [s, w, n, e].join(',') + '];' + MM_QUERY)});
-  if (!r.ok){ var er = new Error('the map server answered ' + r.status + (r.status === 429 || r.status === 504 ? ' (busy)' : '')); er.busy = r.status === 429 || r.status === 504; throw er; }
-  return fromOverpass(await r.json());
+/* 0.114.91: map downloads. The free Overpass servers are often busy, and a big city can be too much for one request, which the server reports inside an answer
+   that otherwise looks fine (a "remark"), so the game used to take a cut-off map as the whole thing. Now: three servers in turn, a time limit on each try,
+   the remark checked, and an area that is too big split into four and joined back together */
+var OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'], OPI = 0;
+function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+async function fetchT(url, opt, ms){ var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, tm = setTimeout(function(){ if (ctl) ctl.abort(); }, ms); opt = opt || {}; if (ctl) opt.signal = ctl.signal;
+  try { return await fetch(url, opt); } catch (e){ if (e && e.name === 'AbortError'){ var er = new Error('the map server took too long'); er.busy = true; er.slow = true; throw er; } throw e; } finally { clearTimeout(tm); } }
+async function overpassJSON(s, w, n, e, say){
+  var body = 'data=' + encodeURIComponent('[out:json][timeout:180][bbox:' + [s, w, n, e].join(',') + '];' + MM_QUERY), last = null;
+  for (var t = 0; t < OVERPASS.length*2; t++){
+    var k = (OPI + t) % OVERPASS.length, host = OVERPASS[k].split('/')[2];
+    if (say && t) say('The map server is busy; trying ' + host + '...');
+    try {
+      var r = await fetchT(OVERPASS[k], {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body}, 200000);
+      if (r.status === 429 || r.status === 503 || r.status === 504 || r.status === 502){ last = new Error('the map servers are busy (' + r.status + ')'); last.busy = true; await wait(t < OVERPASS.length ? 1500 : 10000); continue; }
+      if (!r.ok){ last = new Error('the map server answered ' + r.status); continue; }
+      var j = await r.json();
+      if (j.remark && /runtime error|timed out|out of memory|Query run out/i.test(j.remark)){ var big = new Error('that area has too much map data for one download'); big.big = true; throw big; }
+      if (!j.elements){ last = new Error('the map server sent something that is not a map'); continue; }
+      OPI = k; return j;
+    } catch (er){ if (er.big) throw er; last = er; if (!er.busy) await wait(1500); }
+  }
+  throw last || new Error('no map server answered');
+}
+/* too big: four quarters, each split again if needed (twice at most), joined by element id */
+async function overpassArea(s, w, n, e, say, depth){
+  depth = depth || 0;
+  try { return await overpassJSON(s, w, n, e, say); }
+  catch (er){ if (!er.big || depth >= 2) throw er;
+    if (say) say('That is a lot of map: downloading it in ' + Math.pow(4, depth + 1) + ' pieces...');
+    var mlat = (s + n)/2, mlon = (w + e)/2, Q = [[s, w, mlat, mlon], [s, mlon, mlat, e], [mlat, w, n, mlon], [mlat, mlon, n, e]], seen = {}, all = [];
+    for (var q = 0; q < 4; q++){ var part = await overpassArea(Q[q][0], Q[q][1], Q[q][2], Q[q][3], say, depth + 1);
+      part.elements.forEach(function(el9){ var id = el9.type + el9.id; if (!seen[id]){ seen[id] = 1; all.push(el9); } }); await wait(800); }
+    return {elements:all}; }
+}
+async function overpassRaw(s, w, n, e, say){ return fromOverpass(await overpassArea(s, w, n, e, say)); }
+/* place lookup: up to five answers; the first is used, and the status line says where it is (city, county, state) so a wrong Springfield is plain to see */
+async function lookUp(q){
+  var r = await fetchT('https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&accept-language=en&q=' + encodeURIComponent(q), {}, 25000);
+  if (!r.ok) throw new Error('the place lookup answered ' + r.status + (r.status === 403 || r.status === 429 ? ' (busy; try again in a minute)' : ''));
+  var j = await r.json(); if (!j.length) throw new Error('that place was not found. Try adding the state, like "Dayton, Ohio"');
+  var a = j[0].address || {}, where = [a.city || a.town || a.village || a.hamlet || a.county || String(j[0].display_name || q).split(',')[0], a.state, a.country_code && a.country_code !== 'us' ? a.country : ''].filter(Boolean).join(', ');
+  var other = j.slice(1).some(function(x){ return x.address && a.state && x.address.state && x.address.state !== a.state; });
+  j[0].where = where; j[0].note = 'Found ' + where + '.' + (other ? ' Not that one? Add the state to the name, like "' + String(q).split(',')[0] + ', ' + (j.slice(1).filter(function(x){ return x.address && x.address.state && x.address.state !== a.state; })[0].address.state) + '".' : '');
+  return j[0];
 }
 function zoneName(R, i, j){ return R.name + ' ' + (i >= 0 ? 'E' + i : 'W' + (-i)) + ' ' + (j >= 0 ? 'N' + j : 'S' + (-j)); }
-async function zoneFetch(R, i, j){
-  var b = zoneBox(R, i, j), my = 0.0045, mx = my/Math.cos(R.lat*Math.PI/180), raw = await overpassRaw(b.s - my, b.w - mx, b.n + my, b.e + mx);
+async function zoneFetch(R, i, j, say){
+  var b = zoneBox(R, i, j), my = 0.0045, mx = my/Math.cos(R.lat*Math.PI/180), raw = await overpassRaw(b.s - my, b.w - mx, b.n + my, b.e + mx, say);
   try { raw.elev = await fetchElev(b.s - my*1.3, b.w - mx*1.3, b.n + my*1.3, b.e + mx*1.3); } catch (e){ raw.elev = null; }
   raw.zone = b; var text = JSON.stringify(toCompact(raw, zoneName(R, i, j))); await zonePut(R, i, j, text); return text;
 }
 async function enterZone(R, lat, lon, yaw, carry, atSafe){
   var ij = zoneOf(R, lat, lon), text = R.builtin ? await builtinSquare(ij[0], ij[1]) : await zoneGet(R, ij[0], ij[1]);
-  if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1]); }
+  if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1], function(t){ info(t); var rs = el('rgStatus'); if (rs) rs.textContent = t; }); }
   text = await edApply(text);
   var raw = parseText(text); if (R.builtin) raw.name = '';   /* each square keeps its own save, named by the square */
   raw.spawn = [lon, lat]; raw.pin = R.id === 'springfield-mo' && Math.abs(lat - SEQUIOTA.lat) < 1e-6 && Math.abs(lon - SEQUIOTA.lon) < 1e-6; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
@@ -5494,9 +5535,8 @@ async function startRegion(){
   var st = el('rgStatus'), q = el('rgPlace').value.trim(), miles = +el('rgMiles').value; if (!q){ st.textContent = 'Type a place name first.'; return; } if (!glOK) return;
   try {
     st.textContent = 'Looking up the place...';
-    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q)); if (!r.ok) throw new Error('the place lookup answered ' + r.status);
-    var j = await r.json(); if (!j.length) throw new Error('that place was not found');
-    var lat = +j[0].lat, lon = +j[0].lon, name = String(j[0].display_name || q).split(',')[0].replace(/[<>&"]/g, '').trim().slice(0, 40) + ' region';
+    var f = await lookUp(q), j = [f]; st.textContent = f.note;
+    var lat = +j[0].lat, lon = +j[0].lon, name = String(f.where || j[0].display_name || q).split(',').slice(0, 2).join(',').replace(/[<>&"]/g, '').trim().slice(0, 40) + ' region';
     var R = {id:slug(name) + '-' + Date.now().toString(36), name:name, lat:lat, lon:lon, miles:miles, dLat:0.05, dLon:+(0.05/Math.cos(lat*Math.PI/180)).toFixed(4), last:null};
     REGIONS.push(R); saveRegions(); renderRegions(); await playRegion(R);
   } catch (e){ st.textContent = 'Could not start the region: ' + (/fetch|network/i.test(e.message || '') ? 'no connection to the map servers' : e.message || 'unknown error') + '.'; }
@@ -5678,21 +5718,16 @@ async function makeMap(){
   if (!glOK) return;
   try {
     st.textContent = 'Looking up the place...';
-    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q));
-    if (!r.ok) throw new Error('the place lookup answered ' + r.status);
-    var j = await r.json(); if (!j.length) throw new Error('that place was not found');
+    var f0 = await lookUp(q), j = [f0], r; st.textContent = f0.note;
     var lat = +j[0].lat, lon = +j[0].lon, bb = (j[0].boundingbox || []).map(Number), s, n, w, e;
     if (size === 'city'){
       s = bb[0]; n = bb[1]; w = bb[2]; e = bb[3];
       if (!(n > s) || !(e > w)) throw new Error('that place has no outline to download');
-      if ((n - s)*(e - w) > 0.2) throw new Error('that area is too large; pick a smaller place or size');
+      if ((n - s)*(e - w) > 0.2) throw new Error('all of ' + f0.where + ' is too large for one map; pick a size in miles instead, or use Start region for a whole city');
     } else { var km = +size, dlat = km/110.54, dlon = km/(111.32*Math.cos(lat*Math.PI/180)); s = lat - dlat; n = lat + dlat; w = lon - dlon; e = lon + dlon; }
-    st.textContent = 'Downloading map data. A large area can take a few minutes...';
-    r = await fetch('https://overpass-api.de/api/interpreter', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:'data=' + encodeURIComponent('[out:json][timeout:240][bbox:' + [s, w, n, e].join(',') + '];' + MM_QUERY)});
-    if (!r.ok) throw new Error('the map server answered ' + r.status + (r.status === 429 || r.status === 504 ? ' (busy; try again shortly or pick a smaller size)' : ''));
-    st.textContent = 'Building the map...';
-    var raw = fromOverpass(await r.json()); if (!raw.ways.length) throw new Error('no map data came back for that area');
+    st.textContent = f0.note + ' Downloading map data. A large area can take a few minutes...';
+    var raw = await overpassRaw(s, w, n, e, function(t){ st.textContent = t; });
+    st.textContent = 'Building the map...'; if (!raw.ways.length) throw new Error('no map data came back for that area');
     var name = String(j[0].display_name || q).split(',')[0].trim() + (size === 'city' ? '' : ' ' + (+size*2*0.621).toFixed(1) + ' mi');
     st.textContent = 'Adding hills and valleys...'; var hills = true;
     try { raw.elev = await fetchElev(s, w, n, e); } catch (er){ raw.elev = null; hills = false; }

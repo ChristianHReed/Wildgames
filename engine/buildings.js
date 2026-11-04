@@ -668,11 +668,11 @@ function sunkWalls(w, g, LIFT, SWY, RDY){
     for (var q = 0; q + 3 < p.length; q += 2){
       if (inRanges(gp, q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue;
       var ns = Math.max(1, Math.ceil(l/2)), ux = (bx - ax)/l, uz = (bz - az)/l, nx = -uz, nz = ux, si;
-      for (si = 0; si < ns; si++){ var s0 = l*si/ns, s1 = l*(si + 1)/ns, mx = ax + ux*(s0 + s1)/2, mz = az + uz*(s0 + s1)/2;
-        [-1, 1].forEach(function(sd){ if (roadOff(mx + nx*(hw + 0.4)*sd, mz + nz*(hw + 0.4)*sd, 0.1)) return;
-          var x0 = ax + ux*s0 + nx*hw*sd, z0 = az + uz*s0 + nz*hw*sd, x1 = ax + ux*s1 + nx*hw*sd, z1 = az + uz*s1 + nz*hw*sd, h0 = hAt0(x0, z0), h1 = hAt0(x1, z1);
-          g.quad(x0, h0 + RDY + LIFT, z0, x1, h1 + RDY + LIFT, z1, x1, h1 + SWY + LIFT, z1, x0, h0 + SWY + LIFT, z0, KC, 255); });
-      }
+      [-1, 1].forEach(function(sd){ var r0 = -1;   /* 0.114.91: joined into runs of up to 10 m (the height grid's spacing), not a quad every 2 m */
+        var put = function(a0, a1){ var s0 = l*a0/ns, s1 = l*a1/ns, x0 = ax + ux*s0 + nx*hw*sd, z0 = az + uz*s0 + nz*hw*sd, x1 = ax + ux*s1 + nx*hw*sd, z1 = az + uz*s1 + nz*hw*sd, h0 = hAt0(x0, z0), h1 = hAt0(x1, z1);
+          g.quad(x0, h0 + RDY + LIFT, z0, x1, h1 + RDY + LIFT, z1, x1, h1 + SWY + LIFT, z1, x0, h0 + SWY + LIFT, z0, KC, 255); };
+        for (si = 0; si <= ns; si++){ var off = si === ns || roadOff(ax + ux*l*(si + 0.5)/ns + nx*(hw + 0.4)*sd, az + uz*l*(si + 0.5)/ns + nz*(hw + 0.4)*sd, 0.1);
+          if (!off && r0 < 0) r0 = si; else if (r0 >= 0 && (off || si - r0 >= 5)){ put(r0, si); r0 = off ? -1 : si; } } });
     }
   });
 }
@@ -707,8 +707,10 @@ function prep3D(){
     for (var q = 0; q < p.length - 2; q += 2){
       if (inGap(q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx-ax, bz-az); if (l < 0.01) continue;
       if (cut && SUNK && l > 2.5){ var ns = Math.ceil(l/2), si, sx0, sz0, sx1, sz1, sl = l/ns;   /* long segments are cut into 2 m pieces so each can be tested */
-        for (si = 0; si < ns; si++){ sx0 = ax + (bx - ax)*si/ns; sz0 = az + (bz - az)*si/ns; sx1 = ax + (bx - ax)*(si + 1)/ns; sz1 = az + (bz - az)*(si + 1)/ns;
-          if (roadOff((sx0 + sx1)/2, (sz0 + sz1)/2, 0.3)) continue; var snx = -(sz1-sz0)/sl*hw, snz = (sx1-sx0)/sl*hw; g.pl = [tile, 0.25]; g.quad(sx0+snx,y,sz0+snz, sx1+snx,y,sz1+snz, sx1-snx,y,sz1-snz, sx0-snx,y,sz0-snz, col, 255); }
+        /* 0.114.91: tested in 2 m pieces, but the pieces that stay are joined into one quad per unbroken run (a quad per piece made a downtown square tens of millions of vertices once draped, and phones ran out of memory loading it) */
+        var r0 = -1, snx = -(bz - az)/l*hw, snz = (bx - ax)/l*hw, flush = function(a0, a1){ sx0 = ax + (bx - ax)*a0/ns; sz0 = az + (bz - az)*a0/ns; sx1 = ax + (bx - ax)*a1/ns; sz1 = az + (bz - az)*a1/ns; g.pl = [tile, 0.25]; g.quad(sx0+snx,y,sz0+snz, sx1+snx,y,sz1+snz, sx1-snx,y,sz1-snz, sx0-snx,y,sz0-snz, col, 255); };
+        for (si = 0; si <= ns; si++){ var off = si === ns || roadOff(ax + (bx - ax)*(si + 0.5)/ns, az + (bz - az)*(si + 0.5)/ns, 0.3);
+          if (!off && r0 < 0) r0 = si; else if (off && r0 >= 0){ flush(r0, si); r0 = -1; } }
         continue; }
       if (cut && SUNK && roadOff((ax + bx)/2, (az + bz)/2, 0.3)) continue;
       var nx = -(bz-az)/l*hw, nz = (bx-ax)/l*hw;
@@ -723,11 +725,11 @@ function prep3D(){
     for (var q = 0; q + 3 < p.length; q += 2){
       if (inRanges(gp, q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue;
       var ns = Math.max(1, Math.ceil(l/2)), ux = (bx - ax)/l, uz = (bz - az)/l, nx = -uz, nz = ux, si;
-      for (si = 0; si < ns; si++){ var s0 = l*si/ns, s1 = l*(si + 1)/ns, mx = ax + ux*(s0 + s1)/2, mz = az + uz*(s0 + s1)/2;
-        [-1, 1].forEach(function(sd){ if (roadOff(mx + nx*(hw + 1)*sd, mz + nz*(hw + 1)*sd, 0.2) || roadOff(mx + nx*(hw + 0.1)*sd, mz + nz*(hw + 0.1)*sd, 0.0)) return;
-          var x0 = ax + ux*s0, z0 = az + uz*s0, x1 = ax + ux*s1, z1 = az + uz*s1; g.pl = [TX.sidewalk, 0.25];
-          g.quad(x0 + nx*hw*sd, SWY, z0 + nz*hw*sd, x1 + nx*hw*sd, SWY, z1 + nz*hw*sd, x1 + nx*(hw + 2)*sd, SWY, z1 + nz*(hw + 2)*sd, x0 + nx*(hw + 2)*sd, SWY, z0 + nz*(hw + 2)*sd, WHITE, 255); });
-      }
+      [-1, 1].forEach(function(sd){ var r0 = -1;   /* 0.114.91: one quad per unbroken run of 2 m pieces, not one per piece */
+        var put = function(a0, a1){ var s0 = l*a0/ns, s1 = l*a1/ns, x0 = ax + ux*s0, z0 = az + uz*s0, x1 = ax + ux*s1, z1 = az + uz*s1; g.pl = [TX.sidewalk, 0.25];
+          g.quad(x0 + nx*hw*sd, SWY, z0 + nz*hw*sd, x1 + nx*hw*sd, SWY, z1 + nz*hw*sd, x1 + nx*(hw + 2)*sd, SWY, z1 + nz*(hw + 2)*sd, x0 + nx*(hw + 2)*sd, SWY, z0 + nz*(hw + 2)*sd, WHITE, 255); };
+        for (si = 0; si <= ns; si++){ var off = true; if (si < ns){ var mx = ax + ux*l*(si + 0.5)/ns, mz = az + uz*l*(si + 0.5)/ns; off = roadOff(mx + nx*(hw + 1)*sd, mz + nz*(hw + 1)*sd, 0.2) || roadOff(mx + nx*(hw + 0.1)*sd, mz + nz*(hw + 0.1)*sd, 0.0); }
+          if (!off && r0 < 0) r0 = si; else if (off && r0 >= 0){ put(r0, si); r0 = -1; } } });
     }
   });
   w.roads.forEach(function(r){
@@ -755,13 +757,15 @@ function prep3D(){
   var list = []; chunks.forEach(function(c){ list.push(c); });
   g.pl = null; placeProps(g); try { placeDress(g); } catch (er){ console.log('dress', er); }
   /* the ground is cut into squares so only the part near you is drawn */
-  var GT = 256, buckets = new Map(), gt = [];
-  for (i = 0; i < g.p.length; i += 9){
-    var kx = Math.floor((g.p[i] + g.p[i+3] + g.p[i+6])/3/GT), ky = Math.floor((g.p[i+2] + g.p[i+5] + g.p[i+8])/3/GT), key = gk(kx, ky), bm = buckets.get(key);
-    if (!bm){ bm = new Mesh(); bm.x = (kx + 0.5)*GT; bm.y = (ky + 0.5)*GT; buckets.set(key, bm); }
-    for (var q = 0; q < 9; q++){ bm.p.push(g.p[i+q]); bm.t.push(g.t[i+q]); } var ci = i/3*4; for (q = 0; q < 12; q++) bm.c.push(g.c[ci+q]);
-  }
-  buckets.forEach(function(bm){ gt.push({g:upload(bm), x:bm.x, y:bm.y}); });
+  /* 0.114.91: counted first, then copied straight into typed arrays (4 and 1 bytes a value, not 8 in growing lists), and the big lists let go before the upload:
+     a town square's ground used to need its whole size twice over in plain lists at this point, which is where phones ran out of memory and the page reloaded */
+  var GT = 256, gt = [], nT = g.p.length/9, bk = new Int32Array(nT), ids = new Map(), cnt = [], bxs = [], bys = [];
+  for (i = 0; i < nT; i++){ var o9 = i*9, kx = Math.floor((g.p[o9] + g.p[o9+3] + g.p[o9+6])/3/GT), ky = Math.floor((g.p[o9+2] + g.p[o9+5] + g.p[o9+8])/3/GT), key = gk(kx, ky), id = ids.get(key);
+    if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i] = id; cnt[id]++; }
+  var BK = cnt.map(function(n){ return {p:new Float32Array(n*9), c:new Uint8Array(n*12), t:new Float32Array(n*9), k:0}; });
+  for (i = 0; i < nT; i++){ var bb = BK[bk[i]], so = i*9, d9 = bb.k*9, d12 = bb.k*12, q; for (q = 0; q < 9; q++){ bb.p[d9 + q] = g.p[so + q]; bb.t[d9 + q] = g.t[so + q]; } for (q = 0; q < 12; q++) bb.c[d12 + q] = g.c[i*12 + q]; bb.k++; }
+  g.p = g.c = g.t = null; bk = null;
+  BK.forEach(function(bm, id){ gt.push({g:upload(bm), x:bxs[id], y:bys[id]}); BK[id] = null; });
   w.gl = {ground:gt, chunks:list, terr:new Map()};
 }
 
