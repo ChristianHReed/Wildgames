@@ -546,7 +546,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.116.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.116.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -665,7 +665,7 @@ cv.addEventListener('mousedown', function(e){
 cv.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 /* touch: left stick moves, dragging the view looks, buttons act */
 var touchMode = false, stick = {id:null, x:0, y:0}, look = {id:null, x:0, y:0};
-function enableTouch(){ if (touchMode) return; touchMode = true; document.body.classList.add('touchmode'); el('touch').classList.remove('hidden'); }
+function enableTouch(){ if (touchMode) return; touchMode = true; document.body.classList.add('touchmode'); el('touch').classList.remove('hidden'); setTimeout(bApply, 50); }
 window.addEventListener('touchstart', enableTouch, {passive:true});
 function stickSet(t){
   var r = el('stick').getBoundingClientRect(), dx = t.clientX - (r.left + r.width/2), dy = t.clientY - (r.top + r.height/2), l = Math.hypot(dx, dy), m = 50;
@@ -723,21 +723,22 @@ function bZoom(){ return parseFloat(getComputedStyle(document.documentElement).g
 var BHUD = ['vitals', 'hud', 'miniWrap', 'hudMenu', 'carHud', 'inv'], BSEL = '#touch button, #stick, #vitals, #hud, #miniWrap, #hudMenu, #carHud, #inv';
 function bItems(){ return Array.prototype.slice.call(el('touch').querySelectorAll('button')).concat([el('stick')], BHUD.map(el)); }
 function bSet(n, fx, fy){ var z = bZoom(); n.style.setProperty('--bx', (fx*innerWidth/z) + 'px'); n.style.setProperty('--by', (fy*innerHeight/z) + 'px'); if (n.id === 'hudMenu'){ var hb = el('hudBtns'); hb.style.setProperty('--bx', (fx*innerWidth) + 'px'); hb.style.setProperty('--by', (fy*innerHeight) + 'px'); } }
-function bClamp(n){ var r = n.getBoundingClientRect(); if (!r.width) return; var o = (BPOS[bOri()] || {})[n.id]; if (!o) return; var dx = 0, dy = 0;
+function bClamp(n, keep){ var r = n.getBoundingClientRect(); if (!r.width || innerWidth < 200 || innerHeight < 200) return; var o = (BPOS[bOri()] || {})[n.id]; if (!o) return; var dx = 0, dy = 0;
   if (r.left < 0) dx = -r.left; else if (r.right > innerWidth) dx = innerWidth - r.right; if (r.top < 0) dy = -r.top; else if (r.bottom > innerHeight) dy = innerHeight - r.bottom;
-  if (dx || dy){ o[0] += dx/innerWidth; o[1] += dy/innerHeight; bSet(n, o[0], o[1]); } }
-function bApply(){ var L = BPOS[bOri()] || {}; bItems().forEach(function(n){ var o = L[n.id]; if (o) bSet(n, o[0], o[1]); else { n.style.removeProperty('--bx'); n.style.removeProperty('--by'); if (n.id === 'hudMenu'){ el('hudBtns').style.removeProperty('--bx'); el('hudBtns').style.removeProperty('--by'); } } }); bItems().forEach(bClamp); }
+  if (dx || dy){ var nx = o[0] + dx/innerWidth, ny = o[1] + dy/innerHeight; bSet(n, nx, ny); if (keep){ o[0] = nx; o[1] = ny; } } }   /* only while you are moving things is a clamped place kept; otherwise it is just drawn on screen and the saved place stays as you set it */
+function bApply(){ var L = BPOS[bOri()] || {}; bItems().forEach(function(n){ var o = L[n.id]; if (o) bSet(n, o[0], o[1]); else { n.style.removeProperty('--bx'); n.style.removeProperty('--by'); if (n.id === 'hudMenu'){ el('hudBtns').style.removeProperty('--bx'); el('hudBtns').style.removeProperty('--by'); } } }); bItems().forEach(function(n){ bClamp(n, !!BED); }); }
+setInterval(function(){ if (!BED && touchMode && !document.hidden) bApply(); }, 1500);   /* things that appear later (the speed panel) are brought on screen too */
 window.addEventListener('resize', function(){ bApply(); if (BED) bLabel(); });
 window.addEventListener('orientationchange', function(){ setTimeout(function(){ bApply(); if (BED) bLabel(); }, 250); });
 function bLabel(){ el('beSub').textContent = (bOri() === 'p' ? 'Upright (vertical) layout' : 'Sideways (horizontal) layout') + ' \u2013 drag buttons and readouts (speed and fuel under Driving, health, map, hotbar) where you want them. Turn the phone to set the other layout.'; }
 function bTab(m){ var t = el('touch'); document.body.classList.toggle('bedrive', m === 2); t.classList.remove('bmode', 'vmode'); if (m === 1) t.classList.add('bmode'); if (m === 2) t.classList.add('vmode'); el('tMode').innerHTML = '<img src="assets/ui/' + (m === 1 ? 'back' : 'build') + '.svg" alt="">';
-  [['beFoot', 0], ['beBuild', 1], ['beDrive', 2]].forEach(function(a){ el(a[0]).classList.toggle('on', a[1] === m); }); setTimeout(function(){ bItems().forEach(bClamp); bSave(); }, 30); }
+  [['beFoot', 0], ['beBuild', 1], ['beDrive', 2]].forEach(function(a){ el(a[0]).classList.toggle('on', a[1] === m); }); setTimeout(function(){ bItems().forEach(function(n){ bClamp(n, true); }); bSave(); }, 30); }
 ['touchstart', 'touchend', 'touchcancel', 'mousedown', 'mouseup', 'click'].forEach(function(ev){ window.addEventListener(ev, function(e){ if (BED && !(e.target.closest && e.target.closest('#bedit'))){ e.stopPropagation(); if (e.cancelable) e.preventDefault(); } }, true); });
 ['touchstart', 'touchend', 'touchcancel', 'touchmove'].forEach(function(ev){ cv.addEventListener(ev, function(e){ if (BED){ e.stopPropagation(); e.preventDefault(); } }, true); });
 var bDrag = null;
 window.addEventListener('pointerdown', function(e){ if (!BED) return; var n = e.target.closest && e.target.closest(BSEL); if (!n) return; var o = ((BPOS[bOri()] = BPOS[bOri()] || {})[n.id] = BPOS[bOri()][n.id] || [0, 0]);
   bDrag = {n:n, id:e.pointerId, x:e.clientX, y:e.clientY, ox:o[0], oy:o[1]}; try { n.setPointerCapture(e.pointerId); } catch (er){} e.preventDefault(); }, true);
-window.addEventListener('pointermove', function(e){ if (!bDrag || e.pointerId !== bDrag.id) return; var o = BPOS[bOri()][bDrag.n.id]; o[0] = bDrag.ox + (e.clientX - bDrag.x)/innerWidth; o[1] = bDrag.oy + (e.clientY - bDrag.y)/innerHeight; bSet(bDrag.n, o[0], o[1]); bClamp(bDrag.n); });
+window.addEventListener('pointermove', function(e){ if (!bDrag || e.pointerId !== bDrag.id) return; var o = BPOS[bOri()][bDrag.n.id]; o[0] = bDrag.ox + (e.clientX - bDrag.x)/innerWidth; o[1] = bDrag.oy + (e.clientY - bDrag.y)/innerHeight; bSet(bDrag.n, o[0], o[1]); bClamp(bDrag.n, true); });
 function bUp(e){ if (!bDrag || e.pointerId !== bDrag.id) return; bDrag = null; bSave(); }
 window.addEventListener('pointerup', bUp); window.addEventListener('pointercancel', bUp);
 function bStart(){ if (BED || !touchMode) return; BED = {m: el('touch').classList.contains('vmode') ? 2 : el('touch').classList.contains('bmode') ? 1 : 0}; el('touch').classList.add('edit'); document.body.classList.add('btnedit'); el('bedit').classList.remove('hidden'); el('hudBtns').classList.add('hidden'); el('tActM').textContent = 'Action'; el('tAct').classList.add('on'); bLabel(); bTab(BED.m); }
