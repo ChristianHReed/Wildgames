@@ -42,6 +42,31 @@
       s.onload = s.onerror = function(e){ if (e && e.type === 'error') P.errors.push('could not load pack ' + f); if (--left === 0 && cb) cb(); };
       document.head.appendChild(s); });
   };
+  /* the damage looks of a pack vehicle live in <pack>.damage.js (kept out of the main pack so phones load them only when a vehicle is first hit).
+     loadDamage(key, cb): loads that file once (script tag, works over file://), puts each vehicle's looks into SHAPED.props.models.vehicles[key].damage, then cb(true); cb(false) if the file is missing */
+  P.damageBase = 'packs/';
+  P.loadDamage = function(key, cb){
+    cb = cb || function(){};
+    var v = null; for (var i = 0; i < P.vehicles.length; i++) if (P.vehicles[i].key === key){ v = P.vehicles[i]; break; }
+    var SH = root.SHAPED, M = SH && SH.props && SH.props.models.vehicles, cur = M && M[key];
+    if (!v || !cur){ cb(false); return; }
+    if (cur.damage && Object.keys(cur.damage).length){ cb(true); return; }
+    P._dmg = P._dmg || {};
+    var st = P._dmg[v.pack] = P._dmg[v.pack] || {state:'new', waiting:[]};
+    function apply(){
+      var ok = false; (root.AFTERSTREET_PACK_DAMAGE || []).forEach(function(d){
+        if (!d || d.format !== 'afterstreet-pack-damage' || d.pack !== v.pack) return;
+        for (var id in d.damage){ var k = P.keyOf({id:v.pack}, {id:id}); if (M[k]){ M[k].damage = d.damage[id]; if (k === key) ok = true; } } });
+      return ok; }
+    if (st.state === 'done'){ cb(apply()); return; }
+    st.waiting.push(cb);
+    if (st.state === 'loading') return;
+    st.state = 'loading';
+    var s = document.createElement('script'); s.src = P.damageBase + v.pack + '.damage.js';
+    s.onload = function(){ st.state = 'done'; var ok = apply(); st.waiting.splice(0).forEach(function(f){ f(ok); }); };
+    s.onerror = function(){ st.state = 'failed'; P.errors.push('could not load damage looks for pack ' + v.pack); st.waiting.splice(0).forEach(function(f){ f(false); }); };
+    document.head.appendChild(s);
+  };
   /* a pack from text (a file the player picked, or one kept in the browser) */
   P.parse = function(text){ var a = text.indexOf('{'), b = text.lastIndexOf('}'); var p = JSON.parse(text.slice(a, b + 1)); if (p.format !== P.FORMAT) throw new Error('not an AfterStreet pack'); return p; };
   P.add = function(pack){ (root.AFTERSTREET_PACKS = root.AFTERSTREET_PACKS || []).push(pack); };

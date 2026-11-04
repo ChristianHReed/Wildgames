@@ -80,8 +80,17 @@ if (good.length){
   console.log('pack: ' + Math.round(text.length/1024) + ' KB; installed ' + P.vehicles.length + ' land, ' + (P.boats || []).length + ' boats, ' + (P.aircraft || []).length + ' aircraft' + (P.errors.length ? '; errors: ' + P.errors.join('; ') : ''));
   if (P.errors.length) failed++;
   if (makePack){
-    fs.writeFileSync(root + 'packs/workshop-crafts.js', text);
-    console.log('wrote packs/workshop-crafts.js (the game loads it once its name is in packs/index.js: the main chat adds it with walk-in rooms, trailers, boats and aircraft)');
+    /* phones: the ten damage looks of each vehicle go to their own file (loaded when a vehicle is first hit), and the editable source to a file only the Workshop loads */
+    var pk = P.parse(text), dmg = {}, src = {}, head = text.slice(0, text.indexOf('(window.')), nDmg = 0;
+    pk.assets.forEach(function(a){
+      if (a.model && a.model.damage && Object.keys(a.model.damage).length){ dmg[a.id] = a.model.damage; a.model.damage = {}; nDmg++; }
+      if (a.source){ src[a.id] = a.source; delete a.source; }
+    });
+    var pre = function(what){ return '/* AfterStreet content pack "Workshop vehicles": ' + what + ' */\n'; };
+    fs.writeFileSync(root + 'packs/workshop-crafts.js', head + '(window.AFTERSTREET_PACKS = window.AFTERSTREET_PACKS || []).push(' + JSON.stringify(pk) + ');\n');
+    fs.writeFileSync(root + 'packs/workshop-crafts.damage.js', pre('damage looks, loaded by AfterstreetPacks.loadDamage the first time one of its vehicles is hit') + '(window.AFTERSTREET_PACK_DAMAGE = window.AFTERSTREET_PACK_DAMAGE || []).push(' + JSON.stringify({format:'afterstreet-pack-damage', pack:'workshop-crafts', damage:dmg}) + ');\n');
+    fs.writeFileSync(root + 'packs/workshop-crafts.source.js', pre('editable designs, loaded only by the Workshop') + '(window.AFTERSTREET_PACK_SOURCE = window.AFTERSTREET_PACK_SOURCE || []).push(' + JSON.stringify({format:'afterstreet-pack-source', pack:'workshop-crafts', source:src}) + ');\n');
+    console.log('wrote packs/workshop-crafts.js, .damage.js and .source.js (the game loads it once its name is in packs/index.js: the main chat adds it with walk-in rooms, trailers, boats and aircraft)');
   }
 }
 console.log(results.length + ' designs, ' + failed + ' failed');

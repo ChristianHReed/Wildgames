@@ -1693,6 +1693,14 @@
     h += '<div class="row" style="margin-top:12px"><button class="alt sm" data-m="import">Import a pack file</button><span class="sp"></span><button class="alt sm" data-m="close">Close</button></div>';
     modal(h);
   }
+  /* packs/workshop-crafts.js (the game's pack) plus packs/workshop-crafts.source.js (the editable designs, only the Workshop loads it); cb when both have loaded or failed */
+  function craftPack(cb){
+    var get = function(){ return (window.AFTERSTREET_PACKS || []).filter(function(p){ return p && p.id === 'workshop-crafts'; })[0]; };
+    var load = function(src, done){ var sc = document.createElement('script'); sc.src = src; sc.onload = sc.onerror = done; document.head.appendChild(sc); };
+    var joinSource = function(){ var pk = get(); (window.AFTERSTREET_PACK_SOURCE || []).forEach(function(q){ if (!pk || !q || q.pack !== 'workshop-crafts') return; pk.assets.forEach(function(a){ if (q.source[a.id] && !a.source) a.source = q.source[a.id]; }); }); cb(); };
+    var withMain = function(){ if (window.AFTERSTREET_PACK_SOURCE && window.AFTERSTREET_PACK_SOURCE.length) return joinSource(); load('packs/workshop-crafts.source.js', joinSource); };
+    if (get()) withMain(); else load('packs/workshop-crafts.js', withMain);
+  }
   /* the vehicles remade with the build library (packs/workshop-crafts.js), opened as copies */
   function craftLib(){
     var box = $('modalBox'), show = function(){
@@ -1703,8 +1711,7 @@
         list.map(function(a){ var g = a.game || {}; return '<div class="it"><span class="nm">' + esc(a.name) + ' <span class="muted">' + esc((M.CLASSES[a.domain || 'land'].filter(function(c){ return c[0] === a.cls; })[0] || ['', a.cls])[1]) + (g.mobileBase ? ' · mobile base' : g.walkIn ? ' · walk-in' : '') + '</span></span><button class="alt sm" data-m="openCraft" data-id="' + esc(a.id) + '">Open a copy</button></div>'; }).join('') +
         '</div><div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Close</button></div>';
     };
-    if ((window.AFTERSTREET_PACKS || []).some(function(p){ return p && p.id === 'workshop-crafts'; })) return show();
-    box.innerHTML = '<p>Loading…</p>'; var sc = document.createElement('script'); sc.src = 'packs/workshop-crafts.js'; sc.onload = sc.onerror = show; document.head.appendChild(sc);
+    box.innerHTML = '<p>Loading…</p>'; craftPack(show);
   }
   /* every model of every pack the game has, opened as an editable copy */
   function stockBrowser(){
