@@ -504,9 +504,9 @@ function placeProps(g){
   w.buildings.forEach(function(b){
     if (!b.door) return; var d = b.door, tx = -d.ny, ty = d.nx, h = hash(b.id, 13, 3), x, y;
     if (b.cat === 'house'){ if (h < 0.45){ var sd = h < 0.22 ? 1 : -1; x = d.x - d.nx*0.7 + tx*1.7*sd; y = d.y - d.ny*0.7 + ty*1.7*sd; if (ok(x, y)) cand.bush.push([x, y, h*20]); } }
-    else if (h < 0.5){ x = d.x - d.nx*1.1 + tx*3.4; y = d.y - d.ny*1.1 + ty*3.4; if (ok(x, y) && ok(x + tx, y + ty) && ok(x - tx, y - ty)) cand.dump.push([x, y, Math.atan2(ty, tx)]); }
+    else if (h < 0.5){ x = d.x - d.nx*1.1 + tx*3.4; y = d.y - d.ny*1.1 + ty*3.4; if (ok(x, y) && ok(x + tx, y + ty) && ok(x - tx, y - ty)) cand.dump.push([x, y, Math.atan2(ty, tx), b.kind]); }
   });
-  w.slights = []; w.obstL = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
+  w.slights = []; w.obstL = []; w.dumps = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'dumpster'){ var di = w.dumps.length; w.dumps.push({dump:1, name:'dumpster', x:c[0], y:c[1], kind:c[3], looted:!!(w.dumpGone && w.dumpGone.indexOf(di) >= 0), t:0, i:di}); } if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
   put(cand.light, 'streetlight', 700); put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
 }
 /* 0.80 dressing from the art pack's unused street, plant and road pieces: signs and poles on the streets, mailboxes at houses, bus stops, manholes,

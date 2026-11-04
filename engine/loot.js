@@ -79,20 +79,38 @@ var STREETW = {'st-axe':'Axe', 'st-crowbar':'Crowbar', 'st-wrench':'Wrench', 'st
   D('deposit table', {}, {any:{key:.2, none:6}}); D('queue stanchion', {}, {any:{scrap:1, none:6}}); D('brochure rack', {}, {any:{map:3, book:.5, none:3}}); D('po box wall', {}, {any:{key:.5, map:.3, none:5}}); D('parcel scale', {}, {any:{scrap:.3, none:6}});
   D('mail sort rack', {}, {any:{food:.5, battery:.8, medkit:.3, coat:.3, book:.3, none:3}}); D('dental chair', {}, {any:{antibio:.5, bandage:.6, none:4}}); D('sterilizer counter', {}, {any:{bandage:2, antibio:1, splint:.3, none:3}});
   /* what a car, truck or army vehicle carries */
-  D('trunk', {n:3}, {any:{scrap:3, water:1, food:1, tire:.8, carbat:.5, toolkit:.25, fuel:1, ammo:.5, battery:.6, none:4},
-    'k:wreck':{_n:2, scrap:3, water:1, food:1, tire:.8, carbat:.5, toolkit:.25, fuel:1, ammo:.5, battery:.6, none:4},
+  D('trunk', {n:3}, {any:{scrap:2, water:1.2, food:1.2, tire:.6, carbat:.3, toolkit:.3, fuel:.6, battery:.6, 'st-umbrella':.3, coat:.5, medkit:.5, flashlight:.5, map:.6, none:3.5},
+    'k:wreck':{_n:2, scrap:3, water:1, food:1, tire:.8, carbat:.5, toolkit:.25, fuel:1, battery:.6, none:4},
     'k:military':{_n:5, ammo:3, rifle:3.5, shell:2.5, flareshell:1, flare_gun:.25, carbine:.7, pump_shotgun:.4, revolver:.3, hunting_rifle:.15, medkit:1.8, bandage:1.5, radio:1.2, battery:1, flashlight:.8, helmet:1.2, shovel:.4, fuel:.8, none:1.5},
     'k:police':{_n:3, ammo:3, shell:2.5, rifle:1, pump_shotgun:.4, revolver:.3, flashlight:1.5, radio:1, medkit:1, bandage:1, battery:1, helmet:.6, flareshell:1, flare_gun:.1, key:.4, none:2},
     'k:ambulance':{_n:4, medkit:5, bandage:6, antibio:2.5, splint:3, water:1.5, flashlight:.8, battery:.8, none:1},
     'k:fire':{_n:4, medkit:2, bandage:2, splint:1, helmet:1.5, gloves:1.2, boots:1, 'st-axe':1.2, 'st-crowbar':.8, flashlight:1, flareshell:.8, flare_gun:.2, fuel:1, water:2, none:1.5},
     'k:work':{_n:3, scrap:4, toolkit:1, tape:1.5, fuel:2, tire:.8, parts:.8, 'st-wrench':.7, 'st-crowbar':.5, gloves:.8, helmet:.5, none:1.5},
-    'k:truck':{_n:3, scrap:3, wood:1.5, fuel:1.5, tire:1, carbat:.6, toolkit:.4, food:1.2, water:1.2, tape:.8, none:3}});
+    'k:truck':{_n:3, scrap:3, wood:1.5, fuel:1.5, tire:1, carbat:.6, toolkit:.4, food:1.2, water:1.2, tape:.8, none:3},
+    /* an ordinary car (the 'any' list above) holds a spare, a jack, snacks and a first-aid kit; the rest by kind of vehicle */
+    'k:suv':{_n:3, water:2, food:1.5, medkit:.9, bandage:.6, coat:.8, raincoat:.6, boots:.4, flashlight:.8, lantern:.5, battery:.6, tire:.6, toolkit:.4, fuel:1, map:.8, shovel:.3, 'st-umbrella':.3, none:2.5},
+    'k:pickup':{_n:3, scrap:2.5, toolkit:.9, tape:1, fuel:1.3, tire:.8, carbat:.5, shovel:.5, gloves:.6, boots:.3, wood:.8, water:.6, 'st-crowbar':.3, 'st-wrench':.3, 'st-axe':.25, none:3},
+    'k:van':{_n:3, toolkit:1.2, scrap:3, tape:1.5, battery:1, flashlight:.8, parts:.5, tire:.4, gloves:.6, helmet:.2, fuel:.6, 'st-wrench':.6, 'st-crowbar':.5, none:2.5},
+    'k:flatbed':{_n:3, wood:3, scrap:3, nails:1.5, tape:1, fuel:1.5, tire:1, chunk:1, toolkit:.4, 'st-crowbar':.4, none:2.5},
+    'k:cargo_food':{_n:4, food:7, water:4, fresh:2, none:1}, 'k:cargo_build':{_n:4, wood:4, scrap:4, nails:2, tape:2, sheet:1.5, chunk:1.5, toolkit:.4, none:1},
+    'k:cargo_med':{_n:4, medkit:4, bandage:5, antibio:2, splint:1.5, water:1, none:1}, 'k:cargo_goods':{_n:4, battery:3, radio:.8, flashlight:1.5, coat:1.5, sweater:1.5, boots:1, book:.6, scrap:1, none:1.5},
+    'k:bus':{_n:3, map:2, coat:1, sweater:1, 'st-umbrella':1, battery:.6, book:.6, water:.6, medkit:.8, flashlight:.6, none:4},
+    'k:schoolbus':{_n:3, book:2.5, food:1.2, water:1.2, medkit:1, bandage:1, sweater:.8, cap:.6, coat:.5, flashlight:.5, none:3},
+    'k:rv':{_n:5, food:3, fresh:1.5, water:3, medkit:1.2, bandage:1, lantern:1, flashlight:1, battery:1.5, fuel:1.5, map:1.2, coat:1, raincoat:.8, boots:.5, tape:.6, toolkit:.4, none:1.5},
+    'h:hunter':{hunting_rifle:.5, double_barrel:.2, rifle:2.5, shell:2, arrow:.4}, 'h:handyman':{'st-crowbar':.6, 'st-wrench':.6, toolkit:.5, tape:.5}});
+  /* street dumpsters: what the shop or office beside them throws out */
+  D('dumpster', {n:2}, {any:{scrap:3, rotten:1.2, wood:.8, tape:.4, food:.3, battery:.2, none:4},
+    'k:restaurant':{rotten:4, food:1.2, fresh:.3, water:.3, scrap:1.5, none:2}, 'k:grocery':{rotten:4, food:1.2, fresh:.6, water:.3, scrap:1.5, none:2}, 'k:bar':{rotten:2, water:.8, scrap:2, none:3}, 'k:fuel':{scrap:2, food:.6, water:.5, fuel:.3, none:3},
+    'k:clinic':{bandage:.8, scrap:1.5, antibio:.2, medkit:.15, none:4}, 'k:hospital':{bandage:.8, scrap:1.5, antibio:.2, medkit:.15, none:4},
+    'k:hardware':{scrap:4, wood:2.5, tape:.8, tire:.4, parts:.4, nails:1, fuel:.3, none:2}, 'k:garage':{scrap:4, wood:1.5, tire:.6, parts:.6, tape:.6, fuel:.4, none:2}, 'k:warehouse':{wood:3, scrap:3, chunk:1, tape:.6, none:2.5},
+    'k:clothes':{sweater:.8, coat:.6, boots:.4, cap:.3, scrap:.5, none:4}, 'k:electronics':{battery:2, scrap:2, flashlight:.3, radio:.15, none:3}, 'k:office':{scrap:1, battery:.5, book:.3, none:6}, 'k:school':{food:1, rotten:1, book:.4, scrap:1, none:4},
+    'k:hotel':{scrap:1.5, coat:.3, water:.5, food:.5, rotten:.8, none:4}, 'k:library':{book:1.5, scrap:.5, none:4}, 'k:gym':{water:1, scrap:1, none:5}, 'k:outdoors':{arrow:.3, tape:.5, scrap:2, none:4}, 'k:church':{scrap:.5, food:.4, none:6}});
   /* supplies lying about in the open on the map, by the kind of place they belong to */
   D('supply stash', {n:2, cust:.06}, {any:{scrap:3, food:2, water:2, battery:1, none:1}, 'k:food':{food:6, fresh:3, water:4, none:.5}, 'k:medical':{medkit:6, bandage:3, antibio:1.5, splint:1, water:1, none:.5}, 'k:police':{ammo:8, rifle:2, shell:2.5, medkit:1, radio:1, battery:2, carbine:.35, pump_shotgun:.5, revolver:.6, helmet:.8, none:.5},
     'k:industrial':{scrap:5, wood:4, fuel:2, battery:1, chunk:2.5, tape:1.2, toolkit:.4, 'st-crowbar':.3, 'st-axe':.2, none:.5}, 'k:shop':{food:2, water:2, scrap:2, battery:1.6, medkit:1, coat:.6, map:.8, radio:.3, none:.8}, 'k:civic':{water:2, food:2, battery:2, flashlight:1, medkit:.8, scrap:1, none:1.5}, 'k:house':{food:3, water:2, scrap:1.5, wood:1, battery:.9, medkit:.5, seeds:.25, none:1.5}});
 })();
 var LOOTKINDS = ['house', 'apartments', 'garage', 'grocery', 'restaurant', 'bar', 'clinic', 'hospital', 'police', 'fire', 'outdoors', 'hardware', 'fuel', 'warehouse', 'parking', 'clothes', 'electronics', 'shop', 'school', 'library', 'church', 'office', 'bank', 'hotel', 'gym', 'venue'];
-var LOOTVEH = {wreck:'a wrecked car', military:'an army vehicle', police:'a police car', ambulance:'an ambulance', fire:'a fire engine', work:'a work truck (tow, dump, digger...)', truck:'a truck or van'};
+var LOOTVEH = {wreck:'a wrecked car', military:'an army vehicle', police:'a police car', ambulance:'an ambulance', fire:'a fire engine', work:'a work truck (tow, dump, digger...)', truck:'a truck', suv:'an SUV, wagon or off-roader', pickup:'a pickup', van:'a van', flatbed:'a flatbed truck', cargo_food:'a box truck full of groceries', cargo_build:'a box truck full of building supplies', cargo_med:'a box truck full of medical supplies', cargo_goods:'a box truck full of goods', bus:'a city bus', schoolbus:'a school bus', rv:'a motorhome'};
 var LOOTCAT = {food:'a food stash', medical:'a medical stash', police:'an armoury stash', industrial:'a workshop stash', shop:'a shop stash', civic:'a public-building stash', house:'a home stash'};
 function lootScopeName(sc){
   var t = sc.slice(2); if (sc === 'any') return 'Anywhere else'; if (sc.charAt(0) === 'h') return HHN[t] || t;
@@ -130,19 +148,28 @@ function householdOf(b){
 function lootNameOf(o){ return o.corpse ? null : !o.b && o.cat ? 'supply stash' : (o.name || '').toLowerCase(); }
 function lootTable(o, scopeKind, extra){
   var name = o.trunk ? 'trunk' : lootNameOf(o); if (!name || !(LOOTDEF[name] || LOOTUSER[name])) return null;
-  var kind = scopeKind || (o.b && o.b.kind) || o.cat, tab = lootScope(name, 'k:' + kind) || lootScope(name, 'any'); if (!tab) return null;
+  var kind = scopeKind || (o.b && o.b.kind) || o.kind || o.cat, tab = lootScope(name, 'k:' + kind) || lootScope(name, 'any'); if (!tab) return null;
   var t = {}, k, n = tab._n || lootRolls(name); for (k in tab) if (k !== '_n') t[k] = tab[k];
   var hh = extra || (o.b && HOMEKINDS[o.b.kind] ? householdOf(o.b) : null);
   if (hh && hh.type !== 'none'){ var h = lootScope(name, 'h:' + hh.type); if (h) for (k in h) t[k] = (t[k] || 0) + h[k]; }
   return {tab:t, n:n, cust:LOOTUSER[name] && LOOTUSER[name].cust !== undefined ? LOOTUSER[name].cust : LOOTDEF[name] ? LOOTDEF[name].cust : 0};
 }
 /* which vehicle scope a car's boot belongs to */
-function lootVehKind(v, key){
+function lootVehKind(v, key, army){
   var k = String(key || v.kind || '').toLowerCase();
-  if (/army|humvee|armou?red|apc|ammo_trailer|military|transport_heli|patrol_boat|jeep/.test(k)) return 'military';
-  if (v.dead === 'wreck' || v.dead === true || v.dead) return 'wreck';
-  if (/police/.test(k)) return 'police'; if (/ambulance/.test(k)) return 'ambulance'; if (/fire/.test(k)) return 'fire';
+  if (army || /army|humvee|armou?red|apc|ammo_trailer|military|transport_heli|patrol_boat|jeep/.test(k)) return 'military';
+  if (v.dead) return 'wreck';
+  if (/police/.test(k)) return 'police'; if (/ambulance/.test(k)) return 'ambulance'; if (/fire_engine|fire_truck|firetruck/.test(k)) return 'fire';
   if (/tow|dump|mixer|garbage|excavator|bulldozer|crane|loader/.test(k)) return 'work';
-  if (/truck|van|bus|semi|flatbed|trailer|motorhome/.test(k)) return 'truck';
-  return 'any';
+  if (/school_bus/.test(k)) return 'schoolbus'; if (/bus/.test(k)) return 'bus'; if (/motorhome|\brv\b/.test(k)) return 'rv';
+  if (/box_truck|boxtruck|trailer|semi/.test(k)) return 'cargo'; if (/flatbed/.test(k)) return 'flatbed';
+  if (/pickup|red_truck/.test(k)) return 'pickup'; if (/van/.test(k)) return 'van'; if (/suv|offroad|wagon|ozark/.test(k)) return 'suv';
+  if (/truck/.test(k)) return 'truck'; return 'any';
+}
+/* the table for searching a vehicle: its own kind, a cargo for box trucks, and for pickups a rifle behind the seat (north of town) or a tradesman's tools */
+function lootBoot(v, key, army){
+  var k = lootVehKind(v, key, army), ex = null, r = hash(Math.round(v.x), Math.round(v.y), 72);
+  if (k === 'cargo') k = 'cargo_' + ['food', 'build', 'med', 'goods'][Math.floor(hash(Math.round(v.x), Math.round(v.y), 73)*4)];
+  else if (k === 'pickup'){ if (r < 0.4 && LOOTCFG.north && lootNorth({cy:v.y}) && LOOTCFG.guns > 0) ex = {type:'hunter'}; else if (r < 0.2) ex = {type:'handyman'}; }
+  return lootTable({trunk:1}, k === 'any' ? null : k, ex);
 }
