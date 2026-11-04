@@ -36,10 +36,14 @@ Loop: gear up at home, meet up, cross the city, restore the airport, hold the ru
 - **Harder world:** more and tougher aliens scaled to the number of players.
 - **Otherwise the same loop as solo.**
 
-## Open questions
-- Escape: how many people can the plane carry; does everyone have to be aboard?
-- Zones: how big, and what happens at the edge of a very large map?
-- Endless: do survivors die permanently, and can the settlement be lost?
+## Answered after the first pass
+- **Escape plane:** carries everyone, no limit; the run ends when all living players are aboard.
+- **Reclaim zones:** about 500 m squares in a grid; zones at the map edge are simply smaller.
+- **Endless survivor death:** a difficulty setting on a new world (permanent death on or off).
+- **Endless losing the base:** a difficulty setting on a new world (base can be overrun on or off).
+
+## Difficulty settings on a new world (collected)
+Nest push-back (Gentle, Steady, Brutal), permanent survivor death, base can be lost, homes with weapons (already in Settings).
 
 ## Suggested build order
 1. Difficulty settings on a new world (alien pressure, nest push-back) and the settlement meter for Endless.
