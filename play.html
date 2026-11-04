@@ -516,7 +516,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.93', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.94', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4714,9 +4714,12 @@ function regPackV(e){ var k = e.key, g = e.game || {}, mph = +g.topSpeedMph || 6
   PACKK.push(k); PACKE[k] = e; CKD[k] = [k, e.paint || {}]; KITV[k] = k; SLOT[k] = ['paint1', 'paint2', 'paint3'];
   TANK[k] = Math.max(150, Math.min(600, (+g.rangeMiles || 300)*0.85)); TOPSPD[k] = Math.max(14, Math.min(40, mph*0.4)); WEAK[k] = big ? 0.6 : 0.9; ACCEL[k] = (big ? 8 : 11)*pw; }
 (window.AfterstreetPacks && AfterstreetPacks.vehicles || []).forEach(regPackV);   /* 0.114.88: one at a time, so a car built at a station joins while the game runs */
+/* 0.114.94: pack cars keep their ten damage looks in packs/<pack>.damage.js, loaded the first time one is hurt (the car shows its whole look until then) */
+var DMGASK = {};
+function dmgAsk(k){ if (DMGASK[k]) return; DMGASK[k] = 1; try { AfterstreetPacks.loadDamage(k, function(ok){ if (!ok) return; for (var q in CDM) if (CDM[q] === null && q.indexOf(k + '|') === 0) delete CDM[q]; }); } catch (er){ } }
 function carDmgModel(k, lv, fire, cu){
   var key = k + '|' + lv + (fire ? 'f' : '') + (cu && (cu.c || cu.t) ? '|' + (cu.c || '') + (cu.t || '') : ''); if (CDM[key] !== undefined) return CDM[key]; CDM[key] = null;
-  try { var C0 = CKD[k]; if (!C0 || !SPON || !VMOD[k] || !VMOD[k].w) return null; var PR = SHAPED.props, V = PR.models.vehicles[C0[0]], D = V && V.damage; if (!D) return null;
+  try { var C0 = CKD[k]; if (!C0 || !SPON || !VMOD[k] || !VMOD[k].w) return null; var PR = SHAPED.props, V = PR.models.vehicles[C0[0]], D = V && V.damage; if (V && (!D || !D.body_crumple_heavy) && window.AfterstreetPacks && AfterstreetPacks.loadDamage && /^pk_/.test(C0[0])){ delete CDM[key]; dmgAsk(C0[0]); return null; } if (!D) return null;
     var body = lv === 1 ? D.body_bumper_bent : lv === 2 ? D.body_crumple_light : D.body_crumple_heavy, bon = lv === 1 ? V.bonnet : lv === 2 ? D.bonnet_crumple_light : D.bonnet_buckled, pcs = (body || V.body).concat(bon || []);
     if (lv >= 1) pcs = pcs.concat(lv >= 4 ? D.windscreen_missing : D.windscreen_cracked); if (lv >= 3) pcs = pcs.concat(D.smoke); if (fire) pcs = pcs.concat(D.fire);
     var ov = {}, q2, sl = SLOT[k] || ['paint3']; for (q2 in (C0[1] || {})) ov[q2] = C0[1][q2]; if (cu && cu.c) ov[sl[0]] = cu.c; if (cu && cu.t && sl[1]) ov[sl[1]] = cu.t;
