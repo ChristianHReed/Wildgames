@@ -51,10 +51,15 @@ $('locMe').addEventListener('click', function(){
 async function search(){
   var q = $('q').value.trim(); if (!q) return;
   try {
-    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q)); if (!r.ok) throw new Error(r.status);
-    var j = await r.json(); if (!j.length){ toast('That place was not found.'); return; }
-    setArea({lat:+j[0].lat, lon:+j[0].lon, name:String(j[0].display_name || q).split(',').slice(0, 2).join(',').trim().slice(0, 40)}, true);
-  } catch (e){ toast('The place search needs an internet connection. You can type the latitude and longitude instead.', 5); }
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, tm = setTimeout(function(){ if (ctl) ctl.abort(); }, 25000);
+    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&accept-language=en&q=' + encodeURIComponent(q), ctl ? {signal:ctl.signal} : {}); clearTimeout(tm);
+    if (!r.ok){ toast(r.status === 403 || r.status === 429 ? 'The place search is busy. Try again in a minute, or type the latitude and longitude.' : 'The place search answered ' + r.status + '.', 5); return; }
+    var j = await r.json(); if (!j.length){ toast('That place was not found. Try adding the state, like "Dayton, Ohio".', 5); return; }
+    var a = j[0].address || {}, nm = [a.city || a.town || a.village || a.hamlet || a.county || String(j[0].display_name || q).split(',')[0], a.state].filter(Boolean).join(', ');
+    var other = j.slice(1).filter(function(x){ return x.address && a.state && x.address.state && x.address.state !== a.state; })[0];
+    setArea({lat:+j[0].lat, lon:+j[0].lon, name:nm.slice(0, 40)}, true);
+    toast('Found ' + nm + '.' + (other ? ' Not that one? Add the state, like "' + String(q).split(',')[0] + ', ' + other.address.state + '".' : ''), 6);
+  } catch (e){ toast(e && e.name === 'AbortError' ? 'The place search took too long. Try again, or type the latitude and longitude.' : 'The place search needs an internet connection. You can type the latitude and longitude instead.', 5); }
 }
 $('qGo').addEventListener('click', search); $('q').addEventListener('keydown', function(e){ if (e.key === 'Enter') search(); });
 var tapMode = false; $('tapSet').addEventListener('click', function(){ tapMode = !tapMode; this.classList.toggle('on', tapMode); note(tapMode ? 'Tap the map where the centre should be' : ''); });

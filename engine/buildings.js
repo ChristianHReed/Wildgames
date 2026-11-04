@@ -738,8 +738,9 @@ function prep3D(){
     else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false, r.tun, true); }
     else ribbon(r.pts, r.w/2, r.kind === 'road' && r.w >= 6 ? RDY : 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap, !(r.kind === 'road' && r.w >= 6));
   });
-  g.pl = null; if (w.hg) drape(g, LIFT); w.liftY = LIFT;
-  if (w.hg && mapSrc && mapSrc.street){ var WT = g.t, WP = g.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; }   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
+  g.pl = null; if (w.hg) drape(g, LIFT, true); w.liftY = LIFT;
+  if (w.hg && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
+  var gD = g; g = new Mesh();   /* 0.114.92: the draped ground stays as it came back (typed arrays from the Rust core); what follows goes into a second list */
   sunkWalls(w, g, LIFT, SWY, RDY);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
   try { structBuild(g); } catch (er){ console.log('structures', er); }
@@ -759,12 +760,14 @@ function prep3D(){
   /* the ground is cut into squares so only the part near you is drawn */
   /* 0.114.91: counted first, then copied straight into typed arrays (4 and 1 bytes a value, not 8 in growing lists), and the big lists let go before the upload:
      a town square's ground used to need its whole size twice over in plain lists at this point, which is where phones ran out of memory and the page reloaded */
-  var GT = 256, gt = [], nT = g.p.length/9, bk = new Int32Array(nT), ids = new Map(), cnt = [], bxs = [], bys = [];
-  for (i = 0; i < nT; i++){ var o9 = i*9, kx = Math.floor((g.p[o9] + g.p[o9+3] + g.p[o9+6])/3/GT), ky = Math.floor((g.p[o9+2] + g.p[o9+5] + g.p[o9+8])/3/GT), key = gk(kx, ky), id = ids.get(key);
-    if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i] = id; cnt[id]++; }
+  var GT = 256, gt = [], ids = new Map(), cnt = [], bxs = [], bys = [], SRC = (gD.parts || [gD]).concat([g]);
+  var bks = SRC.map(function(sm){ var nT = sm.p.length/9, bk = new Int32Array(nT);
+    for (var i2 = 0; i2 < nT; i2++){ var o9 = i2*9, kx = Math.floor((sm.p[o9] + sm.p[o9+3] + sm.p[o9+6])/3/GT), ky = Math.floor((sm.p[o9+2] + sm.p[o9+5] + sm.p[o9+8])/3/GT), key = gk(kx, ky), id = ids.get(key);
+      if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i2] = id; cnt[id]++; }
+    return bk; });
   var BK = cnt.map(function(n){ return {p:new Float32Array(n*9), c:new Uint8Array(n*12), t:new Float32Array(n*9), k:0}; });
-  for (i = 0; i < nT; i++){ var bb = BK[bk[i]], so = i*9, d9 = bb.k*9, d12 = bb.k*12, q; for (q = 0; q < 9; q++){ bb.p[d9 + q] = g.p[so + q]; bb.t[d9 + q] = g.t[so + q]; } for (q = 0; q < 12; q++) bb.c[d12 + q] = g.c[i*12 + q]; bb.k++; }
-  g.p = g.c = g.t = null; bk = null;
+  SRC.forEach(function(sm, si){ var bk = bks[si], nT = bk.length; for (var i2 = 0; i2 < nT; i2++){ var bb = BK[bk[i2]], so = i2*9, d9 = bb.k*9, d12 = bb.k*12, q; for (q = 0; q < 9; q++){ bb.p[d9 + q] = sm.p[so + q]; bb.t[d9 + q] = sm.t[so + q]; } for (q = 0; q < 12; q++) bb.c[d12 + q] = sm.c[i2*12 + q]; bb.k++; }
+    sm.p = sm.c = sm.t = null; bks[si] = null; });
   BK.forEach(function(bm, id){ gt.push({g:upload(bm), x:bxs[id], y:bys[id]}); BK[id] = null; });
   w.gl = {ground:gt, chunks:list, terr:new Map()};
 }

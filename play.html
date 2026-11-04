@@ -516,7 +516,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.91', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.92', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -524,7 +524,7 @@ var BUILD = '0.114.91', ART = {}, ARTSET = (function(){
   return set;
 })();
 /* shared engine files (also loaded by the Maps Builder): same ?v=BUILD rule as the art */
-['core', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'collision', 'render'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+['core', 'core_wasm', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'collision', 'render'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
 </script>
 <script>
 'use strict';
@@ -1743,7 +1743,10 @@ function pickLot(){
     var b = cd[0], d = cd[1], dr = b.door, ox = -dr.nx, oy = -dr.ny, ux = -oy, uy = ox, cx = b.cx + ox*6, cy = b.cy + oy*6, z = {x:cx, y:cy, ux:ux, uy:uy, hw:LOT_W, hd:LOT_D};
     var cr = zoneCorners(z), ok = cr.every(function(p){ return p[0] > bx.x0 + 8 && p[0] < bx.x1 - 8 && p[1] > bx.y0 + 8 && p[1] < bx.y1 - 8; }); if (!ok) return;
     var sc = (w.pin ? d*2.5 : (maxD - d)*0.04) + Math.max(0, b.area - 150)*0.5 + (b.area < 80 ? 40 : 0), inz = function(x, y, e){ var l = zoneLocal(z, x, y); return Math.abs(l[0]) < LOT_W + e && Math.abs(l[1]) < LOT_D + e; };
-    w.roads.forEach(function(r){ if (r.kind === 'path') return; var p = r.pts; for (var q = 0; q + 3 < p.length; q += 2){ var L2 = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), n = Math.max(1, Math.ceil(L2/3)); for (var s2 = 0; s2 <= n; s2++){ var x = p[q] + (p[q+2] - p[q])*s2/n, y = p[q+1] + (p[q+3] - p[q+1])*s2/n; if (inz(x, y, r.w/2)){ sc += r.kind === 'water' ? 400 : 60; return; } } } });
+    w.roads.forEach(function(r){ if (r.kind === 'path') return; var p = r.pts;
+      if (!r.bb){ var bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9; for (var qq = 0; qq < p.length; qq += 2){ if (p[qq] < bx0) bx0 = p[qq]; if (p[qq] > bx1) bx1 = p[qq]; if (p[qq+1] < by0) by0 = p[qq+1]; if (p[qq+1] > by1) by1 = p[qq+1]; } r.bb = [bx0, by0, bx1, by1]; }
+      var rr = 46 + r.w; if (r.bb[0] > cx + rr || r.bb[2] < cx - rr || r.bb[1] > cy + rr || r.bb[3] < cy - rr) return;   /* 0.114.92: roads nowhere near this lot are not walked point by point (a second of loading in a big square) */
+      for (var q = 0; q + 3 < p.length; q += 2){ var L2 = Math.hypot(p[q+2] - p[q], p[q+3] - p[q+1]), n = Math.max(1, Math.ceil(L2/3)); for (var s2 = 0; s2 <= n; s2++){ var x = p[q] + (p[q+2] - p[q])*s2/n, y = p[q+1] + (p[q+3] - p[q+1])*s2/n; if (inz(x, y, r.w/2)){ sc += r.kind === 'water' ? 400 : 60; return; } } } });
     w.buildings.forEach(function(o){ if (o !== b && !o.gone && inz(o.cx, o.cy, 6)) sc += o.area > 400 ? 120 : 12; });
     if (inWater(cx, cy, LOT_W)) sc += 400;
     /* 0.50.3: the lot has to be within sight of the town. Count the buildings 45 to 130 m from the middle of the lot (outside it): the more there are, and the nearer the first, the better */

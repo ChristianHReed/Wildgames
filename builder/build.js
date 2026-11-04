@@ -210,6 +210,38 @@ L.overpassQuery = function(b){
     'node[natural~"^(tree|peak|spring)$"];node[highway~"^(traffic_signals|stop|give_way|crossing|street_lamp|bus_stop)$"];);out geom;';
 };
 
+/* the free OpenStreetMap servers are often busy, and a big area can be too much for one request; the server says so in a "remark" inside an answer that otherwise looks fine.
+   So: three servers in turn, a time limit on each, the remark checked, and an area that is too big fetched in four quarters and joined (twice at most). b = [w, s, e, n] */
+L.OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter'];
+L.opi = 0;
+L.overpassOnce = async function(b, say, stop){
+  var body = 'data=' + encodeURIComponent(L.overpassQuery(b)), last = null, sleep = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+  for (var t = 0; t < L.OVERPASS.length*2; t++){
+    if (stop && stop()) throw new Error('stopped');
+    var k = (L.opi + t) % L.OVERPASS.length, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, tm = setTimeout(function(){ if (ctl) ctl.abort(); }, 200000);
+    if (t && say) say('The map server is busy; trying ' + L.OVERPASS[k].split('/')[2]);
+    try {
+      var r = await fetch(L.OVERPASS[k], {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body, signal:ctl ? ctl.signal : undefined});
+      if (r.status === 429 || r.status >= 500){ last = new Error('the OpenStreetMap servers are busy (' + r.status + '); try again in a few minutes, or upload a file'); clearTimeout(tm); await sleep(t < L.OVERPASS.length ? 1500 : 10000); continue; }
+      if (!r.ok){ last = new Error('the OpenStreetMap server answered ' + r.status); clearTimeout(tm); continue; }
+      var j = await r.json(); clearTimeout(tm);
+      if (j.remark && /runtime error|timed out|out of memory|Query run out/i.test(j.remark)){ var big = new Error('too much map data for one download'); big.big = true; throw big; }
+      if (!j.elements){ last = new Error('the OpenStreetMap server sent something that is not map data'); continue; }
+      L.opi = k; return j;
+    } catch (e){ clearTimeout(tm); if (e.big || e.message === 'stopped') throw e; last = e.name === 'AbortError' ? new Error('the OpenStreetMap server took too long') : e; await sleep(1500); }
+  }
+  throw last || new Error('no OpenStreetMap server answered');
+};
+L.overpassArea = async function(b, say, stop, depth){
+  depth = depth || 0;
+  try { return await L.overpassOnce(b, say, stop); }
+  catch (e){ if (!e.big || depth >= 2) throw e;
+    if (say) say('That is a lot of map: downloading it in ' + Math.pow(4, depth + 1) + ' pieces');
+    var mx = (b[0] + b[2])/2, my = (b[1] + b[3])/2, Q = [[b[0], b[1], mx, my], [mx, b[1], b[2], my], [b[0], my, mx, b[3]], [mx, my, b[2], b[3]]], seen = new Set(), all = [];
+    for (var q = 0; q < 4; q++){ var part = await L.overpassArea(Q[q], say, stop, depth + 1); part.elements.forEach(function(el){ var id = el.type + el.id; if (!seen.has(id)){ seen.add(id); all.push(el); } }); }
+    return {elements:all}; }
+};
+
 /* job: {proj, area:{id,name,lat,lon,miles}, osm:{kind:'pbf'|'xml'|'overpass'|'geojson'|'download', file|text}, tiffs:[File], overture:[File], opts:{fill, step, tiles}} */
 L.runBuild = async function(job, post, stop){
   var t0 = Date.now(), A = job.area, R = L.regionOf(A), loc = L.local(A.lat, A.lon), say = function(f, text){ post({t:'progress', f:f, text:text}); };
@@ -221,14 +253,15 @@ L.runBuild = async function(job, post, stop){
     var text = o.text;
     if (o.kind === 'download'){
       say(0.02, 'Downloading OpenStreetMap for the area (this can take a minute)');
-      var r = await fetch('https://overpass-api.de/api/interpreter', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'data=' + encodeURIComponent(L.overpassQuery(R.read))});
-      if (!r.ok) throw new Error('the OpenStreetMap server answered ' + r.status + (r.status === 429 || r.status === 504 ? ' (it is busy; try again in a few minutes, or upload a file)' : ''));
-      text = await r.text();
-    } else if (!text && o.file) text = await o.file.text();
-    say(0.3, 'Reading OpenStreetMap');
-    var tt = text.replace(/^﻿/, '').trim();
-    if (tt[0] === '<') F = L.readOsmXml(tt, R.read);
-    else { var j = JSON.parse(tt); F = j.elements ? L.readOverpass(j, R.read) : L.readGeoJson(j, R.read); }
+      var dj = await L.overpassArea(R.read, function(tx){ say(0.02, tx); }, stop);
+      say(0.3, 'Reading OpenStreetMap'); F = L.readOverpass(dj, R.read);
+    } else {
+      if (!text && o.file) text = await o.file.text();
+      say(0.3, 'Reading OpenStreetMap');
+      var tt = text.replace(/^﻿/, '').trim();
+      if (tt[0] === '<') F = L.readOsmXml(tt, R.read);
+      else { var j = JSON.parse(tt); F = j.elements ? L.readOverpass(j, R.read) : L.readGeoJson(j, R.read); }
+    }
   }
   if (stop()) throw new Error('stopped');
   stats.osm = {ways:F.ways.length, pois:F.pois.length, places:F.places.length, buildings:F.ways.filter(function(w){ return w.t.building; }).length};

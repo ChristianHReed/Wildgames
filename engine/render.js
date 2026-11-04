@@ -216,6 +216,15 @@ var GSEA = [[0.98, 1.04, 0.94, 0], [1.03, 1.0, 0.86, 0], [1.1, 0.93, 0.72, 0], [
    cam: {e: eye [x,y,z], f, s, u: forward, side and up unit vectors, V: view matrix, Pm: projection matrix, cx, cy: the map point to draw around, tz: tan of half the vertical field of view}
    env: {hour: 0..24, wd: weather brightness 0.6..1, fl: lightning flash 0 or 0.5, wtype: weather 0 clear, 1 rain, 2 storm, 3 snow, 4 fog, dark: 0..1 night, grid: street lights on,
          season: 0..3, lightOn: flashlight on, lights: up to 8 near lights {x, y, lamp, gen, sl, eye, ey} nearest first, now: seconds} */
+/* 0.114.92: view culling. The scene used to draw every tile and block of buildings in a square around you, the ones behind you too (about 440 draws and 400,000 triangles a frame
+   in Springfield). A tile is skipped when it is wholly outside the view to the sides or behind: tested flat on the map against the view's width plus a margin,
+   and never for anything close, or when you look steeply up or down (then the ground under you fills the view) */
+function camCull(cam){
+  var fx = cam.f[0], fz = cam.f[2], fl = Math.hypot(fx, fz), ex = cam.e[0], ez = cam.e[2];
+  if (fl < 0.45 || !cam.tz) return function(){ return true; };
+  fx /= fl; fz /= fl; var half = Math.atan(cam.tz*(W/H)*1.15) + 0.12;
+  return function(x, z, r){ var dx = x - ex, dz = z - ez, d = Math.hypot(dx, dz); if (d < r + 24) return true; var c = (dx*fx + dz*fz)/d; c = c > 1 ? 1 : c < -1 ? -1 : c; return Math.acos(c) < half + Math.asin(Math.min(1, r/d)); };
+}
 function drawScene(cam, env){
   var e = cam.e, f = cam.f, s = cam.s, u = cam.u, cx = cam.cx, cy = cam.cy, wd = env.wd, fl = env.fl, dark = env.dark, now = env.now, hour0 = env.hour, i;
   gl.viewport(0, 0, W, H);
@@ -234,26 +243,27 @@ function drawScene(cam, env){
   gl.uniform3fv(U.fcol, fcl);
   gl.uniform4fv(U.fires, fu);
   /* ground paint (parks, sidewalks, roads) is drawn in painting order and nudged toward the eye, so far-off layers do not flicker */
-  var GR = Math.min(QS.far, 800) + 130; gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1.5, -6); gl.depthFunc(gl.LEQUAL);
-  for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (Math.abs(gq.x - cx) < GR && Math.abs(gq.y - cy) < GR) drawMesh(gq.g); }
+  var VIS = camCull(cam), GR = Math.min(QS.far, 800) + 130; gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1.5, -6); gl.depthFunc(gl.LEQUAL);
+  for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (Math.abs(gq.x - cx) < GR && Math.abs(gq.y - cy) < GR && VIS(gq.x, gq.y, 182)) drawMesh(gq.g); }
   gl.disable(gl.POLYGON_OFFSET_FILL); gl.depthFunc(gl.LESS);
   /* buildings: the detailed version near you, the plain version out to the draw distance */
   var NR = QS.chunk + CH, FRR = QS.far + CH;
   for (i = 0; i < world.gl.chunks.length; i++){
     var ch = world.gl.chunks[i], cdx = Math.abs(ch.x - cx), cdy = Math.abs(ch.y - cy);
+    if (!VIS(ch.x, ch.y, CH*0.75)) continue;
     if (ch.g && cdx < NR && cdy < NR){ drawMesh(ch.g); if (cdx < 170 && cdy < 170) drawMesh(ch.l, gl.LINES); }
     else if (ch.far && cdx < FRR && cdy < FRR) drawMesh(ch.far);
   }
   /* see-through window glass (0.114.48): drawn after the solid world, blended, and it does not write depth so what is behind still shows */
-  var gls = false; for (i = 0; i < world.gl.chunks.length; i++){ var gc = world.gl.chunks[i]; if (gc.gg && gc.g && Math.abs(gc.x - cx) < 150 && Math.abs(gc.y - cy) < 150){ if (!gls){ gls = true; gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(U.gA, 0.26); } drawMesh(gc.gg); } }
+  var gls = false; for (i = 0; i < world.gl.chunks.length; i++){ var gc = world.gl.chunks[i]; if (gc.gg && gc.g && Math.abs(gc.x - cx) < 150 && Math.abs(gc.y - cy) < 150 && VIS(gc.x, gc.y, CH*0.75)){ if (!gls){ gls = true; gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(U.gA, 0.26); } drawMesh(gc.gg); } }
   if (gls){ gl.depthMask(true); gl.disable(gl.BLEND); gl.uniform1f(U.gA, 1); }
   if (world.gl.det) world.gl.det.forEach(function(o){ if (o.g && Math.abs(o.x - cx) < QS.clutR*0.8 + 10 + DT && Math.abs(o.y - cy) < QS.clutR*0.8 + 10 + DT) drawMesh(o.g); });
-  if (world.gl.trees) world.gl.trees.forEach(function(o){ if (o.g && Math.abs(o.x - cx) < FRR + 130 && Math.abs(o.y - cy) < FRR + 130) drawMesh(o.g); });
+  if (world.gl.trees) world.gl.trees.forEach(function(o){ if (o.g && Math.abs(o.x - cx) < FRR + 130 && Math.abs(o.y - cy) < FRR + 130 && VIS(o.x, o.y, TREE_T*0.75)) drawMesh(o.g); });
   if (world.fence && Math.abs(world.fence.x - cx) < 400 && Math.abs(world.fence.y - cy) < 400) drawMesh(world.fence.g);
   for (i = 0; i < loaded.length; i++){ var gsI = loaded[i].int.gs; for (var gq = 0; gq < gsI.length; gq++) drawMesh(gsI[gq]); }
   for (i = 0; i < facs.length; i++) if (facs[i].fac) drawMesh(facs[i].fac);
   if (typeof dgPrep === 'function') dgPrep(cx, cy, U);
-  var TR = world.gl.terr, trR = QS.far + (world.tg ? TT*world.tg.cell : 0); TR.forEach(function(o){ if (Math.abs(o.x - cx) < trR && Math.abs(o.y - cy) < trR) drawMesh(o.g); });
+  var TR = world.gl.terr, trR = QS.far + (world.tg ? TT*world.tg.cell : 0); var trr = world.tg ? TT*world.tg.cell*0.75 : 200; TR.forEach(function(o){ if (Math.abs(o.x - cx) < trR && Math.abs(o.y - cy) < trR && VIS(o.x, o.y, trr)) drawMesh(o.g); });
   if (typeof drawDig === 'function') drawDig(cx, cy);
 
   return {md:md, sky:sky};

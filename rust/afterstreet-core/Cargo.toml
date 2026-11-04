@@ -1,0 +1,14 @@
+[package]
+name = "afterstreet-core"
+version = "0.1.0"
+edition = "2021"
+description = "AfterStreet's number crunching in Rust, compiled to WebAssembly for the game (engine/core_wasm.js)"
+license = "MIT"
+
+[lib]
+crate-type = ["rlib"]
+
+[profile.release]
+opt-level = 3
+panic = "abort"
+lto = true

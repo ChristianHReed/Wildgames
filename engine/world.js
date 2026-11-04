@@ -646,7 +646,36 @@ function groundAt(x, y){ if (!world.hg) return SUNK ? roadOff(x, y) : 0; var b =
 /* the height something is standing at, counting stairs and upper floors */
 function entY(e){ return groundAt(e.x, e.y) + lvlY(buildingAt(e.x, e.y), e); }
 /* lay a flat mesh over the hills: cut every triangle along the terrain's own triangles, so each piece lies flat on the ground */
-function drape(m, lift){
+/* 0.114.92: the Rust core (rust/afterstreet-core, embedded in engine/core_wasm.js). Started as the page loads; until it is ready, or if this browser
+   cannot run WebAssembly (or ?nowasm is in the address), the JavaScript below does the same work. CORE.mod is kept so a fresh instance can be made
+   after a big job: WebAssembly memory never shrinks, so the old instance is let go and its memory with it */
+var CORE = null, COREMOD = null;
+(function(){ try { if (!window.AFTERSTREET_CORE_WASM || !window.WebAssembly || /[?&]nowasm/.test(location.search)) return;
+  var s = atob(window.AFTERSTREET_CORE_WASM), b = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+  WebAssembly.compile(b).then(function(m){ COREMOD = m; return WebAssembly.instantiate(m); }).then(function(inst){ CORE = inst.exports; }).catch(function(e){ console.warn('core wasm', e); }); } catch (e){ console.warn('core wasm', e); } })();
+function coreFresh(){ var old = CORE; CORE = null; if (COREMOD) WebAssembly.instantiate(COREMOD).then(function(inst){ CORE = inst.exports; }).catch(function(){ CORE = old; }); }
+/* drape in the Rust core, in batches of 1024 triangles: each batch's result comes back as typed arrays (4 bytes a value, not 8) in m.parts.
+   Batches keep the module's memory small, and they let the browser move the code to its fast compiler after the first few (a single long call
+   would run in the slow first-pass code the whole time) */
+function coreDrape(m, lift){
+  var g = world.hg, N = m.p.length/9, mem = CORE.memory, base = (CORE.__heap_base.value + 15) & ~15, BT = 1024, parts = [];
+  var hgAt = base, tri = (hgAt + g.d.length*4 + 15) & ~15, col = tri + BT*36, uv = (col + BT*12 + 15) & ~15, op = uv + BT*36, cap = BT*3*40, oc, ot, end;
+  var lay = function(){ oc = op + cap*12; ot = (oc + cap*4 + 15) & ~15; end = ot + cap*12; var have = mem.buffer.byteLength; if (end > have) mem.grow(Math.ceil((end - have)/65536)); };
+  lay(); new Float32Array(mem.buffer, hgAt, g.d.length).set(g.d);
+  var P0 = m.p, C0 = m.c, T0 = m.t;
+  for (var s0 = 0; s0 < N; s0 += BT){
+    var n = Math.min(BT, N - s0), B = mem.buffer;
+    new Float32Array(B, tri, n*9).set(P0.slice(s0*9, (s0 + n)*9)); new Uint8Array(B, col, n*12).set(C0.slice(s0*12, (s0 + n)*12)); new Float32Array(B, uv, n*9).set(T0.slice(s0*9, (s0 + n)*9));
+    var need = CORE.as_drape(tri, col, uv, n, hgAt, g.cols, g.rows, g.x0, g.y0, g.cell, lift, op, oc, ot, cap);
+    if (need > cap){ cap = need + 64; lay(); need = CORE.as_drape(tri, col, uv, n, hgAt, g.cols, g.rows, g.x0, g.y0, g.cell, lift, op, oc, ot, cap); }
+    if (need){ B = mem.buffer; parts.push({p:new Float32Array(B.slice(op, op + need*12)), c:new Uint8Array(B.slice(oc, oc + need*4)), t:new Float32Array(B.slice(ot, ot + need*12))}); }
+  }
+  m.parts = parts; m.p = []; m.c = []; m.t = [];
+  if (mem.buffer.byteLength > 32*1048576) coreFresh();
+  return true;
+}
+function drape(m, lift, typed){
+  if (typed && CORE && world.hg){ try { if (coreDrape(m, lift)) return; } catch (e){ console.warn('core drape, using JavaScript', e); CORE = null; } }
   var g = world.hg, P0 = m.p, C0 = m.c, T0 = m.t, p = [], c = [], t = [], cs = g.cell, n = P0.length/9;
   var clip = function(poly, a, b, cc){ /* keep the side where a*x + b*z <= cc */
     var out = [], k = poly.length; if (!k) return out;
