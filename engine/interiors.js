@@ -199,6 +199,8 @@ FURN.stage = {s:[2.5,1.2], boxes:[[0,.3,0,2.5,.3,1.2,'#5a4028'],[0,.61,0,2.5,.01
    how many: a negative number means one per that many square metres. extras: ring = chairs around it, seat = a chair in front, side = something beside it, face 'far' = rows all facing the far end ---- */
 ['dresser', 'fridge', 'closet', 'locker', 'wardrobe', 'shelf', 'filing', 'gunlocker', 'vending'].forEach(function(n){ FURN[n].heavy = 1; });   /* things you can shove against a door */
 try { if (window.AfterstreetPacks && window.SHAPED) AfterstreetPacks.install(window.SHAPED); } catch (er) { console.warn('packs', er); }
+/* 0.114.93: once installed, the game has no use for a pack asset's editable source (the Workshop's own copy of the design, kept so it can open it again), so it is let go */
+try { (window.AFTERSTREET_PACKS || []).forEach(function(pk){ (pk && pk.assets || []).forEach(function(a){ if (a && a.source) a.source = null; }); }); } catch (er) {}
 spInstall();
 var ROOMS = {
   living:[['rug','mid',1],['sofa','wall',1],['tv','wall',1],['ctable','mid',1],['armchair','corner',1],['wardrobe','wall',1],['lamp','corner',1],['plant','corner',1]],
@@ -838,7 +840,8 @@ function manageInteriors(budget){
     for (i = 0; i < cell.length; i++){ var b = cell[i]; if (b.int || b.gone || b.stamp === stampN) continue; b.stamp = stampN; var d = bdist(b, P.x, P.y); if (d < QS.intR) cand.push([d, b]); }
   }
   cand.sort(function(a, b){ return a[0] - b[0]; });
-  for (i = 0; i < cand.length && i < budget; i++){ cand[i][1].int = genInterior(cand[i][1]); loaded.push(cand[i][1]); }
+  var t0 = performance.now();   /* 0.114.93: and at most about 4 ms of it per call when walking, so a street of furnished houses does not stall a frame */
+  for (i = 0; i < cand.length && i < budget && (i === 0 || budget > 10 || performance.now() - t0 < 4); i++){ cand[i][1].int = genInterior(cand[i][1]); loaded.push(cand[i][1]); }
   if (P.inside && P.inside.int && P.inside.int.lv.length < Math.min(P.inside.int.nl, (P.lvl || 0) + 3)) growInterior(P.inside, P.inside.int);   /* one more floor above you, a floor at a time */
   for (i = loaded.length - 1; i >= 0; i--) if (bdist(loaded[i], P.x, P.y) > QS.intR + 37){ freeInt(loaded[i]); loaded[i].int = null; loaded.splice(i, 1); }
 }

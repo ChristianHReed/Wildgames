@@ -766,7 +766,13 @@ function prep3D(){
       if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i2] = id; cnt[id]++; }
     return bk; });
   var BK = cnt.map(function(n){ return {p:new Float32Array(n*9), c:new Uint8Array(n*12), t:new Float32Array(n*9), k:0}; });
-  SRC.forEach(function(sm, si){ var bk = bks[si], nT = bk.length; for (var i2 = 0; i2 < nT; i2++){ var bb = BK[bk[i2]], so = i2*9, d9 = bb.k*9, d12 = bb.k*12, q; for (q = 0; q < 9; q++){ bb.p[d9 + q] = sm.p[so + q]; bb.t[d9 + q] = sm.t[so + q]; } for (q = 0; q < 12; q++) bb.c[d12 + q] = sm.c[i2*12 + q]; bb.k++; }
+  /* 0.114.93: copied in runs: triangles next to each other in a list nearly always land in the same tile, so a run is one typed-array copy, not a value at a time */
+  SRC.forEach(function(sm, si){ var bk = bks[si], nT = bk.length, typed = !Array.isArray(sm.p), r0 = 0;
+    var flush = function(a, b){ var bb = BK[bk[a]], n = b - a, d9 = bb.k*9, d12 = bb.k*12;
+      if (typed){ bb.p.set(sm.p.subarray(a*9, b*9), d9); bb.t.set(sm.t.subarray(a*9, b*9), d9); bb.c.set(sm.c.subarray(a*12, b*12), d12); }
+      else { for (var q = 0; q < n*9; q++){ bb.p[d9 + q] = sm.p[a*9 + q]; bb.t[d9 + q] = sm.t[a*9 + q]; } for (q = 0; q < n*12; q++) bb.c[d12 + q] = sm.c[a*12 + q]; }
+      bb.k += n; };
+    for (var i2 = 1; i2 <= nT; i2++) if (i2 === nT || bk[i2] !== bk[r0]){ if (nT) flush(r0, i2); r0 = i2; }
     sm.p = sm.c = sm.t = null; bks[si] = null; });
   BK.forEach(function(bm, id){ gt.push({g:upload(bm), x:bxs[id], y:bys[id]}); BK[id] = null; });
   w.gl = {ground:gt, chunks:list, terr:new Map()};

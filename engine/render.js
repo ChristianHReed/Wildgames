@@ -205,8 +205,9 @@ function coverKind(x, y){
 }
 function drawNature(){
   if (!NAT.pine || !natTex) return; var i;
-  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[treeVarKey(tr)] || NAT[treeKey(tr)]); }
-  for (i = 0; i < clutter.length; i++){ var c = clutter[i]; gl.uniform4f(U.inst, c.x, c.gy, c.y, c.yw); gl.uniform1f(U.iscl, c.sc); drawMesh(c.m); }
+  var V = SCENEVIS;   /* 0.114.93: near trees and small plants are one draw each, so the ones outside the view are skipped (about half of them) */
+  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive || !V(tr.x, tr.y, 9*(tr.sc || 1))) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[treeVarKey(tr)] || NAT[treeKey(tr)]); }
+  for (i = 0; i < clutter.length; i++){ var c = clutter[i]; if (!V(c.x, c.y, 2)) continue; gl.uniform4f(U.inst, c.x, c.gy, c.y, c.yw); gl.uniform1f(U.iscl, c.sc); drawMesh(c.m); }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1);
 }
 var GSEA = [[0.98, 1.04, 0.94, 0], [1.03, 1.0, 0.86, 0], [1.1, 0.93, 0.72, 0], [0.9, 0.9, 0.9, 0.66]];
@@ -219,6 +220,7 @@ var GSEA = [[0.98, 1.04, 0.94, 0], [1.03, 1.0, 0.86, 0], [1.1, 0.93, 0.72, 0], [
 /* 0.114.92: view culling. The scene used to draw every tile and block of buildings in a square around you, the ones behind you too (about 440 draws and 400,000 triangles a frame
    in Springfield). A tile is skipped when it is wholly outside the view to the sides or behind: tested flat on the map against the view's width plus a margin,
    and never for anything close, or when you look steeply up or down (then the ground under you fills the view) */
+var SCENEVIS = function(){ return true; };
 function camCull(cam){
   var fx = cam.f[0], fz = cam.f[2], fl = Math.hypot(fx, fz), ex = cam.e[0], ez = cam.e[2];
   if (fl < 0.45 || !cam.tz) return function(){ return true; };
@@ -243,7 +245,7 @@ function drawScene(cam, env){
   gl.uniform3fv(U.fcol, fcl);
   gl.uniform4fv(U.fires, fu);
   /* ground paint (parks, sidewalks, roads) is drawn in painting order and nudged toward the eye, so far-off layers do not flicker */
-  var VIS = camCull(cam), GR = Math.min(QS.far, 800) + 130; gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1.5, -6); gl.depthFunc(gl.LEQUAL);
+  var VIS = SCENEVIS = camCull(cam), GR = Math.min(QS.far, 800) + 130; gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1.5, -6); gl.depthFunc(gl.LEQUAL);
   for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (Math.abs(gq.x - cx) < GR && Math.abs(gq.y - cy) < GR && VIS(gq.x, gq.y, 182)) drawMesh(gq.g); }
   gl.disable(gl.POLYGON_OFFSET_FILL); gl.depthFunc(gl.LESS);
   /* buildings: the detailed version near you, the plain version out to the draw distance */

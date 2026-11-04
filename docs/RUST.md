@@ -37,4 +37,9 @@ With the Rust WebAssembly target installed (`rustup target add wasm32-unknown-un
 
 ## Next candidates
 
+What is left at load (0.114.93, Springfield's home square, about 5.6 s): native work (parsing the square, uploading to the graphics card) about 2.6 s, the Rust drape about 1 s, building shells and ground pieces in JavaScript (`Mesh.tri`) about 0.5 s, the ground cover generator about 0.2 s. Per frame in JavaScript: the game update about 5 ms, building vehicles and props into the frame's mesh about 2.5 ms, house interiors and building blocks made as you walk about 2.5 ms each (now time-limited).
+
+The biggest memory left at the menu is the content packs (about 150 MB of JavaScript heap): `packs/workshop-crafts.js` alone is 15 MB, 9 MB of it ten damage looks per vehicle. Loading those looks only when a vehicle is first damaged would need a change to the pack format (Workshop chat).
+
+
 Measured at load in Springfield, after drape: the safe-house lot search (made fast in JavaScript by skipping far roads), the ground cover generator (`buildCover`), building shells, and the terrain tiles. Per frame the JavaScript is small; the time is in drawing, which view culling (0.114.92) cut by about a third.

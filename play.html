@@ -516,7 +516,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.114.92', ART = {}, ARTSET = (function(){
+var BUILD = '0.114.93', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3165,18 +3165,21 @@ function fpsTick(ts){
 (function(){ var h = '', N = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']; for (var r = 0; r < 3; r++) for (var i = 0; i < 8; i++) h += '<b' + (i % 2 ? ' class="m"' : '') + '>' + N[i] + '</b>'; el('compTape').innerHTML = h; })();
 var cmpF = [];
 function compassFlags(deg){
-  var box = el('compass'), W = box.clientWidth || 300, half = W/2 - 7, all = marks.concat(fmarks), i;
+  var all = marks.length || fmarks.length ? marks.concat(fmarks) : null, i; if (!all){ if (cmpF.n){ cmpF.forEach(function(f){ f.style.display = 'none'; f.st = ''; }); cmpF.n = 0; } return; }   /* 0.114.93: nothing to show, nothing to touch */
+  var box = el('compass'), now = performance.now(); if (!cmpF.w || now - cmpF.wt > 1000){ cmpF.w = box.clientWidth || 300; cmpF.wt = now; }   /* reading the width forces the page to lay out again, so once a second, not every frame */
+  var W = cmpF.w, half = W/2 - 7; cmpF.n = all.length;
   for (i = 0; i < all.length; i++){
     var q = all[i], f = cmpF[i];
     if (!f){ f = document.createElement('div'); f.className = 'cflag'; box.appendChild(f); cmpF[i] = f; }
     var dx = q.x - P.x, dy = q.y - P.y, d = Math.hypot(dx, dy), td = Math.atan2(dy, dx)*180/Math.PI + 90, df = ((td - deg + 540) % 360) - 180, px = df/45*60, edge = Math.abs(px) > half;
     px = Math.max(-half, Math.min(half, px));
+    var st = (W/2 + px).toFixed(1) + (edge ? 'e' : '') + (q.o ? 'o' : '') + dist(d, true) + q.n; if (f.st === st) continue; f.st = st;   /* only what changed is written */
     f.style.display = 'block'; f.style.left = (W/2 + px).toFixed(1) + 'px'; f.style.opacity = edge ? '.6' : '1';
     f.style.color = q.o ? '#7fc3ee' : '#ff7a5c';
     f.textContent = '\u2691' + dist(d, true);
     f.title = (q.o ? q.o + ': ' : '') + q.n;
   }
-  for (; i < cmpF.length; i++) cmpF[i].style.display = 'none';
+  for (; i < cmpF.length; i++) if (cmpF[i].st !== ''){ cmpF[i].style.display = 'none'; cmpF[i].st = ''; }
 }
 function compassTick(){ var deg = ((P.yaw*180/Math.PI + 90) % 360 + 360) % 360; el('compTape').style.transform = 'translateX(' + (-(480 + deg/45*60 + 30)).toFixed(1) + 'px)'; compassFlags(deg); }
 el('hudMenu').addEventListener('click', function(){ el('hudBtns').classList.toggle('hidden'); if (document.exitPointerLock) document.exitPointerLock(); });
