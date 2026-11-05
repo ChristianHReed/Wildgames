@@ -1,0 +1,1 @@
+Bug reports sent from the game (Menu > Report a bug). Each report is `<id>.json` (note, game state, position, recent errors) and `<id>.jpg` (what the player saw). Run `node tools/bugreports.js` to rebuild `docs/BUG_REPORTS.md`, the list to work from. Fixed reports move to `bugreports/done/`.
