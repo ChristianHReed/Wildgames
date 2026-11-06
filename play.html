@@ -556,7 +556,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.117.4', ART = {}, ARTSET = (function(){
+var BUILD = '0.117.5', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -3271,7 +3271,7 @@ var lastTs = 0, OOMN = 0, OOMD = 0;   /* 0.117.3: every 1.5 s or so ask the grap
 function frame(ts){
   var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
   if (running){ if (P.sleep && !P.cop){ for (var sk = 0; sk < 40 && P.sleep && running && !wakeReq; sk++) update(0.75); if (wakeReq && P.sleep) update(0.001); if (running) update(dt*0.01); } else update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
-  if (running && ++OOMN > 90){ OOMN = 0; try { if (gl.getError() === gl.OUT_OF_MEMORY && !OOMD){ OOMD = 1; if (oomOnce()){ lsSet('lastblock:quality', '0'); saveNow(); running = false; toast('The phone ran out of graphics memory. The game is going to low detail and reloading...', 6); setTimeout(function(){ location.reload(); }, 1800); } } } catch (er){} }
+  if (running && ++OOMN > 90){ OOMN = 0; try { if (gl.getError() === gl.OUT_OF_MEMORY && !OOMD){ OOMD = 1; BUGERR.push('graphics out of memory at build ' + BUILD); if (false && oomOnce()){ lsSet('lastblock:quality', '0'); saveNow(); running = false; toast('The phone ran out of graphics memory. The game is going to low detail and reloading...', 6); setTimeout(function(){ location.reload(); }, 1800); } } } catch (er){} }
   if (BUGSHOT){ var bs = BUGSHOT; BUGSHOT = null; try { bugShow(bs()); } catch (er){ toast('The picture could not be taken.', 3); } }
   if (FPSM) fpsTick(ts);
   requestAnimationFrame(frame);

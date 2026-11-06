@@ -356,14 +356,17 @@ function manageGroundTiles(){ var G = world.gl && world.gl.ground; if (!G) retur
   for (i = 0; i < G.length; i++) if (G[i].g) have++;
   var budget = have ? 3 : 64;
   for (i = 0; i < G.length; i++){ o = G[i]; d = Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y));
-    if (!o.g && d < R && n < budget){ if (o.d){ o.g = o.d.p.length ? upload(o.d) : {n:0, nil:1}; n++; } else if (o.z && !o.wait){ gtUnpack(o, world); n++; } }
+    if (!o.g && d < R && n < budget){ if (o.d){ o.g = gtLen(o.d) ? upload(gtMesh(o.d)) : {n:0, nil:1}; n++; } else if (o.z && !o.wait){ gtUnpack(o, world); n++; } }
     else if (o.g && d > R + 320){ if (!o.g.nil) freeMesh(o.g); o.g = null; if (o.z) o.d = null; }
   } }
 /* 0.117.4: a ground tile far from you is packed into a compressed blob (outside the page's working memory where the browser allows) and unpacked when you come near */
+function gtCat(L, T){ var n = 0, i, o; for (i = 0; i < L.length; i++) n += L[i].length; o = new T(n); n = 0; for (i = 0; i < L.length; i++){ o.set(L[i], n); n += L[i].length; } return o; }
+function gtMesh(d){ return d.pp ? {p:gtCat(d.pp, Float32Array), c:gtCat(d.pc, Uint8Array), t:gtCat(d.pt, Float32Array)} : d; }
+function gtLen(d){ return d.pp ? d.n : d.p.length; }
 var GTZ = {busy:0, ok:typeof CompressionStream === 'function' && typeof DecompressionStream === 'function' && typeof Blob === 'function' && typeof Response === 'function'};
-function gtPackAll(w){ if (!GTZ.ok) return; var G = w.gl.ground.slice(), k = 0, run = function(){ if (world !== w) return; while (k < G.length && !(G[k].d && G[k].d.p.length)) k++; if (k >= G.length) return; gtPack(G[k++], w, run); }; for (var j = 0; j < 8; j++) run(); }
+function gtPackAll(w){ if (!GTZ.ok) return; var G = w.gl.ground.slice(), k = 0, run = function(){ if (world !== w) return; while (k < G.length && !(G[k].d && gtLen(G[k].d))) k++; if (k >= G.length) return; gtPack(G[k++], w, run); }; for (var j = 0; j < 8; j++) run(); }
 function gtPack(o, w, next){ var d = o.d; o.wait = 1;
-  var head = new Uint32Array([d.p.length, d.c.length, d.t.length]), bl = new Blob([head, d.p, d.c, d.t]);
+  var M = d.pp ? null : d, sum = function(L){ var n = 0; L.forEach(function(a){ n += a.length; }); return n; }, head = M ? new Uint32Array([M.p.length, M.c.length, M.t.length]) : new Uint32Array([sum(d.pp), sum(d.pc), sum(d.pt)]), bl = new Blob(M ? [head, M.p, M.c, M.t] : [head].concat(d.pp, d.pc, d.pt));
   new Response(bl.stream().pipeThrough(new CompressionStream('deflate-raw'))).blob().then(function(z){ GTZ.busy = 0; o.wait = 0; if (world !== w) return; o.z = z; o.d = null; if (next) next(); })
     .catch(function(){ GTZ.busy = 0; o.wait = 0; GTZ.ok = false; }); }
 function gtUnpack(o, w){ o.wait = 1;
@@ -785,16 +788,14 @@ function prep3D(){
     for (var i2 = 0; i2 < nT; i2++){ var o9 = i2*9, kx = Math.floor((sm.p[o9] + sm.p[o9+3] + sm.p[o9+6])/3/GT), ky = Math.floor((sm.p[o9+2] + sm.p[o9+5] + sm.p[o9+8])/3/GT), key = gk(kx, ky), id = ids.get(key);
       if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i2] = id; cnt[id]++; }
     return bk; });
-  var BK = cnt.map(function(n){ return {p:new Float32Array(n*9), c:new Uint8Array(n*12), t:new Float32Array(n*9), k:0}; });
-  /* 0.114.93: copied in runs: triangles next to each other in a list nearly always land in the same tile, so a run is one typed-array copy, not a value at a time */
+  /* 0.117.5: each list's runs are copied out as small pieces into their tile, and the list is let go straight away: the ground is never held twice over (it was 340 MB at the peak for Springfield's centre, and iPhones closed the page) */
+  var BK = cnt.map(function(n){ return {pp:[], pc:[], pt:[], n:n}; });
   SRC.forEach(function(sm, si){ var bk = bks[si], nT = bk.length, typed = !Array.isArray(sm.p), r0 = 0;
-    var flush = function(a, b){ var bb = BK[bk[a]], n = b - a, d9 = bb.k*9, d12 = bb.k*12;
-      if (typed){ bb.p.set(sm.p.subarray(a*9, b*9), d9); bb.t.set(sm.t.subarray(a*9, b*9), d9); bb.c.set(sm.c.subarray(a*12, b*12), d12); }
-      else { for (var q = 0; q < n*9; q++){ bb.p[d9 + q] = sm.p[a*9 + q]; bb.t[d9 + q] = sm.t[a*9 + q]; } for (q = 0; q < n*12; q++) bb.c[d12 + q] = sm.c[a*12 + q]; }
-      bb.k += n; };
+    var flush = function(a, b){ var bb = BK[bk[a]];
+      if (typed){ bb.pp.push(sm.p.slice(a*9, b*9)); bb.pt.push(sm.t.slice(a*9, b*9)); bb.pc.push(sm.c.slice(a*12, b*12)); }
+      else { bb.pp.push(new Float32Array(sm.p.slice(a*9, b*9))); bb.pt.push(new Float32Array(sm.t.slice(a*9, b*9))); bb.pc.push(new Uint8Array(sm.c.slice(a*12, b*12))); } };
     for (var i2 = 1; i2 <= nT; i2++) if (i2 === nT || bk[i2] !== bk[r0]){ if (nT) flush(r0, i2); r0 = i2; }
-    sm.p = sm.c = sm.t = null; bks[si] = null; });
-  /* 0.117.4: each 256 m ground tile is kept ready on the CPU and only the tiles near you are on the graphics chip (manageGroundTiles); a city square's whole ground went up at once (170 MB in Springfield's centre) and iPhones ran out of memory */
+    sm.p = sm.c = sm.t = null; bks[si] = null; if (gD.parts && si < gD.parts.length) gD.parts[si] = null; });
   BK.forEach(function(bm, id){ gt.push({g:null, d:bm, x:bxs[id], y:bys[id]}); BK[id] = null; });
   w.gl = {ground:gt, chunks:list, terr:new Map()}; setTimeout(function(){ gtPackAll(w); }, 300);
 }
