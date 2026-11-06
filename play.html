@@ -542,7 +542,7 @@
   var first = c[5]; box.insertBefore(jr, first);
   var show = function(id){ T.forEach(function(t){ t[4].classList.toggle('on', t[0] === id); t[5].classList.toggle('on', t[0] === id); }); try { localStorage.setItem('lastblock:tab', id); } catch (e){} };
   T.forEach(function(t){ var page = document.createElement('div'); page.className = 'jpage'; t[3].forEach(function(i){ if (pick(i)) page.appendChild(pick(i)); }); pg.appendChild(page);
-    var b = document.createElement('button'); b.type = 'button'; b.className = 'jtab'; b.textContent = t[1]; b.style.setProperty('--tc', t[2]); b.addEventListener('click', function(){ show(t[0]); }); tb.appendChild(b); t[4] = page; t[5] = b; });
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'jtab'; b.textContent = t[1]; b.style.setProperty('--tc', t[2]); b.addEventListener('click', function(){ show(t[0]); }); tb.appendChild(b); t[4] = page; t[5] = b; page.id = 'jp_' + t[0]; });
   var last = null; try { last = localStorage.getItem('lastblock:tab'); } catch (e){} show(T.some(function(t){ return t[0] === last; }) ? last : 'play');
   window.showTab = show;
 })();
@@ -556,7 +556,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.117.5', ART = {}, ARTSET = (function(){
+var BUILD = '0.118.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -5749,8 +5749,44 @@ async function renderRegions(){
   for (var i = 0; i < REGIONS.length; i++){ var R = REGIONS[i], n = (await zoneKeys(R)).length, tot = zoneList(R).length;
     if (R.asmap){ hb += '<div class="irow"><span class="n">' + esc(R.name) + '<br><i>' + n + ' squares on this device &middot; ' + R.miles + ' miles across' + (R.attribution ? ' &middot; Map data: ' + esc(String(R.attribution).slice(0, 160)) : '') + '</i></span><button data-rg="play" data-i="' + i + '">Play</button><button class="alt" data-rg="del" data-i="' + i + '">Remove</button></div>'; continue; }
     h += '<div class="irow"><span class="n">' + esc(R.name) + '<br><i>' + R.miles + ' miles &middot; ' + n + ' of ' + tot + ' squares on this device</i>' + (R.attribution ? '<br><i>Map data: ' + esc(String(R.attribution).slice(0, 260)) + '</i>' : '') + '</span><button data-rg="play" data-i="' + i + '">Play</button><button class="alt" data-rg="dl" data-i="' + i + '">' + (rgDl && rgDl.id === R.id ? 'Stop' : 'Download more') + '</button><button class="alt" data-rg="del" data-i="' + i + '">Delete</button></div>'; }
+  if (typeof updPlayLast === 'function') try { updPlayLast(); } catch (e){}
   box.innerHTML = h; el('bmList').innerHTML = hb || '<div style="opacity:.7;font-size:12px">No Maps Builder maps on this device yet.</div>';
 }
+/* 0.118.0: the Play tab plays the map you last played (any map: Springfield, a region, a Maps Builder map, a map you made or loaded, the demo town, the Test World). Every map you play is kept in the Maps tab under Your maps; picking one there makes it the one Play opens next time. */
+function myMaps(){ try { return JSON.parse(lsGet('lastblock:mymaps') || '[]') || []; } catch (e){ return []; } }
+function myMapKeep(lp, text){ var L = myMaps().filter(function(m){ return m.id !== lp.id; }); L.unshift({id:lp.id, name:lp.name, t:Date.now()}); lsSet('lastblock:mymaps', JSON.stringify(L.slice(0, 40)));
+  idbDo('readwrite', function(s){ return s.put(text, 'map:' + lp.id); }).catch(function(){}); renderMyMaps(); }
+function lastPlay(){ try { return JSON.parse(lsGet('lastblock:lastplay') || 'null'); } catch (e){ return null; } }
+function lastName(lp){ if (!lp) return '';
+  if (lp.k === 'spring') return SPRING ? SPRING.name : 'Springfield, MO'; if (lp.k === 'demo') return 'the demo town'; if (lp.k === 'street') return 'the Test World';
+  if (lp.k === 'region'){ var R = REGIONS.filter(function(r){ return r.id === lp.id; })[0]; return R ? R.name : ''; }
+  if (lp.k === 'map'){ var m = myMaps().filter(function(q){ return q.id === lp.id; })[0]; return m ? m.name : lp.name || ''; } return ''; }
+function updPlayLast(){ var b = el('playLast'), t = el('playLastT'); if (!b) return; var lp = lastPlay(), n = lastName(lp);
+  b.textContent = n ? 'Play ' + n : 'Choose a map'; var sb0 = el('safeBtn'); if (sb0) sb0.style.display = n ? '' : 'none'; t.textContent = n ? 'The map you played last. Pick another one in the Maps tab and it opens here next time.' : 'You have not played a map yet. Open the Maps tab to pick Springfield, a region, or a map of your own.'; }
+async function playMyMap(id, name){ info('Opening ' + name + '...'); var text = await idbDo('readonly', function(s){ return s.get('map:' + id); }).catch(function(){ return null; });
+  if (!text){ fail('That map is no longer on this device. Load its file again from the Maps tab.'); return; } mapSrc = {text:text}; enter(parseText(text), name); }
+async function playLastMap(safe){ if (!glOK) return; var lp = lastPlay(); toSafe = !!safe;
+  if (!lp || !lastName(lp)){ toSafe = false; showTab('maps'); info('Pick a map to play.'); return; }
+  if (lp.k === 'demo'){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); return; }
+  if (lp.k === 'street'){ mapSrc = {street:true}; enter(testStreetRaw(), 'Test World'); return; }
+  if (lp.k === 'region'){ var R = REGIONS.filter(function(r){ return r.id === lp.id; })[0]; if (R){ if (safe){ R.last = null; saveRegions(); } playRegion(R); return; } }
+  if (lp.k === 'spring' && SPRING){ if (safe){ SPRING.last = null; saveRegions(); } playRegion(SPRING); return; }
+  if (lp.k === 'map'){ playMyMap(lp.id, lastName(lp)); return; }
+  toSafe = false; showTab('maps'); info('Pick a map to play.'); }
+function renderMyMaps(){ var box = el('myMaps'); if (!box) return; var L = myMaps(), lp = lastPlay(), h = '<b>Your maps</b>';
+  if (!L.length) h += '<div style="opacity:.7;font-size:12px">Maps you make or load are kept here after you play them once.</div>';
+  L.forEach(function(m){ h += '<div class="irow"><span class="n">' + esc(m.name) + (lp && lp.k === 'map' && lp.id === m.id ? ' <i>(played last)</i>' : '') + '</span><button data-mm="play" data-id="' + esc(m.id) + '">Play</button><button class="alt" data-mm="del" data-id="' + esc(m.id) + '">Remove</button></div>'; });
+  box.innerHTML = h; updPlayLast(); }
+(function(){
+  var pp = el('jp_play'), mp = el('jp_maps'), row = el('spring') && el('spring').parentElement; if (!pp || !mp) return;
+  var top = document.createElement('div'); top.className = 'panel'; top.innerHTML = '<div class="row" style="margin:0"><button id="playLast" style="font-size:17px;padding:12px 20px">Choose a map</button></div><div id="playLastT" style="margin-top:6px;font-size:13px"></div>';
+  pp.insertBefore(top, pp.firstChild); if (row){ var sb = el('safeBtn'); if (sb) top.querySelector('.row').appendChild(sb); var mm = document.createElement('div'); mm.className = 'panel'; mm.id = 'myMaps'; mp.insertBefore(mm, mp.firstChild); mp.insertBefore(row, mm.nextSibling); }
+  el('playLast').addEventListener('click', function(){ playLastMap(false); });
+  el('myMaps').addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('button[data-mm]'); if (!b) return; var id = b.getAttribute('data-id'), m = myMaps().filter(function(q){ return q.id === id; })[0]; if (!m) return;
+    if (b.getAttribute('data-mm') === 'play'){ if (glOK) playMyMap(m.id, m.name); }
+    else { lsSet('lastblock:mymaps', JSON.stringify(myMaps().filter(function(q){ return q.id !== id; }))); idbDo('readwrite', function(s){ return s.delete('map:' + id); }).catch(function(){}); var lp = lastPlay(); if (lp && lp.k === 'map' && lp.id === id) lsSet('lastblock:lastplay', 'null'); renderMyMaps(); } });
+  renderMyMaps();
+})();
 el('rgGo').addEventListener('click', startRegion);
 el('bldGo').addEventListener('click', function(){ location.href = 'builder.html'; });
 el('wsGo').addEventListener('click', function(){ location.href = 'workshop.html'; });
@@ -5919,7 +5955,7 @@ function freeWorldGL(w){
 async function enter(raw, name){
   try {
     if (world) freeWorldGL(world);
-    if (!raw.zone) lsSet('lastblock:lastplay', JSON.stringify({k:mapSrc && mapSrc.demo ? 'demo' : mapSrc && mapSrc.street ? 'street' : 'other'}));
+    if (!raw.zone){ var lpk = mapSrc && mapSrc.demo ? {k:'demo'} : mapSrc && mapSrc.street ? {k:'street'} : mapSrc && mapSrc.text ? {k:'map', id:slug(raw.name || name), name:String(raw.name || name).slice(0, 60)} : {k:'other'}; lsSet('lastblock:lastplay', JSON.stringify(lpk)); if (lpk.k === 'map') myMapKeep(lpk, mapSrc.text); }
     if (!raw.zone) region = null;
     netClose(); if (raw.name) name = raw.name;
     lsSet('lastblock:name', el('pname').value); lsSet('lastblock:quality', el('qual').value);
@@ -5949,7 +5985,7 @@ function exitToMenu(msg){
   saveNow(); running = false; inRun = false; keys = {}; netClose();
   if (document.exitPointerLock) document.exitPointerLock();
   el('play').classList.add('hidden'); el('prompt').classList.add('hidden'); document.body.classList.remove('copmode'); ['copMap', 'copBar', 'chatIn', 'items', 'build', 'chest', 'trade', 'loot', 'pack', 'bigMap', 'travel', 'hudBtns'].forEach(function(id){ el(id).classList.add('hidden'); }); el('hurt').style.opacity = 0; el('title').classList.remove('hidden');
-  saveInfo(); syncChar(false); if (dir) refreshMaps().catch(function(){}); info(typeof msg === 'string' ? msg : 'Saved.'); if (wasRegion) renderRegions();
+  saveInfo(); syncChar(false); updPlayLast(); renderMyMaps(); if (dir) refreshMaps().catch(function(){}); info(typeof msg === 'string' ? msg : 'Saved.'); if (wasRegion) renderRegions();
 }
 el('menuBtn').addEventListener('click', function(){ exitToMenu(); });
 el('file').addEventListener('change', function(e){ readFile(e.target.files[0]); e.target.value = ''; });
@@ -5986,15 +6022,7 @@ el('testStreet').addEventListener('click', function(){ if (glOK){ mapSrc = {stre
 el('demo').addEventListener('click', function(){ if (glOK){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); } });
 /* stuck somewhere? play the last map again, starting at its safe house (your things and the world are kept) */
 var toSafe = false;
-el('safeBtn').addEventListener('click', function(){
-  if (!glOK) return; var lp = null; try { lp = JSON.parse(lsGet('lastblock:lastplay') || 'null'); } catch (e){}
-  toSafe = true;
-  if (lp && lp.k === 'demo'){ mapSrc = {demo:true}; enter(demoRaw(), 'Demo Town'); return; }
-  if (lp && lp.k === 'street'){ mapSrc = {street:true}; enter(testStreetRaw(), 'Test World'); return; }
-  if (lp && lp.k === 'region'){ var R = REGIONS.filter(function(r){ return r.id === lp.id; })[0]; if (R){ R.last = null; saveRegions(); playRegion(R); return; } }
-  if ((!lp || lp.k === 'spring') && SPRING){ SPRING.last = null; saveRegions(); playRegion(SPRING); return; }
-  info('Now press Play on the map you were on: you will start at its safe house.');
-});
+el('safeBtn').addEventListener('click', function(){ playLastMap(true); });
 function savedChars(){
   var out = []; try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf('lastblock:char:') === 0){ try { var c = JSON.parse(localStorage.getItem(k)); out.push({slug:k.slice(15), c:c}); } catch (e) {} } } } catch (e) {}
   return out.sort(function(a, b){ return a.slug < b.slug ? -1 : 1; });
