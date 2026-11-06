@@ -246,7 +246,7 @@ function drawScene(cam, env){
   gl.uniform4fv(U.fires, fu);
   /* ground paint (parks, sidewalks, roads) is drawn in painting order and nudged toward the eye, so far-off layers do not flicker */
   var VIS = SCENEVIS = camCull(cam), GR = Math.min(QS.far, 800) + 130; gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1.5, -6); gl.depthFunc(gl.LEQUAL);
-  for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (Math.abs(gq.x - cx) < GR && Math.abs(gq.y - cy) < GR && VIS(gq.x, gq.y, 182)) drawMesh(gq.g); }
+  for (i = 0; i < world.gl.ground.length; i++){ var gq = world.gl.ground[i]; if (gq.g && gq.g.n && Math.abs(gq.x - cx) < GR && Math.abs(gq.y - cy) < GR && VIS(gq.x, gq.y, 182)) drawMesh(gq.g); }
   gl.disable(gl.POLYGON_OFFSET_FILL); gl.depthFunc(gl.LESS);
   /* buildings: the detailed version near you, the plain version out to the draw distance */
   var NR = QS.chunk + CH, FRR = QS.far + CH;

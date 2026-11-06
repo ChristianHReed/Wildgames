@@ -351,9 +351,29 @@ function shell(b, m, lm){
   if (K.awn && b.door && Ht > 3.3){ var dd = b.door, ox = -dd.nx, oz = -dd.ny, ya = Math.atan2(oz, ox), ac = C(K.awn); m.ybox(dd.x + ox*0.65, dd.y + oz*0.65, ya, 0, 0, 2.62, 0.65, 0.06, 1.7, ac); m.ybox(dd.x + ox*0.08, dd.y + oz*0.08, ya, 0, 0, 3.2, 0.05, 0.3, 1.5, [Math.round(ac[0]*0.7), Math.round(ac[1]*0.7), Math.round(ac[2]*0.7)]); }
 }
 var NULLM = {box:function(){}, ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, quadV:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
+/* ground tiles (roads, pavements, paths, water) on the graphics chip only near you: up within the draw distance plus a tile, gone when well past it */
+function manageGroundTiles(){ var G = world.gl && world.gl.ground; if (!G) return; var R = Math.min(QS.far, 800) + 130 + 256, n = 0, have = 0, i, o, d;
+  for (i = 0; i < G.length; i++) if (G[i].g) have++;
+  var budget = have ? 3 : 64;
+  for (i = 0; i < G.length; i++){ o = G[i]; d = Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y));
+    if (!o.g && d < R && n < budget){ if (o.d){ o.g = o.d.p.length ? upload(o.d) : {n:0, nil:1}; n++; } else if (o.z && !o.wait){ gtUnpack(o, world); n++; } }
+    else if (o.g && d > R + 320){ if (!o.g.nil) freeMesh(o.g); o.g = null; if (o.z) o.d = null; }
+  } }
+/* 0.117.4: a ground tile far from you is packed into a compressed blob (outside the page's working memory where the browser allows) and unpacked when you come near */
+var GTZ = {busy:0, ok:typeof CompressionStream === 'function' && typeof DecompressionStream === 'function' && typeof Blob === 'function' && typeof Response === 'function'};
+function gtPackAll(w){ if (!GTZ.ok) return; var G = w.gl.ground.slice(), k = 0, run = function(){ if (world !== w) return; while (k < G.length && !(G[k].d && G[k].d.p.length)) k++; if (k >= G.length) return; gtPack(G[k++], w, run); }; for (var j = 0; j < 8; j++) run(); }
+function gtPack(o, w, next){ var d = o.d; o.wait = 1;
+  var head = new Uint32Array([d.p.length, d.c.length, d.t.length]), bl = new Blob([head, d.p, d.c, d.t]);
+  new Response(bl.stream().pipeThrough(new CompressionStream('deflate-raw'))).blob().then(function(z){ GTZ.busy = 0; o.wait = 0; if (world !== w) return; o.z = z; o.d = null; if (next) next(); })
+    .catch(function(){ GTZ.busy = 0; o.wait = 0; GTZ.ok = false; }); }
+function gtUnpack(o, w){ o.wait = 1;
+  new Response(o.z.stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer().then(function(ab){ o.wait = 0; if (world !== w || o.g) return;
+    var h = new Uint32Array(ab, 0, 3), off = 12, p = new Float32Array(ab, off, h[0]); off += h[0]*4; var c = new Uint8Array(ab, off, h[1]); off += h[1]; var t = new Float32Array(ab.slice(off, off + h[2]*4));
+    var dm = {p:p, c:c, t:t}, dd = Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y)); if (dd < Math.min(QS.far, 800) + 130 + 256 + 320) o.g = upload(dm); })
+    .catch(function(e){ o.wait = 0; console.warn('ground tile', e); }); }
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
+  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); manageGroundTiles(); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
@@ -754,7 +774,7 @@ function prep3D(){
     c.list.push(b); b.chunk = c; shell(b, NULLM); b.int = null; b.fac = null; b.got = {};
   });
   facs.forEach(function(fb){ if (fb.fac){ freeMesh(fb.fac); fb.fac = null; } }); facs = [];
-  if (w.gl){ w.gl.ground.forEach(function(o){ freeMesh(o.g); }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
+  if (w.gl){ w.gl.ground.forEach(function(o){ if (o.g) freeMesh(o.g); o.g = null; }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
   var list = []; chunks.forEach(function(c){ list.push(c); });
   g.pl = null; placeProps(g); try { placeDress(g); } catch (er){ console.log('dress', er); }
   /* the ground is cut into squares so only the part near you is drawn */
@@ -774,7 +794,8 @@ function prep3D(){
       bb.k += n; };
     for (var i2 = 1; i2 <= nT; i2++) if (i2 === nT || bk[i2] !== bk[r0]){ if (nT) flush(r0, i2); r0 = i2; }
     sm.p = sm.c = sm.t = null; bks[si] = null; });
-  BK.forEach(function(bm, id){ gt.push({g:upload(bm), x:bxs[id], y:bys[id]}); BK[id] = null; });
-  w.gl = {ground:gt, chunks:list, terr:new Map()};
+  /* 0.117.4: each 256 m ground tile is kept ready on the CPU and only the tiles near you are on the graphics chip (manageGroundTiles); a city square's whole ground went up at once (170 MB in Springfield's centre) and iPhones ran out of memory */
+  BK.forEach(function(bm, id){ gt.push({g:null, d:bm, x:bxs[id], y:bys[id]}); BK[id] = null; });
+  w.gl = {ground:gt, chunks:list, terr:new Map()}; setTimeout(function(){ gtPackAll(w); }, 300);
 }
 
