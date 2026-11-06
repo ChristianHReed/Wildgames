@@ -556,7 +556,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.117.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.117.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1499,7 +1499,7 @@ function goToSleep(o){
 function wakeUp(why){ if (!P.sleep) return; var hrs = (time - P.sleep.start)/DAY*24, cab = P.sleep.cab; if (cab){ var q = tpt(cab, 0.25, 1.6); P.x = q.x; P.y = q.y; } P.sleep = null; if (!cab) allBeds().forEach(function(bd){ var a = world.edits.beds[charSlug()]; if (bd.s === charSlug() && Math.hypot(bd.x - P.x, bd.y - P.y) < 3 && (!a || a.b !== bd.b)) doEdit({a:'bed', s:charSlug(), b:bd.b, x:bd.x, y:bd.y}); }); el('sleepMask').classList.remove('on'); toast((why ? why + ' ' : '') + 'You slept ' + (hrs < 1 ? 'a little' : Math.round(hrs) + ' hours') + (cab ? ' in the truck.' : '. You will wake here if you die.'), 5); updateHud(); }
 /* 0.89: any key, click or tap wakes you, not only E */
 var wakeReq = false;
-['keydown', 'mousedown', 'touchstart'].forEach(function(ev){ document.addEventListener(ev, function(e){ if (P.sleep && !P.cop && performance.now() - (P.sleep.rt || 0) > 600 && !(e.target && e.target.closest && e.target.closest('#menu, .modal'))) wakeReq = true; }, true); });
+['keydown', 'mousedown', 'touchstart'].forEach(function(ev){ document.addEventListener(ev, function(e){ if (P && P.sleep && !P.cop && performance.now() - (P.sleep.rt || 0) > 600 && !(e.target && e.target.closest && e.target.closest('#menu, .modal'))) wakeReq = true; }, true); });
 function sleepTick(dt){
   if (!P.sleep) return;
   if (wakeReq){ wakeReq = false; return wakeUp(''); }
@@ -3263,6 +3263,8 @@ function render(){
 }
 
 /* ================= loop + screens ================= */
+/* 0.117.2: when a phone takes the graphics context away (out of memory) the game saves and starts over with the same save instead of showing black ground */
+cv.addEventListener('webglcontextlost', function(e){ e.preventDefault(); try { if (running) saveNow(); } catch (er){} running = false; try { toast('The phone ran out of graphics memory. Reloading the game...', 6); } catch (er){} setTimeout(function(){ location.reload(); }, 1800); });
 var lastTs = 0;
 function frame(ts){
   var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
