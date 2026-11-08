@@ -106,9 +106,15 @@ What is missing, in the order it should be built:
 
 ## Device test log
 
+The owner's test devices are an iPhone 11 and an iPad Pro (main), a Beelink mini PC and an older HP Envy laptop (unattended benchmarks). How to run the benchmark: `launch/README.md`. Results: `docs/BENCHMARKS.md`.
+
 When someone plays on a device, the result goes here (a bug report from the game carries the device and browser).
 
 | Date | Device | Browser | Map | Detail | Result |
 | --- | --- | --- | --- | --- | --- |
 | Nov 2026 | iPhone (owner's) | Safari | Springfield E0 S1 | Low | Crashed the page on loading the city centre until 0.117.5; retest needed. |
+| Nov 2026 | iPhone 11 (owner's main test device) | Safari | `play.html?bench` | Low | Waiting for the first run. |
+| Nov 2026 | iPad Pro (owner's main test device) | Safari | `play.html?bench` | Low, Normal | Waiting for the first run. |
+| Nov 2026 | Beelink mini PC | launcher `bench-windows.bat` or `bench-linux.sh` | unattended | Normal | Waiting for the first run. |
+| Nov 2026 | HP Envy laptop (older) | launcher, unattended | unattended | Low, Normal | Waiting for the first run. |
 | Nov 2026 | Linux desktop (automated) | Chromium | Springfield, Test World, demo town | Low, Normal | Runs; used for every change. |

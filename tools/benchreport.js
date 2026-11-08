@@ -11,7 +11,7 @@ for (const k of Object.keys(dev)) {
   out += '## ' + k + '\n\n';
   for (const r of dev[k].slice(0, 5)) {
     const d = r.device || {};
-    out += `**${r.when.slice(0, 16).replace('T', ' ')}** · build ${r.build} · ${Q[+d.quality] || d.quality} detail · ${d.view} at ${d.dpr}x · ${d.gpu || ''}${d.file ? ' · from the drive' : ''}\n\n`;
+    out += `**${r.when.slice(0, 16).replace('T', ' ')}** · build ${r.build} · ${Q[+d.quality] || d.quality} detail${d.rscale && d.rscale < 1 ? ' · drawn at ' + Math.round(d.rscale*100) + '%' : ''}${d.fcap ? ' · capped at ' + d.fcap : ''} · ${d.view} at ${d.dpr}x · ${d.gpu || ''}${d.file ? ' · from the drive' : ''}\n\n`;
     out += 'Loading: ' + (r.loads || []).map(l => `${l.load} ${l.seconds} s`).join(', ') + '\n\n';
     out += '| Stage | fps | 95% ms | worst ms | frames over 50 ms | update ms | draw ms | calls | triangles | memory MB |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n';
     for (const s of r.stages) out += `| ${s.stage} | ${s.fps} | ${s.p95} | ${s.worst} | ${s.long} | ${s.updMs} | ${s.drawMs} | ${s.calls} | ${Math.round(s.tris / 1000)}k | ${s.heapMB == null ? '-' : s.heapMB} |\n`;
