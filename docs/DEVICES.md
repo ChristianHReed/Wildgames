@@ -21,7 +21,7 @@ Afterstreet is open source and meant to travel on a drive. So:
 | WebAssembly | Optional. The heavy map work runs faster with it; without it the same work runs in plain JavaScript. |
 | Storage | About 250 MB for the whole folder (game, art, packs). Each map you make adds a few MB. Saves are small. |
 | Memory (estimate) | 2 GB of RAM for the demo town and small maps on Low detail; 4 GB for a city centre square; 8 GB to be comfortable. Measured on a desktop: the densest Springfield square peaks near 550 MB of page memory while it loads and settles near 250 MB. Phones close a page well before they run out of RAM, so phones need the Low setting. |
-| Controls | Keyboard and mouse, or a touch screen. A game controller is not supported yet (it is first on the list below). |
+| Controls | Keyboard and mouse, a touch screen, or a game controller (0.120.0; menus too). |
 
 ## Devices
 
@@ -84,7 +84,7 @@ What the game has now:
 
 What is missing, in the order it should be built:
 
-1. **Game controller (gamepad) support**, with the buttons shown in words.
+1. ~~Game controller (gamepad) support~~ built in 0.120.0, menus included, with a line in words saying which button does what.
 2. **Rebinding keys and controller buttons.**
 3. **Captions for sounds that matter:** an alien behind you, a raid starting, a door breaking, each as a short line with a direction.
 4. **Colour-blind safe signals:** health and needs bars and map markers also differ by shape or label, not only by red and green.
@@ -96,10 +96,10 @@ What is missing, in the order it should be built:
 
 ## Order of work for "play anywhere"
 
-1. Gamepad support.
+1. ~~Gamepad support~~ (0.120.0).
 2. Detail presets chosen on first start, and a Low setting tested on a tier-B device.
 3. Saves on the drive in every browser (export on quit, import on start, where the browser cannot write the folder).
-4. Launch scripts in `launch/` for Windows, macOS, Linux and the Pi (any installed browser, app window where the browser allows it).
+4. ~~Launch scripts in `launch/`~~ (0.120.0: Windows, macOS, Linux and Pi kiosk; untested on real machines yet).
 5. A "Host your own copy" section in the README.
 6. Captions, colour-blind signals, text size, rebinding, hold or toggle, less motion.
 7. Optional: an Android package, built openly and offered on F-Droid.
