@@ -58,3 +58,15 @@ Use this to pick the next stretch goal when a mode's planned work (docs/GAME_LOO
 
 **All modes**
 - Upper-floor window glass see-through; the Workshop's wiring of modules into whole buildings; the waterways pack on real maps.
+
+## Play on more devices (8 November 2026)
+From docs/DEVICES.md. Gamepad support, detail presets, saves on the drive in every browser and the Pi kiosk start are planned work, not stretch. These are the extras:
+- **Desktop-less Linux retro handhelds** (ROCKNIX, Knulli, muOS, ArkOS on Anbernic, Miyoo, Powkiddy and the like): a PortMaster port that starts the open-source WPE WebKit `cog` launcher on `play.html`, drawing straight to the screen. Only models with 2 GB or more; 640x480 layouts.
+- **Android package** built openly from this repository (Capacitor or a plain WebView), offered on F-Droid, for handhelds and phones where the website is not wanted.
+- **Xbox** through its Edge browser, once gamepad support is in: test, then a note in the guide.
+- **A "Handheld" detail preset** below Low: half-resolution drawing scaled up, 30 fps cap for battery, shorter view distance, fewer aliens at once, small maps by default.
+- **On-screen gamepad keyboard** for chat, survivor names and map search on devices with no keyboard or touch.
+- **Host-your-own kit**: a one-page guide and a tiny optional home-server script so a household, school or club can serve its own copy on a home network.
+- **Low-memory map squares**: squares cut smaller (or loaded in parts) for devices with 1 to 2 GB.
+- **Battery and heat mode** on phones and tablets: frame cap and lower resolution when on battery or warm.
+

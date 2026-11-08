@@ -40,8 +40,21 @@ Afterstreet is open source and meant to travel on a drive. So:
 | C | Raspberry Pi 4 (4 GB or more) | As for Pi 5, Low detail, small maps. | As for Pi 5. | As for Pi 5 | Not yet |
 | C | Xbox (Edge browser) | Open the game's website in Edge. | In the browser. | Needs gamepad support. | Not yet |
 | C | Older Android phones (2 GB) | As for Android, Low detail, the demo town or a Neighborhood-size map. | In the browser. | Touch | Not yet |
+| C | Linux retro handhelds without a desktop (2 GB) | A PortMaster port with WPE WebKit (`cog`), a stretch goal. | In the launcher's storage on the SD card. | Built-in controller (needs gamepad support). | Not yet |
 | Not supported | Nintendo Switch, PlayStation, most smart TVs and TV sticks | No usable browser with WebGL and storage. | | | |
 | Not supported | E-ink readers, feature phones, microcontroller handhelds (ESP32 and the like), Internet Explorer | No WebGL, or far too little memory. | | | |
+
+## Custom and home-made handhelds
+
+Three kinds, each with its own way in:
+
+| Kind | Examples | How it runs the game | What it needs from the game | Outlook |
+| --- | --- | --- | --- | --- |
+| Android handhelds | Retroid Pocket, AYN Odin, Anbernic's Android models | Chrome or Firefox: the website and Save for offline, like an Android phone. | Gamepad support, including menus. | Tier B once gamepads work. |
+| Single-board-computer handhelds | Home-made Raspberry Pi 5 or CM5 builds, the uConsole | Raspberry Pi OS Lite with the `cage` kiosk and Chromium in kiosk mode, starting `play.html` at boot: no desktop, straight into the game. | Gamepad support, a Handheld detail preset, a launch kit in `launch/`. | Tier B on a Pi 5 with 4 GB or more; Pi 4 is the floor. |
+| Linux retro handhelds without a desktop | Anbernic, Miyoo, Powkiddy running ROCKNIX, Knulli, muOS or ArkOS | No browser on board. The open WPE WebKit engine and its `cog` launcher draw straight to the screen, packaged as a PortMaster port. | Gamepad support, menus that fit 640x480, the lowest detail, small maps. | Stretch goal: 2 GB models maybe; 1 GB models likely too small. |
+
+Everything here is open source: `cage`, Chromium, WPE WebKit and PortMaster.
 
 ## Scrutiny of the earlier plan
 
