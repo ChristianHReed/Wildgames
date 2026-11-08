@@ -414,6 +414,7 @@
         <label>Alien pressure, for a new world<select id="dfPress"><option value="low">Low: fewer aliens about</option><option value="normal" selected>Normal</option><option value="high">High: crowds and bigger hordes</option></select></label>
         <label>Nests fight back, for a new world<select id="dfNest"><option value="gentle">Gentle: a few more aliens each day, nests stay put</option><option value="steady" selected>Steady: packs grow stronger each day, nests spread slowly</option><option value="brutal">Brutal: nests spread fast and spawn new alien types early</option></select></label>
         <label>Survivors, for a new world<select id="dfPerma"><option value="0" selected>Hurt, never dead: they are carried home to recover</option><option value="1">They can die for good</option></select></label>
+        <label>The base, for a new world (Endless)<select id="dfLose"><option value="0" selected>Raids hurt it but it holds</option><option value="1">It can be overrun: people scatter, half the supplies are lost</option></select></label>
         <label>Searched loot<select id="lootRule"><option value="refill">Refills after about five days</option><option value="never">Never comes back</option></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
       </div>
@@ -556,7 +557,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.118.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.119.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1738,6 +1739,7 @@ function packTick(dt){
     var G = packsA[gi], ms = zombies.filter(function(z){ return z.grp === G.id; }), i;
     if (!ms.length){ packsA.splice(gi, 1); continue; }
     var Ld = ms[0], hc = null;
+    if (G.raid){ var rz = world.zones && world.zones[0]; if (!rz || !raidOn()){ G.raid = false; ms.forEach(function(z){ z.raid = 0; }); } else { G.tx = rz.x; G.ty = rz.y; G.t = 0; G.wait = 0; continue; } }
     for (i = 0; i < ms.length; i++){ var m = ms[i]; if (m.st === 2 && !hc) hc = m; if (m.st === 1 && !hc && m.heard && time - m.heard < 3) hc = m; }
     /* the whole pack turns to a noise or a sight one of them has: the others come to the same place, though they still have to find you */
     if (hc){ if (hc.st === 2){ G.tx = hc.lx || hc.x; G.ty = hc.ly || hc.y; } else { G.tx = hc.lx; G.ty = hc.ly; } G.t = 0; G.wait = 0;
@@ -1758,9 +1760,9 @@ function nestIn(b, rr){ var d = b.door, o = doorOut(b), tx = -o[1], ty = o[0], T
   return null; }
 /* ---- 0.116.0: difficulty, chosen for a new world and kept with it (world.diff). Alien pressure scales how many aliens are about and the size of a horde;
    nest push-back sets how fast packs grow with the days, whether nests spread, and when spitters and giants first come ---- */
-var DIFFD = {press:'normal', nest:'steady', perma:0}, PRESS = {low:0.6, normal:1, high:1.5}, NESTG = {gentle:0.01, steady:0.03, brutal:0.07}, NESTSP = {gentle:0, steady:0.15, brutal:0.3};
-function cleanDiff(d){ d = d || {}; return {press:PRESS[d.press] ? d.press : 'normal', nest:NESTG[d.nest] !== undefined ? d.nest : 'steady', perma:d.perma ? 1 : 0}; }
-function readDiff(){ return cleanDiff({press:el('dfPress').value, nest:el('dfNest').value, perma:+el('dfPerma').value}); }
+var DIFFD = {press:'normal', nest:'steady', perma:0, lose:0}, PRESS = {low:0.6, normal:1, high:1.5}, NESTG = {gentle:0.01, steady:0.03, brutal:0.07}, NESTSP = {gentle:0, steady:0.15, brutal:0.3};
+function cleanDiff(d){ d = d || {}; return {press:PRESS[d.press] ? d.press : 'normal', nest:NESTG[d.nest] !== undefined ? d.nest : 'steady', perma:d.perma ? 1 : 0, lose:d.lose ? 1 : 0}; }
+function readDiff(){ return cleanDiff({press:el('dfPress').value, nest:el('dfNest').value, perma:+el('dfPerma').value, lose:+el('dfLose').value}); }
 function DF(){ return (world && world.diff) || DIFFD; }
 function spawnPack(n, horde, cs, day, cnt){
   var DD = DF(); n = Math.min(16, Math.max(1, Math.round(n*(1 + NESTG[DD.nest]*Math.max(0, day - 1)))));
@@ -2302,7 +2304,7 @@ function update(dt){
   if (net.role !== 'guest'){
     var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridAt(P.inside.cx, P.inside.cy) && powered(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
     net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, sm:p.sm || 1, eng:!!(p.vh && world.vmap && world.vmap[p.vh] && world.vmap[p.vh].t), loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, yaw:p.yaw, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
-    tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0); });
+    tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0) && !(raidOn() && zoneAt(t.x, t.y, 0) === world.zones[0]); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); }); heatTick(dt, tg);
     PF.budget = QS.zmul < 1 ? 2 : 4;
     for (i = zombies.length - 1; i >= 0; i--){
@@ -2311,9 +2313,9 @@ function update(dt){
         var t2 = tg[q2], dd = Math.hypot(t2.x - z.x, t2.y - z.y); if (dd < dAny) dAny = dd;
       }
       if (z.hp <= 0){ kills++; addCorpse(z); if (z.k < 4) alienCall(z.k, z.x, z.y, true, 'die'); zombies.splice(i, 1); continue; }
-      if (dAny > (z.grp ? 200 : 130)){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
+      if (dAny > (z.grp ? 200 : 130) && !z.raid){ if (z.k === 1 && z.obs && time < z.obs.until && relocate(z, tg)) continue; zombies.splice(i, 1); continue; }
       /* a hard edge: anything inside a safe zone is put back on its rim, however fast it was coming */
-      var zn = zoneAt(z.x, z.y, 0.6); if (zn){ zoneOut(zn, z, 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
+      var zn = zoneAt(z.x, z.y, 0.6); if (zn && !(z.raid && zn === world.zones[0])){ zoneOut(zn, z, 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
       setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y, z.lvl) >= 0;
       T = senses(z, A, tg, dt, night); if (T) d = Math.hypot(T.x - z.x, T.y - z.y);
       z.cd -= dt; z.hurt -= dt; z.thru -= dt;
@@ -3336,7 +3338,7 @@ function worldSave(){
   var got = {}, cr = [], tr = [];
   world.buildings.forEach(function(b){ var ks = Object.keys(b.got); if (ks.length) got[b.id] = ks.map(Number); });
   world.crates.forEach(function(c, i){ if (c.looted) cr.push(i); }); world.trees.forEach(function(t, i){ if (!t.alive) tr.push(i); });
-  return {diff:world.diff, settle:world.settle, dumps:(world.dumpGone || []).slice(0, 400), surv:(world.surv || []).map(function(q){ return {id:q.id, key:q.key, hp:Math.round(q.hp || 60), st:q.st, job:q.job, hu:Math.round(q.hu), x:r2(q.x), y:r2(q.y), away:q.away ? Math.round(q.away - time) : 0, gone:q.gone ? 1 : 0, sc:Math.round(q.sc || 0)}; }), burst:Object.keys(world.burst || {}).map(Number), v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, cut:Object.keys(world.cut || {}).slice(-5000), fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
+  return {diff:world.diff, settle:world.settle, dumps:(world.dumpGone || []).slice(0, 400), surv:(world.surv || []).map(function(q){ return {id:q.id, key:q.key, nm:q.base, sk:q.sk, th:Math.round(q.th || 0), mo:Math.round(q.mo === undefined ? 70 : q.mo), nc:q.nc ? 1 : 0, hp:Math.round(q.hp || 60), st:q.st, job:q.job, hu:Math.round(q.hu), x:r2(q.x), y:r2(q.y), away:q.away ? Math.round(q.away - time) : 0, gone:q.gone ? 1 : 0, sc:Math.round(q.sc || 0)}; }), burst:Object.keys(world.burst || {}).map(Number), v:1, map:world.name, nb:world.buildings.length, time:time, got:got, crates:cr, trees:tr, cut:Object.keys(world.cut || {}).slice(-5000), fires:fires, lamps:lamps, cades:cades, packs:packs, searched:searched, kills:kills, players:worldPlayers, veh:vehSave(), scen:world.scen, found:Object.keys(world.found).map(Number), won:!!world.won, nests:Object.keys(world.nests).map(Number), mem:world.mem || [], wx:{w:wx.w, until:wx.until}, edits:world.edits};
 }
 function charSave(){
   var all = {}, k; for (k in inv) all[k] = inv[k] + (P.home ? (P.home[k] | 0) : 0);
@@ -4998,7 +5000,11 @@ function truckBits(m, v, now, tr, fit, y0){
 }
 /* ================= 0.49.0: other survivors. A few are waiting in the town; ask one to come along, then at the base give each a job. They are the design chat's six ready-made survivors ================= */
 var NPCN = {old_ranger:'Old Hollis', medic:'Doc Marlow', kid_hoodie:'Tobias', farmer:'Farmer Reed', drifter:'Nix', mechanic:'Dale'};
-var SJOB = {guard:['guard', 'keeps watch along the fence and fights aliens that come close'], garden:['gardener', 'waters the plots and brings in the harvest'], scavenge:['scavenger', 'goes out for supplies and comes back with some'], repair:['builder', 'mends damaged walls around the base, using wood from the supply chest'], cook:['cook', 'turns raw food in the supply chest into hot meals']};
+var SJOB = {guard:['guard', 'keeps watch along the fence and fights aliens that come close'], garden:['gardener', 'waters the plots and brings in the harvest'], scavenge:['scavenger', 'goes out for supplies and comes back with some'], repair:['builder', 'mends damaged walls around the base, using wood from the supply chest'], cook:['cook', 'turns raw food in the supply chest into hot meals and boils dirty water'], medic:['medic', 'patches up hurt people at the base with bandages and kits from the supply chest']};
+var SJORD = ['guard', 'garden', 'scavenge', 'repair', 'cook', 'medic'];
+/* 0.119.0: names for people who turn up at the settlement (the six looks are shared; each person has their own name) */
+var SNAMES = ['Ada', 'Bram', 'Cass', 'Della', 'Esme', 'Finn', 'Gus', 'Hana', 'Ivo', 'June', 'Kit', 'Lou', 'Mara', 'Ned', 'Opal', 'Pike', 'Quinn', 'Rosa', 'Sol', 'Tess', 'Ulla', 'Vic', 'Wren', 'Yuri', 'Zed', 'Bea', 'Cole', 'Dot', 'Eli', 'Fay'];
+var SKILLOF = {old_ranger:'guard', medic:'medic', kid_hoodie:'scavenge', farmer:'garden', drifter:'scavenge', mechanic:'repair'};
 function npcLook(key){
   var L = SHAPED.survivor.npcLooks[key]; if (!L) return null;
   return {build:L.build, body:L.body, skin:L.skin, hairC:L.hairColour, hair:L.hair, hat:L.hat || 'none', face:L.face, top:L.top, bot:L.bottoms, shoe:L.shoes, shirt:L.shirt, pants:L.pants, acc:L.acc, pack:false, wpn:'', gloves:false, scarf:false, worn:L.worn || [], npc:L.npc || []};
@@ -5010,12 +5016,12 @@ function makeSurvivors(saved){
   c.sort(function(a, b){ return a[0] - b[0]; });
   var n = Math.max(1, Math.min(4, Math.round(w.buildings.length/220))), zk = hash(w.buildings.length, 5, 5);
   c.slice(0, n).forEach(function(a, i){ var d = a[1].door, key = keys[(Math.floor(zk*6) + i) % keys.length];
-    w.surv.push({surv:true, id:i, key:key, base:NPCN[key] || key, name:NPCN[key] || key, tip:'', x:d.x - d.nx*1.6 - d.ny*1.6, y:d.y - d.ny*1.6 + d.nx*1.6, yaw:Math.atan2(-d.ny, -d.nx), st:'wait', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:d.x - d.nx*1.6, hy:d.y - d.ny*1.6}); });
-  if (saved) saved.forEach(function(q){ var s2 = w.surv[q.id | 0]; if (!s2 && q.key && NPCN[q.key] && (q.id | 0) < 12){ s2 = {surv:true, id:w.surv.length, key:q.key, base:NPCN[q.key], name:NPCN[q.key], tip:'', x:+q.x || 0, y:+q.y || 0, yaw:0, st:'follow', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:+q.x || 0, hy:+q.y || 0}; w.surv.push(s2); } if (!s2) return; s2.hp = q.hp > 0 ? +q.hp : 60; s2.st = /^(wait|follow|stay|base)$/.test(q.st) ? q.st : 'wait'; s2.job = SJOB[q.job] ? q.job : ''; s2.hu = Math.max(0, Math.min(100, +q.hu || 0)); if (isFinite(q.x) && isFinite(q.y)){ s2.x = +q.x; s2.y = +q.y; } s2.away = q.away > 0 ? time + q.away : 0; s2.gone = q.gone ? 1 : 0; s2.sc = +q.sc || 0; });
+    w.surv.push({surv:true, id:i, key:key, base:NPCN[key] || key, name:NPCN[key] || key, sk:SKILLOF[key] || 'guard', th:0, mo:70, tip:'', x:d.x - d.nx*1.6 - d.ny*1.6, y:d.y - d.ny*1.6 + d.nx*1.6, yaw:Math.atan2(-d.ny, -d.nx), st:'wait', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:d.x - d.nx*1.6, hy:d.y - d.ny*1.6}); });
+  if (saved) saved.forEach(function(q){ var s2 = w.surv[q.id | 0]; if (!s2 && q.key && (NPCN[q.key] || q.nm) && SHAPED.survivor.npcLooks[q.key] && (q.id | 0) < 60){ s2 = {surv:true, id:w.surv.length, key:q.key, base:q.nm || NPCN[q.key], name:q.nm || NPCN[q.key], sk:SKILLOF[q.key] || 'guard', th:0, mo:70, tip:'', x:+q.x || 0, y:+q.y || 0, yaw:0, st:'follow', job:'', hu:0, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:+q.x || 0, hy:+q.y || 0}; w.surv.push(s2); } if (!s2) return; s2.hp = q.hp > 0 ? +q.hp : 60; s2.st = /^(wait|follow|stay|base)$/.test(q.st) ? q.st : 'wait'; s2.job = SJOB[q.job] ? q.job : ''; s2.hu = Math.max(0, Math.min(100, +q.hu || 0)); if (isFinite(q.x) && isFinite(q.y)){ s2.x = +q.x; s2.y = +q.y; } s2.away = q.away > 0 ? time + q.away : 0; s2.gone = q.gone ? 1 : 0; s2.sc = +q.sc || 0; if (q.nm){ s2.base = s2.name = String(q.nm).slice(0, 24); } if (SJOB[q.sk]) s2.sk = q.sk; s2.th = Math.max(0, Math.min(100, +q.th || 0)); s2.mo = isFinite(q.mo) ? Math.max(0, Math.min(100, +q.mo)) : 70; s2.nc = q.nc ? 1 : 0; });
 }
 function survPanel(){
   var L = (world.surv || []).filter(function(s){ return !s.gone && s.st !== 'wait'; }); if (!L.length) return '';
-  return '<h3>Survivors</h3>' + L.map(function(s){ var jb = SJOB[s.job]; return '<div class="irow"><img class="sport" alt="" src="assets/ui/portraits/' + s.key + '.png?v=' + BUILD + '" onerror="this.remove()"><span class="n">' + s.base + '<br><i>' + (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + ' &middot; hunger ' + Math.round(s.hu) + '% &middot; health ' + Math.round(Math.max(0, s.hp)/0.6) + '%' + (s.away ? ' &middot; out on a run' : '') + '</i></span><button data-a="sj' + s.id + '">' + (inSafe(P.x, P.y, 0) ? 'Next job' : s.st === 'stay' ? 'Follow' : 'Wait') + '</button></div>'; }).join('');
+  return '<h3>Survivors</h3>' + L.map(function(s){ var jb = SJOB[s.job]; return '<div class="irow"><img class="sport" alt="" src="assets/ui/portraits/' + s.key + '.png?v=' + BUILD + '" onerror="this.remove()"><span class="n">' + s.base + '<br><i>' + (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + (s.sk && SJOB[s.sk] ? ' &middot; good ' + (s.sk === 'garden' ? 'at growing food' : 'as a ' + SJOB[s.sk][0]) : '') + ' &middot; hunger ' + Math.round(s.hu) + '% &middot; thirst ' + Math.round(s.th || 0) + '% &middot; health ' + Math.round(Math.max(0, s.hp)/0.6) + '% &middot; spirits ' + survMood(s) + (s.away ? ' &middot; out on a run' : '') + '</i></span><button data-a="sj' + s.id + '">' + (inSafe(P.x, P.y, 0) ? 'Next job' : s.st === 'stay' ? 'Follow' : 'Wait') + '</button></div>'; }).join('');
 }
 /* ---- 0.116.0: the settlement meter (Endless). People, food, water, power, medicine and safety at the safe house, read from what is actually there ---- */
 var SETTLE_M = [5, 10, 20];
@@ -5027,6 +5033,7 @@ function settleStats(){
   o.med = (ci.medkit | 0)*2 + (ci.bandage | 0) + (ci.antibio | 0); o.guards = (world.surv || []).filter(function(q){ return !q.gone && q.job === 'guard' && !q.rest; }).length;
   var tot = 0, ok = 0; (world.edits.walls || []).forEach(function(w){ if (!inSafe(w.x, w.y, 6)) return; var by = wallBays(w), h = wallMat(w).hp; for (var q = 0; q < 6; q++){ tot++; ok += Math.max(0, Math.min(1, by[q]/h)); } }); o.walls = tot ? ok/tot : 0; o.wallN = tot;
   o.bar = {food:Math.min(1, o.mins/60), water:o.tap ? 1 : Math.min(1, o.water/(2 + 2*n1)), power:o.grid ? 1 : gens ? 0.8 : 0, med:Math.min(1, o.med/6), safe:Math.min(1, o.guards*0.35 + o.walls*0.6)};
+  o.beds = baseBeds(); o.room = 2 + 2*o.beds; o.bar.beds = Math.min(1, o.room/Math.max(1, people));
   o.self = o.bar.food >= 0.6 && o.bar.water >= 0.6 && o.bar.power > 0 && o.plots >= Math.ceil(people/2) && people > 0;
   return o;
 }
@@ -5039,12 +5046,81 @@ function settlePanel(){
     bar('Water', o.bar.water, o.tap ? 'the taps still run (until day ' + WATER_DAY + ')' : o.water + ' bottles stored') +
     bar('Power', o.bar.power, o.grid ? 'the grid is on' : o.gens ? o.gens + ' generator' + (o.gens === 1 ? '' : 's') + ' running' : 'dark') +
     bar('Medicine', o.bar.med, (ci0(o.med) ? o.med + ' points of supplies' : 'nothing stored')) +
-    bar('Safety', o.bar.safe, o.guards + ' guard' + (o.guards === 1 ? '' : 's') + (o.wallN ? ' &middot; walls ' + Math.round(o.walls*100) + '% sound' : ' &middot; no walls built'));
+    bar('Beds', o.bar.beds, 'room for ' + o.room + ' (' + o.beds + ' bed' + (o.beds === 1 ? '' : 's') + ' built, each sleeps two)') +
+    bar('Safety', o.bar.safe, o.guards + ' guard' + (o.guards === 1 ? '' : 's') + (o.wallN ? ' &middot; walls ' + Math.round(o.walls*100) + '% sound' : ' &middot; no walls built') + (raidOn() ? ' &middot; <b>raid now</b>' : '')) +
+    '<div style="font-size:12px;margin-top:4px"><i>' + (SETTLE_M.filter(function(t){ return settleHas(t); }).map(function(t){ return SETTLE_U[t]; }).join(' ') || 'At 5, 10 and 20 survivors the settlement gets better at what it does.') + ' Newcomers come to the gate at dawn when there is food and water for them.</i></div>';
 }
 function ci0(n){ return n > 0; }
-function settleTick(){
-  if (!world || !world.scen || world.scen.type !== 'endless' || net.role === 'guest') return; var S = world.settle = world.settle || {m:[]}, n = survCount();
-  SETTLE_M.forEach(function(t){ if (n >= t && S.m.indexOf(t) < 0){ S.m.push(t); toast('Settlement milestone: ' + t + ' survivors.', 6); feed('Your settlement now has ' + t + ' survivors', '#9bd07a'); emit({k:'settle', t:t}); } });
+/* ---- 0.119.0: Endless, step 2. Needs and spirits, a medic, skills, newcomers at the gate each dawn, milestone rewards, and night raids on the settlement ---- */
+var SETTLE_U = {5:'Scavengers now go out in pairs and bring back half as much again.', 10:'Guards fight harder and keep watch farther out from the fence.', 20:'Gardeners bring in twice the harvest.'};
+function settleHas(t){ var S = world.settle; return !!(S && S.m && S.m.indexOf(t) >= 0); }
+function raidOn(){ return !!(world && world.settle && world.settle.raidOn); }
+function baseBeds(){ return allBeds().filter(function(q){ return inSafe(q.x, q.y, 3); }).length; }
+function baseRoom(){ return 2 + 2*baseBeds(); }   /* each bed sleeps two in shifts; the safe house sleeps two as it is */
+var SSC = {t:-9, o:null};
+function settleC(){ if (!SSC.o || Math.abs(time - SSC.t) > 3){ SSC.o = settleStats(); SSC.t = time; } return SSC.o; }
+function survRate(s){ var m = s.mo === undefined ? 70 : s.mo; return (s.sk && s.sk === s.job ? 1.5 : 1)*(m > 70 ? 1.15 : m < 35 ? 0.7 : 1); }
+function survMorale(s, dt){
+  var tg = 72, why = 'it did not feel safe';
+  if (s.hu > 75){ tg -= 25; why = 'there was nothing to eat'; } if (s.th > 75){ tg -= 25; why = 'there was nothing to drink'; } if (s.hp < 30) tg -= 12;
+  if (s.st === 'base'){ var o = settleC(); if (o.people > baseRoom()){ tg -= 15; if (s.hu <= 75 && s.th <= 75) why = 'there was nowhere to sleep'; } if (o.self) tg += 10; if (o.bar.safe < 0.3) tg -= 8; if (raidOn()) tg -= 10; }
+  s.mo = (s.mo === undefined ? 70 : s.mo) + (Math.max(0, Math.min(100, tg)) - (s.mo === undefined ? 70 : s.mo))*Math.min(1, dt/40);
+  if (s.mo < 15){ s.low = (s.low || 0) + dt; if (s.low > 150){ s.gone = 1; s.ride = null; feed(s.base + ' left: ' + why, '#e07a5a'); toast(s.base + ' could not stay: ' + why + '.', 5); return true; } } else s.low = 0;
+  return false; }
+function survMedic(s, ch, dt){
+  var tgt = null, td = 1e9, inB = function(x, y){ return inSafe(x, y, 1); };
+  (world.surv || []).forEach(function(q){ if (q === s || q.gone || q.away || q.hp >= 45 || !inB(q.x, q.y)) return; var d = Math.hypot(q.x - s.x, q.y - s.y); if (d < td){ td = d; tgt = q; } });
+  if (!tgt && P.hp < 70 && inB(P.x, P.y)){ tgt = P; td = Math.hypot(P.x - s.x, P.y - s.y); }
+  var kit = ch && (ch.inv.bandage > 0 ? 'bandage' : ch.inv.medkit > 0 ? 'medkit' : null);
+  if (!tgt || !kit){ survGo(s, s.hx, s.hy, 2.2, dt, 1.2); return; }
+  survGo(s, tgt.x, tgt.y, 3.2, dt, 1.2); s.sc += dt*survRate(s);
+  if (s.sc > 9 && td < 1.8){ s.sc = 0; ch.inv[kit]--; var amt = kit === 'medkit' ? 45 : 22;
+    if (tgt === P){ P.hp = Math.min(100, P.hp + amt); P.bleed = 0; updateHud(); feed(s.base + ' patched you up (' + (kit === 'medkit' ? 'a medical kit' : 'a bandage') + ' from the supply chest)', '#9bd07a'); }
+    else { tgt.hp = Math.min(60, tgt.hp + amt*0.6); if (tgt.rest) tgt.rest = Math.min(tgt.rest, time + 30); feed(s.base + ' patched up ' + tgt.base, '#9bd07a'); } sfx('pick', s.x, s.y, 0.4); } }
+function gatePoint(){ var bz = world.zones && world.zones[0]; if (!bz) return null; for (var k = 0; k < 16; k++){ var a = Math.random()*6.283, e = {x:bz.x + Math.cos(a)*60, y:bz.y + Math.sin(a)*60}; zoneOut(bz, e, 2.2); if (!circ(e.x, e.y, 0.5) && !inWater(e.x, e.y, 0.3) && !buildingAt(e.x, e.y)) return e; } return null; }
+function newcomer(){
+  if (!window.SHAPED || !SHAPED.survivor || !SHAPED.survivor.npcLooks) return null; var keys = Object.keys(SHAPED.survivor.npcLooks), L = world.surv = world.surv || [], used = {};
+  L.forEach(function(q){ used[q.base] = 1; }); var nm = SNAMES.filter(function(n){ return !used[n]; }); if (!nm.length || L.length >= 60) return null; var e = gatePoint(); if (!e) return null;
+  var key = keys[Math.floor(Math.random()*keys.length)], name = nm[Math.floor(Math.random()*nm.length)], sk = SJORD[Math.floor(Math.random()*SJORD.length)];
+  var q = {surv:true, id:L.length, key:key, base:name, name:name, sk:sk, th:20, mo:60, nc:1, tip:'', x:e.x, y:e.y, yaw:0, st:'wait', job:'', hu:30, hp:60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:e.x, hy:e.y}; L.push(q); return q; }
+function startRaid(n){
+  var bz = world.zones && world.zones[0]; if (!bz) return 0; var x0 = 0, y0 = 0, ok = false, a = 0;
+  for (var k = 0; k < 24 && !ok; k++){ a = Math.random()*6.283; var r = 75 + Math.random()*25; x0 = bz.x + Math.cos(a)*r; y0 = bz.y + Math.sin(a)*r; ok = !circ(x0, y0, 0.6) && !inWater(x0, y0, 0.5) && !inSafe(x0, y0, 10) && !buildingAt(x0, y0); }
+  if (!ok) return 0; var G = {id:++packId, home:-1, horde:false, raid:true, vis:{}, t:0, wait:0, tx:bz.x, ty:bz.y}; packsA.push(G); var made = 0, day = Math.floor((8 + time/DAY*24)/24) + 1;
+  var pc = survCount(), kinds = []; for (var j = 0; j < n; j++) kinds.push(0); for (j = 0; j < Math.floor(pc/3); j++) kinds.push(1); for (j = 0; j < Math.floor(pc/4); j++) kinds.push(4); if (day >= 5 && pc >= 6) kinds.push(2); if (day >= 4 && pc >= 5) kinds.push(3);
+  for (var i = 0; i < kinds.length; i++){ var x = x0 + Math.random()*6 - 3, y = y0 + Math.random()*6 - 3; if (circ(x, y, 0.4)) continue; var z = addAlien(kinds[i], x, y); z.grp = G.id; z.raid = 1; z.st = 1; z.stT = 30; z.lx = bz.x; z.ly = bz.y; made++; }
+  if (!made){ packsA.pop(); return 0; }
+  var dirs = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'];
+  return {n:made, dir:dirs[((Math.round(a/(Math.PI/4)) % 8) + 8) % 8]}; }
+function baseLost(){
+  var S = world.settle, ch = survChest(), bz = world.zones[0], k;
+  if (ch) for (k in ch.inv) ch.inv[k] = Math.floor((ch.inv[k] | 0)/2);
+  var hs = world.buildings.filter(function(b){ var d = Math.hypot(b.cx - bz.x, b.cy - bz.y); return b.door && !b.gone && !world.nests[b.id] && d > 80 && d < 260; });
+  (world.surv || []).forEach(function(q){ if (q.gone || q.st !== 'base') return; var b = hs.length ? hs[Math.floor(Math.random()*hs.length)] : null; if (b){ var o = doorOut(b); q.x = b.door.x + o[0]*1.6; q.y = b.door.y + o[1]*1.6; q.hx = q.x; q.hy = q.y; }
+    q.st = 'wait'; q.job = ''; q.away = 0; q.mo = 40; });
+  S.lost = (S.lost || 0) + 1; S.ov = 0; S.raidOn = 0; zombies.forEach(function(z){ z.raid = 0; });
+  toast('The base was overrun. Your people scattered into the town and half the supplies are gone. Find them and bring them home.', 8); feed('The settlement was overrun', '#e07a5a'); }
+function settleTick(dt){
+  if (!world || !world.scen || world.scen.type !== 'endless' || net.role === 'guest') return; var S = world.settle = world.settle || {m:[]}, n = survCount(); dt = dt || 0;
+  SETTLE_M.forEach(function(t){ if (n >= t && S.m.indexOf(t) < 0){ S.m.push(t); toast('Settlement milestone: ' + t + ' survivors. ' + (SETTLE_U[t] || ''), 7); feed('Your settlement now has ' + t + ' survivors', '#9bd07a'); emit({k:'settle', t:t}); } });
+  var hrs = 8 + time/DAY*24, dayN = Math.floor(hrs/24), hr = hrs % 24, bz = world.zones && world.zones[0]; if (!bz) return;
+  /* newcomers: each dawn from the second day, people who heard of the settlement come to the gate if it can feed and water them (two if it feeds itself). Those not let in by the next dawn move on */
+  if (hr >= 6 && hr < 12 && S.dawn !== dayN){ S.dawn = dayN;
+    (world.surv || []).forEach(function(q){ if (q.nc && q.st === 'wait' && !q.gone){ q.gone = 1; feed(q.base + ' gave up waiting at the gate and moved on', '#c0c6cc'); } });
+    if (dayN >= 1){ var o = settleStats(), k = o.bar.food >= 0.4 && o.bar.water >= 0.4 ? (o.self ? 2 : 1) : 0, got = [];
+      for (var i = 0; i < k; i++){ var q = newcomer(); if (q) got.push(q.base + ' (good as a ' + SJOB[q.sk][0] + ')'); }
+      if (got.length){ toast('Someone is at the gate: ' + got.join(' and ') + (got.length > 1 ? ' want' : ' wants') + ' to join. Go and let them in before tomorrow.', 7); feed('At the gate: ' + got.join(', '), '#9bd07a'); }
+      else if (dayN >= 2 && n > 0 && !k) feed('No one came to the gate: the settlement is short of ' + (o.bar.food < 0.4 ? 'food' : 'water'), '#e0a05a'); } }
+  /* raids: some nights from the second, a pack comes for the settlement itself, bigger as it grows. It can come over the fence; walls, guards and you hold it. It pulls back at dawn */
+  var nN = nightNo(); if (dark > 0.55 && dayN >= 1 && S.raidN !== nN && n >= 2 && !hordeNight()){ S.raidN = nN;
+    if (Math.random() < Math.min(0.9, 0.35 + 0.05*n)){ var r = startRaid(Math.min(32, Math.round((4 + n*2)*PRESS[DF().press]))); if (r){ S.raidOn = 1; S.raidT = time; toast('Raid! ' + r.n + ' aliens are coming for the settlement from the ' + r.dir + '. Get to the base.', 7); feed('A raid is coming from the ' + r.dir, '#ff8f7a'); sfx('alarm', bz.x, bz.y, 0.6); } } }
+  if (S.raidOn){
+    var inside = 0, ch = survChest(); zombies.forEach(function(z){ if (!z.raid || z.hp <= 0) return; if (zoneAt(z.x, z.y, 0) === bz){ inside++;
+      if (ch && Math.hypot(z.x - ch.x, z.y - ch.y) < 3){ z.rob = (z.rob || 0) + dt; if (z.rob > 4){ z.rob = 0; var tk = ch.inv.food > 0 ? 'food' : ch.inv.meal > 0 ? 'meal' : ch.inv.fresh > 0 ? 'fresh' : ch.inv.water > 0 ? 'water' : null; if (tk){ ch.inv[tk]--; if (!S.robSaid || time - S.robSaid > 20){ S.robSaid = time; feed('Aliens are tearing into the supply chest', '#e07a5a'); } } } } } });
+    var left = zombies.some(function(z){ return z.raid && z.hp > 0; });
+    if (dark < 0.12 || !left){ S.raidOn = 0; S.ov = 0; zombies.forEach(function(z){ z.raid = 0; }); feed(left ? 'The raiders pulled back at dawn' : 'The raid is beaten off', '#9bd07a'); if (!left) toast('The raid is beaten off.', 4); return; }
+    if (DF().lose){ var guards = (world.surv || []).some(function(q){ return !q.gone && q.st === 'base' && q.job === 'guard' && !q.rest && q.hp > 0; }), you = zoneAt(P.x, P.y, 0) === bz;
+      if (inside >= 3 && !guards && !you){ S.ov = (S.ov || 0) + dt; if (S.ov > 45) baseLost(); else if (S.ov > 20 && !S.ovSaid){ S.ovSaid = 1; toast('The base is being overrun. Get back there!', 5); } } else S.ov = Math.max(0, (S.ov || 0) - dt*0.5), S.ovSaid = 0; } }
 }
 function survCount(){ var n = 0; (world.surv || []).forEach(function(s){ if (!s.gone && s.st !== 'wait') n++; }); return n; }
 function survGo(s, tx, ty, sp, dt, stop){
@@ -5055,16 +5131,21 @@ function survGo(s, tx, ty, sp, dt, stop){
   if (Math.hypot(s.x - ox, s.y - oy) < step*0.3){ s.stuck += dt; if (s.stuck > 0.3 && !(s.av > 0)){ var sg = Math.random() < 0.5 ? 1 : -1; s.ax = -dy/d*sg; s.ay = dx/d*sg; s.av = 0.7 + Math.random()*0.8; } } else s.stuck = Math.max(0, s.stuck - dt*2); return d;
 }
 function survChest(){ var cs = world.edits.chests, i; for (i = 0; i < cs.length; i++) if (cs[i].id === 'safe') return cs[i]; return null; }
+function survFollowers(){ var n = 0; (world.surv || []).forEach(function(q){ if (!q.gone && (q.st === 'follow' || q.st === 'stay')) n++; }); return n; }
+function survMood(s){ var m = s.mo === undefined ? 70 : s.mo; return m > 70 ? 'good' : m > 45 ? 'fair' : m > 20 ? 'low' : 'very low'; }
 function survTip(s){
-  if (s.st === 'wait') return survCount() >= 3 ? 'you already have three with you' : 'ask to come along';
+  if (s.st === 'wait' && s.nc) return 'wants to join the settlement · ' + (s.sk && SJOB[s.sk] ? 'good as a ' + SJOB[s.sk][0] : 'ask them in');
+  if (s.st === 'wait') return survFollowers() >= 3 ? 'you already have three with you' : 'ask to come along';
   var hung = (s.hu > 75 ? ', hungry' : '') + (s.hp < 30 ? ', badly hurt' : s.hp < 50 ? ', hurt' : ''), jb = SJOB[s.job];
   if (inSafe(P.x, P.y, 0)) return (jb ? jb[0] : s.st === 'stay' ? 'waiting' : 'with you') + hung + ' · change job';
   return (s.st === 'stay' ? 'waiting here' : 'with you') + hung + ' · ' + (s.st === 'stay' ? 'follow' : 'wait here');
 }
 function survTalk(s){
-  if (s.st === 'wait'){ if (survCount() >= 3){ toast('You already have three survivors with you. They need feeding too.', 3.5); return; }
+  if (s.st === 'wait' && s.nc){ s.nc = 0; s.st = 'base'; s.job = s.sk || 'guard'; s.sc = 0; var bz1 = world.zones && world.zones[0]; s.hx = bz1 ? bz1.x + (Math.random() - 0.5)*6 : P.x; s.hy = bz1 ? bz1.y + (Math.random() - 0.5)*6 : P.y; sfx('pick', s.x, s.y, 0.6);
+    feed(s.base + ' joins the settlement as the ' + SJOB[s.job][0], '#9bd07a'); toast(s.base + ': "Thank you. I will pull my weight." They start as the ' + SJOB[s.job][0] + ', the job they are good at.', 5); return; }
+  if (s.st === 'wait'){ if (survFollowers() >= 3){ toast('You already have three survivors with you. Take them to the safe house and give them jobs first.', 3.5); return; }
     s.st = 'follow'; s.job = ''; s.hu = Math.min(s.hu, 30); sfx('pick', s.x, s.y, 0.6); feed(s.base + ' comes with you', '#9bd07a'); toast(s.base + ': "I will stick with you. Get me somewhere safe and I will earn my keep." At the safe house, press E on them to give a job.', 6); return; }
-  if (inSafe(P.x, P.y, 0)){ var order = ['guard', 'garden', 'scavenge', 'repair', 'cook'], at = order.indexOf(s.job), nx = order[(at + 1) % order.length]; s.job = nx; s.st = 'base'; s.sc = 0; s.hx = P.x + (Math.random() - 0.5)*3; s.hy = P.y + (Math.random() - 0.5)*3;
+  if (inSafe(P.x, P.y, 0)){ var order = SJORD, at = order.indexOf(s.job), nx = order[(at + 1) % order.length]; s.job = nx; s.st = 'base'; s.sc = 0; s.hx = P.x + (Math.random() - 0.5)*3; s.hy = P.y + (Math.random() - 0.5)*3;
     feed(s.base + ' is now the ' + SJOB[nx][0], '#9bd07a'); toast(s.base + ' ' + SJOB[nx][1] + '. Press E again to change the job.', 5); return; }
   if (s.st === 'stay'){ s.st = 'follow'; s.job = ''; feed(s.base + ' follows you', '#9bd07a'); } else { s.st = 'stay'; s.job = ''; feed(s.base + ' waits here', '#9bd07a'); }
 }
@@ -5082,29 +5163,31 @@ function survRide(s){
   var sp = seatPoint(v, s.ride.k); s.x = sp.x; s.y = sp.y; s.yaw = v.yaw; s.mv = 0; return true;
 }
 function survTick(dt){
-  if (!world || !world.surv || net.role === 'guest' || !running) return; settleTick();
+  if (!world || !world.surv || net.role === 'guest' || !running) return; settleTick(dt);
   world.surv.forEach(function(s){
     if (s.gone) return;
     if (s.st === 'wait'){ s.mv = 0; s.tip = survTip(s); return; }
-    if (s.st === 'follow' && !s.away){ if (survRide(s)){ s.hu += dt/3; return; } } else if (s.ride) s.ride = null;
+    if (s.st === 'follow' && !s.away){ if (survRide(s)){ s.hu += dt/3; s.th = Math.min(100, (s.th || 0) + dt/4); return; } } else if (s.ride) s.ride = null;
     s.hu += dt/3; var ch = survChest();   /* a hundred in five minutes; a meal is taken from the supply chest, or from your pack */
     if (s.hu > 60){ var src = ch && (ch.inv.food > 0 || ch.inv.fresh > 0) ? ch.inv : (!ch || ch) && (inv.food > 0 || inv.fresh > 0) ? inv : null;
       if (src){ var kf = src.fresh > 0 ? 'fresh' : 'food'; src[kf]--; s.hu = 0; s.starve = 0; if (src === inv) updateHud(); feed(s.base + ' ate a meal', '#c0c6cc'); } }
-    if (s.hu >= 100){ s.starve = (s.starve || 0) + dt; if (s.starve > 150){ s.gone = 1; feed(s.base + ' left: there was nothing to eat', '#e07a5a'); toast(s.base + ' could not stay without food, and left.', 5); return; } }
+    /* 0.119.0: thirst (a drink from the taps at the base while they run, else a bottle from the supply chest, or from your pack while they follow you) and spirits */
+    s.th = (s.th || 0) + dt/4; if (s.th > 60 && !s.away){ if (inSafe(s.x, s.y, 0) && waterOn()) s.th = 0; else { var wsrc = ch && ch.inv.water > 0 ? ch.inv : s.st === 'follow' && inv.water > 0 ? inv : null; if (wsrc){ wsrc.water--; s.th = 0; if (wsrc === inv) updateHud(); } } } s.th = Math.min(100, s.th);
+    if (survMorale(s, dt)) return;
     var hungry = s.hu > 75; s.tip = survTip(s); s.cd -= dt; s.atk = Math.max(0, s.atk - dt);
     /* aliens go for survivors too (0.49.2): anything awake in reach bites them; a follower or waiting survivor fights back */
     if (s.hp === undefined) s.hp = 60; s.hurt = Math.max(0, (s.hurt || 0) - dt); var inS = inSafe(s.x, s.y, 0), near = null, nd = 3.6;
     for (var zi = 0; zi < zombies.length; zi++){ var zz = zombies[zi]; if (zz.hp <= 0) continue; var A2 = AK[zz.k], zd2 = Math.hypot(zz.x - s.x, zz.y - s.y);
-      if (!inS && zd2 < A2.stand + 0.6 && zd2 < Math.hypot(zz.x - P.x, zz.y - P.y) + 1){ zz.sd = (zz.sd || 0) - dt; if (zz.sd <= 0){ zz.sd = A2.cd; s.hp -= A2.dmg*0.6; s.hurt = 0.4; sfx('hurt', s.x, s.y, 0.5); } }
-      if (zd2 < nd && (s.st === 'follow' || s.st === 'stay')){ nd = zd2; near = zz; } }
+      if (!s.rest && (!inS || zz.raid) && zd2 < A2.stand + 0.6 && (zz.raid || zd2 < Math.hypot(zz.x - P.x, zz.y - P.y) + 1)){ zz.sd = (zz.sd || 0) - dt; if (zz.sd <= 0){ zz.sd = A2.cd; s.hp -= A2.dmg*0.6; s.hurt = 0.4; sfx('hurt', s.x, s.y, 0.5); } }
+      if (zd2 < nd && (s.st === 'follow' || s.st === 'stay' || (s.st === 'base' && zz.raid && zd2 < 1.8))){ nd = zd2; near = zz; } }
     if (s.rest){ if (time < s.rest){ s.mv = 0; s.hp = Math.min(60, s.hp + dt*0.4); return; } s.rest = 0; s.hp = Math.max(s.hp, 20); feed(s.base + ' is back on their feet', '#9bd07a'); }
     if (s.hp <= 0){
-      if (!DF().perma){ var bz0 = world.zones && world.zones[0]; s.hp = 6; s.rest = time + 150; s.st = 'stay'; s.job = ''; s.ride = null; if (bz0){ s.x = bz0.x + (Math.random() - 0.5)*4; s.y = bz0.y + (Math.random() - 0.5)*4; s.hx = s.x; s.hy = s.y; } feed(s.base + ' was badly hurt and is resting at the base', '#e0a05a'); toast(s.base + ' went down. They are being carried home to recover.', 5); return; }
+      if (!DF().perma){ var bz0 = world.zones && world.zones[0]; s.hp = 6; s.rest = time + 150; if (s.st !== 'base'){ s.st = 'stay'; s.job = ''; } s.ride = null; if (bz0){ s.x = bz0.x + (Math.random() - 0.5)*4; s.y = bz0.y + (Math.random() - 0.5)*4; s.hx = s.x; s.hy = s.y; } feed(s.base + ' was badly hurt and is resting at the base', '#e0a05a'); toast(s.base + ' went down. They are being carried home to recover.', 5); return; }
       s.gone = 1; feed(s.base + ' was killed by the aliens', '#e07a5a'); toast(s.base + ' did not make it.', 5); return; }
     if (inS || s.hp >= 60) s.hp = Math.min(60, s.hp + (inS ? dt*1.2 : 0)); else s.hp = Math.min(60, s.hp + dt*0.05);
     if (near && s.cd <= 0){ s.yaw = Math.atan2(near.y - s.y, near.x - s.x); s.cd = 1.1; s.atk = 0.45; hitZombie(near, 5, Math.cos(s.yaw)*2, Math.sin(s.yaw)*2, false); if (typeof alienCall === 'function') alienCall(0, s.x, s.y, false); }
     var dP = Math.hypot(P.x - s.x, P.y - s.y);
-    if (s.away){ if (time >= s.away){ s.away = 0; var lt = {scrap:2 + Math.floor(Math.random()*4), wood:2 + Math.floor(Math.random()*3), food:1 + Math.floor(Math.random()*3), water:1 + Math.floor(Math.random()*2)}, tx = [];
+    if (s.away){ if (time >= s.away){ s.away = 0; var lt = {scrap:2 + Math.floor(Math.random()*4), wood:2 + Math.floor(Math.random()*3), food:1 + Math.floor(Math.random()*3), water:1 + Math.floor(Math.random()*2)}, tx = [], lm = (settleHas(5) ? 1.5 : 1)*(s.sk === 'scavenge' ? 1.3 : 1); for (var lk in lt) lt[lk] = Math.round(lt[lk]*lm); if (Math.random() < 0.3) lt.bandage = 1; if (Math.random() < 0.25) lt.dirty = 2;
         if (Math.random() < 0.1){ s.gone = 1; feed(s.base + ' did not come back from the supply run', '#e07a5a'); toast(s.base + ' never returned from the supply run.', 5); return; }
         if (ch) for (var k in lt){ ch.inv[k] = (ch.inv[k] || 0) + lt[k]; tx.push('+' + lt[k] + ' ' + k); } else for (var k2 in lt){ inv[k2] = (inv[k2] || 0) + lt[k2]; tx.push('+' + lt[k2] + ' ' + k2); }
         feed(s.base + ' is back: ' + tx.join(', ') + (ch ? ' (in the supply chest)' : ''), '#9bd07a'); updateHud(); } return; }
@@ -5114,35 +5197,38 @@ function survTick(dt){
       if (s.stuck > 4 && dP > 6){ s.stuck = 0; var a2 = Math.random()*6.28; s.x = P.x + Math.cos(a2)*2.5; s.y = P.y + Math.sin(a2)*2.5; } return; }
     if (s.st === 'stay'){ s.mv = 0; return; }
     /* at the base */
+    if (raidOn() && s.job !== 'guard' && s.job !== 'medic'){ var sb1 = safeB(); if (sb1){ survGo(s, sb1.cx + (s.id % 3 - 1)*1.2, sb1.cy + ((s.id >> 2) % 3 - 1)*1.2, 4.0, dt, 0.6); return; } }   /* 0.119.0: in a raid everyone but the guards and the medic gets inside the safe house */
     if (hungry){ survGo(s, s.hx, s.hy, 2.2, dt, 1); return; }
     if (s.job === 'guard'){
-      var bz = world.zones && world.zones[0], tg = null, bd = 13, px = 0, py = 0;   /* the nearest alien within 13 m of the fence */
+      var bz = world.zones && world.zones[0], tg = null, bd = settleHas(10) ? 18 : 13, px = 0, py = 0, gdm = (settleHas(10) ? 9 : 5)*(s.sk === 'guard' ? 1.3 : 1);   /* the nearest alien within 13 m of the fence */
       if (bz) for (var i = 0; i < zombies.length; i++){ var z = zombies[i]; if (z.hp <= 0) continue; var l = zoneLocal(bz, z.x, z.y), hw = bz.hw - 1.4, hd = bz.hd - 1.4, cx2 = Math.max(-hw, Math.min(hw, l[0])), cy2 = Math.max(-hd, Math.min(hd, l[1])), qx = bz.x + cx2*bz.ux - cy2*bz.uy, qy = bz.y + cx2*bz.uy + cy2*bz.ux, dz = Math.hypot(z.x - qx, z.y - qy); if (dz < bd){ bd = dz; tg = z; px = qx; py = qy; } }
       if (tg){ survGo(s, px, py, 4.2, dt, 0.5); var dd = Math.hypot(tg.x - s.x, tg.y - s.y);
-        if (dd < 3.6){ s.yaw = Math.atan2(tg.y - s.y, tg.x - s.x); if (s.cd <= 0){ s.cd = 1.1; s.atk = 0.45; hitZombie(tg, 5, Math.cos(s.yaw)*2, Math.sin(s.yaw)*2, false); } } }
+        if (dd < 3.6){ s.yaw = Math.atan2(tg.y - s.y, tg.x - s.x); if (s.cd <= 0){ s.cd = s.sk === 'guard' ? 1.1 : 1.6; s.atk = 0.45; hitZombie(tg, gdm, Math.cos(s.yaw)*2, Math.sin(s.yaw)*2, false); } } }
       else survGo(s, s.hx, s.hy, 2.4, dt, 1.2);
       return; }
     if (s.job === 'garden'){
       var pl = null, pd = 1e9; (world.edits.plots || []).forEach(function(q){ if (!inSafe(q.x, q.y, 3)) return; var dq = Math.hypot(q.x - s.x, q.y - s.y); if (dq < pd){ pd = dq; pl = q; } });
       if (!pl){ survGo(s, s.hx, s.hy, 2.4, dt, 1.2); return; }
-      survGo(s, pl.x + 1.3, pl.y, 2.6, dt, 0.5); s.sc += dt;
+      survGo(s, pl.x + 1.3, pl.y, 2.6, dt, 0.5); s.sc += dt*survRate(s);
       if (s.sc > 25){ s.sc = 0; (world.edits.plots || []).forEach(function(q){ if (!inSafe(q.x, q.y, 3)) return;
-          if (q.s === 2){ var nf = 3, cc = survChest(); if (cc) cc.inv.fresh = (cc.inv.fresh || 0) + nf; else inv.fresh += nf; q.s = 0; q.g = 0; plotSet(q); feed(s.base + ' harvested a plot (+' + nf + ' fresh food)', ITEMS.fresh[1]); }
+          if (q.s === 2){ var nf = (settleHas(20) ? 6 : 3) + (s.sk === 'garden' ? 1 : 0), cc = survChest(); if (cc) cc.inv.fresh = (cc.inv.fresh || 0) + nf; else inv.fresh += nf; q.s = 0; q.g = 0; plotSet(q); feed(s.base + ' harvested a plot (+' + nf + ' fresh food)', ITEMS.fresh[1]); }
           else if (q.s === 1 && plotDry(q)){ q.wet = time; plotSet(q); feed(s.base + ' watered a plot', ITEMS.water[1]); } }); }
       return; }
     if (s.job === 'repair'){
       var rw = null, rdv = 1e9; (world.edits.walls || []).forEach(function(w){ if (!inSafe(w.x, w.y, 6)) return; var by = wallBays(w), hp0 = wallMat(w).hp; for (var q = 0; q < 6; q++) if (by[q] < hp0){ var dq = Math.hypot(w.x - s.x, w.y - s.y); if (dq < rdv){ rdv = dq; rw = w; } break; } });
       if (!rw){ survGo(s, s.hx, s.hy, 2.4, dt, 1.2); return; }
-      survGo(s, rw.x + 1.2, rw.y + 1.2, 2.8, dt, 1.0); s.sc += dt;
+      survGo(s, rw.x + 1.2, rw.y + 1.2, 2.8, dt, 1.0); s.sc += dt*survRate(s);
       if (s.sc > 12 && rdv < 6){ s.sc = 0; var rm = wallMat(rw), nd = rm === WMATS.steel ? 'scrap' : rm === WMATS.concrete ? 'chunk' : 'wood', src2 = ch && ch.inv[nd] > 0 ? ch.inv : inv[nd] > 0 ? inv : null, by2 = wallBays(rw);
         if (src2) for (var q2 = 0; q2 < 6; q2++) if (by2[q2] < rm.hp){ var cost = by2[q2] <= 0 ? 2 : 1; if (src2[nd] < cost) break; src2[nd] -= cost; by2[q2] = rm.hp; emit({k:'edit', e:{a:'wbay', id:rw.id, i:q2, v:rm.hp}}); rebuildWalls(); sfx('plank', rw.x, rw.y, 0.6, 0.9); feed(s.base + ' mended a wall', '#9bd07a'); if (src2 === inv) updateHud(); break; } }
       return; }
     if (s.job === 'cook'){
-      survGo(s, s.hx, s.hy, 2.2, dt, 1.2); s.sc += dt;
+      survGo(s, s.hx, s.hy, 2.2, dt, 1.2); s.sc += dt*survRate(s);
       if (s.sc > 40 && ch && ch.inv.food > 0){ s.sc = 0; ch.inv.food--; ch.inv.meal = (ch.inv.meal || 0) + 1; sfx('pot', s.x, s.y, 0.5); feed(s.base + ' cooked a hot meal (in the supply chest)', ITEMS.meal[1]); }
+      else if (s.sc > 40 && ch && ch.inv.dirty > 0 && ch.inv.wood > 0){ s.sc = 0; var nb0 = Math.min(3, ch.inv.dirty); ch.inv.dirty -= nb0; ch.inv.water = (ch.inv.water || 0) + nb0; ch.inv.wood--; sfx('pot', s.x, s.y, 0.5); feed(s.base + ' boiled ' + nb0 + ' bottle' + (nb0 > 1 ? 's' : '') + ' of water (1 wood)', ITEMS.water[1]); }
       return; }
+    if (s.job === 'medic'){ survMedic(s, ch, dt); return; }
     if (s.job === 'scavenge'){
-      var wk = s.sc = (s.sc || 0) + dt; survGo(s, s.hx, s.hy, 2.2, dt, 1.2);
+      var wk = s.sc = (s.sc || 0) + dt*survRate(s); survGo(s, s.hx, s.hy, 2.2, dt, 1.2);
       if (wk > 200 && dP > 6){ s.sc = 0; s.away = time + 100 + Math.random()*60; s.mv = 0; feed(s.base + ' heads out to look for supplies', '#c0c6cc'); }
       return; }
     survGo(s, s.hx, s.hy, 2.2, dt, 1.2);
@@ -5674,7 +5760,7 @@ async function enterZone(R, lat, lon, yaw, carry, atSafe){
     var v = {veh:true, id:home ? 'truck' : 'r' + Date.now().toString(36), t:carry.veh.t, kind:tkc ? 'truck' : (carry.veh.ck || undefined), hp:carry.veh.hp, cu:cleanCu(carry.veh.cu), name:tkc ? 'the truck' : carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel}; if (v.cu) carName(v);
     world.vehicles = world.vehicles.filter(function(o){ return !(tkc && o.kind === 'truck'); }); world.vehicles.push(v); world.vmap[v.id] = v; P.veh = v; v.rd = time;
     if (tkc){ var bc2 = bedChest(); if (bc2 && carry.veh.bed){ bc2.inv = carry.veh.bed.inv || {}; bc2.items = carry.veh.bed.items || {}; bc2.designs = carry.veh.bed.designs || []; } } } }
-  if (carry && carry.surv) carry.surv.forEach(function(q, qi){ var a = qi*2.1 + 0.5; (world.surv = world.surv || []).push({surv:true, id:world.surv.length, key:q.key, base:NPCN[q.key], name:NPCN[q.key], tip:'', x:P.x + Math.cos(a)*2.5, y:P.y + Math.sin(a)*2.5, yaw:P.yaw, st:'follow', job:'', hu:q.hu || 0, hp:q.hp || 60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:P.x, hy:P.y}); });
+  if (carry && carry.surv) carry.surv.forEach(function(q, qi){ var a = qi*2.1 + 0.5; (world.surv = world.surv || []).push({surv:true, id:world.surv.length, key:q.key, base:q.nm || NPCN[q.key], name:q.nm || NPCN[q.key], sk:q.sk || SKILLOF[q.key] || 'guard', th:q.th || 0, mo:q.mo === undefined ? 70 : q.mo, tip:'', x:P.x + Math.cos(a)*2.5, y:P.y + Math.sin(a)*2.5, yaw:P.yaw, st:'follow', job:'', hu:q.hu || 0, hp:q.hp || 60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:P.x, hy:P.y}); });
   R.last = {lat:lat, lon:lon, yaw:P.yaw}; saveRegions(); manageInteriors(99); updateHud();
 }
 /* walking or driving over the edge of a square */
@@ -5692,7 +5778,7 @@ async function zoneTravel(){
     var ti = world.vehicles.indexOf(P.veh); if (ti >= 0) world.vehicles.splice(ti, 1); P.veh = null;
   }
   if (P.veh){ var vi = world.vehicles.indexOf(P.veh); if (vi >= 0 && P.veh.id[0] === 'r') world.vehicles.splice(vi, 1); P.veh = null; }
-  carry.surv = []; (world.surv || []).forEach(function(q){ if (!q.gone && q.st === 'follow'){ carry.surv.push({key:q.key, hu:q.hu, hp:q.hp}); q.gone = 1; } });
+  carry.surv = []; (world.surv || []).forEach(function(q){ if (!q.gone && q.st === 'follow'){ carry.surv.push({key:q.key, hu:q.hu, hp:q.hp, nm:q.base, sk:q.sk, th:q.th, mo:q.mo}); q.gone = 1; } });
   saveNow();
   freeWorldGL(world); await new Promise(function(r){ setTimeout(r, 120); });   /* 0.117.3: the part you leave gives its graphics memory back first, before the next part is downloaded, read and built, so two parts are never held at once */
   try { await enterZone(R, ll[1], ll[0], yaw, carry); P.pitch = pitch; }
@@ -6161,8 +6247,8 @@ function lootUI(){
   fillThings(); thS.value = 'nightstand'; fillScopes(); scS.selectedIndex = 0; draw();
 }
 lootLoadUser(); lootUI();
-(function(){ var d = null; try { d = JSON.parse(lsGet('lastblock:diff') || 'null'); } catch (e) {} if (d){ d = cleanDiff(d); el('dfPress').value = d.press; el('dfNest').value = d.nest; el('dfPerma').value = String(d.perma); }
-  ['dfPress', 'dfNest', 'dfPerma'].forEach(function(id){ el(id).addEventListener('change', function(){ lsSet('lastblock:diff', JSON.stringify(readDiff())); }); }); })();
+(function(){ var d = null; try { d = JSON.parse(lsGet('lastblock:diff') || 'null'); } catch (e) {} if (d){ d = cleanDiff(d); el('dfPress').value = d.press; el('dfNest').value = d.nest; el('dfPerma').value = String(d.perma); el('dfLose').value = String(d.lose); }
+  ['dfPress', 'dfNest', 'dfPerma', 'dfLose'].forEach(function(id){ el(id).addEventListener('change', function(){ lsSet('lastblock:diff', JSON.stringify(readDiff())); }); }); })();
 (function(){
   var n = lsGet('lastblock:name'), q = lsGet('lastblock:quality'), vr = lsGet('lastblock:vrule');
   if (n) el('pname').value = n; if (vr) el('vRule').value = vr; var lr = lsGet('lastblock:loot'); if (lr) el('lootRule').value = lr; el('lootRule').addEventListener('change', function(){ lsSet('lastblock:loot', el('lootRule').value); });

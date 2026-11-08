@@ -1,6 +1,6 @@
 # Game loops by mode (decided 4 November 2026, from the owner's answers)
 
-Step 1 is built (0.116.0): the new-world difficulty settings (alien pressure, nest push-back, survivors can die for good) and the Endless settlement meter. The rest is not built. Build order is at the end. "Base can be lost" is held back until the raids on the settlement exist (step 2), since it has nothing to act on yet. Stretch goals paired with each mode are in docs/STRETCH.md.
+Step 1 is built (0.116.0): the new-world difficulty settings (alien pressure, nest push-back, survivors can die for good) and the Endless settlement meter. Step 2 is built (0.119.0): see "Endless as built" below. Steps 3 to 5 are not built. Build order is at the end. "Base can be lost" is held back until the raids on the settlement exist (step 2), since it has nothing to act on yet. Stretch goals paired with each mode are in docs/STRETCH.md.
 
 ## Endless: build a settlement
 Loop: scavenge by day, fortify and grow by night, survive the raids.
@@ -9,6 +9,15 @@ Loop: scavenge by day, fortify and grow by night, survive the raids.
 - **Self-sufficiency:** farm (garden plots), clean water, power (generators and fuel), medicine. A settlement that makes more than it uses stops needing runs; a short one slowly loses people.
 - **Pressure:** raids on the base grow with the settlement (walls, lights, guards matter).
 - **Needs from the game:** a settlement meter (people, food, water, power, safety) shown in the base; survivor jobs that already exist (`world.surv`, `job`) extended; milestone toasts.
+
+## Endless as built (0.119.0)
+- **Needs:** every survivor has hunger (a meal from the supply chest), thirst (the taps at the base while they run, else a bottle from the chest, or from your pack while following) and spirits. Spirits drop when hungry, thirsty, badly hurt, short of beds, unsafe or during a raid, and rise when the settlement feeds itself. Very low spirits for a while and they leave, saying why.
+- **Beds:** the safe house sleeps two; each bed you build in the base sleeps two more (they sleep in shifts). Shown as Beds in the settlement panel.
+- **Jobs:** guard, gardener, scavenger, builder, cook (now also boils dirty water in the chest, 1 wood for up to 3 bottles), and the new medic (patches up hurt people at the base, you included, with bandages and kits from the chest). Each person has a skill; working at it is half as fast again, and good spirits add a little more.
+- **Newcomers:** each dawn from the second day, one person (two if the settlement feeds itself) comes to the gate if there is food and water for them. Let them in (E) and they start at the job they are good at. Unanswered, they move on the next dawn. Followers are capped at three; people at the base are not.
+- **Milestones:** 5 survivors: scavengers bring back half as much again. 10: guards hit harder and watch 18 m out. 20: gardeners bring in twice the harvest.
+- **Raids:** some nights from the second (more likely as it grows), a pack comes for the settlement from one side, bigger as it grows (swarmers, plus stalkers, clingers, a spitter from day 4 at 5 people, a giant from day 5 at 6). Raiders come over the fence; walls, guards and you hold them. Everyone but guards and the medic hides in the safe house. Raiders at the supply chest destroy food and water. They pull back at dawn.
+- **Base can be lost** (new-world setting, off by default): if three or more raiders are inside with no guard standing and you are away for 45 seconds, the base is overrun: people scatter to houses in the town (find and bring them back) and half the chest is lost.
 
 ## Reclaim: take the city back, zone by zone
 Loop: scout a zone, prepare, raid its nests, hold it, move on.
