@@ -57,6 +57,8 @@ Which devices can run it, how to start it on each, and the game's accessibility 
 | Build | N (B and C for barricade and campfire) | Build, Wall, Fire |
 | Switch weapon, use last item | Q, G | Items panel |
 | Chat, mark a spot | Enter, X | Chat, Mark |
+| Walk into a box truck, trailer, bus, motorhome or van; fit out a mobile base | E at its way in (open, then climb in); Build (N) inside | Tap the way in; Build inside |
+| Hook a trailer to a semi | Reverse the semi's hitch up to the trailer's front; E at the hitch unhooks | Same |
 
 ### Game controller
 

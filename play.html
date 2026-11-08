@@ -559,7 +559,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.120.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.121.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -621,7 +621,7 @@ function startRun(ws, cs){
   w.nests = {}; w.burst = {}; w.nestNew = {}; wx = {w:0, until:time + 150, tor:null, flash:0}; flares = []; lures = []; w.lastDay = 0;
   if (resumed && !ws.fresh){ (ws.nests || []).forEach(function(i){ if (w.buildings[i]) w.nests[i] = 1; }); (ws.burst || []).forEach(function(i){ if (w.buildings[i] && !w.nests[i]) w.burst[i] = 1; }); if (ws.wx){ wx.w = ws.wx.w | 0; wx.until = +ws.wx.until || 0; } } else pickNests();
   w.total = 0; w.buildings.forEach(function(b){ w.total += b.rolls + 1; }); w.total += w.crates.length;
-  hiTrees = []; clutter = []; clutKey = ''; world.trees.forEach(function(t){ t.hi = false; }); buildTrees(); makeVehicles(resumed ? ws.veh : null); makeTraders(); makeSurvivors(resumed ? ws.surv : null); setupScenario(resumed ? ws : null); pings = []; P.gridWas = undefined;
+  hiTrees = []; clutter = []; clutKey = ''; world.trees.forEach(function(t){ t.hi = false; }); buildTrees(); makeVehicles(resumed ? ws.veh : null); vTowRelink(); makeTraders(); makeSurvivors(resumed ? ws.surv : null); setupScenario(resumed ? ws : null); pings = []; P.gridWas = undefined;
   manageInteriors(40); makeMini();
   el('title').classList.add('hidden'); el('play').classList.remove('hidden'); el('feed').innerHTML = '';
   loadWallsPack(); loadPowerPack(); loadGroundPack(); running = true; inRun = true; saveT = 20; updateHud();
@@ -1088,6 +1088,7 @@ function digHold(dt){
 var BEDFO = {};
 function findTarget(){
   if (P.veh || P.climbL) return null;
+  if (P.vroom) return vRoomTarget(); var vw0 = vWalkTarget(); if (vw0) return vw0;
   if (P.roof){ var HT0 = hatchOf(P.roof); if (HT0 && Math.hypot(HT0.x - P.x, HT0.y - P.y) < 1.5) return ladTarget(HT0, false); var LR = P.roof.lad; return LR && Math.hypot(LR.tx - P.x, LR.ty - P.y) < 1.7 ? ladTarget(LR, false) : null; }
   if (P.inside && P.lvl === nLv(P.inside) - 1 && P.lvl > 0){ var HT1 = hatchOf(P.inside); if (HT1 && Math.hypot(HT1.x - P.x, HT1.y - P.y) < 1.1) return ladTarget(HT1, true); }
   var best = null, bd = 2.4, fx = Math.cos(P.yaw), fy = Math.sin(P.yaw), i, j, dx, dy, d;
@@ -2201,6 +2202,7 @@ function update(dt){
   setLvl(P); if (!P.inside) P.lvl = 0;
   var tgy = P.climbL ? climbH() : P.roof ? roofY(P.roof) : (world.hg ? (P.inside ? P.inside.base : baseAt(P.x, P.y, P.gy, (P.veh && P.veh.boat) || P.swim ? 0.4 : P.veh ? 1.4 : 0)) : P.inside ? 0 : groundAt(P.x, P.y)) + (P.inside ? lvlY(P.inside, P) : 0); if (P.veh) P.veh.gh = !P.inside && LASTDECK ? tgy : undefined;
   if (!P.inside && !P.roof && !P.climbL && !LASTDECK && ((P.veh && P.veh.boat) || P.swim) && wet(P.x, P.y)) tgy = Math.max(tgy, waterY(P.x, P.y) - (P.swim ? 0.55 : 0));   /* 0.114.86: afloat, you ride the water's surface, not the river bed */
+  if (P.vroom){ var vrm = vInt(P.vroom.v); if (vrm) tgy = vFloorY(P.vroom.v, vrm); }
   /* 0.99.1: stepping off the edge of a hole drops you: a fall of more than 2 m hurts (and from 3.5 m can break a leg) */
   if (!P.fall && DIGN && !P.inside && !P.climbL && !P.roof && !P.veh && !P.swim && P.gy !== undefined && P.gy - tgy > 0.9 && P.gy - tgy < 12){ P.fall = 0.1; P.fy0 = P.gy; }
   if (P.fall){ P.fall += 9.8*dt; P.gy -= P.fall*dt; if (P.gy <= tgy){ P.gy = tgy; P.fall = 0; if (P.fy0 !== undefined){ var fd = P.fy0 - tgy; P.fy0 = undefined; if (fd > 2.1){ P.hp -= (fd - 2)*11; P.cause = 'a fall'; P.hurt = 0.3; sfx('stone', P.x, P.y, 0.8, 0.6); P.noise = Math.max(P.noise || 0, 4); if (fd > 3.4 && !P.leg && Math.random() < 0.55) breakLeg(); } } } } else P.gy = P.gy === undefined || P.climbL || Math.abs(tgy - P.gy) > 6 ? tgy : P.gy + (tgy - P.gy)*Math.min(1, dt*10);
@@ -2209,6 +2211,7 @@ function update(dt){
   if (P.jy > 0 || P.jv){ if (P.fall || P.swim || P.climbL || P.hide || P.veh){ P.jy = 0; P.jv = 0; } else { P.jv -= 14*dt; P.jy += P.jv*dt; if (P.jy <= 0){ P.landT = time; if (!P.inside) fxAdd('effects.dust_puff', P.x, P.y, P.gy || 0, {life:0.6, s0:0.5, s1:1.4, rise:0.1, up:0.02}); CAM.landV = -Math.min(7, -P.jv)*0.5; P.jy = 0; P.jv = 0; P.noise = Math.max(P.noise || 0, 2.5); } } }
   if (net.role !== 'guest') weatherTick(dt, day);
   bodyTick(dt, hour);
+  if (P.vroom){ vRoomMove(dt, P.sleep ? 0 : mf, P.sleep ? 0 : ms); mf = ms = 0; }
   if (mf || ms){
     var l = Math.hypot(mf, ms), V = P.veh, cy = Math.cos(P.yaw), sy = Math.sin(P.yaw), vx0 = P.x, vy0 = P.y, gt = gait(true);
     var sp = (V ? vehSpeed(dt) : (P.swim ? SPD.swim*(P.stam > 0 ? 1 : 0.55) : gt === 0 ? SPD.crouch : gt === 2 ? SPD.sprint : SPD.walk)*moveMul()*slopeMul(cy*mf - sy*ms, sy*mf + cy*ms)*windowMul(dt))*dt*Math.min(1, l)/l;
@@ -2219,7 +2222,7 @@ function update(dt){
     if (V && V.boat){ var dkB = deckHit(P.x, P.y, 'hi'); if (dkB){ var wyB = waterY(P.x, P.y), kB = spBoat(V.boat), hB = Math.max(1.4, boatTop(kB) + 0.9); if (dkB.h - 0.8 - wyB < hB){ P.x = vx0; P.y = vy0; V.spd = 0; if (time > (V.lowT || 0)){ V.lowT = time + 3; toast('Too low to pass under.', 2); } } } }   /* 0.114.86: a deck too low for the boat and rider stops it */
     P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V){ if (!(P.jy > 0)) P.bob += (P.mvD || 0)*(gt === 2 ? 1.4 : gt === 0 ? 2.9 : 2.0); } else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
-  pitTick(dt); surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.jy > 0 ? 0 : P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms)); camTick(dt);
+  vTowTick(dt); pitTick(dt); surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.jy > 0 ? 0 : P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms)); camTick(dt);
   if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else if ((wx.w === 1 || wx.w === 2 || wx.w === 4) && !P.inside && !(P.veh && P.veh.t)){ var rc = dress().rain; P.wet = Math.min(90, (P.wet || 0) + dt*(wx.w === 2 ? 2.2 : 1.4)*(1 - rc)); if (rc > 0.7) P.wet = Math.max(0, P.wet - dt*0.3); }   /* rain soaks you unless you are covered */
   else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
@@ -2253,6 +2256,7 @@ function update(dt){
     else if (target.chest){ openChest(target); keys.KeyE = false; autoUse = null; }
     else if (target.trader){ openTrade(); keys.KeyE = false; autoUse = null; }
     else if (target.surv){ if (ePress || tapped) survTalk(target); autoUse = null; }
+    else if (target.vwalk || target.vfit){ if (ePress || tapped) vUse(target); autoUse = null; }
     else if (target.truckSpot){ var tj = target.act === 'work' ? truckJob() : null;
       if (tj){ prog += dt/(me.bg === 'mechanic' ? 1.8 : 3); if (prog >= 1){ prog = 0; truckFit(tj); autoUse = null; keys.KeyE = false; } }
       else { if (ePress || tapped) truckUse(target); autoUse = null; } }
@@ -2287,6 +2291,7 @@ function update(dt){
     else if (target.plot) el('ptxt').textContent = plotText(target);
     else if (target.dig) el('ptxt').textContent = digText();
     else if (target.hideSpot || target.shove){ var tch2 = document.body.classList.contains('touchmode'); el('ptxt').textContent = (target.hideSpot ? (tch2 ? 'Tap to hide in the ' : 'Press E to hide in the ') + target.name + ' \u00b7 ' : 'Empty ' + target.name + ' \u00b7 ') + (tch2 ? 'Wall' : 'B') + ' shoves it against the door'; }
+    else if (target.vwalk || target.vfit) el('ptxt').textContent = vText(target);
     else if (target.truckSpot) el('ptxt').textContent = truckText(target);
     else if (target.fix) el('ptxt').textContent = fixText(target);
     else if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
@@ -2304,7 +2309,7 @@ function update(dt){
   trailT -= dt; if (trailT <= 0){ trailT = 0.8; var tl = TRAIL[TRAIL.length - 1]; if (!tl || Math.hypot(tl.x - P.x, tl.y - P.y) > 1.2){ TRAIL.push({x:P.x, y:P.y, t:time}); if (TRAIL.length > 70) TRAIL.shift(); } }
   P.noise = Math.max(0, P.noise - dt); gunTick(dt); if (P.gunT > 0) P.gunT -= dt;
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridAt(P.inside.cx, P.inside.cy) && powered(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
+    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridAt(P.inside.cx, P.inside.cy) && powered(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab) || !!(P.vroom && !vDoorOpen(P.vroom.v)), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
     net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, sm:p.sm || 1, eng:!!(p.vh && world.vmap && world.vmap[p.vh] && world.vmap[p.vh].t), loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, yaw:p.yaw, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0) && !(raidOn() && zoneAt(t.x, t.y, 0) === world.zones[0]); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); }); heatTick(dt, tg);
@@ -3796,6 +3801,8 @@ function loadEdits(ed){
   E.placed = []; (Array.isArray(ed.placed) ? ed.placed : []).slice(0, 80).forEach(function(q){ if (q && FURN[q.k] && isFinite(q.x) && isFinite(q.y)) E.placed.push({id:String(q.id).slice(0, 30), k:String(q.k), x:+q.x, y:+q.y, yaw:+q.yaw || 0, hp:Math.max(1, Math.min(40, +q.hp || 40))}); });
   E.boots = {}; for (k in (ed.boots || {})) E.boots[String(k).slice(0, 24)] = 1;
   E.benches = E.benches || []; (Array.isArray(ed.benches) ? ed.benches : []).slice(0, 30).forEach(function(q){ if (q && isFinite(q.x) && isFinite(q.y)) E.benches.push({fix:'bench', name:'tool bench', id:String(q.id).slice(0, 24), x:+q.x, y:+q.y, yaw:+q.yaw || 0}); });
+  E.vbase = {}; for (k in (ed.vbase || {})){ var vb0 = ed.vbase[k]; if (vb0 && typeof vb0 === 'object') E.vbase[String(k).slice(0, 40)] = {door:vb0.door ? 1 : 0, fit:(Array.isArray(vb0.fit) ? vb0.fit : []).filter(function(f){ return f && VFITS[f.k] && isFinite(f.c); }).slice(0, 40).map(function(f){ return {k:f.k, c:f.c | 0}; }), inv:vb0.inv && typeof vb0.inv === 'object' ? vb0.inv : {}, items:vb0.items && typeof vb0.items === 'object' ? vb0.items : {}}; }
+  E.vtow = {}; for (k in (ed.vtow || {})) E.vtow[String(k).slice(0, 40)] = String(ed.vtow[k]).slice(0, 40);
   E.junkv = E.junkv || {}; for (k in (ed.junkv || {})) E.junkv[String(k).slice(0, 24)] = 1;
   E.stations = []; (Array.isArray(ed.stations) ? ed.stations : []).slice(0, 30).forEach(function(q){ var o = stnObj(q); if (o) E.stations.push(o); });
   rebuildWalls();
@@ -3826,6 +3833,7 @@ function applyEdit(e){
   else if (e.a === 'junkveh' && typeof e.id === 'string'){ (E.junkv || (E.junkv = {}))[e.id.slice(0, 24)] = 1; var vj = world.vmap && world.vmap[e.id]; if (vj && vj !== P.veh){ var vi2 = world.vehicles.indexOf(vj); if (vi2 >= 0) world.vehicles.splice(vi2, 1); delete world.vmap[e.id]; } }
   else if (e.a === 'bench' && e.q && isFinite(e.q.x) && (E.benches || (E.benches = [])).length < 30){ E.benches.push({fix:'bench', name:'tool bench', id:String(e.q.id).slice(0, 24), x:+e.q.x, y:+e.q.y, yaw:+e.q.yaw || 0}); }
   else if (e.a === 'place' && e.q && FURN[e.q.k] && (E.placed || (E.placed = [])).length < 80){ E.placed.push({id:String(e.q.id).slice(0, 30), k:String(e.q.k), x:+e.q.x, y:+e.q.y, yaw:+e.q.yaw || 0, hp:Math.max(1, Math.min(40, +e.q.hp || 40))}); rebuildWalls(); }
+  else if (e.a === 'vbase' && e.id && e.r){ E.vbase = E.vbase || {}; var vr0 = E.vbase[e.id] = E.vbase[e.id] || {door:0, fit:[], inv:{}, items:{}}; vr0.door = e.r.door ? 1 : 0; vr0.fit = (Array.isArray(e.r.fit) ? e.r.fit : []).filter(function(f){ return f && VFITS[f.k]; }).slice(0, 40); }
   else if (e.a === 'unplace'){ E.placed = (E.placed || []).filter(function(q){ return q.id !== e.id; }); rebuildWalls(); }
   else if (e.a === 'boot' && typeof e.id === 'string'){ (E.boots || (E.boots = {}))[e.id.slice(0, 24)] = 1; }
   else if (e.a === 'stn' && e.q && (E.stations || (E.stations = [])).length < 30){ var so = stnObj(e.q); if (so) E.stations.push(so); rebuildWalls(); }
@@ -3856,6 +3864,7 @@ function nearBuilding(){
 var WMORDER = ['wood', 'steel', 'concrete'];
 function buildAct(a, pos){
   var x = pos ? pos.x : P.x + Math.cos(P.yaw)*1.8, y = pos ? pos.y : P.y + Math.sin(P.yaw)*1.8, yaw = pos ? pos.yaw : P.yaw, id = Date.now() + '-' + Math.floor(Math.random()*1e6), b = nearBuilding(), cheap = me.bg === 'builder' || me.bg === 'mechanic';
+  if (/^vf_/.test(a)){ vFit(a.slice(3)); renderBuild(); return; } if (/^vx_\d+$/.test(a)){ vUnfit(+a.slice(3)); renderBuild(); return; }
   if (/^sj\d+$/.test(a)){ var sv0 = (world.surv || [])[+a.slice(2)]; if (sv0 && !sv0.gone && sv0.st !== 'wait' && !sv0.away){ survTalk(sv0); renderBuild(); } return; }
   if (a === 'cade'){ place('cade'); } else if (a === 'fire'){ place('fire'); }
   else if (a === 'cover' || a === 'stake'){
@@ -4179,7 +4188,7 @@ function renderBuild(){
   var b = nearBuilding(), wc = (me.bg === 'builder' || me.bg === 'mechanic') ? 2 : 3;
   var row = function(a, name, note){ return '<div class="irow"><span class="n">' + name + '<br><i>' + note + '</i></span><button data-a="' + a + '">' + (a === 'paint' ? 'Repaint' : a === 'demo' ? 'Demolish' : a === 'vrep' || a === 'tpatch' ? 'Repair' : a === 'unwall' ? 'Remove' : a === 'wallmat' ? 'Switch' : a === 'wrep' ? 'Repair' : a === 'ask' ? 'Ask' : 'Build') + '</button></div>'; };
   box.innerHTML = '<b>Build</b> <button id="bdClose" class="alt" style="float:right">Close</button><div>Wood ' + inv.wood + ' &middot; Scrap ' + inv.scrap + ' &middot; ' + (b ? (P.inside ? 'Inside ' : 'Next to ') + (b.name || CAT[b.cat].label) : 'No building in reach') + '</div>' +
-    settlePanel() + survPanel() +
+    vFitPanel() + settlePanel() + survPanel() +
     '<h3>Defenses</h3>' + row('cade', 'Barricade', 'Temporary; aliens break it down') + row('sandbag', 'Sandbag wall', '8 soil (from digging). A low wall in front of you that takes three times the punishment of a barricade') + row('boardall', 'Board up all windows', '2 wood each. Every window of the building you stand in; broken ones cannot be boarded') + row('brace', 'Door brace', '3 wood, 2 scrap. A bar across the inside of the front door; aliens have to break it. Build from inside') + row('wall', 'Wall section (' + WMATS[WMAT].name + ')', (WMAT === 'concrete' ? (wc === 2 ? 5 : 6) + ' concrete chunks. About twenty times as hard to break. ' : WMAT === 'steel' ? '2 wood and ' + (wc === 2 ? 3 : 4) + ' scrap. About four times as hard to break. ' : wc + ' wood. ') + '3 m wide in six bays, placed in front of you. Aliens tear it down a bay at a time') + row('wallmat', 'Wall material: ' + WMATS[WMAT].name, 'Switch between timber, sheet steel and poured concrete') + row('wrep', 'Repair nearest wall', 'Timber: 1 wood a bay, 2 for a bay torn open. Steel: scrap. Concrete: chunks') + row('unwall', 'Remove nearest wall', 'Returns 1 wood') + row('tpatch', 'Close torn-open walls of the nearest building', 'Timber 3 wood, metal 3 scrap, brick 2 concrete chunks') + row('vrep', 'Repair vehicle', 'Nearest car or truck: 1 car part restores a good part of its health') + row('fire', 'Campfire', 'Warmth, healing, and stalkers keep away') +
     '<h3>Base</h3>' + row('cbox', 'Cable box', '4 scrap, 3 nails. Indoors, one per building. Feeds the building from a generator, solar panels or batteries; trips when overloaded') + row('solar', 'Solar panel', '6 scrap, 2 sheet metal. Outdoors, within 50 ft of a cable box; works by day') + row('bench', 'Tool bench', '6 wood, 3 scrap. Repairs your weapon for 1 scrap; works inside or out') +
     '<h3>Workshop stations</h3>' + row('carshop', 'Car shop', '20 wood, 40 scrap, 20 nails, 2 engine parts. A 20 by 66 ft bay on open ground; its door opens towards you. Design cars, trucks and trailers at its terminal; they roll out of the door') + row('dock', 'Boathouse', '30 wood, 10 scrap, 30 nails. Stand at the water\u2019s edge facing the water: the shed goes on the shore, the covered slip out over the water. Design boats; they float in the slip') + row('hangar', 'Air hangar', '40 wood, 80 scrap, 30 nails, 4 engine parts. A 66 by 92 ft hangar on open ground, front towards you. Design aircraft (flying is not in the game yet)') + row('wardrobe', 'Wardrobe', '5 wood (or use one in the Test World). Design clothes') + row('bed', 'Bed', '5 wood. Indoors. Makes this building your base; you wake here after dying') + row('chest', 'Storage chest', '3 wood, 2 scrap. Indoors. Shared with everyone in this world') +
@@ -4492,13 +4501,14 @@ function makeVehicles(saved){
     var dd = hash(cx, cy, 26), dead = dd < 0.3 ? 'wreck' : dd < 0.42 ? 'burnt' : 0, tilt = dead ? (hash(cx, cy, 27) - 0.5)*1.1 : (hash(cx, cy, 28) - 0.5)*0.2, yaw = Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + tilt;
     var bk = ['sedan', 'sedan', 'wagon', 'suv', 'hatch', 'hatch', 'van', 'offroad', 'crew', 'flatbed', 'boxtruck', 'sedan'][Math.floor(hash(cx, cy, 29)*12)]; if (PACKK.length && el('packCars').value !== 'off' && hash(cx, cy, 30) < 0.12) bk = PACKK[Math.floor(hash(cx, cy, 31)*PACKK.length) % PACKK.length];
     if (MACH.length && hash(cx, cy, 31) < (r.hw === 'motorway' || r.hw === 'trunk' ? 0.16 : r.hw === 'primary' ? 0.1 : 0.05)){ var mk = MACH[Math.floor(hash(cx, cy, 32)*MACH.length)];
-      if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:'wreck', kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(cx, cy, 33) - 0.5)*0.5, fuel:0}); rc++; } return; }
+      var mdead = /heap/.test(mk) || hash(cx, cy, 35) < 0.45 ? 'wreck' : 0;   /* 0.121.0: about half the machines and service trucks left on the roads still run */
+      if (!circ(x, y, 3.2)){ list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:'the abandoned ' + mk.replace(/_/g, ' '), dead:mdead, hp:mdead ? undefined : Math.round(45 + hash(cx, cy, 36)*50), kind:'m_' + mk, x:x, y:y, yaw:Math.atan2(uy, ux) + (side < 0 ? Math.PI : 0) + (hash(cx, cy, 33) - 0.5)*0.5, fuel:mdead ? 0 : fuelRoll('van', cx, cy)}); rc++; } return; }
     list.push({veh:true, gh:dkH === null ? undefined : dkH, id:cid, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the abandoned car', dead:dead, kind:dead ? bk + '_' + dead : bk, hp:dead ? undefined : Math.round(50 + hash(cx, cy, 34)*50), x:x, y:y, yaw:yaw, fuel:dead ? 0 : fuelRoll(bk, cx, cy)}); rc++;
   });
   /* 0.114.86: the test street has working cars parked along both kerbs, one of every kind the fleet has, so any change to cars can be looked at straight away */
   if (mapSrc && mapSrc.street){ var TS = [].concat((PACKK || []).filter(function(k){ return /afterstreet|workshop_crafts|workshop_sample/.test(k) && !/trailer|_ws$/.test(k) && !/crafts_(box_truck|semi_tractor)/.test(k); })), tn = 0;
     var mr = testMainRoad(w); [mr].forEach(function(r){ if (!r) return; var p = r.pts, y0 = p[1], y1 = p[p.length - 1], sx = p[0], lo = Math.min(y0, y1), hi = Math.max(y0, y1);
-      for (var yy = lo + 10; yy < hi - 6; yy += 8, tn++){ var side = tn % 2 ? 1 : -1, bk3 = TS[tn % TS.length], x = sx + side*r.w*0.27, y = yy + (tn % 3)*2; if (Math.abs(y - w.spawn.y) < 7 || circ(x, y, 1.6)) continue;
+      for (var yy = lo + 10; yy < hi - 6; yy += 8, tn++){ var side = tn % 2 ? 1 : -1, bk3 = TS[tn % TS.length], x = sx + side*r.w*0.27, y = yy + (tn % 3)*2; if (Math.abs(y - w.spawn.y) < 7 || circ(x, y, 1.6) || (y > p[1] + 165 - 110 && y < p[1] + 165 - 68)) continue;   /* 0.121.0: leave room for the walk-in truck, semi and trailer */
         list.push({veh:true, id:'ts' + tn, t:1, name:'the ' + (PACKE[bk3] && PACKE[bk3].name ? PACKE[bk3].name.replace(/\s*\(remade\)/i, '').toLowerCase() : bk3.replace(/_/g, ' ')), dead:0, kind:bk3, hp:100, x:x, y:y, yaw:(side > 0 ? Math.PI/2 : -Math.PI/2) + (hash(tn, 3, 5) - 0.5)*0.08, fuel:fuelRoll(bk3, tn, 7)}); } }); }
   rackData(w);
   /* 0.114.86: boats afloat in the Test World: small ones in the river, the larger ones in the lake the river runs into */
@@ -4547,6 +4557,8 @@ function switchSeat(){ var v = P.veh, ss = seatList(v); if (!ss || ss.length < 2
   for (i = 1; i <= ss.length; i++){ var k = (cur + i) % ss.length; if (!tk[k]){ P.seat = k; feed(k === 0 ? 'Driver seat' : k === 1 ? 'Front passenger seat' : 'Seat ' + (k + 1), '#cfd5db'); if (k > 0){ v.vs = 0; } return; } }
   toast('No other seat is free.', 2); }
 function mount(v){
+  var pe0 = v.t && !v.dead ? vEnt(v) : null; if (pe0 && pe0.game && pe0.game.driveable === false){ toast((v.name || 'The trailer').replace(/^the /, 'The ') + ' has no engine. Back a semi tractor up to its front and it hooks on.', 5); return; }
+  if (P.vroom) return;
   if (v.dead){ toast('This ' + (v.dead === 'burnt' ? 'burnt-out shell' : 'wreck') + ' will never run again. Hold J with an axe, crowbar or wrench to take it apart for scrap.', 4.5); return; }
   if (v.kind === 'truck' && !truckFixed(v)){ toast('The truck will not start yet. Work on it at the front: ' + truckLeft().join(', ') + '.', 5); return; }
   var ss0 = seatList(v), lz0 = -(P.x - v.x)*Math.sin(v.yaw) + (P.y - v.y)*Math.cos(v.yaw); P.seat = 0;
@@ -4866,6 +4878,7 @@ function drawCar(m, v, now){
   var tr = v.id === 'truck' ? truckP() : null, fit = tr ? fitting() : null, y0 = -(B.drop || 0);
   var KF = v.cu && !v.dead && !v.burnt && v.kind !== 'truck' ? carFit(k, v.cu) : null;
   m.part(B, v.x, v.y, v.yaw, y0, 0, KF ? KF.lift : 0, 0, 0, 0);
+  if (/^pk_/.test(k) && !v.dead && !v.burnt) vDrawParts(m, v, k, y0);
   if (KF){
     KF.wheels.forEach(function(w){ var rz = w.flip ? -(v.spin || 0) : (v.spin || 0), ry = (w.flip ? Math.PI : 0) + (w.front ? (v.steer || 0) : 0); m.part(w.T, v.x, v.y, v.yaw, y0, w.x, w.y, w.z, rz, ry); if (w.R) m.part(w.R, v.x, v.y, v.yaw, y0, w.x, w.y, w.z, rz, ry); });
     KF.parts.forEach(function(q){ m.part(q.M, v.x, v.y, v.yaw, y0, q.x, q.y, q.z, 0, 0); });
@@ -4977,6 +4990,112 @@ function cabSleep(v){
   for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
   var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90 && P.rest > 50){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
   P.sleep = {start:time, hp:P.hp, cab:v, ox:P.x, oy:P.y, rt:performance.now()}; wakeReq = false; P.x = v.x; P.y = v.y; el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping in the truck…'; keys = {};
+}
+/* ================= 0.121.0: walk-in vehicles, mobile bases and trailers (the Workshop's interior and coupling data) =================
+   A box truck or trailer has a room (interior.rooms[0]): open its back door (E at the back), climb in (E), walk about on its floor, fit it out
+   (Build menu while inside: bed, locker, workbench), sleep, store things, and drive off with all of it. Shut the door and aliens lose you.
+   A semi tractor backed up to a trailer's front hooks it on; the trailer swings behind on the hitch; E at the hitch unhooks it.
+   Vehicle frame: the pack's x is across (left +), y up, z forward; on the map a point is tpt(v, z, -x). */
+function vEnt(v){ return v && v.t && !v.dead && !v.burnt && v.kind !== 'truck' ? PACKE[baseKind(carKind(v))] : null; }
+function vInt(v){ var e = vEnt(v), r = e && e.interior && e.interior.rooms && e.interior.rooms[0]; return r && r.entry && r.doors && r.doors.length && (r.walkIn || (e.game && e.game.walkIn) || r.stand || r.crouch) ? r : null; }
+function vSide(rm){ if (rm._side) return rm._side; var e = rm.entry, d = [[e[2] - rm.min[2], 0, -1], [rm.max[2] - e[2], 0, 1], [rm.max[0] - e[0], 1, 0], [e[0] - rm.min[0], -1, 0]].sort(function(a, b){ return a[0] - b[0]; })[0];
+  return rm._side = {dx:d[1], dz:d[2]}; }   /* which wall the way in is on: back, front, left or right (pack x, z) */
+function vDoorPt(rm, out){ var s0 = vSide(rm), e = rm.entry, x = s0.dx ? (s0.dx > 0 ? rm.max[0] : rm.min[0]) + s0.dx*out : e[0], z = s0.dz ? (s0.dz > 0 ? rm.max[2] : rm.min[2]) + s0.dz*out : e[2]; return [x, z]; }
+function vB(v, make){ var E = world.edits; E.vbase = E.vbase || {}; var r = E.vbase[v.id]; if (!r && make) r = E.vbase[v.id] = {door:0, fit:[], inv:{}, items:{}}; return r || null; }
+function vDoorOpen(v){ var r = vB(v); return !!(r && r.door); }
+function vW(v, x, z){ return tpt(v, z, -x); }   /* pack (x, z) to the map */
+function vL(v, wx, wy){ var c = Math.cos(v.yaw), s = Math.sin(v.yaw), dx = wx - v.x, dy = wy - v.y; return {f:c*dx + s*dy, r:-s*dx + c*dy}; }   /* the map to (forward, right) */
+function vFloorY(v, rm){ var k = carKind(v), B = VMOD[k] || {}; return baseAt(v.x, v.y, v.gh, 1.4) - (B.drop || 0) + rm.floorY; }
+var VPART = {};
+function vPart(k, name, piv){ var key = k + '|' + name + (piv ? '|p' : ''); if (VPART[key] !== undefined) return VPART[key]; VPART[key] = null;
+  try { var V = SHAPED.props.models.vehicles[k], pc = V && V.parts && V.parts[name]; if (!pc) return null; var C0 = CKD[k] || [k, {}], ov = {}, q; for (q in (C0[1] || {})) ov[q] = C0[1][q];
+    if (piv) pc = pc.map(function(o){ var c = JSON.parse(JSON.stringify(o)); c.p = [c.p[0] - piv[0], c.p[1], c.p[2] - piv[2]]; return c; });
+    VPART[key] = spModel(pc, spColour(SHAPED.props.palette, ov), {car:true}); } catch (e){ }
+  return VPART[key]; }
+/* the door parts and fittings, drawn with the vehicle (doors were not drawn at all before) */
+function vDrawParts(m, v, k, y0){
+  var V = SHAPED.props && SHAPED.props.models.vehicles[k]; if (!V || !V.parts) return; var rm = vInt(v), open = vDoorOpen(v), rd = rm ? rm.doors || [] : [];
+  Object.keys(V.parts).forEach(function(n){ var isD = rd.indexOf(n) >= 0;
+    if (!isD || !open){ var M = vPart(k, n); if (M) m.part(M, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0); return; }
+    if (/roll/.test(n)) return;   /* a roll-up door rolls up into the roof */
+    var pc = V.parts[n][0], side = pc.d[0] < pc.d[2], piv, ang;
+    if (!side){ var hx = pc.p[0] + (pc.p[0] >= 0 ? 1 : -1)*pc.d[0]/2; piv = [hx, 0, pc.p[2]]; ang = (hx >= 0 ? -1 : 1)*1.75*(pc.p[2] < 0 ? 1 : -1); }   /* end doors swing out on their outer hinges */
+    else { var hz = pc.p[2] + pc.d[2]/2; piv = [pc.p[0], 0, hz]; ang = (pc.p[0] >= 0 ? 1 : -1)*1.5; }   /* side doors swing out on their front hinges */
+    var M2 = vPart(k, n, piv); if (M2) m.part(M2, v.x, v.y, v.yaw, y0, piv[2], 0, -piv[0], 0, ang); });
+  var r = vB(v); if (r && rm && r.fit.length) r.fit.forEach(function(f){ var c = rm.cells[f.c]; if (!c) return; var F = FURN[f.k === 'locker' ? 'shelf' : f.k] || FURN.crate, q = vW(v, c[0], c[1]), my = m.yo; m.yo = my - (VMOD[k].drop || 0) + rm.floorY - 0.1;
+    F.boxes.forEach(function(bx){ m.ybox(q.x, q.y, v.yaw + (f.k === 'bed' ? Math.PI/2 : 0), bx[0]*(f.k === 'bed' ? 0.85 : 0.6), bx[2]*0.6, bx[1] + 0.1, bx[3]*(f.k === 'bed' ? 0.85 : 0.6), bx[4], bx[5]*0.6, C(bx[6])); }); m.yo = my; });
+}
+var VFITS = {bed:['Bed', {wood:5}, 'sleep here; it travels with the vehicle'], locker:['Locker', {scrap:4}, 'storage that rides along'], bench:['Workbench', {wood:6, scrap:2}, 'repair weapons on the road']};
+function vFitPanel(){
+  if (!P.vroom) return ''; var v = P.vroom.v, rm = vInt(v), r = vB(v, true); if (!rm) return ''; var slots = (vEnt(v).game || {}).baseSlots || 8, used = r.fit.length;
+  var h = '<h3>Fit out ' + v.name.replace(/^the /, 'the ') + '</h3><div><i>' + used + ' of ' + slots + ' spaces used. Fittings go on the floor nearest you and travel with it.</i></div>';
+  Object.keys(VFITS).forEach(function(k){ var F = VFITS[k], cost = Object.keys(F[1]).map(function(q){ return F[1][q] + ' ' + q; }).join(', ');
+    h += '<div class="irow"><span class="n">' + F[0] + '<br><i>' + cost + ' &middot; ' + F[2] + '</i></span><button data-a="vf_' + k + '">Build</button></div>'; });
+  r.fit.forEach(function(f, i){ h += '<div class="irow"><span class="n">' + VFITS[f.k][0] + ' (fitted)</span><button data-a="vx_' + i + '">Take out</button></div>'; });
+  return h; }
+function vFit(k){
+  var v = P.vroom && P.vroom.v, rm = vInt(v), r = v && vB(v, true), F = VFITS[k]; if (!rm || !F) return; var slots = (vEnt(v).game || {}).baseSlots || 8;
+  if (r.fit.length >= slots){ toast('There is no more room in here.', 3); return; }
+  for (var q in F[1]) if ((inv[q] | 0) < F[1][q]){ toast(F[0] + ' takes ' + Object.keys(F[1]).map(function(z){ return F[1][z] + ' ' + z; }).join(' and ') + '.', 3); return; }
+  var taken = {}, best = -1, bd = 1e9, me0 = {x:-P.vroom.r, z:P.vroom.f}; r.fit.forEach(function(f){ taken[f.c] = 1; });
+  rm.cells.forEach(function(c, i){ if (taken[i] || c[1] < rm.min[2] + 1.1) return; for (var j = 0; j < r.fit.length; j++){ var o = rm.cells[r.fit[j].c]; if (o && Math.hypot(o[0] - c[0], o[1] - c[1]) < (k === 'bed' || r.fit[j].k === 'bed' ? 1.4 : 1.0)) return; } var d = Math.hypot(c[0] - me0.x, c[1] - me0.z); if (d > 0.45 && d < bd){ bd = d; best = i; } });   /* clear of the door and of the other fittings */
+  if (best < 0){ toast('There is no free floor here.', 3); return; }
+  for (q in F[1]) inv[q] -= F[1][q]; r.fit.push({k:k, c:best}); emit({k:'edit', e:{a:'vbase', id:v.id, r:r}}); sfx('plank', P.x, P.y, 0.6); updateHud(); feed(F[0] + ' fitted', '#9bd07a'); }
+function vUnfit(i){ var v = P.vroom && P.vroom.v, r = v && vB(v); if (!r || !r.fit[i]) return; var F = VFITS[r.fit[i].k]; for (var q in F[1]) inv[q] = (inv[q] | 0) + Math.floor(F[1][q]/2); r.fit.splice(i, 1); emit({k:'edit', e:{a:'vbase', id:v.id, r:r}}); updateHud(); feed(F[0] + ' taken out (half its cost back)', '#c0c6cc'); }
+function vLocker(v){ var r = vB(v, true), q = vW(v, 0, 0); return {chest:true, id:'veh:' + v.id, name:'the locker in ' + v.name.replace(/^the /, 'the '), inv:r.inv, items:r.items, designs:[], x:q.x, y:q.y, vloc:v}; }
+/* what you can do at the back of a walk-in vehicle, at a tractor's hitch, or inside */
+function vWalkTarget(){
+  if (P.veh || P.vroom) return null; var best = null, bd = 1.7;
+  for (var i = 0; i < world.vehicles.length; i++){ var v = world.vehicles[i]; if (!v.t || Math.abs(v.x - P.x) > 14 || Math.abs(v.y - P.y) > 14) continue;
+    var rm = vInt(v); if (rm && v !== P.veh && !(v.vs > 0.5)){ var dp = vDoorPt(rm, 0.7), q = vW(v, dp[0], dp[1]), d = Math.hypot(q.x - P.x, q.y - P.y); if (d < bd){ bd = d; best = {vwalk:true, v:v, room:rm, x:q.x, y:q.y, act:vDoorOpen(v) ? 'in' : 'open'}; } }
+    var e = vEnt(v), H = e && e.coupling && e.coupling.hitch; if (H && v.tow){ var h = vW(v, H.pos[0], H.pos[2] - 0.9), d2 = Math.hypot(h.x - P.x, h.y - P.y); if (d2 < bd){ bd = d2; best = {vwalk:true, v:v, x:h.x, y:h.y, act:'unhook'}; } } }
+  return best; }
+function vRoomTarget(){
+  var R = P.vroom, v = R.v, rm = vInt(v); if (!rm) return null; var r = vB(v, true), best = null, bd = 1.3;
+  var dpi = vDoorPt(rm, -0.4); if (Math.hypot(dpi[0] + R.r, dpi[1] - R.f) < 1.0) return {vwalk:true, v:v, room:rm, act:vDoorOpen(v) ? 'close' : 'open', x:P.x, y:P.y};
+  if (!((vEnt(v).game || {}).baseSlots > 0)) return vLocker(v);   /* a van, ambulance or fire-engine locker: its load space is the store */
+  r.fit.forEach(function(f, i){ var c = rm.cells[f.c]; if (!c) return; var d = Math.hypot(c[0] + R.r, c[1] - R.f); if (d < bd){ bd = d; var q = vW(v, c[0], c[1]);
+    best = f.k === 'bed' ? {vfit:true, v:v, f:f, x:q.x, y:q.y} : f.k === 'locker' ? vLocker(v) : {fix:'bench', name:'workbench', x:q.x, y:q.y}; } });
+  return best; }
+function vText(o){ var tch = document.body.classList.contains('touchmode'), E = tch ? 'Tap to ' : 'Press E to ', nm = o.v.name.replace(/^the /, 'the ');
+  if (o.vfit) return E + 'sleep in the bed in ' + nm;
+  if (o.act === 'open') return E + 'open the back door of ' + nm;
+  if (o.act === 'close') return E + 'shut the back door' + (P.vroom ? ' (aliens cannot see you in here with it shut)' : '');
+  if (o.act === 'in') return E + 'climb into ' + nm + ' · Build (N) inside to fit it out';
+  if (o.act === 'unhook') return E + 'unhook the trailer';
+  return ''; }
+function vUse(o){
+  var v = o.v, r = vB(v, true);
+  if (o.vfit) return vSleep(v);
+  if (o.act === 'open' || o.act === 'close'){ r.door = o.act === 'open' ? 1 : 0; sfx(r.door ? 'door_open' : 'door_close', P.x, P.y, 0.8); makeNoise(P.x, P.y, 5); emit({k:'edit', e:{a:'vbase', id:v.id, r:r}}); return; }
+  if (o.act === 'in'){ var rm = o.room, di = vDoorPt(rm, -0.6); P.vroom = {v:v, f:di[1], r:-di[0], cr:P.crouch}; if (rm.headroom < 1.75) P.crouch = true; P.inside = null; P.lvl = 0; var q = vW(v, di[0], di[1]); P.x = q.x; P.y = q.y; P.gy = vFloorY(v, rm); sfx('step', P.x, P.y, 0.6); feed('In ' + v.name + '. Build (N) to fit it out; shut the door to hide.', '#c0c6cc'); return; }
+  if (o.act === 'unhook'){ var T = v.tow; if (T){ T.towBy = null; v.tow = null; delete (world.edits.vtow || {})[v.id]; sfx('metal', P.x, P.y, 0.7); feed('Trailer unhooked', '#c0c6cc'); } } }
+function vOut(){ var R = P.vroom; if (!R) return; var v = R.v, rm = vInt(v); P.vroom = null; P.crouch = !!R.cr; if (!rm) return; var dq = vDoorPt(rm, 0.9), q = vW(v, dq[0], dq[1]); if (!circ(q.x, q.y, 0.35)){ P.x = q.x; P.y = q.y; } P.gy = undefined; }
+function vSleep(v){
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
+  var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90 && P.rest > 50){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
+  P.sleep = {start:time, hp:P.hp, rt:performance.now(), vb:v}; wakeReq = false; el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping in ' + v.name + '…'; keys = {}; }
+/* walking inside: your place is kept in the vehicle's own frame, so you ride along if it moves */
+function vRoomMove(dt, mf, ms){
+  var R = P.vroom, v = R.v, rm = vInt(v); if (!rm || world.vehicles.indexOf(v) < 0){ vOut(); return; }
+  var l = Math.hypot(mf, ms); if (l > 0){ var gt = gait(true), sp = (gt === 0 ? SPD.crouch : SPD.walk)*moveMul()*dt*Math.min(1, l)/l, wx = (Math.cos(P.yaw)*mf - Math.sin(P.yaw)*ms)*sp, wy = (Math.sin(P.yaw)*mf + Math.cos(P.yaw)*ms)*sp, c = Math.cos(v.yaw), s = Math.sin(v.yaw);
+    R.f += c*wx + s*wy; R.r += -s*wx + c*wy; P.bob += Math.hypot(wx, wy)*2; }
+  var m = 0.3, px = -R.r, pz = R.f, sd = vSide(rm), e = rm.entry, open = vDoorOpen(v);
+  if (open && ((sd.dz < 0 && pz < rm.min[2] + m - 0.01) || (sd.dz > 0 && pz > rm.max[2] - m + 0.01) || (sd.dx > 0 && px > rm.max[0] - m + 0.01) || (sd.dx < 0 && px < rm.min[0] + m - 0.01)) && (sd.dz ? Math.abs(px - e[0]) < 0.9 : Math.abs(pz - e[2]) < 0.9)){ vOut(); return; }   /* out through the open way in */
+  px = Math.max(rm.min[0] + m, Math.min(rm.max[0] - m, px)); pz = Math.max(rm.min[2] + m, Math.min(rm.max[2] - m, pz)); R.r = -px; R.f = pz;
+  var q = tpt(v, R.f, R.r); P.x = q.x; P.y = q.y; P.inside = null; P.lvl = 0; P.roof = null; P.mv = l > 0; }
+/* trailers: a tractor reversed up to a trailer's front hooks it on; the trailer swings behind on the hitch */
+function vAxleZ(T){ var B = VMOD[carKind(T)], w = (B && B.w) || []; return w.length ? w.reduce(function(a, q){ return a + q[0]; }, 0)/w.length : 0; }
+function vTowRelink(){ var L = world.edits.vtow || {}, m = {}; world.vehicles.forEach(function(v){ m[v.id] = v; }); for (var k in L){ var a = m[k], b = m[L[k]]; if (a && b){ a.tow = b; b.towBy = a.id; } else delete L[k]; } P.vroom = null; }
+function vTowTick(dt){
+  world.vehicles.forEach(function(v){ var e = vEnt(v), H = e && e.coupling && e.coupling.hitch; if (!H) return;
+    var hp = vW(v, H.pos[0], H.pos[2]);
+    if (!v.tow && P.veh === v && !(P.seat > 0) && (v.vs || 0) < 0.3){ for (var i = 0; i < world.vehicles.length; i++){ var T = world.vehicles[i], te = vEnt(T), K = te && te.coupling && te.coupling.coupler; if (!K || T === v || T.towBy) continue;
+        var kp = vW(T, K.pos[0], K.pos[2]); if (Math.hypot(kp.x - hp.x, kp.y - hp.y) < 1.3){ var dy = Math.abs(((T.yaw - v.yaw + Math.PI*3) % (Math.PI*2)) - Math.PI); if (dy < 0.7){ v.tow = T; T.towBy = v.id; (world.edits.vtow = world.edits.vtow || {})[v.id] = T.id; sfx('metal', hp.x, hp.y, 0.9); toast(T.name.replace(/^the /, 'The ') + ' is hooked on. It follows the hitch; get out at the back of the cab and press E to unhook it.', 6); break; } } } }
+    var T2 = v.tow; if (!T2) return; if (world.vehicles.indexOf(T2) < 0 || T2.dead){ v.tow = null; return; }
+    var te2 = vEnt(T2), K2 = te2 && te2.coupling && te2.coupling.coupler; if (!K2){ v.tow = null; return; }
+    var cz = K2.pos[2], az = vAxleZ(T2), A = tpt(T2, az, 0), yaw = Math.atan2(hp.y - A.y, hp.x - A.x); var rel = Math.atan2(Math.sin(yaw - v.yaw), Math.cos(yaw - v.yaw)); if (Math.abs(rel) > 1.25) yaw = v.yaw + Math.sign(rel)*1.25;   /* it cannot fold back further than it would on the hitch */
+    T2.yaw = yaw; T2.x = hp.x - Math.cos(yaw)*cz; T2.y = hp.y - Math.sin(yaw)*cz; T2.gh = v.gh; T2.rd = time; });
 }
 /* the moving bits of the truck: the bonnet lifting over the engine bay, the driver's door off its hinges, the flat tire, a part being fitted */
 function truckBits(m, v, now, tr, fit, y0){
@@ -5762,6 +5881,8 @@ async function enterZone(R, lat, lon, yaw, carry, atSafe){
     if (home) world.edits.truck.away = 0;   /* driving the truck back into the home part of the map: it is the safe-house truck again */
     var v = {veh:true, id:home ? 'truck' : 'r' + Date.now().toString(36), t:carry.veh.t, kind:tkc ? 'truck' : (carry.veh.ck || undefined), hp:carry.veh.hp, cu:cleanCu(carry.veh.cu), name:tkc ? 'the truck' : carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel}; if (v.cu) carName(v);
     world.vehicles = world.vehicles.filter(function(o){ return !(tkc && o.kind === 'truck'); }); world.vehicles.push(v); world.vmap[v.id] = v; P.veh = v; v.rd = time;
+    if (carry.veh.vb){ (world.edits.vbase = world.edits.vbase || {})[v.id] = carry.veh.vb; }
+    if (carry.veh.tow && carry.veh.tow.ck){ var TT = {veh:true, id:v.id + 't', t:1, kind:carry.veh.tow.ck, hp:carry.veh.tow.hp || 100, dead:0, name:'the trailer', x:x, y:y, yaw:P.yaw, fuel:0}; var tq = tpt(v, -9, 0); TT.x = tq.x; TT.y = tq.y; world.vehicles.push(TT); world.vmap[TT.id] = TT; v.tow = TT; TT.towBy = v.id; (world.edits.vtow = world.edits.vtow || {})[v.id] = TT.id; if (carry.veh.tow.vb) world.edits.vbase[TT.id] = carry.veh.tow.vb; }
     if (tkc){ var bc2 = bedChest(); if (bc2 && carry.veh.bed){ bc2.inv = carry.veh.bed.inv || {}; bc2.items = carry.veh.bed.items || {}; bc2.designs = carry.veh.bed.designs || []; } } } }
   if (carry && carry.surv) carry.surv.forEach(function(q, qi){ var a = qi*2.1 + 0.5; (world.surv = world.surv || []).push({surv:true, id:world.surv.length, key:q.key, base:q.nm || NPCN[q.key], name:q.nm || NPCN[q.key], sk:q.sk || SKILLOF[q.key] || 'guard', th:q.th || 0, mo:q.mo === undefined ? 70 : q.mo, tip:'', x:P.x + Math.cos(a)*2.5, y:P.y + Math.sin(a)*2.5, yaw:P.yaw, st:'follow', job:'', hu:q.hu || 0, hp:q.hp || 60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:P.x, hy:P.y}); });
   R.last = {lat:lat, lon:lon, yaw:P.yaw}; saveRegions(); manageInteriors(99); updateHud();
@@ -5774,6 +5895,10 @@ async function zoneTravel(){
   if (!zoneIn(R, ij[0], ij[1])){ back('This is the edge of your region.'); return; }
   zoneBusy = true; running = false; keys = {}; el('travel').classList.remove('hidden');
   var carry = {time:time, veh:P.veh && !P.veh.boat && !P.veh.moto && !P.veh.mach ? {t:P.veh.t, fuel:P.veh.fuel, kind:P.veh.kind === 'truck' ? 'truck' : 0, ck:P.veh.t && P.veh.kind !== 'truck' ? carKind(P.veh) : 0, hp:P.veh.hp, cu:P.veh.cu} : null}, yaw = P.yaw, pitch = P.pitch, old = {world:world, x:P.x, y:P.y};
+  /* 0.121.0: a mobile base's fittings, locker and door go with the vehicle, and so does a hooked trailer with its own */
+  if (carry.veh && P.veh && P.veh.t){ var VB0 = world.edits.vbase || {}; if (VB0[P.veh.id]){ carry.veh.vb = VB0[P.veh.id]; delete VB0[P.veh.id]; }
+    var TW = P.veh.tow; if (TW){ carry.veh.tow = {ck:carKind(TW), hp:TW.hp, vb:VB0[TW.id] || null}; delete VB0[TW.id]; (world.edits.junkv = world.edits.junkv || {})[TW.id] = 1; world.vehicles = world.vehicles.filter(function(o){ return o !== TW; }); delete (world.edits.vtow || {})[P.veh.id]; P.veh.tow = null; } }
+  P.vroom = null;
   if (P.veh && P.veh.kind === 'truck'){   /* the truck drives on with its bed; this part of the map no longer has it */
     var bc = world.bed; carry.veh.bed = bc ? {inv:bc.inv, items:bc.items, designs:bc.designs} : null;
     if (bc){ var bi = world.edits.chests.indexOf(bc); if (bi >= 0) world.edits.chests.splice(bi, 1); world.bed = null; }
