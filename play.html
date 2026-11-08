@@ -556,7 +556,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.118.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.118.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -1082,6 +1082,7 @@ function digHold(dt){
     doEdit({a:'dig', c:out}); var dm = -deep*0.5, dsn = dm < 3 ? 'dig_soil' : dm < 4.5 ? 'dig_gravel' : 'dig_stone'; sfx(sfxHas(dsn) ? dsn : 'pick', DIGT.x, DIGT.y, 0.7, 1); makeNoise(P.x, P.y, dm > 3 ? 7 : 5); P.stam = Math.max(0, P.stam - (inv.shovel > 0 ? 2.5 : 5));
     var got = [['soil', 1]]; if (deep <= -6 && Math.random() < (deep <= -9 ? 0.75 : 0.4)) got.push(['stone', deep <= -9 && Math.random() < 0.5 ? 2 : 1]); got.forEach(function(g){ inv[g[0]] += g[1]; feed('+' + g[1] + ' ' + ITEMS[g[0]][0], ITEMS[g[0]][1]); }); updateHud(); }
 }
+var BEDFO = {};
 function findTarget(){
   if (P.veh || P.climbL) return null;
   if (P.roof){ var HT0 = hatchOf(P.roof); if (HT0 && Math.hypot(HT0.x - P.x, HT0.y - P.y) < 1.5) return ladTarget(HT0, false); var LR = P.roof.lad; return LR && Math.hypot(LR.tx - P.x, LR.ty - P.y) < 1.7 ? ladTarget(LR, false) : null; }
@@ -1098,6 +1099,8 @@ function findTarget(){
       if (de2 < Math.min(bd, 1.9) && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = de2; best = fxo; }
     }
   }
+  /* 0.118.1: a bed you built (Build > Bed) is a bed to sleep in, like one that came with the house */
+  if (P.inside && !(P.lvl > 0)) allBeds().forEach(function(q){ if (q.b !== P.inside.id) return; var ddx = q.x - P.x, ddy = q.y - P.y, dd = Math.hypot(ddx, ddy); if (dd < Math.min(bd, 1.9) && (dd < 1.1 || (ddx*fx + ddy*fy)/(dd || 1) > 0.4)){ bd = dd; var bk = q.b + ':' + q.x.toFixed(1) + ':' + q.y.toFixed(1); best = BEDFO[bk] || (BEDFO[bk] = {fix:'bed', name:'bed', b:P.inside, x:q.x, y:q.y, lvl:0, built:1}); } });
   for (i = 0; i < world.crates.length; i++){
     var cr = world.crates[i]; if (cr.looted && !stashLeft(cr)) continue; dx = cr.x - P.x; dy = cr.y - P.y; d = Math.hypot(dx, dy);
     if (d < bd && (d < 0.9 || (dx*fx + dy*fy)/d > 0.45)){ bd = d; best = cr; }
@@ -4809,7 +4812,10 @@ function vehMoved(v, dx, dy, dt){
 /* ---- cars on screen (0.39): the Kenney Car Kit models, with wheels that roll with the ground covered and front wheels that steer ---- */
 /* 0.114.86: the stock cars are drawn with the content chat's rebuilt models (the reference look, cabins, see-through glass); wrecks and burnt shells use the rebuilt ones' damage models */
 var STOCKPK = {sedan:'sedan_remade', hatch:'hatchback_remade', wagon:'wagon_remade', suv:'suv_remade', offroad:'offroader_remade', crew:'crew_pickup_remade', flatbed:'flatbed_remade', van:'van_remade', boxtruck:'box_truck_walkin', taxi:'sedan_remade', police:'police'};
-function carKind(v){ var k = carKind0(v), m = /^([a-z]+)(_wreck|_burnt)?$/.exec(k || ''); if (!m || !STOCKPK[m[1]] || v.id === 'truck' || el('packCars').value === 'off') return k;
+/* 0.118.1: the safe house truck is drawn as the Workshop pack's crew pickup (it keeps kind 'truck' for its repairs, fuel and speed) */
+var TRUCKPK = 'pk_workshop_crafts_crew_pickup_remade';
+function carKind(v){ if (v.kind === 'truck' || v.id === 'truck'){ var k1 = carKind0(v); return k1 === 'truck' && VMOD[TRUCKPK] && el('packCars').value !== 'off' ? TRUCKPK : k1; }
+  var k = carKind0(v), m = /^([a-z]+)(_wreck|_burnt)?$/.exec(k || ''); if (!m || !STOCKPK[m[1]] || el('packCars').value === 'off') return k;
   var nk = 'pk_workshop_crafts_' + STOCKPK[m[1]] + (m[2] || ''); if (!VMOD[nk]) return k; v.kind = nk; return nk; }
 function carKind0(v){
   if (v.kind && /^pk_(afterstreet_fleet|workshop_sample)_/.test(v.kind)) v.kind = v.kind.replace(/^pk_(afterstreet_fleet|workshop_sample)_/, 'pk_workshop_crafts_');   /* 0.114.86: the old fleet and sample packs moved into the Workshop pack under the same names; saved cars follow */
@@ -4870,7 +4876,7 @@ function drawCar(m, v, now){
     }
     m.part(W, v.x, v.y, v.yaw, y0, w[0], w[1], w[2], v.spin || 0, w[3] ? (v.steer || 0) : 0);
   });
-  if (v.kind === 'truck') truckBits(m, v, now, tr, fit, y0);
+  if (v.kind === 'truck' && k === 'truck') truckBits(m, v, now, tr, fit, y0);
   return true;
 }
 /* ================= the truck at the safe house (0.39): broken at the start; fixed with parts from garages it carries gear and is somewhere to sleep ================= */
