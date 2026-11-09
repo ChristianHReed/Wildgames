@@ -39,8 +39,7 @@ Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash
 
 ## Not done yet (honest list)
 
-- Tree colour variants (a note on which tree parts take a per-tree tint, plus a few autumn broadleaf trees). The garden crop stages are one shared bed, not one per crop type.
-- Seasonal and dry palette rows (colours only, no models).
+- Done in `docs/PALETTES.md` (project doc "Season palettes and tree tint rules"): season, dry-summer and desert palette rows and the per-tree tint rules. The garden crop stages are one shared bed, not one per crop type.
 - Porch and chimney checks on the stock houses; broken (not only faded) sign variants.
 - Crashed airliner with crater, elevated rail section, subway entrance, cheap far wind turbine, armoured survivor vehicles (these need the Workshop chat if the remade logic requires it), parked tractor wrecks (the farm pack already has a tractor, hay wagon and flatbed; wreck versions are the open part).
 
