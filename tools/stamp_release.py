@@ -26,3 +26,12 @@ wr('sw.js', sw)
 rm = rd('README.md'); rm = re.sub(r'Version [\d.]+\.', 'Version %s.' % ver, rm, count=1); wr('README.md', rm)
 assert ("'%s'" % ver) in rd('sw.js') and ('BUILD = \'%s\'' % ver) in rd('play.html')
 print('version', ver, 'map data', dv)
+
+# every file the pages load has to be in the offline copy's list, or a phone that goes offline after its first visit is missing it
+need = ['packs/%s.js' % p for p in re.findall(r"'([\w-]+)'", rd('packs/index.js').split('=')[1].split(';')[0])]
+for page in ('play.html', 'builder.html', 'workshop.html'):
+    need += [u.split('?')[0] for u in re.findall(r'<script src="([^"]+)"', rd(page)) if not u.startswith('http') and "'" not in u]
+for pre, lst in re.findall(r"\[([^\]]+)\]\.forEach\(function\(n\)\{ document\.write\('<script src=\"(assets|engine)/", rd('play.html')):
+    need += ['%s/%s.js' % (lst, n) for n in re.findall(r"'([\w/]+)'", pre) if not n.startswith('/')]
+sw = rd('sw.js'); miss = sorted(set(f for f in need if ("'%s'" % f) not in sw))
+if miss: print('NOT IN sw.js (add to STATIC):', ', '.join(miss)); sys.exit(1)

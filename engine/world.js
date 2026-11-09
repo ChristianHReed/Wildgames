@@ -303,6 +303,7 @@ function buildWorld(raw, name){
     else if (cat && w.crates.length < 400) w.crates.push({x:x, y:y, cat:cat, name:t.name || CAT[cat].label + ' stash', looted:false, rolls:2, time:1.2});
   });
   plantTrees(w, buildCover(w));
+  if (raw.zone){ raw.ways = []; raw.pois = []; raw.elev = null; raw.tclass = null; raw.holes = null; }   /* 0.127.4: a region square's file form is let go before the 3D is built (the heaviest step), so a phone holds one copy fewer */
   return w;
 }
 /* ---- terrain types from the built-in region (tools/build_region.py): a coarse grid of what covers the land, read with soft edges ---- */

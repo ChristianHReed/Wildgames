@@ -122,6 +122,7 @@
   body.tx #title>*,body.tx .modal,body.tx #invite,body.tx #toast,body.tx #feed,body.tx #hudBtns,body.tx #prompt{zoom:var(--ts)}
   body.tx .modal,body.tx #invite{width:min(540px,calc(94vw / var(--ts)));max-height:calc(82vh / var(--ts))}
   body.tx #toast{max-width:min(520px,calc(60vw / var(--ts)))}
+  @media (max-width:640px){body.tx .jtabs{zoom:calc(1 / var(--ts))}body.tx .jtab{font-size:13px}}   /* 0.127.4: on a narrow phone the side tabs stay their own size (a touch bigger type), so larger text does not push Workshop off the edge or squeeze the page */
   .screen{position:fixed;inset:0;background:radial-gradient(rgba(61,48,41,.09) 1px,transparent 1.5px) 0 0/18px 18px,var(--cream);display:flex;align-items:flex-start;justify-content:center;overflow:auto}
   .box{max-width:700px;width:100%;padding:34px 22px 40px;box-sizing:border-box}
   h1{font-family:var(--disp);font-weight:400;font-size:68px;line-height:.92;margin:8px 0 10px;color:var(--ink)}
@@ -537,7 +538,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.3</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.4</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -582,7 +583,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.127.3', ART = {}, ARTSET = (function(){
+var BUILD = '0.127.4', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -1948,7 +1949,7 @@ function rzBuild(w){
   w.rz = {Z:Z, cols:cols, rows:rows, at:at, cnt:null};
 }
 function rzOf(x, y){ return world.rz ? world.rz.at(x, y) : null; }
-function rzCount(){ var R = world.rz; if (R.cnt) return R.cnt; var c = new Map(); for (var k in world.nests){ var b = world.buildings[k]; if (!b) continue; var z = R.at(b.cx, b.cy); if (z) c.set(z, (c.get(z) || 0) + 1); } R.cnt = c; return c; }
+function rzCount(){ var R = world.rz; if (R.cnt) return R.cnt; var c = new Map(); for (var k in world.nests){ var b = world.buildings[k]; if (!b) continue; var z = R.at(b.cx, b.cy); if (z){ c.set(z, (c.get(z) || 0) + 1); z.live = true; } } R.cnt = c; return c; }
 function rzNests(z){ return z ? rzCount().get(z) || 0 : 0; }
 function rzHeld(){ var n = 0, t = 0; world.rz.Z.forEach(function(z){ if (!z.live) return; t++; if (rzNests(z)) n++; }); return [n, t]; }
 function rzClear(x, y){ if (!rzOn()) return false; var z = rzOf(x, y); return !!(z && z.live && !rzNests(z)); }
@@ -1957,6 +1958,7 @@ function rzPick(w){
   w.rz.Z.forEach(function(z){ if (!z.live || z === sz) return; var L = z.b.map(function(id){ return w.buildings[id]; }).filter(function(b){ return b.area >= 60 && b.id !== w.safe && Math.hypot(b.cx - w.spawn.x, b.cy - w.spawn.y) > 70; });
     L.sort(function(a, b){ return hash(a.id, 7, 3) - hash(b.id, 7, 3); }); for (var k = 0; k < Math.min(L.length, z.b.length >= 150 ? 2 : 1); k++) w.nests[L[k].id] = 1; });
   w.rz.cnt = null;
+  if (!Object.keys(w.nests).length){ pickNests(); w.rz.cnt = null; }   /* 0.127.4: a map too small for zones (one zone, and you start in it) still gets nests, so a new Reclaim world is not won at once */
 }
 function rzTick(){
   if (!rzOn() || P.cop) return; var z = rzOf(P.x, P.y); if (z === world.rzAt) return; var was = world.rzAt; world.rzAt = z; if (!z || !was) return;
@@ -2000,7 +2002,8 @@ function spreadNests(){
       var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
       for (var i = 0; i < cell.length; i++){ var o = cell[i]; if (o === b || world.nests[o.id] || !o.door || o.gone) continue; var d = Math.hypot(o.cx - b.cx, o.cy - b.cy); if (d < bd){ bd = d; best = o; } }
     }
-    if (best && rzOn() && DF().nest !== 'brutal' && rzOf(best.cx, best.cy) !== rzOf(b.cx, b.cy)) best = null;   /* 0.127.0: in Reclaim only Brutal nests spread into another zone */
+    if (best && rzOn() && DF().nest !== 'brutal' && rzOf(best.cx, best.cy) !== rzOf(b.cx, b.cy)) best = null;
+    if (best && rzOn()){ var bz = rzOf(best.cx, best.cy); if (!bz || !bz.live) best = null; }   /* 0.127.4: never into a zone too small to count, where the goal could not see it */   /* 0.127.0: in Reclaim only Brutal nests spread into another zone */
     if (best){ setNest(best.id, 1); world.nestNew[best.id] = time; emit({k:'nest', b:best.id, on:1}); toast('A nest has spread to another building.', 4); }
   });
 }
@@ -2421,7 +2424,7 @@ function update(dt){
       var zn = zoneAt(z.x, z.y, 0.6); if (zn && !(z.raid && zn === world.zones[0])){ zoneOut(zn, z, 0.6); z.kx = z.ky = 0; if (zoneAt(z.x, z.y, 0)){ zombies.splice(i, 1); continue; } }
       setLvl(z); var zbS = buildingAt(z.x, z.y); z.onSt = stairT(zbS, z.x, z.y, z.lvl) >= 0;
       T = senses(z, A, tg, dt, night); if (T) d = Math.hypot(T.x - z.x, T.y - z.y);
-      z.cd -= dt; z.hurt -= dt; z.thru -= dt;
+      z.cd -= dt; z.hurt -= dt; z.thru -= dt; if (z.fo > 0) z.fo -= dt;
       var ox = z.x, oy = z.y, zs = (night ? A.nspd : A.spd)*z.spd, vx = 0, vy = 0, L = lureAt(z.x, z.y);
       if (z.climb || z.roof){ alienRoof(z, A, T, dt, zs); continue; }
       if (z.k === 1 && !L){ var SA = stalkerAI(z, A, T, tg, dt); if (SA){ L = SA; zs = SA.sp*z.spd; T = null; d = 1e9; } }
@@ -2459,7 +2462,7 @@ function update(dt){
         var sdz = T && !T.roof ? A.stand : 0.8;
         if (d > sdz || shy) stepMove(z, (vx*zs + z.kx)*dt, (vy*zs + z.ky)*dt, A.r);
         else if (d < sdz - 0.35) stepMove(z, (-ex/d*zs*0.45 + z.kx)*dt, (-ey/d*zs*0.45 + z.ky)*dt, A.r);   /* you walked into it: it steps back to striking distance */
-        if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; }
+        if (!shy && z.av <= 0 && d > 1.3 && Math.hypot(z.x - ox, z.y - oy) < zs*dt*0.35){ var sg = Math.random() < 0.5 ? 1 : -1; z.ax = -gy/gd*sg; z.ay = gx/gd*sg; z.av = 0.6 + Math.random()*0.9; if (world.fenceG && !z.inside && (z.fs = (z.fs || 0) + 1) >= 3){ z.fs = 0; z.fo = 1.6; z.av = 0; } }   /* 0.127.4: held up three times running, it scrambles over the fence or hedge in its way (buildings still stop it) */
         if (T && T.b && !T.roof && z.k !== 2) alienAtPort(z, A, T.b, dt);
         else if (!T && (z.st === 1 || z.st === 3) && z.k !== 2){ var lb = buildingAt(z.lx, z.ly); if (lb && buildingAt(z.x, z.y) !== lb) alienAtPort(z, A, lb, dt); }   /* it heard you inside: it tries the doors and windows */
         if (A.spit && T && !T.roof && !shy && d < A.spit && d > 2.5 && z.cd <= 0 && (T.lvl || 0) === (z.lvl || 0) && !hitWall((z.x + T.x)/2, (z.y + T.y)/2) && !(buildingAt(z.x, z.y) !== buildingAt(T.x, T.y))){ z.cd = A.cd; z.ang = Math.atan2(T.y - z.y, T.x - z.x); addSpit(z, T.x, T.y); emit({k:'spit', s:{x:z.x, y:z.y, tx:T.x, ty:T.y, k:z.k, lvl:z.lvl || 0}}); alienCall(3, z.x, z.y, false); }
@@ -3386,11 +3389,19 @@ var TXS = 1; try { TXS = +(localStorage.getItem('lastblock:txt') || 1) || 1; } c
 function txApply(){ document.body.classList.toggle('tx', TXS > 1); document.body.style.setProperty('--ts', String(TXS)); }
 var PAUSEON = true; try { PAUSEON = localStorage.getItem('lastblock:pause') !== '0'; } catch (e){}
 function gamePaused(){ var hb = el('hudBtns'), br = el('bugRep'), be = el('bedit'); return !!((hb && !hb.classList.contains('hidden')) || (br && !br.classList.contains('hidden')) || (be && !be.classList.contains('hidden'))); }
+/* 0.127.4: a fault inside one frame used to stop the game for good (the next frame was never asked for): the picture froze and nothing answered.
+   Now the fault is noted for the bug report, said once on screen, and the next frame goes ahead */
+var FERRN = 0, FERRS = {};
+function frameErr(e){
+  FERRN++; var k = String(e && e.message || e) + ' @' + String(e && e.stack || '').split('\n').slice(1, 3).map(function(l){ return l.trim().replace(/^at /, '').replace(/https?:\/\/[^ )]*\//, ''); }).join(' < ');
+  if (!FERRS[k]){ FERRS[k] = 1; BUGERR.push('frame: ' + k.slice(0, 300)); if (BUGERR.length > 12) BUGERR.shift(); try { console.error('frame fault: ' + k); } catch (er){} }
+  if (FERRN === 1 || FERRN % 900 === 0){ try { toast(FERRN === 1 ? 'Something went wrong inside the game. It carries on; please send a bug report (Menu, Report a bug) so it can be fixed.' : 'The game keeps hitting the same fault. Save from the Menu and refresh the page.', 8); } catch (er){} }
+}
 function frame(ts){
   if (FCAP && running && ts - lastDraw < 1000/FCAP - 3){ requestAnimationFrame(frame); return; } lastDraw = ts;
   var dt = Math.min(0.05, (ts - lastTs)/1000 || 0); lastTs = ts;
   var PZ = running && !net.role && PAUSEON && !BUGSHOT && gamePaused(); if (PZ) dt = 0;
-  if (running && !PZ){ if (P.sleep && !P.cop){ for (var sk = 0; sk < 40 && P.sleep && running && !wakeReq; sk++) update(0.75); if (wakeReq && P.sleep) update(0.001); if (running) update(dt*0.01); } else update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } }
+  try { if (running && !PZ){ if (P.sleep && !P.cop){ for (var sk = 0; sk < 40 && P.sleep && running && !wakeReq; sk++) update(0.75); if (wakeReq && P.sleep) update(0.001); if (running) update(dt*0.01); } else update(dt); if (running){ if (P.cop) drawCop(); else { render(); compassTick(); miniT -= dt; if (miniT <= 0){ miniT = 0.2; drawMini(); } } } } } catch (fe){ frameErr(fe); }
   if (running && ++OOMN > 90){ OOMN = 0; try { if (gl.getError() === gl.OUT_OF_MEMORY && !OOMD){ OOMD = 1; BUGERR.push('graphics out of memory at build ' + BUILD); if (false && oomOnce()){ lsSet('lastblock:quality', '0'); saveNow(); running = false; toast('The phone ran out of graphics memory. The game is going to low detail and reloading...', 6); setTimeout(function(){ location.reload(); }, 1800); } } } catch (er){} }
   if (BUGSHOT){ var bs = BUGSHOT; BUGSHOT = null; try { bugShow(bs()); } catch (er){ toast('The picture could not be taken.', 3); } }
   if (FPSM) fpsTick(ts);
@@ -4634,13 +4645,15 @@ function makeVehicles(saved){
     [['pk_workshop_crafts_box_truck_walkin', -1.9, -78], ['pk_workshop_crafts_semi_tractor', 1.9, -84], ['pk_workshop_crafts_box_trailer', -1.9, -100]].forEach(function(b5, bi5){ list.push({veh:true, id:'tw' + bi5, t:1, name:'the ' + b5[0].replace(/^pk_workshop_crafts_/, '').replace(/_/g, ' '), dead:0, kind:b5[0], hp:100, x:b5[1] + ox, y:b5[2] + oy, yaw:b5[1] > 0 ? -Math.PI/2 : Math.PI/2, fuel:fuelRoll(b5[0], bi5, 9)}); }); }
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck', sck = typeof saved[sid][5] === 'string' && !tk ? saved[sid][5] : undefined; if (sck && sck.slice(0, 2) === 'B:'){ if (SHAPED.boats && SHAPED.boats.models[sck.slice(2)]) list.push({veh:true, id:sid, t:0, boat:sck.slice(2), name:'the ' + stnNice(sck.slice(2)), x:0, y:0, yaw:0, fuel:0}); continue; } list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : sck, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
   /* 0.123.0: cars the map builder placed (asmb:prop = vehicles.<kind>, _wreck or _burnt at the end): parked where they were put, driveway or kerb */
+  var mpSeen = {};
   (w.mprops || []).forEach(function(q, qi){ if (!/^vehicles\./.test(q.p)) return; var k = q.p.slice(9), dead = /_wreck$/.test(k) ? 'wreck' : /_burnt$/.test(k) ? 'burnt' : 0, base = k.replace(/_(wreck|burnt)$/, '');
     if (!VMOD[base] && (PACKK || []).indexOf(base) < 0) return; var ix = Math.round(q.x), iy = Math.round(q.y);
-    list.push({veh:true, id:'mp' + qi, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the parked car', dead:dead, kind:dead ? base + '_' + dead : base, hp:dead ? undefined : Math.round(50 + hash(ix, iy, 34)*50), x:q.x, y:q.y, yaw:Math.atan2(Math.cos(q.yw), -Math.sin(q.yw)), dopen:q.door ? 1 : 0, fuel:dead ? 0 : fuelRoll(base, ix, iy)}); });
+    var mid = 'mp' + ix + '_' + iy; while (mpSeen[mid]) mid += 'b'; mpSeen[mid] = 1;   /* 0.127.4: named by where it stands, not by its place in the list, so a save or a guest never gets the wrong car when the list is thinned */
+    list.push({veh:true, id:mid, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the parked car', dead:dead, kind:dead ? base + '_' + dead : base, hp:dead ? undefined : Math.round(50 + hash(ix, iy, 34)*50), x:q.x, y:q.y, yaw:Math.atan2(Math.cos(q.yw), -Math.sin(q.yw)), dopen:q.door ? 1 : 0, fuel:dead ? 0 : fuelRoll(base, ix, iy)}); });
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
   if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
   /* 0.114.86: cars only start on roads: a land vehicle whose middle is not on a drivable road is dropped (the player's own truck, saved vehicles and machines are kept) */
-  list = list.filter(function(v){ if (!v.t || v.id === 'truck' || /^mp\d/.test(v.id) || v.kind === 'truck' || (saved && saved[v.id]) || /^m_/.test(v.kind || '')) return true; return onDriveRoad(w, v.x, v.y); });
+  list = list.filter(function(v){ if (!v.t || v.id === 'truck' || /^mp[-\d]/.test(v.id) || v.kind === 'truck' || (saved && saved[v.id]) || /^m_/.test(v.kind || '')) return true; return onDriveRoad(w, v.x, v.y); });
   w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = (+s2[3] || 0)*(saved._u ? 1 : CAN_M/60); if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); if (s2[7]){ var dh0 = deckHit(v.x, v.y, 'hi'); if (dh0) v.gh = dh0.h; } if (s2[8]){ v.cu = cleanCu(s2[8]); if (v.cu) carName(v); } } });
   bedChest();
 }
@@ -5736,7 +5749,7 @@ async function hostWelcome(peer){
   el('invStatus').textContent = 'Connected. Sending the world...';
   var text = mapSrc && mapSrc.text ? mapSrc.text : mapSrc && mapSrc.zr ? await edApply(await zoneGet(mapSrc.zr, mapSrc.zi, mapSrc.zj)) : null;   /* 0.127.3: a region square is read again from storage only when a friend joins */
   worldPlayers[charSlug()] = {x:P.x, y:P.y, yaw:P.yaw};
-  send(peer.dc, {t:'hello', day:DAY, v:VERSION, pid:peer.id, rule:el('vRule').value, designs:craftable().filter(function(d){ return !d.unique; }).slice(0, 60), name:world.name, demo:!text, len:text ? text.length : 0, ws:worldSave()});
+  send(peer.dc, {t:'hello', day:DAY, v:VERSION, pid:peer.id, rule:el('vRule').value, designs:craftable().filter(function(d){ return !d.unique; }).slice(0, 60), name:world.name, demo:!text, len:text ? text.length : 0, thin:mapSrc && mapSrc.zr ? MAPTHIN : null, ws:worldSave()});
   if (text) for (var i = 0; i < text.length; i += 12000){
     while (peer.dc.bufferedAmount > 1000000) await new Promise(function(r){ setTimeout(r, 30); });
     if (peer.dc.readyState !== 'open') return; peer.dc.send('C' + text.substr(i, 12000));
@@ -5841,7 +5854,7 @@ async function guestMsg(g, data){
   else if (m.t === 'go' && g.hello){
     try {
       lsSet('lastblock:name', el('pname').value); QS = QUAL[+el('qual').value] || QUAL[1];
-      var h = g.hello, raw = h.demo ? demoRaw() : parseText(g.chunks.join('')); g.chunks = [];
+      var h = g.hello, raw = h.demo ? demoRaw() : parseText(g.chunks.join('')); g.chunks = []; if (h.thin && typeof h.thin === 'object') thinGenerated(raw, 0, h.thin);
       buildWorld(raw, h.name); prep3D();
       var cs = await readSave('char', charSlug()), asCop = el('joinCop').checked;
       if (h.day > 0) setDay(+h.day);
@@ -6001,21 +6014,23 @@ async function zoneFetch(R, i, j, say){
    keeping a steady, evenly spread share of each kind (the same ones each time); real map data is never thinned */
 function lowMemDev(){ var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e){} return q === '0' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || (navigator.deviceMemory && navigator.deviceMemory <= 4); }
 var GENB = {veh:2500, prop:9000, tree:9000, fence:3000};
-function thinGenerated(raw, len){
-  if (!lowMemDev() || !raw || !raw.pois) return; var gen = function(t){ return t && (t.generated === 'yes' || t['asmb:made'] === 'yes' || t['asmb:lot'] === 'yes'); }, kindOf2 = function(t){ var pp = t['asmb:prop'] || ''; return /^vehicles\./.test(pp) ? 'veh' : pp ? 'prop' : t.natural === 'tree' ? 'tree' : null; };
+var MAPTHIN = null;   /* 0.127.4: what share of each made-up kind this device kept; a host tells its guests so both have the same cars, props and fences */
+function thinGenerated(raw, len, force){
+  if ((!force && !lowMemDev()) || !raw || !raw.pois) return null; var gen = function(t){ return t && (t.generated === 'yes' || t['asmb:made'] === 'yes' || t['asmb:lot'] === 'yes'); }, kindOf2 = function(t){ var pp = t['asmb:prop'] || ''; return /^vehicles\./.test(pp) ? 'veh' : pp ? 'prop' : t.natural === 'tree' ? 'tree' : null; };
   var n = {veh:0, prop:0, tree:0, fence:0}; raw.pois.forEach(function(p){ if (!gen(p.tags)) return; var k = kindOf2(p.tags); if (k) n[k]++; });
   raw.ways.forEach(function(w){ var t = w.tags; if (gen(t) && t.barrier) n.fence++; });
-  var keep = {}; for (var k in n) keep[k] = n[k] > GENB[k] ? GENB[k]/n[k] : 1; if (keep.veh === 1 && keep.prop === 1 && keep.tree === 1 && keep.fence === 1) return;
+  var keep = {}; for (var k in n) keep[k] = force ? Math.max(0, Math.min(1, +force[k] || 0)) : n[k] > GENB[k] ? GENB[k]/n[k] : 1; if (keep.veh === 1 && keep.prop === 1 && keep.tree === 1 && keep.fence === 1) return null;
   var h = function(x, y){ var s = Math.sin(x*127.1 + y*311.7)*43758.5453; return s - Math.floor(s); }, cut = 0;
   raw.pois = raw.pois.filter(function(p){ if (!gen(p.tags)) return true; var k = kindOf2(p.tags); if (!k || keep[k] >= 1) return true; if (h(p.lon*1e4, p.lat*1e4) < keep[k]) return true; cut++; return false; });
   raw.ways = raw.ways.filter(function(w){ var t = w.tags; if (!gen(t) || !t.barrier || keep.fence >= 1) return true; var c = w.c[0]; if (h(c[0]*1e4, c[1]*1e4) < keep.fence) return true; cut++; return false; });
   if (cut) console.log('thinned ' + cut + ' made-up things from a ' + Math.round(len/1e6) + ' MB square for this device');
+  return keep;
 }
 async function enterZone(R, lat, lon, yaw, carry, atSafe){
   var ij = zoneOf(R, lat, lon), text = R.builtin ? await builtinSquare(ij[0], ij[1]) : await zoneGet(R, ij[0], ij[1]);
   if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1], function(t){ info(t); var rs = el('rgStatus'); if (rs) rs.textContent = t; }); }
   text = await edApply(text);
-  var raw = parseText(text); if (R.builtin) raw.name = ''; thinGenerated(raw, text.length);   /* each square keeps its own save, named by the square */
+  var raw = parseText(text); if (R.builtin) raw.name = ''; MAPTHIN = thinGenerated(raw, text.length);   /* each square keeps its own save, named by the square */
   raw.spawn = [lon, lat]; raw.pin = R.id === 'springfield-mo' && Math.abs(lat - SEQUIOTA.lat) < 1e-6 && Math.abs(lon - SEQUIOTA.lon) < 1e-6; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
   mapSrc = R.builtin ? {text:text} : {zr:R, zi:ij[0], zj:ij[1]}; text = null; inRun = false; region = R; await enter(raw, zoneName(R, ij[0], ij[1])); if (!inRun) throw new Error('that part of the map could not be loaded');
   region = R;

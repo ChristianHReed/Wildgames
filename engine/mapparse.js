@@ -110,7 +110,8 @@ function toCompact(raw, name){
   var out = {lastblockMap:1, name:name, ways:ways, pois:pois}; if (raw.elev) out.elev = raw.elev; if (raw.zone) out.zone = raw.zone; return out;
 }
 function fromCompact(j){
-  return {ways:(j.ways || []).map(function(w){ var c = []; for (var i = 0; i < w[1].length; i += 2) c.push([w[1][i], w[1][i+1]]); return {c:c, tags:w[0]}; }),
+  /* 0.127.4: each way's flat number list is let go as soon as it has been copied, so a 20 MB square never holds both forms of every road and building at once */
+  return {ways:(j.ways || []).map(function(w){ var f = w[1], c = new Array(f.length >> 1); for (var i = 0, q = 0; i + 1 < f.length; i += 2) c[q++] = [f[i], f[i+1]]; w[1] = null; return {c:c, tags:w[0]}; }),
     pois:(j.pois || []).map(function(p){ return {lon:p[0], lat:p[1], tags:p[2]}; }), name:j.name ? String(j.name).replace(/[<>&"]/g, '').slice(0, 60) : '', spawn:Array.isArray(j.spawn) ? j.spawn : null, elev:j.elev && typeof j.elev === 'object' ? j.elev : null, tclass:j.tclass && typeof j.tclass === 'object' ? j.tclass : null, holes:Array.isArray(j.holes) ? j.holes : null, structures:Array.isArray(j.structures) ? j.structures : null, format:j.format | 0, attribution:j.attribution ? String(j.attribution).slice(0, 600) : '', zone:j.zone && j.zone.n > j.zone.s && j.zone.e > j.zone.w ? {s:+j.zone.s, n:+j.zone.n, w:+j.zone.w, e:+j.zone.e} : null};
 }
 function parseText(text){

@@ -1,8 +1,8 @@
 # Wildgames
 
-Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `assets` folder beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
+Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `engine`, `assets` and `packs` folders beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.127.3. Every foundation step in [docs/DESIGN.md](docs/DESIGN.md) has a working first version, but none of it has been tried on real hardware yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.127.4. Every foundation step in [docs/DESIGN.md](docs/DESIGN.md) has a working first version. It is played and bug-reported on an iPhone 11 and an iPad Pro; no benchmark results from computers have come back yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
@@ -12,13 +12,14 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 - **Play demo town** starts right away with a small made-up town.
 - **Back to safe house** is for when you are stuck: it starts the map you last played again, with you at its safe house. Your things, the world and your progress are kept.
 - **Make a map** builds a map of a real place from its name. It needs internet once; after that the map works offline.
-- **Load map file** plays a map file you already have (an OpenStreetMap export, or one made by Make a map).
+- **Load a map file** plays a map file you already have: a Maps Builder `.asmap`, an OpenStreetMap export, or one made by Make a map.
 - **Connect game folder** (Chrome and Edge on computers) lets the game save into the `world`, `characters`, `maps` and `packs` folders on the drive. Pick the folder that contains `play.html`.
 - In other browsers, progress is kept in the browser, and **Export saves** / **Import saves** move it between devices.
 
 | Folder | Holds |
 | --- | --- |
-| `play.html` | The whole game: start page and game in one file |
+| `play.html` | The game: start page and game in one file |
+| `engine/` | The game's shared code: map reading, world building, drawing, collision (see `engine/README.md`) |
 | `assets/springfield/` | The built-in Springfield region, one file per square |
 | `maps/` | Map files |
 | `world/` | One save per map, written by the game |

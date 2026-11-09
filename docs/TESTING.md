@@ -1,6 +1,10 @@
 # Afterstreet: testing roadmap
 
-Everything in `play.html` (version 0.45.2) has been run only in an automated test browser on one machine with no graphics card. Nothing has been tried on a real drive, a real phone or a real network. The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack; the map maker's own downloads are still untried. This roadmap is the order to try those things in.
+This list of hand tests was written at version 0.45.2 and has not been reworked since; the stages below still describe what to try on real hardware, but the game has many more features than they cover. Since then the game has been played on an iPhone 11 and an iPad Pro, with problems sent in through the in-game bug report (Menu, Report a bug; see `docs/BUG_REPORTS.md`). The built-in Springfield region is real OpenStreetMap data from the Afterstreet map pack.
+
+## Automated check before every release
+
+`node tools/smoke.js` starts a world in a headless browser, plays it with random keys and clicks through two game days, and prints every fault. Run it for the demo town, Springfield (Endless, Reclaim, Escape), the Test World and one Maps Builder file; the steps are in `docs/RELEASE.md`. It finds crashes, not wrong pictures or bad feel: those still need a person.
 
 Work top to bottom. Stages 1, 2, 9 and 11 are the make-or-break tests: if one of them fails, the design may need to change, so report it before going further.
 
