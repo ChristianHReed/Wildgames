@@ -351,9 +351,32 @@ function shell(b, m, lm){
   if (K.awn && b.door && Ht > 3.3){ var dd = b.door, ox = -dd.nx, oz = -dd.ny, ya = Math.atan2(oz, ox), ac = C(K.awn); m.ybox(dd.x + ox*0.65, dd.y + oz*0.65, ya, 0, 0, 2.62, 0.65, 0.06, 1.7, ac); m.ybox(dd.x + ox*0.08, dd.y + oz*0.08, ya, 0, 0, 3.2, 0.05, 0.3, 1.5, [Math.round(ac[0]*0.7), Math.round(ac[1]*0.7), Math.round(ac[2]*0.7)]); }
 }
 var NULLM = {box:function(){}, ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, quadV:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
+/* ground tiles (roads, pavements, paths, water) on the graphics chip only near you: up within the draw distance plus a tile, gone when well past it */
+function manageGroundTiles(){ var G = world.gl && world.gl.ground; if (!G) return; var R = Math.min(QS.far, 800) + 130 + 256, n = 0, have = 0, i, o, d;
+  for (i = 0; i < G.length; i++) if (G[i].g) have++;
+  var budget = have ? 3 : 64;
+  for (i = 0; i < G.length; i++){ o = G[i]; d = Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y));
+    if (!o.g && d < R && n < budget){ if (o.d){ o.g = gtLen(o.d) ? upload(gtMesh(o.d)) : {n:0, nil:1}; n++; } else if (o.z && !o.wait){ gtUnpack(o, world); n++; } }
+    else if (o.g && d > R + 320){ if (!o.g.nil) freeMesh(o.g); o.g = null; if (o.z) o.d = null; }
+  } }
+/* 0.117.4: a ground tile far from you is packed into a compressed blob (outside the page's working memory where the browser allows) and unpacked when you come near */
+function gtCat(L, T){ var n = 0, i, o; for (i = 0; i < L.length; i++) n += L[i].length; o = new T(n); n = 0; for (i = 0; i < L.length; i++){ o.set(L[i], n); n += L[i].length; } return o; }
+function gtMesh(d){ return d.pp ? {p:gtCat(d.pp, Float32Array), c:gtCat(d.pc, Uint8Array), t:gtCat(d.pt, Float32Array)} : d; }
+function gtLen(d){ return d.pp ? d.n : d.p.length; }
+var GTZ = {busy:0, ok:typeof CompressionStream === 'function' && typeof DecompressionStream === 'function' && typeof Blob === 'function' && typeof Response === 'function'};
+function gtPackAll(w){ if (!GTZ.ok) return; var G = w.gl.ground.slice(), k = 0, run = function(){ if (world !== w) return; while (k < G.length && !(G[k].d && gtLen(G[k].d))) k++; if (k >= G.length) return; gtPack(G[k++], w, run); }; for (var j = 0; j < 8; j++) run(); }
+function gtPack(o, w, next){ var d = o.d; o.wait = 1;
+  var M = d.pp ? null : d, sum = function(L){ var n = 0; L.forEach(function(a){ n += a.length; }); return n; }, head = M ? new Uint32Array([M.p.length, M.c.length, M.t.length]) : new Uint32Array([sum(d.pp), sum(d.pc), sum(d.pt)]), bl = new Blob(M ? [head, M.p, M.c, M.t] : [head].concat(d.pp, d.pc, d.pt));
+  new Response(bl.stream().pipeThrough(new CompressionStream('deflate-raw'))).blob().then(function(z){ GTZ.busy = 0; o.wait = 0; if (world !== w) return; o.z = z; o.d = null; if (next) next(); })
+    .catch(function(){ GTZ.busy = 0; o.wait = 0; GTZ.ok = false; }); }
+function gtUnpack(o, w){ o.wait = 1;
+  new Response(o.z.stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer().then(function(ab){ o.wait = 0; if (world !== w || o.g) return;
+    var h = new Uint32Array(ab, 0, 3), off = 12, p = new Float32Array(ab, off, h[0]); off += h[0]*4; var c = new Uint8Array(ab, off, h[1]); off += h[1]; var t = new Float32Array(ab.slice(off, off + h[2]*4));
+    var dm = {p:p, c:c, t:t}, dd = Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y)); if (dd < Math.min(QS.far, 800) + 130 + 256 + 320) o.g = upload(dm); })
+    .catch(function(e){ o.wait = 0; console.warn('ground tile', e); }); }
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
+  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); manageGroundTiles(); manageMapProps(Math.max(1, budget >> 1)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
@@ -504,10 +527,11 @@ function placeProps(g){
   w.buildings.forEach(function(b){
     if (!b.door) return; var d = b.door, tx = -d.ny, ty = d.nx, h = hash(b.id, 13, 3), x, y;
     if (b.cat === 'house'){ if (h < 0.45){ var sd = h < 0.22 ? 1 : -1; x = d.x - d.nx*0.7 + tx*1.7*sd; y = d.y - d.ny*0.7 + ty*1.7*sd; if (ok(x, y)) cand.bush.push([x, y, h*20]); } }
-    else if (h < 0.5){ x = d.x - d.nx*1.1 + tx*3.4; y = d.y - d.ny*1.1 + ty*3.4; if (ok(x, y) && ok(x + tx, y + ty) && ok(x - tx, y - ty)) cand.dump.push([x, y, Math.atan2(ty, tx)]); }
+    else if (h < 0.5){ x = d.x - d.nx*1.1 + tx*3.4; y = d.y - d.ny*1.1 + ty*3.4; if (ok(x, y) && ok(x + tx, y + ty) && ok(x - tx, y - ty)) cand.dump.push([x, y, Math.atan2(ty, tx), b.kind]); }
   });
-  w.slights = []; w.obstL = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
-  put(cand.light, 'streetlight', 700); put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
+  w.slights = []; w.obstL = []; w.dumps = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'dumpster'){ var di = w.dumps.length; w.dumps.push({dump:1, name:'dumpster', x:c[0], y:c[1], kind:c[3], looted:!!(w.dumpGone && w.dumpGone.indexOf(di) >= 0), t:0, i:di}); } if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
+  if (!(w.mhas && w.mhas.lamp)) put(cand.light, 'streetlight', 700);   /* 0.123.0: a map with its own street lamps (builder 1.24) keeps only those */
+  put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
 }
 /* 0.80 dressing from the art pack's unused street, plant and road pieces: signs and poles on the streets, mailboxes at houses, bus stops, manholes,
    and in the wild logs, stumps, ferns, mushrooms, brambles, flowers and reeds. All are small and decorative: nothing here blocks you */
@@ -546,7 +570,7 @@ function placeDress(g){
     for (var q = 0; q + 3 < n; q += 2){ var ax = p[q], ay = p[q+1], l = Math.hypot(p[q+2] - ax, p[q+3] - ay); if (l < 0.5) continue; var dx = (p[q+2] - ax)/l, dy = (p[q+3] - ay)/l, yaw = Math.atan2(dx, dy);
       for (; run < l; run += main ? 70 : 60, k++){
         var sd = k % 2 ? 1 : -1, off = r.w/2 + 3.6, x = ax + dx*run - dy*off*sd, y = ay + dy*run + dx*off*sd, h = hash(ri*13 + q, k, 83);
-        if (!main && ok(x, y, 2)) add('street.power_pole', x, y, yaw, 450);
+        if (!main && ok(x, y, 2) && !(w.mhas && w.mhas.pole)) add('street.power_pole', x, y, yaw, 450);
         var h2 = hash(ri*11 + q, k, 97), lat = (hash(ri, k + q, 98) - 0.5)*(r.w - 2.5), xd = ax + dx*run - dy*lat, yd = ay + dy*run + dx*lat;
         if (h2 < 0.45){ for (var cc = 0; cc < 3; cc++) add('ground.decals.crack', xd + (cc - 1)*0.5*dy, yd - (cc - 1)*0.5*dx, yaw + (hash(ri, k, 100 + cc) - 0.5)*1.4, 1500); }
         else if (h2 > 0.93) add('ground.decals.pothole', xd, yd, h2*40, 500); else if (h2 > 0.86 && main) add('ground.decals.skid_marks', xd, yd, yaw, 400);
@@ -562,7 +586,7 @@ function placeDress(g){
   });
   w.buildings.forEach(function(b){
     if (!b.door || b.gone) return; var d = b.door, tx = -d.ny, ty = d.nx, h = hash(b.id, 17, 5), x, y;
-    if (b.cat === 'house'){ if (h < 0.5){ x = d.x - d.nx*7 + tx*2.6; y = d.y - d.ny*7 + ty*2.6; if (ok(x, y, 3)) add('street.mailbox', x, y, Math.atan2(-d.nx, -d.ny), 600); } }
+    if (b.cat === 'house'){ if (h < 0.5 && !(w.mhas && w.mhas.mailbox)){ x = d.x - d.nx*7 + tx*2.6; y = d.y - d.ny*7 + ty*2.6; if (ok(x, y, 3)) add('street.mailbox', x, y, Math.atan2(-d.nx, -d.ny), 600); } }
     else if (b.cat === 'shop' || b.cat === 'food'){
       if (h < 0.35){ x = d.x - d.nx*1.3 - tx*3.2; y = d.y - d.ny*1.3 - ty*3.2; if (ok(x, y, 0.3)) add('street.newspaper_box', x, y, Math.atan2(-d.nx, -d.ny), 150); }
       else if (h > 0.8){ x = d.x - d.nx*1.5 + tx*3.4; y = d.y - d.ny*1.5 + ty*3.4; if (ok(x, y, 0.3)) add('street.bike_rack', x, y, Math.atan2(tx, ty), 120); }
@@ -657,6 +681,34 @@ function placeDress(g){
     for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; if (SOLID[path]){ (w.obstL = w.obstL || []).push([c[0], c[1], SOLID[path]]); w.obst = null; } g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' || path.slice(0, 9) === 'pk.court_' || path.slice(0, 13) === 'pk.field_line' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
   w.dressCount = total; w.dressOut = out;
 }
+/* 0.123.0: the map's own props (builder 1.24 street dressing and props placed in the builder), kept in 96 m cells and meshed only near you, like the buildings.
+   Power poles with an asmb:wire point carry four wires to the next pole: one per insulator on the crossarm (x -0.9, -0.3, 0.3, 0.9 at 8.06 m, the content chat's measure),
+   sagging a fiftieth of the span in the middle, drawn as two thin crossed strips so they read from any side. Street lamps light pools at night like the game's own. */
+var MPC = 96, MPWX = [-0.9, -0.3, 0.3, 0.9], MPWY = 8.06, MPWC = [38, 38, 42];
+function mpPrepare(w){
+  w.gl.mp = []; var L = w.mprops; if (!L || !L.length) return; var cells = new Map(), poles = new Map(), pk = function(x, y){ return Math.round(x*2) + ':' + Math.round(y*2); };
+  L.forEach(function(q){ if (/^vehicles\./.test(q.p)) return; var key = gk(Math.floor(q.x/MPC), Math.floor(q.y/MPC)), c = cells.get(key);
+    if (!c){ c = {x:(Math.floor(q.x/MPC) + 0.5)*MPC, y:(Math.floor(q.y/MPC) + 0.5)*MPC, list:[], g:null}; cells.set(key, c); w.gl.mp.push(c); } c.list.push(q);
+    if (q.p === 'street.power_pole') poles.set(pk(q.x, q.y), q);
+    if (q.p === 'street.street_lamp') (w.slights = w.slights || []).push({x:q.x, y:q.y, sl:true});
+    var r = SOLID[q.p] || (/street_lamp|traffic_light|parking_meter|sign_|bollard|hydrant/.test(q.p) ? 0.2 : /bench|trash|bin|mailbox|newspaper|booth|vending|barrel/.test(q.p) ? 0.35 : 0); if (r){ (w.obstL = w.obstL || []).push([q.x, q.y, r]); w.obst = null; } });
+  L.forEach(function(q){ if (q.wx !== undefined){ var o = poles.get(pk(q.wx, q.wy)); if (!o){ var best = 2.5; poles.forEach(function(z){ var d = Math.hypot(z.x - q.wx, z.y - q.wy); if (d < best){ best = d; o = z; } }); } q.to = o || {x:q.wx, y:q.wy, yw:q.yw}; } });
+}
+function mpWire(m, a, b){
+  var ca = Math.cos(a.yw), sa = Math.sin(a.yw), cb = Math.cos(b.yw), sb = Math.sin(b.yw), flip = ca*cb + sa*sb < 0, ha = hAt(a.x, a.y), hb = hAt(b.x, b.y), span = Math.hypot(b.x - a.x, b.y - a.y), sag = span/50, N = 6;
+  if (span < 4 || span > 90) return; var dx = (b.x - a.x)/span, dy = (b.y - a.y)/span, W = 0.025;
+  for (var i = 0; i < 4; i++){ var la = MPWX[i], lb = MPWX[flip ? 3 - i : i], x0 = a.x + ca*la, y0 = a.y + sa*la, z0 = ha + MPWY, x1 = b.x + cb*lb, y1 = b.y + sb*lb, z1 = hb + MPWY, pv = null;
+    for (var s = 0; s <= N; s++){ var t = s/N, px = x0 + (x1 - x0)*t, py = y0 + (y1 - y0)*t, pz = z0 + (z1 - z0)*t - sag*4*t*(1 - t);
+      if (pv){ m.quad(pv[0] - dy*W, pv[2], pv[1] + dx*W, px - dy*W, pz, py + dx*W, px + dy*W, pz, py - dx*W, pv[0] + dy*W, pv[2], pv[1] - dx*W, MPWC, 255);
+        m.quad(pv[0], pv[2] - W, pv[1], px, pz - W, py, px, pz + W, py, pv[0], pv[2] + W, pv[1], MPWC, 255); }
+      pv = [px, py, pz]; } }
+}
+function manageMapProps(budget){
+  var A = world.gl.mp; if (!A || !A.length) return; var R = QS.chunk + MPC, n = 0;
+  for (var i = 0; i < A.length; i++){ var c = A[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
+    if (!c.g && d < R && n < budget){ var m = new Mesh(); c.list.forEach(function(q){ var M = spB(q.p); if (M) m.modelS(M, q.x, q.y, q.yw, hAt(q.x, q.y) + 0.02, 1); if (q.to) mpWire(m, q, q.to); }); c.g = upload(m); n++; }
+    else if (c.g && d > R + 150){ freeMesh(c.g); c.g = null; } }
+}
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */
 function manageFacades(){}
 function dirtyChunk(b){ if (b && b.fac){ freeMesh(b.fac); b.fac = null; } if (b && b.chunk && b.chunk.far){ freeMesh(b.chunk.far); b.chunk.far = null; } if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); freeMesh(b.chunk.l); b.chunk.g = null; b.chunk.l = null; } }
@@ -668,11 +720,11 @@ function sunkWalls(w, g, LIFT, SWY, RDY){
     for (var q = 0; q + 3 < p.length; q += 2){
       if (inRanges(gp, q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue;
       var ns = Math.max(1, Math.ceil(l/2)), ux = (bx - ax)/l, uz = (bz - az)/l, nx = -uz, nz = ux, si;
-      for (si = 0; si < ns; si++){ var s0 = l*si/ns, s1 = l*(si + 1)/ns, mx = ax + ux*(s0 + s1)/2, mz = az + uz*(s0 + s1)/2;
-        [-1, 1].forEach(function(sd){ if (roadOff(mx + nx*(hw + 0.4)*sd, mz + nz*(hw + 0.4)*sd, 0.1)) return;
-          var x0 = ax + ux*s0 + nx*hw*sd, z0 = az + uz*s0 + nz*hw*sd, x1 = ax + ux*s1 + nx*hw*sd, z1 = az + uz*s1 + nz*hw*sd, h0 = hAt0(x0, z0), h1 = hAt0(x1, z1);
-          g.quad(x0, h0 + RDY + LIFT, z0, x1, h1 + RDY + LIFT, z1, x1, h1 + SWY + LIFT, z1, x0, h0 + SWY + LIFT, z0, KC, 255); });
-      }
+      [-1, 1].forEach(function(sd){ var r0 = -1;   /* 0.114.91: joined into runs of up to 10 m (the height grid's spacing), not a quad every 2 m */
+        var put = function(a0, a1){ var s0 = l*a0/ns, s1 = l*a1/ns, x0 = ax + ux*s0 + nx*hw*sd, z0 = az + uz*s0 + nz*hw*sd, x1 = ax + ux*s1 + nx*hw*sd, z1 = az + uz*s1 + nz*hw*sd, h0 = hAt0(x0, z0), h1 = hAt0(x1, z1);
+          g.quad(x0, h0 + RDY + LIFT, z0, x1, h1 + RDY + LIFT, z1, x1, h1 + SWY + LIFT, z1, x0, h0 + SWY + LIFT, z0, KC, 255); };
+        for (si = 0; si <= ns; si++){ var off = si === ns || roadOff(ax + ux*l*(si + 0.5)/ns + nx*(hw + 0.4)*sd, az + uz*l*(si + 0.5)/ns + nz*(hw + 0.4)*sd, 0.1);
+          if (!off && r0 < 0) r0 = si; else if (r0 >= 0 && (off || si - r0 >= 5)){ put(r0, si); r0 = off ? -1 : si; } } });
     }
   });
 }
@@ -707,8 +759,10 @@ function prep3D(){
     for (var q = 0; q < p.length - 2; q += 2){
       if (inGap(q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx-ax, bz-az); if (l < 0.01) continue;
       if (cut && SUNK && l > 2.5){ var ns = Math.ceil(l/2), si, sx0, sz0, sx1, sz1, sl = l/ns;   /* long segments are cut into 2 m pieces so each can be tested */
-        for (si = 0; si < ns; si++){ sx0 = ax + (bx - ax)*si/ns; sz0 = az + (bz - az)*si/ns; sx1 = ax + (bx - ax)*(si + 1)/ns; sz1 = az + (bz - az)*(si + 1)/ns;
-          if (roadOff((sx0 + sx1)/2, (sz0 + sz1)/2, 0.3)) continue; var snx = -(sz1-sz0)/sl*hw, snz = (sx1-sx0)/sl*hw; g.pl = [tile, 0.25]; g.quad(sx0+snx,y,sz0+snz, sx1+snx,y,sz1+snz, sx1-snx,y,sz1-snz, sx0-snx,y,sz0-snz, col, 255); }
+        /* 0.114.91: tested in 2 m pieces, but the pieces that stay are joined into one quad per unbroken run (a quad per piece made a downtown square tens of millions of vertices once draped, and phones ran out of memory loading it) */
+        var r0 = -1, snx = -(bz - az)/l*hw, snz = (bx - ax)/l*hw, flush = function(a0, a1){ sx0 = ax + (bx - ax)*a0/ns; sz0 = az + (bz - az)*a0/ns; sx1 = ax + (bx - ax)*a1/ns; sz1 = az + (bz - az)*a1/ns; g.pl = [tile, 0.25]; g.quad(sx0+snx,y,sz0+snz, sx1+snx,y,sz1+snz, sx1-snx,y,sz1-snz, sx0-snx,y,sz0-snz, col, 255); };
+        for (si = 0; si <= ns; si++){ var off = si === ns || roadOff(ax + (bx - ax)*(si + 0.5)/ns, az + (bz - az)*(si + 0.5)/ns, 0.3);
+          if (!off && r0 < 0) r0 = si; else if (off && r0 >= 0){ flush(r0, si); r0 = -1; } }
         continue; }
       if (cut && SUNK && roadOff((ax + bx)/2, (az + bz)/2, 0.3)) continue;
       var nx = -(bz-az)/l*hw, nz = (bx-ax)/l*hw;
@@ -723,11 +777,11 @@ function prep3D(){
     for (var q = 0; q + 3 < p.length; q += 2){
       if (inRanges(gp, q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue;
       var ns = Math.max(1, Math.ceil(l/2)), ux = (bx - ax)/l, uz = (bz - az)/l, nx = -uz, nz = ux, si;
-      for (si = 0; si < ns; si++){ var s0 = l*si/ns, s1 = l*(si + 1)/ns, mx = ax + ux*(s0 + s1)/2, mz = az + uz*(s0 + s1)/2;
-        [-1, 1].forEach(function(sd){ if (roadOff(mx + nx*(hw + 1)*sd, mz + nz*(hw + 1)*sd, 0.2) || roadOff(mx + nx*(hw + 0.1)*sd, mz + nz*(hw + 0.1)*sd, 0.0)) return;
-          var x0 = ax + ux*s0, z0 = az + uz*s0, x1 = ax + ux*s1, z1 = az + uz*s1; g.pl = [TX.sidewalk, 0.25];
-          g.quad(x0 + nx*hw*sd, SWY, z0 + nz*hw*sd, x1 + nx*hw*sd, SWY, z1 + nz*hw*sd, x1 + nx*(hw + 2)*sd, SWY, z1 + nz*(hw + 2)*sd, x0 + nx*(hw + 2)*sd, SWY, z0 + nz*(hw + 2)*sd, WHITE, 255); });
-      }
+      [-1, 1].forEach(function(sd){ var r0 = -1;   /* 0.114.91: one quad per unbroken run of 2 m pieces, not one per piece */
+        var put = function(a0, a1){ var s0 = l*a0/ns, s1 = l*a1/ns, x0 = ax + ux*s0, z0 = az + uz*s0, x1 = ax + ux*s1, z1 = az + uz*s1; g.pl = [TX.sidewalk, 0.25];
+          g.quad(x0 + nx*hw*sd, SWY, z0 + nz*hw*sd, x1 + nx*hw*sd, SWY, z1 + nz*hw*sd, x1 + nx*(hw + 2)*sd, SWY, z1 + nz*(hw + 2)*sd, x0 + nx*(hw + 2)*sd, SWY, z0 + nz*(hw + 2)*sd, WHITE, 255); };
+        for (si = 0; si <= ns; si++){ var off = true; if (si < ns){ var mx = ax + ux*l*(si + 0.5)/ns, mz = az + uz*l*(si + 0.5)/ns; off = roadOff(mx + nx*(hw + 1)*sd, mz + nz*(hw + 1)*sd, 0.2) || roadOff(mx + nx*(hw + 0.1)*sd, mz + nz*(hw + 0.1)*sd, 0.0); }
+          if (!off && r0 < 0) r0 = si; else if (off && r0 >= 0){ put(r0, si); r0 = -1; } } });
     }
   });
   w.roads.forEach(function(r){
@@ -736,8 +790,9 @@ function prep3D(){
     else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false, r.tun, true); }
     else ribbon(r.pts, r.w/2, r.kind === 'road' && r.w >= 6 ? RDY : 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap, !(r.kind === 'road' && r.w >= 6));
   });
-  g.pl = null; if (w.hg) drape(g, LIFT); w.liftY = LIFT;
-  if (w.hg && mapSrc && mapSrc.street){ var WT = g.t, WP = g.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; }   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
+  g.pl = null; if (w.hg) drape(g, LIFT, true); w.liftY = LIFT;
+  if (w.hg && typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
+  var gD = g; g = new Mesh();   /* 0.114.92: the draped ground stays as it came back (typed arrays from the Rust core); what follows goes into a second list */
   sunkWalls(w, g, LIFT, SWY, RDY);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
   try { structBuild(g); } catch (er){ console.log('structures', er); }
@@ -751,17 +806,26 @@ function prep3D(){
     c.list.push(b); b.chunk = c; shell(b, NULLM); b.int = null; b.fac = null; b.got = {};
   });
   facs.forEach(function(fb){ if (fb.fac){ freeMesh(fb.fac); fb.fac = null; } }); facs = [];
-  if (w.gl){ w.gl.ground.forEach(function(o){ freeMesh(o.g); }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
+  if (w.gl){ w.gl.ground.forEach(function(o){ if (o.g) freeMesh(o.g); o.g = null; }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
   var list = []; chunks.forEach(function(c){ list.push(c); });
   g.pl = null; placeProps(g); try { placeDress(g); } catch (er){ console.log('dress', er); }
   /* the ground is cut into squares so only the part near you is drawn */
-  var GT = 256, buckets = new Map(), gt = [];
-  for (i = 0; i < g.p.length; i += 9){
-    var kx = Math.floor((g.p[i] + g.p[i+3] + g.p[i+6])/3/GT), ky = Math.floor((g.p[i+2] + g.p[i+5] + g.p[i+8])/3/GT), key = gk(kx, ky), bm = buckets.get(key);
-    if (!bm){ bm = new Mesh(); bm.x = (kx + 0.5)*GT; bm.y = (ky + 0.5)*GT; buckets.set(key, bm); }
-    for (var q = 0; q < 9; q++){ bm.p.push(g.p[i+q]); bm.t.push(g.t[i+q]); } var ci = i/3*4; for (q = 0; q < 12; q++) bm.c.push(g.c[ci+q]);
-  }
-  buckets.forEach(function(bm){ gt.push({g:upload(bm), x:bm.x, y:bm.y}); });
-  w.gl = {ground:gt, chunks:list, terr:new Map()};
+  /* 0.114.91: counted first, then copied straight into typed arrays (4 and 1 bytes a value, not 8 in growing lists), and the big lists let go before the upload:
+     a town square's ground used to need its whole size twice over in plain lists at this point, which is where phones ran out of memory and the page reloaded */
+  var GT = 256, gt = [], ids = new Map(), cnt = [], bxs = [], bys = [], SRC = (gD.parts || [gD]).concat([g]);
+  var bks = SRC.map(function(sm){ var nT = sm.p.length/9, bk = new Int32Array(nT);
+    for (var i2 = 0; i2 < nT; i2++){ var o9 = i2*9, kx = Math.floor((sm.p[o9] + sm.p[o9+3] + sm.p[o9+6])/3/GT), ky = Math.floor((sm.p[o9+2] + sm.p[o9+5] + sm.p[o9+8])/3/GT), key = gk(kx, ky), id = ids.get(key);
+      if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i2] = id; cnt[id]++; }
+    return bk; });
+  /* 0.117.5: each list's runs are copied out as small pieces into their tile, and the list is let go straight away: the ground is never held twice over (it was 340 MB at the peak for Springfield's centre, and iPhones closed the page) */
+  var BK = cnt.map(function(n){ return {pp:[], pc:[], pt:[], n:n}; });
+  SRC.forEach(function(sm, si){ var bk = bks[si], nT = bk.length, typed = !Array.isArray(sm.p), r0 = 0;
+    var flush = function(a, b){ var bb = BK[bk[a]];
+      if (typed){ bb.pp.push(sm.p.slice(a*9, b*9)); bb.pt.push(sm.t.slice(a*9, b*9)); bb.pc.push(sm.c.slice(a*12, b*12)); }
+      else { bb.pp.push(new Float32Array(sm.p.slice(a*9, b*9))); bb.pt.push(new Float32Array(sm.t.slice(a*9, b*9))); bb.pc.push(new Uint8Array(sm.c.slice(a*12, b*12))); } };
+    for (var i2 = 1; i2 <= nT; i2++) if (i2 === nT || bk[i2] !== bk[r0]){ if (nT) flush(r0, i2); r0 = i2; }
+    sm.p = sm.c = sm.t = null; bks[si] = null; if (gD.parts && si < gD.parts.length) gD.parts[si] = null; });
+  BK.forEach(function(bm, id){ gt.push({g:null, d:bm, x:bxs[id], y:bys[id]}); BK[id] = null; });
+  w.gl = {ground:gt, chunks:list, terr:new Map()}; try { mpPrepare(w); } catch (er){ console.log('map props', er); } setTimeout(function(){ gtPackAll(w); }, 300);
 }
 

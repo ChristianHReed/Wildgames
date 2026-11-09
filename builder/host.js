@@ -15,6 +15,7 @@ var P = {x:0, y:0, yaw:0, pitch:0, gy:0, inside:null, lvl:0, roof:null, veh:null
 /* clock, flags and game state the engine looks at; the builder passes its own hour and season to drawScene */
 var DAY = 43200, time = 0, inRun = false, running = false, keys = {}, gait = 0, LAYDBG = null, ROOMAUD = null, dist = 0, dark = 0;
 var inv = {}, wx = {w:0, until:0, tor:null, flash:0}, lamps = [], fires = [], flares = [];
+var mapSrc = null;   /* the game's test-world flag (engine/buildings.js reads it without a guard); the builder never runs the Test World */
 function season(){ return window.View3D ? View3D.env.season : 1; }
 /* messages and sound */
 function toast(msg){ if (window.View3D) View3D.note(msg); }

@@ -30,6 +30,8 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | `art-tests/` | Art-style test scenes, not part of the game. Round 1: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street.html · Round 2: https://christianhreed.github.io/Wildgames/art-tests/voxel-test-street-2.html · Round 3, the stress test (today's buildings against blocks on a real Springfield square, with a benchmark): https://christianhreed.github.io/Wildgames/art-tests/voxel-stress-test.html. Add `?fps=1` to the game's link for a frame-rate counter to compare |
 | `docs/` | The design document, the roadmap, the testing roadmap and the art direction (`docs/ART.md`) |
 
+Which devices can run it, how to start it on each, and the game's accessibility options: [docs/DEVICES.md](docs/DEVICES.md). Launchers for Windows, macOS, Linux and the Pi are in `launch/`. Benchmark results: [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
 ## Controls
 
 | Action | Computer | Touch screen |
@@ -55,6 +57,27 @@ Download this repository (green **Code** button, then **Download ZIP**), unzip i
 | Build | N (B and C for barricade and campfire) | Build, Wall, Fire |
 | Switch weapon, use last item | Q, G | Items panel |
 | Chat, mark a spot | Enter, X | Chat, Mark |
+| Walk into a box truck, trailer, bus, motorhome or van; fit out a mobile base | E at its way in (open, then climb in); Build (N) inside | Tap the way in; Build inside |
+| Keep things in a car's trunk; sleep in a car | Y at the car (the first time searches it), or E at its back; in the seat, Y sleeps | Trunk button; Menu > Sleep in this seat |
+| Hook a trailer to a semi | Reverse the semi's hitch up to the trailer's front; E at the hitch unhooks | Same |
+
+### Game controller
+
+Any controller the browser sees with the standard layout (Xbox, PlayStation, Switch Pro, Steam Deck and most handhelds). In menus and on the start page: the d-pad or left stick moves between buttons, **A** chooses, **B** goes back, **LB / RB** switch the start page tabs; a line at the bottom says so.
+
+| In the game | Button |
+| --- | --- |
+| Move, look | Left stick, right stick |
+| Swing, shoot | RT, LT |
+| Jump, crouch | A, B |
+| Search, open, take, talk (hold where it needs holding) | X |
+| Items | Y |
+| Switch weapon, throw a stone | LB, RB |
+| Run on or off | Press the left stick |
+| Flashlight | Press the right stick |
+| Eat, drink, bandage, first or third person | D-pad up, down, left, right |
+| Map, Menu | View, Menu |
+| Driving | Left stick steers, RT drives, LT brakes and reverses, B handbrake, A changes seat, X gets out |
 
 ## Playing together
 

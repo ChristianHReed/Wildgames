@@ -49,11 +49,15 @@ Mesh.prototype.ybox = function(x,z,yaw,fo,lo,cy,hf,hy,hl,col){
 Mesh.prototype.pyr = function(x,z,y0,r,h,col,rot){ y0 += this.yo;
   for (var k = 0; k < 4; k++){ var a = rot + k*1.5708, b = a + 1.5708; this.tri(x + Math.cos(a)*r, y0, z + Math.sin(a)*r, x + Math.cos(b)*r, y0, z + Math.sin(b)*r, x, y0 + h, z, col, this.al); }
 };
+/* 0.114.93: a mesh redrawn every frame (old given) reuses its own typed copies, grown when needed, instead of three new arrays a frame for the
+   garbage collector to clear; lists that are already typed arrays (the ground tiles) go up as they are */
+function dynCopy(o, k, src, T){ var n = src.length, a = o[k]; if (!a || a.length < n){ a = o[k] = new T(Math.max(n, a ? a.length*1.5 : 0) | 0); } a.set(src); return a.subarray(0, n); }
 function upload(m, old){
   var o = old || {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}, mode = old ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW;
-  gl.bindBuffer(gl.ARRAY_BUFFER, o.vb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(m.p), mode);
-  gl.bindBuffer(gl.ARRAY_BUFFER, o.cb); gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(m.c), mode);
-  gl.bindBuffer(gl.ARRAY_BUFFER, o.tb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(m.t), mode);
+  var P = m.p instanceof Float32Array ? m.p : old ? dynCopy(o, 'sp', m.p, Float32Array) : new Float32Array(m.p), Cc = m.c instanceof Uint8Array ? m.c : old ? dynCopy(o, 'sc', m.c, Uint8Array) : new Uint8Array(m.c), T = m.t instanceof Float32Array ? m.t : old ? dynCopy(o, 'st', m.t, Float32Array) : new Float32Array(m.t);
+  gl.bindBuffer(gl.ARRAY_BUFFER, o.vb); gl.bufferData(gl.ARRAY_BUFFER, P, mode);
+  gl.bindBuffer(gl.ARRAY_BUFFER, o.cb); gl.bufferData(gl.ARRAY_BUFFER, Cc, mode);
+  gl.bindBuffer(gl.ARRAY_BUFFER, o.tb); gl.bufferData(gl.ARRAY_BUFFER, T, mode);
   o.n = m.p.length/3; return o;
 }
 function freeMesh(o){ gl.deleteBuffer(o.vb); gl.deleteBuffer(o.cb); gl.deleteBuffer(o.tb); }

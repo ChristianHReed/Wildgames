@@ -2,7 +2,7 @@
    Classic script. The heavy work runs in the background worker (worker.js); this file only drives the page. */
 (function(){
 'use strict';
-var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'uses', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
+var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'uses', 'streets', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
 var $ = function(id){ return document.getElementById(id); };
 var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]; }); };
 var fmtN = function(n){ return Math.round(n).toLocaleString('en-US'); };
@@ -15,7 +15,7 @@ $('ver').textContent = 'v' + L.VERSION;
 
 /* ---------------- state ---------------- */
 var SGF = {lat:37.2089, lon:-93.2923, name:'Springfield, MO'};
-var S = {area:{lat:SGF.lat, lon:SGF.lon, miles:5, name:SGF.name}, opts:{fill:true, step:10, tiles:true}, proj:null, osm:null, tiffs:[], tiffInfo:[], overture:[], man:null, single:null, preview:null, building:false};
+var S = {area:{lat:SGF.lat, lon:SGF.lon, miles:5, name:SGF.name}, opts:{fill:true, dress:true, step:10, tiles:true}, proj:null, osm:null, tiffs:[], tiffInfo:[], overture:[], man:null, single:null, preview:null, building:false};
 try { var saved = JSON.parse(lsGet('asmb:state') || 'null'); if (saved && saved.area && isFinite(saved.area.lat)){ S.area = saved.area; S.opts = saved.opts || S.opts; S.proj = saved.proj || null; } } catch (e){}
 function saveState(){ lsSet('asmb:state', JSON.stringify({area:S.area, opts:S.opts, proj:S.proj})); }
 
@@ -51,10 +51,15 @@ $('locMe').addEventListener('click', function(){
 async function search(){
   var q = $('q').value.trim(); if (!q) return;
   try {
-    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q)); if (!r.ok) throw new Error(r.status);
-    var j = await r.json(); if (!j.length){ toast('That place was not found.'); return; }
-    setArea({lat:+j[0].lat, lon:+j[0].lon, name:String(j[0].display_name || q).split(',').slice(0, 2).join(',').trim().slice(0, 40)}, true);
-  } catch (e){ toast('The place search needs an internet connection. You can type the latitude and longitude instead.', 5); }
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, tm = setTimeout(function(){ if (ctl) ctl.abort(); }, 25000);
+    var r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&accept-language=en&q=' + encodeURIComponent(q), ctl ? {signal:ctl.signal} : {}); clearTimeout(tm);
+    if (!r.ok){ toast(r.status === 403 || r.status === 429 ? 'The place search is busy. Try again in a minute, or type the latitude and longitude.' : 'The place search answered ' + r.status + '.', 5); return; }
+    var j = await r.json(); if (!j.length){ toast('That place was not found. Try adding the state, like "Dayton, Ohio".', 5); return; }
+    var a = j[0].address || {}, nm = [a.city || a.town || a.village || a.hamlet || a.county || String(j[0].display_name || q).split(',')[0], a.state].filter(Boolean).join(', ');
+    var other = j.slice(1).filter(function(x){ return x.address && a.state && x.address.state && x.address.state !== a.state; })[0];
+    setArea({lat:+j[0].lat, lon:+j[0].lon, name:nm.slice(0, 40)}, true);
+    toast('Found ' + nm + '.' + (other ? ' Not that one? Add the state, like "' + String(q).split(',')[0] + ', ' + other.address.state + '".' : ''), 6);
+  } catch (e){ toast(e && e.name === 'AbortError' ? 'The place search took too long. Try again, or type the latitude and longitude.' : 'The place search needs an internet connection. You can type the latitude and longitude instead.', 5); }
 }
 $('qGo').addEventListener('click', search); $('q').addEventListener('keydown', function(e){ if (e.key === 'Enter') search(); });
 var tapMode = false; $('tapSet').addEventListener('click', function(){ tapMode = !tapMode; this.classList.toggle('on', tapMode); note(tapMode ? 'Tap the map where the centre should be' : ''); });
@@ -111,6 +116,7 @@ $('stElev').addEventListener('click', function(e){ var i = e.target.getAttribute
 $('fOvt').addEventListener('change', function(){ S.overture = S.overture.concat(Array.prototype.slice.call(this.files)); this.value = ''; ovtUI(); });
 function ovtUI(){ var c = $('cOvt'); c.classList.toggle('ok', S.overture.length > 0); $('stOvt').innerHTML = S.overture.length ? '<b>Ready:</b> ' + S.overture.map(function(f){ return esc(f.name) + ' (' + fmtMB(f.size) + ')'; }).join(', ') + ' <a href="#" id="ovtClr">clear</a>' : 'No files yet.'; var cl = $('ovtClr'); if (cl) cl.onclick = function(e){ e.preventDefault(); S.overture = []; ovtUI(); }; }
 $('optFill').addEventListener('change', function(){ S.opts.fill = this.checked; saveState(); });
+$('optDress').addEventListener('change', function(){ S.opts.dress = this.checked; saveState(); });
 $('optStep').addEventListener('change', function(){ S.opts.step = +this.value; saveState(); });
 
 /* ---------------- build ---------------- */
@@ -121,7 +127,7 @@ $('build').addEventListener('click', function(){
   if (S.osm.kind === 'download' && !navigator.onLine){ toast('Downloading needs an internet connection.'); return; }
   S.proj = S.proj || slug(S.area.name) + '-' + Date.now().toString(36); saveState();
   var job = {proj:S.proj, area:{id:S.proj, name:S.area.name || 'My map', lat:S.area.lat, lon:S.area.lon, miles:S.area.miles}, osm:{kind:S.osm.kind, file:S.osm.file || null, name:S.osm.name},
-    tiffs:S.tiffs.slice(), overture:S.overture.slice(), opts:{fill:S.opts.fill, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
+    tiffs:S.tiffs.slice(), overture:S.overture.slice(), opts:{fill:S.opts.fill, dress:S.opts.dress !== false, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
   S.building = true; S.t0 = Date.now(); $('build').disabled = true; $('stop').classList.remove('hidden'); $('barI').style.width = '0%'; $('stage').textContent = 'Starting...';
   W.post({t:'build', job:job});
 });
@@ -396,7 +402,7 @@ cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 cv.addEventListener('wheel', function(e){ e.preventDefault(); var m0 = toM(e.offsetX, e.offsetY); V.s = Math.max(0.0005, Math.min(20, V.s*Math.pow(1.0015, -e.deltaY))); var m1 = toM(e.offsetX, e.offsetY); V.x += m0[0] - m1[0]; V.y += m0[1] - m1[1]; drawSoon(); }, {passive:false});
 
 /* ---------------- start: restore the last map (autosaved on this device) ---------------- */
-areaUI(); setOsm(null); ovtUI(); $('optFill').checked = S.opts.fill; $('optStep').value = String(S.opts.step); resize(); fitArea();
+areaUI(); setOsm(null); ovtUI(); $('optFill').checked = S.opts.fill; $('optDress').checked = S.opts.dress !== false; $('optStep').value = String(S.opts.step); resize(); fitArea();
 if (S.proj){
   Promise.all([L.dbGet('projects', S.proj), L.dbGet('preview', S.proj)]).then(function(r){
     if (!r[0] || !r[0].man) return; S.man = r[0].man; S.single = r[0].single || null;
