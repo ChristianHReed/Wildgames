@@ -1,6 +1,6 @@
 # Streetscape pack (afterstreet-streetscape)
 
-Reply to the main chat's "Request to content chat: art from the visual reference" (8 November 2026). Built by `node workshop/tools/make_streetscape.js` into `packs/afterstreet-streetscape.js` (195 KB, 27 land models, listed in `packs/index.js`). Everything is under 800 triangles; the whole set is about 7,000. Made-up brands only, blank sign panels, no real marks. The pictures were used as a description of the feel, never traced.
+Reply to the main chat's "Request to content chat: art from the visual reference" (8 November 2026). Built by `node workshop/tools/make_streetscape.js` into `packs/afterstreet-streetscape.js` (about 270 KB, 35 land models, listed in `packs/index.js`). Everything is under 800 triangles; the whole set is about 7,000. Made-up brands only, blank sign panels, no real marks. The pictures were used as a description of the feel, never traced.
 
 All models are land models: `SHAPED.land.models.land[<id>]` with an `info` row (w, len, h, note). Origin is the centre of the base, front is +Z, metres, Y up.
 
@@ -29,18 +29,19 @@ No new pole model is needed.
 
 **Houses and roadside (D):** `dormer_window` (sits on a 35 to 45 degree roof, roof side at z = 0), `pole_sign_store` (6 m, lit blank panel), `pole_sign_station` (8 m price pole), `strip_mall` (24 x 9 m, three shops, awnings, two roof billboards), `rural_gas_station` (canopy over two old pumps, shed shop with porch, crates, tyre rack, pole sign).
 
+**Batch 2:** `vending_lit` (glowing front, `light` point), `exit_sign_green` (blank, 4.4 m), `billboard_faded` (peeling, no words). Building sections for the builder to stack, all 8 m bays facing +z: `section_shopfront_8` (4 m, glass front, recessed door, shutter box, roof level y = 4), `section_middle_8` (3.2 m, three windows, repeat as needed), `section_cornice_8` (1.4 m, stepped cornice, parapet, roof slab). Stack order: shopfront, middle x N, cornice. `fast_food_building` (16 x 18 m with a made-up brand, drive-through window, pole sign, roof units) and `country_grocery` (porch, green tin roof, water tank, canopy over three old pumps).
+
 ## Already in the game, kept (checked by name)
 
 Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash bin (props street); vending machine (businesses, services); air conditioner, water tank, satellite dish, roof hatch, chimney, garage door (props); bus shelter and kiosk (roadside, services); motel (roadside); water tower, lighthouse, wind turbine, billboards (roadside, towers); gantry, guard rail, sandbags (power, props, barriers); puddle (fx, ground); reeds and shrubs (flora, waterside).
 
 ## Not done yet (honest list)
 
-- Lit vending glow at night: the stock model has no glow piece; needs a `vending_lit` variant (next).
 - Ground tiles (flowered grass, mixed grass and dirt, patterned plaza paving, wet sand, dry pale ground): `ground.js` was not opened; next.
 - Tree colour variants, crop growth stages (4 to 5 per crop), overgrowth set (wall vines, roof grass tufts, tree through a roof).
 - Seasonal and dry palette rows (colours only, no models).
-- Building sections (shopfront ground floor, repeating middle floor, cornice top), porch/chimney checks, old country grocery, fast-food building (made-up brand), faded and broken signs.
-- Crashed airliner with crater, elevated rail section, green exit signs, subway entrance, cheap far wind turbine, armoured survivor vehicles (these need the Workshop chat if the remade logic requires it), tractors and farm machines as parked wrecks.
+- Porch and chimney checks on the stock houses; broken (not only faded) sign variants.
+- Crashed airliner with crater, elevated rail section, subway entrance, cheap far wind turbine, armoured survivor vehicles (these need the Workshop chat if the remade logic requires it), tractors and farm machines as parked wrecks.
 
 ## Checks
 
