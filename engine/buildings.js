@@ -792,10 +792,12 @@ function prep3D(){
   /* lawns in parks and on greens use the terrain's own grass (tile 45 = terrain blend, no other layers), so they meet it without a seam;
      woods and fields are not drawn as shapes at all: the ground cover generator paints them into the terrain with soft edges */
   var ATILE = {grass:[TERR, [240,250,232]], park:[TERR, [232,248,226]], sand:[TX.dirt, WHITE], parking:[TX.asphalt, [226,222,214]], water:[TX.water, WHITE]};
+  /* 0.126.2: fields the builder gave a crop (asmb:crop wheat, corn, soy, hay, fallow; asmb:shade 0 to 3) are tinted so farmland reads as a patchwork */
+  var CROPC = {wheat:[255, 226, 140], corn:[206, 236, 160], maize:[206, 236, 160], soy:[184, 222, 168], soybeans:[184, 222, 168], hay:[244, 236, 176], fallow:[214, 182, 140]};
   w.areas.forEach(function(a){
-    var p = a.pts; if (!ATILE[a.kind]) return;
+    var p = a.pts, ck = a.kind === 'field' && CROPC[a.crop]; if (!ATILE[a.kind] && !ck) return;
     if (p.length > 800){ var st = Math.ceil(p.length/800)*2, q = []; for (i = 0; i < p.length; i += st) q.push(p[i], p[i+1]); p = q; }
-    var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : a.kind === 'water' ? 0.12 : 0.25];   /* 0.114.75: lakes take a larger water texture, so the far surface does not break into noise */
+    var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ck ? [TERR, ck.map(function(v){ return Math.min(255, v*(0.94 + 0.04*(a.shd | 0))) | 0; })] : ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : a.kind === 'water' ? 0.12 : 0.25];   /* 0.114.75: lakes take a larger water texture, so the far surface does not break into noise */
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
     /* 0.125.4: the lake shore strip (0.124.0) is off: on hills the draped strip and the lake under it are a few cm apart and the iPhone's depth buffer
        cannot tell them apart, so the whole lake shimmered. Kept for a later version that cuts the strip out of the lake instead of laying it on top */
