@@ -537,7 +537,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.2</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.3</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -582,7 +582,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.127.2', ART = {}, ARTSET = (function(){
+var BUILD = '0.127.3', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -5734,7 +5734,7 @@ async function hostInvite(stun){
 async function hostWelcome(peer){
   net.role = 'host'; net.peers.push(peer); if (pending === peer) pending = null;
   el('invStatus').textContent = 'Connected. Sending the world...';
-  var text = mapSrc && mapSrc.text ? mapSrc.text : null;
+  var text = mapSrc && mapSrc.text ? mapSrc.text : mapSrc && mapSrc.zr ? await edApply(await zoneGet(mapSrc.zr, mapSrc.zi, mapSrc.zj)) : null;   /* 0.127.3: a region square is read again from storage only when a friend joins */
   worldPlayers[charSlug()] = {x:P.x, y:P.y, yaw:P.yaw};
   send(peer.dc, {t:'hello', day:DAY, v:VERSION, pid:peer.id, rule:el('vRule').value, designs:craftable().filter(function(d){ return !d.unique; }).slice(0, 60), name:world.name, demo:!text, len:text ? text.length : 0, ws:worldSave()});
   if (text) for (var i = 0; i < text.length; i += 12000){
@@ -5996,13 +5996,28 @@ async function zoneFetch(R, i, j, say){
   try { raw.elev = await fetchElev(b.s - my*1.3, b.w - mx*1.3, b.n + my*1.3, b.e + mx*1.3); } catch (e){ raw.elev = null; }
   raw.zone = b; var text = JSON.stringify(toCompact(raw, zoneName(R, i, j))); await zonePut(R, i, j, text); return text;
 }
+/* 0.127.3: phones and tablets close a page that holds too much. A big Maps Builder square (a dense city, builder 1.24 and later) carries tens of thousands of made-up
+   things (parked cars, poles, lamps, mailboxes, street trees, fences). On a touch device, or on Low detail, those are thinned to a budget when the square loads,
+   keeping a steady, evenly spread share of each kind (the same ones each time); real map data is never thinned */
+function lowMemDev(){ var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e){} return q === '0' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || (navigator.deviceMemory && navigator.deviceMemory <= 4); }
+var GENB = {veh:2500, prop:9000, tree:9000, fence:3000};
+function thinGenerated(raw, len){
+  if (!lowMemDev() || !raw || !raw.pois) return; var gen = function(t){ return t && (t.generated === 'yes' || t['asmb:made'] === 'yes' || t['asmb:lot'] === 'yes'); }, kindOf2 = function(t){ var pp = t['asmb:prop'] || ''; return /^vehicles\./.test(pp) ? 'veh' : pp ? 'prop' : t.natural === 'tree' ? 'tree' : null; };
+  var n = {veh:0, prop:0, tree:0, fence:0}; raw.pois.forEach(function(p){ if (!gen(p.tags)) return; var k = kindOf2(p.tags); if (k) n[k]++; });
+  raw.ways.forEach(function(w){ var t = w.tags; if (gen(t) && t.barrier) n.fence++; });
+  var keep = {}; for (var k in n) keep[k] = n[k] > GENB[k] ? GENB[k]/n[k] : 1; if (keep.veh === 1 && keep.prop === 1 && keep.tree === 1 && keep.fence === 1) return;
+  var h = function(x, y){ var s = Math.sin(x*127.1 + y*311.7)*43758.5453; return s - Math.floor(s); }, cut = 0;
+  raw.pois = raw.pois.filter(function(p){ if (!gen(p.tags)) return true; var k = kindOf2(p.tags); if (!k || keep[k] >= 1) return true; if (h(p.lon*1e4, p.lat*1e4) < keep[k]) return true; cut++; return false; });
+  raw.ways = raw.ways.filter(function(w){ var t = w.tags; if (!gen(t) || !t.barrier || keep.fence >= 1) return true; var c = w.c[0]; if (h(c[0]*1e4, c[1]*1e4) < keep.fence) return true; cut++; return false; });
+  if (cut) console.log('thinned ' + cut + ' made-up things from a ' + Math.round(len/1e6) + ' MB square for this device');
+}
 async function enterZone(R, lat, lon, yaw, carry, atSafe){
   var ij = zoneOf(R, lat, lon), text = R.builtin ? await builtinSquare(ij[0], ij[1]) : await zoneGet(R, ij[0], ij[1]);
   if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1], function(t){ info(t); var rs = el('rgStatus'); if (rs) rs.textContent = t; }); }
   text = await edApply(text);
-  var raw = parseText(text); if (R.builtin) raw.name = '';   /* each square keeps its own save, named by the square */
+  var raw = parseText(text); if (R.builtin) raw.name = ''; thinGenerated(raw, text.length);   /* each square keeps its own save, named by the square */
   raw.spawn = [lon, lat]; raw.pin = R.id === 'springfield-mo' && Math.abs(lat - SEQUIOTA.lat) < 1e-6 && Math.abs(lon - SEQUIOTA.lon) < 1e-6; raw.zone = raw.zone || zoneBox(R, ij[0], ij[1]);
-  mapSrc = {text:text}; inRun = false; region = R; await enter(raw, zoneName(R, ij[0], ij[1])); if (!inRun) throw new Error('that part of the map could not be loaded');
+  mapSrc = R.builtin ? {text:text} : {zr:R, zi:ij[0], zj:ij[1]}; text = null; inRun = false; region = R; await enter(raw, zoneName(R, ij[0], ij[1])); if (!inRun) throw new Error('that part of the map could not be loaded');
   region = R;
   var g = world.geo, x = (lon - g.lon0)*g.kx, y = -(lat - g.lat0)*g.ky; if (circ(x, y, 0.5) && !buildingAt(x, y)){ x = world.spawn.x; y = world.spawn.y; }
   if (!atSafe){ P.x = x; P.y = y; P.yaw = yaw || 0; } P.gy = undefined; P.roof = null; P.climbL = null; P.fall = 0;
@@ -6190,7 +6205,7 @@ async function zipOpen(file){
 async function openAsmap(file){
   var st = el('rgStatus');
   try {
-    st.textContent = 'Reading ' + file.name + '...';
+    st.textContent = 'Reading ' + file.name + '...'; info(st.textContent);
     var z = await zipOpen(file), man = JSON.parse(await z.text('manifest.json') || 'null'), r0 = man && man.region;
     if (!r0 || !r0.id || !isFinite(r0.lat) || !isFinite(r0.lon) || !(r0.dLat > 0) || !(r0.dLon > 0)) throw new Error('it has no map description');
     if (man.required && man.required.length) throw new Error('this map needs a newer game (it uses: ' + man.required.slice(0, 5).join(', ') + ')');
@@ -6200,12 +6215,12 @@ async function openAsmap(file){
     if (Array.isArray(man.places)) R.places = man.places.slice(0, 300);
     await zoneWipe(R);
     for (var i = 0; i < names.length; i++){
-      var ij = names[i].match(/(-?\d+)_(-?\d+)/); st.textContent = 'Saving squares: ' + (i + 1) + ' of ' + names.length;
+      var ij = names[i].match(/(-?\d+)_(-?\d+)/); st.textContent = 'Saving squares: ' + (i + 1) + ' of ' + names.length; info(st.textContent);
       await zonePut(R, +ij[1], +ij[2], await z.text(names[i]));
     }
     REGIONS = REGIONS.filter(function(x){ return x.id !== R.id; }); REGIONS.push(R); saveRegions(); await renderRegions();
-    st.textContent = R.name + ' is on this device (' + names.length + ' squares). Press Play.';
-  } catch (e){ st.textContent = 'Could not open the map file: ' + (e.message || 'unknown error') + '.'; }
+    st.textContent = R.name + ' is on this device (' + names.length + ' squares). Press Play.'; info(st.textContent);
+  } catch (e){ st.textContent = 'Could not open the map file: ' + (e.message || e.name || 'unknown error') + '.'; info(st.textContent); try { BUGERR.push('openAsmap ' + file.name + ' ' + file.size + ': ' + (e && (e.name + ' ' + e.message))); } catch (er){} }
 }
 /* 0.112.0: shared edits (.asedit files from the Maps Builder). The files are kept on this device; as each map square loads, the changes that fall inside it (ground, roads, buildings, props, floods) are laid on top with the builder's own `terrainApply`. Positions are latitude and longitude, so a file works on any build of the same place. */
 var EDITS = null, BLD_L = null, EDIT_LIBS = ['lib_flatbush', 'geo', 'gen', 'uses', 'structures', 'build'], EDIT_FILES = ['builder/lib/flatbush.js', 'builder/geo.js', 'builder/gen.js', 'builder/uses.js', 'builder/structures.js', 'builder/build.js'];
