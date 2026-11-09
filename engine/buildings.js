@@ -691,6 +691,7 @@ function mpPrepare(w){
     if (!c){ c = {x:(Math.floor(q.x/MPC) + 0.5)*MPC, y:(Math.floor(q.y/MPC) + 0.5)*MPC, list:[], g:null}; cells.set(key, c); w.gl.mp.push(c); } c.list.push(q);
     if (q.p === 'street.power_pole') poles.set(pk(q.x, q.y), q);
     if (q.p === 'street.street_lamp') (w.slights = w.slights || []).push({x:q.x, y:q.y, sl:true});
+    if (/burning_barrel/.test(q.p)) (w.barrels = w.barrels || []).push({lamp:true, x:q.x, y:q.y});   /* a fire barrel lights its own warm pool at night, power or not */
     var r = SOLID[q.p] || (/street_lamp|traffic_light|parking_meter|sign_|bollard|hydrant/.test(q.p) ? 0.2 : /bench|trash|bin|mailbox|newspaper|booth|vending|barrel/.test(q.p) ? 0.35 : 0); if (r){ (w.obstL = w.obstL || []).push([q.x, q.y, r]); w.obst = null; } });
   L.forEach(function(q){ if (q.wx !== undefined){ var o = poles.get(pk(q.wx, q.wy)); if (!o){ var best = 2.5; poles.forEach(function(z){ var d = Math.hypot(z.x - q.wx, z.y - q.wy); if (d < best){ best = d; o = z; } }); } q.to = o || {x:q.wx, y:q.wy, yw:q.yw}; } });
 }
@@ -778,9 +779,15 @@ function prep3D(){
       if (inRanges(gp, q)) continue; var ax = p[q], az = p[q+1], bx = p[q+2], bz = p[q+3], l = Math.hypot(bx - ax, bz - az); if (l < 0.01) continue;
       var ns = Math.max(1, Math.ceil(l/2)), ux = (bx - ax)/l, uz = (bz - az)/l, nx = -uz, nz = ux, si;
       [-1, 1].forEach(function(sd){ var r0 = -1;   /* 0.114.91: one quad per unbroken run of 2 m pieces, not one per piece */
-        var put = function(a0, a1){ var s0 = l*a0/ns, s1 = l*a1/ns, x0 = ax + ux*s0, z0 = az + uz*s0, x1 = ax + ux*s1, z1 = az + uz*s1; g.pl = [TX.sidewalk, 0.25];
-          g.quad(x0 + nx*hw*sd, SWY, z0 + nz*hw*sd, x1 + nx*hw*sd, SWY, z1 + nz*hw*sd, x1 + nx*(hw + 2)*sd, SWY, z1 + nz*(hw + 2)*sd, x0 + nx*(hw + 2)*sd, SWY, z0 + nz*(hw + 2)*sd, WHITE, 255); };
-        for (si = 0; si <= ns; si++){ var off = true; if (si < ns){ var mx = ax + ux*l*(si + 0.5)/ns, mz = az + uz*l*(si + 0.5)/ns; off = roadOff(mx + nx*(hw + 1)*sd, mz + nz*(hw + 1)*sd, 0.2) || roadOff(mx + nx*(hw + 0.1)*sd, mz + nz*(hw + 0.1)*sd, 0.0); }
+        /* 0.123.1: from the builder's street bands when the map has them: a grass verge (the ground shows through) between the kerb and the pavement, the pavement's own width,
+           and a gravel shoulder instead of a pavement on rural roads. Without them, the old 2 m pavement at the kerb */
+        var wk = r.wk === undefined ? 2 : r.wk, p0 = hw + (r.vg > 0 ? r.vg + 0.25 : 0), p1 = p0 + wk, sh = r.sh || 0;
+        var strip = function(x0, z0, x1, z1, a, b){ g.quad(x0 + nx*a*sd, SWY, z0 + nz*a*sd, x1 + nx*a*sd, SWY, z1 + nz*a*sd, x1 + nx*b*sd, SWY, z1 + nz*b*sd, x0 + nx*b*sd, SWY, z0 + nz*b*sd, WHITE, 255); };
+        var put = function(a0, a1){ var s0 = l*a0/ns, s1 = l*a1/ns, x0 = ax + ux*s0, z0 = az + uz*s0, x1 = ax + ux*s1, z1 = az + uz*s1;
+          if (wk > 0){ g.pl = [TX.sidewalk, 0.25]; strip(x0, z0, x1, z1, p0, p1); }
+          if (sh > 0){ g.pl = [TX.gravel, 0.5]; strip(x0, z0, x1, z1, hw, hw + sh); } };
+        if (wk <= 0 && sh <= 0) return;
+        for (si = 0; si <= ns; si++){ var off = true; if (si < ns){ var mx = ax + ux*l*(si + 0.5)/ns, mz = az + uz*l*(si + 0.5)/ns, pm = wk > 0 ? (p0 + p1)/2 : hw + sh/2; off = roadOff(mx + nx*pm*sd, mz + nz*pm*sd, 0.2) || roadOff(mx + nx*(hw + 0.1)*sd, mz + nz*(hw + 0.1)*sd, 0.0); }
           if (!off && r0 < 0) r0 = si; else if (off && r0 >= 0){ put(r0, si); r0 = -1; } } });
     }
   });

@@ -225,7 +225,7 @@ function buildWorld(raw, name){
       return;
     }
     if (closed && (t.place === 'square' || (t.highway === 'pedestrian' && pts.length >= 8) || (t.name && /\b(square|plaza)\b/i.test(t.name) && !t.building))){ var sq = bbox({pts:pts}); (w.squares = w.squares || []).push({x:(sq.minx + sq.maxx)/2, y:(sq.miny + sq.maxy)/2, r:Math.hypot(sq.maxx - sq.minx, sq.maxy - sq.miny)/2, name:t.name || ''}); }
-    if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx})); return; }
+    if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx, vg:Math.max(0, Math.min(8, +t['asmb:verge'] || 0)), wk:t['asmb:walk'] !== undefined && isFinite(+t['asmb:walk']) ? Math.max(0, Math.min(6, +t['asmb:walk'])) : 2, sh:Math.max(0, Math.min(3, +t['asmb:shoulder'] || 0)), st:t['asmb:street'] || ''}));   /* 0.123.1: the builder's street bands (verge, pavement, shoulder widths) */ return; }
     if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water', wi:wayIx})); return; }
     if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail', wi:wayIx})); return; }
     if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k, lei:t.leisure || '', sport:t.sport || '', lu:t.landuse || ''})); } }

@@ -357,12 +357,12 @@ function carParts(key){
   return carC[key];
 }
 function propMesh(){
-  if (!propList){ try { var J = cur.json || (cur.json = JSON.parse(cur.text)), g = world.geo; propList = []; (J.pois || []).forEach(function(q){ var t = q[2]; if (t && t['asmb:prop']) propList.push({p:t['asmb:prop'], x:(q[0] - g.lon0)*g.kx, y:-(q[1] - g.lat0)*g.ky, ry:(+t['asmb:ry'] || 0), yaw:t['asmb:yaw'] !== undefined ? +t['asmb:yaw'] : undefined}); }); } catch (e) { propList = []; } }
+  if (!propList){ try { var J = cur.json || (cur.json = JSON.parse(cur.text)), g = world.geo; propList = []; (J.pois || []).forEach(function(q){ var t = q[2]; if (t && t['asmb:prop']) propList.push({p:t['asmb:prop'], x:(q[0] - g.lon0)*g.kx, y:-(q[1] - g.lat0)*g.ky, ry:(+t['asmb:ry'] || 0), yaw:t['asmb:yaw'] !== undefined ? +t['asmb:yaw'] : undefined, z:+t['asmb:z'] || 0}); }); } catch (e) { propList = []; } }
   if (!propList.length) return null;
   /* only what is near the camera is drawn: a built street carries tens of thousands of poles, lamps and mailboxes */
   propAt = {x:P.x, y:P.y}; var rr = 260 + (mode === 'fly' ? flyH*1.5 : 0), near = propList.filter(function(q){ return Math.abs(q.x - P.x) < rr && Math.abs(q.y - P.y) < rr; });
   if (near.length > 2500){ near.sort(function(a2, b2){ return Math.hypot(a2.x - P.x, a2.y - P.y) - Math.hypot(b2.x - P.x, b2.y - P.y); }); near.length = 2500; }
-  var m = new Mesh(), any = false; near.forEach(function(q){ var yw = q.yaw !== undefined ? -q.yaw*Math.PI/180 : -q.ry*Math.PI/2, y0 = hAt(q.x, q.y), car = /^vehicles\./.test(q.p) ? carParts(q.p) : null;
+  var m = new Mesh(), any = false; near.forEach(function(q){ var yw = q.yaw !== undefined ? -q.yaw*Math.PI/180 : -q.ry*Math.PI/2, y0 = hAt(q.x, q.y) + (q.z || 0), car = /^vehicles\./.test(q.p) ? carParts(q.p) : null;
     if (car){ m.modelS(car.B, q.x, q.y, yw, y0, 1); if (car.W){ var cs = Math.cos(yw), sn = Math.sin(yw); car.w.forEach(function(w){ m.modelS(car.W, q.x + cs*w[0] - sn*w[2], q.y + sn*w[0] + cs*w[2], yw, y0 + w[1], 1); }); } any = true; return; }
     var M = spB(q.p); if (!M) return; m.modelS(M, q.x, q.y, yw, y0, 1); any = true; });
   return any ? m : null;
