@@ -381,7 +381,7 @@ function manageChunks(budget){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
     if (c.g && FRON && c.frm !== wantF && (wantF || d > FRD + 40) && n < budget){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; if (c.gg){ freeMesh(c.gg); c.gg = null; } }
-    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); FRNOW = wantF; for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); if (!bb.gone) footShade(m, s0, bb.base || 0); } FRNOW = false; c.frm = wantF; c.g = upload(m); c.l = upload(lm); if (c.gg){ freeMesh(c.gg); c.gg = null; } c.gg = m.gm ? upload(m.gm) : null; n++; } }
+    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); FRNOW = wantF; for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length, g0 = m.gm ? m.gm.p.length : 0; shell(bb, m, lm); if (world.hg && !bb.gone){ seat(bb, m, lm, s0, l0); if (m.gm) for (var gq = g0 + 1; gq < m.gm.p.length; gq += 3) m.gm.p[gq] += bb.base; }   /* 0.125.4: the window glass is lifted with its building (it floated above roofs on hills) */ if (!bb.gone) footShade(m, s0, bb.base || 0); } FRNOW = false; c.frm = wantF; c.g = upload(m); c.l = upload(lm); if (c.gg){ freeMesh(c.gg); c.gg = null; } c.gg = m.gm ? upload(m.gm) : null; n++; } }
     else if (d > R + 150){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; if (c.gg){ freeMesh(c.gg); c.gg = null; } }
     if (!c.far){ if (d < QS.far + CH && nf < Math.min(budget*3, 90)){ var fm = new Mesh(); for (var q = 0; q < c.list.length; q++) shellFar(c.list[q], fm); c.far = upload(fm); nf++; } }
     else if (d > QS.far + CH + 300){ freeMesh(c.far); c.far = null; }
@@ -758,7 +758,8 @@ function prep3D(){
     if (p.length > 800){ var st = Math.ceil(p.length/800)*2, q = []; for (i = 0; i < p.length; i += st) q.push(p[i], p[i+1]); p = q; }
     var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : a.kind === 'water' ? 0.12 : 0.25];   /* 0.114.75: lakes take a larger water texture, so the far surface does not break into noise */
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
-    if (a.kind === 'water') shoreStrip(g, p, a);
+    /* 0.125.4: the lake shore strip (0.124.0) is off: on hills the draped strip and the lake under it are a few cm apart and the iPhone's depth buffer
+       cannot tell them apart, so the whole lake shimmered. Kept for a later version that cuts the strip out of the lake instead of laying it on top */
   });
   bridgeScan(w); buildSunk(w); wwPlan(w);
   var LIFT = w.hg ? 0.12 : 0, SWY = 0.062, RDY = SWY - ROAD_T; w.liftY = LIFT;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
