@@ -68,4 +68,4 @@ Answer with every id, notes and the weak spots: Project doc "Content chat reply 
 - Batch 15 (civic): `fountain_round`, `statue_plinth`, `bandstand`, `war_memorial`, `gas_canopy_pumps`, and `church_white_steeple`, built from `FLOORPLAN.gen('church')` with wood-framed walls (studs every 0.5 m, plates, headers, siding, sheathing, plaster), pews, altar, vestry and a bell tower (717 pieces, the heaviest model).
 - Batch 16 (plants and ground): `young_tree`, `willow`, `cattails`, `fallen_log`, `stump`, `boulder_s`.
 - Open doors on cars: no separate models; the driver door is a hinged rig part the game poses open.
-- Not done: church ceiling, interior door leaves and tower stairs; a per-axle wheel radius for the tractor (Workshop chat); none of batches 5 to 16 checked in the game yet.
+- Church also has flat ceilings over the back rooms and porch and ajar interior door leaves; the nave is open to the rafters. Not done: tower stairs (the tower above the porch is a solid clad shaft); a per-axle wheel radius for the tractor (Workshop chat); none of batches 5 to 16 checked in the game yet.

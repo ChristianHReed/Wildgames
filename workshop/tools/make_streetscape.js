@@ -590,7 +590,9 @@ function buildChurch(a){
         bx(a0, a1, 0.95, top, 0.0, 0.03, W.gl, 'glass'); bx(o.u - 0.015, o.u + 0.015, 0.95, top, 0.02, 0.05, W.trim); bx(a0, a1, 1.8, 1.83, 0.02, 0.05, W.trim);
         bx(a0 - 0.01, a1 + 0.01, 0.9, 0.95, 0.12, 0.16, W.trim); }
       else { bx(a0 - 0.07, a0, 0, top + 0.07, 0.09, 0.13, W.trim); bx(a1, a1 + 0.07, 0, top + 0.07, 0.09, 0.13, W.trim); bx(a0 - 0.07, a1 + 0.07, top, top + 0.07, 0.09, 0.13, W.trim);
-        if (o.leaf) bx(a0 + 0.04, a1 - 0.04, 0, top - 0.04, 0.0, 0.05, W.door); } });
+        if (o.leaf) bx(a0 + 0.04, a1 - 0.04, 0, top - 0.04, 0.0, 0.05, W.door);
+        if (o.ajar){ var ca = Math.cos(1.2), sa = Math.sin(1.2), cu = a0 + 0.04 + 0.45*ca, cw = 0.45*sa, wx = x0 + tx*cu + nx*cw, wz = z0 + tz*cu + nz*cw, ang = Math.atan2(tx*ca + nx*sa, tz*ca + nz*sa)*180/Math.PI - 90;
+          a.box(wx, y0 + (top - 0.04)/2, wz, 0.9, top - 0.04, 0.05, W.door, {m:'wood', rot:[0, ang, 0]}); } } });
     /* a corner board on the outside of exterior corners is added by the caller */
   }
   /* merge the plan's wall pieces on each line and put the doors in as openings */
@@ -598,7 +600,7 @@ function buildChurch(a){
   st.walls.forEach(function(w){ var vert = w.x0 === w.x1, key = (vert ? 'x' : 'z') + (vert ? w.x0 : w.z0), a0 = vert ? Math.min(w.z0, w.z1) : Math.min(w.x0, w.x1), a1 = vert ? Math.max(w.z0, w.z1) : Math.max(w.x0, w.x1); (lines[key] = lines[key] || {vert:vert, c:vert ? w.x0 : w.z0, segs:[]}).segs.push([a0, a1]); });
   Object.keys(lines).forEach(function(k){ var ln = lines[k], segs = ln.segs.sort(function(p, q){ return p[0] - q[0]; }), runs = [];
     segs.forEach(function(sg){ var last = runs[runs.length - 1]; if (last && sg[0] - last.b < 1.2){ last.doors.push({c:(last.b + sg[0])/2}); last.b = sg[1]; } else runs.push({a:sg[0], b:sg[1], doors:[]}); });
-    runs.forEach(function(r){ var vert = ln.vert, c = ln.c, ext = vert ? (c === 0 || c === plan.w) : (c === 0 || c === plan.d), ops = r.doors.map(function(d){ return {u:0, w:1.0, kind:'door', c:d.c}; }), x0, z0, x1, z1, nx = 0, nz = 0;
+    runs.forEach(function(r){ var vert = ln.vert, c = ln.c, ext = vert ? (c === 0 || c === plan.w) : (c === 0 || c === plan.d), ops = r.doors.map(function(d){ return {u:0, w:1.0, kind:'door', c:d.c, ajar:!ext}; }), x0, z0, x1, z1, nx = 0, nz = 0;
       if (vert){ x0 = x1 = mx(c); z0 = mz(r.a); z1 = mz(r.b); nx = c === 0 ? -1 : 1; if (c !== 0 && c !== plan.w) nx = 1; } else { z0 = z1 = mz(c); x0 = mx(r.a); x1 = mx(r.b); nz = c === 0 ? 1 : (c === plan.d ? -1 : 1); }
       /* walk along the run in the direction of increasing model x or decreasing model z; re-express the door centres as u from the run's start */
       var L = r.b - r.a; ops.forEach(function(o){ o.u = vert ? (o.c - r.a) : (o.c - r.a); });
@@ -616,6 +618,9 @@ function buildChurch(a){
     for (var i = 0; i <= 32; i++){ var rx = -8 + i*0.5; a.box(rx, eaveY + rise/2 - 0.08, s*run1/2, 0.045, 0.14, len*0.97, W.frm, {m:'wood', rot:[s*ang, 0, 0]}); } });
   a.box(0, eaveY + rise + 0.02, 0, 17.2, 0.06, 0.3, W.roof, {m:'sheet'});
   [1, -1].forEach(function(s){ a.raw('prism', [s*7.97, eaveY + 1.2, 0], {scl:[8.0/0.3118, 3.0/0.27, 0.2/0.4], c:W.sid, m:'wood', rot:[0, 90, 0]}); });
+  /* flat ceilings over the back rooms and the narthex porch (plaster under joists); the nave stays open to the rafters */
+  a.box(0, eaveY - 0.08, -2.5, 15.8, 0.04, 3.0, W.pla, {m:'sheet'}); for (var cj = -7.5; cj <= 7.5; cj += 0.5) a.box(cj, eaveY - 0.0, -2.5, 0.045, 0.14, 3.0, W.frm, {m:'wood'});
+  a.box(0, eaveY - 0.08, 5.8, 3.7, 0.04, 3.4, W.pla, {m:'sheet'});
   /* tension ties across the nave, every 2 m, so the roof has bones inside */
   for (var t = -7; t <= 7; t += 2) a.box(t, eaveY - 0.1, 0.0, 0.08, 0.18, 8.0, W.frm, {m:'wood'});
   /* the bell tower over the entrance: its own framed walls up to the ceiling, then a clad shaft, a belfry and a spire */
