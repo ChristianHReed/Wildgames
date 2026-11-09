@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.33.1';
+L.VERSION = '1.33.2';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp', 'waterway', 'bridge:support'];
@@ -70,9 +70,11 @@ function addMulti(R, t, outers, inners){
 L.readPbfArea = async function(file, b, progress, stop){
   var R = {ways:[], pois:[], places:[]};
   /* pass 1: nodes in the box (kept in sorted typed arrays), tagged nodes, multipolygon relations */
+  var seen = 0, mnLa = 91, mxLa = -91, mnLo = 181, mxLo = -181;   /* every point in the file, so a failed read can say what the file holds */
   var cap = 1 << 20, n = 0, ids = new Float64Array(cap), la = new Int32Array(cap), lo = new Int32Array(cap), sorted = true, last = -1, rels = [], memb = new Set();
   await L.pbfRead(file, {
     node:function(id, lat, lon, t){
+      seen++; if (lat < mnLa) mnLa = lat; if (lat > mxLa) mxLa = lat; if (lon < mnLo) mnLo = lon; if (lon > mxLo) mxLo = lon;
       if (lon < b[0] || lon > b[2] || lat < b[1] || lat > b[3]) return;
       if (n === cap){ cap *= 2; var a = new Float64Array(cap); a.set(ids); ids = a; var c = new Int32Array(cap); c.set(la); la = c; var d = new Int32Array(cap); d.set(lo); lo = d; }
       if (id < last) sorted = false; last = id; ids[n] = id; la[n] = Math.round(lat*1e7); lo[n] = Math.round(lon*1e7); n++;
@@ -111,6 +113,7 @@ L.readPbfArea = async function(file, b, progress, stop){
     addMulti(R, r.t, L.stitch(out), L.stitch(inn));
   });
   R.nodesInBox = n;
+  R.diag = {seen:seen, kept:n, bytes:file.size, box:seen ? [mnLo, mnLa, mxLo, mxLa] : null};
   return R;
 };
 /* Overpass JSON (out geom) */

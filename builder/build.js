@@ -266,7 +266,11 @@ L.runBuild = async function(job, post, stop){
   }
   if (stop()) throw new Error('stopped');
   stats.osm = {ways:F.ways.length, pois:F.pois.length, places:F.places.length, buildings:F.ways.filter(function(w){ return w.t.building; }).length};
-  if (!F.ways.length) throw new Error('the OpenStreetMap data has nothing inside the chosen area. Check that the file is for this place');
+  if (!F.ways.length){ var dg = F.diag, why = '';
+    if (dg){ var mb = Math.round(dg.bytes/1048576*10)/10;
+      why = !dg.seen ? ' The file (' + mb + ' MB) gave no map points at all, so it was probably not read in full: make sure it has finished downloading to the device, then pick it again.'
+        : ' The file (' + mb + ' MB) holds ' + dg.seen.toLocaleString() + ' points spanning longitude ' + dg.box[0].toFixed(2) + ' to ' + dg.box[2].toFixed(2) + ' and latitude ' + dg.box[1].toFixed(2) + ' to ' + dg.box[3].toFixed(2) + '; ' + dg.kept.toLocaleString() + ' fall inside your area (west, south, east, north: ' + R.read.map(function(v){ return v.toFixed(2); }).join(', ') + ').'; }
+    throw new Error('the OpenStreetMap data has nothing inside the chosen area. Check that the file is for this place.' + why.replace(/\.\.$/, '.')); }
   /* 2. Overture buildings */
   if (job.overture && job.overture.length){
     say(0.46, 'Adding Overture buildings'); var ov = [];
