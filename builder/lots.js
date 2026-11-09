@@ -21,7 +21,7 @@
     var round6 = function(v){ return Math.round(v*1e6)/1e6; };
 
     L.lots = function(F, loc){
-      var out = {landmarks:0, towers:0, shops:0, parking:0, kerbCuts:0, signs:0, dumpsters:0, serviceFences:0, houses:0, drives:0, fences:0, fenceKm:0, sheds:0, pools:0, yardItems:0, roofUnits:0, chimneys:0, dishes:0};
+      var out = {bankTrees:0, reeds:0, edgeGrass:0, edgeShrubs:0, edgeTrees:0, roadTrees:0, hedges:0, fields:0, landmarks:0, towers:0, shops:0, parking:0, kerbCuts:0, signs:0, dumpsters:0, serviceFences:0, houses:0, drives:0, fences:0, fenceKm:0, sheds:0, pools:0, yardItems:0, roofUnits:0, chimneys:0, dishes:0};
       var CELL = 40, bl = [], bgrid = new Map(), segs = [], drv = new Map(), pk = new Map(), fg = new Map(), existing = new Map();
       var key = function(x, y, c){ return Math.floor(x/c) + ',' + Math.floor(y/c); };
       var put = function(m, x, y, c, v){ var k = key(x, y, c), l = m.get(k); if (!l) m.set(k, l = []); l.push(v); };
@@ -199,6 +199,70 @@
             prop(items[Math.floor(h3(seedA, seedB, 96 + y)*items.length)], px2, py2, yaw, 'yard'); out.yardItems++;
           }
         }
+      });
+      /* ---- the green edges (from the layout request, step 8): tree rows along streams and rivers, reeds round ponds and lakes, a band of tall grass,
+         shrubs and young trees round woods, hedges and a crop mix on fields, tree rows on country roads. Real trees keep their place; new ones keep 5 m clear. ---- */
+      var tg = new Map(); F.pois.forEach(function(p){ if (p.t && p.t.natural === 'tree'){ var q = loc.m(p.lon, p.lat); put(tg, q[0], q[1], 10, [q[0], q[1]]); } });
+      var EDGE_CAP = 160000, nEdge = 0;
+      var treeNear = function(x, y, r){ return each(tg, x, y, 10, r, function(v){ return Math.hypot(v[0] - x, v[1] - y) < r; }); };
+      var okSpot = function(x, y, rt){ return nEdge < EDGE_CAP && !inAny(x, y, 1.5, null) && clearOfRoads(x, y, 3) && !treeNear(x, y, rt || 5); };
+      var addTree = function(x, y, band){ var p = ll(x, y); F.pois.push({lon:p[0], lat:p[1], t:{natural:'tree', generated:'yes', 'asmb:made':'yes', 'asmb:band':band}}); put(tg, x, y, 10, [x, y]); nEdge++; };
+      var toM = function(c){ var m = []; for (var i = 0; i < c.length; i += 2){ var p = loc.m(c[i], c[i + 1]); m.push(p[0], p[1]); } return m; };
+      /* walk a line of metre points: fn(x, y, nx, ny, k) every step (+/- jitter) with a left-hand unit normal */
+      var walk = function(m, step, jit, sd, fn){
+        var carry = h3(Math.round(m[0]), Math.round(m[1]), sd)*step, k = 0;
+        for (var i = 0; i + 3 < m.length; i += 2){
+          var ax = m[i], ay = m[i + 1], bx = m[i + 2], by = m[i + 3], L0 = Math.hypot(bx - ax, by - ay); if (L0 < 0.5) continue; var dx = (bx - ax)/L0, dy = (by - ay)/L0, t0 = carry;
+          while (t0 < L0){ fn(ax + dx*t0, ay + dy*t0, -dy, dx, k++); t0 += step + (h3(Math.round(ax), Math.round(ay), k, sd + 1) - 0.5)*2*jit; }
+          carry = t0 - L0;
+        }
+      };
+      F.ways.forEach(function(w){
+        var t = w.t, hwid = {river:7, stream:2.5, canal:4}[t.waterway];
+        if (!w.poly && hwid){
+          var m = toM(w.c), rowOn = false;
+          [-1, 1].forEach(function(sd){
+            walk(m, 15, 5, 101 + sd, function(x, y, nx, ny, k){
+              if (k % 6 === 0) rowOn = h3(Math.round(x), Math.round(y), 102 + sd) < 0.6;   /* trees come in runs of about six, then a gap */
+              if (!rowOn) return;
+              var off = hwid + 2.5 + h3(Math.round(x), Math.round(y), 103)*3, px = x + nx*off*sd, py = y + ny*off*sd;
+              if (okSpot(px, py, 5)){ addTree(px, py, 'bank'); out.bankTrees++; }
+              if (t.waterway !== 'canal' && h3(Math.round(x), Math.round(y), 104) < 0.3){ var rx = x + nx*(hwid + 0.6)*sd, ry = y + ny*(hwid + 0.6)*sd; if (!inAny(rx, ry, 1, null) && clearOfRoads(rx, ry, 2)){ prop('plants.reeds', rx, ry, h3(Math.round(rx), Math.round(ry), 105)*360, 'shore'); out.reeds++; nEdge++; } }
+            });
+          });
+          return;
+        }
+        if (!w.poly) return;
+        var isWater = t.natural === 'water' && t.water !== 'pool' || t.landuse === 'reservoir' || t.landuse === 'basin';
+        var isWood = t.natural === 'wood' || t.landuse === 'forest' || t.natural === 'scrub';
+        var isField = t.landuse === 'farmland' || t.landuse === 'meadow' || t.landuse === 'orchard' && false;
+        if (!isWater && !isWood && !isField) return;
+        var pm = toM(w.c), ar = Math.abs(L.area(pm)); if (ar < 400) return;
+        var outward = function(x, y, nx, ny, d){ var ax = x + nx*d, ay = y + ny*d; return L.pip(pm, ax, ay) ? [x - nx*d, y - ny*d] : [ax, ay]; };
+        if (isWater){
+          walk(pm, 5, 2, 110, function(x, y, nx, ny){ if (h3(Math.round(x), Math.round(y), 111) > 0.45) return; var q = outward(x, y, nx, ny, 0.8); if (!inAny(q[0], q[1], 1, null) && clearOfRoads(q[0], q[1], 2) && nEdge < EDGE_CAP){ prop('plants.reeds', q[0], q[1], h3(Math.round(q[0]), Math.round(q[1]), 112)*360, 'shore'); out.reeds++; nEdge++; } });
+        } else if (isWood){
+          walk(pm, 5, 1.5, 120, function(x, y, nx, ny, k){
+            var q = outward(x, y, nx, ny, 2 + h3(Math.round(x), Math.round(y), 121)*2.5);   /* tall grass first */
+            if (okSpot(q[0], q[1], 1.5)){ prop('plants.grass_tuft', q[0], q[1], h3(Math.round(q[0]), Math.round(q[1]), 122)*360, 'edge'); out.edgeGrass++; nEdge++; }
+            if (k % 2 === 0){ var q2 = outward(x, y, nx, ny, 5 + h3(Math.round(x), Math.round(y), 123)*3); if (okSpot(q2[0], q2[1], 3)){ prop('plants.bush', q2[0], q2[1], h3(Math.round(q2[0]), Math.round(q2[1]), 124)*360, 'edge'); out.edgeShrubs++; nEdge++; } }
+            if (k % 3 === 0 && h3(Math.round(x), Math.round(y), 125) < 0.6){ var q3 = outward(x, y, nx, ny, 8 + h3(Math.round(x), Math.round(y), 126)*4); if (okSpot(q3[0], q3[1], 6)){ addTree(q3[0], q3[1], 'edge'); out.edgeTrees++; } }
+          });
+        } else if (isField && ar >= 4000){
+          out.fields++;
+          if (!t['asmb:crop']){ var CROPS = ['wheat', 'corn', 'soy', 'hay', 'fallow']; t['asmb:crop'] = CROPS[Math.floor(h3(Math.round(pm[0]), Math.round(pm[1]), 130)*CROPS.length)]; t['asmb:shade'] = String(Math.floor(h3(Math.round(pm[0]), Math.round(pm[1]), 131)*4)); }
+          var hs = h3(Math.round(pm[0]), Math.round(pm[1]), 132);
+          if (hs < 0.55 && !w.t.barrier){ wayOut(hs < 0.3 ? T.hedge : T.chain, pm, false); out.hedges++; }
+          if (hs < 0.3) walk(pm, 24, 8, 133, function(x, y, nx, ny){ var q = outward(x, y, nx, ny, 3); if (okSpot(q[0], q[1], 8)){ addTree(q[0], q[1], 'edge'); out.edgeTrees++; } });
+        }
+      });
+      /* country roads: runs of trees close to the road, on and off in stretches of about 120 m */
+      F.ways.forEach(function(w){
+        var t = w.t; if (w.poly || t['asmb:street'] !== 'rural') return;
+        var half = HALF[t.highway] || 3, m = toM(w.c);
+        [-1, 1].forEach(function(sd){ var on = false; walk(m, 18, 6, 140 + sd, function(x, y, nx, ny, k){
+          if (k % 7 === 0) on = h3(Math.round(x), Math.round(y), 141 + sd) < 0.35; if (!on) return;
+          var off = half + 4.5 + h3(Math.round(x), Math.round(y), 142)*2.5, px = x + nx*off*sd, py = y + ny*off*sd; if (okSpot(px, py, 6)){ addTree(px, py, 'verge'); out.roadTrees++; } }); });
       });
       /* ---- landmarks: every 1 km cell with a town in it has one tall thing to see down its streets. A tall building, a tower, a mast, a silo or a
          chimney that is mapped counts; if there is none, a water tower goes in a park or an industrial lot (man_made=water_tower, marked made-up) ---- */
