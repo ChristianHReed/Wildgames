@@ -340,7 +340,9 @@ function frameMesh(){
   }
   return cnt ? m : null;
 }
-var frameBuf = null, frameDirty = false, propBuf = null, propDirty = true, propList = null;
+var frameBuf = null, frameDirty = false, propBuf = null, propDirty = true, propList = null, propAt = {x:1e9, y:1e9};
+V3.toProp = function(piece, k){ var best = null, bd = 1e18, n = 0; (propList || []).forEach(function(q){ if (q.p !== piece) return; if (++n < (k || 1)) return; var d = Math.hypot(q.x - P.x, q.y - P.y); if (d < bd){ bd = d; best = q; } }); if (best){ P.x = best.x + 7; P.y = best.y + 7; propDirty = true; } return !!best; };
+V3.propInfo = function(){ var c = {}; (propList || []).forEach(function(q){ c[q.p] = (c[q.p] || 0) + 1; }); return {n:propList ? propList.length : -1, drawn:!!propBuf, at:propAt, kinds:c}; };
 V3.frameInfo = function(){ if (!frameD) return null; var m = frameMesh(); return {kind:frameD.kind, fam:frameD.fam, storeys:frameD.lv, edges:frameD.pts.length/2 - 1, tris:m ? m.p.length/9 : 0}; };
 
 /* the props the player has put down: map points tagged asmb:prop, drawn from the art packs (the game reads the same tag) */
@@ -355,9 +357,12 @@ function carParts(key){
   return carC[key];
 }
 function propMesh(){
-  if (!propList){ try { var J = cur.json || (cur.json = JSON.parse(cur.text)), g = world.geo; propList = []; (J.pois || []).forEach(function(q){ var t = q[2]; if (t && t['asmb:prop']) propList.push({p:t['asmb:prop'], x:(q[0] - g.lon0)*g.kx, y:-(q[1] - g.lat0)*g.ky, ry:(+t['asmb:ry'] || 0)}); }); } catch (e) { propList = []; } }
+  if (!propList){ try { var J = cur.json || (cur.json = JSON.parse(cur.text)), g = world.geo; propList = []; (J.pois || []).forEach(function(q){ var t = q[2]; if (t && t['asmb:prop']) propList.push({p:t['asmb:prop'], x:(q[0] - g.lon0)*g.kx, y:-(q[1] - g.lat0)*g.ky, ry:(+t['asmb:ry'] || 0), yaw:t['asmb:yaw'] !== undefined ? +t['asmb:yaw'] : undefined}); }); } catch (e) { propList = []; } }
   if (!propList.length) return null;
-  var m = new Mesh(), any = false; propList.forEach(function(q){ var yw = -q.ry*Math.PI/2, y0 = hAt(q.x, q.y), car = /^vehicles\./.test(q.p) ? carParts(q.p) : null;
+  /* only what is near the camera is drawn: a built street carries tens of thousands of poles, lamps and mailboxes */
+  propAt = {x:P.x, y:P.y}; var rr = 260 + (mode === 'fly' ? flyH*1.5 : 0), near = propList.filter(function(q){ return Math.abs(q.x - P.x) < rr && Math.abs(q.y - P.y) < rr; });
+  if (near.length > 2500){ near.sort(function(a2, b2){ return Math.hypot(a2.x - P.x, a2.y - P.y) - Math.hypot(b2.x - P.x, b2.y - P.y); }); near.length = 2500; }
+  var m = new Mesh(), any = false; near.forEach(function(q){ var yw = q.yaw !== undefined ? -q.yaw*Math.PI/180 : -q.ry*Math.PI/2, y0 = hAt(q.x, q.y), car = /^vehicles\./.test(q.p) ? carParts(q.p) : null;
     if (car){ m.modelS(car.B, q.x, q.y, yw, y0, 1); if (car.W){ var cs = Math.cos(yw), sn = Math.sin(yw); car.w.forEach(function(w){ m.modelS(car.W, q.x + cs*w[0] - sn*w[2], q.y + sn*w[0] + cs*w[2], yw, y0 + w[1], 1); }); } any = true; return; }
     var M = spB(q.p); if (!M) return; m.modelS(M, q.x, q.y, yw, y0, 1); any = true; });
   return any ? m : null;
@@ -431,6 +436,7 @@ function draw(){
   var m = new Mesh(), far = world.tg ? world.tg.min - 3 : 0, bq = QS.far*1.4 + 400 + (mode === 'fly' ? flyH*3 : 0);
   m.pl = [TERR, 0]; m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, [228,236,214], 255); m.pl = null;
   dynB = upload(m, dynB); drawMesh(dynB); drawNature();
+  if (!propDirty && propList && propList.length > 40 && Math.hypot(P.x - propAt.x, P.y - propAt.y) > 60) propDirty = true;
   if (propDirty){ propDirty = false; var pm = propMesh(); if (pm){ pm.pl = null; propBuf = upload(pm, propBuf); } else propBuf = null; } if (propBuf) drawMesh(propBuf);
   if (frameD){ if (frameDirty){ frameDirty = false; var fm = frameMesh(); if (fm){ fm.pl = null; frameBuf = upload(fm, frameBuf); } else frameBuf = null; } if (frameBuf) drawMesh(frameBuf); }
   if (showS){ var sm = structMesh(); if (sm){ sm.pl = null; strB = upload(sm, strB); drawMesh(strB); } }

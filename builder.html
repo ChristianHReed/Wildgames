@@ -160,6 +160,7 @@
 
     <section class="panel" id="s3">
       <h2>3 &middot; Build</h2>
+      <div class="row"><label><input id="optDress" type="checkbox" checked>Dress the streets (kerbs, verges, pavements, trees, poles, lamps, mailboxes; marked made-up)</label></div>
       <div class="row"><label><input id="optFill" type="checkbox" checked>Fill gaps with made-up homes and farms (marked, so real data can replace them)</label></div>
       <div class="row"><label class="muted" style="width:110px">Ground detail</label><select id="optStep"><option value="5">Finest (5 m, big files)</option><option value="10" selected>Fine (10 m, best look)</option><option value="20">Standard (20 m)</option><option value="40">Light (40 m)</option></select></div>
       <div class="row"><button id="build">Build the map</button><button id="stop" class="alt hidden">Stop</button></div>
@@ -215,6 +216,7 @@
 <script src="builder/tiff.js"></script>
 <script src="builder/gen.js"></script>
 <script src="builder/uses.js"></script>
+<script src="builder/streets.js"></script>
 <script src="builder/structures.js"></script>
 <script src="builder/build.js"></script>
 <script src="builder/worker.js"></script>

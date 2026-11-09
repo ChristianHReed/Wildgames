@@ -163,3 +163,8 @@ The requests ask to keep the pack's GeoJSON layout, so the first deliverable is 
 - Inferring building heights (TU Delft): https://3d.bk.tudelft.nl/news/2017/01/17/inferring-heights-ceus-paper.html
 - OSM width tagging: https://wiki.openstreetmap.org/wiki/Key:width:lanes
 - Lane widths, NAIP and lidar point classes: general knowledge, to be checked when used.
+
+
+## Street dressing (1.24.0)
+
+OpenStreetMap gives the road line and class but not what is beside it. `builder/streets.js` reads each road's surroundings and decides which of four street kinds it is: **main** (shops or dense buildings close to the road, pavement 4 m, no verge), **town** (buildings close to the road, 1.5 m verge, 1.75 m pavement), **suburb** (set back, 2.5 m verge, 1.35 m pavement) and **rural** (no kerb, 1.2 m gravel shoulder, 4 m verge, no pavement). Things stand in their band: trees and poles in the verge (trees in pits on a main street), lamps at the verge edge, mailboxes at the verge edge in front of houses, benches, bins and meters on a main street pavement. Poles stand on one side of the road every 35 to 45 m and carry a wire to the next pole; they are left out of dense city main streets where cables run underground. Rules are from `docs/VISUAL_REFERENCE.md` "Third look" and the main chat's request; the replies and data are in `docs/MAP_LAYOUT_REPLY.md`.
