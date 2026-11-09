@@ -1,7 +1,7 @@
 /* Heavy vehicles rebuilt with the reference look recipe (docs/VEHICLE_DESIGN_GUIDE.md): box truck, semi tractor, army cargo truck, motorhome,
    city and school buses, APC, ammo trailer, box trailer. Shared cab builder: raked windscreen on slim pillars, door glass, wheel openings cut into
    the body with dark wells, face with slatted grille, big mirrors, tinted glass, full driver kit inside. */
-var CK = require('../tools/cabin_kit.js'), R = require('./refs.js'), H = R.H;
+var AK = require('./parts/air_kit.js'), CK = require('../tools/cabin_kit.js'), R = require('./refs.js'), H = R.H;
 var wall = H.wall, arch = H.arch, quad = H.quad, post = H.post, face = H.face, text = H.text, textLen = H.textLen, wheelLook = H.wheelLook, DK = H.DK, BUMP = H.BUMP, AMB = H.AMB, RED = H.RED;
 function mkb(WSB, S){ return WSB.create(Object.assign({id:S.id, name:S.name, domain:'land', cls:S.cls, paint:{paint1:S.paint[0], paint2:S.paint[1], paint3:S.paint[2]}, topSpeed:S.top}, S.extra || {})); }
 /* wheels, axles and frame; returns the wheel openings */
@@ -278,7 +278,10 @@ function apc(WSB){
   b.box([-0.1, 2.3, 2.1], [0.5, 2.4, 2.7], {c:'paint1', m:'steel', name:'driver hatch'}); b.block('cyl', [0.2, 2.45, 2.4], [0.55, 0.1, 0.55], {c:'paint2', m:'steel', name:'driver hatch ring'});
   b.shell([-hw, 0.8, -4.4], [hw, 2.45, 1.8], {open:['back', 'front'], c:'paint1', m:'steel', floorC:'underside', wall:0.1, floor:0.1, name:'troop bay', room:'troop bay'});
   b.door([-hw, 0.8, -4.55], [hw, 2.45, -4.5], {kind:'ramp', c:'paint1', name:'rear ramp'});
-  b.box([-0.5, 2.45, -1.0], [0.5, 2.55, 1.4], {c:'paint1', m:'steel', name:'roof hatch plate'}); b.box([-0.45, 2.55, -0.3], [0.45, 3.0, 0.7], {c:'paint1', m:'steel', name:'turret'}); b.box([-0.2, 2.7, 0.7], [0.2, 2.82, 0.8], {c:'paint2', m:'steel', name:'gun mantlet'}); b.box([-0.05, 2.74, 0.8], [0.05, 2.8, 2.4], {c:'black', m:'steel', name:'autocannon'});
+  b.box([-0.5, 2.45, -1.0], [0.5, 2.55, 1.4], {c:'paint1', m:'steel', name:'roof hatch plate'}); AK.tube(b, [[-0.45, 2.8, 0.2, 0.1], [-0.3, 2.8, 0.42, 0.22], [0.2, 2.8, 0.46, 0.24], [0.6, 2.78, 0.4, 0.2], [0.78, 2.76, 0.2, 0.12]], {c:'paint1', m:'steel', name:'turret'}); b.box([-0.2, 2.68, 0.76], [0.2, 2.84, 0.86], {c:'paint2', m:'steel', name:'gun mantlet'});
+  [-1, 1].forEach(function(sx){ quad(b, [[sx*hw, 2.45, -4.4], [sx*hw, 2.45, 1.8], [sx*(hw - 0.4), 2.7, 1.8], [sx*(hw - 0.4), 2.7, -4.4]], [0, 0.06, 0], {c:'paint1', m:'steel', name:'roof chamfer'}); });
+  b.box([-0.9, 2.7, -4.4], [0.9, 2.76, 1.8], {c:'paint1', m:'steel', name:'roof deck'});
+  [-1, 1].forEach(function(sx){ quad(b, [[sx*hw, 0.8, 3.7], [sx*hw, 0.8, 4.4], [sx*hw, 1.2, 4.4], [sx*hw, 1.75, 3.7]], [-sx*0.1, 0, 0], {c:'paint1', m:'steel', name:'nose cheek'}); }); b.box([-0.05, 2.74, 0.8], [0.05, 2.8, 2.4], {c:'black', m:'steel', name:'autocannon'});
   [-1, 1].forEach(function(sx){ b.box([sx*0.3 - 0.06, 2.45, -2.2], [sx*0.3 + 0.06, 2.6, -1.9], {c:'paint2', m:'steel', name:'hatch ring'}); b.box([sx*(hw + 0.02) - 0.01, 1.4, -3.2], [sx*(hw + 0.02) + 0.01, 1.52, -2.5], {c:'#16191d', m:'glass', name:'vision slit'}); b.box([sx*(hw + 0.02) - 0.01, 1.4, -2.0], [sx*(hw + 0.02) + 0.01, 1.52, -1.3], {c:'#16191d', m:'glass', name:'vision slit'}); b.box([sx*0.9 - 0.12, 2.45, 1.0], [sx*0.9 + 0.12, 2.6, 1.4], {c:'paint2', m:'steel', name:'smoke launcher'}); });
   b.box([-0.03, 2.55, -1.6], [0.03, 3.6, -1.56], {c:DK, m:'steel', name:'antenna'});
   b.light('headlight', [1.0, 1.0, 3.72], [0.2, 0.16, 0.04]); b.light('taillight', [1.1, 1.2, -4.58], [0.16, 0.2, 0.04]);
