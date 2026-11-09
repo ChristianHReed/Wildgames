@@ -231,6 +231,41 @@ L.structures = function(box, sq, elev){
       if (run && run.n >= 3) runs.push(run);
       runs.forEach(function(r){ var mid = Math.floor(r.n/2); push({k:'bank', w:wi, len:(r.n - 1)*20 + 20, l:0, src:'inferred', t:r.t, h:Math.round(r.sum/r.n*10)/10}, r.x[mid], r.y[mid]); });
     });
+    /* ---- sinkholes: closed hollows in the ground, at least 1.5 m below the rim in all eight directions 30 m away. Asked for by the content chat
+       (karst: sinkhole_s/m/_pond). Not on roads or in water. Spaced 40 m apart, at most 150 a square, deepest first. ---- */
+    var sk = [], dirs = [[1,0],[0.707,0.707],[0,1],[-0.707,0.707],[-1,0],[-0.707,-0.707],[0,-1],[0.707,-0.707]];
+    var bx0 = (box.w - lon0)*kx, bx1 = (box.e - lon0)*kx, by0 = (box.s - lat0)*ky, by1 = (box.n - lat0)*ky;
+    for (var sy = by0 + 40; sy < by1 - 40; sy += 10) for (var sx = bx0 + 40; sx < bx1 - 40; sx += 10){
+      var h0 = gh(sx, sy), mn = 1e9, ok = true;
+      for (var d2 = 0; d2 < 8; d2++){ var hr2 = gh(sx + dirs[d2][0]*30, sy + dirs[d2][1]*30) - h0; if (hr2 < 1.5){ ok = false; break; } if (hr2 < mn) mn = hr2; }
+      if (ok) sk.push({x:sx, y:sy, d:mn, h:h0});
+    }
+    sk.sort(function(a, b){ return b.d - a.d; });
+    var kept = [];
+    for (var si = 0; si < sk.length && kept.length < 150; si++){
+      var c2 = sk[si], near = false; for (var ki = 0; ki < kept.length; ki++) if (Math.hypot(kept[ki].x - c2.x, kept[ki].y - c2.y) < 40){ near = true; break; }
+      if (near) continue;
+      var onRoad = false; for (var ri2 = 0; ri2 < lines.length && !onRoad; ri2++){ var mm = info[lines[ri2]].m; for (var q3 = 0; q3 + 3 < mm.length; q3 += 2){ var ex = mm[q3 + 2] - mm[q3], ey = mm[q3 + 3] - mm[q3 + 1], el = ex*ex + ey*ey, tt = el ? Math.max(0, Math.min(1, ((c2.x - mm[q3])*ex + (c2.y - mm[q3 + 1])*ey)/el)) : 0;
+        if (Math.hypot(mm[q3] + ex*tt - c2.x, mm[q3 + 1] + ey*tt - c2.y) < 15){ onRoad = true; break; } } }
+      var inWater = false; for (var ai2 = 0; ai2 < areas.length && !inWater; ai2++) if (info[areas[ai2]].cls === 'water' && L.pip(info[areas[ai2]].m, c2.x, c2.y)) inWater = true;
+      if (onRoad || inWater) continue;
+      kept.push(c2);
+    }
+    kept.forEach(function(c2){ push({k:'sink', w:-1, len:0, l:0, src:'inferred', h:Math.round(c2.d*10)/10, s:c2.d >= 5 ? 'm' : 's'}, c2.x, c2.y); });
+  }
+  /* ---- tree stand type for every wood, forest, scrub or orchard polygon: broadleaf, conifer, mixed, scrub or orchard. Mapped leaf_type / genus decide;
+     otherwise it is picked from the polygon's place (seeded, so the same map always gives the same woods). ---- */
+  for (var wi2 = 0; wi2 < n; wi2++){
+    var tg = ways[wi2][0], cc = ways[wi2][1]; if (!cc || cc.length < 8 || cc[0] !== cc[cc.length - 2] || cc[1] !== cc[cc.length - 1]) continue;
+    var kind = tg.landuse === 'orchard' ? 'orchard' : (tg.natural === 'scrub' || tg.natural === 'heath') ? 'scrub' : (tg.natural === 'wood' || tg.landuse === 'forest') ? 'wood' : null; if (!kind) continue;
+    var mc2 = toM(cc), area = 0, gx = 0, gy = 0, nn = mc2.length/2 - 1; for (var q4 = 0; q4 < nn; q4++){ var x1 = mc2[q4*2], y1 = mc2[q4*2 + 1], x2 = mc2[q4*2 + 2], y2 = mc2[q4*2 + 3]; area += x1*y2 - x2*y1; gx += x1; gy += y1; }
+    area = Math.abs(area)/2; if (area < 400) continue;
+    var st = kind === 'wood' ? null : kind, src2 = 'osm';
+    if (!st){ var lt = tg.leaf_type, ge = (tg.genus || '').toLowerCase();
+      if (lt === 'broadleaved') st = 'broadleaf'; else if (lt === 'needleleaved') st = 'conifer'; else if (lt === 'mixed') st = 'mixed';
+      else if (/pinus|picea|abies|juniperus|thuja|tsuga/.test(ge)) st = 'conifer'; else if (ge) st = 'broadleaf';
+      else { src2 = 'inferred'; var hh = Math.abs(Math.sin((gx/nn + lon0*1000)*12.9898 + (gy/nn + lat0*1000)*78.233)*43758.5453) % 1; st = hh < 0.7 ? 'broadleaf' : hh < 0.85 ? 'mixed' : 'conifer'; } }
+    push({k:'stand', w:wi2, len:Math.sqrt(area), l:0, src:src2, t:st}, gx/nn, gy/nn);
   }
   return {list:list, counts:counts};
 };
