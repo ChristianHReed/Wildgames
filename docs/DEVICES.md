@@ -97,8 +97,8 @@ What is missing, in the order it should be built:
 ## Order of work for "play anywhere"
 
 1. ~~Gamepad support~~ (0.120.0).
-2. Detail presets chosen on first start, and a Low setting tested on a tier-B device.
-3. Saves on the drive in every browser (export on quit, import on start, where the browser cannot write the folder).
+2. ~~Detail presets chosen on first start~~ (0.125.0); a Low setting tested on a tier-B device is still to do (the owner's iPhone 11 benchmark).
+3. ~~Saves on the drive in every browser~~ (0.125.0: offer to save a copy on leaving a map, offer to load one on a start with no saves).
 4. ~~Launch scripts in `launch/`~~ (0.120.0: Windows, macOS, Linux and Pi kiosk; untested on real machines yet).
 5. A "Host your own copy" section in the README.
 6. Captions, colour-blind signals, text size, rebinding, hold or toggle, less motion.

@@ -559,8 +559,25 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.124.3', ART = {}, ARTSET = (function(){
+/* 0.125.0: the first time the game starts on a device it picks the detail for it, from what the browser will say: touch or not, screen size, memory
+   (Chrome and Edge only), processor cores and the graphics chip's name. Phones and tablets get Low (Safari closes a page long before the device is out of memory);
+   computers with software drawing, 4 GB or less, two cores or an old integrated chip get Low and a lighter drawing scale on big screens; a dedicated graphics card with
+   8 GB and 8 cores gets High; the rest Medium. The choice and the reason are kept, said once on the start page, and Settings changes it as before */
+function autoDetail(){
+  var touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0, mem = navigator.deviceMemory || 0, cores = navigator.hardwareConcurrency || 0, sw = Math.min(screen.width, screen.height), big = Math.max(screen.width, screen.height)*(window.devicePixelRatio || 1), gpu = '';
+  try { var cv = document.createElement('canvas'), g = cv.getContext('webgl') || cv.getContext('experimental-webgl'); if (g){ var di = g.getExtension('WEBGL_debug_renderer_info'); gpu = String(di ? g.getParameter(di.UNMASKED_RENDERER_WEBGL) : g.getParameter(g.RENDERER) || ''); var lc = g.getExtension('WEBGL_lose_context'); if (lc) lc.loseContext(); } } catch (e){}
+  var soft = /swiftshader|llvmpipe|softpipe|software|basic render/i.test(gpu), oldi = /intel.*(hd graphics( [2-5]\d\d\b|$| family)|gma)|mali-[4t][0-9]|adreno.*[2-5]\d\d\b|powervr/i.test(gpu), disc = /nvidia|geforce|quadro|radeon (rx|pro)|radeon\(tm\) rx|arc a\d/i.test(gpu);
+  var bits = [], q = 1, rs = 0;
+  if (touch && sw < 900){ q = 0; bits.push(sw < 600 ? 'a phone' : 'a tablet'); }
+  else if (soft){ q = 0; bits.push('software drawing'); rs = 0.75; }
+  else if ((mem && mem <= 4) || (cores && cores <= 2) || oldi){ q = 0; bits.push(mem && mem <= 4 ? mem + ' GB of memory' : cores && cores <= 2 ? cores + ' processor cores' : 'an older graphics chip'); if (big > 2000) rs = 0.75; }
+  else if (disc && (!mem || mem >= 8) && cores >= 8){ q = 2; bits.push('a graphics card'); }
+  else bits.push('a computer');
+  return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
+}
+var BUILD = '0.125.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
+  if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
   try { AfterstreetPacks.writeTags('packs/'); } catch (e) {}   /* 0.114.24: content packs (cars from the Workshop) load after the art and before the engine */
@@ -6230,6 +6247,22 @@ function exitToMenu(msg){
   if (document.exitPointerLock) document.exitPointerLock();
   el('play').classList.add('hidden'); el('prompt').classList.add('hidden'); document.body.classList.remove('copmode'); ['copMap', 'copBar', 'chatIn', 'items', 'build', 'chest', 'trade', 'loot', 'pack', 'bigMap', 'travel', 'hudBtns'].forEach(function(id){ el(id).classList.add('hidden'); }); el('hurt').style.opacity = 0; el('title').classList.remove('hidden');
   saveInfo(); syncChar(false); updPlayLast(); renderMyMaps(); if (dir) refreshMaps().catch(function(){}); info(typeof msg === 'string' ? msg : 'Saved.'); if (wasRegion) renderRegions();
+  saveAsk('exit');
+}
+/* 0.125.0: browsers that cannot write to the drive (Safari, Firefox) keep saves only in that browser. On leaving a map the start page offers to put a copy
+   on the drive (a download of the same file Export saves makes), and on a start with no saves at all it offers to load one. "Don't ask again" ends it */
+function saveAsk(when){
+  var old = el('saveAsk'); if (old) old.remove(); if (dir || window.showDirectoryPicker || lsGet('lastblock:saveAsk') === 'never') return;
+  var n = 0; try { for (var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if (k.indexOf('lastblock:world:') === 0 || k.indexOf('lastblock:char:') === 0) n++; } } catch (e){}
+  if (when === 'exit' && !n) return; if (when === 'start' && n) return;
+  var box = document.createElement('div'); box.id = 'saveAsk'; box.style.cssText = 'margin:10px auto;max-width:520px;padding:10px 12px;border-radius:10px;background:#f3ecd9;border:1px solid #c9b98f;color:#3b3526;font:14px system-ui,sans-serif;text-align:left';
+  box.innerHTML = (when === 'exit' ? '<b>Keep a copy of your progress on your drive?</b><br>This browser keeps your saves only on this device. A copy on the drive goes with you to another computer.'
+    : '<b>Playing from your drive on a new device?</b><br>If you saved a copy of your progress (afterstreet-saves.json), load it to carry on.') +
+    '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' + (when === 'exit' ? '<button class="alt" data-k="yes">Save a copy</button>' : '<button class="alt" data-k="load">Load my saves</button>') +
+    '<button class="alt" data-k="later">Not now</button><button class="alt" data-k="never">Don\'t ask again</button></div>';
+  box.addEventListener('click', function(e){ var k = e.target.getAttribute && e.target.getAttribute('data-k'); if (!k) return;
+    if (k === 'yes') el('exportBtn').click(); if (k === 'load') el('importFile').click(); if (k === 'never') lsSet('lastblock:saveAsk', 'never'); box.remove(); });
+  var st = el('status'); st.parentNode.insertBefore(box, st.nextSibling);
 }
 el('menuBtn').addEventListener('click', function(){ exitToMenu(); });
 el('file').addEventListener('change', function(e){ readFile(e.target.files[0]); e.target.value = ''; });
@@ -6410,6 +6443,8 @@ lootLoadUser(); lootUI();
   el('fovS').value = CAMS.fov; el('bobS').value = String(CAMS.bob); el('fxS').value = String(CAMS.fx);
   el('mapMode').value = MAPMODE; el('mapMode').addEventListener('change', function(){ MAPMODE = el('mapMode').value; lsSet('lastblock:mapmode', MAPMODE); });
   el('qual').value = q !== null ? q : (('ontouchstart' in window) || navigator.maxTouchPoints > 0 ? '0' : '1');
+  setTimeout(function(){ try { saveAsk('start'); } catch (e){} }, 600);
+  var aq = lsGet('lastblock:autoq'); if (aq && !lsGet('lastblock:autoqSaid')){ try { var ad = JSON.parse(aq), QN = ['Low', 'Medium', 'High']; setTimeout(function(){ info('Detail is set to ' + QN[ad.q] + ' for this device (' + ad.why + '). Change it any time in Settings, under View distance and art detail.'); }, 400); lsSet('lastblock:autoqSaid', '1'); } catch (e){} }
 })();
 loadPacks(); wForm(); renderPacks(); fillScen();
 el('musicOn').checked = MUS.on; el('musicOn').addEventListener('change', function(){ MUS.on = el('musicOn').checked; lsSet('lastblock:music', MUS.on ? '1' : '0'); sndInit(); });
