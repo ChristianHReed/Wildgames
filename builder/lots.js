@@ -21,7 +21,7 @@
     var round6 = function(v){ return Math.round(v*1e6)/1e6; };
 
     L.lots = function(F, loc){
-      var out = {shops:0, parking:0, kerbCuts:0, signs:0, dumpsters:0, serviceFences:0, houses:0, drives:0, fences:0, fenceKm:0, sheds:0, pools:0, yardItems:0, roofUnits:0, chimneys:0, dishes:0};
+      var out = {landmarks:0, towers:0, shops:0, parking:0, kerbCuts:0, signs:0, dumpsters:0, serviceFences:0, houses:0, drives:0, fences:0, fenceKm:0, sheds:0, pools:0, yardItems:0, roofUnits:0, chimneys:0, dishes:0};
       var CELL = 40, bl = [], bgrid = new Map(), segs = [], drv = new Map(), pk = new Map(), fg = new Map(), existing = new Map();
       var key = function(x, y, c){ return Math.floor(x/c) + ',' + Math.floor(y/c); };
       var put = function(m, x, y, c, v){ var k = key(x, y, c), l = m.get(k); if (!l) m.set(k, l = []); l.push(v); };
@@ -199,6 +199,28 @@
             prop(items[Math.floor(h3(seedA, seedB, 96 + y)*items.length)], px2, py2, yaw, 'yard'); out.yardItems++;
           }
         }
+      });
+      /* ---- landmarks: every 1 km cell with a town in it has one tall thing to see down its streets. A tall building, a tower, a mast, a silo or a
+         chimney that is mapped counts; if there is none, a water tower goes in a park or an industrial lot (man_made=water_tower, marked made-up) ---- */
+      var CELLK = 1000, cells = new Map(), kk = function(x, y){ return Math.floor(x/CELLK) + ',' + Math.floor(y/CELLK); };
+      var cellOf = function(x, y){ var k = kk(x, y), c = cells.get(k); if (!c){ c = {n:0, tall:false, spots:[]}; cells.set(k, c); } return c; };
+      bl.forEach(function(b){ var c = cellOf(b.x, b.y); c.n++; if ((b.t.shop || b.t.building === 'retail' || b.t.building === 'commercial' || b.t.building === 'industrial' || b.t.building === 'warehouse') && b.a >= 400 && (!c.big || b.a > c.big.a)) c.big = b; var t = b.t, lv = parseInt(t['building:levels'], 10) || 0, hh = parseFloat(t.height) || 0; if (hh >= 25 || lv >= 8 || t.man_made === 'tower' || (t.amenity === 'place_of_worship' && (hh >= 18 || t.tower_type || t['tower:type']))) c.tall = true; });
+      F.pois.forEach(function(p){ var t = p.t; if (!t || !(t.man_made === 'water_tower' || t.man_made === 'tower' || t.man_made === 'mast' || t.man_made === 'silo' || t.man_made === 'chimney' || t.man_made === 'communications_tower' || t['tower:type'])) return; var q = loc.m(p.lon, p.lat); cellOf(q[0], q[1]).tall = true; });
+      F.ways.forEach(function(w){
+        var t = w.t; if (!w.poly) return;
+        if (t.man_made === 'water_tower' || t.man_made === 'silo' || t.man_made === 'chimney' || t.man_made === 'tower'){ var q0 = loc.m(w.c[0], w.c[1]); cellOf(q0[0], q0[1]).tall = true; return; }
+        if (!(t.leisure === 'park' || t.landuse === 'industrial' || t.landuse === 'retail' && false)) return;
+        var m = [], i, cx = 0, cy = 0, n = 0; for (i = 0; i < w.c.length; i += 2){ var p = loc.m(w.c[i], w.c[i + 1]); m.push(p[0], p[1]); cx += p[0]; cy += p[1]; n++; } if (n < 4) return; cx /= n; cy /= n;
+        var ar = Math.abs(L.area(m)); if (ar < 1500 || !L.pip(m, cx, cy)) return;
+        cellOf(cx, cy).spots.push({x:cx, y:cy, a:ar, ind:t.landuse === 'industrial'});
+      });
+      cells.forEach(function(c){
+        if (c.n < 15) return; out.landmarks++;
+        if (c.tall){ out.tallCells = (out.tallCells || 0) + 1; return; } if (!c.spots.length && c.big){ var bb = c.big, ds = bb.r + 12, dirs = [[bb.ux, bb.uy], [-bb.ux, -bb.uy], [-bb.uy, bb.ux], [bb.uy, -bb.ux]]; for (var di = 0; di < 4; di++){ var tx = bb.x + dirs[di][0]*ds, ty = bb.y + dirs[di][1]*ds; c.spots.push({x:tx, y:ty, a:1, ind:false}); } }
+        if (!c.spots.length){ out.noSpot = (out.noSpot || 0) + 1; return; }
+        c.spots.sort(function(p, q){ return (q.ind - p.ind) || (q.a - p.a); });
+        for (var i = 0; i < c.spots.length; i++){ var sp = c.spots[i]; if (inAny(sp.x, sp.y, 6, null) || !clearOfRoads(sp.x, sp.y, 8)){ out.blocked = (out.blocked || 0) + 1; continue; }
+          var pp = ll(sp.x, sp.y); F.pois.push({lon:pp[0], lat:pp[1], t:{man_made:'water_tower', 'tower:type':'water', height:'30', generated:'yes', 'asmb:made':'yes', 'asmb:landmark':'yes'}}); out.towers++; break; }
       });
       out.fenceKm = Math.round(out.fenceKm*10)/10;
       return out;

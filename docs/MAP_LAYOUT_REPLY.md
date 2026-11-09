@@ -12,9 +12,9 @@ Pulled and read the builder-downloads note (0.114.92) too: no conflicts, nothing
 | 2 | Power poles with wire end points | **Done** | 1.24.0 |
 | 3 | Lot fill: driveways for real houses, fences, back-yard items | **Done** except the "slightly off" detail and four back-yard items with no art yet | 1.25.0 |
 | 6 | Roof units on flat roofs | **Done** | 1.25.0 |
-| 4 | Town rings (height, setback, roof and lot width by distance to the centre) | Next | planned 1.27 |
+| 4 | Town rings (height, setback, roof and lot width by distance to the centre) | **Done** for made-up homes and shops; mapped buildings keep their data | 1.27.0 |
 | 5 | Roadside pattern (parking to the front, kerb cuts, pole sign, service side) | **Done** (pole sign uses `street.hanging_sign` until art exists) | 1.26.0 |
-| 7 | One tall landmark per square | Next | planned 1.27 |
+| 7 | One tall landmark per square | **Done** (per 1 km cell of town) | 1.27.0 |
 | 8 | Forest edges and tree rows | After | planned 1.27 |
 | 9 | Abandoned traffic, big vehicles, camps and roadblocks | After | planned 1.28 |
 
@@ -93,3 +93,9 @@ Study of the twenty new references: `docs/MAP_REFERENCE_STUDY.md`. In `builder/l
 | Service side | `street.dumpster` props (`asmb:band=service`) at the back corner, and a chain-link `barrier=fence` round the rear (75% of lots) |
 
 Springfield test map: about 980 lots with parking, 1,900 kerb cuts, 950 signs, 4,700 dumpsters, plus the existing anchor stores' own car parks (not doubled). Not done: loading docks with trucks (step 9), painted bays in the builder's 3D view.
+
+## 1.27.0: town rings and landmarks (steps 4 and 7)
+
+**Rings (`builder/gen.js`, the gap fill).** The town centre is the 250 m cell with the highest road density. Made-up homes and shops are then shaped by distance from it: **core** (under 450 m): wall to wall, lots 7 to 10 m wide, 3.5 m back from the road, shops 2 to 4 storeys with flat roofs, homes mostly 2 storeys; **inner** (450 m to 1.1 km): narrow lots 8 to 11 m, 4.5 m back, shops 2 storeys, gabled roofs; **outer**: wide lots 12 to 17 m, 9 m back, mostly 1 storey, gabled or hipped, shops as big boxes 14 m back behind car parks. New tags on made-up buildings: `building:levels`, `roof:shape`, `asmb:ring` (0, 1, 2). Real mapped buildings keep their own data. Limit: on the Springfield test map every made-up home falls in the outer ring (the real downtown is fully mapped), so the core and inner rules are written but not yet seen in a build.
+
+**Landmarks (`builder/lots.js`).** Each 1 km cell with 15 or more buildings needs one tall thing: a mapped building of 25 m or 8 storeys, a tower, mast, silo, chimney or water tower, or a church with a tower. If a cell has none, a water tower is added in a park or industrial lot, or failing that behind the cell's largest shop or warehouse: POI `man_made=water_tower`, `tower:type=water`, `height=30`, `asmb:landmark=yes`, `generated=yes`, `asmb:made=yes`. Springfield test map: 249 town cells, 10 already had a tall landmark, about 190 got a water tower (the test file has no park or industrial areas, so they stand behind shops). The game already maps `man_made=water_tower` to `towers.water_standpipe`; `man_made`, `tower:type`, `height` must pass `keepTags`. The builder's 3D view does not draw them.
