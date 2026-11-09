@@ -5,16 +5,15 @@ var WSBc; function WSBcreate(WSB, id, name, cls, paint){ return WSB.create({id:i
 var H = require('./refs.js').H, quad = H.quad, RED = H.RED, DK = H.DK;
 /* a shaped open hull: flat stern section, bow that tapers to a stem with a rising sheer, transom with cap, rub rail, floor boards, cleats and the marked Hull block */
 function hull(b, L, hw, h, o){ o = o || {}; var s = o.skin || 0.05, bow = o.bow || 0.45, z1 = L*0.3, tip = 0.07, sheer = o.sheer == null ? 0.12 : o.sheer, th = hw*0.92;
-  b.box([-th, 0, -L], [th, s, z1], {c:'paint1', m:'sheet', name:'bottom'});
-  quad(b, [[-th, 0, z1], [th, 0, z1], [tip, 0, L + bow], [-tip, 0, L + bow]], [0, s, 0], {c:'paint1', m:'sheet', name:'bottom'});
-  b.box([hw - s, 0, -L], [hw, h, z1], {c:'paint1', m:'sheet', mx:true, name:'side'});
-  quad(b, [[hw, 0, z1], [tip, 0, L + bow], [tip, h + sheer, L + bow], [hw, h, z1]], [-s, 0, 0], {c:'paint1', m:'sheet', mx:true, name:'side'});
+  /* one open lofted skin: a U section (flat-ish bottom, flared sides) from the transom to the stem; the bottom and the sheer line both rise toward the bow */
+  var U = [180, 196, 228, 258, 282, 312, 344, 360], f = function(z, k, rise){ var t = k; return [0, h + rise, z, hw*t, h*0.98 + rise*0.0]; };
+  var rings = [[0, h, -L, hw*0.97, h*0.98], [0, h, -L*0.5, hw, h*0.98], [0, h, z1, hw*0.98, h*0.98], [0, h + sheer*0.45, L*0.62, hw*0.7, h*0.98 - 0.02], [0, h + sheer*0.8, L*0.88 + bow*0.2, hw*0.38, h*0.9], [0, h + sheer*0.95, L + bow*0.62, hw*0.14, h*0.7], [0, h + sheer, L + bow, 0.03, h*0.4]];
+  b.block('tube', [0, 0, 0], null, {s:'loft', ax:'z', ang:U, closed:false, both:true, cin:'paint2', r:rings, c:'paint1', m:'sheet', name:'hull shell'});
   b.box([-hw, 0, -L - s], [hw, h, -L], {c:'paint1', m:'sheet', name:'transom'});
   b.box([-hw, h, -L - s], [hw, h + 0.06, -L + 0.08], {c:'paint2', m:'sheet', name:'transom cap'});
   b.box([hw - 0.1, h, -L], [hw, h + 0.06, z1], {c:'paint2', m:'sheet', mx:true, name:'gunwale'});
   quad(b, [[hw, h, z1], [tip, h + sheer, L + bow], [tip, h + sheer + 0.06, L + bow], [hw, h + 0.06, z1]], [-0.1, 0, 0], {c:'paint2', m:'sheet', mx:true, name:'gunwale'});
   b.box([-hw + s, s, -L], [hw - s, s + 0.03, z1], {c:'paint3', m:'wood', name:'floor boards'});
-  b.box([hw - 0.0, h - 0.18, -L], [hw + 0.03, h - 0.1, z1], {c:'paint2', m:'sheet', mx:true, name:'rub rail'});
   [z1 - 0.15, -L + 0.4].forEach(function(z){ b.box([hw - 0.09, h + 0.06, z - 0.07], [hw - 0.02, h + 0.1, z + 0.07], {c:'chrome', m:'steel', mx:true, name:'cleat'}); });
   b.hull([-hw + s, 0, -L], [hw - s, h, L + bow*0.6]); }
 function seatAt(b, z, w, nm, y, back){ var yy = y == null ? 0.3 : y; if (back) b.box([-w/2, yy, z - 0.2], [w/2, yy + 0.4, z - 0.15], {fitting:true, c:'paint2', m:'cloth', name:nm + ' back'}); return b.seat([0, yy, z], {size:[w, 0.05, 0.3], c:'paint3', name:nm}); }
