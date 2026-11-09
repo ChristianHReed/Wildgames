@@ -491,5 +491,57 @@ model('farmhouse_white', 'Farmhouse, white', 'A white two-storey farmhouse 9 m w
   a.box(0, 1.85, 2.55, 1.2, 2.4, 0.1, FM.door, {m:'wood'}); a.glow(0.0, 2.95, 2.62, 0.3, 0.2, 0.06, K.lamp); a.pt('light', 'light', [0, 2.95, 2.7], [0, 0, 1]); a.pt('door', 'door', [0, 1.0, 2.7], [0, 0, 1]);
   a.box(-4.52, 2.4, -0.5, 0.08, 2.0, 1.0, FM.trim, {m:'wood'}); a.box(-4.55, 2.4, -0.5, 0.04, 1.8, 0.84, FM.gl, {m:'glass'}); a.box(4.52, 2.4, -0.5, 0.08, 2.0, 1.0, FM.trim, {m:'wood'}); a.box(4.55, 2.4, -0.5, 0.04, 1.8, 0.84, FM.gl, {m:'glass'}); });
 
+/* ============================================ batch 14: yard and fence pieces (map chat request, section C) ============================================ */
+var YD = {woodD:C('#6a5034'), pipe:C('#b8bcbe'), seat:C('#2e4660'), mat:C('#26272a'), net:C('#3a3d40'), spr:C('#b0b4b6'), log:C('#7a5a3a'), logE:C('#c8a878'), hedge:C('#3e6a34'), hedgeD:C('#2e5028'), hedgeL:C('#5a8a40'), stone:C('#a8a498'), stoneD:C('#8a867a'), moss:C('#5e7a48'), post:C('#7a5a3a'), wire:C('#9a9ea0'), dh:C('#a8362c'), dhR:C('#4a4e52'), gdoor:C('#e4e2da'), ply:C('#a88a5a'), plyD:C('#8a6e44'), tarp:C('#3e6a8a'), tarpD:C('#2e5470'), bk:C('#2a2b2e')};
+model('swing_set', 'Swing set', 'A backyard swing set 3.6 m wide and 2.4 m high: an A-frame of two steel pipes each end, a top bar, two chain swings with seats and one swing wrapped over the bar; legs at both ends so it stands in grass.', 3.8, 2.8, 2.5, function(a){
+  [-1.7, 1.7].forEach(function(x){ [-1, 1].forEach(function(s){ a.box(x, 1.2, s*0.7, 0.07, 2.5, 0.07, YD.pipe, {m:'steel', rot:[s*16, 0, 0]}); }); a.box(x, 0.02, 0, 0.08, 0.04, 1.6, YD.pipe, {m:'steel'}); });
+  a.cyl(0, 2.4, 0, 0.05, 3.6, 'x', YD.pipe, {m:'steel', n:8});
+  [-0.8, 0.8].forEach(function(x, i){ [-0.2, 0.2].forEach(function(dx){ a.box(x + dx, 1.5, 0, 0.015, 1.8, 0.015, YD.net, {m:'steel'}); }); a.box(x, 0.58, 0, 0.5, 0.05, 0.2, YD.seat, {m:'plastic'}); });
+  a.box(1.5, 2.2, 0, 0.015, 0.4, 0.015, YD.net, {m:'steel'}); a.pt('loot', 'door', [0, 0.6, 0.2], [0, 0, 1]); });
+model('trampoline', 'Trampoline', 'A round garden trampoline 3 m across and 0.9 m high on eight legs, with a black mat, a spring ring and a green edge pad, and a safety net on four poles.', 3.4, 3.4, 2.6, function(a){
+  a.cyl(0, 0.9, 0, 1.5, 0.04, 'y', YD.mat, {m:'cloth', n:16}); a.cyl(0, 0.85, 0, 1.55, 0.1, 'y', YD.hedgeD, {m:'cloth', n:16});
+  for (var i = 0; i < 8; i++){ var r = i*45*Math.PI/180; a.box(Math.sin(r)*1.4, 0.43, Math.cos(r)*1.4, 0.06, 0.86, 0.06, YD.pipe, {m:'steel'}); a.box(Math.sin(r)*1.36, 0.88, Math.cos(r)*1.36, 0.02, 0.06, 0.02, YD.spr, {m:'steel'}); }
+  for (var j = 0; j < 4; j++){ var q = (j*90 + 45)*Math.PI/180; a.box(Math.sin(q)*1.55, 1.7, Math.cos(q)*1.55, 0.04, 1.6, 0.04, YD.pipe, {m:'steel'}); }
+  a.cyl(0, 2.45, 0, 1.55, 0.03, 'y', YD.net, {m:'steel', n:16}); });
+model('wood_pile', 'Wood pile', 'A stack of split firewood 2 m long, 1.2 m high and 0.6 m deep between two stakes, ends showing in rings of pale wood; loot: firewood.', 2.2, 0.8, 1.3, function(a){
+  for (var y = 0; y < 5; y++) for (var x = 0; x < 6; x++){ var o = (y % 2)*0.1; a.cyl(-0.85 + x*0.34 + o, 0.15 + y*0.25, 0, 0.12, 0.6, 'z', YD.log, {m:'wood', n:6}); a.cyl(-0.85 + x*0.34 + o, 0.15 + y*0.25, 0.31, 0.1, 0.02, 'z', YD.logE, {m:'wood', n:6}); }
+  [-1.1, 1.1].forEach(function(x){ a.box(x, 0.65, 0, 0.08, 1.3, 0.08, YD.post, {m:'wood'}); }); a.pt('loot', 'door', [0, 0.6, 0.4], [0, 0, 1]); });
+model('picnic_table', 'Picnic table', 'A slatted wooden picnic table 1.8 m long with two attached benches, an A-frame of legs and a plank top.', 1.9, 1.7, 0.8, function(a){
+  a.box(0, 0.74, 0, 1.8, 0.05, 0.75, YD.log, {m:'wood'}); [-0.7, 0, 0.7].forEach(function(x){ a.box(x, 0.745, 0, 0.02, 0.055, 0.76, YD.post, {m:'wood'}); });
+  [-1, 1].forEach(function(s){ a.box(0, 0.44, s*0.62, 1.8, 0.05, 0.28, YD.log, {m:'wood'}); });
+  [-0.7, 0.7].forEach(function(x){ [-1, 1].forEach(function(s){ a.box(x, 0.4, s*0.4, 0.06, 0.9, 0.05, YD.post, {m:'wood', rot:[s*-24, 0, 0]}); }); a.box(x, 0.4, 0, 0.06, 0.05, 1.2, YD.post, {m:'wood'}); }); a.pt('loot', 'door', [0, 0.8, 0], [0, 1, 0]); });
+model('bbq_grill', 'Barbecue grill', 'A round charcoal kettle grill 0.6 m across on three legs with a handle and a bottom vent, plus a bag of charcoal and a spatula on a shelf; loot: charcoal, lighter fluid.', 0.9, 0.9, 1.1, function(a){
+  a.raw('ball', [0, 0.78, 0], {scl:[0.6/0.3, 0.34/0.3, 0.6/0.3], c:YD.bk, m:'steel', n:12}); a.cyl(0, 0.6, 0, 0.31, 0.04, 'y', YD.pipe, {m:'steel', n:12});
+  [0, 120, 240].forEach(function(d){ var r = d*Math.PI/180; a.box(Math.sin(r)*0.26, 0.3, Math.cos(r)*0.26, 0.04, 0.6, 0.04, YD.net, {m:'steel', rot:[Math.cos(r)*-8, 0, Math.sin(r)*8]}); });
+  a.box(0, 1.05, 0.3, 0.06, 0.06, 0.2, YD.net, {m:'steel'}); a.cyl(0, 0.3, 0, 0.18, 0.03, 'y', YD.net, {m:'steel', n:10}); a.box(0.5, 0.2, 0.1, 0.35, 0.4, 0.2, C('#5a4a3a'), {m:'cloth'}); a.pt('loot', 'door', [0.5, 0.45, 0.1], [0, 1, 0]); });
+model('doghouse', 'Doghouse', 'A wooden doghouse 0.9 m wide, 1.1 m long and 0.9 m high with a red pitched roof, an arched doorway on the front (+z) and a chewed bowl beside it.', 1.1, 1.5, 1.0, function(a){
+  a.box(0, 0.35, 0, 0.9, 0.6, 1.1, YD.post, {m:'wood'}); a.box(0, 0.04, 0, 1.0, 0.08, 1.2, YD.woodD, {m:'wood'}); a.raw('prism', [0, 0.78, 0], {scl:[1.1/0.3118, 0.4/0.27, 1.3/0.4], c:YD.dh, m:'sheet', rot:[0, 90, 0]});
+  a.box(0, 0.3, 0.56, 0.4, 0.5, 0.04, YD.bk, {m:'wood'}); a.raw('ball', [0, 0.56, 0.56], {scl:[0.4/0.3, 0.16/0.3, 0.04/0.3], c:YD.bk, m:'wood', n:8}); a.cyl(0.6, 0.04, 0.9, 0.12, 0.06, 'y', YD.spr, {m:'steel', n:8}); a.pt('door', 'door', [0, 0.3, 0.7], [0, 0, 1]); });
+model('hedge_run_4', 'Hedge, 4 m', 'A clipped garden hedge 4 m long, 0.7 m thick and 1.3 m high in leaf-green, with a lighter top and a few darker pockets; tile end to end along a property line.', 4.0, 0.8, 1.3, function(a){
+  a.bev(0, 0.65, 0, 4.0, 1.3, 0.7, YD.hedge, {m:'plant'}); a.bev(0, 1.25, 0, 3.9, 0.12, 0.6, YD.hedgeL, {m:'plant'}); blob(a, -1.0, 0.36, 0.5, 0.15, YD.hedgeD, 0.5, 31, 5); blob(a, 1.1, -0.36, 0.5, 0.15, YD.hedgeD, 0.7, 37, 5); });
+function wallLow(mossy){ return function(a){
+  a.box(0, 0.45, 0, 4.0, 0.9, 0.4, mossy ? YD.stoneD : YD.stone, {m:'stone'}); for (var i = 0; i < 5; i++) a.box(-1.6 + i*0.8, 0.4, 0.2, 0.7, 0.28, 0.02, i % 2 ? YD.stoneD : YD.stone, {m:'stone'}); a.box(0, 0.93, 0, 4.04, 0.1, 0.46, YD.concL || K.concL, {m:'stone'});
+  if (mossy){ blob(a, -1.0, 0, 0.7, 0.2, YD.moss, 0.97, 3, 5); blob(a, 1.2, 0, 0.6, 0.2, YD.moss, 0.97, 9, 5); a.box(1.6, 0.25, 0.2, 0.6, 0.5, 0.05, YD.moss, {m:'plant'}); a.box(-1.7, 0.7, 0, 0.5, 0.3, 0.5, YD.stoneD, {m:'stone', rot:[0, 25, 10]}); } }; }
+model('wall_low_4', 'Low wall, 4 m', 'A 4 m dry-stone garden wall, 0.9 m high and 0.4 m thick, with a flat cap; the plain look.', 4.1, 0.5, 1.0, wallLow(false));
+model('wall_low_4_mossy', 'Low wall, 4 m, mossy', 'The same low wall in a mossy, tumbled look: green caps and patches and one stone fallen from the top.', 4.1, 0.6, 1.0, wallLow(true));
+model('fence_farm_post_rail_4', 'Farm fence, post and rail, 4 m', 'A 4 m ranch fence: two round posts and three split rails, weathered grey-brown, 1.2 m high; ends meet the next piece.', 4.0, 0.2, 1.3, function(a){
+  [-2, 2].forEach(function(x){ a.cyl(x, 0.6, 0, 0.09, 1.2, 'y', YD.post, {m:'wood', n:6}); }); [0.35, 0.7, 1.05].forEach(function(y){ a.box(0, y, 0.1, 4.0, 0.09, 0.05, YD.log, {m:'wood'}); }); a.cyl(0, 0.55, 0, 0.07, 1.1, 'y', YD.post, {m:'wood', n:6}); });
+model('fence_wire_4', 'Wire fence, 4 m', 'A 4 m farm wire fence 1.1 m high: steel T-posts at each end and the middle, five wire strands and a pale mesh panel on the lower half.', 4.0, 0.2, 1.2, function(a){
+  [-2, 0, 2].forEach(function(x){ a.box(x, 0.55, 0, 0.05, 1.1, 0.05, YD.wire, {m:'steel'}); }); [0.25, 0.45, 0.65, 0.85, 1.05].forEach(function(y){ a.box(0, y, 0.04, 4.0, 0.012, 0.012, YD.net, {m:'steel'}); }); a.box(0, 0.3, 0.03, 4.0, 0.5, 0.01, YD.wire, {m:'steel'}); });
+model('garage_door_open', 'Garage door, open', 'A residential garage door 2.4 m wide and 2.1 m high rolled up: the dark opening, a white curled roll above and two side tracks; the leaves are retracted. Origin on the wall plane, opening faces +z.', 2.8, 0.4, 2.5, function(a){
+  a.box(0, 1.05, -0.05, 2.4, 2.1, 0.06, YD.bk, {m:'sheet'}); [-1.28, 1.28].forEach(function(x){ a.box(x, 1.05, 0.02, 0.1, 2.2, 0.1, YD.gdoor, {m:'sheet'}); }); a.box(0, 2.3, 0.02, 2.8, 0.2, 0.1, YD.gdoor, {m:'sheet'}); a.cyl(0, 2.18, 0.1, 0.12, 2.3, 'x', YD.gdoor, {m:'sheet', n:10}); a.pt('door', 'door', [0, 1.0, 0.2], [0, 0, 1]); });
+model('roof_tarp', 'Roof tarp', 'A blue tarp 4 by 3 m pinned over a damaged roof section, lying on the slope, with wrinkled folds, rope ties along the edges and a few sandbags on top; lay it flat on a pitched or flat roof.', 4.2, 3.2, 0.5, function(a){
+  a.box(0, 0.04, 0, 4.0, 0.04, 3.0, YD.tarp, {m:'cloth'}); a.box(-1.0, 0.1, 0.2, 0.2, 0.1, 2.6, YD.tarpD, {m:'cloth', rot:[0, 6, 0]}); a.box(0.9, 0.09, -0.1, 0.18, 0.08, 2.4, YD.tarpD, {m:'cloth', rot:[0, -8, 0]});
+  [-1.8, 0, 1.8].forEach(function(x){ a.box(x, 0.1, 1.45, 0.5, 0.18, 0.3, C('#8a7a5a'), {m:'cloth'}); a.box(x, 0.06, -1.5, 0.04, 0.04, 0.3, K.rope || YD.post, {m:'cloth'}); }); });
+model('fence_panel_missing_4', 'Wood fence, panels missing', 'A 2 m privacy fence section with three posts: a few boards missing, one leaning and a gap where a panel has fallen; pair with the wooden fence tiles.', 4.0, 0.3, 1.9, function(a){
+  [-2, 0, 2].forEach(function(x, i){ a.box(x, 0.9, 0, 0.12, 1.8, 0.12, YD.post, {m:'wood', rot:i === 2 ? [0, 0, 6] : [0, 0, 0]}); });
+  for (var i = 0; i < 9; i++){ if (i === 3 || i === 4 || i === 7) continue; a.box(-1.8 + i*0.45, 0.88 + (i === 6 ? -0.2 : 0), 0.08, 0.38, i === 6 ? 1.4 : 1.7, 0.03, i % 2 ? YD.log : YD.post, {m:'wood', rot:i === 5 ? [0, 0, 14] : [0, 0, 0]}); }
+  [0.4, 1.4].forEach(function(y){ a.box(0, y, 0.0, 4.0, 0.08, 0.05, YD.woodD, {m:'wood'}); }); a.box(0.7, 0.04, 0.4, 0.38, 0.03, 1.6, YD.log, {m:'wood', rot:[0, 20, 0]}); });
+model('boarded_window_set', 'Boarded windows', 'Three window openings 1.1 by 1.4 m at 1.6 m spacing, each nailed shut with rough planks: two crossed boards on the first, three flat boards on the second, one board slanted over the third; frames in white, set on the wall plane at z = 0.', 5.0, 0.2, 1.7, function(a){
+  [-1.6, 0, 1.6].forEach(function(x, i){ a.box(x, 0.85, -0.04, 1.2, 1.5, 0.06, YD.bk, {m:'sheet'}); a.box(x, 1.62, 0.0, 1.3, 0.1, 0.06, YD.gdoor, {m:'wood'}); a.box(x, 0.08, 0.0, 1.3, 0.1, 0.06, YD.gdoor, {m:'wood'}); a.box(x - 0.6, 0.85, 0.0, 0.1, 1.6, 0.06, YD.gdoor, {m:'wood'}); a.box(x + 0.6, 0.85, 0.0, 0.1, 1.6, 0.06, YD.gdoor, {m:'wood'});
+    if (i === 0){ a.box(x, 0.85, 0.05, 1.5, 0.16, 0.04, YD.ply, {m:'wood', rot:[0, 0, 40]}); a.box(x, 0.85, 0.08, 1.5, 0.16, 0.04, YD.plyD, {m:'wood', rot:[0, 0, -40]}); }
+    if (i === 1){ [0.35, 0.85, 1.35].forEach(function(y, k){ a.box(x, y, 0.05, 1.4, 0.2, 0.04, k % 2 ? YD.ply : YD.plyD, {m:'wood'}); }); }
+    if (i === 2){ a.box(x, 0.85, 0.05, 1.4, 0.2, 0.04, YD.ply, {m:'wood', rot:[0, 0, -18]}); a.box(x, 0.3, 0.05, 0.9, 0.18, 0.04, YD.plyD, {m:'wood', rot:[0, 0, 6]}); } }); });
+
 fs.writeFileSync(root + 'packs/afterstreet-streetscape.js', M.packToJS(pack));
 console.log('wrote packs/afterstreet-streetscape.js:', pack.assets.length, 'models');
