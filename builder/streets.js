@@ -59,7 +59,7 @@ window.BLIB.streets = function(L){
     };
     var spacing = function(base, jit, x, y, k){ return base + (h3(Math.round(x), Math.round(y), k, 61) - 0.5)*2*jit; };
     var llOf = function(x, y){ var p = loc.ll(x, y); return [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]; };
-    var plain = {}, push = function(x, y, tags){ var p = llOf(x, y); F.pois.push({lon:p[0], lat:p[1], t:tags}); };
+    var KEEP = F.keep || 1, plain = {}, push = function(x, y, tags){ if (KEEP < 1 && !tags.power && Math.abs(Math.sin(x*12.9898 + y*78.233)*43758.5453) % 1 >= KEEP) return; var p = llOf(x, y); F.pois.push({lon:p[0], lat:p[1], t:tags}); };
     var prop = function(kind, piece, x, y, yaw, extra){ var t = {'asmb:prop':piece, 'asmb:ry':String(((Math.round(yaw/90) % 4) + 4) % 4), 'asmb:yaw':String(((Math.round(yaw) % 360) + 360) % 360), 'asmb:made':'yes', generated:'yes', 'asmb:band':kind.band}; if (extra) for (var k in extra) t[k] = extra[k]; push(x, y, t); };
     var other = 0;
     roads.forEach(function(rd, ri){

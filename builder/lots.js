@@ -59,8 +59,9 @@
       var inBox = function(o, x, y, mg){ var dx = x - o.x, dy = y - o.y; return Math.abs(dx*o.ux + dy*o.uy) < o.hu + mg && Math.abs(-dx*o.uy + dy*o.ux) < o.hv + mg; };
       var inAny = function(x, y, mg, skip){ return each(bgrid, x, y, CELL, 40, function(o){ return o !== skip && Math.hypot(o.x - x, o.y - y) < o.r + mg + 1 && inBox(o, x, y, mg); }); };
       var clearOfRoads = function(x, y, mg){ var r = nearRoad(x, y, 12); for (var i = 0; i < r.length; i++) if (r[i].d < r[i].s[4] + mg) return false; return true; };
-      var wayOut = function(tags, pts, poly){ var c = []; for (var i = 0; i < pts.length; i += 2){ var p = ll(pts[i], pts[i + 1]); c.push(p[0], p[1]); } F.ways.push({t:tags, c:c, poly:!!poly, src:'gen'}); };
-      var prop = function(piece, x, y, yaw, band, z){ var p = ll(x, y), tg = {'asmb:prop':piece, 'asmb:ry':String(((Math.round(yaw/90) % 4) + 4) % 4), 'asmb:yaw':String(Math.round(yaw)), generated:'yes', 'asmb:made':'yes', 'asmb:band':band}; if (z) tg['asmb:z'] = String(Math.round(z*10)/10); F.pois.push({lon:p[0], lat:p[1], t:tg}); };
+      var wayOut = function(tags, pts, poly){ if (F.keep < 1 && !tags.amenity && !tags.landuse && Math.abs(Math.sin(pts[0]*12.9898 + pts[1]*78.233)*43758.5453) % 1 >= Math.sqrt(F.keep)) return; var c = []; for (var i = 0; i < pts.length; i += 2){ var p = ll(pts[i], pts[i + 1]); c.push(p[0], p[1]); } F.ways.push({t:tags, c:c, poly:!!poly, src:'gen'}); };
+      var KEEP = F.keep || 1; var kept = function(x, y){ return KEEP >= 1 || Math.abs(Math.sin(x*12.9898 + y*78.233)*43758.5453) % 1 < KEEP; };   /* on a phone or tablet only part of the made-up detail is made (F.keep), so a big city fits in the tab */
+      var prop = function(piece, x, y, yaw, band, z){ if (!kept(x, y)) return; var p = ll(x, y), tg = {'asmb:prop':piece, 'asmb:ry':String(((Math.round(yaw/90) % 4) + 4) % 4), 'asmb:yaw':String(Math.round(yaw)), generated:'yes', 'asmb:made':'yes', 'asmb:band':band}; if (z) tg['asmb:z'] = String(Math.round(z*10)/10); F.pois.push({lon:p[0], lat:p[1], t:tg}); };
       /* facing direction (fx, fy) as the yaw used by the props: atan2(east, south) (the 3D view and the game turn a prop by -yaw about the vertical axis, the prop model faces +z) in the game's metre space, where y grows south */
       var yawOf = function(fx, fy){ return Math.atan2(fx, fy)*180/Math.PI; };
       var heightOf = function(t){ var h = parseFloat(t.height); if (h > 0) return h; var lv = parseInt(t['building:levels'], 10); return (lv > 0 ? lv : 1)*3.2; };
@@ -215,7 +216,7 @@
       var EDGE_CAP = 160000, nEdge = 0;
       var treeNear = function(x, y, r){ return each(tg, x, y, 10, r, function(v){ return Math.hypot(v[0] - x, v[1] - y) < r; }); };
       var okSpot = function(x, y, rt){ return nEdge < EDGE_CAP && !inAny(x, y, 1.5, null) && clearOfRoads(x, y, 3) && !treeNear(x, y, rt || 5); };
-      var addTree = function(x, y, band){ var p = ll(x, y); F.pois.push({lon:p[0], lat:p[1], t:{natural:'tree', generated:'yes', 'asmb:made':'yes', 'asmb:band':band}}); put(tg, x, y, 10, [x, y]); nEdge++; };
+      var addTree = function(x, y, band){ if (!kept(x, y)) return; var p = ll(x, y); F.pois.push({lon:p[0], lat:p[1], t:{natural:'tree', generated:'yes', 'asmb:made':'yes', 'asmb:band':band}}); put(tg, x, y, 10, [x, y]); nEdge++; };
       var toM = function(c){ var m = []; for (var i = 0; i < c.length; i += 2){ var p = loc.m(c[i], c[i + 1]); m.push(p[0], p[1]); } return m; };
       /* walk a line of metre points: fn(x, y, nx, ny, k) every step (+/- jitter) with a left-hand unit normal */
       var walk = function(m, step, jit, sd, fn){
@@ -279,7 +280,7 @@
          come from the fleet pack (the game skips what the map's packs do not hold). All seeded by position, marked generated=yes and asmb:made=yes. ---- */
       var CARS = ['hatchback', 'sedan', 'sedan', 'wagon', 'suv', 'pickup', 'van', 'offroader', 'crew_pickup'], cg = new Map(), nCar = 0, CAR_CAP = 70000;
       var pickCar = function(sx, sy, sd, ruin){ var k = CARS[Math.floor(h3(sx, sy, sd)*CARS.length)], r = h3(sx, sy, sd + 1); if (r < ruin*0.3) return 'vehicles.' + k + '_burnt'; if (r < ruin) return 'vehicles.' + k + '_wreck'; return 'vehicles.' + k; };
-      var carAt = function(piece, x, y, yaw, band, minGap){ if (nCar >= CAR_CAP || each(cg, x, y, 8, minGap || 5.5, function(v){ return Math.hypot(v[0] - x, v[1] - y) < (minGap || 5.5); }) || inAny(x, y, 0.8, null)) return false; var p = ll(x, y); F.pois.push({lon:p[0], lat:p[1], t:{'asmb:prop':piece, 'asmb:ry':String(((Math.round(yaw/90) % 4) + 4) % 4), 'asmb:yaw':String(Math.round(yaw)), generated:'yes', 'asmb:made':'yes', 'asmb:band':band}}); put(cg, x, y, 8, [x, y]); nCar++; return true; };
+      var carAt = function(piece, x, y, yaw, band, minGap){ if (!kept(x, y) || nCar >= CAR_CAP || each(cg, x, y, 8, minGap || 5.5, function(v){ return Math.hypot(v[0] - x, v[1] - y) < (minGap || 5.5); }) || inAny(x, y, 0.8, null)) return false; var p = ll(x, y); F.pois.push({lon:p[0], lat:p[1], t:{'asmb:prop':piece, 'asmb:ry':String(((Math.round(yaw/90) % 4) + 4) % 4), 'asmb:yaw':String(Math.round(yaw)), generated:'yes', 'asmb:made':'yes', 'asmb:band':band}}); put(cg, x, y, 8, [x, y]); nCar++; return true; };
       /* where the town is: the 250 m cell with the most buildings */
       var cnt = new Map(), cenBX = 0, cenBY = 0, cenBN = 0; bl.forEach(function(b){ var k = Math.floor(b.x/250) + ',' + Math.floor(b.y/250), v = (cnt.get(k) || 0) + 1; cnt.set(k, v); if (v > cenBN){ cenBN = v; cenBX = (Math.floor(b.x/250) + 0.5)*250; cenBY = (Math.floor(b.y/250) + 0.5)*250; } });
       /* in driveways: about a third of houses with a drive have a car in it, nose to the garage */

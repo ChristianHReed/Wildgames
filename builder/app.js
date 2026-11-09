@@ -131,7 +131,7 @@ $('build').addEventListener('click', function(){
   if (S.osm.kind === 'download' && !navigator.onLine){ toast('Downloading needs an internet connection.'); return; }
   S.proj = S.proj || slug(S.area.name) + '-' + Date.now().toString(36); saveState();
   var job = {proj:S.proj, area:{id:S.proj, name:S.area.name || 'My map', lat:S.area.lat, lon:S.area.lon, miles:S.area.miles}, osm:{kind:S.osm.kind, file:S.osm.file || null, name:S.osm.name},
-    tiffs:S.tiffs.slice(), overture:S.overture.slice(), opts:{fill:S.opts.fill, dress:S.opts.dress !== false, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
+    tiffs:S.tiffs.slice(), overture:S.overture.slice(), opts:{light:DEV.kind !== 'computer', fill:S.opts.fill, dress:S.opts.dress !== false, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
   S.building = true; S.t0 = Date.now(); $('build').disabled = true; $('stop').classList.remove('hidden'); $('barI').style.width = '0%'; $('stage').textContent = 'Starting...';
   W.post({t:'build', job:job});
 });
