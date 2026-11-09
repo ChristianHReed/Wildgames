@@ -80,13 +80,14 @@ What the game has now:
 | Feeling it | Short vibration on button presses (Android). |
 | Keyboard | WASD or arrow keys to turn, every action on a key. |
 | Pace | Sleeping skips the night. The game saves on its own every few seconds of play. |
+| Hearing | Captions for sounds that matter (Settings): aliens, banging, breaking, crashes, alarms and raids, each with where it came from. |
 | Reporting problems | Menu > Report a bug sends a picture and a note, with the device and browser, so device problems can be fixed. |
 
 What is missing, in the order it should be built:
 
 1. ~~Game controller (gamepad) support~~ built in 0.120.0, menus included, with a line in words saying which button does what.
 2. **Rebinding keys and controller buttons.**
-3. **Captions for sounds that matter:** an alien behind you, a raid starting, a door breaking, each as a short line with a direction.
+3. ~~Captions for sounds that matter~~ (0.125.1, Settings): aliens, banging, glass, metal, crashes, walls giving way, alarms and raids, each with a direction.
 4. **Colour-blind safe signals:** health and needs bars and map markers also differ by shape or label, not only by red and green.
 5. **Text size** for the start page, the menus and the messages (the screen controls already scale).
 6. **Hold or toggle** choice for every hold action (search, pry, take apart, drink), and a slower double-tap time.

@@ -407,6 +407,7 @@
         <label>Frame rate<select id="fcap"><option value="0">As fast as the screen allows</option><option value="30">30 a second (cooler, saves battery)</option></select></label>
         <label>View distance and art detail<select id="qual"><option value="0">Low (phones, older laptops)</option><option value="1">Medium</option><option value="2">High</option></select></label>
         <label>Field of view (how wide you see)<input id="fovS" type="range" min="70" max="110" value="100"></label>
+        <label><input type="checkbox" id="capsS"> Captions for sounds that matter (aliens, gunfire, breaking, raids), with the direction</label>
         <label>Head bob when walking<select id="bobS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Screen controls and readouts size<select id="hudS"><option value="0.85">Small</option><option value="1">Normal</option><option value="1.15">Large</option><option value="1.3">Extra large</option></select></label>
         <label>High-contrast screen controls<select id="hudHC"><option value="0">Off</option><option value="1">On</option></select></label>
@@ -575,7 +576,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.125.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.125.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -1975,7 +1976,22 @@ function sndPlace(x, y, range){
 function sndOut(pan){ var g = SND.ctx.createGain(); if (SND.ctx.createStereoPanner){ var p = SND.ctx.createStereoPanner(); p.pan.value = pan; g.connect(p); p.connect(SND.out); } else g.connect(SND.out); return g; }
 /* 0.95.0: the sound names the game asks for, where the content chat's set (assets/audio/sounds_content.js) calls them something else */
 var SNDA = {step_concrete:'step_road', hit:'hit_fist', wood_hit:'hit_bat', glass:'glass_smash', search:'cloth_rustle', chop:'hit_blade', metal:'metal_clang', pot:'metal_clang'};
+/* 0.125.1: captions for sounds that matter (Settings, off by default): an alien, gunfire, banging, breaking glass or walls, a crash, an alarm, a raid,
+   each a short line at the bottom with where it came from (ahead, behind you, to your left or right). They show even with the sound turned down.
+   The player's own sounds are not captioned */
+var CAPON = false, CAPT = {}, CAPL = [[/^alien.*attack/, 'An alien attacks'], [/^alien_loud/, 'An alien shrieks'], [/^alien/, 'Alien sounds'], [/^gunshot/, 'Gunfire'], [/^wood_hit|^plank/, 'Banging on wood'],
+  [/^glass/, 'Glass breaks'], [/^metal|^pot/, 'Metal clangs'], [/crash/, 'A crash'], [/crumble|concrete_break|wall_break|rubble/, 'A wall gives way'], [/^alarm/, 'An alarm'], [/^hydraulic/, 'A machine whines']];
+try { CAPON = localStorage.getItem('lastblock:caps') === '1'; } catch (e){}
+function capDir(x, y){ var a = Math.atan2(y - P.y, x - P.x) - P.yaw; a = Math.atan2(Math.sin(a), Math.cos(a)); var c = Math.abs(a); return c < 0.8 ? 'ahead' : c > 2.35 ? 'behind you' : Math.sin(a) > 0 ? 'to your right' : 'to your left'; }
+function caption(text, x, y){
+  if (!CAPON || !running || !P) return; var line = text + (x !== undefined ? ', ' + capDir(x, y) : ''), now = performance.now(); if (CAPT[line] && now - CAPT[line] < 2500) return; CAPT[line] = now;
+  var box = el('caps'); if (!box){ box = document.createElement('div'); box.id = 'caps'; box.setAttribute('aria-live', 'polite'); box.style.cssText = 'position:fixed;left:50%;bottom:calc(96px + 6vh);transform:translateX(-50%);z-index:99;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none'; document.body.appendChild(box); }
+  var d = document.createElement('div'); d.textContent = line; d.style.cssText = 'background:rgba(0,0,0,.78);color:#fff;font:600 15px system-ui,sans-serif;padding:3px 10px;border-radius:6px;transition:opacity .6s'; box.appendChild(d);
+  while (box.children.length > 3) box.removeChild(box.firstChild); setTimeout(function(){ d.style.opacity = '0'; setTimeout(function(){ d.remove(); }, 700); }, 3000);
+}
+function capSnd(name, x, y, range){ if (!CAPON || x === undefined || !P) return; var dd = Math.hypot(x - P.x, y - P.y); if (dd < 2.5 || dd > (range || 40)) return; for (var i = 0; i < CAPL.length; i++) if (CAPL[i][0].test(name)){ caption(CAPL[i][1], x, y); return; } }
 function sfx(name, x, y, vol, rate, range){
+  capSnd(name, x, y, range);
   if (!SND.ctx || !running || !SND.vol) return; var L = SND.buf[name]; if (!L || !L.length) L = SND.buf[SNDA[name]]; if (!L || !L.length) return; var pl = sndPlace(x, y, range || 40); if (!pl) return;
   var src = SND.ctx.createBufferSource(); src.buffer = L[Math.floor(Math.random()*L.length)]; src.playbackRate.value = (rate || 1)*(0.94 + Math.random()*0.12);
   var g = sndOut(pl[1]); g.gain.value = (vol === undefined ? 1 : vol)*pl[0]; src.connect(g); src.start();
@@ -1998,6 +2014,7 @@ function burst(x, y, vol, freq, dur, range, type){
 /* an alien call: a wavering tone through a growl. Swarmers chitter high, the stalker shrieks, the giant groans low */
 var ALN = ['swarmer', 'stalker', 'giant', 'spitter'];
 function alienCall(k, x, y, loud, kind){
+  capSnd(kind === 'attack' ? 'alien_attack' : loud ? 'alien_loud' : 'alien', x, y, loud ? 70 : 35);
   if (!SND.ctx || !running || !SND.vol) return;
   var an = 'alien_' + ALN[k] + '_' + (kind || (loud ? 'notice' : 'idle')); if (sfxHas(an)){ sfx(an, x, y, kind === 'attack' || loud ? 0.9 : 0.5, 1, loud ? 70 : 35); return; } var pl = sndPlace(x, y, loud ? 70 : 35); if (!pl) return; var t = SND.ctx.currentTime;
   var base = [520, 300, 70, 400][k], dur = [0.35, 0.9, 1.3, 0.5][k]*(loud ? 1.3 : 1), o = SND.ctx.createOscillator(), lfo = SND.ctx.createOscillator(), lg = SND.ctx.createGain();
@@ -5247,7 +5264,7 @@ function newcomer(){
 function startRaid(n){
   var bz = world.zones && world.zones[0]; if (!bz) return 0; var x0 = 0, y0 = 0, ok = false, a = 0;
   for (var k = 0; k < 24 && !ok; k++){ a = Math.random()*6.283; var r = 75 + Math.random()*25; x0 = bz.x + Math.cos(a)*r; y0 = bz.y + Math.sin(a)*r; ok = !circ(x0, y0, 0.6) && !inWater(x0, y0, 0.5) && !inSafe(x0, y0, 10) && !buildingAt(x0, y0); }
-  if (!ok) return 0; var G = {id:++packId, home:-1, horde:false, raid:true, vis:{}, t:0, wait:0, tx:bz.x, ty:bz.y}; packsA.push(G); var made = 0, day = Math.floor((8 + time/DAY*24)/24) + 1;
+  if (!ok) return 0; caption('A raid is coming', x0, y0); var G = {id:++packId, home:-1, horde:false, raid:true, vis:{}, t:0, wait:0, tx:bz.x, ty:bz.y}; packsA.push(G); var made = 0, day = Math.floor((8 + time/DAY*24)/24) + 1;
   var pc = survCount(), kinds = []; for (var j = 0; j < n; j++) kinds.push(0); for (j = 0; j < Math.floor(pc/3); j++) kinds.push(1); for (j = 0; j < Math.floor(pc/4); j++) kinds.push(4); if (day >= 5 && pc >= 6) kinds.push(2); if (day >= 4 && pc >= 5) kinds.push(3);
   for (var i = 0; i < kinds.length; i++){ var x = x0 + Math.random()*6 - 3, y = y0 + Math.random()*6 - 3; if (circ(x, y, 0.4)) continue; var z = addAlien(kinds[i], x, y); z.grp = G.id; z.raid = 1; z.st = 1; z.stT = 30; z.lx = bz.x; z.ly = bz.y; made++; }
   if (!made){ packsA.pop(); return 0; }
@@ -6451,6 +6468,7 @@ el('musicOn').checked = MUS.on; el('musicOn').addEventListener('change', functio
 el('vol').value = Math.round(SND.vol*100); el('vol').addEventListener('input', function(){ SND.vol = el('vol').value/100; lsSet('lastblock:vol', el('vol').value); sndInit(); });
 el('fovS').addEventListener('input', function(){ CAMS.fov = +el('fovS').value; lsSet('lastblock:fov', CAMS.fov); });
 el('bobS').addEventListener('change', function(){ CAMS.bob = +el('bobS').value; lsSet('lastblock:bob', CAMS.bob); });
+el('capsS').checked = CAPON; el('capsS').addEventListener('change', function(){ CAPON = el('capsS').checked; lsSet('lastblock:caps', CAPON ? '1' : '0'); });
 el('fxS').addEventListener('change', function(){ CAMS.fx = +el('fxS').value; lsSet('lastblock:fx', CAMS.fx); });
 function hudPrefs(){ var hs = lsGet('lastblock:hudscale') || '1', hc = lsGet('lastblock:hudhc') || '0'; el('hudS').value = hs; el('hudHC').value = hc; document.documentElement.style.setProperty('--hs', hs); document.body.classList.toggle('hc', hc === '1'); }   /* 0.114.86 */
 el('hudS').addEventListener('change', function(){ lsSet('lastblock:hudscale', el('hudS').value); hudPrefs(); }); el('hudHC').addEventListener('change', function(){ lsSet('lastblock:hudhc', el('hudHC').value); hudPrefs(); }); hudPrefs();
