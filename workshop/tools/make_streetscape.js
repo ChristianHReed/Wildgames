@@ -391,5 +391,29 @@ model('sign_hanging_broken', 'Shop sign, hanging', 'A shop sign 1.6 m wide hangi
 model('sign_fallen_pole', 'Fallen street sign', 'A street name sign on a leaning pole that has fallen across the pavement, 3.2 m long, the blue name board face-up and cracked; a trip-hazard prop; the pole lies along x. No real street names.', 3.4, 0.7, 0.5, function(a){
   a.cyl(0, 0.07, 0, 0.045, 3.0, 'x', WR.post, {m:'steel', n:6, rot:[0, 5, 0]}); a.box(-1.4, 0.13, 0.04, 0.9, 0.04, 0.28, C('#2f5aa0'), {m:'sheet', rot:[0, 5, 0]}); a.box(-1.4, 0.15, 0.04, 0.7, 0.02, 0.1, WR.white, {m:'sheet'}); a.box(1.5, 0.05, 0.0, 0.3, 0.08, 0.3, K.concD, {m:'stone', rot:[0, 10, 0]}); });
 
+/* ============================================ batch 11: far wind turbine, elevated rail, subway entrance (main chat art request) ============================================ */
+var TB = {tower:C('#e4e6e2'), towerD:C('#c4c8c4'), blade:C('#f0f0ec'), hub:C('#c8ccc8'), conc:C('#8e8e88'), concD:C('#6e6e68'), rail:C('#5a4e46'), slp:C('#4a3a2c'), bal:C('#7a766c'), yel:C('#d8b02c'), sub:C('#2f5aa0'), subW:C('#e8ece8')};
+model('wind_turbine_far', 'Wind turbine, far (cheap)', 'A 3-blade wind turbine 34 m tall with a 24 m rotor, built as cheaply as possible (about 120 triangles) for the far distance: a tapered white tower, a box nacelle, a hub and three flat blades; stand-alone landmark on hills and wind farms. Blades face +z; the rotor is static.', 14, 14, 46, function(a){
+  a.cone(0, 21.5, 0, 2.2, 43, TB.tower, {m:'steel', n:6}); a.cyl(0, 0.5, 0, 1.4, 1.0, 'y', TB.conc, {m:'stone', n:6}); a.box(0, 34.6, 0.4, 1.6, 1.6, 4.0, TB.towerD, {m:'steel'}); a.box(0, 34.6, 2.5, 1.2, 1.2, 0.6, TB.hub, {m:'steel'});
+  [0, 120, 240].forEach(function(ang){ var r = ang*Math.PI/180, L = 12; a.wedge(Math.sin(r)*L*0.5, 34.6 + Math.cos(r)*L*0.5, 3.0, 0.9, L, 0.14, TB.blade, {m:'sheet', rot:[0, 0, -ang]}); }); a.pt('light', 'light', [0, 36.0, 0.4], [0, 1, 0]); });
+function railDeck(a, len, plat){ var H = 6.6, W = 4.4;
+  [-len*0.25, len*0.25].forEach(function(z){ a.box(0, H/2, z, 1.4, H, 1.2, TB.conc, {m:'stone'}); a.box(0, H - 0.3, z, 3.4, 0.6, 1.8, TB.concD, {m:'stone'}); });
+  a.box(0, H + 0.55, 0, W, 1.1, len, TB.conc, {m:'stone'}); a.box(0, H + 0.0, 0, W + 0.3, 0.2, len, TB.concD, {m:'stone'});
+  a.box(0, H + 1.12, 0, W - 0.5, 0.06, len, TB.bal, {m:'stone'});
+  [-0.72, 0.72].forEach(function(x){ a.box(x, H + 1.22, 0, 0.1, 0.14, len, TB.rail, {m:'steel'}); });
+  for (var i = 0; i < len/0.8; i++) a.box(0, H + 1.18, -len/2 + 0.4 + i*0.8, 2.4, 0.1, 0.24, TB.slp, {m:'wood'});
+  [-1, 1].forEach(function(sd){ a.box(sd*(W/2 - 0.12), H + 1.7, 0, 0.24, 1.0, len, TB.concD, {m:'stone'}); a.box(sd*(W/2 - 0.12), H + 2.25, 0, 0.34, 0.12, len, TB.conc, {m:'stone'}); });
+  if (plat){ a.box(-W/2 - 1.6, H + 0.8, 0, 3.0, 0.4, len, TB.concD, {m:'stone'}); a.box(-W/2 - 1.6, H + 1.02, 0, 3.0, 0.05, len, TB.yel, {m:'sheet'}); a.box(-W/2 - 3.0, H + 3.4, 0, 0.12, 4.6, 0.12, TB.rail, {m:'steel'}); a.box(-W/2 - 0.2, H + 3.4, -len/2 + 0.2, 0.12, 4.6, 0.12, TB.rail, {m:'steel'}); a.box(-W/2 - 0.2, H + 3.4, len/2 - 0.2, 0.12, 4.6, 0.12, TB.rail, {m:'steel'}); a.box(-W/2 - 1.6, H + 5.7, 0, 3.4, 0.14, len, TB.sub, {m:'sheet'}); a.box(-W/2 - 1.6, H + 1.4, 0, 0.7, 0.08, 3.0, C('#7a5a34'), {m:'wood'}); } }
+model('elevated_rail_8m', 'Elevated rail, 8 m', 'An 8 m section of elevated railway on two concrete piers, deck 7.7 m above the ground: ballast, two rails on sleepers and a low concrete parapet each side. Tiles along z (end to end). Make the track bed walkable; the underside is open so roads can pass beneath. Rails 1.43 m apart.', 4.8, 8, 9.1, function(a){ railDeck(a, 8, false); });
+model('elevated_rail_station_8m', 'Elevated rail station, 8 m', 'An 8 m elevated rail section with a platform on the left side: a raised yellow-edged platform 3 m wide, a bench and a blue roof on posts. Tiles along z and joins the plain 8 m section. Stair down not included yet.', 9.6, 8, 13, function(a){ railDeck(a, 8, true); });
+model('subway_entrance', 'Subway entrance', 'A closed underground station entrance 3 m wide and 4 m deep: a stair opening with a steel balustrade on each side, a blue sign pole with a lit round lamp, a roof canopy with a sign bar and a rolled-down steel gate across the top step. Closed: it does not lead anywhere yet. Open side is +z.', 4.2, 4.6, 3.8, function(a){
+  a.box(0, 0.1, 0, 3.6, 0.2, 4.4, TB.concD, {m:'stone'}); a.box(0, 0.22, 0.4, 2.6, 0.05, 3.4, C('#2a2a28'), {m:'stone'});
+  for (var i = 0; i < 6; i++) a.box(0, 0.3 - i*0.01, 1.8 - i*0.55, 2.4, 0.04, 0.5, TB.conc, {m:'stone'});
+  [-1.4, 1.4].forEach(function(x){ a.box(x, 1.0, 0, 0.14, 2.0, 4.2, TB.conc, {m:'stone'}); a.box(x, 2.05, 0, 0.3, 0.1, 4.2, TB.concD, {m:'stone'}); a.box(x + (x < 0 ? 0.2 : -0.2), 0.8, 0, 0.05, 0.05, 4.0, TB.sub, {m:'steel'}); });
+  [-1.3, 1.3].forEach(function(x){ a.box(x, 2.6, -1.9, 0.14, 3.0, 0.14, TB.rail, {m:'steel'}); a.box(x, 2.6, 1.9, 0.14, 3.0, 0.14, TB.rail, {m:'steel'}); });
+  a.box(0, 3.2, 0, 3.3, 0.14, 4.2, TB.sub, {m:'sheet'}); a.box(0, 3.55, 1.95, 3.3, 0.5, 0.1, TB.subW, {m:'sheet'}); a.glow(0, 3.55, 2.02, 3.0, 0.3, 0.03, C('#f4f0e0'));
+  for (var g = 0; g < 8; g++) a.box(-1.1 + g*0.31, 1.05, 1.3, 0.08, 2.0, 0.04, C('#6a6a66'), {m:'steel'}); a.box(0, 2.0, 1.3, 2.6, 0.12, 0.08, C('#6a6a66'), {m:'steel'}); a.box(0, 0.4, 1.3, 2.6, 0.12, 0.08, C('#6a6a66'), {m:'steel'});
+  a.cyl(2.0, 1.6, 2.2, 0.04, 3.2, 'y', TB.rail, {m:'steel', n:6}); a.raw('ball', [2.0, 3.3, 2.2], {scl:[0.3/0.3, 0.3/0.3, 0.3/0.3], c:TB.sub, m:'sheet', n:8}); a.glow(2.0, 3.3, 2.2, 0.36, 0.36, 0.36, C('#f4f0e0')); a.pt('light', 'light', [2.0, 3.3, 2.2], [0, 0, 1]); });
+
 fs.writeFileSync(root + 'packs/afterstreet-streetscape.js', M.packToJS(pack));
 console.log('wrote packs/afterstreet-streetscape.js:', pack.assets.length, 'models');

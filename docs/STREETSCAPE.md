@@ -56,4 +56,5 @@ Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash
 - Batch 8: `shop_shelf_outdoor`, `water_barrels_3`, `propane_cage` (loot), `lamp_light_pool` (glow decal), `shopfront_glow_4` (lit window, awning and sign), `porch_set` (steps open in the middle), `garden_pool`.
 - Batch 9: corn, potato and pumpkin in five stages each (`corn_stage_1_seeds` .. `_5_ripe`, `potato_stage_*`, `pumpkin_stage_*`), same 2 m soil square as the wheat so the game swaps by days since planting.
 - Batch 10: `wreck_tractor`, `sign_stop_bent`, `sign_hanging_broken`, `sign_fallen_pole` (broken signs; no real street names).
-- Not done yet from the reference list: elevated rail, subway entrance, far wind turbine.
+- Batch 11: `wind_turbine_far` (about 120 triangles), `elevated_rail_8m`, `elevated_rail_station_8m` (platform, bench, roof), `subway_entrance` (closed, gate across the top step).
+- Not done yet: stairs from the elevated station down to the street, an open subway entrance that leads somewhere (needs the Map and Main chats), rail curves and ramps.
