@@ -1,6 +1,6 @@
 # Game loops by mode (decided 4 November 2026, from the owner's answers)
 
-Step 1 is built (0.116.0): the new-world difficulty settings (alien pressure, nest push-back, survivors can die for good) and the Endless settlement meter. Step 2 is built (0.119.0): see "Endless as built" below. Steps 3 to 5 are not built. Build order is at the end. "Base can be lost" is held back until the raids on the settlement exist (step 2), since it has nothing to act on yet. Stretch goals paired with each mode are in docs/STRETCH.md.
+Step 1 is built (0.116.0): the new-world difficulty settings (alien pressure, nest push-back, survivors can die for good) and the Endless settlement meter. Step 2 is built (0.119.0): see "Endless as built" below. Step 3 is built in part (0.127): see "Reclaim as built". Steps 4 and 5 are not built. Build order is at the end. "Base can be lost" is held back until the raids on the settlement exist (step 2), since it has nothing to act on yet. Stretch goals paired with each mode are in docs/STRETCH.md.
 
 ## Endless: build a settlement
 Loop: scavenge by day, fortify and grow by night, survive the raids.
@@ -29,6 +29,13 @@ Loop: scout a zone, prepare, raid its nests, hold it, move on.
   - Steady: nests grow stronger each day and raid your base after day 3.
   - Brutal: uncleared nests spread to new buildings and spawn new alien types.
 - **Needs from the game:** zone list and progress on the map, nest defence and alarm behaviour, the one-use siege items, a difficulty option.
+
+## Reclaim as built (0.127.1)
+- **Zones:** 500 m squares of the map square; one with 8 or more buildings is held. Named after its longest street, else by grid ("zone C4"). A new Reclaim world puts one nest in each held zone (two where there are 150 buildings or more), none where you start.
+- **Cleared:** a zone with no nests left sends out no more aliens (night trickle and hordes do not start in it). Outside Brutal, nests only spread within their own zone.
+- **Map and goal:** the big map shades each held zone purple with its nest count, cleared ones green; entering a zone says which; the goal reads "zones cleared X / N". Every zone cleared wins.
+- **Siege:** starting on a nest raises the alarm (defenders come out, aliens nearby come). Guards come out when you get within 45 m. By hand a nest takes 10 s; a nest charge (1 fuel, 2 scrap, 1 duct tape) is set in 1.5 s and goes off 5 s later.
+- **Not built yet:** loot refilling in cleared zones, outposts, neighbourhood names from the map, the difficulty differences beyond spreading (Gentle and Steady growth already apply through nest push-back).
 
 ## Escape: fly out in 7 days (best played together)
 Loop: gear up at home, meet up, cross the city, restore the airport, hold the runway, fly out.

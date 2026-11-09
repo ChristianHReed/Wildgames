@@ -537,7 +537,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.126.2</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -582,7 +582,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.126.2', ART = {}, ARTSET = (function(){
+var BUILD = '0.127.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -642,7 +642,7 @@ function startRun(ws, cs){
   if (ws && ws.nb === w.buildings.length && ws.edits) loadEdits(ws.edits);
   pickSafe(!resumed && net.role !== 'guest', toSafe || !(resumed && worldPlayers[charSlug()]));
   if (toSafe){ toSafe = false; P.lvl = 0; P.roof = null; P.climbL = null; P.gy = undefined; P.fall = 0; P.hide = null; el('hideMask').classList.remove('on'); P.veh = null; if (world.safe >= 0) setTimeout(function(){ toast('Back at your safe house.', 4); }, 50); }
-  w.nests = {}; w.burst = {}; w.nestNew = {}; wx = {w:0, until:time + 150, tor:null, flash:0}; flares = []; lures = []; w.lastDay = 0;
+  w.nests = {}; w.burst = {}; w.nestNew = {}; wx = {w:0, until:time + 150, tor:null, flash:0}; flares = []; lures = []; charges = []; w.lastDay = 0;
   if (resumed && !ws.fresh){ (ws.nests || []).forEach(function(i){ if (w.buildings[i]) w.nests[i] = 1; }); (ws.burst || []).forEach(function(i){ if (w.buildings[i] && !w.nests[i]) w.burst[i] = 1; }); if (ws.wx){ wx.w = ws.wx.w | 0; wx.until = +ws.wx.until || 0; } } else pickNests();
   w.total = 0; w.buildings.forEach(function(b){ w.total += b.rolls + 1; }); w.total += w.crates.length;
   hiTrees = []; clutter = []; clutKey = ''; world.trees.forEach(function(t){ t.hi = false; }); buildTrees(); makeVehicles(resumed ? ws.veh : null); vTowRelink(); makeTraders(); makeSurvivors(resumed ? ws.surv : null); setupScenario(resumed ? ws : null); pings = []; P.gridWas = undefined;
@@ -847,6 +847,8 @@ function useItem(k){
   if (CLOTHES[k]){ wearItem(k); return; }
   if (k === 'food' && inv.fresh > 0) k = 'fresh';   /* key 1 eats whatever would go off first */
   if (k === 'fiber'){ if (inv.fiber < 2){ toast('A bandage takes 2 plant fibre.', 3); return; } inv.fiber -= 2; inv.bandage++; feed('Made a bandage', ITEMS.bandage[1]); updateHud(); return; }
+  if (k === 'fuel'){ if (inv.fuel < 1 || inv.scrap < 2 || !(inv.tape > 0)){ toast('A nest charge takes 1 fuel, 2 scrap and 1 duct tape.', 3); return; } inv.fuel--; inv.scrap -= 2; inv.tape--; inv.charge = (inv.charge || 0) + 1; feed('Made a nest charge', ITEMS.charge[1]); updateHud(); return; }
+  if (k === 'charge'){ toast('Stand at a nest core and hold E to set the charge.', 3); return; }
   if (k === 'wood'){ if (inv.wood < 2 || inv.fiber < 1){ toast('A splint takes 2 wood and 1 plant fibre.', 3); return; } inv.wood -= 2; inv.fiber--; inv.splint++; feed('Made a splint', ITEMS.splint[1]); updateHud(); return; }
   if (inv[k] < 1 && ITEMS[k]){ toast('No ' + ITEMS[k][0].toLowerCase() + ' left.', 2); return; }
   if (inv[k] > 0 && (k === 'bandage' || k === 'water')){ P.actK = k === 'water' ? 'drink' : 'bandage'; P.actT = time; }
@@ -1191,7 +1193,7 @@ function addCorpse(z){
   corpses.push(c); if (corpses.length > 40) corpses.shift(); emit({k:'corpse', c:c});
 }
 function loot(o){
-  if (o.nest){ clearNest(o.b); return; }
+  if (o.nest){ if (inv.charge > 0){ setCharge(o); return; } clearNest(o.b); return; }
   if (o.pack){ takePack(o); return; }
   if (o.plant){ gather(o); return; }
   if (!o.corpse && !o.stash){
@@ -1226,11 +1228,12 @@ function takeLoot(key){
 el('loot').addEventListener('click', function(e){ var t = e.target; if (t.id === 'ltClose'){ closeLoot(); return; } var k = t.getAttribute && t.getAttribute('data-k'); if (k) takeLoot(k); });
 
 /* ---- backpack: everything carried, stacked and grouped ---- */
-var CATS = [['Food and drink', ['meal', 'fresh', 'food', 'water', 'dirty', 'berry', 'rotten', 'meat', 'cooked']], ['Medical', ['medkit', 'bandage', 'antibio', 'splint', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'hide', 'tape', 'fuel', 'fiber', 'stone', 'soil']], ['Power and light', ['generator', 'flashlight', 'radio', 'lantern', 'battery']], ['Clothes', ['coat', 'raincoat', 'leather', 'sweater', 'beanie', 'cap', 'helmet', 'gloves', 'trousers', 'thermals', 'boots']], ['Gear', ['key', 'seeds', 'shovel']], ['Truck parts', ['toolkit', 'tire', 'carbat', 'parts']]];
-var USE = {coat:'Wear', raincoat:'Wear', leather:'Wear', sweater:'Wear', beanie:'Wear', cap:'Wear', helmet:'Wear', gloves:'Wear', trousers:'Wear', thermals:'Wear', boots:'Wear', generator:'Set it up here', fresh:'Eat', rotten:'Eat (risky)', meat:function(){ return nearFire() ? 'Cook and eat (fire)' : 'Eat raw (risky)'; }, cooked:'Eat', dirty:function(){ return nearFire() ? 'Boil it all (fire)' : 'Drink (risky)'; }, bandage:'Use', antibio:'Take', splint:'Use', tape:'Patch weapon', fiber:'Make a bandage', wood:'Make a splint', meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
+ITEMS.charge = ['Nest charge', '#c8553a', ''];
+var CATS = [['Food and drink', ['meal', 'fresh', 'food', 'water', 'dirty', 'berry', 'rotten', 'meat', 'cooked']], ['Medical', ['medkit', 'bandage', 'antibio', 'splint', 'herb']], ['Ammo', ['ammo']], ['Materials', ['wood', 'scrap', 'hide', 'tape', 'fuel', 'fiber', 'stone', 'soil']], ['Power and light', ['generator', 'flashlight', 'radio', 'lantern', 'battery']], ['Clothes', ['coat', 'raincoat', 'leather', 'sweater', 'beanie', 'cap', 'helmet', 'gloves', 'trousers', 'thermals', 'boots']], ['Gear', ['key', 'seeds', 'shovel', 'charge']], ['Truck parts', ['toolkit', 'tire', 'carbat', 'parts']]];
+var USE = {coat:'Wear', raincoat:'Wear', leather:'Wear', sweater:'Wear', beanie:'Wear', cap:'Wear', helmet:'Wear', gloves:'Wear', trousers:'Wear', thermals:'Wear', boots:'Wear', generator:'Set it up here', fresh:'Eat', rotten:'Eat (risky)', meat:function(){ return nearFire() ? 'Cook and eat (fire)' : 'Eat raw (risky)'; }, cooked:'Eat', dirty:function(){ return nearFire() ? 'Boil it all (fire)' : 'Drink (risky)'; }, bandage:'Use', antibio:'Take', splint:'Use', tape:'Patch weapon', fuel:'Make a nest charge', charge:'Set at a nest', fiber:'Make a bandage', wood:'Make a splint', meal:'Eat', berry:'Eat', herb:'Make a medkit', stone:'Make ammo (V throws one)', food:'Eat', water:'Drink', medkit:'Use', flashlight:'On / off', radio:'Scan', lantern:'Place'};
 var NOTE = {fresh:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.freshT || FRESH_S)/60)) + ' min'; }, meal:function(){ return 'goes off in about ' + Math.max(1, Math.ceil((P.mealT || MEAL_S)/60)) + ' min'; },
   rotten:function(){ return 'half the time it makes you sick'; }, dirty:function(){ return 'boil it at a stove (1 wood) or beside a campfire'; }, bandage:function(){ return 'stops bleeding and keeps a wound clean'; },
-  antibio:function(){ return 'cures an infected wound'; }, splint:function(){ return 'lets a broken leg heal'; }, tape:function(){ return 'patches your equipped weapon (+40%)'; }, wood:function(){ return '2 wood and 1 plant fibre make a splint'; }, seeds:function(){ return 'plant one in a garden plot (Build, N)'; },
+  antibio:function(){ return 'cures an infected wound'; }, splint:function(){ return 'lets a broken leg heal'; }, tape:function(){ return 'patches your equipped weapon (+40%)'; }, charge:function(){ return 'set at a nest core: it goes off five seconds later and takes the nest with it'; }, wood:function(){ return '2 wood and 1 plant fibre make a splint'; }, seeds:function(){ return 'plant one in a garden plot (Build, N)'; },
   toolkit:function(){ return 'needed for every repair on the truck; you keep it'; }, tire:function(){ return 'for the truck\'s missing front wheel'; }, carbat:function(){ return 'the truck\'s battery is dead'; }, parts:function(){ return 'a fan belt and hoses for the truck\'s engine'; }};
 function pct(v){ return Math.round(Math.max(0, v)*100) + '%'; }
 function clothNote(k){ var C = CLOTHES[k], t = []; t.push(SLOTS.filter(function(s){ return s[0] === C.s; })[0][1].toLowerCase()); if (C.warm) t.push('+' + C.warm + '\u00b0F'); if (C.rain >= 0.3) t.push(C.rain >= 0.8 ? 'waterproof' : 'sheds some rain'); if (C.armor) t.push('takes ' + Math.round(C.armor*100) + '% of a hit'); if (C.glass) t.push('no cuts from broken glass'); if (C.sun) t.push('shade in the sun'); return t.join(' &middot; '); }
@@ -1796,7 +1799,7 @@ function spawnPack(n, horde, cs, day, cnt){
   var ids = Object.keys(world.nests), pick = [], i;
   ids.forEach(function(k){ var b = world.buildings[k]; if (!b || !b.door || b.gone) return; var md = 1e9; cs.forEach(function(c){ md = Math.min(md, Math.hypot(c.x - b.cx, c.y - b.cy)); }); if (md > (horde ? 60 : 55) && md < (horde ? 160 : 140)) pick.push(b); });
   var nb = pick.length ? pick[Math.floor(Math.random()*pick.length)] : null, px, py;
-  if (nb){ var ns0 = nestIn(nb, 0.4); if (!ns0) return null; px = ns0[0]; py = ns0[1]; } else if (horde){ var c1 = cs[Math.floor(Math.random()*cs.length)], a = Math.random()*6.283; px = c1.x + Math.cos(a)*85; py = c1.y + Math.sin(a)*85; if (inSafe(px, py, 14)) return null; } else return null;
+  if (nb){ var ns0 = nestIn(nb, 0.4); if (!ns0) return null; px = ns0[0]; py = ns0[1]; } else if (horde){ var c1 = cs[Math.floor(Math.random()*cs.length)], a = Math.random()*6.283; px = c1.x + Math.cos(a)*85; py = c1.y + Math.sin(a)*85; if (inSafe(px, py, 14) || rzClear(px, py)) return null; } else return null;
   var G = {id:++packId, home:nb ? nb.id : -1, horde:!!horde, vis:{}, t:0, wait:0}; packsA.push(G); var made = 0;
   for (i = 0; i < n; i++){ var x = px + Math.random()*5 - 2.5, y = py + Math.random()*5 - 2.5; if (circ(x, y, 0.4)) continue; var k = (horde && day >= (DD.nest === 'brutal' ? 3 : 6) && cnt[3] < 3 && Math.random() < 0.18) ? 3 : (horde && day >= (DD.nest === 'brutal' ? 5 : 9) && cnt[4] < 3 && Math.random() < 0.14) ? 4 : 0; if (k === 3 || k === 4) cnt[k]++; var z = addAlien(k, x, y); z.grp = G.id; made++; }
   if (!made){ packsA.pop(); return null; }
@@ -1813,7 +1816,7 @@ function spawnAliens(day){
   var nestSpot = function(d0, d1, rr){ var pick = [], k2; for (k2 in world.nests){ var nb2 = world.buildings[k2]; if (!nb2 || !nb2.door || nb2.gone) continue; var dm = 1e9; cs.forEach(function(c){ dm = Math.min(dm, Math.hypot(c.x - nb2.cx, c.y - nb2.cy)); }); if (dm > d0 && dm < d1 + 130) pick.push(nb2); }
     if (!pick.length) return null; var nb3 = pick[Math.floor(Math.random()*pick.length)], ni = nestIn(nb3, rr); if (!ni) return null; var qx = ni[0], qy = ni[1]; return (near(qx, qy, 30) || inSafe(qx, qy, 14)) ? null : [qx, qy]; };
   var ring = function(d0, d1, rr){ var ns = nestSpot(d0, d1, rr); if (ns) return ns; if (!city) return null;
-    var a = Math.random()*6.283, d = d0 + Math.random()*(d1 - d0), x = c0.x + Math.cos(a)*d, y = c0.y + Math.sin(a)*d; return (near(x, y, 30) || circ(x, y, rr) || inSafe(x, y, 14)) ? null : [x, y]; };
+    var a = Math.random()*6.283, d = d0 + Math.random()*(d1 - d0), x = c0.x + Math.cos(a)*d, y = c0.y + Math.sin(a)*d; return (near(x, y, 30) || circ(x, y, rr) || inSafe(x, y, 14) || rzClear(x, y)) ? null : [x, y]; };
   if (inSafe(c0.x, c0.y, 0) && Math.random() < 0.7) return;
   var p;
   /* horde nights (0.47): every third day, once it is dark, wave after wave of swarmers (and later spitters) come for whoever is out, drawn to where you stand */
@@ -1928,14 +1931,66 @@ function pickNests(){
   list.sort(function(a, b){ return a[0] - b[0]; });
   for (var i = 0, n = Math.min(list.length, Math.max(1, Math.min(40, Math.round(w.buildings.length/45)))); i < n; i++) w.nests[list[i][1].id] = 1;
 }
+/* ---- 0.127.0: Reclaim zones. The map square is cut into 500 m zones (smaller at the edges); a zone with 8 or more buildings is held by the aliens until its nests are gone.
+   A fresh Reclaim world puts one nest in every held zone (two in a zone of 150 buildings or more), none in the zone you start in. A cleared zone sends out no more aliens.
+   Zones are named after their longest street ("around Elm Street"), else by grid ("zone C4"). Every zone cleared wins, as every nest gone always has ---- */
+var RZS = 500;
+function rzOn(){ return !!(world && world.scen && world.scen.type === 'reclaim' && world.rz); }
+function rzBuild(w){
+  var cols = Math.max(1, Math.ceil((w.maxx - w.minx)/RZS)), rows = Math.max(1, Math.ceil((w.maxy - w.miny)/RZS)), Z = [], i, j;
+  for (j = 0; j < rows; j++) for (i = 0; i < cols; i++){ var x0 = w.minx + i*RZS, y0 = w.miny + j*RZS; Z.push({i:i, j:j, x0:x0, y0:y0, x1:Math.min(w.maxx, x0 + RZS), y1:Math.min(w.maxy, y0 + RZS), b:[], rl:{}, live:false, name:''}); }
+  var at = function(x, y){ var a = Math.floor((x - w.minx)/RZS), b2 = Math.floor((y - w.miny)/RZS); return a < 0 || b2 < 0 || a >= cols || b2 >= rows ? null : Z[b2*cols + a]; };
+  w.buildings.forEach(function(b){ if (b.gone || !b.door) return; var z = at(b.cx, b.cy); if (z) z.b.push(b.id); });
+  w.roads.forEach(function(r){ if (!r.name || r.kind !== 'road') return; for (var k = 0; k + 3 < r.pts.length; k += 2){ var z = at((r.pts[k] + r.pts[k+2])/2, (r.pts[k+1] + r.pts[k+3])/2); if (z) z.rl[r.name] = (z.rl[r.name] || 0) + Math.hypot(r.pts[k+2] - r.pts[k], r.pts[k+3] - r.pts[k+1]); } });
+  var used = {};
+  Z.forEach(function(z){ z.live = z.b.length >= 8; var best = '', bl = 0; for (var nm in z.rl) if (z.rl[nm] > bl && !used[nm]){ bl = z.rl[nm]; best = nm; } if (best) used[best] = 1;
+    z.name = best ? 'around ' + best : 'zone ' + String.fromCharCode(65 + (z.i % 26)) + (z.j + 1); delete z.rl; });
+  w.rz = {Z:Z, cols:cols, rows:rows, at:at, cnt:null};
+}
+function rzOf(x, y){ return world.rz ? world.rz.at(x, y) : null; }
+function rzCount(){ var R = world.rz; if (R.cnt) return R.cnt; var c = new Map(); for (var k in world.nests){ var b = world.buildings[k]; if (!b) continue; var z = R.at(b.cx, b.cy); if (z) c.set(z, (c.get(z) || 0) + 1); } R.cnt = c; return c; }
+function rzNests(z){ return z ? rzCount().get(z) || 0 : 0; }
+function rzHeld(){ var n = 0, t = 0; world.rz.Z.forEach(function(z){ if (!z.live) return; t++; if (rzNests(z)) n++; }); return [n, t]; }
+function rzClear(x, y){ if (!rzOn()) return false; var z = rzOf(x, y); return !!(z && z.live && !rzNests(z)); }
+function rzPick(w){
+  w.nests = {}; var sz = w.rz.at(w.spawn.x, w.spawn.y);
+  w.rz.Z.forEach(function(z){ if (!z.live || z === sz) return; var L = z.b.map(function(id){ return w.buildings[id]; }).filter(function(b){ return b.area >= 60 && b.id !== w.safe && Math.hypot(b.cx - w.spawn.x, b.cy - w.spawn.y) > 70; });
+    L.sort(function(a, b){ return hash(a.id, 7, 3) - hash(b.id, 7, 3); }); for (var k = 0; k < Math.min(L.length, z.b.length >= 150 ? 2 : 1); k++) w.nests[L[k].id] = 1; });
+  w.rz.cnt = null;
+}
+function rzTick(){
+  if (!rzOn() || P.cop) return; var z = rzOf(P.x, P.y); if (z === world.rzAt) return; var was = world.rzAt; world.rzAt = z; if (!z || !was) return;
+  if (!z.live) return; var n = rzNests(z); toast(n ? 'Entering ' + z.name + ': held by the aliens, ' + n + ' nest' + (n > 1 ? 's' : '') + ' to destroy.' : 'Entering ' + z.name + ': cleared. No aliens come out of here now.', 4);
+}
+/* ---- 0.127.1: siege. Starting on a nest raises the alarm: aliens nearby come to it and the nest throws out a few defenders (once a minute a nest).
+   In Reclaim a nest has guards that come out when you get within 45 m (again every two minutes), and pulling one apart by hand takes 10 s instead of 4.
+   A nest charge (1 fuel, 2 scrap, 1 duct tape: use the fuel) is set in 1.5 s and goes off 5 s later, taking the nest and anything close with it ---- */
+var charges = [];
+function nestOut(b, n, k){ var made = 0; for (var i = 0; i < n && zombies.length < 60; i++){ var q = nestIn(b, 0.4); if (!q) break; var z = addAlien(k || 0, q[0], q[1]); z.st = 1; z.stT = 10; z.lx = P.x; z.ly = P.y; made++; } return made; }
+function nestAlarm(b){ if (!b || net.role === 'guest') return; if (b.alT && time - b.alT < 60) return; b.alT = time; var co = nestCore(b); makeNoise(co.x, co.y, rzOn() ? 110 : 70); var n = nestOut(b, rzOn() ? 3 + Math.min(3, Math.floor(dayNum()/3)) : 2);
+  if (n){ toast('The nest shrieks: it is calling the others.', 3); caption('A nest shrieks', co.x, co.y); sfx('alien_loud', co.x, co.y, 1); } }
+function nestGuards(){ if (!rzOn() || net.role === 'guest') return; for (var k in world.nests){ var b = world.buildings[k]; if (!b || Math.abs(b.cx - P.x) > 45 || Math.abs(b.cy - P.y) > 45 || Math.hypot(b.cx - P.x, b.cy - P.y) > 45) continue;
+  if (b.gdT && time - b.gdT < 120) continue; b.gdT = time; var n = nestOut(b, 2 + (dayNum() > 3 ? 1 : 0) + (DF().nest === 'brutal' ? 1 : 0), dayNum() > 4 && Math.random() < 0.3 ? 1 : 0); if (n) caption('Nest guards come out', b.cx, b.cy); } }
+function setCharge(o){ inv.charge--; var co = nestCore(o.b); charges.push({x:co.x, y:co.y, b:o.b, t:5}); feed('Charge set. Get clear!', ITEMS.charge[1]); toast('Charge set: five seconds. Get clear!', 4); sfx('metal', co.x, co.y, 0.8); updateHud(); }
+function chargeTick(dt){
+  for (var i = charges.length - 1; i >= 0; i--){ var c = charges[i], was = Math.ceil(c.t); c.t -= dt; if (Math.ceil(c.t) < was && c.t > 0) sfx('reload_click', c.x, c.y, 0.9);
+    if (c.t > 0) continue; charges.splice(i, 1); var bg = groundAt(c.x, c.y); booms.push({x:c.x, y:c.y, t:0.35}); makeNoise(c.x, c.y, 60); sfx('car_crash_heavy', c.x, c.y, 1, 1, 120);
+    try { fxAdd('effects.explosion_core', c.x, c.y, bg, {life:1.1, s0:0.5, s1:3.2, up:0.9}); fxAdd('effects.explosion_ring', c.x, c.y, bg, {life:0.5, s0:0.5, s1:8}); } catch (e){}
+    for (var j = 0; j < zombies.length; j++){ var z = zombies[j], dx = z.x - c.x, dy = z.y - c.y, dd = Math.hypot(dx, dy) || 0.001; if (dd < 7 + AK[z.k].r) hitZombie(z, 140, dx/dd*12, dy/dd*12); }
+    var dp = Math.hypot(P.x - c.x, P.y - c.y); if (dp < 6){ P.hp -= Math.round(45*(1 - dp/6)) + 5; P.hurt = 0.4; P.cause = 'a nest charge'; }
+    if (world.nests[c.b.id]) clearNest(c.b); }
+}
 function nestCore(b){
   if (!b.core){ var x = b.cx, y = b.cy; if (!pip(b.pts, x, y) && b.door){ x = b.door.x + b.door.nx*2; y = b.door.y + b.door.ny*2; } b.core = {nest:true, b:b, name:'the nest core', x:x, y:y}; }
   return b.core;
 }
-function setNest(id, on){ var b = world.buildings[id]; if (!b) return; if (on){ world.nests[id] = 1; delete world.burst[id]; } else { if (world.nests[id]) world.burst[id] = 1; delete world.nests[id]; delete world.nestNew[id]; } dirtyChunk(b); }
+function setNest(id, on){ var b = world.buildings[id]; if (!b) return; if (world.rz) world.rz.cnt = null; if (on){ world.nests[id] = 1; delete world.burst[id]; } else { if (world.nests[id]) world.burst[id] = 1; delete world.nests[id]; delete world.nestNew[id]; } dirtyChunk(b); }
 function clearNest(b){
   setNest(b.id, 0); emit({k:'nest', b:b.id, on:0}); inv.scrap += 4; feed('Nest destroyed', '#b05cff'); feed('+4 Scrap', ITEMS.scrap[1]);
-  toast('Nest destroyed. ' + Object.keys(world.nests).length + ' left in this world.', 4); updateHud(); checkScenario();
+  if (rzOn()){ var cz = rzOf(b.cx, b.cy), hz = rzHeld(); if (cz && cz.live && !rzNests(cz)){ toast(cz.name.charAt(0).toUpperCase() + cz.name.slice(1) + ' is cleared: no more aliens come out of here. ' + (hz[0] ? hz[0] + ' of ' + hz[1] + ' zones still held.' : 'That was the last zone.'), 6); feed('Zone cleared: ' + cz.name, '#7a8a5e'); }
+    else toast('Nest destroyed. ' + rzNests(cz) + ' left in ' + (cz ? cz.name : 'this zone') + '.', 4); }
+  else toast('Nest destroyed. ' + Object.keys(world.nests).length + ' left in this world.', 4);
+  updateHud(); checkScenario();
 }
 function spreadNests(){
   var ids = Object.keys(world.nests), spp = NESTSP[DF().nest]; if (ids.length >= 60 || !spp) return;
@@ -1945,6 +2000,7 @@ function spreadNests(){
       var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
       for (var i = 0; i < cell.length; i++){ var o = cell[i]; if (o === b || world.nests[o.id] || !o.door || o.gone) continue; var d = Math.hypot(o.cx - b.cx, o.cy - b.cy); if (d < bd){ bd = d; best = o; } }
     }
+    if (best && rzOn() && DF().nest !== 'brutal' && rzOf(best.cx, best.cy) !== rzOf(b.cx, b.cy)) best = null;   /* 0.127.0: in Reclaim only Brutal nests spread into another zone */
     if (best){ setNest(best.id, 1); world.nestNew[best.id] = time; emit({k:'nest', b:best.id, on:1}); toast('A nest has spread to another building.', 4); }
   });
 }
@@ -2313,7 +2369,7 @@ function update(dt){
     else if (target.fix){ if (ePress || tapped) useFix(target); autoUse = null; }
     else if (target.port && target.k < 0 && doorState(target.b) === 0 && lockedOf(target.b) && !(inv.key > 0)){ prog += dt/6; if (prog >= 1){ prog = 0; setPort(target.b, -2, 0); setPort(target.b, -1, 1); feed('You pried the door open', '#c0c6cc'); makeNoise(P.x, P.y, 6); autoUse = null; keys.KeyE = false; } }
     else if (target.port){ if (ePress || tapped) usePort(target); autoUse = null; }
-    else { prog += dt/(target.nest ? 4 : target.plant ? (target.nm === 'rock' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
+    else { if (target.nest && prog === 0) nestAlarm(target.b); prog += dt/(target.nest ? (inv.charge > 0 ? 1.5 : rzOn() ? 10 : 4) : target.plant ? (target.nm === 'rock' ? 1.6 : 0.7) : searchTime()); if (prog >= 1){ loot(target); prog = 0; target = null; autoUse = null; keys.KeyE = false; } }
   } else prog = 0;
   var pr = el('prompt');
   if (P.hide){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = 'Hiding \u00b7 ' + (document.body.classList.contains('touchmode') ? 'move or tap Come out' : 'move or press E to come out'); }
@@ -2321,7 +2377,7 @@ function update(dt){
   else if (P.veh){ pr.classList.remove('hidden'); el('pbar').style.width = '0%'; el('ptxt').textContent = (document.body.classList.contains('touchmode') ? 'Tap here to get ' : 'Press E to get ') + (P.veh.t ? 'out' : 'off'); }
   else if (target){
     pr.classList.remove('hidden'); el('pbar').style.width = (prog*100) + '%';
-    el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.dead ? 'Hold J to take apart ' : target.t ? 'Press E to drive ' + (target.kind === 'truck' ? '' : '(Y: trunk and fuel) ') : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.surv ? 'Press E: ' : target.chest ? 'Press E to open ' : target.nest ? 'Hold E to destroy ' : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.surv ? target.name + ' (' + target.tip + ')' : target.name);
+    el('ptxt').textContent = target === 'water' ? (P.thirst < 99 ? 'Hold E to drink (unboiled, it may make you sick)' : 'Hold E to fill a bottle (boil it before drinking)') : (target.lamp ? 'Press E to pick up the ' : target.veh ? (target.dead ? 'Hold J to take apart ' : target.t ? 'Press E to drive ' + (target.kind === 'truck' ? '' : '(Y: trunk and fuel) ') : 'Press E to ride ') : target.trader ? 'Press E to trade with ' : target.surv ? 'Press E: ' : target.chest ? 'Press E to open ' : target.nest ? (inv.charge > 0 ? 'Hold E to set a nest charge on ' : 'Hold E to destroy ') : target.pack ? 'Hold E to pick up ' : target.plant ? 'Hold E to gather from ' : 'Hold E to search ') + (target.b ? target.name + (target.b.name ? ' – ' + target.b.name : '') : target.surv ? target.name + ' (' + target.tip + ')' : target.name);
     if (target.port) el('ptxt').textContent = portText(target);
     else if (target.subC) el('ptxt').textContent = subText(target);
     else if (target.cboxC) el('ptxt').textContent = cboxText(target);
@@ -2342,7 +2398,7 @@ function update(dt){
   if ((wantSwing || keys.Swing) && P.atkCd <= 0 && !P.veh) swing();
   machTick(dt, !!(wantSwing || keys.Swing));
   if (wantShoot && P.shootCd <= 0 && !P.veh) shoot();
-  scenT -= dt; if (scenT <= 0){ scenT = 0.5; checkScenario(); }
+  scenT -= dt; if (scenT <= 0){ scenT = 0.5; checkScenario(); rzTick(); nestGuards(); }
   wantSwing = wantShoot = false;
 
   var night = dark > 0.5;
@@ -2549,6 +2605,9 @@ function drawMap(c, w, h, cx, cy, sc, big){
   c.strokeStyle = '#6b4a32'; c.lineWidth = 2; for (i = 0; i < W0.wallSegs.length; i += 4){ c.beginPath(); c.moveTo(W0.wallSegs[i]*sc + ox, W0.wallSegs[i+1]*sc + oy); c.lineTo(W0.wallSegs[i+2]*sc + ox, W0.wallSegs[i+3]*sc + oy); c.stroke(); }
   (W0.zones || []).forEach(function(z){ c.strokeStyle = '#f3f0e8'; c.lineWidth = 2; c.setLineDash([3, 3]); c.beginPath(); if (z.hw) zoneCorners(z).forEach(function(p, k){ if (k) c.lineTo(p[0]*sc + ox, p[1]*sc + oy); else c.moveTo(p[0]*sc + ox, p[1]*sc + oy); }), c.closePath(); else c.arc(z.x*sc + ox, z.y*sc + oy, z.r*sc, 0, 6.283); c.stroke(); c.setLineDash([]); c.fillStyle = 'rgba(122,170,100,.14)'; c.fill(); });
   mapFog(c, w, h, ox, oy, sc);
+  if (big && rzOn()){ c.setLineDash([]); world.rz.Z.forEach(function(z){ if (!z.live || z.x1 < x0 || z.x0 > x1 || z.y1 < y0 || z.y0 > y1) return; var n = rzNests(z), X = z.x0*sc + ox, Y = z.y0*sc + oy, Wz = (z.x1 - z.x0)*sc, Hz = (z.y1 - z.y0)*sc;
+    c.fillStyle = n ? 'rgba(125,90,150,.16)' : 'rgba(122,138,94,.14)'; c.fillRect(X, Y, Wz, Hz); c.strokeStyle = n ? 'rgba(125,90,150,.75)' : 'rgba(92,110,70,.75)'; c.lineWidth = 1.5; c.strokeRect(X, Y, Wz, Hz);
+    if (Wz > 90){ c.font = '700 12px sans-serif'; c.textAlign = 'left'; c.fillStyle = n ? '#5a3d70' : '#4e5e3a'; c.fillText(z.name + (n ? ' \u00b7 ' + n + ' nest' + (n > 1 ? 's' : '') : ' \u00b7 cleared'), X + 5, Y + 15); } }); }
   var dot = function(x, y, r, col){ c.fillStyle = col; c.beginPath(); c.arc(x*sc + ox, y*sc + oy, r, 0, 6.283); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 1.5; c.stroke(); };
   heat.forEach(function(h){ if (h.v < 8) return; var g = c.createRadialGradient(h.x*sc + ox, h.y*sc + oy, 0, h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc)); g.addColorStop(0, 'rgba(201,74,46,' + Math.min(0.45, h.v/90).toFixed(2) + ')'); g.addColorStop(1, 'rgba(201,74,46,0)'); c.fillStyle = g; c.beginPath(); c.arc(h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc), 0, 6.283); c.fill(); });   /* noise heat */
   if (wx.tor){ c.strokeStyle = '#4a4a55'; c.lineWidth = 2; for (var tr0 = 0; tr0 < 3; tr0++){ c.beginPath(); c.arc(wx.tor.x*sc + ox, wx.tor.y*sc + oy, 3 + tr0*3, tr0, tr0 + 4.2); c.stroke(); } }   /* the tornado */
@@ -3587,6 +3646,7 @@ function landThrow(t){
   else { var l = {x:t.x, y:t.y, life:st.secs}; lures.push(l); emit({k:'lure', l:l}); }
 }
 function itemsTick(dt){
+  chargeTick(dt);
   var i; for (i = throws.length - 1; i >= 0; i--){ throws[i].t += dt/0.6; if (throws[i].t >= 1){ landThrow(throws[i]); throws.splice(i, 1); } }
   for (i = booms.length - 1; i >= 0; i--){ booms[i].t -= dt; if (booms[i].t <= 0) booms.splice(i, 1); }
   for (i = flares.length - 1; i >= 0; i--){ flares[i].life -= dt; if (flares[i].life <= 0) flares.splice(i, 1); }
@@ -5462,7 +5522,7 @@ el('trade').addEventListener('click', function(e){
   renderTrade(); updateHud();
 });
 /* ================= scenarios: the long-term goal of a world, chosen when the world is created ================= */
-var SCEN0 = [{id:'endless', name:'Endless: survive as long as you can', type:'endless', parts:0}, {id:'reclaim', name:'Reclaim: destroy every nest', type:'reclaim', parts:0}, {id:'escape', name:'Escape: find 3 beacon parts, reach the evacuation point', type:'escape', parts:3}];
+var SCEN0 = [{id:'endless', name:'Endless: survive as long as you can', type:'endless', parts:0}, {id:'reclaim', name:'Reclaim: take the city back, zone by zone', type:'reclaim', parts:0}, {id:'escape', name:'Escape: find 3 beacon parts, reach the evacuation point', type:'escape', parts:3}];
 function cleanScen(sc){ if (!sc || !/^(endless|reclaim|escape)$/.test(sc.type)) return null; return {id:slug(sc.id || sc.name || sc.type).slice(0, 40), name:txt(sc.name, 70) || sc.type, type:sc.type, parts:Math.max(1, Math.min(8, sc.parts | 0 || 3))}; }
 function scenList(){ var l = SCEN0.slice(); for (var k in PACKS) if (PACKS[k].on) (PACKS[k].scenarios || []).forEach(function(sc){ l.push(sc); }); return l; }
 function fillScen(){ var s0 = el('scen'), cur = s0.value || lsGet('lastblock:scen') || 'endless'; s0.innerHTML = scenList().map(function(sc){ return '<option value="' + sc.id + '">' + sc.name + '</option>'; }).join(''); s0.value = cur; if (!s0.value) s0.value = 'endless'; }
@@ -5470,6 +5530,7 @@ function setupScenario(ws){
   var w = world, sc = ws && ws.scen ? cleanScen(ws.scen) : null;
   if (!sc){ var id = el('scen').value; lsSet('lastblock:scen', id); sc = scenList().filter(function(q){ return q.id === id; })[0] || SCEN0[0]; }
   w.settle = ws && ws.settle && Array.isArray(ws.settle.m) ? {m:ws.settle.m.slice(0, 8)} : {m:[]}; w.diff = ws && ws.diff ? cleanDiff(ws.diff) : (ws ? cleanDiff(null) : readDiff()); w.scen = sc; w.found = {}; w.won = !!(ws && ws.won); w.partB = []; w.evac = {x:0, y:0};
+  w.rz = null; w.rzAt = null; if (sc.type === 'reclaim'){ rzBuild(w); if (!ws || ws.fresh || !(ws.nests || []).length && !ws.won) rzPick(w); }
   if (sc.type === 'escape'){
     var c = []; w.buildings.forEach(function(b){ if (b.door && !b.gone && !w.nests[b.id] && b.area > 70 && Math.hypot(b.cx - w.spawn.x, b.cy - w.spawn.y) > 50) c.push([hash(b.id, 17, 9), b.id]); });
     c.sort(function(a, b){ return a[0] - b[0]; }); w.partB = c.slice(0, sc.parts).map(function(a){ return a[1]; });
@@ -5486,13 +5547,13 @@ function findPart(b){
 function setDay(v){ var q = /[?&]day=(\d+)/.exec(location.search); DAY = Math.max(60, +(v || (q && q[1]) || el('dayLen').value) || 43200); if (!v && !q) lsSet('lastblock:daylen', el('dayLen').value); }
 function goalText(){
   var sc = world.scen; if (world.won) return 'Goal complete';
-  if (sc.type === 'reclaim') return 'Goal: destroy every nest';
+  if (sc.type === 'reclaim'){ if (!world.rz) return 'Goal: destroy every nest'; var hz = rzHeld(); return 'Goal: zones cleared ' + (hz[1] - hz[0]) + ' / ' + hz[1]; }
   if (sc.type === 'escape'){ var left = partsLeft(); return left ? 'Goal: beacon parts ' + (world.partB.length - left) + ' / ' + world.partB.length : 'Goal: reach the evacuation point'; }
   return 'Goal: survive';
 }
 function winWorld(remote){
   if (world.won) return; world.won = true; if (!remote) emit({k:'won'});
-  toast((world.scen.type === 'reclaim' ? 'Every nest is destroyed. The city is yours again.' : 'The beacon is lit and help is on the way. You made it out.') + ' This world stays open; keep playing as long as you like.', 12); saveNow();
+  toast((world.scen.type === 'reclaim' ? 'Every zone is cleared. The city is yours again.' : 'The beacon is lit and help is on the way. You made it out.') + ' This world stays open; keep playing as long as you like.', 12); saveNow();
 }
 function checkScenario(){
   if (!world.scen || world.won || P.cop) return; var sc = world.scen;
