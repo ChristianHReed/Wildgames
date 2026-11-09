@@ -223,5 +223,32 @@ model('crashed_airliner', 'Crashed airliner', 'A twin-engine airliner that came 
   a.cyl(-10.5, 0.55, 20.5, 0.14, 2.6, 'z', K.ironL, {m:'steel', rot:[0, 34, 6]}); a.cyl(-9.4, 0.12, 21.6, 0.5, 0.3, 'x', K.rub, {m:'rubber', rot:[0, 34, 0]});
   a.pt('loot', 'door', [0, 2.0, 5.5], [0, 0, 1]); });
 
+/* ============================================ batch 5: wheat in five growth stages (visual reference 2) ============================================ */
+/* one 2 m by 2 m square of tan soil per stage, same footprint so the game swaps them as the crop grows: seeds, sprouts, leafy, green ears, golden ears.
+   The shape changes first and the colour second: broad low leaves, then upright stalks, then fat chunky ears. */
+var WH = {soil:C('#b79d6c'), soilD:C('#9c8458'), seed:C('#d8842c'), seedL:C('#eaa648'), sp:C('#6fb43a'), spD:C('#4f9a2c'), g1:C('#8fc43c'), g2:C('#b4d048'), earG:C('#a8c83c'), earY:C('#d8b83a'), earO:C('#d89a30'), earD:C('#b87a24'), dead:C('#c8a248'), deadD:C('#a88434')};
+function wheatBed(a){ a.box(0, 0.02, 0, 2, 0.04, 2, WH.soil, {m:'earth'}); blob(a, -0.5, 0.4, 0.5, 0.35, WH.soilD, 0.045, 31, 8); blob(a, 0.55, -0.55, 0.45, 0.3, WH.soilD, 0.045, 32, 8); }
+/* one plant: a stalk, `n` leaves leaning out round it, and an ear of `lobes` chunky lobes on top */
+function wheat(a, x, z, h, o){ var yaw = o.yaw || 0;
+  if (h > 0.3) a.box(x, h/2 + 0.04, z, 0.035, h, 0.035, o.stalk, {m:'plant'});
+  for (var i = 0; i < o.leaves; i++){ var ang = yaw + i*360/o.leaves + (o.leafYaw || 0), len = o.leafLen, lean = o.lean, rr = ang*Math.PI/180;
+    a.wedge(x + Math.sin(rr)*0.07, o.leafY + 0.04, z + Math.cos(rr)*0.07, o.leafW, len, 0.015, o.leaf, {m:'plant', rot:[lean, ang, 0]}); }
+  if (o.lobes) for (var k = 0; k < o.lobes; k++){ var ey = h + 0.04 - k*o.lobeH*0.8, sw = (k % 2 ? 1 : -1)*0.018; a.bev(x + sw, ey - o.lobeH/2, z, o.earW, o.lobeH, o.earW*0.85, k === 0 ? o.earTop || o.ear : o.ear, {m:'plant'}); } }
+var WHEAT = [
+  {n:'seeds', label:'seeds on the soil', k:0},
+  {n:'sprouts', label:'sprouts with broad low leaves', k:1},
+  {n:'leafy', label:'upright stalks with young green ears', k:2},
+  {n:'green_ears', label:'tall stalks with full green ears', k:3},
+  {n:'golden', label:'ripe: golden ears, yellow bent leaves', k:4}];
+WHEAT.forEach(function(st, si){ model('wheat_stage_' + (si + 1) + '_' + st.n, 'Wheat, stage ' + (si + 1) + ' (' + st.n.replace('_', ' ') + ')', 'A 2 m by 2 m patch of wheat, stage ' + (si + 1) + ' of 5: ' + st.label + '. Same footprint at every stage so the game swaps one for the next as days pass; the ripe stage is the one to harvest. Chunky stylised plants over a tan soil square.', 2, 2, [0.1, 0.35, 0.75, 1.0, 1.05][si], function(a){
+  wheatBed(a);
+  if (st.k === 0){ for (var i = 0; i < 14; i++){ var t = i*2.399, rr = 0.85*Math.sqrt((i + 0.5)/14); a.wedge(Math.cos(t)*rr, 0.06, Math.sin(t)*rr, 0.07, 0.04, 0.035, i % 3 ? WH.seed : WH.seedL, {m:'plant', rot:[0, (i*53) % 180, 20 + (i % 3)*15]}); } return; }
+  if (st.k === 1){ for (var j = 0; j < 7; j++){ var u = j*2.399 + 0.5, r2 = 0.8*Math.sqrt((j + 0.5)/7); wheat(a, Math.cos(u)*r2, Math.sin(u)*r2, 0, {leaves:5, leafLen:0.34, leafW:0.1, lean:48, leafY:0.02, leaf:j % 2 ? WH.sp : WH.spD, yaw:j*37, ear:0, stalk:WH.sp}); }
+    for (var q = 0; q < 3; q++) wheat(a, Math.cos(q*2.1)*0.35, Math.sin(q*2.1)*0.35, 0.3, {leaves:3, leafLen:0.28, leafW:0.07, lean:55, leafY:0.04, leaf:WH.sp, stalk:WH.sp, lobes:3, lobeH:0.05, earW:0.05, ear:WH.g1}); return; }
+  var tall = [0, 0, 0.7, 0.95, 1.0][st.k], lobes = [0, 0, 4, 6, 6][st.k], lh = [0, 0, 0.07, 0.09, 0.1][st.k], ew = [0, 0, 0.1, 0.14, 0.15][st.k];
+  var stalk = [0, 0, WH.sp, WH.g1, WH.dead][st.k], leaf = [0, 0, WH.sp, WH.g1, WH.dead][st.k], ear = [0, 0, WH.g1, WH.earG, WH.earO][st.k], top = [0, 0, WH.g2, WH.earY, WH.earD][st.k];
+  for (var n = 0; n < 24; n++){ var ax = -0.8 + (n % 5)*0.4 + (n % 2 ? 0.1 : -0.08), az = -0.78 + Math.floor(n/5)*0.4 + ((n*7) % 3)*0.05, hh = tall*(0.88 + ((n*5) % 4)*0.06);
+    wheat(a, ax, az, hh, {leaves:3, leafLen:st.k === 4 ? 0.6 : 0.55, leafW:0.11, lean:st.k === 4 ? 62 : 28, leafY:0.04, leaf:n % 3 ? leaf : (st.k === 4 ? WH.deadD : WH.spD), yaw:n*47, stalk:stalk, lobes:lobes, lobeH:lh, earW:ew, ear:ear, earTop:top}); } }); });
+
 fs.writeFileSync(root + 'packs/afterstreet-streetscape.js', M.packToJS(pack));
 console.log('wrote packs/afterstreet-streetscape.js:', pack.assets.length, 'models');
