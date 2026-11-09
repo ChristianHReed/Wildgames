@@ -200,6 +200,9 @@ function testStreetRaw(){
   line([[44, -50], [44, -14]], {barrier:'hedge'}); line([[44, -50], [104, -50]], {barrier:'wall'}); line([[104, -50], [104, -14]], {barrier:'fence', fence_type:'wood'});
   line([[110, -50], [110, 0]], {barrier:'fence', fence_type:'wire'}); line([[116, -50], [116, 0]], {barrier:'fence', fence_type:'split_rail'}); line([[122, -50], [122, 0]], {barrier:'fence', fence_type:'chain_link'});
   prop(2.4, 24, 'vehicles.pk_workshop_crafts_police', 0, {'asmb:door_open':'yes'});
+  /* 0.126.1: a surface car park with painted bays (builder 1.26 asmb:bays) beside the shops, and a barn and a strip mall to walk into (solid boxes from the pack's sizes) */
+  var pk = [[-60, 150], [-20, 150], [-20, 172], [-60, 172], [-60, 150]]; ways.push({c:pk.map(function(p){ return LL(p[0], p[1]); }), tags:{amenity:'parking', parking:'surface', 'asmb:bays':'yes'}});
+  prop(-150, 120, 'land.barn_red', 90);
   return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, spawn:LL(-3, -40), name:'Test World'};
 }
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }

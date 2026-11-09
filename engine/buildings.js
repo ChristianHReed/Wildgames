@@ -717,6 +717,24 @@ function mpPrepare(w){
     for (var s = 0; s < ns; s++){ var x0 = ax + (bx - ax)*s/ns, y0 = ay + (by - ay)*s/ns, x1 = ax + (bx - ax)*(s + 1)/ns, y1 = ay + (by - ay)*(s + 1)/ns, mx = (x0 + x1)/2, my = (y0 + y1)/2, key = gk(Math.floor(mx/MPC), Math.floor(my/MPC)), c = cells.get(key);
       if (!c){ c = {x:(Math.floor(mx/MPC) + 0.5)*MPC, y:(Math.floor(my/MPC) + 0.5)*MPC, list:[], g:null}; cells.set(key, c); w.gl.mp.push(c); } (c.fs = c.fs || []).push(x0, y0, x1, y1, f.k);
       for (var gx = Math.floor(Math.min(x0, x1)/16); gx <= Math.floor(Math.max(x0, x1)/16); gx++) for (var gy = Math.floor(Math.min(y0, y1)/16); gy <= Math.floor(Math.max(y0, y1)/16); gy++){ var gkey = gk(gx, gy); (FG.get(gkey) || FG.set(gkey, []).get(gkey)).push(x0, y0, x1, y1); } } } });
+  /* 0.126.1: the bigger land models (barns, tents, booths, barriers, the strip mall...) are solid: a box the size of the pack's info row (w across, len along),
+     pushed into the fence grid. Flat or soft things (decals, grass, reeds, tape) and ones you walk under (canopies, the bandstand) are left open */
+  var LI = window.SHAPED && SHAPED.land && SHAPED.land.models && SHAPED.land.models.land;
+  if (LI) L.forEach(function(q){ if (q.p.slice(0, 5) !== 'land.' || q.z > 0.5) return; var id = q.p.slice(5), M = LI[id], I = M && (M.info || (SHAPED.land.info || {})[id]); if (!I || !(I.w > 0.4) || !(I.len > 0.4) || (I.h !== undefined && I.h < 0.6)) return;
+    if (/decal|grass|reed|cattail|lily|tape|track|path|stain|crack|canopy|bandstand|vines|tarp|garden_pool|roof_units|fire_escape|young_tree|willow|cattails/.test(id)) return;
+    var c = Math.cos(q.yw), sn = Math.sin(q.yw), hw = I.w/2, hl = I.len/2, P4 = [[-hw, -hl], [hw, -hl], [hw, hl], [-hw, hl]].map(function(a){ return [q.x + c*a[0] - sn*a[1], q.y + sn*a[0] + c*a[1]]; });
+    for (var e = 0; e < 4; e++){ var A = P4[e], B = P4[(e + 1) % 4];
+      for (var gx = Math.floor(Math.min(A[0], B[0])/16); gx <= Math.floor(Math.max(A[0], B[0])/16); gx++) for (var gy = Math.floor(Math.min(A[1], B[1])/16); gy <= Math.floor(Math.max(A[1], B[1])/16); gy++){ var gkey = gk(gx, gy); (FG.get(gkey) || FG.set(gkey, []).get(gkey)).push(A[0], A[1], B[0], B[1]); } } });
+  /* 0.126.1: painted bays on surface car parks (builder 1.26 asmb:bays, or parking=surface): rows of white lines 2.6 m apart, 5 m long, along the lot's longest side
+     and, on lots deeper than 12 m, the opposite side too. Kept with the props, drawn near the player */
+  (w.areas || []).forEach(function(a){ if (!a.bays || a.pts.length < 6) return; var P2 = a.pts, n2 = P2.length/2, best = -1, bl = 0, i2;
+    for (i2 = 0; i2 < n2; i2++){ var j2 = (i2 + 1) % n2, l2 = Math.hypot(P2[j2*2] - P2[i2*2], P2[j2*2+1] - P2[i2*2+1]); if (l2 > bl){ bl = l2; best = i2; } } if (bl < 6) return;
+    var ax = P2[best*2], ay = P2[best*2+1], bx = P2[((best + 1) % n2)*2], by = P2[((best + 1) % n2)*2+1], ux = (bx - ax)/bl, uy = (by - ay)/bl, cx2 = (a.minx + a.maxx)/2, cy2 = (a.miny + a.maxy)/2, nx = -uy, ny = ux;
+    if ((cx2 - ax)*nx + (cy2 - ay)*ny < 0){ nx = -nx; ny = -ny; } var depth = 0; for (i2 = 0; i2 < n2; i2++) depth = Math.max(depth, (P2[i2*2] - ax)*nx + (P2[i2*2+1] - ay)*ny);
+    var rows = [[0.6, 5.6]]; if (depth > 12) rows.push([depth - 5.6, depth - 0.6]);
+    var key = gk(Math.floor(cx2/MPC), Math.floor(cy2/MPC)), c = cells.get(key); if (!c){ c = {x:(Math.floor(cx2/MPC) + 0.5)*MPC, y:(Math.floor(cy2/MPC) + 0.5)*MPC, list:[], g:null}; cells.set(key, c); w.gl.mp.push(c); }
+    rows.forEach(function(r){ for (var s = 1.3; s <= bl - 1.3; s += 2.6){ var x0 = ax + ux*s + nx*r[0], y0 = ay + uy*s + ny*r[0], x1 = ax + ux*s + nx*r[1], y1 = ay + uy*s + ny*r[1];
+      if (pip(P2, x0, y0) && pip(P2, x1, y1)) (c.bays = c.bays || []).push(x0, y0, x1, y1); } }); });
   L.forEach(function(q){ if (q.wx !== undefined){ var o = poles.get(pk(q.wx, q.wy)); if (!o){ var best = 2.5; poles.forEach(function(z){ var d = Math.hypot(z.x - q.wx, z.y - q.wy); if (d < best){ best = d; o = z; } }); } q.to = o || {x:q.wx, y:q.wy, yw:q.yw}; } });
 }
 function mpWire(m, a, b){
@@ -736,12 +754,18 @@ function mpFences(m, fs){
     if (!M && F[2]){ path = F[2]; len = F[3]; M = spB(path); } if (!M) continue;
     if (path === 'land.wall_low_4' && hash(Math.round(ax), Math.round(ay), 177) < 0.35){ var Mm = spB('land.wall_low_4_mossy'); if (Mm) M = Mm; }
     var L2 = Math.hypot(bx - ax, by - ay); if (L2 < 0.5) continue; var n = Math.max(1, Math.round(L2/len)), yw = Math.atan2(by - ay, bx - ax);
-    for (var k = 0; k < n; k++){ var t = (k + 0.5)/n, x = ax + (bx - ax)*t, y = ay + (by - ay)*t; m.modelS(M, x, y, yw, hAt(x, y) + 0.02, 1); } }
+    for (var k = 0; k < n; k++){ var t = (k + 0.5)/n, x = ax + (bx - ax)*t, y = ay + (by - ay)*t; m.modelS(M, x, y, yw, mpH(x, y) + 0.02, 1); } }
+}
+/* the ground's surface where a map prop stands: the terrain, or on flat maps the raised ground beside the sunk roads */
+function mpH(x, y){ return world.hg ? hAt(x, y) + (world.liftY || 0) + 0.03 : (typeof SUNK !== 'undefined' && SUNK ? roadOff(x, y) : 0); }   /* drape() lifts flat ground pieces by liftY on hills */
+function mpBays(m, B){ var W = 0.06, C = [222, 222, 214];
+  for (var i = 0; i < B.length; i += 4){ var ax = B[i], ay = B[i+1], bx = B[i+2], by = B[i+3], L = Math.hypot(bx - ax, by - ay) || 1, px = -(by - ay)/L*W, py = (bx - ax)/L*W, N = Math.max(1, Math.round(L/1.5)), pv = null;
+    for (var k = 0; k <= N; k++){ var t = k/N, x = ax + (bx - ax)*t, y = ay + (by - ay)*t, z = mpH(x, y) + 0.03; if (pv) m.quad(pv[0] + px, pv[2], pv[1] + py, x + px, z, y + py, x - px, z, y - py, pv[0] - px, pv[2], pv[1] - py, C, 255); pv = [x, y, z]; } }
 }
 function manageMapProps(budget){
   var A = world.gl.mp; if (!A || !A.length) return; var R = QS.chunk + MPC, n = 0;
   for (var i = 0; i < A.length; i++){ var c = A[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
-    if (!c.g && d < R && n < budget){ var m = new Mesh(); c.list.forEach(function(q){ var M = spB(q.p); if (M) m.modelS(M, q.x, q.y, q.yw, hAt(q.x, q.y) + (q.z || 0) + 0.02, 1); if (q.to) mpWire(m, q, q.to); }); if (c.fs) mpFences(m, c.fs); c.g = upload(m); n++; }
+    if (!c.g && d < R && n < budget){ var m = new Mesh(); c.list.forEach(function(q){ var M = spB(q.p); if (M) m.modelS(M, q.x, q.y, q.yw, mpH(q.x, q.y) + (q.z || 0) + 0.02, 1); if (q.to) mpWire(m, q, q.to); }); if (c.fs) mpFences(m, c.fs); if (c.bays) mpBays(m, c.bays); c.g = upload(m); n++; }
     else if (c.g && d > R + 150){ freeMesh(c.g); c.g = null; } }
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */

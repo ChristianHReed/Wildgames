@@ -231,7 +231,7 @@ function buildWorld(raw, name){
     /* 0.126.0: fences, hedges and low walls (builder 1.25 lot lines, field edges, or mapped): kept as segments, drawn by tiling pieces along them near the player
        (buildings.js mpPrepare), solid on foot through a grid of their own */
     if (t.barrier && !t.building && FENCEK[t.barrier]){ var fk = t.barrier === 'fence' ? (FENCEF[t.fence_type] || 'wood') : FENCEK[t.barrier]; (w.fencesL = w.fencesL || []).push({pts:pts, k:fk}); return; }
-    if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k, lei:t.leisure || '', sport:t.sport || '', lu:t.landuse || ''})); } }
+    if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k, lei:t.leisure || '', sport:t.sport || '', lu:t.landuse || '', bays:k === 'parking' && (t['asmb:bays'] === 'yes' || t.parking === 'surface') ? 1 : 0})); } }
   });
   if (!w.buildings.length && !w.roads.length) throw new Error('This file has no buildings or roads. Try exporting a built-up area.');
   w.areas.sort(function(p, q){ return AREA_RANK[p.kind] - AREA_RANK[q.kind]; });
