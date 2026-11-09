@@ -401,7 +401,7 @@ function treeTile(key){
     if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); return; }
     if (IMPR && natTex){
       var tk2 = treeKey(tr), r = (IMPR[tk2] || 5)*tr.sc, y0 = m.yo - 0.1, y1 = y0 + 2*r, tile = 60 + (IMPT[tk2] || 1), UVQ = [0.003,0.997, 0.997,0.997, 0.997,0.003, 0.003,0.003];
-      var tt = tr.tint || (tr.tint = treeTint(tr)), tcol = [tt[0]*255 | 0, tt[1]*255 | 0, tt[2]*255 | 0];
+      var tt = tr.tint || (tr.tint = treeTint(tr)), tcol = [Math.min(255, tt[0]*240) | 0, Math.min(255, tt[1]*240) | 0, Math.min(255, tt[2]*240) | 0];
       for (var q = 0; q < 2; q++){ var a = tr.yw + q*1.5708, cx = Math.cos(a)*r, cz = Math.sin(a)*r; m.quadUV([tr.x - cx, y0, tr.y - cz, tr.x + cx, y0, tr.y + cz, tr.x + cx, y1, tr.y + cz, tr.x - cx, y1, tr.y - cz], UVQ, tile, tcol, 255); }
       return;
     }

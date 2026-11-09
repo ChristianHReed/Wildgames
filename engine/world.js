@@ -906,7 +906,8 @@ function addTree(x, y, n, h){ var L = SPECIES[h || 'poi'] || SPECIES.poi; world.
 /* 0.98.2: trees standing in woods are the woods pack's close-grown, clear-trunked forms (not in autumn: they have no autumn colours yet) */
 var WOODK = {oak:'w_oak_tall', maple:'w_hickory', sycamore:'w_walnut', poplar:'w_birch'};
 function treeVarKey(tr){ if (tr.dn && season() !== 2){ var wk = WOODK[TREES[tr.sp]]; if (wk && NAT[wk]){ var wv = Math.floor(hash(Math.round(tr.x*10), Math.round(tr.y*10), 41)*3); return wv && NAT[wk + (wv === 1 ? '_b' : '_c')] ? wk + (wv === 1 ? '_b' : '_c') : wk; } } var k = treeKey(tr), v = Math.floor(hash(Math.round(tr.x*10), Math.round(tr.y*10), 41)*3); return v ? k + (v === 1 ? '_b' : '_c') : k; }
-function treeKey(tr){ var nm = TREES[tr.sp] || 'oak'; return season() === 2 && tr.sp < 4 ? nm + '_fall' : nm; }
+/* 0.124.1 (content chat's tint rules): about one broadleaf in twelve wears its autumn colours all year, and one in twelve stays green in autumn; pines never change */
+function treeKey(tr){ var nm = TREES[tr.sp] || 'oak'; if (tr.sp >= 4) return nm; var odd = hash(Math.round(tr.x*3), Math.round(tr.y*3), 173) < 1/12, fall = season() === 2; return fall !== odd ? nm + '_fall' : nm; }
 /* 0.92.0: real heights and roof shapes from map format 2. "12", "12 m" and "40 ft" all work; a building mapped by height only gets the storeys that fit */
 function metres(v){ if (v === undefined || v === null) return 0; var m = String(v).match(/^\s*(-?[\d.]+)\s*(m|ft|feet|')?/i); if (!m) return 0; var n = +m[1]; if (!isFinite(n)) return 0; return m[2] && /^(ft|feet|')$/i.test(m[2]) ? n*0.3048 : n; }
 function levelsOfHeight(t){ var h = metres(t.height) - metres(t.min_height); return h >= 2.5 ? Math.max(1, Math.min(15, Math.round(h/3.2))) : 0; }

@@ -7,7 +7,7 @@ var prog3, aP, aC, aT, U = {}, dyn = null, vmb = null, glOK = false, texReady = 
 function initGL(){
   if (!gl) return false;
   var deriv = gl.getExtension('OES_standard_derivatives'), lod = deriv && gl.getExtension('EXT_shader_texture_lod');
-  var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;uniform vec4 itint;uniform vec2 swy;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c*itint;vt=t;vec3 q=p*iscl;float sw=swy.y*q.y*q.y*0.0015;q.x+=sin(swy.x*1.7+inst.x*0.37+inst.z*0.29)*sw;q.z+=cos(swy.x*1.3+inst.x*0.21+inst.z*0.33)*sw*0.7;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
+  var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;uniform vec4 itint;uniform vec2 swy;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){float lf=clamp((c.g-max(c.r,c.b))*5.0,0.0,1.0);vc=vec4(c.rgb*mix(vec3(1.0),itint.rgb,lf),c.a);vt=t;vec3 q=p*iscl;float sw=swy.y*q.y*q.y*0.0015;q.x+=sin(swy.x*1.7+inst.x*0.37+inst.z*0.29)*sw;q.z+=cos(swy.x*1.3+inst.x*0.21+inst.z*0.33)*sw*0.7;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
     'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;uniform sampler2D dmask;uniform float dmOn;uniform vec2 dmo;uniform float dmS;' +
@@ -39,6 +39,10 @@ function initGL(){
     'else if(k>199.5){if(texOn>0.5&&bldOn>0.5){vec4 tb=samp(k,vt.xy);if(tb.a>0.75)col=tb.rgb*vc.rgb;else{col=tb.rgb;if(tb.a>0.25){float wh=fract(sin(dot(floor(vec2(wp.x+wp.z,wp.y)*vec2(0.25,0.3125)),vec2(12.9898,78.233)))*43758.5453);float wc=fract(wh*71.37);float cold=winF>0.2?step(0.8,wc):1.0;float fk=cold>0.5?0.45+0.55*step(0.25,fract(sin(floor(tm*7.0+wh*60.0)*12.9898)*43758.5453)):1.0;glow=step(1.0-winF,wh)*1.7*fk;winc=mix(winc,vec3(0.55,0.75,1.0),cold);col=mix(col,col*0.5,dark);}}}}' +
     'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
     'else if(k>44.5&&k<46.5){if(dmOn>0.5){vec2 du=(wp.xz-dmo)/dmS;if(du.x>0.0&&du.y>0.0&&du.x<1.0&&du.y<1.0&&texture2D(dmask,du).r>0.5)discard;}vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
+    /* 0.124.2: grass is never one flat green: big soft patches lighter and darker, drier yellow patches, and drifts of small flowers (white, yellow, violet)
+       near the player; all only where the ground is green, so roads, earth and rock are left alone */
+    'float gg=clamp((col.g-max(col.r,col.b))*6.0,0.0,1.0);if(gg>0.01){float pn=vn(wp.xz*0.025);float pn2=vn(wp.xz*0.017+7.3);col*=1.0+(pn-0.5)*0.24*gg;col=mix(col,col*vec3(1.1,1.03,0.76),smoothstep(0.55,0.85,pn2)*0.45*gg);' +
+    'if(d<30.0){float fd=smoothstep(0.6,0.8,vn(wp.xz*0.04+3.1));vec2 fc=floor(wp.xz*3.0);if(fd>0.0&&h2(fc)>1.0-0.08*fd){vec2 ff=fract(wp.xz*3.0)-0.5;float fh=h2(fc+5.0);vec3 fco=fh<0.4?vec3(0.95,0.93,0.86):fh<0.7?vec3(0.95,0.8,0.26):vec3(0.64,0.48,0.86);col=mix(col,fco,step(length(ff),0.2)*smoothstep(30.0,14.0,d)*gg);}}}' +
     'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){float fl=step(0.03,fract(vt.z));float hwr=max(1.0,(fract(vt.z)-0.05)*100.0);float sh=fl*clamp(abs(vt.x)*6.0/hwr,0.0,1.0);bool shr=vc.g<0.5;vec2 wuv=shr?wp.xz*0.12:vt.xy;vec2 u1=wuv+mix(vec2(tm*0.035,tm*0.02),vec2(0.0,-tm*0.16),fl);vec2 u2=wuv*1.9+mix(vec2(-tm*0.03,tm*0.045),vec2(0.0,-tm*0.23),fl);vec3 ww=mix((samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5,(samp(19.0,u1*0.12).rgb+samp(19.0,u2*0.09).rgb)*0.5,smoothstep(10.0,40.0,d));float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);col=mix(col,col*vec3(0.5,0.72,0.9),fl*(1.0-sh)*0.6);float stk=smoothstep(0.82,1.0,sin(vt.x*7.0+sin((vt.y+tm*0.2)*1.7)*1.6));col+=vec3(0.07,0.09,0.1)*stk*fl;float fb=smoothstep(0.8,0.98,sh+0.06*sin(tm*1.4+wp.x*1.3+wp.z*1.1))*fl;col=mix(col,vec3(0.93,0.97,0.99),fb*(0.5+0.5*samp(19.0,u2*2.0).r));float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);if(shr&&fl<0.5){float sT=clamp(vt.x,0.0,1.0);col=mix(col,col*vec3(0.84,1.08,1.02)+vec3(0.03,0.08,0.07)*(1.0-dark),sT*sT*0.5);float fbL=smoothstep(0.9,0.985,sT+0.035*sin(tm*1.3+wp.x*0.9+wp.z*1.1));col=mix(col,vec3(0.9,0.95,0.97)*(1.0-dark*0.75),fbL*0.8);}col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8)*smoothstep(28.0,8.0,d);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
     /* light from the upper left and a little behind, at an uneven angle so the four sides of a house each get their own tone and a corner always shows */
@@ -137,7 +141,13 @@ var MOODK = [
 function moodAt(hour){
   var i = 0; while (MOODK[i+1].h < hour) i++; var a = MOODK[i], b = MOODK[i+1], t = (hour - a.h)/(b.h - a.h), L = function(x, y){ return x + (y - x)*t; }, V = function(x, y){ return [L(x[0], y[0]), L(x[1], y[1]), L(x[2], y[2])]; };
   var sun = V(a.sun, b.sun), mx = Math.max(sun[0], sun[1], sun[2]) || 1;
-  return {top:V(a.top, b.top), hor:V(a.hor, b.hor), fn:L(a.fn, b.fn), ff:L(a.ff, b.ff), fm:L(a.fm, b.fm), sun:sun.map(function(v){ return 1 + (v/mx - 1)*0.72; }), shd:V(a.shd, b.shd), vig:L(a.vig, b.vig)};
+  var o = {top:V(a.top, b.top), hor:V(a.hor, b.hor), fn:L(a.fn, b.fn), ff:L(a.ff, b.ff), fm:L(a.fm, b.fm), sun:sun.map(function(v){ return 1 + (v/mx - 1)*0.72; }), shd:V(a.shd, b.shd), vig:L(a.vig, b.vig)};
+  /* 0.124.1: the season leans the daylight (content chat's season rows): spring and summer as they are, autumn a warmer sun and a warmer haze, winter a paler,
+     cooler sun with bluer shade and a pale blue haze. Nights are left alone */
+  var se = 1; try { se = season(); } catch (e){} var dy = Math.max(0, 1 - o.vig*2.5);
+  if (se === 2 && dy > 0){ o.sun = [o.sun[0], o.sun[1]*(1 - 0.04*dy), o.sun[2]*(1 - 0.1*dy)]; o.hor = [o.hor[0]*(1 + 0.04*dy), o.hor[1]*(1 - 0.01*dy), o.hor[2]*(1 - 0.06*dy)]; }
+  if (se === 3 && dy > 0){ o.sun = [o.sun[0]*(1 - 0.03*dy), o.sun[1], o.sun[2]*(1 + 0.03*dy)]; o.shd = [o.shd[0]*(1 - 0.03*dy), o.shd[1], o.shd[2]*(1 + 0.04*dy)]; o.hor = [o.hor[0], o.hor[1]*(1 + 0.02*dy), o.hor[2]*(1 + 0.04*dy)].map(function(v){ return Math.min(1, v); }); }
+  return o;
 }
 function skyAt(hour){ return moodAt(hour).hor; }
 /* the sky is drawn first, behind everything: a gradient from the horizon up, the sun by day, the moon and stars at night */
@@ -214,11 +224,11 @@ function coverKind(x, y){
 }
 function treeTint(tr){
   var h1 = hash(Math.round(tr.x*3), Math.round(tr.y*3), 171), h2 = hash(Math.round(tr.x*3), Math.round(tr.y*3), 172), b = 0.84 + 0.16*h1;
-  if (h2 < 0.04) return [1, 0.78*b, 0.5*b];        /* a rust tree */
-  if (h2 < 0.09) return [b, 0.95*b, 0.62*b];       /* a gold one */
-  if (h2 < 0.45) return [0.95*b, b, 0.86*b];        /* yellow-green */
-  if (h2 < 0.75) return [0.86*b, 0.95*b, b];        /* blue-green */
-  return [b, b, b];
+  /* content chat's rules: brightness within 8%, hue a few degrees either way, only on leaves (the vertex shader leaves anything not green, bark included, alone);
+     neighbours in a clump (same 12 m cell) share most of their colour. The odd autumn-coloured tree is a model swap (treeKey), not a tint */
+  var cx = Math.floor(tr.x/12), cy = Math.floor(tr.y/12), c1 = hash(cx, cy, 174), c2 = hash(cx, cy, 175);
+  b = 0.88 + 0.24*(0.7*c1 + 0.3*h1); var hu = ((0.7*c2 + 0.3*h2) - 0.5)*1.6;
+  return hu > 0 ? [b*(1 + 0.1*hu), b, b*(1 - 0.2*hu)] : [b*(1 + 0.16*hu), b, b*(1 - 0.08*hu)];
 }
 function drawNature(){
   if (!NAT.pine || !natTex) return; var i;
