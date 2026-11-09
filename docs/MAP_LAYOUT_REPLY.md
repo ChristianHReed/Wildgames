@@ -12,9 +12,9 @@ Pulled and read the builder-downloads note (0.114.92) too: no conflicts, nothing
 | 2 | Power poles with wire end points | **Done** | 1.24.0 |
 | 3 | Lot fill: driveways for real houses, fences, back-yard items | **Done** except the "slightly off" detail and four back-yard items with no art yet | 1.25.0 |
 | 6 | Roof units on flat roofs | **Done** | 1.25.0 |
-| 4 | Town rings (height, setback, roof and lot width by distance to the centre) | After | planned 1.26 |
-| 5 | Roadside pattern (parking to the front, kerb cuts, pole sign, service side) | After | planned 1.26 |
-| 7 | One tall landmark per square | After | planned 1.26 |
+| 4 | Town rings (height, setback, roof and lot width by distance to the centre) | Next | planned 1.27 |
+| 5 | Roadside pattern (parking to the front, kerb cuts, pole sign, service side) | **Done** (pole sign uses `street.hanging_sign` until art exists) | 1.26.0 |
+| 7 | One tall landmark per square | Next | planned 1.27 |
 | 8 | Forest edges and tree rows | After | planned 1.27 |
 | 9 | Abandoned traffic, big vehicles, camps and roadblocks | After | planned 1.28 |
 
@@ -80,3 +80,16 @@ New pass `builder/lots.js`, run after the street pass (same "Dress the streets" 
 **Needs from the game:** pass `barrier`, `fence_type`, `service`, `leisure`, `height` and `asmb:lot` through `keepTags` so the fence, driveway and pool ways survive; draw fences by tiling `street.picket_fence`/`chainlink_fence` (and a hedge from `plants.bush`) along the way; honour `asmb:z`. The builder's own 3D view does not draw fences, hedges or pools yet.
 
 **Not done / art gaps:** the "slightly off" detail (open garage, missing plank, tarp on the roof) has no art yet; swing, trampoline, boat on a trailer and wood pile have no art yet (content chat), so back yards use the five props above. Lots are boxes around the house, not real lot lines, so they can overlap oddly on irregular blocks.
+
+## 1.26.0: roadside pattern (step 5)
+
+Study of the twenty new references: `docs/MAP_REFERENCE_STUDY.md`. In `builder/lots.js`, every shop, fuel station, restaurant, bank, motel or other commercial building (120 to 9,000 m2) that stands 8 m or more back from the nearest road, with no parking mapped within 40 m of its front, gets:
+
+| Item | Data |
+| --- | --- |
+| Parking lot between the building and the road | way `amenity=parking`, `parking=surface`, `parking:orientation=perpendicular`, `capacity`, `asmb:bays=yes`, `asmb:lot=yes`. The game should paint bays (about 2.6 x 5 m) across it |
+| Two kerb cuts | ways `highway=service`, `service=driveway`, `asmb:kerbcut=yes`, `width=7`, from the road edge to the lot front |
+| Pole sign near one cut | `asmb:prop=street.hanging_sign`, `asmb:band=sign`, facing the road. **Art request:** a tall pole sign (price board, MOTEL) |
+| Service side | `street.dumpster` props (`asmb:band=service`) at the back corner, and a chain-link `barrier=fence` round the rear (75% of lots) |
+
+Springfield test map: about 980 lots with parking, 1,900 kerb cuts, 950 signs, 4,700 dumpsters, plus the existing anchor stores' own car parks (not doubled). Not done: loading docks with trucks (step 9), painted bays in the builder's 3D view.
