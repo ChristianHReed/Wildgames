@@ -445,7 +445,7 @@
       </details>
     </div>
     <div class="row">
-      <label class="btn">Load map file<input id="file" type="file" accept=".osm,.xml,.json,.geojson" hidden></label>
+      <label class="btn">Load a map file<input id="file" type="file" accept=".asmap,.zip,.asedit,.osm,.xml,.json,.geojson" multiple hidden></label>
       <button id="spring">Play Springfield, MO</button>
       <button id="demo" class="alt">Play demo town</button>
       <button id="safeBtn" class="alt" title="Stuck? Starts your last map again at its safe house">Back to safe house</button>
@@ -465,7 +465,7 @@
       <div id="bmBox" style="border-bottom:1px solid rgba(61,48,41,.25);padding-bottom:10px;margin-bottom:10px">
         <b>Maps Builder: open it, then load what it made</b>
         <div>Make maps and edits in the Maps Builder, then bring the files back here. Load a map file (.asmap), then press Play on it; add an edits file (.asedit) to change a map you already play, saved progress included. You can also drop map files or edit files (.asedit) anywhere on this page. Maps stay on this device and work offline.</div>
-        <div class="row" style="margin-top:6px"><label class="btn">Load map file<input id="asmapFile" type="file" accept=".asmap,.zip" multiple hidden></label> <label class="btn alt">Add edits file (.asedit)<input id="aseditFile" type="file" accept=".asedit,.json" multiple hidden></label> <button id="bldGo" class="alt" type="button">Open the Maps Builder</button></div>
+        <div class="row" style="margin-top:6px"><label class="btn">Load a map file (.asmap)<input id="asmapFile" type="file" accept=".asmap,.zip" multiple hidden></label> <label class="btn alt">Add edits file (.asedit)<input id="aseditFile" type="file" accept=".asedit,.json" multiple hidden></label> <button id="bldGo" class="alt" type="button">Open the Maps Builder</button></div>
         <div id="rgStatus" style="min-height:18px;font-weight:700;color:var(--clayDeep);margin-top:4px"></div>
         <div id="bmList"></div>
         <div id="edList" style="font-size:12px"></div>
@@ -527,7 +527,7 @@
     <ol>
       <li>Go to <b>openstreetmap.org</b> and zoom in on a neighborhood (about half a mile across works best).</li>
       <li>Click <b>Export</b> at the top, then the blue <b>Export</b> button. It downloads <b>map.osm</b>.</li>
-      <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load map file</b>.</li>
+      <li>Put it in the <b>maps</b> folder next to this file, or pick it with <b>Load a map file</b>.</li>
     </ol>
     <div class="panel" id="testPanel">
       <b>Test World: everything that needs checking</b>
@@ -537,7 +537,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.2</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -582,7 +582,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.127.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.127.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -6356,7 +6356,13 @@ function saveAsk(when){
   var st = el('status'); st.parentNode.insertBefore(box, st.nextSibling);
 }
 el('menuBtn').addEventListener('click', function(){ exitToMenu(); });
-el('file').addEventListener('change', function(e){ readFile(e.target.files[0]); e.target.value = ''; });
+/* 0.127.2: one Load a map file button for every kind (map chat note 27): a Maps Builder map (.asmap, .zip) goes to openAsmap, an edits file (.asedit) to edOpen,
+   anything else (OpenStreetMap .osm, .xml, .json, .geojson) to the old reader. iPhone and iPad grey out file types they do not know (.asmap), so there the
+   pickers take any file and the game sorts them by name */
+function anyMapFile(f){ var n = (f.name || '').toLowerCase(); if (/\.(asmap|zip)$/.test(n)) return openAsmap(f); if (/\.asedit$/.test(n)) return edOpen(f); readFile(f); return Promise.resolve(); }
+el('file').addEventListener('change', function(e){ var fs = [].slice.call(e.target.files); e.target.value = ''; var bm = el('bmBox'); if (fs.some(function(f){ return /\.(asmap|zip|asedit)$/i.test(f.name); }) && bm) try { bm.scrollIntoView({block:'nearest'}); } catch (er){}
+  fs.reduce(function(p, f){ return p.then(function(){ return anyMapFile(f); }); }, Promise.resolve()); });
+if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) ['file', 'asmapFile', 'aseditFile'].forEach(function(id){ var i = el(id); if (i) i.removeAttribute('accept'); });
 window.addEventListener('dragover', function(e){ e.preventDefault(); });
 window.addEventListener('drop', function(e){ e.preventDefault(); if (!running && e.dataTransfer.files.length) readFile(e.dataTransfer.files[0]); });
 el('spring').addEventListener('click', function(){

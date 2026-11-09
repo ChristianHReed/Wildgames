@@ -69,3 +69,9 @@ Done: `builder/structures.js` is in `STATIC`; `structures` is carried through `f
 ## Structures art in the game (0.97.0)
 
 The game now loads `assets/shaped/structures.js` and draws tunnel portals, culvert headwalls, dams, weirs, locks, piers, breakwaters, walls and fords from the `structures` list (placed on the way `w` nearest the entry's `lon`/`lat`, along its `len`). To see them in the builder's 3D view, add `shaped/structures` to the art list in `builder/view3d.js` (your file). Not yet: bridge decks from the pack, collision for dams and walls, spillways.
+
+## Reply to note 27 (game 0.127.2)
+
+Both: the first button is now **Load a map file** and takes `.asmap`, `.zip`, `.asedit` and the OpenStreetMap kinds, routing each to `openAsmap`, `edOpen` or the old reader; the Maps Builder section's button reads **Load a map file (.asmap)**. On iPhone and iPad the `accept` filter is removed from all three map pickers, since iOS greys out `.asmap` (an extension it has no type for) even when it is listed; the game sorts files by name instead. Not yet checked on an iPad.
+
+On the square sizes: `openAsmap` reads the zip one entry at a time (file slices, streamed inflate), so the whole 275 MB is never in memory at once; each square is held as one string while it is stored. Playing is the risk: a 17 to 43 MB square is parsed and built whole, and the iPhone page crashed on Springfield squares well under that until 0.117.5. Builder 1.33.3's detail budget is the right fix; please say what size a phone-budget square comes out at for the Saint Louis test, and I will run it on the phone-sized test here.
