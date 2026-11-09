@@ -363,7 +363,8 @@ function propMesh(){
   propAt = {x:P.x, y:P.y}; var rr = 260 + (mode === 'fly' ? flyH*1.5 : 0), near = propList.filter(function(q){ return Math.abs(q.x - P.x) < rr && Math.abs(q.y - P.y) < rr; });
   if (near.length > 2500){ near.sort(function(a2, b2){ return Math.hypot(a2.x - P.x, a2.y - P.y) - Math.hypot(b2.x - P.x, b2.y - P.y); }); near.length = 2500; }
   var m = new Mesh(), any = false; near.forEach(function(q){ var yw = q.yaw !== undefined ? -q.yaw*Math.PI/180 : -q.ry*Math.PI/2, y0 = hAt(q.x, q.y) + (q.z || 0), car = /^vehicles\./.test(q.p) ? carParts(q.p) : null;
-    if (car){ m.modelS(car.B, q.x, q.y, yw, y0, 1); if (car.W){ var cs = Math.cos(yw), sn = Math.sin(yw); car.w.forEach(function(w){ m.modelS(car.W, q.x + cs*w[0] - sn*w[2], q.y + sn*w[0] + cs*w[2], yw, y0 + w[1], 1); }); } any = true; return; }
+    if (car){ yw += Math.PI/2;   /* cars are modelled facing +x, other props +z: a vehicle prop faces the way asmb:yaw says, like every other prop */
+      m.modelS(car.B, q.x, q.y, yw, y0, 1); if (car.W){ var cs = Math.cos(yw), sn = Math.sin(yw); car.w.forEach(function(w){ m.modelS(car.W, q.x + cs*w[0] - sn*w[2], q.y + sn*w[0] + cs*w[2], yw, y0 + w[1], 1); }); } any = true; return; }
     var M = spB(q.p); if (!M) return; m.modelS(M, q.x, q.y, yw, y0, 1); any = true; });
   return any ? m : null;
 }

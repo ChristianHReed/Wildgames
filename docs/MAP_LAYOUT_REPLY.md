@@ -16,7 +16,7 @@ Pulled and read the builder-downloads note (0.114.92) too: no conflicts, nothing
 | 5 | Roadside pattern (parking to the front, kerb cuts, pole sign, service side) | **Done** (pole sign uses `street.hanging_sign` until art exists) | 1.26.0 |
 | 7 | One tall landmark per square | **Done** (per 1 km cell of town) | 1.27.0 |
 X
-| 9 | Abandoned traffic, big vehicles, camps and roadblocks | After | planned 1.28 |
+| 9 | Abandoned traffic, big vehicles, camps and roadblocks | **Done** except police cars, ambulances and tractors (no art) and bridge jams | 1.29.0 |
 
 ## 1.24.0: what the map now carries
 
@@ -113,3 +113,26 @@ In `builder/lots.js` (same option). All new trees are `natural=tree` with `gener
 | Country roads (`asmb:street=rural`) | Tree runs 4.5 to 7 m from the road in stretches of about 120 m (35% of stretches) | `asmb:band=verge` |
 
 Springfield test map (streams, rivers and ponds but no woods or fields): about 7,000 bank trees, 5,600 reeds, 13,000 road trees. Woods and fields were checked in a made-up test area (286 grass tufts, 143 shrubs, 64 young trees round a 1 km wood edge; two fields tagged). Not done: farm cluster at a field corner, splitting big fields into strips, reeds as ground wet patches (needs the game), and the builder's 3D view does not draw hedges or fences.
+
+## 1.29.0: abandoned traffic (step 9) and what the game's 0.123/0.124 reads
+
+Read the main chat's note "map props read in the game". All vehicles are `asmb:prop` points `vehicles.<kind>` (kinds: hatchback, sedan, wagon, suv, offroader, pickup, crew_pickup, flatbed, van, box_truck, with `_wreck` and `_burnt`), facing the way `asmb:yaw` says (same as every other prop; the game already does this, and the builder's 3D view now turns cars a quarter turn so they match). Buses and semis use the fleet pack: `vehicles.pk_afterstreet_fleet_city_bus` and `vehicles.pk_afterstreet_fleet_semi_tractor` (the game skips them when the pack is not installed). Camps and roadblocks use `land.*` models from the streetscape pack.
+
+| Where | What | `asmb:band` |
+| --- | --- | --- |
+| Driveways | A car in about 30% of driveways, nose to the house; 22% of cars are wrecks or burnt out | `drive` |
+| Kerbs | Cars on the kerb side of residential, town and main streets about every 16 m (main 40%, town 30%, suburb 10%, none on rural roads, none near junctions), facing with traffic on the right, against it on the left; 18% ruined | `kerb` |
+| Shop car parks | A row of up to 8 cars nose-in at the building front, 2.6 m apart, a quarter of the spaces empty | `lot` |
+| Main roads out | On primary, secondary and tertiary roads 500 m to 3 km from the town centre, 150 m stretches (about one in nine) with cars bunched in the outbound lane, one in ten a bus or box truck, one in ten angled as if crashed | `jam` |
+| Warehouses and depots (industrial, 1,200 m2 or more) | 1 to 4 box trucks, semis or flatbeds nose to the building front, 5 m apart | `dock` |
+| Bus stops | A bus alongside one stop in four | `stop` |
+| Parks and pitches (3,000 m2 or more, one in seven) | A quarantine camp: ten tents (`land.dome_tent_blue/green/orange`, `land.relief_tent`) in two rows, two `land.burning_barrel`, four `land.camp_barrier_4` at the corners, a `vehicles.van_wreck` at the gate | `camp` |
+| Where a primary or secondary road leaves town at 1.6 km (one in three) | A roadblock: `land.camp_barrier_4` across the road, two wrecks, a `land.burning_barrel` each side | `roadblock` |
+
+Springfield test map: about 5,900 kerb cars, 16,700 driveway cars, 4,500 shop-lot cars, 200 jam cars, 820 big vehicles, 8 roadblocks (the map has no parks, so camps were checked on a made-up area: 13 camps in 100 parks). A total of about 70,000 vehicles can be placed in one map (cap); they are meshed only near the camera in the builder and the game.
+
+**Corrections found while testing.** The builder's 3D view drew vehicles a quarter turn off the other props (cars are modelled facing +x, other props +z); fixed there. The data was right all along: `asmb:yaw` is atan2(east, south) of the facing direction in the game's metre space, and the game's parked-car code gives the same facing.
+
+**Needs from the game:** nothing new beyond note 20 to 23 (`keepTags`); the main chat's note says `asmb:prop` vehicles and `land.*` are already read. For the main chat's footprint request: I do not know the sizes of the big land models; if the game prefers `asmb:size` on camps and roadblocks, tell me the sizes and I will tag them.
+
+**Not done / art gaps:** police cars at stations and roadblocks, ambulances at hospitals, tractors at farms and dealers, open car doors, cars crashed into poles (no art or no pole check yet), jams on bridges (bridges are excluded from the road pass), a school-field quarantine camp.

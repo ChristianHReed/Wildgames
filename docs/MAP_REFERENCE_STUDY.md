@@ -29,7 +29,7 @@ From the map chat, 8 November 2026. The user attached twenty reference pictures 
 | 6 Landmark per square | Done | 1.27.0 |
 | 8 Clumped trees, woods edges, patchwork fields | Done | 1.28.0 |
 | 9 Farm cluster at a field corner | After | planned 1.29 |
-| 10 Placed vehicles | After | planned 1.29 |
+| 10 Placed vehicles | Done (no police, ambulance or tractor art yet) | 1.29.0 |
 | 11 Squares and parks with a centre | After | planned 1.30 |
 
 ## Art the pictures ask for that does not exist yet
