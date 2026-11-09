@@ -536,6 +536,12 @@ model('garage_door_open', 'Garage door, open', 'A residential garage door 2.4 m 
 model('roof_tarp', 'Roof tarp', 'A blue tarp 4 by 3 m pinned over a damaged roof section, lying on the slope, with wrinkled folds, rope ties along the edges and a few sandbags on top; lay it flat on a pitched or flat roof.', 4.2, 3.2, 0.5, function(a){
   a.box(0, 0.04, 0, 4.0, 0.04, 3.0, YD.tarp, {m:'cloth'}); a.box(-1.0, 0.1, 0.2, 0.2, 0.1, 2.6, YD.tarpD, {m:'cloth', rot:[0, 6, 0]}); a.box(0.9, 0.09, -0.1, 0.18, 0.08, 2.4, YD.tarpD, {m:'cloth', rot:[0, -8, 0]});
   [-1.8, 0, 1.8].forEach(function(x){ a.box(x, 0.1, 1.45, 0.5, 0.18, 0.3, C('#8a7a5a'), {m:'cloth'}); a.box(x, 0.06, -1.5, 0.04, 0.04, 0.3, K.rope || YD.post, {m:'cloth'}); }); });
+model('fence_wood_4', 'Wood privacy fence, 4 m', 'A plain 4 m privacy fence 1.8 m high: twenty upright boards in two weathered browns on two back rails, a cap rail and posts at both ends; ends meet the next piece, run along x.', 4.0, 0.15, 1.85, function(a){
+  var bc = [YD.log, C('#86683f'), C('#6f5636')];
+  a.box(-1.95, 0.9, 0, 0.1, 1.8, 0.1, YD.woodD, {m:'wood'}); a.box(1.95, 0.9, 0, 0.1, 1.8, 0.1, YD.woodD, {m:'wood'});
+  [0.35, 1.45].forEach(function(y){ a.box(0, y, -0.06, 3.9, 0.08, 0.05, YD.woodD, {m:'wood'}); });
+  for (var i = 0; i < 20; i++){ var x = -1.9 + 0.1 + i*0.2; if (Math.abs(x) > 1.86 && false) continue; a.box(x, 0.88 + (i % 5 === 2 ? 0.02 : 0), 0.0, 0.18, 1.76 + (i % 5 === 2 ? 0.04 : 0), 0.035, bc[(i*7) % 3], {m:'wood'}); }
+  a.box(0, 1.84, 0, 4.0, 0.05, 0.14, YD.woodD, {m:'wood'}); a.bev(-1.95, 1.87, 0, 0.14, 0.05, 0.14, YD.woodD, {m:'wood'}); a.bev(1.95, 1.87, 0, 0.14, 0.05, 0.14, YD.woodD, {m:'wood'}); });
 model('fence_panel_missing_4', 'Wood fence, panels missing', 'A 2 m privacy fence section with three posts: a few boards missing, one leaning and a gap where a panel has fallen; pair with the wooden fence tiles.', 4.0, 0.3, 1.9, function(a){
   [-2, 0, 2].forEach(function(x, i){ a.box(x, 0.9, 0, 0.12, 1.8, 0.12, YD.post, {m:'wood', rot:i === 2 ? [0, 0, 6] : [0, 0, 0]}); });
   for (var i = 0; i < 9; i++){ if (i === 3 || i === 4 || i === 7) continue; a.box(-1.8 + i*0.45, 0.88 + (i === 6 ? -0.2 : 0), 0.08, 0.38, i === 6 ? 1.4 : 1.7, 0.03, i % 2 ? YD.log : YD.post, {m:'wood', rot:i === 5 ? [0, 0, 14] : [0, 0, 0]}); }

@@ -69,3 +69,5 @@ Answer with every id, notes and the weak spots: Project doc "Content chat reply 
 - Batch 16 (plants and ground): `young_tree`, `willow`, `cattails`, `fallen_log`, `stump`, `boulder_s`.
 - Open doors on cars: no separate models; the driver door is a hinged rig part the game poses open.
 - Church also has flat ceilings over the back rooms and porch and ajar interior door leaves; the nave is open to the rafters. The bell tower is hollow with three open stair flights up to the belfry floor (a `stairs` point at the foot). Not done: a per-axle wheel radius for the tractor (Workshop chat); none of batches 5 to 16 checked in the game yet.
+
+- Batch 17: `fence_wood_4` (plain 1.8 m privacy fence, 4 m along x, ends meet; asked by the main chat for builder `fence_type=wood`).
