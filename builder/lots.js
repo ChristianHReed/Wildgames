@@ -62,7 +62,7 @@
       var yawOf = function(fx, fy){ return Math.atan2(fx, fy)*180/Math.PI; };
       var heightOf = function(t){ var h = parseFloat(t.height); if (h > 0) return h; var lv = parseInt(t['building:levels'], 10); return (lv > 0 ? lv : 1)*3.2; };
 
-      var CAP = 90000, nH = 0, nCom = 0, lotJobs = [], driveJobs = [], bigJobs = [];
+      var CAP = 90000, nH = 0, nCom = 0, lotJobs = [], driveJobs = [], bigJobs = [], fieldJobs = [];
       bl.forEach(function(b){
         var t = b.t, ar = b.a, seedA = Math.round(b.x), seedB = Math.round(b.y);
         var comm = !!(t.shop || t.office || t.amenity || FLAT[t.building]);
@@ -86,7 +86,7 @@
           else if (h3(seedA, seedB, 78) < 0.12){ prop('street.satellite_dish', b.x + b.ux*b.hu*0.4, b.y + b.uy*b.hu*0.4, Math.round(h3(seedA, seedB, 79)*360), 'roof', h + 0.6); out.dishes++; }
         }
         /* ---- shops, fuel, food and motels on a lot: parking between the building and the road, two kerb cuts, a sign, a service side ---- */
-        if ((t.building === 'industrial' || t.building === 'warehouse' || t.industrial === 'warehouse') && ar >= 1200) bigJobs.push(b);
+        if ((t.building === 'industrial' || t.building === 'warehouse' || t.industrial === 'warehouse') && ar >= 1200) b.job = 'dock'; else if (t.amenity === 'fire_station' || t.building === 'fire_station') b.job = 'fire'; else if (t.amenity === 'police' || t.building === 'police') b.job = 'police'; else if (t.amenity === 'hospital' || t.building === 'hospital') b.job = 'hospital'; if (b.job) bigJobs.push(b);
         var SKIP = {parking:1, school:1, university:1, hospital:1, place_of_worship:1, college:1, kindergarten:1, townhall:1, police:1, fire_station:1, library:1, grave_yard:1};
         var shopLike = (t.shop || t.amenity || t.tourism === 'motel' || t.tourism === 'hotel' || t.building === 'retail' || t.building === 'commercial' || t.building === 'supermarket') && !SKIP[t.amenity] && t.building !== 'shed';
         if (shopLike && ar >= 120 && ar <= 9000 && nCom < 40000){
@@ -107,7 +107,7 @@
                 if (okp){
                   var rect = []; [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function(cn){ rect.push(pcx + cgx*cn[0]*pw/2 + cfx*cn[1]*parkD/2, pcy + cgy*cn[0]*pw/2 + cfy*cn[1]*parkD/2); }); rect.push(rect[0], rect[1]);
                   var pt = {amenity:'parking', parking:'surface', 'parking:orientation':'perpendicular', capacity:String(Math.max(6, Math.round(pw*parkD/25))), 'asmb:bays':'yes', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'};
-                  wayOut(pt, rect, true); out.parking++; put(pk, pcx, pcy, CELL, 1); out.shops++; lotJobs.push({cx:pcx, cy:pcy, fx:cfx, fy:cfy, gx:cgx, gy:cgy, pw:pw, pd:parkD, bx:b.x, by:b.y, fh:cfh, cap:+pt.capacity});
+                  wayOut(pt, rect, true); out.parking++; if (t.amenity === 'fuel'){ prop('land.gas_canopy_pumps', pcx, pcy, yawOf(cfx, cfy), 'canopy'); out.canopies = (out.canopies || 0) + 1; } put(pk, pcx, pcy, CELL, 1); out.shops++; lotJobs.push({cx:pcx, cy:pcy, fx:cfx, fy:cfy, gx:cgx, gy:cgy, pw:pw, pd:parkD, bx:b.x, by:b.y, fh:cfh, cap:+pt.capacity});
                   /* two kerb cuts from the road edge to the front of the parking, and a pole sign by one of them */
                   var yawC = yawOf(cfx, cfy), sgn2 = h3(Math.round(b.x), Math.round(b.y), 97) < 0.5 ? 1 : -1;
                   [-1, 1].forEach(function(sg){
@@ -259,6 +259,7 @@
           if (!t['asmb:crop']){ var CROPS = ['wheat', 'corn', 'soy', 'hay', 'fallow']; t['asmb:crop'] = CROPS[Math.floor(h3(Math.round(pm[0]), Math.round(pm[1]), 130)*CROPS.length)]; t['asmb:shade'] = String(Math.floor(h3(Math.round(pm[0]), Math.round(pm[1]), 131)*4)); }
           var hs = h3(Math.round(pm[0]), Math.round(pm[1]), 132);
           if (hs < 0.55 && !w.t.barrier){ wayOut(hs < 0.3 ? T.hedge : T.chain, pm, false); out.hedges++; }
+          if (ar >= 20000 && h3(Math.round(pm[0]), Math.round(pm[1]), 134) < 0.25){ var kx = 0, ky = 0, kn = 0, ki; for (ki = 0; ki + 1 < pm.length; ki += 2){ kx += pm[ki]; ky += pm[ki + 1]; kn++; } kx /= kn; ky /= kn; if (L.pip(pm, kx, ky) && !inAny(kx, ky, 4, null)){ var cp = ['vehicles.pk_workshop_crafts_combine', 'vehicles.pk_workshop_crafts_farm_tractor'][h3(Math.round(kx), Math.round(ky), 135) < 0.6 ? 0 : 1]; fieldJobs.push([cp, kx, ky, h3(Math.round(kx), Math.round(ky), 136)*360]); } }
           if (hs < 0.3) walk(pm, 24, 8, 133, function(x, y, nx, ny){ var q = outward(x, y, nx, ny, 3); if (okSpot(q[0], q[1], 8)){ addTree(q[0], q[1], 'edge'); out.edgeTrees++; } });
         }
       });
@@ -279,14 +280,15 @@
       /* where the town is: the 250 m cell with the most buildings */
       var cnt = new Map(), cenBX = 0, cenBY = 0, cenBN = 0; bl.forEach(function(b){ var k = Math.floor(b.x/250) + ',' + Math.floor(b.y/250), v = (cnt.get(k) || 0) + 1; cnt.set(k, v); if (v > cenBN){ cenBN = v; cenBX = (Math.floor(b.x/250) + 0.5)*250; cenBY = (Math.floor(b.y/250) + 0.5)*250; } });
       /* in driveways: about a third of houses with a drive have a car in it, nose to the garage */
-      driveJobs.forEach(function(d){ var sx = Math.round(d[2]), sy = Math.round(d[3]); if (h3(sx, sy, 200) > 0.3) return; var dx = d[2] - d[0], dy = d[3] - d[1], dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl; var px = d[2] - dx*3.2, py = d[3] - dy*3.2; if (dl > 6 && carAt(pickCar(sx, sy, 201, 0.22), px, py, yawOf(dx, dy), 'drive')) out.driveCars++; });
+      driveJobs.forEach(function(d){ var sx = Math.round(d[2]), sy = Math.round(d[3]); if (h3(sx, sy, 200) > 0.3) return; var dx = d[2] - d[0], dy = d[3] - d[1], dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl; var px = d[2] - dx*3.2, py = d[3] - dy*3.2; if (dl > 6 && carAt(h3(sx, sy, 202) < 0.07 ? 'vehicles.pk_workshop_crafts_boat_trailer' : pickCar(sx, sy, 201, 0.22), px, py, yawOf(dx, dy), 'drive', h3(sx, sy, 202) < 0.07 ? 6 : 5.5)) out.driveCars++; });
       /* nose-in at shops: a row at the building's front, 2.6 m apart */
       lotJobs.forEach(function(j){ var sx = Math.round(j.bx), sy = Math.round(j.by), n = Math.min(8, Math.round(j.cap*0.35)), ln = Math.min(j.pw - 4, n*2.7), row = j.cx - j.fx*(j.pd/2 - 3.0), roy = j.cy - j.fy*(j.pd/2 - 3.0); for (var i = 0; i < n; i++){ var off = -ln/2 + i*(ln/Math.max(1, n - 1)); if (h3(sx, sy, 210 + i) < 0.25) continue; if (carAt(pickCar(sx, sy, 220 + i, 0.15), row + j.gx*off, roy + j.gy*off, yawOf(-j.fx, -j.fy), 'lot', 2.4)) out.lotCars++; } });
       /* big vehicles at warehouse and depot docks: box trucks and semis nose to the building, 4.5 m apart */
       bigJobs.forEach(function(b){ var rs2 = nearRoad(b.x, b.y, 80 + b.r); if (!rs2.length) return; rs2.sort(function(p, q){ return p.d - q.d; }); var s4 = rs2[0].s, ex = s4[2] - s4[0], ey = s4[3] - s4[1], el = Math.hypot(ex, ey) || 1, t4 = Math.max(0, Math.min(1, ((b.x - s4[0])*ex + (b.y - s4[1])*ey)/(el*el))), tx = s4[0] + ex*t4 - b.x, ty = s4[1] + ey*t4 - b.y, tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
         var du = tx*b.ux + ty*b.uy, dv = -tx*b.uy + ty*b.ux, fx, fy, fh, gh; if (Math.abs(du) >= Math.abs(dv)){ var q = du >= 0 ? 1 : -1; fx = b.ux*q; fy = b.uy*q; fh = b.hu; gh = b.hv; } else { var q2 = dv >= 0 ? 1 : -1; fx = -b.uy*q2; fy = b.ux*q2; fh = b.hv; gh = b.hu; }
-        var gx = -fy, gy = fx, sx = Math.round(b.x), sy = Math.round(b.y), n = Math.min(4, Math.max(1, Math.round(gh/6)));
-        for (var i = 0; i < n; i++){ var off = (i - (n - 1)/2)*5.2, kd = h3(sx, sy, 230 + i), pc = kd < 0.45 ? 'vehicles.box_truck' : kd < 0.75 ? 'vehicles.pk_afterstreet_fleet_semi_tractor' : 'vehicles.flatbed'; if (h3(sx, sy, 240 + i) < 0.7 && carAt(pc, b.x + fx*(fh + 7) + gx*off, b.y + fy*(fh + 7) + gy*off, yawOf(-fx, -fy), 'dock', 4.5)) out.bigVehicles++; } });
+        var gx = -fy, gy = fx, sx = Math.round(b.x), sy = Math.round(b.y), n = Math.min(b.job === 'dock' ? 4 : 2, Math.max(1, Math.round(gh/6)));
+        for (var i = 0; i < n; i++){ var off = (i - (n - 1)/2)*5.2, kd = h3(sx, sy, 230 + i), pc = b.job === 'fire' ? 'vehicles.pk_workshop_crafts_fire_engine_remade' : b.job === 'police' ? 'vehicles.pk_workshop_crafts_police' : b.job === 'hospital' ? 'vehicles.pk_workshop_crafts_ambulance' : kd < 0.3 ? 'vehicles.box_truck' : kd < 0.55 ? 'vehicles.pk_workshop_crafts_box_trailer' : kd < 0.8 ? 'vehicles.pk_afterstreet_fleet_semi_tractor' : 'vehicles.flatbed'; if (h3(sx, sy, 240 + i) < 0.7 && carAt(pc, b.x + fx*(fh + 7) + gx*off, b.y + fy*(fh + 7) + gy*off, yawOf(-fx, -fy), b.job === 'dock' ? 'dock' : 'station', 4.5)) out.bigVehicles++; } });
+      fieldJobs.forEach(function(j){ if (carAt(j[0], j[1], j[2], j[3], 'field', 6)) out.fieldMachines = (out.fieldMachines || 0) + 1; });
       /* buses at the stops: one in four bus stops has a bus alongside, stopped */
       F.pois.slice().forEach(function(p){ if (!p.t || p.t.highway !== 'bus_stop') return; var q = loc.m(p.lon, p.lat), sx = Math.round(q[0]), sy = Math.round(q[1]); if (h3(sx, sy, 250) > 0.25) return; var rs3 = nearRoad(q[0], q[1], 14); if (!rs3.length) return; rs3.sort(function(a, c){ return a.d - c.d; }); var s5 = rs3[0].s, dx = s5[2] - s5[0], dy = s5[3] - s5[1], dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl; var rx = -dy, ry = dx, ps = (q[0] - (s5[0] + dx*((q[0] - s5[0])*dx + (q[1] - s5[1])*dy)))*rx + (q[1] - (s5[1] + dy*((q[0] - s5[0])*dx + (q[1] - s5[1])*dy)))*ry, sg = ps >= 0 ? 1 : -1; if (carAt('vehicles.pk_afterstreet_fleet_city_bus', q[0] + rx*sg*(s5[4] - 2.2 - (rs3[0].d)) , q[1] + ry*sg*(s5[4] - 2.2 - (rs3[0].d)), yawOf(dx*sg, dy*sg), 'stop', 12)) out.bigVehicles++; });
       /* on every road: kerb cars, and stuck traffic on the main roads out of town */

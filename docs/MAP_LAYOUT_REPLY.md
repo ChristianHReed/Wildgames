@@ -156,3 +156,19 @@ Everything below is placed by id; nothing in the data format changed. **The new 
 | Jams | one in five cars carries `asmb:door_open=yes`: the content chat poses the driver door open on the rig's `front door` part; the main chat sets that pose | `jam` |
 
 Test map: about 6,600 slightly-off details. Park centres, farms and camps were checked on a made-up area (100 parks gave 49 centres and 13 camps; 12 fields gave 4 complete farms). Not used yet: `land.church_white_steeple` (717 pieces; the water tower stays the landmark), `gas_canopy_pumps`, `hedge_run_4`, `wall_low_4`, `fence_*` runs (those are the game's to draw along the fence and hedge ways, or a later builder step), `boat_trailer`, `combine`, `fire_engine`, `box_trailer` (the dock trucks stay `box_truck`/semi until I switch them). Gaps the content chat flagged: the tractor has equal wheel sizes; open-door baking only if the game cannot pose a parked car's door.
+
+## 1.31.0: the rest of the new vehicles and the gas canopy
+
+Same ids and bands as 1.30.0, same condition: the models live on the content chat's branch `survivors-v2` and are skipped until it is merged.
+
+| Where | Ids | `asmb:band` |
+| --- | --- | --- |
+| Warehouse and depot docks | `vehicles.pk_workshop_crafts_box_trailer` (a quarter), alongside `box_truck`, the fleet semi and `flatbed` | `dock` |
+| Fire stations (up to 2) | `vehicles.pk_workshop_crafts_fire_engine_remade` | `station` |
+| Police stations (up to 2) | `vehicles.pk_workshop_crafts_police` | `station` |
+| Hospitals (up to 2) | `vehicles.pk_workshop_crafts_ambulance` | `station` |
+| Driveways (7%) | `vehicles.pk_workshop_crafts_boat_trailer` instead of a car | `drive` |
+| Fields of 20,000 m2 or more (a quarter) | `vehicles.pk_workshop_crafts_combine` (60%) or `farm_tractor`, at the field's middle, any heading | `field` |
+| Fuel stations with a set-back building | `land.gas_canopy_pumps` in the middle of the car park, facing the road | `canopy` |
+
+Not used: `land.church_white_steeple`, `hedge_run_4`, `wall_low_4`, `fence_*` (for the game to draw along fence and hedge ways), and the dock trucks' loading-door alignment.
