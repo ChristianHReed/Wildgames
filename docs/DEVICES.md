@@ -74,11 +74,12 @@ What the game has now:
 
 | For | In the game |
 | --- | --- |
-| Reading the buttons | Words on buttons, not icons. |
+| Reading the buttons | Words on buttons, not icons. Text size for the start page, menus, panels and messages (Settings). |
 | Seeing the controls | Screen controls and readouts size (four sizes, Settings). High-contrast screen controls (Settings). |
 | Hands and grip | Move buttons: every touch button, the stick and the readouts (speed and fuel, health, map, hotbar, menu) can be put anywhere, with separate layouts for upright and sideways. Floating stick: put your thumb anywhere on the left side. Run and Crouch toggle on touch. Hold actions show their progress on the button. |
 | Feeling it | Short vibration on button presses (Android). |
 | Keyboard | WASD or arrow keys to turn, every action on a key. |
+| Motion | Head bob and camera effects (sprint zoom, hit shake, weapon sway) can each be turned down or off (Settings). |
 | Pace | Playing alone, the game stops while the menu is open (Settings). Sleeping skips the night. The game saves on its own every few seconds of play. |
 | Hearing | Captions for sounds that matter (Settings): aliens, banging, breaking, crashes, alarms and raids, each with where it came from. |
 | Reporting problems | Menu > Report a bug sends a picture and a note, with the device and browser, so device problems can be fixed. |
@@ -89,9 +90,9 @@ What is missing, in the order it should be built:
 2. **Rebinding keys and controller buttons.**
 3. ~~Captions for sounds that matter~~ (0.125.1, Settings): aliens, banging, glass, metal, crashes, walls giving way, alarms and raids, each with a direction.
 4. **Colour-blind safe signals:** health and needs bars and map markers also differ by shape or label, not only by red and green.
-5. **Text size** for the start page, the menus and the messages (the screen controls already scale).
+5. ~~Text size~~ (0.125.3): Normal, Large or Larger for the start page, menus, panels and messages.
 6. **Hold or toggle** choice for every hold action (search, pry, take apart, drink), and a slower double-tap time.
-7. **Less motion:** turn off head bob, screen shake and the sway of the held item.
+7. ~~Less motion~~: head bob (Off, Low, Normal) and camera effects (sprint zoom, hit shake, weapon sway: Off, Low, Normal) are both in Settings.
 8. ~~Pause in single player~~ (0.125.2): while the Menu list, a bug report or the button editor is open.
 9. **Start page for screen readers:** labels on every start-page control (the 3D game itself cannot be read by a screen reader).
 
