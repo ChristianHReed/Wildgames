@@ -42,8 +42,15 @@ function initGL(){
     'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){float fl=step(0.03,fract(vt.z));float hwr=max(1.0,(fract(vt.z)-0.05)*100.0);float sh=fl*clamp(abs(vt.x)*6.0/hwr,0.0,1.0);vec2 u1=vt.xy+mix(vec2(tm*0.035,tm*0.02),vec2(0.0,-tm*0.16),fl);vec2 u2=vt.xy*1.9+mix(vec2(-tm*0.03,tm*0.045),vec2(0.0,-tm*0.23),fl);vec3 ww=mix((samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5,(samp(19.0,u1*0.12).rgb+samp(19.0,u2*0.09).rgb)*0.5,smoothstep(10.0,40.0,d));float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);col=mix(col,col*vec3(0.5,0.72,0.9),fl*(1.0-sh)*0.6);float stk=smoothstep(0.82,1.0,sin(vt.x*7.0+sin((vt.y+tm*0.2)*1.7)*1.6));col+=vec3(0.07,0.09,0.1)*stk*fl;float fb=smoothstep(0.8,0.98,sh+0.06*sin(tm*1.4+wp.x*1.3+wp.z*1.1))*fl;col=mix(col,vec3(0.93,0.97,0.99),fb*(0.5+0.5*samp(19.0,u2*2.0).r));float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8)*smoothstep(28.0,8.0,d);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
     /* light from the upper left and a little behind, at an uneven angle so the four sides of a house each get their own tone and a corner always shows */
-    'vec3 LD=normalize(vec3(-0.62,0.72,0.3));float ld=dot(n,LD);float band=smoothstep(-0.55,0.7,ld);if(k>79.5)band=smoothstep(-0.45,0.6,ld);if(unlit||emis)band=1.0;' +
+    /* 0.122.0 toon shading: the light falls in three soft-edged bands (shade, half light, full light) instead of a smooth ramp, the shade is a cool
+       colour and the light warm, sunlit edges get a thin warm rim, and colours are a little richer by day. At night the bands stay but the colour
+       drains out (see below), so the moonlit town reads in cold, grey-blue steps and only lamps, fires and windows are warm */
+    'vec3 LD=normalize(vec3(-0.62,0.72,0.3));float ld=dot(n,LD);float tb=smoothstep(-0.55,0.7,ld);if(k>79.5)tb=smoothstep(-0.45,0.6,ld);' +
+    'float band=mix(tb,0.45*smoothstep(0.2,0.3,tb)+0.55*smoothstep(0.6,0.7,tb),0.85);if(unlit||emis)band=1.0;' +
+    'bool flatg=(k>44.5&&k<46.5)||(k>18.5&&k<19.5);' +
     'col=mix(col*shd*0.86,col*sunc,band);' +
+    'if(!unlit&&!emis&&!flatg){float rim=smoothstep(0.55,0.8,1.0-abs(dot(n,V/d)));col+=col*sunc*rim*band*0.2*(1.0-dark);}' +
+    'float lu=dot(col,vec3(0.3,0.59,0.11));col=max(mix(vec3(lu),col,1.08-0.66*dark),0.0);' +
     'float spot=smoothstep(0.78,0.95,dot(V/d,fwd))*0.95/(1.0+d*d*0.004)+0.22/(1.0+d*d*0.12);' +
     'vec3 lit=vec3(amb+dark*spot*flash);' +
     'vec3 lamp=vec3(0.0);for(int i=0;i<8;i++){float fd=distance(wp,fires[i].xyz);lamp+=fcol[i]*fires[i].w*dark/(1.0+fd*fd*0.05);}lit+=lamp;' +
@@ -116,19 +123,21 @@ function drawMesh(o, mode){
    where the fog starts and ends and how thick it gets, the sun or moon colour, the colour of shade, and how dark the screen edges are.
    By day the fog is a light haze so the town still shows far off; at night it closes in to about 30 m of near-black */
 var MOODK = [
-  [0,    '03050a', '0d1420', 5, 30, 1, '7f9ccc', [0.58, 0.64, 0.84], 0.6],
-  [5,    '0b1222', '2b2c40', 10, 45, 1, '8ea2c8', [0.6, 0.64, 0.82], 0.45],
-  [6.5,  '5f7aa0', 'f2bb8e', 30, 85, 0.7, 'ffb27a', [0.72, 0.64, 0.72], 0.1],
-  [9,    '5f97d0', 'd3e4ec', 45, 115, 0.28, 'fff2da', [0.74, 0.7, 0.76], 0],
-  [16,   '6a9bd0', 'e2e2d8', 45, 110, 0.28, 'ffe8c4', [0.74, 0.69, 0.74], 0],
-  [18.5, '6f80aa', 'ffbe80', 35, 90, 0.5, 'ffa45a', [0.7, 0.6, 0.72], 0.12],
-  [20,   '18213a', '4e4566', 16, 58, 1, '9db0de', [0.6, 0.62, 0.82], 0.4],
-  [24,   '03050a', '0d1420', 5, 30, 1, '7f9ccc', [0.58, 0.64, 0.84], 0.6]
+  [0,    '03050a', '0b1418', 5, 30, 1, '86a8b4', [0.44, 0.54, 0.62], 0.62],
+  [5,    '0b1222', '2b2c40', 10, 45, 1, '8ea2c8', [0.5, 0.56, 0.72], 0.45],
+  [6.5,  '5f7aa0', 'f2bb8e', 30, 85, 0.7, 'ffb070', [0.66, 0.6, 0.8], 0.1],
+  [7.8,  '6290c8', 'eed6c0', 40, 105, 0.36, 'ffd29c', [0.66, 0.67, 0.84], 0.03],
+  [9.5,  '5f97d0', 'd3e4ec', 45, 115, 0.28, 'fff0d2', [0.66, 0.71, 0.88], 0],
+  [15.5, '6a9bd0', 'e2e2d8', 45, 110, 0.28, 'ffe6bc', [0.66, 0.7, 0.88], 0],
+  [17.3, '6a90c8', 'f0d6b4', 42, 105, 0.32, 'ffcc8a', [0.66, 0.65, 0.84], 0.04],
+  [18.5, '6f80aa', 'ffbe80', 35, 90, 0.5, 'ffa050', [0.64, 0.58, 0.8], 0.12],
+  [20,   '18213a', '3e3f5a', 16, 58, 1, '9db0de', [0.5, 0.56, 0.74], 0.42],
+  [24,   '03050a', '0b1418', 5, 30, 1, '86a8b4', [0.44, 0.54, 0.62], 0.62]
 ].map(function(k){ var h = function(x){ var v = parseInt(x, 16); return [(v >> 16 & 255)/255, (v >> 8 & 255)/255, (v & 255)/255]; }; return {h:k[0], top:h(k[1]), hor:h(k[2]), fn:k[3], ff:k[4], fm:k[5], sun:h(k[6]), shd:k[7], vig:k[8]}; });
 function moodAt(hour){
   var i = 0; while (MOODK[i+1].h < hour) i++; var a = MOODK[i], b = MOODK[i+1], t = (hour - a.h)/(b.h - a.h), L = function(x, y){ return x + (y - x)*t; }, V = function(x, y){ return [L(x[0], y[0]), L(x[1], y[1]), L(x[2], y[2])]; };
   var sun = V(a.sun, b.sun), mx = Math.max(sun[0], sun[1], sun[2]) || 1;
-  return {top:V(a.top, b.top), hor:V(a.hor, b.hor), fn:L(a.fn, b.fn), ff:L(a.ff, b.ff), fm:L(a.fm, b.fm), sun:sun.map(function(v){ return 1 + (v/mx - 1)*0.55; }), shd:V(a.shd, b.shd), vig:L(a.vig, b.vig)};
+  return {top:V(a.top, b.top), hor:V(a.hor, b.hor), fn:L(a.fn, b.fn), ff:L(a.ff, b.ff), fm:L(a.fm, b.fm), sun:sun.map(function(v){ return 1 + (v/mx - 1)*0.72; }), shd:V(a.shd, b.shd), vig:L(a.vig, b.vig)};
 }
 function skyAt(hour){ return moodAt(hour).hor; }
 /* the sky is drawn first, behind everything: a gradient from the horizon up, the sun by day, the moon and stars at night */
