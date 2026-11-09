@@ -561,12 +561,83 @@ model('war_memorial', 'War memorial', 'A stone cenotaph 2 m wide and 6 m high on
   a.box(0, 3.0, 0, 1.5, 2.8, 1.5, CV.stL, {m:'stone'}); a.box(0, 3.3, 0, 1.2, 3.8, 1.2, CV.stL, {m:'stone'}); a.box(0, 5.6, 0, 1.0, 0.6, 1.0, CV.stL, {m:'stone'}); a.box(0, 6.1, 0, 0.12, 0.8, 0.12, CV.stD, {m:'stone'}); a.box(0, 6.2, 0, 0.5, 0.12, 0.12, CV.stD, {m:'stone'});
   a.box(0, 3.3, 0.62, 0.14, 1.4, 0.04, CV.stD, {m:'stone'}); a.box(0, 3.5, 0.62, 0.6, 0.14, 0.04, CV.stD, {m:'stone'}); a.box(0, 1.1, 1.05, 1.0, 0.1, 0.4, CV.stD, {m:'stone'});
   [[-2.1, -2.1], [2.1, -2.1], [-2.1, 2.1], [2.1, 2.1]].forEach(function(p){ a.box(p[0], 0.35, p[1], 0.12, 0.7, 0.12, CV.iron, {m:'steel'}); }); [[0, 2.1, 4.2, 0], [0, -2.1, 4.2, 0], [2.1, 0, 0, 4.2], [-2.1, 0, 0, 4.2]].forEach(function(l){ a.box(l[0], 0.5, l[1], l[2] || 0.03, 0.03, l[3] || 0.03, CV.iron, {m:'steel'}); }); });
-model('church_white_steeple', 'Village church, white steeple', 'A small white village church 7 m wide and 14 m long: lap-board walls, a steep grey gable roof, a square bell tower at the front (+z) rising to a tall open belfry and a spire, double red doors with steps, tall arched side windows and a small porch; door point at the front.', 7.8, 15.0, 17.0, function(a){
-  a.box(0, 0.2, 0, 7.6, 0.4, 14.6, CV.conc, {m:'stone'}); a.box(0, 2.9, -1.0, 7.0, 5.0, 12.0, CV.wht, {m:'wood'}); a.raw('prism', [0, 6.3, -1.0], {scl:[7.6/0.3118, 3.4/0.27, 12.2/0.4], c:CV.roof, m:'sheet'});
-  a.box(0, 5.0, 5.8, 4.0, 9.8, 4.0, CV.wht, {m:'wood'}); a.box(0, 10.4, 5.8, 3.6, 2.2, 3.6, CV.wht, {m:'wood'}); [[-1.55, 0], [1.55, 0], [0, -1.55], [0, 1.55]].forEach(function(p){ a.box(5.8*0 + p[0], 10.4, 5.8 + p[1], p[0] ? 0.4 : 2.0, 2.0, p[1] ? 0.4 : 2.0, CV.whtD, {m:'wood'}); });
-  [-1.0, 1.0].forEach(function(s){ a.box(s*1.5, 10.4, 7.8, 0.06, 1.8, 0.06, CV.whtD, {m:'wood'}); }); a.box(0, 10.3, 5.8, 1.0, 1.4, 1.0, CV.iron, {m:'steel'}); a.raw('cone', [0, 14.0, 5.8], {scl:[3.4/0.24, 5.0/0.3, 3.4/0.24], c:CV.roof, m:'sheet', n:4, rot:[0, 45, 0]}); a.box(0, 16.6, 5.8, 0.06, 1.2, 0.06, CV.iron, {m:'steel'}); a.box(0, 16.8, 5.8, 0.4, 0.06, 0.06, CV.iron, {m:'steel'});
-  a.box(-0.6, 1.5, 7.84, 1.0, 2.7, 0.1, CV.red, {m:'wood'}); a.box(0.6, 1.5, 7.84, 1.0, 2.7, 0.1, CV.red, {m:'wood'}); a.raw('ball', [0, 2.9, 7.84], {scl:[2.2/0.3, 0.7/0.3, 0.1/0.3], c:CV.red, m:'wood', n:10}); for (var i = 0; i < 3; i++) a.box(0, 0.6 - i*0.15 - 0.0, 8.3 + i*0.3 - 0.4 + 0.0, 2.6, 0.15, 0.5, CV.conc, {m:'stone'}); a.pt('door', 'door', [0, 1.4, 8.1], [0, 0, 1]);
-  [-2.5, 0.5, 3.5].forEach(function(z){ [-3.55, 3.55].forEach(function(x){ a.box(x, 3.2, z - 1.5, 0.1, 2.4, 1.0, CV.whtD, {m:'wood'}); a.box(x + (x < 0 ? -0.02 : 0.02), 3.1, z - 1.5, 0.06, 2.1, 0.7, CV.glT, {m:'glass'}); a.raw('ball', [x + (x < 0 ? -0.02 : 0.02), 4.25, z - 1.5], {scl:[0.06/0.3, 0.35/0.3, 0.7/0.3], c:CV.glT, m:'glass', n:8}); }); }); });
+/* The church is built from the game's own building plan: FLOORPLAN.gen('church') gives the rooms, walls and doors, and every wall is a wood-framed wall as in assets/shaped/walls.js:
+   studs every 0.5 m, a bottom plate and double top plate, king and jack studs and a header at each opening, a sill and cripples under windows, and the layers outside to inside:
+   siding 0.085-0.1, sheathing 0.07-0.085, frame, plasterboard (interior walls get plaster on both sides). Storey 3.5 m (community), floor top at 0.3 m (the floor zone), rafters every 0.5 m. */
+var FLOORPLAN = require(root + 'assets/shaped/floorplan.js') || window.FLOORPLAN;
+function buildChurch(a){
+  var plan = FLOORPLAN.gen('church', 16, 8, {seed:5, storeys:1}), st = plan.storeys[0], H = 3.5, Y0 = 0.3, T = 0.18;
+  var W = {sid:C('#ece8dc'), osb:C('#b89a64'), frm:C('#cfb184'), pla:C('#d8d0bc'), trim:C('#f4f1e6'), roof:C('#4a4e52'), roofL:C('#62666a'), floor:C('#8a6a46'), conc:C('#9a988e'), door:C('#a8362c'), gl:'glassTint', pew:C('#6a4a2c'), pewD:C('#4a3220'), cloth:C('#7a2e3a'), gold:C('#c8a850'), iron:C('#3a3d40'), stone:C('#b4b0a4'), tile:C('#c8c4b6'), wc:C('#e4e2da')};
+  function mx(px){ return px - 8; } function mz(pz){ return 4 - pz; }
+  /* a wall run from model point (x0,z0) to (x1,z1) with outward normal (nx,nz); openings are {u, w, kind:'door'|'window'} along the run (u from the start, metres) */
+  function run(x0, z0, x1, z1, nx, nz, ops, ext, Hh, base){
+    var L = Math.abs(x1 - x0) + Math.abs(z1 - z0), tx = (x1 - x0)/L, tz = (z1 - z0)/L, y0 = base === undefined ? Y0 : base;
+    function bx(u0, u1, ya, yb, w0, w1, c, m, o){ if (u1 - u0 < 0.005 || yb - ya < 0.005 || w1 - w0 < 0.002) return;
+      var cu = (u0 + u1)/2, cw = (w0 + w1)/2, px = x0 + tx*cu + nx*cw, pz = z0 + tz*cu + nz*cw, along = u1 - u0, thick = w1 - w0, sx = Math.abs(tx) > 0.5 ? along : thick, sz = Math.abs(tx) > 0.5 ? thick : along;
+      a.box(px, y0 + (ya + yb)/2, pz, sx, yb - ya, sz, c, Object.assign({m:m || 'wood'}, o || {})); }
+    ops = (ops || []).slice().sort(function(p, q){ return p.u - q.u; });
+    function cut(u0, u1, fn){ var cur = u0; ops.forEach(function(o){ var a0 = o.u - o.w/2, a1 = o.u + o.w/2; if (a0 > cur) fn(cur, a0, null); fn(a0, a1, o); cur = a1; }); if (u1 > cur) fn(cur, u1, null); }
+    /* skins */
+    function skin(w0, w1, c, m){ cut(0, L, function(u0, u1, o){ if (!o) bx(u0, u1, 0, Hh, w0, w1, c, m); else { var top = o.kind === 'door' ? 2.25 : 2.9, sill = o.kind === 'door' ? 0 : 0.9; if (sill > 0) bx(u0, u1, 0, sill, w0, w1, c, m); bx(u0, u1, top, Hh, w0, w1, c, m); } }); }
+    if (ext){ skin(0.085, 0.1, W.sid, 'wood'); skin(0.07, 0.085, W.osb, 'wood'); skin(-0.0825, -0.07, W.pla, 'sheet'); } else { skin(0.07, 0.0825, W.pla, 'sheet'); skin(-0.0825, -0.07, W.pla, 'sheet'); }
+    /* frame */
+    bx(0, L, 0, 0.045, -0.07, 0.07, W.frm); bx(0, L, Hh - 0.3, Hh - 0.255, -0.07, 0.07, W.frm); bx(0, L, Hh - 0.255, Hh - 0.21, -0.07, 0.07, W.frm);
+    var n = Math.round(L/0.5); for (var i = 0; i <= n; i++){ var u = Math.min(i*0.5, L), inOp = ops.some(function(o){ return u > o.u - o.w/2 - 0.52 && u < o.u + o.w/2 + 0.52; }); if (inOp) continue; bx(u - 0.0225, u + 0.0225, 0.045, Hh - 0.3, -0.07, 0.07, W.frm); }
+    ops.forEach(function(o){ var a0 = o.u - o.w/2, a1 = o.u + o.w/2, top = o.kind === 'door' ? 2.25 : 2.9;
+      [a0 - 0.045, a0 - 0.09, a1 + 0.0, a1 + 0.045].forEach(function(uu, k){ var ua = k < 2 ? uu : uu; bx(ua - 0.0225, ua + 0.0225 + (k >= 2 ? 0.0 : 0), 0.045, Hh - 0.3, -0.07, 0.07, W.frm); });
+      bx(a0 - 0.09, a1 + 0.09, top, top + 0.2, -0.07, 0.07, W.frm);
+      if (o.kind === 'window'){ bx(a0, a1, 0.85, 0.9, -0.07, 0.07, W.frm); bx(a0, a1, 0.9, 0.93, -0.03, 0.12, W.trim); bx(a0 - 0.06, a0, 0.9, top, 0.1, 0.13, W.trim); bx(a1, a1 + 0.06, 0.9, top, 0.1, 0.13, W.trim); bx(a0 - 0.06, a1 + 0.06, top, top + 0.07, 0.1, 0.13, W.trim);
+        bx(a0, a1, 0.95, top, 0.0, 0.03, W.gl, 'glass'); bx(o.u - 0.015, o.u + 0.015, 0.95, top, 0.02, 0.05, W.trim); bx(a0, a1, 1.8, 1.83, 0.02, 0.05, W.trim);
+        bx(a0 - 0.01, a1 + 0.01, 0.9, 0.95, 0.12, 0.16, W.trim); }
+      else { bx(a0 - 0.07, a0, 0, top + 0.07, 0.09, 0.13, W.trim); bx(a1, a1 + 0.07, 0, top + 0.07, 0.09, 0.13, W.trim); bx(a0 - 0.07, a1 + 0.07, top, top + 0.07, 0.09, 0.13, W.trim);
+        if (o.leaf) bx(a0 + 0.04, a1 - 0.04, 0, top - 0.04, 0.0, 0.05, W.door); } });
+    /* a corner board on the outside of exterior corners is added by the caller */
+  }
+  /* merge the plan's wall pieces on each line and put the doors in as openings */
+  var lines = {};
+  st.walls.forEach(function(w){ var vert = w.x0 === w.x1, key = (vert ? 'x' : 'z') + (vert ? w.x0 : w.z0), a0 = vert ? Math.min(w.z0, w.z1) : Math.min(w.x0, w.x1), a1 = vert ? Math.max(w.z0, w.z1) : Math.max(w.x0, w.x1); (lines[key] = lines[key] || {vert:vert, c:vert ? w.x0 : w.z0, segs:[]}).segs.push([a0, a1]); });
+  Object.keys(lines).forEach(function(k){ var ln = lines[k], segs = ln.segs.sort(function(p, q){ return p[0] - q[0]; }), runs = [];
+    segs.forEach(function(sg){ var last = runs[runs.length - 1]; if (last && sg[0] - last.b < 1.2){ last.doors.push({c:(last.b + sg[0])/2}); last.b = sg[1]; } else runs.push({a:sg[0], b:sg[1], doors:[]}); });
+    runs.forEach(function(r){ var vert = ln.vert, c = ln.c, ext = vert ? (c === 0 || c === plan.w) : (c === 0 || c === plan.d), ops = r.doors.map(function(d){ return {u:0, w:1.0, kind:'door', c:d.c}; }), x0, z0, x1, z1, nx = 0, nz = 0;
+      if (vert){ x0 = x1 = mx(c); z0 = mz(r.a); z1 = mz(r.b); nx = c === 0 ? -1 : 1; if (c !== 0 && c !== plan.w) nx = 1; } else { z0 = z1 = mz(c); x0 = mx(r.a); x1 = mx(r.b); nz = c === 0 ? 1 : (c === plan.d ? -1 : 1); }
+      /* walk along the run in the direction of increasing model x or decreasing model z; re-express the door centres as u from the run's start */
+      var L = r.b - r.a; ops.forEach(function(o){ o.u = vert ? (o.c - r.a) : (o.c - r.a); });
+      if (vert){ /* model z runs the other way: start at mz(r.a) heading to mz(r.b) which is decreasing, tz = -1 */ }
+      /* windows on exterior walls: 1.0 m clear every 3 m */
+      if (ext){ var free = [], nWin = Math.max(0, Math.floor((L - 1.2)/3)), step = L/(nWin + 1); for (var i = 1; i <= nWin; i++){ var u = step*i; if (!ops.some(function(o){ return Math.abs(o.u - u) < 1.6; })) ops.push({u:u, w:1.0, kind:'window'}); } }
+      run(x0, z0, x1, z1, nx, nz, ops, ext, H); }); });
+  /* floor, foundation and the corner boards */
+  a.box(0, 0.13, 0, 16.5, 0.26, 8.5, W.conc, {m:'stone'}); a.box(0, 0.28, 0, 15.9, 0.04, 7.9, W.floor, {m:'wood'});
+  [[-8, 4], [8, 4], [-8, -4], [8, -4]].forEach(function(p){ a.box(p[0] + (p[0] < 0 ? -0.1 : 0.1), Y0 + H/2, p[1] + (p[1] < 0 ? -0.1 : 0.1), 0.14, H, 0.14, W.trim, {m:'wood'}); });
+  a.box(0, Y0 + 0.08, 4.1, 16.4, 0.16, 0.06, W.trim, {m:'wood'}); a.box(0, Y0 + 0.08, -4.1, 16.4, 0.16, 0.06, W.trim, {m:'wood'});
+  /* roof: ridge along x; 0.45 m eaves; rafters every 0.5 m under a deck of sheet shingles */
+  var eaveY = Y0 + H, run1 = 4.45, rise = 3.2, ang = Math.atan2(rise, run1)*180/Math.PI, len = Math.sqrt(run1*run1 + rise*rise);
+  if (!process.env.NOROOF) [1, -1].forEach(function(s){ a.box(0, eaveY + rise/2 + 0.04, s*run1/2, 17.2, 0.06, len, W.roof, {m:'sheet', rot:[s*ang, 0, 0]}); a.box(0, eaveY + rise/2 + 0.09, s*run1/2, 17.2, 0.025, len*0.98, W.roofL, {m:'sheet', rot:[s*ang, 0, 0]});
+    for (var i = 0; i <= 32; i++){ var rx = -8 + i*0.5; a.box(rx, eaveY + rise/2 - 0.08, s*run1/2, 0.045, 0.14, len*0.97, W.frm, {m:'wood', rot:[s*ang, 0, 0]}); } });
+  a.box(0, eaveY + rise + 0.02, 0, 17.2, 0.06, 0.3, W.roof, {m:'sheet'});
+  [1, -1].forEach(function(s){ a.raw('prism', [s*7.97, eaveY + 1.2, 0], {scl:[8.0/0.3118, 3.0/0.27, 0.2/0.4], c:W.sid, m:'wood', rot:[0, 90, 0]}); });
+  /* tension ties across the nave, every 2 m, so the roof has bones inside */
+  for (var t = -7; t <= 7; t += 2) a.box(t, eaveY - 0.1, 0.0, 0.08, 0.18, 8.0, W.frm, {m:'wood'});
+  /* the bell tower over the entrance: its own framed walls up to the ceiling, then a clad shaft, a belfry and a spire */
+  var tz0 = 4.0, tz1 = 7.6;
+  run(-2, tz0, -2, tz1, -1, 0, [{u:1.8, w:1.0, kind:'window'}], true, H); run(2, tz1, 2, tz0, 1, 0, [{u:1.8, w:1.0, kind:'window'}], true, H); run(-2, tz1, 2, tz1, 0, 1, [{u:2.0, w:1.0, kind:'door', leaf:true}], true, H);
+  a.box(0, 0.13, 5.8, 4.5, 0.26, 3.9, W.conc, {m:'stone'}); a.box(0, 0.28, 5.8, 3.9, 0.04, 3.4, W.floor, {m:'wood'}); for (var q = 0; q < 3; q++) a.box(0, 0.05 + q*0.08, 7.9 + (2 - q)*0.0 + 0.25 + (2 - q)*0.25*0 + q*0.0 + 0.0, 2.6, 0.1, 0.5 + (2 - q)*0.0, W.conc, {m:'stone'});
+  a.box(0, eaveY + 0.05, 5.8, 4.2, 0.1, 3.8, W.frm, {m:'wood'});
+  a.box(0, 6.3, 5.8, 4.0, 5.0, 3.6, W.sid, {m:'wood'}); a.box(0, 8.95, 5.8, 4.3, 0.3, 3.9, W.trim, {m:'wood'}); [[-1.85, 3.95], [1.85, 3.95], [-1.85, 7.65], [1.85, 7.65]].forEach(function(p){ a.box(p[0] + (p[0] < 0 ? -0.05 : 0.05), 6.3, p[1] + (p[1] < 4.5 ? -0.05 : 0.05), 0.16, 5.0, 0.16, W.trim, {m:'wood'}); });
+  a.box(0, 6.4, 7.65, 0.9, 1.9, 0.04, W.gl, 'glass'); a.box(0, 6.4, 7.68, 1.1, 2.1, 0.03, W.trim, {m:'wood'}); a.box(0, 6.4, 7.7, 0.9, 1.9, 0.02, W.gl, {m:'glass'});
+  [[-1.7, 4.15], [1.7, 4.15], [-1.7, 7.45], [1.7, 7.45]].forEach(function(p){ a.box(p[0], 10.25, p[1], 0.22, 2.4, 0.22, W.trim, {m:'wood'}); });
+  [4.05, 7.55].forEach(function(z){ for (var i = 0; i < 4; i++) a.box(-0.9 + i*0.6, 10.25, z, 0.08, 1.6, 0.04, W.iron, {m:'wood', rot:[0, 0, 0]}); }); [-1.85, 1.85].forEach(function(x){ for (var i = 0; i < 4; i++) a.box(x, 10.25, 4.85 + i*0.6, 0.04, 1.6, 0.08, W.iron, {m:'wood'}); });
+  a.box(0, 11.5, 5.8, 4.3, 0.25, 3.9, W.trim, {m:'wood'}); a.cyl(0, 10.0, 5.8, 0.4, 0.8, 'x', W.gold, {m:'steel', n:8}); a.raw('cone', [0, 14.6, 5.8], {scl:[3.7/0.24, 5.8/0.3, 3.7/0.24], c:W.roof, m:'sheet', n:4, rot:[0, 45, 0]}); a.box(0, 17.8, 5.8, 0.06, 1.2, 0.06, W.iron, {m:'steel'}); a.box(0, 18.0, 5.8, 0.4, 0.06, 0.06, W.iron, {m:'steel'});
+  /* inside, by room type (the plan's rooms): nave with pews facing the far end, an altar and pulpit, a font by the door; vestry; store; wc */
+  var nave = st.rooms[0], aisleGap = [7.4, 8.6];
+  [[1.6, 6.6], [9.4, 13.4]].forEach(function(rg){ for (var x = rg[0]; x <= rg[1] + 0.01; x += 1.1){ var X = mx(x); [[0.9, 2.2], [2.9, 4.2]].forEach(function(zr){ var zc = mz((zr[0] + zr[1])/2), zl = zr[1] - zr[0]; a.box(X, 0.55, zc, 0.45, 0.06, zl, W.pew, {m:'wood'}); a.box(X + 0.22, 0.85, zc, 0.06, 0.6, zl, W.pew, {m:'wood'}); a.box(X, 0.3, zc - zl/2 + 0.05, 0.4, 0.5, 0.05, W.pewD, {m:'wood'}); a.box(X, 0.3, zc + zl/2 - 0.05, 0.4, 0.5, 0.05, W.pewD, {m:'wood'}); }); } });
+  a.box(mx(15.0), 0.55, mz(2.5), 1.0, 0.5, 2.6, W.stone, {m:'stone'}); a.box(mx(15.0), 0.9, mz(2.5), 0.9, 0.22, 2.4, W.cloth, {m:'cloth'}); a.box(mx(15.1), 1.05, mz(2.5), 0.12, 0.25, 0.5, W.gold, {m:'steel'}); a.box(mx(15.1), 0.7, mz(2.5), 0.1, 1.8, 0.04, W.gold, {m:'steel'}); a.box(mx(14.0), 0.35, mz(2.5), 0.1, 0.5, 2.8, W.pew, {m:'wood'});
+  a.box(mx(14.7), 0.9, mz(0.9), 0.7, 1.2, 0.7, W.pew, {m:'wood'}); a.box(mx(14.7), 1.6, mz(0.9), 0.9, 0.12, 0.9, W.pewD, {m:'wood'}); a.cyl(mx(6.6), 0.8, mz(0.7), 0.25, 0.9, 'y', W.stone, {m:'stone', n:8}); a.cyl(mx(6.6), 1.28, mz(0.7), 0.4, 0.08, 'y', W.stone, {m:'stone', n:8});
+  a.box(mx(0.4), 1.3, mz(2.0), 0.4, 2.0, 1.4, W.pewD, {m:'wood'}); a.box(mx(0.6), 1.0, mz(2.0), 0.3, 0.12, 1.2, W.iron, {m:'steel'});
+  a.box(mx(2.0), 0.85, mz(6.8), 1.0, 1.0, 0.5, W.pew, {m:'wood'}); a.box(mx(3.6), 0.55, mz(7.2), 1.6, 0.06, 0.7, W.pewD, {m:'wood'}); a.box(mx(9.5), 1.3, mz(7.6), 4.0, 0.06, 0.4, W.pew, {m:'wood'}); a.box(mx(9.5), 0.8, mz(7.6), 4.0, 0.06, 0.4, W.pew, {m:'wood'}); a.box(mx(14.2), 0.4, mz(7.3), 0.5, 0.5, 0.5, W.wc, {m:'stone'}); a.box(mx(15.5), 1.0, mz(7.6), 0.4, 0.1, 0.5, W.wc, {m:'stone'});
+  a.glow(mx(4), 3.0, mz(2.5), 0.3, 0.1, 0.3); a.glow(mx(12), 3.0, mz(2.5), 0.3, 0.1, 0.3); a.pt('light', 'light', [mx(4), 2.9, mz(2.5)], [0, -1, 0]); a.pt('light', 'light', [mx(12), 2.9, mz(2.5)], [0, -1, 0]); a.pt('door', 'door', [0, 1.2, 7.8], [0, 0, 1]); a.pt('loot', 'door', [mx(15.1), 1.2, mz(2.5)], [-1, 0, 0]); a.pt('loot', 'door', [mx(3.5), 1.0, mz(6.5)], [0, 0, 1]);
+}
+model('church_white_steeple', 'Village church, white steeple', 'A small white wood-framed village church built from the game\'s church floor plan (narthex tower at the front, nave with pews, altar and pulpit, vestry, store and wc at the back, doors between rooms): every wall is a real wood-framed wall (studs every 0.5 m, plates, headers, sheathing, siding outside and plaster inside), windows every 3 m, open rafters under a grey gable roof, a bell tower with a belfry and spire. You can walk in the front door (+z).', 17.2, 12.4, 18.2, buildChurch);
 model('gas_canopy_pumps', 'Gas canopy with pumps', 'A roadside fuel canopy 12 m by 8 m on four posts with a low lit fascia, a plain concrete island under it with two double-sided pumps and bollards, a hose on each side and a price board; no kiosk, so it can be placed beside any shop. Two light points under the roof.', 12.4, 8.4, 5.6, function(a){
   a.box(0, 0.05, 0, 12.0, 0.1, 8.0, CV.conc, {m:'stone'}); [[-5, -3], [5, -3], [-5, 3], [5, 3]].forEach(function(p){ a.box(p[0], 2.5, p[1], 0.5, 5.0, 0.5, CV.pl, {m:'sheet'}); });
   a.box(0, 5.3, 0, 12.4, 0.4, 8.4, CV.whtD, {m:'sheet'}); a.box(0, 5.55, 0, 12.4, 0.3, 8.4, CV.red, {m:'sheet'}); a.box(0, 5.12, 0, 12.0, 0.04, 8.0, CV.conc, {m:'sheet'}); a.box(0, 0.2, 0, 3.0, 0.2, 8.0, CV.st, {m:'stone'});
