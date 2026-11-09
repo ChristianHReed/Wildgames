@@ -259,6 +259,7 @@ L.runBuild = async function(job, post, stop){
       if (!text && o.file) text = await o.file.text();
       say(0.3, 'Reading OpenStreetMap');
       var tt = text.replace(/^﻿/, '').trim();
+      if (tt.slice(0, 4) === 'PAR1') throw new Error('this is a Parquet file (Overture buildings), not OpenStreetMap. Put it in step 2 under Overture buildings and pick a .pbf, .osm or the download for OpenStreetMap');
       if (tt[0] === '<') F = L.readOsmXml(tt, R.read);
       else { var j = JSON.parse(tt); F = j.elements ? L.readOverpass(j, R.read) : L.readGeoJson(j, R.read); }
     }

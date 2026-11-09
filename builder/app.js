@@ -72,7 +72,11 @@ function setOsm(o){
   st.innerHTML = !o ? 'No file yet.' : o.kind === 'download' ? '<b>Ready:</b> will download this area from OpenStreetMap when you build.' : '<b>Ready:</b> ' + esc(o.name) + ' (' + fmtMB(o.size) + ')' + (o.kind === 'pbf' ? ', read in two passes; only your area is kept.' : '.');
   $('stage').textContent = o ? 'Ready to build.' : 'Waiting for map data.';
 }
-$('fOsm').addEventListener('change', function(){ var f = this.files[0]; if (f) setOsm({kind:kindOf(f.name), file:f, name:f.name, size:f.size}); this.value = ''; });
+$('fOsm').addEventListener('change', function(){ var f = this.files[0]; this.value = ''; if (!f) return;
+  /* look at the first bytes, not the name: a Parquet file (Overture buildings) starts with PAR1 and a .pbf is not text, so a wrong pick is caught here and not half way through a build */
+  f.slice(0, 4).arrayBuffer().then(function(b){ var h = String.fromCharCode.apply(null, new Uint8Array(b));
+    if (h === 'PAR1'){ S.overture = S.overture.concat([f]); ovtUI(); toast(f.name + ' is an Overture buildings file (Parquet), so it went into step 2 under Overture buildings. OpenStreetMap still needs a .pbf, .osm or the download button.', 8); return; }
+    setOsm({kind:/\.pbf$/i.test(f.name) ? 'pbf' : kindOf(f.name), file:f, name:f.name, size:f.size}); }); });
 
 /* Drop files on the page (iPad: drag them out of the Files app in Split View). A second way in that skips the file picker, which some iPad browsers grey files out of. */
 (function(){
