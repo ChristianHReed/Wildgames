@@ -705,13 +705,18 @@ function placeDress(g){
    sagging a fiftieth of the span in the middle, drawn as two thin crossed strips so they read from any side. Street lamps light pools at night like the game's own. */
 var MPC = 96, MPWX = [-0.9, -0.3, 0.3, 0.9], MPWY = 8.06, MPWC = [38, 38, 42];
 function mpPrepare(w){
-  w.gl.mp = []; var L = w.mprops; if (!L || !L.length) return; var cells = new Map(), poles = new Map(), pk = function(x, y){ return Math.round(x*2) + ':' + Math.round(y*2); };
+  w.gl.mp = []; var L = w.mprops || []; if (!L.length && !w.fencesL) return; var cells = new Map(), poles = new Map(), pk = function(x, y){ return Math.round(x*2) + ':' + Math.round(y*2); };
   L.forEach(function(q){ if (/^vehicles\./.test(q.p)) return; var key = gk(Math.floor(q.x/MPC), Math.floor(q.y/MPC)), c = cells.get(key);
     if (!c){ c = {x:(Math.floor(q.x/MPC) + 0.5)*MPC, y:(Math.floor(q.y/MPC) + 0.5)*MPC, list:[], g:null}; cells.set(key, c); w.gl.mp.push(c); } c.list.push(q);
     if (q.p === 'street.power_pole') poles.set(pk(q.x, q.y), q);
     if (q.p === 'street.street_lamp') (w.slights = w.slights || []).push({x:q.x, y:q.y, sl:true});
     if (/burning_barrel/.test(q.p)) (w.barrels = w.barrels || []).push({lamp:true, x:q.x, y:q.y});   /* a fire barrel lights its own warm pool at night, power or not */
     var r = SOLID[q.p] || (/street_lamp|traffic_light|parking_meter|sign_|bollard|hydrant/.test(q.p) ? 0.2 : /bench|trash|bin|mailbox|newspaper|booth|vending|barrel/.test(q.p) ? 0.35 : 0); if (r){ (w.obstL = w.obstL || []).push([q.x, q.y, r]); w.obst = null; } });
+  /* fences: each segment goes to the cell of its middle (long ones are cut at 24 m), and to a 16 m collision grid */
+  var FG = w.fenceG = new Map(); (w.fencesL || []).forEach(function(f){ var P2 = f.pts; for (var k = 0; k + 3 < P2.length; k += 2){ var ax = P2[k], ay = P2[k+1], bx = P2[k+2], by = P2[k+3], L2 = Math.hypot(bx - ax, by - ay), ns = Math.max(1, Math.ceil(L2/24));
+    for (var s = 0; s < ns; s++){ var x0 = ax + (bx - ax)*s/ns, y0 = ay + (by - ay)*s/ns, x1 = ax + (bx - ax)*(s + 1)/ns, y1 = ay + (by - ay)*(s + 1)/ns, mx = (x0 + x1)/2, my = (y0 + y1)/2, key = gk(Math.floor(mx/MPC), Math.floor(my/MPC)), c = cells.get(key);
+      if (!c){ c = {x:(Math.floor(mx/MPC) + 0.5)*MPC, y:(Math.floor(my/MPC) + 0.5)*MPC, list:[], g:null}; cells.set(key, c); w.gl.mp.push(c); } (c.fs = c.fs || []).push(x0, y0, x1, y1, f.k);
+      for (var gx = Math.floor(Math.min(x0, x1)/16); gx <= Math.floor(Math.max(x0, x1)/16); gx++) for (var gy = Math.floor(Math.min(y0, y1)/16); gy <= Math.floor(Math.max(y0, y1)/16); gy++){ var gkey = gk(gx, gy); (FG.get(gkey) || FG.set(gkey, []).get(gkey)).push(x0, y0, x1, y1); } } } });
   L.forEach(function(q){ if (q.wx !== undefined){ var o = poles.get(pk(q.wx, q.wy)); if (!o){ var best = 2.5; poles.forEach(function(z){ var d = Math.hypot(z.x - q.wx, z.y - q.wy); if (d < best){ best = d; o = z; } }); } q.to = o || {x:q.wx, y:q.wy, yw:q.yw}; } });
 }
 function mpWire(m, a, b){
@@ -723,10 +728,20 @@ function mpWire(m, a, b){
         m.quad(pv[0], pv[2] - W, pv[1], px, pz - W, py, px, pz + W, py, pv[0], pv[2] + W, pv[1], MPWC, 255); }
       pv = [px, py, pz]; } }
 }
+/* fence pieces by kind: [model path, length along its x, fallback path]. A piece is stretched a little to fill the run exactly */
+var FENCEP = {wood:['land.fence_wood_4', 4, 'street.picket_fence', 2.4], picket:['street.picket_fence', 2.4], chain:['street.chainlink_fence', 2.4], wire:['land.fence_wire_4', 4, 'street.chainlink_fence', 2.4],
+  rail:['land.fence_farm_post_rail_4', 4, 'street.picket_fence', 2.4], hedge:['land.hedge_run_4', 4, 'plants.bush', 1.2], wall:['land.wall_low_4', 4, 'street.picket_fence', 2.4]};
+function mpFences(m, fs){
+  for (var i = 0; i < fs.length; i += 5){ var ax = fs[i], ay = fs[i+1], bx = fs[i+2], by = fs[i+3], F = FENCEP[fs[i+4]] || FENCEP.wood, path = F[0], len = F[1], M = spB(path);
+    if (!M && F[2]){ path = F[2]; len = F[3]; M = spB(path); } if (!M) continue;
+    if (path === 'land.wall_low_4' && hash(Math.round(ax), Math.round(ay), 177) < 0.35){ var Mm = spB('land.wall_low_4_mossy'); if (Mm) M = Mm; }
+    var L2 = Math.hypot(bx - ax, by - ay); if (L2 < 0.5) continue; var n = Math.max(1, Math.round(L2/len)), yw = Math.atan2(by - ay, bx - ax);
+    for (var k = 0; k < n; k++){ var t = (k + 0.5)/n, x = ax + (bx - ax)*t, y = ay + (by - ay)*t; m.modelS(M, x, y, yw, hAt(x, y) + 0.02, 1); } }
+}
 function manageMapProps(budget){
   var A = world.gl.mp; if (!A || !A.length) return; var R = QS.chunk + MPC, n = 0;
   for (var i = 0; i < A.length; i++){ var c = A[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
-    if (!c.g && d < R && n < budget){ var m = new Mesh(); c.list.forEach(function(q){ var M = spB(q.p); if (M) m.modelS(M, q.x, q.y, q.yw, hAt(q.x, q.y) + 0.02, 1); if (q.to) mpWire(m, q, q.to); }); c.g = upload(m); n++; }
+    if (!c.g && d < R && n < budget){ var m = new Mesh(); c.list.forEach(function(q){ var M = spB(q.p); if (M) m.modelS(M, q.x, q.y, q.yw, hAt(q.x, q.y) + (q.z || 0) + 0.02, 1); if (q.to) mpWire(m, q, q.to); }); if (c.fs) mpFences(m, c.fs); c.g = upload(m); n++; }
     else if (c.g && d > R + 150){ freeMesh(c.g); c.g = null; } }
 }
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */

@@ -151,6 +151,7 @@ function collide(e, r){
   var cx0 = Math.floor(e.x/G), cy0 = Math.floor(e.y/G);
   for (var pass = 0; pass < 2; pass++){
     stampN++; if (world.wallSegs.length && !e.cl && !(e === P && P.jy > 0.3 && !P.inside)) pushSegs(e, r, world.wallSegs);   /* a clinger goes over fences and walls */
+    if (world.fenceG && !e.cl && !(e === P && P.jy > 0.3 && !P.inside) && !e.inside){ var fgx = Math.floor(e.x/16), fgy = Math.floor(e.y/16); for (var fx = fgx - 1; fx <= fgx + 1; fx++) for (var fy = fgy - 1; fy <= fgy + 1; fy++){ var fsg = world.fenceG.get(gk(fx, fy)); if (fsg) pushSegs(e, r, fsg); } }   /* 0.126.0: fences, hedges and low walls; jump to climb over */
     /* 0.114.54: trunks, street furniture, logs, stumps and the like are solid to anyone on foot (cars have their own check) */
     if (r < 0.9 && !e.cl && typeof obstBuild === 'function' && world.trees){ var om = obstBuild(), ogx, ogy, ol, oi;
       for (ogy = Math.floor((e.y - 2)/8); ogy <= Math.floor((e.y + 2)/8); ogy++) for (ogx = Math.floor((e.x - 2)/8); ogx <= Math.floor((e.x + 2)/8); ogx++){ ol = om.get(gk(ogx, ogy)); if (!ol) continue;

@@ -537,7 +537,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.114.86</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.126.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -582,7 +582,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.125.4', ART = {}, ARTSET = (function(){
+var BUILD = '0.126.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -4576,7 +4576,7 @@ function makeVehicles(saved){
   /* 0.123.0: cars the map builder placed (asmb:prop = vehicles.<kind>, _wreck or _burnt at the end): parked where they were put, driveway or kerb */
   (w.mprops || []).forEach(function(q, qi){ if (!/^vehicles\./.test(q.p)) return; var k = q.p.slice(9), dead = /_wreck$/.test(k) ? 'wreck' : /_burnt$/.test(k) ? 'burnt' : 0, base = k.replace(/_(wreck|burnt)$/, '');
     if (!VMOD[base] && (PACKK || []).indexOf(base) < 0) return; var ix = Math.round(q.x), iy = Math.round(q.y);
-    list.push({veh:true, id:'mp' + qi, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the parked car', dead:dead, kind:dead ? base + '_' + dead : base, hp:dead ? undefined : Math.round(50 + hash(ix, iy, 34)*50), x:q.x, y:q.y, yaw:Math.atan2(Math.cos(q.yw), -Math.sin(q.yw)), fuel:dead ? 0 : fuelRoll(base, ix, iy)}); });
+    list.push({veh:true, id:'mp' + qi, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the parked car', dead:dead, kind:dead ? base + '_' + dead : base, hp:dead ? undefined : Math.round(50 + hash(ix, iy, 34)*50), x:q.x, y:q.y, yaw:Math.atan2(Math.cos(q.yw), -Math.sin(q.yw)), dopen:q.door ? 1 : 0, fuel:dead ? 0 : fuelRoll(base, ix, iy)}); });
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
   if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
   /* 0.114.86: cars only start on roads: a land vehicle whose middle is not on a drivable road is dropped (the player's own truck, saved vehicles and machines are kept) */
@@ -5079,7 +5079,7 @@ function vDrawParts(m, v, k, y0){
   /* 0.121.1: doors move: the way in eases open and shut (v.dA, 0 shut to 1 open); the driver's cab door swings open for a moment as you get in or out */
   var now = performance.now(), dtf = Math.min(0.1, (now - (v.dAt || now))/1000); v.dAt = now; var want = vDoorOpen(v) ? 1 : 0; v.dA = v.dA === undefined ? want : v.dA + Math.max(-dtf*1.6, Math.min(dtf*1.6, want - v.dA));
   var cabT = v.cabT && time < v.cabT ? Math.min(1, (v.cabT - time)/0.6, (time - (v.cabT - 1.6))/0.4 + 0.001) : 0, dsx = vDrvSide(v);
-  Object.keys(V.parts).forEach(function(n){ var isD = rd.indexOf(n) >= 0, pc = V.parts[n][0], am = isD ? v.dA : (/cab_door|driver_door|front_door/.test(n) && cabT > 0 && pc && (pc.p[0] >= 0) === (dsx >= 0)) ? Math.max(0, cabT) : 0;
+  Object.keys(V.parts).forEach(function(n){ var isD = rd.indexOf(n) >= 0, pc = V.parts[n][0], drv = /cab.door|driver.door|front.door/.test(n) && pc && (pc.p[0] >= 0) === (dsx >= 0), am = isD ? v.dA : (drv && cabT > 0) ? Math.max(0, cabT) : (drv && v.dopen && !v.dead && v !== P.veh) ? 0.8 : 0;   /* 0.126.0: a car the map left with its driver door open (asmb:door_open) */
     if (am < 0.01){ var M = vPart(k, n); if (M) m.part(M, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0); return; }
     if (/roll/.test(n)){ if (am > 0.97) return; var M0 = vPart(k, n); if (M0) m.part(M0, v.x, v.y, v.yaw, y0, 0, am*((rm && rm.headroom) || 2)*0.92, 0, 0, 0); return; }   /* a roll-up door slides up into the roof */
     var side = pc.d[0] < pc.d[2], piv, ang;
