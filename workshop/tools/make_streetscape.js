@@ -415,5 +415,32 @@ model('subway_entrance', 'Subway entrance', 'A closed underground station entran
   for (var g = 0; g < 8; g++) a.box(-1.1 + g*0.31, 1.05, 1.3, 0.08, 2.0, 0.04, C('#6a6a66'), {m:'steel'}); a.box(0, 2.0, 1.3, 2.6, 0.12, 0.08, C('#6a6a66'), {m:'steel'}); a.box(0, 0.4, 1.3, 2.6, 0.12, 0.08, C('#6a6a66'), {m:'steel'});
   a.cyl(2.0, 1.6, 2.2, 0.04, 3.2, 'y', TB.rail, {m:'steel', n:6}); a.raw('ball', [2.0, 3.3, 2.2], {scl:[0.3/0.3, 0.3/0.3, 0.3/0.3], c:TB.sub, m:'sheet', n:8}); a.glow(2.0, 3.3, 2.2, 0.36, 0.36, 0.36, C('#f4f0e0')); a.pt('light', 'light', [2.0, 3.3, 2.2], [0, 0, 1]); });
 
+/* ============================================ batch 12: roadblocks and camp pieces (map chat request, section B) ============================================ */
+var RB = {conc:C('#a8a8a0'), concD:C('#86867e'), conc2:C('#98988f'), org:C('#e0742c'), wht:C('#ecebe4'), red:C('#c03a2c'), post:C('#5a5a58'), tape:C('#e0c02c'), tapeD:C('#2a2a28'), wood:C('#8a6a44'), steel:C('#6c7078'), grn:C('#3f6a4a'), blu:C('#3a6aa8'), cream:C('#e4dcc4'), gen:C('#d8a82c'), genD:C('#3a3a3a')};
+model('jersey_barrier_3', 'Jersey barrier, 3 m', 'A concrete Jersey barrier 3 m long, 0.8 m high and 0.6 m wide at the foot with the sloped sides, a darker lower band and a few chips; runs along x and tiles end to end for roadblocks and lanes.', 3, 0.62, 0.82, function(a){
+  a.box(0, 0.12, 0, 3.0, 0.24, 0.62, RB.concD, {m:'stone'}); a.bev(0, 0.52, 0, 3.0, 0.56, 0.4, RB.conc, {m:'stone'}); a.box(0, 0.8, 0, 3.0, 0.06, 0.2, RB.conc2, {m:'stone'});
+  a.box(-1.45, 0.4, 0.0, 0.1, 0.22, 0.5, RB.concD, {m:'stone'}); a.box(1.45, 0.4, 0.0, 0.1, 0.22, 0.5, RB.concD, {m:'stone'}); a.box(0.6, 0.55, 0.22, 0.4, 0.05, 0.02, RB.concD, {m:'stone'}); });
+model('sawhorse_barricade', 'Sawhorse barricade', 'A striped wooden road barricade 2 m wide and 1.1 m high: two A-frame legs, three planks painted in orange and white bands and a small amber lamp on top that glows at night; for roadblocks and road works. Face is +z.', 2.2, 0.8, 1.35, function(a){
+  [-0.85, 0.85].forEach(function(x){ [-0.28, 0.28].forEach(function(z){ a.box(x, 0.5, z, 0.07, 1.05, 0.07, RB.wood, {m:'wood', rot:[z < 0 ? 12 : -12, 0, 0]}); }); a.box(x, 1.0, 0, 0.1, 0.06, 0.5, RB.wood, {m:'wood'}); });
+  [0.95, 0.72, 0.5].forEach(function(y){ for (var i = 0; i < 8; i++) a.box(-0.875 + i*0.25, y, 0.31, 0.25, 0.16, 0.03, i % 2 ? RB.wht : RB.org, {m:'wood'}); });
+  a.box(0, 1.14, 0.0, 0.2, 0.05, 0.2, RB.steel, {m:'steel'}); a.glow(0, 1.26, 0, 0.14, 0.18, 0.14, C('#f4b840')); a.pt('light', 'light', [0, 1.3, 0.1], [0, 0, 1]); });
+model('checkpoint_post', 'Checkpoint post with gate arm', 'A small covered guard post, 2 by 2 m, with a window, a door, a flat roof and a red and white gate arm 4 m long on a pivot beside it, raised to 20 degrees so it reads as open-able; for roadblocks and camp gates. Arm points along +x; front is +z.', 6.2, 2.6, 3.0, function(a){
+  a.box(-2.0, 0.08, 0, 2.2, 0.16, 2.2, RB.concD, {m:'stone'}); a.box(-2.0, 1.2, 0, 1.9, 2.1, 1.9, RB.cream, {m:'stone'}); a.box(-2.0, 2.35, 0, 2.3, 0.16, 2.3, RB.steel, {m:'sheet'});
+  a.box(-2.0, 1.55, 0.96, 1.2, 0.7, 0.04, C('#6a8a98'), {m:'glass'}); a.box(-2.7, 0.95, 0.96, 0.5, 1.7, 0.05, RB.grn, {m:'wood'}); a.pt('door', 'door', [-2.7, 0.95, 1.0], [0, 0, 1]);
+  a.box(-0.7, 0.55, 0.5, 0.18, 1.1, 0.18, RB.post, {m:'steel'});
+  for (var i = 0; i < 8; i++) a.box(-0.7 + 0.5 + i*0.5, 1.15 + (i + 0.5)*0.5*0.34, 0.5, 0.5, 0.1, 0.1, i % 2 ? RB.wht : RB.red, {m:'steel', rot:[0, 0, 20]});
+  a.box(-1.0, 0.85, 0.5, 0.3, 0.3, 0.3, RB.steel, {m:'steel'}); a.box(2.4, 0.4, 0.5, 0.14, 0.8, 0.14, RB.post, {m:'steel'}); });
+model('hazard_tape_fence_6', 'Hazard tape fence, 6 m', 'A 6 m camp-edge fence of seven thin posts, 1.1 m high, with two runs of yellow and black hazard tape sagging between them; the tape is a flat band, no thickness issue for physics. Tiles along x.', 6, 0.2, 1.2, function(a){
+  for (var i = 0; i < 7; i++) a.box(-3 + i, 0.55, 0, 0.06, 1.1, 0.06, i % 2 ? RB.org : RB.post, {m:'steel'});
+  [0.95, 0.65].forEach(function(y, k){ for (var j = 0; j < 6; j++){ var sag = -0.05 - (k ? 0.02 : 0); for (var t = 0; t < 4; t++) a.box(-3 + j + 0.125 + t*0.25, y + sag*Math.sin((t + 0.5)/4*Math.PI) + 0.02, 0, 0.25, 0.07, 0.01, (t + j) % 2 ? RB.tape : RB.tapeD, {m:'sheet'}); } }); });
+model('generator_floodlight', 'Generator floodlight tower', 'A mobile light tower: a yellow generator box on a two-wheel trailer, a raised mast 6 m high and four bright lamps; the lamps glow at night with a point light, a fuel drum beside it and a cable. For camps, roadblocks and work sites; loot: fuel.', 2.4, 3.2, 6.6, function(a){
+  a.box(0, 0.55, 0, 1.4, 0.7, 2.2, RB.gen, {m:'steel'}); a.box(0, 0.95, 0, 1.5, 0.1, 2.3, RB.genD, {m:'steel'}); a.box(0, 0.25, 0, 1.6, 0.14, 2.6, RB.genD, {m:'steel'}); [-0.85, 0.85].forEach(function(x){ a.cyl(x, 0.3, -0.2, 0.3, 0.2, 'x', C('#222220'), {m:'rubber', n:10}); });
+  a.box(0, 0.5, 1.4, 0.1, 0.1, 1.0, RB.genD, {m:'steel'}); a.box(-0.2, 0.7, 1.15, 0.5, 0.3, 0.01, RB.org, {m:'sheet'});
+  a.box(0, 3.9, -0.5, 0.14, 5.9, 0.14, RB.steel, {m:'steel'}); a.box(0, 6.5, -0.5, 1.9, 0.12, 0.2, RB.genD, {m:'steel'});
+  [-0.7, -0.23, 0.23, 0.7].forEach(function(x){ a.box(x, 6.1, -0.38, 0.36, 0.4, 0.2, RB.genD, {m:'steel'}); a.glow(x, 6.1, -0.26, 0.3, 0.32, 0.04, C('#fffbe8')); }); a.pt('light', 'light', [0, 6.1, -0.2], [0, -0.3, 1]);
+  a.cyl(1.1, 0.45, 1.0, 0.28, 0.9, 'y', RB.blu, {m:'steel', n:8}); a.pt('loot', 'door', [1.1, 0.5, 1.3], [0, 0, 1]); });
+model('portable_toilets_3', 'Portable toilets, 3', 'A row of three plastic portable toilet cabins, each 1.2 m wide and 2.3 m tall, in blue, green and white with sloped roofs, a door and a small vent; side by side along x, doors face +z; for camps and events.', 3.8, 1.4, 2.5, function(a){
+  [[-1.3, RB.blu], [0, RB.grn], [1.3, RB.wht]].forEach(function(p, i){ var x = p[0]; a.box(x, 1.1, 0, 1.15, 2.2, 1.15, p[1], {m:'plastic'}); a.wedge(x, 2.28, 0, 1.2, 0.18, 1.2, RB.wht, {m:'plastic'}); a.box(x, 1.0, 0.59, 0.8, 1.8, 0.04, i === 1 ? RB.wht : C('#d0d0c8'), {m:'plastic'}); a.box(x + 0.25, 1.05, 0.62, 0.08, 0.14, 0.03, i === 1 ? RB.red : RB.grn, {m:'plastic'}); a.box(x, 1.95, 0.62, 0.5, 0.12, 0.02, RB.steel, {m:'plastic'}); a.cyl(x + 0.3, 2.45, -0.3, 0.06, 0.2, 'y', RB.steel, {m:'plastic', n:6}); }); });
+
 fs.writeFileSync(root + 'packs/afterstreet-streetscape.js', M.packToJS(pack));
 console.log('wrote packs/afterstreet-streetscape.js:', pack.assets.length, 'models');
