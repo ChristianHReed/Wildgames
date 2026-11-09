@@ -1,6 +1,6 @@
 # Streetscape pack (afterstreet-streetscape)
 
-Reply to the main chat's "Request to content chat: art from the visual reference" (8 November 2026). Built by `node workshop/tools/make_streetscape.js` into `packs/afterstreet-streetscape.js` (about 390 KB, 49 land models, listed in `packs/index.js`). Everything is under 800 triangles; the whole set is about 7,000. Made-up brands only, blank sign panels, no real marks. The pictures were used as a description of the feel, never traced.
+Reply to the main chat's "Request to content chat: art from the visual reference" (8 November 2026). Built by `node workshop/tools/make_streetscape.js` into `packs/afterstreet-streetscape.js` (about 390 KB, 50 land models, listed in `packs/index.js`). Everything is under 800 triangles; the whole set is about 7,000. Made-up brands only, blank sign panels, no real marks. The pictures were used as a description of the feel, never traced.
 
 All models are land models: `SHAPED.land.models.land[<id>]` with an `info` row (w, len, h, note). Origin is the centre of the base, front is +Z, metres, Y up.
 
@@ -33,6 +33,8 @@ No new pole model is needed.
 
 **Batch 3:** Ground tiles, all 2 m: `tile_grass_flowers` (place in drifts), `tile_grass_dirt`, `tile_cobble`, `tile_plaza_paving`, `tile_sand_wet` (foam line on the +z edge, toward the water), `tile_dry_pale`. Garden bed growth, five 2 m beds that share a footprint so the game swaps them by days since planting: `crop_stage_1_seeded`, `_2_sprout`, `_3_leafy`, `_4_flowering`, `_5_ripe`. Overgrowth: `wall_vines_4` (wall side z = 0), `roof_grass_tufts` (3 m patch for roofs and old car roofs), `tree_through_roof` (4 m, 8.5 m tall).
 
+**Batch 4:** `crashed_airliner` (60 x 38 m, tail 9 m): a twin-engine airliner broken in three in a scorched crater, middle fuselage open with a row of windows and blue seat blocks, tail with fin, one wing sheared and one torn, an engine thrown clear, debris and a ring of earth. A `door` point named `loot` sits in the middle section. Sits at ground level; the crater is a dish of earth pieces and needs no terrain cut.
+
 ## Already in the game, kept (checked by name)
 
 Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash bin (props street); vending machine (businesses, services); air conditioner, water tank, satellite dish, roof hatch, chimney, garage door (props); bus shelter and kiosk (roadside, services); motel (roadside); water tower, lighthouse, wind turbine, billboards (roadside, towers); gantry, guard rail, sandbags (power, props, barriers); puddle (fx, ground); reeds and shrubs (flora, waterside).
@@ -41,7 +43,7 @@ Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash
 
 - Done in `docs/PALETTES.md` (project doc "Season palettes and tree tint rules"): season, dry-summer and desert palette rows and the per-tree tint rules. The garden crop stages are one shared bed, not one per crop type.
 - Porch and chimney checks on the stock houses; broken (not only faded) sign variants.
-- Crashed airliner with crater, elevated rail section, subway entrance, cheap far wind turbine, armoured survivor vehicles (these need the Workshop chat if the remade logic requires it), parked tractor wrecks (the farm pack already has a tractor, hay wagon and flatbed; wreck versions are the open part).
+- Elevated rail section, subway entrance, cheap far wind turbine, armoured survivor vehicles (these need the Workshop chat if the remade logic requires it), parked tractor wrecks (the farm pack already has a tractor, hay wagon and flatbed; wreck versions are the open part).
 
 ## Checks
 

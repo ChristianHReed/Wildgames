@@ -194,5 +194,34 @@ model('tree_through_roof', 'Tree through a roof', 'A broadleaf sapling that has 
   a.box(0, 0.05, 0, 4, 0.1, 4, K.roofG, {m:'sheet'}); [[0, 1.7, 3.2, 0.2], [0, -1.7, 3.2, 0.2], [1.7, 0, 0.2, 3.2], [-1.7, 0, 0.2, 3.2]].forEach(function(r){ a.box(r[0], 0.12, r[1], r[2], 0.1, r[3], K.dirt, {m:'earth'}); }); for (var i = 0; i < 6; i++){ var t = i*1.05; a.box(Math.cos(t)*1.2, 0.35, Math.sin(t)*1.2, 0.08, 0.7, 1.0, K.woodD, {m:'wood', rot:[0, -t*57.3, (i%2 ? 24 : -30)]}); }
   a.cyl(0.1, 3.0, 0, 0.18, 6.0, 'y', K.wood, {m:'wood', n:8, rot:[0, 0, -5]}); [[0, 6.6, 0, 1.7], [-1.0, 5.9, 0.4, 1.2], [1.0, 6.2, -0.4, 1.3]].forEach(function(l, i){ a.raw('ball', [l[0], l[1], l[2]], {scl:[l[3]/0.3, l[3]*0.8/0.3, l[3]/0.3], c:i % 2 ? K.grass : K.grassD, m:'plant'}); }); a.raw('ball', [0.3, 7.2, 0.2], {scl:[1.0/0.3, 0.7/0.3, 1.0/0.3], c:K.grassL, m:'plant'}); });
 
+/* ============================================ batch 4: crashed airliner landmark ============================================ */
+var ANG8 = [32, 62, 118, 148, 212, 242, 298, 328];
+function tubeP(a, st, c, extra){ var r = st.map(function(q){ return [0, q[1], q[0], q[2]/0.848, q[3]/0.883]; }); return a.raw('tube', [0, 0, 0], Object.assign({s:'loft', ax:'z', ang:ANG8, r:r, c:c, m:'sheet'}, extra || {})); }
+model('crashed_airliner', 'Crashed airliner', 'A twin-engine airliner that came down in a field and broke in three: the nose and cockpit section buried in a scorched crater, the middle fuselage lying open on its side with windows in a row, the tail with its fin standing 9 m high, one wing sheared off and one torn, an engine thrown clear, debris, burn marks and a ring of churned earth. 60 m by 38 m, tail 9 m; a big landmark and loot site (rows of seats in the middle section). Place at ground level; the crater is a shallow dish of earth and does not need terrain cuts.', 60, 38, 9.5, function(a){
+  var W = C('#d8d8d0'), WD = C('#9a9a94'), SC = C('#2a2622'), BL = C('#3a5a8a'); var M2 = a;
+  /* crater: dished ring of churned earth and a scorch decal */
+  blob(a, 0, -2, 26, 15, K.dirt, 0.03, 31, 12); blob(a, 0, -2, 21, 11, SC, 0.05, 32, 12); blob(a, 6, -6, 12, 6, K.oil, 0.07, 33, 10);
+  for (var i = 0; i < 14; i++){ var t = i/14*Math.PI*2, rx = 24 + Math.sin(i*2.3)*2.5, rz = 14 + Math.cos(i*1.7)*2; a.bev(Math.cos(t)*rx, 0.3, Math.sin(t)*rz - 2, 3.4, 0.5 + (i%3)*0.25, 2.0, i % 2 ? K.dirt : C('#85735a'), {m:'earth', rot:[0, -t*57.3, 0]}); }
+  /* nose and cockpit: nose-down in the crater (tilted), shorter than the rest */
+  a.raw('tube', [0, 0, 0], {s:'loft', ax:'z', ang:ANG8, c:W, m:'sheet', r:[[0, 1.2, 14, 0.2, 0.2], [0, 1.9, 15.4, 1.4, 1.5], [0, 2.2, 18, 2.0, 2.1], [0, 2.3, 22, 2.1, 2.2], [0, 2.3, 26, 2.1, 2.2]]});
+  a.box(0, 2.6, 15.1, 1.8, 0.7, 0.05, K.lens, {m:'glass', rot:[-28, 0, 0]});
+  /* middle fuselage: lies open, one side torn away, windows in a row */
+  tubeP(a, [[-2, 2.2, 2.1, 2.2], [3, 2.25, 2.1, 2.2], [9, 2.3, 2.1, 2.2], [13, 2.3, 2.1, 2.2]], W, {rot:undefined});
+  for (var w = 0; w < 14; w++){ a.pane(2.14, 2.7, -1.4 + w*0.85, 0.04, 0.36, 0.5); }
+  a.box(0, 2.0, 5.5, 3.6, 0.08, 15.2, WD, {m:'sheet'}); [-0.9, 0.9].forEach(function(x){ for (var r = 0; r < 6; r++) a.box(x, 2.55, -0.5 + r*1.9, 0.5, 0.5, 0.5, BL, {m:'cloth'}); });
+  a.box(-2.15, 2.7, 6.5, 0.06, 2.2, 7.0, K.oil, {m:'sheet'});
+  /* tail section with fin and tailplane */
+  tubeP(a, [[-13, 2.1, 0.5, 0.55], [-15.5, 2.35, 1.2, 1.35], [-20, 2.7, 1.7, 1.7], [-26, 2.9, 2.0, 2.0], [-30.5, 3.0, 2.1, 2.2], [-36, 2.9, 1.4, 1.5], [-40, 2.75, 0.3, 0.3]], W);
+  a.raw('plate', [0, 0, 0], {v:[[0, 4.0, -29], [0, 4.0, -37], [0, 9.2, -39], [0, 9.2, -35]], c:WD, m:'sheet', th:[0.18, 0, 0]}); a.box(0, 7.2, -36.5, 0.2, 2.4, 2.2, BL, {m:'sheet'});
+  a.box(-4.4, 3.4, -35, 8.8, 0.18, 3.2, W, {m:'sheet', rot:[0, 0, 4]}); a.box(5.4, 1.1, -37, 5.0, 0.18, 2.8, W, {m:'sheet', rot:[0, 14, 16]});
+  /* wings: left torn stub, right wing sheared and lying on the ground, an engine thrown clear */
+  a.box(-5.6, 1.7, 3.6, 6.8, 0.35, 5.2, WD, {m:'sheet', rot:[0, 0, -6]}); a.box(10.4, 0.5, 8.8, 14.0, 0.35, 5.6, W, {m:'sheet', rot:[0, 18, 8]}); a.box(10.4, 0.5, 6.0, 4.0, 0.2, 2.0, SC, {m:'sheet', rot:[0, 18, 8]});
+  a.cyl(-18, 1.1, 17, 1.2, 4.2, 'z', WD, {m:'steel', rot:[0, 26, 0], n:10}); a.cyl(-18, 1.1, 17, 0.9, 4.3, 'z', SC, {m:'steel', rot:[0, 26, 0], n:8}); a.cyl(-18.6, 1.1, 14.6, 0.6, 0.4, 'z', K.iron, {m:'steel', rot:[0, 26, 0]});
+  /* debris: panels, seat blocks, a landing-gear leg and burnt scraps scattered round the crater */
+  [[12, -12, 2.4, 1.2, 40], [-14, -9, 1.8, 1.0, 70], [18, 4, 3.0, 1.4, 15], [-22, 5, 1.6, 0.9, 110], [6, 14, 2.2, 1.0, 130], [-8, 17, 2.8, 1.2, 20]].forEach(function(d){ a.box(d[0], 0.2, d[1], d[2], 0.12, d[3], K.tin, {m:'sheet', rot:[Math.sin(d[4])*8, d[4], 4]}); a.box(d[0] + 1.4, 0.12, d[1] + 0.6, 0.9, 0.2, 0.7, SC, {m:'sheet', rot:[0, d[4]*2, 0]}); });
+  [[14, -4], [-16, -14], [22, 12]].forEach(function(p, i){ a.box(p[0], 0.4, p[1], 1.0, 0.6, 0.5, BL, {m:'cloth', rot:[0, i*40, 18]}); a.box(p[0] + 0.5, 0.35, p[1] - 0.5, 1.0, 0.6, 0.5, BL, {m:'cloth', rot:[0, i*70, -12]}); });
+  a.cyl(-10.5, 0.55, 20.5, 0.14, 2.6, 'z', K.ironL, {m:'steel', rot:[0, 34, 6]}); a.cyl(-9.4, 0.12, 21.6, 0.5, 0.3, 'x', K.rub, {m:'rubber', rot:[0, 34, 0]});
+  a.pt('loot', 'door', [0, 2.0, 5.5], [0, 0, 1]); });
+
 fs.writeFileSync(root + 'packs/afterstreet-streetscape.js', M.packToJS(pack));
 console.log('wrote packs/afterstreet-streetscape.js:', pack.assets.length, 'models');
