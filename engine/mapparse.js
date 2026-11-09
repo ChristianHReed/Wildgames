@@ -196,6 +196,10 @@ function testStreetRaw(){
   prop(64, -32, 'land.burning_barrel', 0); prop(72, -36, 'land.dome_tent_orange', 200); prop(80, -28, 'land.dome_tent_blue', 160); prop(70, -22, 'land.dome_tent_green', 240);
   prop(92, -34, 'land.relief_tent', 180); prop(58, -40, 'land.guard_booth', 90); [52, 56, 60].forEach(function(y){ prop(y + 46, -42, 'land.camp_barrier_4', 90); });
   [-150, -146, -142].forEach(function(y){ prop(46, y + 100, 'land.tall_grass_patch', 0); });
+  /* 0.126.0: fences, hedges and walls round the park camp (builder 1.25 lot lines are the same ways), and a patrol car left with its door open */
+  line([[44, -50], [44, -14]], {barrier:'hedge'}); line([[44, -50], [104, -50]], {barrier:'wall'}); line([[104, -50], [104, -14]], {barrier:'fence', fence_type:'wood'});
+  line([[110, -50], [110, 0]], {barrier:'fence', fence_type:'wire'}); line([[116, -50], [116, 0]], {barrier:'fence', fence_type:'split_rail'}); line([[122, -50], [122, 0]], {barrier:'fence', fence_type:'chain_link'});
+  prop(2.4, 24, 'vehicles.pk_workshop_crafts_police', 0, {'asmb:door_open':'yes'});
   return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, spawn:LL(-3, -40), name:'Test World'};
 }
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }

@@ -228,6 +228,9 @@ function buildWorld(raw, name){
     if (t.highway && t.area !== 'yes'){ w.roads.push(bbox({pts:pts, w:HW[t.highway] || 6, kind:PATHS[t.highway] ? 'path' : 'road', hw:t.highway, name:t.name || '', wi:wayIx, vg:Math.max(0, Math.min(8, +t['asmb:verge'] || 0)), wk:t['asmb:walk'] !== undefined && isFinite(+t['asmb:walk']) ? Math.max(0, Math.min(6, +t['asmb:walk'])) : 2, sh:Math.max(0, Math.min(3, +t['asmb:shoulder'] || 0)), st:t['asmb:street'] || ''}));   /* 0.123.1: the builder's street bands (verge, pavement, shoulder widths) */ return; }
     if (t.waterway && WW[t.waterway]){ w.roads.push(bbox({pts:pts, w:WW[t.waterway], kind:'water', wi:wayIx})); return; }
     if (IN(t.railway, ['rail','tram','light_rail'])){ w.roads.push(bbox({pts:pts, w:2.4, kind:'rail', wi:wayIx})); return; }
+    /* 0.126.0: fences, hedges and low walls (builder 1.25 lot lines, field edges, or mapped): kept as segments, drawn by tiling pieces along them near the player
+       (buildings.js mpPrepare), solid on foot through a grid of their own */
+    if (t.barrier && !t.building && FENCEK[t.barrier]){ var fk = t.barrier === 'fence' ? (FENCEF[t.fence_type] || 'wood') : FENCEK[t.barrier]; (w.fencesL = w.fencesL || []).push({pts:pts, k:fk}); return; }
     if (closed){ var k = areaKind(t); if (k){ pts.length -= 2; w.areas.push(bbox({pts:pts, kind:k, lei:t.leisure || '', sport:t.sport || '', lu:t.landuse || ''})); } }
   });
   if (!w.buildings.length && !w.roads.length) throw new Error('This file has no buildings or roads. Try exporting a built-up area.');
@@ -286,7 +289,7 @@ function buildWorld(raw, name){
     /* 0.123.0: props the map builder placed (asmb:prop = <category>.<piece>): street dressing (poles with wires, lamps, mailboxes, benches, bins, meters), props a player put down,
        and cars (vehicles.*, made into parked vehicles in makeVehicles). asmb:yaw is degrees (builder 1.24), asmb:ry quarter turns for older maps */
     if (t['asmb:prop'] && /^[a-z0-9_]+\.[A-Za-z0-9_]+$/.test(t['asmb:prop'])){
-      var pth = t['asmb:prop'], yw = t['asmb:yaw'] !== undefined && isFinite(+t['asmb:yaw']) ? -(+t['asmb:yaw'])*Math.PI/180 : -(+t['asmb:ry'] || 0)*Math.PI/2, mp = {p:pth, x:x, y:y, yw:yw};
+      var pth = t['asmb:prop'], yw = t['asmb:yaw'] !== undefined && isFinite(+t['asmb:yaw']) ? -(+t['asmb:yaw'])*Math.PI/180 : -(+t['asmb:ry'] || 0)*Math.PI/2, mp = {p:pth, x:x, y:y, yw:yw, z:isFinite(+t['asmb:z']) ? Math.max(0, Math.min(400, +t['asmb:z'])) : 0}; if (t['asmb:door_open'] === 'yes') mp.door = 1;
       if (t['asmb:wire']){ var wl = String(t['asmb:wire']).split(','); if (wl.length === 2 && isFinite(+wl[0]) && isFinite(+wl[1])) mp.wx = (+wl[0] - lon0)*kx, mp.wy = -(+wl[1] - lat0)*ky; }
       var band = t['asmb:band']; if (band){ var MK = w.mhas || (w.mhas = {}); if (pth === 'street.power_pole') MK.pole = 1; else if (pth === 'street.street_lamp') MK.lamp = 1; else if (pth === 'street.mailbox') MK.mailbox = 1; }
       (w.mprops || (w.mprops = [])).push(mp); return; }
@@ -687,6 +690,7 @@ function coreDrape(m, lift){
 }
 /* 0.124.3: some maps carry the same road twice (a square's own copy and its neighbour's, or two ways drawn over each other), and two ribbons on one line
    fight for the same pixels: the centre line jitters and jumps. A road or path whose every point lies on a longer road of the same width (within 0.6 m) is dropped */
+var FENCEK = {fence:'wood', hedge:'hedge', wall:'wall', retaining_wall:0, city_wall:0, wood_fence:'wood', chain_link:'chain'}, FENCEF = {wood:'wood', picket:'picket', chain_link:'chain', wire:'wire', barbed_wire:'wire', electric:'wire', split_rail:'rail', rail:'rail', post_and_rail:'rail', pole:'rail', metal:'chain', railing:'chain', panel:'wood', board:'wood', hedge:'hedge'};
 function implicitCulverts(w){
   var G = new Map(), CS = 30, segs = 0;
   w.roads.forEach(function(r){ if (r.kind === 'water' || r.kind === 'rail' || r.pts.length < 4) return; for (var k = 0; k + 3 < r.pts.length; k += 2){ var sg = [r.pts[k], r.pts[k+1], r.pts[k+2], r.pts[k+3], r.w/2];
