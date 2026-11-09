@@ -242,13 +242,32 @@ var WHEAT = [
   {n:'golden', label:'ripe: golden ears, yellow bent leaves', k:4}];
 WHEAT.forEach(function(st, si){ model('wheat_stage_' + (si + 1) + '_' + st.n, 'Wheat, stage ' + (si + 1) + ' (' + st.n.replace('_', ' ') + ')', 'A 2 m by 2 m patch of wheat, stage ' + (si + 1) + ' of 5: ' + st.label + '. Same footprint at every stage so the game swaps one for the next as days pass; the ripe stage is the one to harvest. Chunky stylised plants over a tan soil square.', 2, 2, [0.1, 0.35, 0.75, 1.0, 1.05][si], function(a){
   wheatBed(a);
-  if (st.k === 0){ for (var i = 0; i < 14; i++){ var t = i*2.399, rr = 0.85*Math.sqrt((i + 0.5)/14); a.wedge(Math.cos(t)*rr, 0.06, Math.sin(t)*rr, 0.07, 0.04, 0.035, i % 3 ? WH.seed : WH.seedL, {m:'plant', rot:[0, (i*53) % 180, 20 + (i % 3)*15]}); } return; }
+  if (st.k === 0){ for (var i = 0; i < 18; i++){ var t = i*2.399, rr = 0.88*Math.sqrt((i + 0.5)/18); a.wedge(Math.cos(t)*rr, 0.07, Math.sin(t)*rr, 0.13, 0.07, 0.06, i % 3 ? WH.seed : WH.seedL, {m:'plant', rot:[0, (i*53) % 180, 20 + (i % 3)*15]}); } return; }
   if (st.k === 1){ for (var j = 0; j < 7; j++){ var u = j*2.399 + 0.5, r2 = 0.8*Math.sqrt((j + 0.5)/7); wheat(a, Math.cos(u)*r2, Math.sin(u)*r2, 0, {leaves:5, leafLen:0.34, leafW:0.1, lean:48, leafY:0.02, leaf:j % 2 ? WH.sp : WH.spD, yaw:j*37, ear:0, stalk:WH.sp}); }
     for (var q = 0; q < 3; q++) wheat(a, Math.cos(q*2.1)*0.35, Math.sin(q*2.1)*0.35, 0.3, {leaves:3, leafLen:0.28, leafW:0.07, lean:55, leafY:0.04, leaf:WH.sp, stalk:WH.sp, lobes:3, lobeH:0.05, earW:0.05, ear:WH.g1}); return; }
   var tall = [0, 0, 0.7, 0.95, 1.0][st.k], lobes = [0, 0, 4, 6, 6][st.k], lh = [0, 0, 0.07, 0.09, 0.1][st.k], ew = [0, 0, 0.1, 0.14, 0.15][st.k];
   var stalk = [0, 0, WH.sp, WH.g1, WH.dead][st.k], leaf = [0, 0, WH.sp, WH.g1, WH.dead][st.k], ear = [0, 0, WH.g1, WH.earG, WH.earO][st.k], top = [0, 0, WH.g2, WH.earY, WH.earD][st.k];
   for (var n = 0; n < 24; n++){ var ax = -0.8 + (n % 5)*0.4 + (n % 2 ? 0.1 : -0.08), az = -0.78 + Math.floor(n/5)*0.4 + ((n*7) % 3)*0.05, hh = tall*(0.88 + ((n*5) % 4)*0.06);
-    wheat(a, ax, az, hh, {leaves:3, leafLen:st.k === 4 ? 0.6 : 0.55, leafW:0.11, lean:st.k === 4 ? 62 : 28, leafY:0.04, leaf:n % 3 ? leaf : (st.k === 4 ? WH.deadD : WH.spD), yaw:n*47, stalk:stalk, lobes:lobes, lobeH:lh, earW:ew, ear:ear, earTop:top}); } }); });
+    wheat(a, ax, az, hh, {leaves:3, leafLen:st.k === 4 ? 0.5 : 0.55, leafW:st.k === 4 ? 0.15 : 0.11, lean:st.k === 4 ? 40 : 28, leafY:0.04, leaf:n % 3 ? leaf : (st.k === 4 ? WH.deadD : WH.spD), yaw:n*47, stalk:stalk, lobes:lobes, lobeH:lh, earW:ew, ear:ear, earTop:top}); } }); });
+
+/* ============================================ batch 6: water details (visual reference 2: stepping stones, foam rings, lily pads) ============================================ */
+/* water surface is y = 0; rocks sit half under it with a white foam halo at the surface */
+var RK = {g:C('#8a9078'), gL:C('#a4aa90'), gD:C('#6c725e'), moss:C('#6f8a48'), foam:C('#f2f6f4'), foam2:C('#dce8e6'), pad:C('#5f9a3a'), padL:C('#7ab648'), padY:C('#d8b82c'), padR:C('#b8442c'), padO:C('#d8862c'), flw:C('#f4e6ee'), stem:C('#4a7a34')};
+function stone(a, x, z, rx, rz, h, i, moss){ var c = [RK.g, RK.gL, RK.gD][i % 3];
+  blob(a, x, z, rx + 0.16, rz + 0.16, RK.foam, 0.012, i + 41, 10); blob(a, x, z, rx + 0.06, rz + 0.06, RK.foam2, 0.02, i + 43, 9);
+  a.raw('ball', [x, h*0.25, z], {scl:[rx*1.7/0.3, h*0.95/0.3, rz*1.7/0.3], c:c, m:'stone', n:10}); a.bev(x, h*0.66, z, rx*1.3, h*0.2, rz*1.3, [RK.gL, RK.g, RK.gL][i % 3], {m:'stone', rot:[0, i*37, 0]});
+  if (moss) blob(a, x + 0.04, z, rx*0.6, rz*0.55, RK.moss, h*1.0 + 0.02, i + 51, 8); }
+model('rock_in_water', 'Rock in water', 'One flat-topped grey-green rock 1.1 m across standing 0.25 m out of the water, with a white foam ring where it meets the surface. Place at water level (y = 0); the lower half is under the surface.', 1.6, 1.6, 0.3, function(a){ stone(a, 0, 0, 0.55, 0.45, 0.5, 1, false); });
+model('stepping_stones_5', 'Stepping stones, 5', 'A line of five flat-topped stones across shallow water, 4 m long and 0.8 m apart, each 0.7 to 1.0 m wide and 0.2 m above the surface, with foam rings; one has moss on top. Walkable: the tops are level so a player steps from stone to stone.', 4.6, 1.8, 0.3, function(a){
+  [[-1.9, 0.1, 0.42, 0.38], [-0.95, -0.2, 0.48, 0.4], [0.0, 0.15, 0.5, 0.42], [0.95, -0.15, 0.44, 0.4], [1.9, 0.1, 0.4, 0.36]].forEach(function(r, i){ stone(a, r[0], r[1], r[2], r[3], 0.46, i, i === 2); }); });
+model('rock_cluster_water', 'Rock cluster in water', 'Three rocks of different sizes grouped in water, the tallest 0.6 m above the surface, with one foam ring around the group; a river or pond centrepiece.', 2.4, 2.0, 0.65, function(a){
+  stone(a, -0.5, 0.1, 0.6, 0.5, 0.9, 0, false); stone(a, 0.55, -0.2, 0.4, 0.34, 0.7, 2, true); stone(a, 0.2, 0.55, 0.3, 0.26, 0.55, 1, false); });
+function pads(name, label, note, col, flowerCol, n){ model(name, label, note, 2.6, 2.6, 0.12, function(a){
+  for (var i = 0; i < n; i++){ var t = i*2.399 + 0.4, rr = 1.05*Math.sqrt((i + 0.5)/n), x = Math.cos(t)*rr, z = Math.sin(t)*rr, r = 0.2 + ((i*5) % 4)*0.05;
+    a.cyl(x, 0.012, z, r, 0.02, 'y', i % 3 ? col : K.grassD, {m:'plant', n:10}); a.wedge(x + r*0.55, 0.026, z, r*0.8, 0.012, 0.07, K.lamp, {m:'plant', rot:[0, (i*53) % 360, 0]}); if (flowerCol && i % 4 === 0){ a.cone(x, 0.1, z, 0.06, 0.1, flowerCol, {m:'plant'}); } } }); }
+pads('lily_pads_green', 'Lily pads, green', 'A scatter of 14 round lily pads, 0.4 to 0.55 m across, on the water surface (y = 0), a few with a pale flower. The summer look; swap for the yellow set in autumn.', RK.pad, RK.flw, 14);
+pads('lily_pads_autumn', 'Lily pads, autumn', 'The same lily pad scatter in yellow and orange for autumn.', RK.padY, null, 14);
+pads('lily_pads_red', 'Lily pads, red', 'The same lily pad scatter in red-brown for late autumn and winter dieback.', RK.padR, null, 11);
 
 fs.writeFileSync(root + 'packs/afterstreet-streetscape.js', M.packToJS(pack));
 console.log('wrote packs/afterstreet-streetscape.js:', pack.assets.length, 'models');

@@ -48,3 +48,8 @@ Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash
 ## Checks
 
 `test_install.js` passes, `roundtrip.js` reports 0 differ over 2,187 models, the pieces were looked at in the album (`art-tests/album.html#streetgrid`, new scene that draws land models from `window.__ids`), and panes are 4 cm thick or less.
+
+## Batch 5 and 6 (visual reference 2)
+- Wheat in five growth stages on one 2 m soil square each: `wheat_stage_1_seeds`, `_2_sprouts`, `_3_leafy`, `_4_green_ears`, `_5_golden`. Swap by days since planting; the golden one is the harvest stage.
+- Water details, placed at water level (y = 0): `rock_in_water`, `rock_cluster_water`, `stepping_stones_5` (flat tops, 0.8 m apart, each with a white foam ring), and lily pads in three season colours: `lily_pads_green`, `lily_pads_autumn`, `lily_pads_red`.
+- Not done yet from the reference list: corn, potato and pumpkin stages, moss roof cap, panel fences, billboards, scrub tufts.
