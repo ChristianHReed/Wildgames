@@ -381,7 +381,7 @@ function manageChunks(budget){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
     if (c.g && FRON && c.frm !== wantF && (wantF || d > FRD + 40) && n < budget){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; if (c.gg){ freeMesh(c.gg); c.gg = null; } }
-    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); FRNOW = wantF; for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); } FRNOW = false; c.frm = wantF; c.g = upload(m); c.l = upload(lm); if (c.gg){ freeMesh(c.gg); c.gg = null; } c.gg = m.gm ? upload(m.gm) : null; n++; } }
+    if (!c.g){ if (d < R && n < budget){ var m = new Mesh(), lm = new Mesh(); FRNOW = wantF; for (var j = 0; j < c.list.length; j++){ var bb = c.list[j], s0 = m.p.length, l0 = lm.p.length; shell(bb, m, lm); if (world.hg && !bb.gone) seat(bb, m, lm, s0, l0); if (!bb.gone) footShade(m, s0, bb.base || 0); } FRNOW = false; c.frm = wantF; c.g = upload(m); c.l = upload(lm); if (c.gg){ freeMesh(c.gg); c.gg = null; } c.gg = m.gm ? upload(m.gm) : null; n++; } }
     else if (d > R + 150){ freeMesh(c.g); freeMesh(c.l); c.g = null; c.l = null; if (c.gg){ freeMesh(c.gg); c.gg = null; } }
     if (!c.far){ if (d < QS.far + CH && nf < Math.min(budget*3, 90)){ var fm = new Mesh(); for (var q = 0; q < c.list.length; q++) shellFar(c.list[q], fm); c.far = upload(fm); nf++; } }
     else if (d > QS.far + CH + 300){ freeMesh(c.far); c.far = null; }
@@ -401,7 +401,8 @@ function treeTile(key){
     if (!tr.alive){ m.ybox(tr.x, tr.y, 0, 0, 0, 0.2, 0.2, 0.2, 0.2, trunk); return; }
     if (IMPR && natTex){
       var tk2 = treeKey(tr), r = (IMPR[tk2] || 5)*tr.sc, y0 = m.yo - 0.1, y1 = y0 + 2*r, tile = 60 + (IMPT[tk2] || 1), UVQ = [0.003,0.997, 0.997,0.997, 0.997,0.003, 0.003,0.003];
-      for (var q = 0; q < 2; q++){ var a = tr.yw + q*1.5708, cx = Math.cos(a)*r, cz = Math.sin(a)*r; m.quadUV([tr.x - cx, y0, tr.y - cz, tr.x + cx, y0, tr.y + cz, tr.x + cx, y1, tr.y + cz, tr.x - cx, y1, tr.y - cz], UVQ, tile, WHITE, 255); }
+      var tt = tr.tint || (tr.tint = treeTint(tr)), tcol = [tt[0]*255 | 0, tt[1]*255 | 0, tt[2]*255 | 0];
+      for (var q = 0; q < 2; q++){ var a = tr.yw + q*1.5708, cx = Math.cos(a)*r, cz = Math.sin(a)*r; m.quadUV([tr.x - cx, y0, tr.y - cz, tr.x + cx, y0, tr.y + cz, tr.x + cx, y1, tr.y + cz, tr.x - cx, y1, tr.y - cz], UVQ, tile, tcol, 255); }
       return;
     }
     m.ybox(tr.x, tr.y, tr.r, 0, 0, 0.8, 0.16, 0.8, 0.16, trunk); m.pyr(tr.x, tr.y, 1.2, tr.r, tr.r*1.5, g1, tr.r*3); m.pyr(tr.x, tr.y, 1.2 + tr.r*0.9, tr.r*0.7, tr.r*1.3, g2, tr.r*3 + 0.6);
@@ -500,6 +501,24 @@ function nearTrees(x, y, r, fn){
   for (var ky = Math.floor((y - r)/TREE_T); ky <= Math.floor((y + r)/TREE_T); ky++) for (var kx = Math.floor((x - r)/TREE_T); kx <= Math.floor((x + r)/TREE_T); kx++){
     var o = T.get(gk(kx, ky)); if (!o) continue; o.list.forEach(fn); if (o.wild) o.wild.forEach(fn);
   }
+}
+/* 0.124.0: walls darken toward their foot (the corner where wall meets ground gets less sky): every vertex of a building's outside within 1.5 m of its base is
+   shaded down to 74% at ground level. A wall is one quad from foot to eaves, so the shade fades up the whole wall: strong on a house, a faint band on a tower */
+function footShade(m, s0, base){
+  var P2 = m.p, C2 = m.c; for (var v = s0/3; v < P2.length/3; v++){ var hy = P2[v*3 + 1] - base; if (hy > 1.5) continue; var f = hy <= 0 ? 0.74 : 0.74 + 0.26*hy/1.5, o = v*4; C2[o] = C2[o]*f | 0; C2[o + 1] = C2[o + 1]*f | 0; C2[o + 2] = C2[o + 2]*f | 0; }
+}
+/* 0.124.0: a lake's shallows: a strip round the inside of the shore, 1 cm over the water, that the shader turns paler and greener toward the bank with a line of
+   foam breathing at the edge. The strip's vertex colour carries the distance (red 255 at the shore, 0 at its inner edge; green 0 marks it as a shore strip).
+   Corners are mitred, so neighbouring pieces share their inner points and never overlap */
+function shoreStrip(g, p, a){
+  var n = p.length/2; if (n < 3) return; var ar = 0, i; for (i = 0; i < n; i++){ var j = (i + 1) % n; ar += p[i*2]*p[j*2+1] - p[j*2]*p[i*2+1]; }
+  var sg = ar > 0 ? 1 : -1, W = Math.max(1.2, Math.min(4, 0.15*Math.min(a.maxx - a.minx, a.maxy - a.miny))), inn = [];
+  for (i = 0; i < n; i++){ var pi = (i + n - 1) % n, ni = (i + 1) % n, e1x = p[i*2] - p[pi*2], e1y = p[i*2+1] - p[pi*2+1], e2x = p[ni*2] - p[i*2], e2y = p[ni*2+1] - p[i*2+1], l1 = Math.hypot(e1x, e1y) || 1, l2 = Math.hypot(e2x, e2y) || 1;
+    var n1x = -e1y/l1*sg, n1y = e1x/l1*sg, n2x = -e2y/l2*sg, n2y = e2x/l2*sg, mx = n1x + n2x, my = n1y + n2y, ml = Math.hypot(mx, my) || 1; mx /= ml; my /= ml; var c = Math.max(0.5, mx*n2x + my*n2y), k = Math.min(W/c, W*2);
+    inn.push(p[i*2] + mx*k, p[i*2+1] + my*k); }
+  var y = 0.08, TZ = TX.water, put = function(x, z, d){ g.p.push(x, y, z); g.c.push(255, 0, 255, 255); g.t.push(d, 0, TZ); };   /* the distance rides in the uv (vertex colours are one per triangle once draped); the shader takes the water texture from the world position */
+  for (i = 0; i < n; i++){ var j2 = (i + 1) % n, ax = p[i*2], az = p[i*2+1], bx = p[j2*2], bz = p[j2*2+1];
+    put(ax, az, 1); put(bx, bz, 1); put(inn[j2*2], inn[j2*2+1], 0); put(ax, az, 1); put(inn[j2*2], inn[j2*2+1], 0); put(inn[i*2], inn[i*2+1], 0); }
 }
 function seat(b, m, lm, s0, l0){
   var q, p = b.pts, n = p.length, base = b.base, low = b.low - 0.5, fc = [172,160,146];
@@ -739,6 +758,7 @@ function prep3D(){
     if (p.length > 800){ var st = Math.ceil(p.length/800)*2, q = []; for (i = 0; i < p.length; i += st) q.push(p[i], p[i+1]); p = q; }
     var idx = earclip(p), y = a.kind === 'water' ? 0.05 : 0.03, at = ATILE[a.kind]; g.pl = [at[0], at[0] === TERR ? 0 : a.kind === 'water' ? 0.12 : 0.25];   /* 0.114.75: lakes take a larger water texture, so the far surface does not break into noise */
     for (i = 0; i < idx.length; i += 3) g.tri(p[idx[i]*2], y, p[idx[i]*2+1], p[idx[i+1]*2], y, p[idx[i+1]*2+1], p[idx[i+2]*2], y, p[idx[i+2]*2+1], at[1], 255);
+    if (a.kind === 'water') shoreStrip(g, p, a);
   });
   bridgeScan(w); buildSunk(w); wwPlan(w);
   var LIFT = w.hg ? 0.12 : 0, SWY = 0.062, RDY = SWY - ROAD_T; w.liftY = LIFT;   /* pavement and sunk road surface heights (the lift is what drape() adds on hills) */
@@ -798,7 +818,7 @@ function prep3D(){
     else ribbon(r.pts, r.w/2, r.kind === 'road' && r.w >= 6 ? RDY : 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap, !(r.kind === 'road' && r.w >= 6));
   });
   g.pl = null; if (w.hg) drape(g, LIFT, true); w.liftY = LIFT;
-  if (w.hg && typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
+  if (w.hg && typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = pm.c && pm.c[wi*4 + 1] === 0 ? 0.08 : 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
   var gD = g; g = new Mesh();   /* 0.114.92: the draped ground stays as it came back (typed arrays from the Rust core); what follows goes into a second list */
   sunkWalls(w, g, LIFT, SWY, RDY);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }

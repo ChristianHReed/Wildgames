@@ -7,7 +7,7 @@ var prog3, aP, aC, aT, U = {}, dyn = null, vmb = null, glOK = false, texReady = 
 function initGL(){
   if (!gl) return false;
   var deriv = gl.getExtension('OES_standard_derivatives'), lod = deriv && gl.getExtension('EXT_shader_texture_lod');
-  var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c;vt=t;vec3 q=p*iscl;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
+  var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;uniform vec4 itint;uniform vec2 swy;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){vc=c*itint;vt=t;vec3 q=p*iscl;float sw=swy.y*q.y*q.y*0.0015;q.x+=sin(swy.x*1.7+inst.x*0.37+inst.z*0.29)*sw;q.z+=cos(swy.x*1.3+inst.x*0.21+inst.z*0.33)*sw*0.7;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
     'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;uniform sampler2D dmask;uniform float dmOn;uniform vec2 dmo;uniform float dmS;' +
@@ -40,7 +40,7 @@ function initGL(){
     'else if(k>79.5){if(texOn>0.5&&pplOn>0.5)col=ppl(vt.xy,k-80.0);}' +
     'else if(k>44.5&&k<46.5){if(dmOn>0.5){vec2 du=(wp.xz-dmo)/dmS;if(du.x>0.0&&du.y>0.0&&du.x<1.0&&du.y<1.0&&texture2D(dmask,du).r>0.5)discard;}vec4 tr=texOn>0.5?terr(wp.xz*0.25,vt,wp.xz):vec4(0.5,0.62,0.36,0.5);col=tr.rgb*vc.rgb*gsea.rgb;' +
     'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
-    'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){float fl=step(0.03,fract(vt.z));float hwr=max(1.0,(fract(vt.z)-0.05)*100.0);float sh=fl*clamp(abs(vt.x)*6.0/hwr,0.0,1.0);vec2 u1=vt.xy+mix(vec2(tm*0.035,tm*0.02),vec2(0.0,-tm*0.16),fl);vec2 u2=vt.xy*1.9+mix(vec2(-tm*0.03,tm*0.045),vec2(0.0,-tm*0.23),fl);vec3 ww=mix((samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5,(samp(19.0,u1*0.12).rgb+samp(19.0,u2*0.09).rgb)*0.5,smoothstep(10.0,40.0,d));float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);col=mix(col,col*vec3(0.5,0.72,0.9),fl*(1.0-sh)*0.6);float stk=smoothstep(0.82,1.0,sin(vt.x*7.0+sin((vt.y+tm*0.2)*1.7)*1.6));col+=vec3(0.07,0.09,0.1)*stk*fl;float fb=smoothstep(0.8,0.98,sh+0.06*sin(tm*1.4+wp.x*1.3+wp.z*1.1))*fl;col=mix(col,vec3(0.93,0.97,0.99),fb*(0.5+0.5*samp(19.0,u2*2.0).r));float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8)*smoothstep(28.0,8.0,d);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
+    'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){float fl=step(0.03,fract(vt.z));float hwr=max(1.0,(fract(vt.z)-0.05)*100.0);float sh=fl*clamp(abs(vt.x)*6.0/hwr,0.0,1.0);bool shr=vc.g<0.5;vec2 wuv=shr?wp.xz*0.12:vt.xy;vec2 u1=wuv+mix(vec2(tm*0.035,tm*0.02),vec2(0.0,-tm*0.16),fl);vec2 u2=wuv*1.9+mix(vec2(-tm*0.03,tm*0.045),vec2(0.0,-tm*0.23),fl);vec3 ww=mix((samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5,(samp(19.0,u1*0.12).rgb+samp(19.0,u2*0.09).rgb)*0.5,smoothstep(10.0,40.0,d));float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);col=mix(col,col*vec3(0.5,0.72,0.9),fl*(1.0-sh)*0.6);float stk=smoothstep(0.82,1.0,sin(vt.x*7.0+sin((vt.y+tm*0.2)*1.7)*1.6));col+=vec3(0.07,0.09,0.1)*stk*fl;float fb=smoothstep(0.8,0.98,sh+0.06*sin(tm*1.4+wp.x*1.3+wp.z*1.1))*fl;col=mix(col,vec3(0.93,0.97,0.99),fb*(0.5+0.5*samp(19.0,u2*2.0).r));float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);if(shr&&fl<0.5){float sT=clamp(vt.x,0.0,1.0);col=mix(col,col*vec3(0.84,1.08,1.02)+vec3(0.03,0.08,0.07)*(1.0-dark),sT*sT*0.5);float fbL=smoothstep(0.9,0.985,sT+0.035*sin(tm*1.3+wp.x*0.9+wp.z*1.1));col=mix(col,vec3(0.9,0.95,0.97)*(1.0-dark*0.75),fbL*0.8);}col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8)*smoothstep(28.0,8.0,d);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
     /* light from the upper left and a little behind, at an uneven angle so the four sides of a house each get their own tone and a corner always shows */
     /* 0.122.0 toon shading: the light falls in three soft-edged bands (shade, half light, full light) instead of a smooth ramp, the shade is a cool
        colour and the light warm, sunlit edges get a thin warm rim, and colours are a little richer by day. At night the bands stay but the colour
@@ -63,9 +63,9 @@ function initGL(){
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF','gA'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','itint','swy','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF','gA'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0); gl.uniform1f(U.gA, 1);
-  gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.hurtU, 0); (typeof loadCreatures === 'function' && loadCreatures()); (typeof loadPeople === 'function' && loadPeople());
+  gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform4f(U.itint, 1, 1, 1, 1); gl.uniform2f(U.swy, 0, 0); gl.uniform1f(U.hurtU, 0); (typeof loadCreatures === 'function' && loadCreatures()); (typeof loadPeople === 'function' && loadPeople());
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
   dyn = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; vmb = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0};
   /* the texture atlas is embedded in this file; the glow of lit windows lives in its alpha channel */
@@ -212,12 +212,24 @@ function coverKind(x, y){
   var g = world.tg; if (!g) return null; var i = Math.round((x - g.x0)/g.cell), j = Math.round((y - g.y0)/g.cell); if (i < 0 || j < 0 || i >= g.cols || j >= g.rows) return null;
   var k = j*g.cols + i, o = k*6; if (g.td[k] >= 90) return 'forest'; if (g.c[o] > 120) return 'grass'; return hash(Math.round(x), Math.round(y), 61) < 0.5 ? 'park' : null;
 }
+function treeTint(tr){
+  var h1 = hash(Math.round(tr.x*3), Math.round(tr.y*3), 171), h2 = hash(Math.round(tr.x*3), Math.round(tr.y*3), 172), b = 0.84 + 0.16*h1;
+  if (h2 < 0.04) return [1, 0.78*b, 0.5*b];        /* a rust tree */
+  if (h2 < 0.09) return [b, 0.95*b, 0.62*b];       /* a gold one */
+  if (h2 < 0.45) return [0.95*b, b, 0.86*b];        /* yellow-green */
+  if (h2 < 0.75) return [0.86*b, 0.95*b, b];        /* blue-green */
+  return [b, b, b];
+}
 function drawNature(){
   if (!NAT.pine || !natTex) return; var i;
   var V = SCENEVIS;   /* 0.114.93: near trees and small plants are one draw each, so the ones outside the view are skipped (about half of them) */
-  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive || !V(tr.x, tr.y, 9*(tr.sc || 1))) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[treeVarKey(tr)] || NAT[treeKey(tr)]); }
+  /* 0.124.0: each tree its own shade of green (and a few gold or rust ones all year), and trees and small plants sway in the wind, more in a storm */
+  var wsw = typeof wx !== 'undefined' && wx ? [1, 1.6, 2.6, 3.4, 1.8][wx.w | 0] || 1 : 1, wtm = (performance.now()/1000) % 1000;
+  gl.uniform2f(U.swy, wtm, wsw);
+  for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive || !V(tr.x, tr.y, 9*(tr.sc || 1))) continue; var tt = tr.tint || (tr.tint = treeTint(tr)); gl.uniform4f(U.itint, tt[0], tt[1], tt[2], 1); gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(NAT[treeVarKey(tr)] || NAT[treeKey(tr)]); }
+  gl.uniform4f(U.itint, 1, 1, 1, 1); gl.uniform2f(U.swy, wtm, wsw*60);
   for (i = 0; i < clutter.length; i++){ var c = clutter[i]; if (!V(c.x, c.y, 2)) continue; gl.uniform4f(U.inst, c.x, c.gy, c.y, c.yw); gl.uniform1f(U.iscl, c.sc); drawMesh(c.m); }
-  gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1);
+  gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform2f(U.swy, 0, 0);
 }
 var GSEA = [[0.98, 1.04, 0.94, 0], [1.03, 1.0, 0.86, 0], [1.1, 0.93, 0.72, 0], [0.9, 0.9, 0.9, 0.66]];
 /* ================= the scene: sky, ground, buildings, trees, terrain =================
