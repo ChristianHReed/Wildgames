@@ -26,9 +26,11 @@ Every pack vehicle whose first interior room has a way in and a door: box trucks
 - About half the machines and service trucks left on the roads (fire trucks, ambulances, school buses, garbage, tow, dump and bucket trucks, cement mixers, cranes, sweepers, rollers, loaders, bulldozers, forklifts, diggers) now still run and can be driven; the rest are wrecks, and the heaps of spoil and rubble are scenery.
 - The Test World's walk-in truck, semi and trailer no longer sit inside the parked cars.
 
-## Not yet
-- Doors are not animated (they snap open or shut).
-- Cab doors do not open (you still get in to drive with E as before).
-- The van-sized rooms are tight; you crouch in them.
-- A walk-in room is not yet counted as shelter from rain and cold.
-- Multiplayer: door state and fittings are shared; the store inside is not yet.
+## Finished in 0.121.1
+- **Doors move:** the way in eases open and shut (roll-up doors slide up into the roof, others swing out on their hinges); the driver's cab door swings open for a moment as you get in or out.
+- **Shelter:** inside a walk-in room you stay dry and much warmer (more with the door shut); sitting in any car or truck keeps the rain off and some of the cold.
+- **Multiplayer:** the locker's contents are shared with everyone on the map, as the door and fittings already were.
+- **Every car and truck has a trunk to keep things in**, like the truck at the safe house: the first Y (or the Trunk button) searches it; after that Y opens it as storage (with *Siphon a can of fuel* inside), and it also opens with E at the back of the car. It rides with the car and goes with you into the next map square.
+- **Sleep in any vehicle:** sitting in a stopped car, truck or boat, press Y, or Menu > *Sleep in this seat*. With aliens close you cannot; asleep in a vehicle, aliens do not see you.
+- The low van and ambulance load spaces still make you crouch: that is their real height, not a gap.
+- Checked: the ambulance that seemed to throw you out in a test had been driven over the edge of a map square, which swaps in the same vehicle on the next square; nothing was wrong with it.

@@ -303,7 +303,7 @@
   <div id="carHud" class="hidden"><div class="chTop"><b id="chSpd">0</b><span>mph</span><em id="chGear">N</em></div><div class="chFuel"><span>E</span><div class="chBar"><i id="chFuelB"></i></div><span>F</span></div><div class="chSub"><span id="chMi"></span><span class="chHpW"><i id="chHp"></i></span></div><button id="chShop" class="hidden" style="pointer-events:auto;margin-top:6px;width:100%;font-size:12px;padding:5px">Car shop: name, paint, tune, repair</button><div class="chHint">W gas &middot; S brake/reverse &middot; A D steer &middot; Space handbrake &middot; E out</div></div>
   <div id="miniWrap"><canvas id="mini" width="200" height="200"></canvas><div id="osm">&copy; OpenStreetMap contributors</div></div>
   <button id="hudMenu" title="Menu">&#9776;</button>
-  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="bugBtn">Report a bug</button><button id="btnMove">Move buttons</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
+  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="bugBtn">Report a bug</button><button id="btnMove">Move buttons</button><button id="btnVSleep" class="hidden">Sleep in this seat</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
   <div id="inv"></div>
   <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car trunk, siphon fuel, or pick up and put down furniture &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="salv" class="hidden"><span id="stxt"></span><div id="sbar"></div></div>
@@ -559,7 +559,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.121.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.121.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -657,7 +657,7 @@ window.addEventListener('keydown', function(e){
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit'); if (e.code === 'Digit4') useItem('bandage');
   if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
   if (e.code === 'KeyG' && P.veh && P.veh.t){ switchSeat(); return; }
-  if (e.code === 'KeyX') pingAhead(); if (e.code === 'KeyH') el('help').classList.toggle('on'); if (e.code === 'KeyI') togglePack(); if (e.code === 'KeyT') place('lamp'); if (e.code === 'KeyR'){ if (PL) plRotate(); else radioScan(); } if (e.code === 'KeyY'){ if (PL) PL.grid = !PL.grid; else carUse(); } if (e.code === 'Escape' && PL) endPlace(); if (e.code === 'KeyM') toggleBig();
+  if (e.code === 'KeyX') pingAhead(); if (e.code === 'KeyH') el('help').classList.toggle('on'); if (e.code === 'KeyI') togglePack(); if (e.code === 'KeyT') place('lamp'); if (e.code === 'KeyR'){ if (PL) plRotate(); else radioScan(); } if (e.code === 'KeyY'){ if (PL) PL.grid = !PL.grid; else if (P.veh && (P.veh.t || P.veh.boat)) vehSleep(); else carUse(); } if (e.code === 'Escape' && PL) endPlace(); if (e.code === 'KeyM') toggleBig();
   if (e.code === 'KeyN') toggleBuild(); if (e.code === 'KeyZ') toggleCrouch(); if (e.code === 'KeyV') throwStone(); if (e.code === 'KeyP') toggleView();
   if (e.code === 'KeyL') toggleLight(); if (e.code === 'KeyK') toggleItems(); if (e.code === 'KeyQ') cycleWeapon(); if (e.code === 'KeyU') cycleGun(); if (e.code === 'KeyO') startReload(true); if (e.code === 'KeyG') quickItem();
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
@@ -756,7 +756,7 @@ function bUp(e){ if (!bDrag || e.pointerId !== bDrag.id) return; bDrag = null; b
 window.addEventListener('pointerup', bUp); window.addEventListener('pointercancel', bUp);
 function bStart(){ if (BED || !touchMode) return; BED = {m: el('touch').classList.contains('vmode') ? 2 : el('touch').classList.contains('bmode') ? 1 : 0}; el('touch').classList.add('edit'); document.body.classList.add('btnedit'); el('bedit').classList.remove('hidden'); el('hudBtns').classList.add('hidden'); el('tActM').textContent = 'Action'; el('tAct').classList.add('on'); bLabel(); bTab(BED.m); }
 function bEnd(){ if (!BED) return; var m = BED.m; BED = null; bDrag = null; el('touch').classList.remove('edit'); document.body.classList.remove('btnedit', 'bedrive'); el('bedit').classList.add('hidden'); el('tAct').classList.remove('on'); el('tActM').textContent = ''; bTab(m === 2 ? 0 : m); bSave(); }
-el('btnMove').addEventListener('click', bStart); el('beDone').addEventListener('click', bEnd);
+el('btnMove').addEventListener('click', bStart); el('btnVSleep').addEventListener('click', vehSleep); el('beDone').addEventListener('click', bEnd);
 el('beFoot').addEventListener('click', function(){ bTab(0); }); el('beBuild').addEventListener('click', function(){ bTab(1); }); el('beDrive').addEventListener('click', function(){ bTab(2); });
 el('beReset').addEventListener('click', function(){ delete BPOS[bOri()]; bSave(); bApply(); }); el('beAll').addEventListener('click', function(){ BPOS = {}; bSave(); bApply(); });
 bApply();
@@ -2153,7 +2153,7 @@ function weatherTick(dt, day){
 function bodyTick(dt, hour){
   wx.flash -= dt; if (wx.w === 2 && Math.random() < dt*0.12){ wx.flash = 0.18; var tdl = 0.4 + Math.random()*2; setTimeout(function(){ burst(undefined, undefined, 0.7, 260, 3.2); }, tdl*1000); }
   var f = ambientF(hour), wet = wx.w === 1 || wx.w === 2 || wx.w === 4;
-  if (P.inside) f += (66 - f)*0.6; else if (wet) f -= 7;
+  if (P.inside) f += (66 - f)*0.6; else if (P.vroom) f += (66 - f)*(vDoorOpen(P.vroom.v) ? 0.3 : 0.5); else if (P.veh && P.veh.t) f += (66 - f)*0.4; else if (wet) f -= 7;   /* 0.121.1: a vehicle you are in keeps off the weather and some of the cold */
   if (P.inf) f += 10;   /* fever */
   if (nearLight(P.x, P.y, 6)) f += 22; if (P.swim) f -= 10; else if (P.wet > 0) f -= Math.min(9, P.wet/8);
   var dr = dress(); if (f < 66) f = Math.min(f + dr.warm, Math.max(f, 66 + dr.warm*0.15)); else f += dr.warm*Math.min(1, (f - 66)/10)*0.55;   /* layers bring you up to comfortable when it is cold, and make a hot day worse */
@@ -2223,8 +2223,8 @@ function update(dt){
     P.mvD = Math.hypot(P.x - vx0, P.y - vy0); if (!V){ if (!(P.jy > 0)) P.bob += (P.mvD || 0)*(gt === 2 ? 1.4 : gt === 0 ? 2.9 : 2.0); } else vehMoved(V, P.x - vx0, P.y - vy0, dt);
   }
   vTowTick(dt); pitTick(dt); surfTick(dt); genTick(dt); gridTick(); sndTick(dt, P.jy > 0 ? 0 : P.mvD || 0); P.mvD = 0; stoneTick(dt); P.mv = !!(mf || ms) && !P.veh; stamTick(dt, gait(!!(mf || ms)), !!(mf || ms)); camTick(dt);
-  if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else if ((wx.w === 1 || wx.w === 2 || wx.w === 4) && !P.inside && !(P.veh && P.veh.t)){ var rc = dress().rain; P.wet = Math.min(90, (P.wet || 0) + dt*(wx.w === 2 ? 2.2 : 1.4)*(1 - rc)); if (rc > 0.7) P.wet = Math.max(0, P.wet - dt*0.3); }   /* rain soaks you unless you are covered */
-  else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || nearLight(P.x, P.y, 6) ? 3 : 1));
+  if (P.swim){ P.wet = Math.min(90, (P.wet || 0) + dt*30); if (P.stam <= 0){ P.hp -= 1.2*dt; P.cause = 'drowning'; } } else if ((wx.w === 1 || wx.w === 2 || wx.w === 4) && !P.inside && !P.vroom && !(P.veh && P.veh.t)){ var rc = dress().rain; P.wet = Math.min(90, (P.wet || 0) + dt*(wx.w === 2 ? 2.2 : 1.4)*(1 - rc)); if (rc > 0.7) P.wet = Math.max(0, P.wet - dt*0.3); }   /* rain soaks you unless you are covered */
+  else P.wet = Math.max(0, (P.wet || 0) - dt*(P.inside || P.vroom || (P.veh && P.veh.t) || nearLight(P.x, P.y, 6) ? 3 : 1));
   P.x = Math.max(world.minx - 40, Math.min(world.maxx + 40, P.x)); P.y = Math.max(world.miny - 40, Math.min(world.maxy + 40, P.y));
   if (region && world.core && !zoneBusy && (P.x < world.core.x0 || P.x > world.core.x1 || P.y < world.core.y0 || P.y > world.core.y1)) zoneTravel();
   var en = 1 - 0.04*lvl('endur'); if (Math.floor(time/10) !== P.xpT){ P.xpT = Math.floor(time/10); addXp('endur', 3); }
@@ -2309,7 +2309,7 @@ function update(dt){
   trailT -= dt; if (trailT <= 0){ trailT = 0.8; var tl = TRAIL[TRAIL.length - 1]; if (!tl || Math.hypot(tl.x - P.x, tl.y - P.y) > 1.2){ TRAIL.push({x:P.x, y:P.y, t:time}); if (TRAIL.length > 70) TRAIL.shift(); } }
   P.noise = Math.max(0, P.noise - dt); gunTick(dt); if (P.gunT > 0) P.gunT -= dt;
   if (net.role !== 'guest'){
-    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridAt(P.inside.cx, P.inside.cy) && powered(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && P.sleep.cab) || !!(P.vroom && !vDoorOpen(P.vroom.v)), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
+    var tg = [{x:P.x, y:P.y, peer:null, sm:SURFN[P.surf] || 1, eng:!!(P.veh && P.veh.t), loud:P.noise > 0, lit:(lightOn() || (P.inside && !gridAt(P.inside.cx, P.inside.cy) && powered(P.inside))) && dark > 0.3, vis:P.vis || 1, mv:!!P.mv, hidden:!!P.hide || !!(P.sleep && (P.sleep.cab || P.sleep.inveh)) || !!(P.vroom && !vDoorOpen(P.vroom.v)), yaw:P.yaw, lvl:P.lvl || 0, onSt:stairT(P.inside, P.x, P.y, P.lvl) >= 0, roof:P.roof || null, bleed:P.bleed > 0}], cadesChanged = false;
     net.peers.forEach(function(p){ if (p.ready && !p.cop) tg.push({x:p.x, y:p.y, peer:p, sm:p.sm || 1, eng:!!(p.vh && world.vmap && world.vmap[p.vh] && world.vmap[p.vh].t), loud:!!p.loud, lit:!!p.lit && dark > 0.3, vis:p.vis || 1, mv:!!p.mv, hidden:!!p.hidden, yaw:p.yaw, lvl:p.lvl || 0, roof:p.rf ? buildingAt(p.x, p.y) : null}); });
     tg.forEach(function(t){ t.safe = inSafe(t.x, t.y, 0) && !(raidOn() && zoneAt(t.x, t.y, 0) === world.zones[0]); });
     tg.forEach(function(t){ t.b = buildingAt(t.x, t.y); t.fire = nearLight(t.x, t.y, 7); }); heatTick(dt, tg);
@@ -3316,7 +3316,7 @@ function compassFlags(deg){
   for (; i < cmpF.length; i++) if (cmpF[i].st !== ''){ cmpF[i].style.display = 'none'; cmpF[i].st = ''; }
 }
 function compassTick(){ var deg = ((P.yaw*180/Math.PI + 90) % 360 + 360) % 360; el('compTape').style.transform = 'translateX(' + (-(480 + deg/45*60 + 30)).toFixed(1) + 'px)'; compassFlags(deg); }
-el('hudMenu').addEventListener('click', function(){ el('hudBtns').classList.toggle('hidden'); if (document.exitPointerLock) document.exitPointerLock(); });
+el('hudMenu').addEventListener('click', function(){ el('btnVSleep').classList.toggle('hidden', !(P && P.veh && (P.veh.t || P.veh.boat))); el('hudBtns').classList.toggle('hidden'); if (document.exitPointerLock) document.exitPointerLock(); });
 el('hudBtns').addEventListener('click', function(e){ if (e.target.tagName === 'BUTTON') el('hudBtns').classList.add('hidden'); });
 el('helpBtn').addEventListener('click', function(){ el('help').classList.toggle('on'); });
 function fail(msg){ el('status').style.color = '#9a5226'; el('status').textContent = msg; }
@@ -3833,7 +3833,7 @@ function applyEdit(e){
   else if (e.a === 'junkveh' && typeof e.id === 'string'){ (E.junkv || (E.junkv = {}))[e.id.slice(0, 24)] = 1; var vj = world.vmap && world.vmap[e.id]; if (vj && vj !== P.veh){ var vi2 = world.vehicles.indexOf(vj); if (vi2 >= 0) world.vehicles.splice(vi2, 1); delete world.vmap[e.id]; } }
   else if (e.a === 'bench' && e.q && isFinite(e.q.x) && (E.benches || (E.benches = [])).length < 30){ E.benches.push({fix:'bench', name:'tool bench', id:String(e.q.id).slice(0, 24), x:+e.q.x, y:+e.q.y, yaw:+e.q.yaw || 0}); }
   else if (e.a === 'place' && e.q && FURN[e.q.k] && (E.placed || (E.placed = [])).length < 80){ E.placed.push({id:String(e.q.id).slice(0, 30), k:String(e.q.k), x:+e.q.x, y:+e.q.y, yaw:+e.q.yaw || 0, hp:Math.max(1, Math.min(40, +e.q.hp || 40))}); rebuildWalls(); }
-  else if (e.a === 'vbase' && e.id && e.r){ E.vbase = E.vbase || {}; var vr0 = E.vbase[e.id] = E.vbase[e.id] || {door:0, fit:[], inv:{}, items:{}}; vr0.door = e.r.door ? 1 : 0; vr0.fit = (Array.isArray(e.r.fit) ? e.r.fit : []).filter(function(f){ return f && VFITS[f.k]; }).slice(0, 40); }
+  else if (e.a === 'vbase' && e.id && e.r){ E.vbase = E.vbase || {}; var vr0 = E.vbase[e.id] = E.vbase[e.id] || {door:0, fit:[], inv:{}, items:{}}; vr0.door = e.r.door ? 1 : 0; vr0.fit = (Array.isArray(e.r.fit) ? e.r.fit : []).filter(function(f){ return f && VFITS[f.k]; }).slice(0, 40); if (e.r.inv && typeof e.r.inv === 'object') vr0.inv = e.r.inv; if (e.r.items && typeof e.r.items === 'object') vr0.items = e.r.items; if (curChest && curChest.vloc && curChest.vloc.id === e.id){ curChest.inv = vr0.inv; curChest.items = vr0.items; renderChest(); } }
   else if (e.a === 'unplace'){ E.placed = (E.placed || []).filter(function(q){ return q.id !== e.id; }); rebuildWalls(); }
   else if (e.a === 'boot' && typeof e.id === 'string'){ (E.boots || (E.boots = {}))[e.id.slice(0, 24)] = 1; }
   else if (e.a === 'stn' && e.q && (E.stations || (E.stations = [])).length < 30){ var so = stnObj(e.q); if (so) E.stations.push(so); rebuildWalls(); }
@@ -4352,7 +4352,7 @@ var curChest = null;
 function openChest(c){ curChest = c; el('chest').classList.remove('hidden'); if (document.exitPointerLock) document.exitPointerLock(); renderChest(); }
 function renderChest(){
   var c = curChest, box = el('chest'); if (!c || box.classList.contains('hidden')) return;
-  var h = '<b>' + (c.boot ? 'Trunk' : c.bed ? 'Truck bed' : 'Storage chest') + '</b> <button id="chClose" class="alt" style="float:right">Close</button><div class="irow"><span class="n"><i>Item</i></span><i>carried / stored</i></div>', k;
+  var h = '<b>' + (c.boot ? 'Trunk' : c.bed ? 'Truck bed' : c.vloc ? 'Locker' : 'Storage chest') + '</b> <button id="chClose" class="alt" style="float:right">Close</button>' + (c.boot && /^boot:/.test(c.id) ? '<div class="row" style="justify-content:flex-start;margin:4px 0"><button class="alt" data-a="siphon">Siphon a can of fuel</button></div>' : '') + '<div class="irow"><span class="n"><i>Item</i></span><i>carried / stored</i></div>', k;
   var row = function(key, name, col, have, st){ return '<div class="irow"><span class="sw" style="background:' + col + '"></span><span class="n">' + name + '</span><i>' + have + ' / ' + st + '</i><button data-a="put" data-id="' + key + '"' + (have ? '' : ' disabled') + '>Store</button><button class="alt" data-a="get" data-id="' + key + '"' + (st ? '' : ' disabled') + '>Take</button></div>'; };
   for (k in ITEMS) if (inv[k] > 0 || c.inv[k] > 0) h += row('b:' + k, ITEMS[k][0], ITEMS[k][1], inv[k], c.inv[k] | 0);
   var ids = {}; for (k in P.items) if (P.items[k] > 0) ids[k] = 1; for (k in c.items) if (c.items[k] > 0) ids[k] = 1;
@@ -4364,10 +4364,11 @@ function chestMove(key, dirn, all){
   var n = all ? (src[k] | 0) : Math.min(1, src[k] | 0); if (n <= 0 || (cust && !DESIGNS[k]) || (!cust && !(k in ITEMS))) return;
   src[k] -= n; dst[k] = (dst[k] | 0) + n; if (cust && dirn > 0 && P.weapon === k && !P.items[k]) P.weapon = null;
 }
-function chestSync(){ var c = curChest; c.designs = Object.keys(c.items).filter(function(k){ return c.items[k] > 0 && DESIGNS[k]; }).map(function(k){ return DESIGNS[k]; }); emit({k:'edit', e:{a:'chestset', id:c.id, inv:c.inv, items:c.items, designs:c.designs}}); renderChest(); updateHud(); }
+function chestSync(){ var c = curChest; if (c && c.vloc){ var vr1 = vB(c.vloc, true); vr1.inv = c.inv; vr1.items = c.items; emit({k:'edit', e:{a:'vbase', id:c.vloc.id, r:vr1}}); renderChest(); updateHud(); return; } c.designs = Object.keys(c.items).filter(function(k){ return c.items[k] > 0 && DESIGNS[k]; }).map(function(k){ return DESIGNS[k]; }); emit({k:'edit', e:{a:'chestset', id:c.id, inv:c.inv, items:c.items, designs:c.designs}}); renderChest(); updateHud(); }
 el('chest').addEventListener('click', function(e){
   var t = e.target; if (t.id === 'chClose'){ el('chest').classList.add('hidden'); curChest = null; return; }
   var a = t.getAttribute && t.getAttribute('data-a'), id = a && t.getAttribute('data-id'), c = curChest, k; if (!a || !c || !running) return;
+  if (a === 'siphon'){ var sv = world.vmap && world.vmap[c.id.slice(5)]; if (!sv) world.vehicles.forEach(function(q){ if ('boot:' + q.id === c.id) sv = q; }); if (sv) siphon(sv); return; }
   if (a === 'put') chestMove(id, 1, false); else if (a === 'get') chestMove(id, -1, false);
   else if (a === 'putall'){ for (k in ITEMS) chestMove('b:' + k, 1, true); for (k in P.items) chestMove('c:' + k, 1, true); }
   else if (a === 'getall'){ for (k in c.inv) chestMove('b:' + k, -1, true); for (k in c.items) chestMove('c:' + k, -1, true); }
@@ -4545,6 +4546,9 @@ function carUse(){
   if (!(E.boots && E.boots[v.id]) && v.dead !== 'burnt'){
     doEdit({a:'boot', id:v.id}); var LT, army = v.dead && hash(Math.round(v.x), Math.round(v.y), 61) < 0.08, LT = lootBoot(v, carKind(v), army) || {tab:BOOT, n:3}, r = rollStash(LT.tab, LT.n), got = [], k; for (k in r.inv){ inv[k] = (inv[k] || 0) + r.inv[k]; got.push('+' + r.inv[k] + ' ' + (ITEMS[k] ? ITEMS[k][0].toLowerCase() : k)); } for (k in r.items){ P.items[k] = Math.min(99, (P.items[k] || 0) + r.items[k]); got.push('+1 ' + DESIGNS[k].name.toLowerCase()); }
     sfx('plank', v.x, v.y, 0.8, 0.7); makeNoise(v.x, v.y, 8); feed(got.length ? 'Searched the trunk: ' + got.join(', ') : 'The trunk is empty', ITEMS.wood[1]); updateHud(); return; }
+  if (!v.dead){ var bc0 = bootChest(v, true); if (bc0){ openChest(bc0); return; } }
+  siphon(v); }
+function siphon(v){
   var can = v.dead ? (v.siph ? 0 : (hash(v.id.length*7 + (v.x | 0), v.y | 0, 5) < 0.25 ? 1 : 0)) : Math.floor((v.fuel || 0)/CAN_M);
   if (can < 1){ toast(v.dead === 'burnt' ? 'A burnt-out shell. Nothing left in it.' : 'No fuel left to siphon.', 2.5); return; }
   v.siph = 1; if (!v.dead) v.fuel = Math.max(0, v.fuel - CAN_M); inv.fuel++; P.actK = 'siphon'; P.actT = time; sfx('pot', v.x, v.y, 0.7, 0.8); makeNoise(v.x, v.y, 6); feed('Siphoned a can of fuel', ITEMS.fuel[1]); updateHud();
@@ -4565,11 +4569,11 @@ function mount(v){
   var tk0 = seatsTaken(v);
   if ((ss0 && ss0.length > 1 && lz0 < 0) || tk0[0]){ P.seat = -1; for (var sk = 1; sk < (ss0 ? ss0.length : 1); sk++) if (!tk0[sk]){ P.seat = sk; break; }
     if (P.seat < 0){ P.seat = 0; if (tk0[0]){ toast('Every seat is taken.', 2.5); return; } } }   /* the driver seat goes to whoever is first in it; everyone else takes the next free seat */   /* walked up on the right: the nearest free passenger seat */
-  P.veh = v; P.x = v.x; P.y = v.y; v.rd = time; el('items').classList.add('hidden'); if (v.t){ v.hd = v.yaw; v.vs = 0; v.sw = 0; P.yaw = v.yaw; }
+  P.veh = v; P.x = v.x; P.y = v.y; v.rd = time; v.cabT = time + 1.6; el('items').classList.add('hidden'); if (v.t){ v.hd = v.yaw; v.vs = 0; v.sw = 0; P.yaw = v.yaw; }
   feed(v.mach ? 'In the ' + v.mach.replace(/_/g, ' ') + '. W moves the tracks, look to swing the arm, look down to dig closer, click to dig a scoop. E to get out.' : v.moto ? 'On the ' + v.moto.replace(/_/g, ' ') + '. Fuel ' + Math.round(v.fuel/CAN_M*100) + '%. E to get off.' : v.boat ? 'In the ' + v.boat.replace(/_/g, ' ') + '. Move to row or steer. E to get out.' : v.t ? 'Driving' + (v.kind === 'truck' ? ' the truck' : '') + '. Fuel for about ' + Math.round(v.fuel/MILE) + ' miles' + (v.fuel < 1 && inv.fuel > 0 ? ' (a can goes in when you set off)' : '') + '. W gas, S brake and reverse, A D steer, Space handbrake, E get out.' : 'Riding. Press E to get off.', '#cfd5db');
 }
 function dismount(){
-  var v = P.veh; if (!v) return; var wasDrv = !(P.seat > 0); P.veh = null; P.seat = 0; if (wasDrv){ v.x = P.x; v.y = P.y; v.rd = -9; v.vs = 0; } el('carHud').classList.add('hidden'); el('carMod').classList.add('hidden');
+  var v = P.veh; if (!v) return; var wasDrv = !(P.seat > 0); P.veh = null; P.seat = 0; v.cabT = time + 1.6; if (wasDrv){ v.x = P.x; v.y = P.y; v.rd = -9; v.vs = 0; } el('carHud').classList.add('hidden'); el('carMod').classList.add('hidden');
   var sx = -Math.sin(v.yaw), sy = Math.cos(v.yaw), r0 = v.t ? 1.7 : 0.9; if (!circ(P.x + sx*r0, P.y + sy*r0, 0.35)){ P.x += sx*r0; P.y += sy*r0; } else if (!circ(P.x - sx*r0, P.y - sy*r0, 0.35)){ P.x -= sx*r0; P.y -= sy*r0; }
   if (wasDrv) emit({k:'veh', id:v.id, x:r2(v.x), y:r2(v.y), yaw:r2(v.yaw), fuel:Math.round(v.fuel), hp:Math.round(vhp(v)), flat:v.flat ? 1 : 0, cu:v.cu || null});
 }
@@ -4926,12 +4930,16 @@ function bedChest(){
   if (c){ c.name = 'the truck bed'; c.bed = true; } world.bed = c; bedFollow(); return c;
 }
 /* 0.114.9: a car fitted with a roof box, bed cap or other storage part has a trunk chest that rides at its back and holds what you put in it */
+/* 0.121.1: every working car and truck has a trunk you can keep things in, like the truck at the safe house: once you have searched it, Y (or the Trunk button) opens it, and it rides with the car */
+function bootChest(v, make){ var E = world.edits, id = 'boot:' + v.id, i; for (i = 0; i < E.chests.length; i++) if (E.chests[i].id === id) return E.chests[i]; if (!make || E.chests.length >= 160) return null;
+  var c = {chest:true, name:'the trunk', id:id, x:0, y:0, inv:{}, items:{}, designs:[], bed:true, boot:true}; E.chests.push(c); bootPlace(v, c); return c; }
+function bootPlace(v, c){ if (v === P.veh){ c.x = c.y = 1e9; return; } var B = VMOD[carKind(v)], L = B && B.hx ? B.hx : 2.1, q = tpt(v, -(L + 0.5), 0); c.x = q.x; c.y = q.y; }
 function bootFollow(){
   var E = world.edits; world.vehicles.forEach(function(v){
-    if (!v.t || v.kind === 'truck' || !v.cu || v.dead) return; var id = 'boot:' + v.id, c = null, i;
+    if (!v.t || v.kind === 'truck' || v.dead) return; var id = 'boot:' + v.id, c = null, i;
     for (i = 0; i < E.chests.length; i++) if (E.chests[i].id === id){ c = E.chests[i]; break; }
-    if (!c){ if (Math.abs(v.x - P.x) > 8 || Math.abs(v.y - P.y) > 8 || !(carSt(v).storage > 0) || E.chests.length >= 98) return; c = {chest:true, name:'the trunk', id:id, x:0, y:0, inv:{}, items:{}, designs:[]}; E.chests.push(c); }
-    c.bed = true; c.boot = true; c.name = 'the trunk'; if (v === P.veh){ c.x = c.y = 1e9; return; } var q = tpt(v, -2.3, 0); c.x = q.x; c.y = q.y; });
+    if (!c){ if (!v.cu || Math.abs(v.x - P.x) > 8 || Math.abs(v.y - P.y) > 8 || !(carSt(v).storage > 0) || E.chests.length >= 98) return; c = {chest:true, name:'the trunk', id:id, x:0, y:0, inv:{}, items:{}, designs:[]}; E.chests.push(c); }
+    c.bed = true; c.boot = true; c.name = 'the trunk'; bootPlace(v, c); });
 }
 function bedFollow(){ var c = world.bed; if (!c) return; var v = truckOf(); if (!v || v === P.veh){ c.x = c.y = 1e9; return; } var q = tpt(v, -2.95, 0); c.x = q.x; c.y = q.y; }
 /* the places to stand: the driver's door (drive), the passenger door (sleep), the front corner (repairs) */
@@ -5014,17 +5022,21 @@ function vPart(k, name, piv){ var key = k + '|' + name + (piv ? '|p' : ''); if (
   return VPART[key]; }
 /* the door parts and fittings, drawn with the vehicle (doors were not drawn at all before) */
 function vDrawParts(m, v, k, y0){
-  var V = SHAPED.props && SHAPED.props.models.vehicles[k]; if (!V || !V.parts) return; var rm = vInt(v), open = vDoorOpen(v), rd = rm ? rm.doors || [] : [];
-  Object.keys(V.parts).forEach(function(n){ var isD = rd.indexOf(n) >= 0;
-    if (!isD || !open){ var M = vPart(k, n); if (M) m.part(M, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0); return; }
-    if (/roll/.test(n)) return;   /* a roll-up door rolls up into the roof */
-    var pc = V.parts[n][0], side = pc.d[0] < pc.d[2], piv, ang;
+  var V = SHAPED.props && SHAPED.props.models.vehicles[k]; if (!V || !V.parts) return; var rm = vInt(v), rd = rm ? rm.doors || [] : [];
+  /* 0.121.1: doors move: the way in eases open and shut (v.dA, 0 shut to 1 open); the driver's cab door swings open for a moment as you get in or out */
+  var now = performance.now(), dtf = Math.min(0.1, (now - (v.dAt || now))/1000); v.dAt = now; var want = vDoorOpen(v) ? 1 : 0; v.dA = v.dA === undefined ? want : v.dA + Math.max(-dtf*1.6, Math.min(dtf*1.6, want - v.dA));
+  var cabT = v.cabT && time < v.cabT ? Math.min(1, (v.cabT - time)/0.6, (time - (v.cabT - 1.6))/0.4 + 0.001) : 0, dsx = vDrvSide(v);
+  Object.keys(V.parts).forEach(function(n){ var isD = rd.indexOf(n) >= 0, pc = V.parts[n][0], am = isD ? v.dA : (/cab_door|driver_door|front_door/.test(n) && cabT > 0 && pc && (pc.p[0] >= 0) === (dsx >= 0)) ? Math.max(0, cabT) : 0;
+    if (am < 0.01){ var M = vPart(k, n); if (M) m.part(M, v.x, v.y, v.yaw, y0, 0, 0, 0, 0, 0); return; }
+    if (/roll/.test(n)){ if (am > 0.97) return; var M0 = vPart(k, n); if (M0) m.part(M0, v.x, v.y, v.yaw, y0, 0, am*((rm && rm.headroom) || 2)*0.92, 0, 0, 0); return; }   /* a roll-up door slides up into the roof */
+    var side = pc.d[0] < pc.d[2], piv, ang;
     if (!side){ var hx = pc.p[0] + (pc.p[0] >= 0 ? 1 : -1)*pc.d[0]/2; piv = [hx, 0, pc.p[2]]; ang = (hx >= 0 ? -1 : 1)*1.75*(pc.p[2] < 0 ? 1 : -1); }   /* end doors swing out on their outer hinges */
-    else { var hz = pc.p[2] + pc.d[2]/2; piv = [pc.p[0], 0, hz]; ang = (pc.p[0] >= 0 ? 1 : -1)*1.5; }   /* side doors swing out on their front hinges */
-    var M2 = vPart(k, n, piv); if (M2) m.part(M2, v.x, v.y, v.yaw, y0, piv[2], 0, -piv[0], 0, ang); });
+    else { var hz = pc.p[2] + pc.d[2]/2; piv = [pc.p[0], 0, hz]; ang = (pc.p[0] >= 0 ? 1 : -1)*1.3; }   /* side doors swing out on their front hinges */
+    var M2 = vPart(k, n, piv); if (M2) m.part(M2, v.x, v.y, v.yaw, y0, piv[2], 0, -piv[0], 0, ang*am); });
   var r = vB(v); if (r && rm && r.fit.length) r.fit.forEach(function(f){ var c = rm.cells[f.c]; if (!c) return; var F = FURN[f.k === 'locker' ? 'shelf' : f.k] || FURN.crate, q = vW(v, c[0], c[1]), my = m.yo; m.yo = my - (VMOD[k].drop || 0) + rm.floorY - 0.1;
     F.boxes.forEach(function(bx){ m.ybox(q.x, q.y, v.yaw + (f.k === 'bed' ? Math.PI/2 : 0), bx[0]*(f.k === 'bed' ? 0.85 : 0.6), bx[2]*0.6, bx[1] + 0.1, bx[3]*(f.k === 'bed' ? 0.85 : 0.6), bx[4], bx[5]*0.6, C(bx[6])); }); m.yo = my; });
 }
+function vDrvSide(v){ var e = vEnt(v), s = e && e.functions && e.functions.seats; return s && s[0] ? s[0][0] : 0.4; }
 var VFITS = {bed:['Bed', {wood:5}, 'sleep here; it travels with the vehicle'], locker:['Locker', {scrap:4}, 'storage that rides along'], bench:['Workbench', {wood:6, scrap:2}, 'repair weapons on the road']};
 function vFitPanel(){
   if (!P.vroom) return ''; var v = P.vroom.v, rm = vInt(v), r = vB(v, true); if (!rm) return ''; var slots = (vEnt(v).game || {}).baseSlots || 8, used = r.fit.length;
@@ -5071,6 +5083,10 @@ function vUse(o){
   if (o.act === 'in'){ var rm = o.room, di = vDoorPt(rm, -0.6); P.vroom = {v:v, f:di[1], r:-di[0], cr:P.crouch}; if (rm.headroom < 1.75) P.crouch = true; P.inside = null; P.lvl = 0; var q = vW(v, di[0], di[1]); P.x = q.x; P.y = q.y; P.gy = vFloorY(v, rm); sfx('step', P.x, P.y, 0.6); feed('In ' + v.name + '. Build (N) to fit it out; shut the door to hide.', '#c0c6cc'); return; }
   if (o.act === 'unhook'){ var T = v.tow; if (T){ T.towBy = null; v.tow = null; delete (world.edits.vtow || {})[v.id]; sfx('metal', P.x, P.y, 0.7); feed('Trailer unhooked', '#c0c6cc'); } } }
 function vOut(){ var R = P.vroom; if (!R) return; var v = R.v, rm = vInt(v); P.vroom = null; P.crouch = !!R.cr; if (!rm) return; var dq = vDoorPt(rm, 0.9), q = vW(v, dq[0], dq[1]); if (!circ(q.x, q.y, 0.35)){ P.x = q.x; P.y = q.y; } P.gy = undefined; }
+function vehSleep(){ var v = P.veh; if (!v || !(v.t || v.boat)){ toast('Sit in a car, truck or boat to sleep in it.', 3); return; } if ((v.vs || 0) > 0.6 || Math.abs(v.spd || 0) > 0.6){ toast('Stop first.', 2); return; }
+  for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
+  var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90 && P.rest > 50){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
+  v.vs = 0; P.sleep = {start:time, hp:P.hp, rt:performance.now(), inveh:v}; wakeReq = false; el('hudBtns').classList.add('hidden'); el('sleepMask').classList.add('on'); el('sleepMask').textContent = 'Sleeping in ' + (v.name || 'the car') + '\u2026'; keys = {}; }
 function vSleep(v){
   for (var i = 0; i < zombies.length; i++){ var z = zombies[i], d = Math.hypot(z.x - P.x, z.y - P.y); if (d < 12 || (d < 40 && z.st >= 1)){ toast('You cannot sleep with aliens this close.', 3); return; } }
   var hr = (8 + time/DAY*24) % 24; if (hr > 9 && hr < 18 && P.hp > 90 && P.rest > 50){ toast('You are not tired yet. Sleep at night, or when you need to heal.', 3); return; }
@@ -5882,6 +5898,7 @@ async function enterZone(R, lat, lon, yaw, carry, atSafe){
     var v = {veh:true, id:home ? 'truck' : 'r' + Date.now().toString(36), t:carry.veh.t, kind:tkc ? 'truck' : (carry.veh.ck || undefined), hp:carry.veh.hp, cu:cleanCu(carry.veh.cu), name:tkc ? 'the truck' : carry.veh.t ? 'the car' : 'the bicycle', x:x, y:y, yaw:P.yaw, fuel:carry.veh.fuel}; if (v.cu) carName(v);
     world.vehicles = world.vehicles.filter(function(o){ return !(tkc && o.kind === 'truck'); }); world.vehicles.push(v); world.vmap[v.id] = v; P.veh = v; v.rd = time;
     if (carry.veh.vb){ (world.edits.vbase = world.edits.vbase || {})[v.id] = carry.veh.vb; }
+    if (carry.veh.boot){ var BC1 = bootChest(v, true); if (BC1){ BC1.inv = carry.veh.boot.inv || {}; BC1.items = carry.veh.boot.items || {}; BC1.designs = carry.veh.boot.designs || []; } }
     if (carry.veh.tow && carry.veh.tow.ck){ var TT = {veh:true, id:v.id + 't', t:1, kind:carry.veh.tow.ck, hp:carry.veh.tow.hp || 100, dead:0, name:'the trailer', x:x, y:y, yaw:P.yaw, fuel:0}; var tq = tpt(v, -9, 0); TT.x = tq.x; TT.y = tq.y; world.vehicles.push(TT); world.vmap[TT.id] = TT; v.tow = TT; TT.towBy = v.id; (world.edits.vtow = world.edits.vtow || {})[v.id] = TT.id; if (carry.veh.tow.vb) world.edits.vbase[TT.id] = carry.veh.tow.vb; }
     if (tkc){ var bc2 = bedChest(); if (bc2 && carry.veh.bed){ bc2.inv = carry.veh.bed.inv || {}; bc2.items = carry.veh.bed.items || {}; bc2.designs = carry.veh.bed.designs || []; } } } }
   if (carry && carry.surv) carry.surv.forEach(function(q, qi){ var a = qi*2.1 + 0.5; (world.surv = world.surv || []).push({surv:true, id:world.surv.length, key:q.key, base:q.nm || NPCN[q.key], name:q.nm || NPCN[q.key], sk:q.sk || SKILLOF[q.key] || 'guard', th:q.th || 0, mo:q.mo === undefined ? 70 : q.mo, tip:'', x:P.x + Math.cos(a)*2.5, y:P.y + Math.sin(a)*2.5, yaw:P.yaw, st:'follow', job:'', hu:q.hu || 0, hp:q.hp || 60, away:0, gone:0, sc:0, mv:0, cd:0, atk:0, stuck:0, hx:P.x, hy:P.y}); });
@@ -5896,6 +5913,7 @@ async function zoneTravel(){
   zoneBusy = true; running = false; keys = {}; el('travel').classList.remove('hidden');
   var carry = {time:time, veh:P.veh && !P.veh.boat && !P.veh.moto && !P.veh.mach ? {t:P.veh.t, fuel:P.veh.fuel, kind:P.veh.kind === 'truck' ? 'truck' : 0, ck:P.veh.t && P.veh.kind !== 'truck' ? carKind(P.veh) : 0, hp:P.veh.hp, cu:P.veh.cu} : null}, yaw = P.yaw, pitch = P.pitch, old = {world:world, x:P.x, y:P.y};
   /* 0.121.0: a mobile base's fittings, locker and door go with the vehicle, and so does a hooked trailer with its own */
+  if (carry.veh && P.veh && P.veh.t && P.veh.kind !== 'truck'){ var BC0 = bootChest(P.veh); if (BC0){ carry.veh.boot = {inv:BC0.inv, items:BC0.items, designs:BC0.designs}; world.edits.chests.splice(world.edits.chests.indexOf(BC0), 1); } }
   if (carry.veh && P.veh && P.veh.t){ var VB0 = world.edits.vbase || {}; if (VB0[P.veh.id]){ carry.veh.vb = VB0[P.veh.id]; delete VB0[P.veh.id]; }
     var TW = P.veh.tow; if (TW){ carry.veh.tow = {ck:carKind(TW), hp:TW.hp, vb:VB0[TW.id] || null}; delete VB0[TW.id]; (world.edits.junkv = world.edits.junkv || {})[TW.id] = 1; world.vehicles = world.vehicles.filter(function(o){ return o !== TW; }); delete (world.edits.vtow || {})[P.veh.id]; P.veh.tow = null; } }
   P.vroom = null;
