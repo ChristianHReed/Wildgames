@@ -27,7 +27,7 @@
 <div id="cap" hidden><b id="capT"></b><span id="capD"></span></div>
 <div id="bar"></div>
 <script>
-window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-modular','../packs/afterstreet-fleet','../packs/afterstreet-clips','../packs/afterstreet-waterways','../packs/afterstreet-stations','../packs/afterstreet-military','../packs/afterstreet-tools','../packs/workshop-crafts'];
+window.__packs=['shapes','survivor','aliens','buildings','props','held','fx','ground','walls','power','world','machines','animals','interiors','floorplan','flora','furniture2','structures','land','woods','farm','waterside','foodservice','autotrade','services','shopfit','bikes','boats','parks','vehiclekit','vehiclefit','machinedig','roadside','digging','rail','civic','barriers','towers','fleet','pitworks','solar','../packs/packload','../packs/afterstreet-bridges','../packs/afterstreet-survivors','../packs/afterstreet-modular','../packs/afterstreet-fleet','../packs/afterstreet-clips','../packs/afterstreet-waterways','../packs/afterstreet-stations','../packs/afterstreet-military','../packs/afterstreet-streetscape','../packs/afterstreet-tools','../packs/workshop-crafts'];
 function loadPack(n){ return new Promise(function(ok,bad){ var t=['../assets/shaped/'+n+'.js', n+'.js'];
   (function next(){ if(!t.length) return bad(new Error('could not load '+n)); var s=document.createElement('script'); s.src=t.shift(); s.onload=ok; s.onerror=function(){ s.remove(); next(); }; document.head.appendChild(s); })(); }); }
 window.packsReady=window.__packs.reduce(function(p,n){ return p.then(function(){ return loadPack(n); }); }, Promise.resolve()).then(function(){ if(window.AfterstreetPacks) window.AfterstreetPacks.install(window.SHAPED); });
@@ -785,6 +785,11 @@ const SCENES={
         for (const w of rg.wheels){ const wm=mesh(m.wheel,col); wm.position.set(w[0],w[1],w[2]); if (w[0]<0) wm.rotation.y=Math.PI; g.add(wm); }
         g.position.set(window.__spread?i*(window.__spread):0, 0, 0); scene.add(g); });
       cam.position.set(11,4,9); ctl.target.set(0,1,0); if(window.__cam){ cam.position.set(...window.__cam[0]); ctl.target.set(...window.__cam[1]); }}},
+  streetgrid:{t:'Land pieces from a pack, in a row',d:'Renders the land models named in window.__ids side by side (spacing window.__spread) from SHAPED.land.models.land, for checks of street, roof and roadside pieces.',
+    make(){ lights('day'); scene.background=new THREE.Color(0x6e8795); scene.fog=null; ground(400,400,0x7a8668);
+      const ids=window.__ids||[], sp=window.__spread||6, LDm=SHAPED.land;
+      ids.forEach((id,i)=>{ const m=LDm.models.land&&LDm.models.land[id]; if(!m){console.log('missing',id);return;} const g=new THREE.Group(); g.add(mesh(m,colourer(LDm.palette,LANDC))); g.position.set((i-(ids.length-1)/2)*sp,0,0); scene.add(g); });
+      cam.position.set(0,3,sp*1.3); ctl.target.set(0,1,0); if(window.__cam){ cam.position.set(...window.__cam[0]); ctl.target.set(...window.__cam[1]); } cam.lookAt(ctl.target); }},
   craftgrid:{t:'Crafts from the pack, in a row',d:'Renders every id in window.__ids side by side (spacing window.__spread) straight from the workshop-crafts pack, for four-view checks.',
     make(){ lights('day'); scene.background=new THREE.Color(0x6e8795); scene.fog=null; ground(400,400,0x56748a);
       const pk=(window.AFTERSTREET_PACKS||[]).find(q=>q.id==='workshop-crafts'); const ids=window.__ids||[]; const sp=window.__spread||12;
