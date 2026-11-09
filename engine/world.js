@@ -233,6 +233,7 @@ function buildWorld(raw, name){
   if (!w.buildings.length && !w.roads.length) throw new Error('This file has no buildings or roads. Try exporting a built-up area.');
   w.areas.sort(function(p, q){ return AREA_RANK[p.kind] - AREA_RANK[q.kind]; });
   w.water = w.areas.filter(function(r){ return r.kind === 'water'; });
+  dedupeRoads(w);
   w.waterLines = w.roads.filter(function(r){ return r.kind === 'water'; });
   w.roads.sort(function(p, q){ return (p.kind === 'water' ? -1 : p.w) - (q.kind === 'water' ? -1 : q.w); });
   /* 0.96.1: a `culvert` entry (builder 1.6 structures) is a stretch of stream under a road or building: no water ribbon over its span, and you can walk across it */
@@ -680,6 +681,24 @@ function coreDrape(m, lift){
   m.parts = parts; m.p = []; m.c = []; m.t = [];
   if (mem.buffer.byteLength > 32*1048576) coreFresh();
   return true;
+}
+/* 0.124.3: some maps carry the same road twice (a square's own copy and its neighbour's, or two ways drawn over each other), and two ribbons on one line
+   fight for the same pixels: the centre line jitters and jumps. A road or path whose every point lies on a longer road of the same width (within 0.6 m) is dropped */
+function dedupeRoads(w){
+  var R = w.roads, G = new Map(), CS = 20, drop = new Set(), idx = [];
+  R.forEach(function(r, i){ if ((r.kind === 'road' || r.kind === 'path') && r.pts.length >= 4) idx.push(i); });
+  var len = function(r){ var L = 0; for (var k = 0; k + 3 < r.pts.length; k += 2) L += Math.hypot(r.pts[k+2] - r.pts[k], r.pts[k+3] - r.pts[k+1]); return L; };
+  idx.forEach(function(i){ R[i].__l = len(R[i]); }); idx.sort(function(a, b){ return R[b].__l - R[a].__l; });
+  var near = function(x, y, wd){ var gx = Math.floor(x/CS), gy = Math.floor(y/CS), L = G.get(gx + ',' + gy); if (!L) return false;
+    for (var q = 0; q < L.length; q++){ var sg = L[q]; if (sg[4] !== wd) continue; var dx = sg[2] - sg[0], dy = sg[3] - sg[1], l2 = dx*dx + dy*dy, t = l2 ? Math.max(0, Math.min(1, ((x - sg[0])*dx + (y - sg[1])*dy)/l2)) : 0; if (Math.hypot(sg[0] + dx*t - x, sg[1] + dy*t - y) < 0.6) return true; } return false; };
+  idx.forEach(function(i){ var r = R[i], P2 = r.pts, all = true;
+    for (var k = 0; k < P2.length && all; k += 2){ if (!near(P2[k], P2[k+1], r.w)) all = false; }
+    if (all){ for (var k2 = 0; k2 + 3 < P2.length && all; k2 += 2) if (!near((P2[k2] + P2[k2+2])/2, (P2[k2+1] + P2[k2+3])/2, r.w)) all = false; }
+    if (all){ drop.add(i); return; }
+    for (var k3 = 0; k3 + 3 < P2.length; k3 += 2){ var sg = [P2[k3], P2[k3+1], P2[k3+2], P2[k3+3], r.w], x0 = Math.floor((Math.min(sg[0], sg[2]) - 1)/CS), x1 = Math.floor((Math.max(sg[0], sg[2]) + 1)/CS), y0 = Math.floor((Math.min(sg[1], sg[3]) - 1)/CS), y1 = Math.floor((Math.max(sg[1], sg[3]) + 1)/CS);
+      for (var gx = x0; gx <= x1; gx++) for (var gy = y0; gy <= y1; gy++){ var key = gx + ',' + gy; (G.get(key) || G.set(key, []).get(key)).push(sg); } } });
+  idx.forEach(function(i){ delete R[i].__l; });
+  if (drop.size){ w.roads = R.filter(function(r, i){ return !drop.has(i); }); w.roadDupes = drop.size; }
 }
 function drape(m, lift, typed){
   if (typed && CORE && world.hg){ try { if (coreDrape(m, lift)) return; } catch (e){ console.warn('core drape, using JavaScript', e); CORE = null; } }
