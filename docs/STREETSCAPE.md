@@ -58,3 +58,14 @@ Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash
 - Batch 10: `wreck_tractor`, `sign_stop_bent`, `sign_hanging_broken`, `sign_fallen_pole` (broken signs; no real street names).
 - Batch 11: `wind_turbine_far` (about 120 triangles), `elevated_rail_8m`, `elevated_rail_station_8m` (platform, bench, roof), `subway_entrance` (closed, gate across the top step).
 - Not done yet: stairs from the elevated station down to the street, an open subway entrance that leads somewhere (needs the Map and Main chats), rail curves and ramps.
+
+## Batch 12 to 16 (map chat request "art the map builder still needs")
+Answer with every id, notes and the weak spots: Project doc "Content chat reply - art the map builder asked for". Pack is 144 models, about 1.6 MB.
+- Batch 12 (roadblock and camp): `jersey_barrier_3`, `sawhorse_barricade`, `checkpoint_post`, `hazard_tape_fence_6`, `generator_floodlight`, `portable_toilets_3`.
+- Farm machines (Workshop pack, `workshop/designs/farm.js`): `farm_tractor`, `combine`, `boat_trailer`. Armoured stock vehicles: `pickup_armoured`, `offroader_armoured`, `van_armoured`.
+- Batch 13 (farm): `barn_red`, `silo_pair`, `grain_bin`, `hay_bale_round`, `hay_bale_stack`, `livestock_pen_8`, `trough`, `farm_windmill`, `farmhouse_white`.
+- Batch 14 (yards and fences): `swing_set`, `trampoline`, `wood_pile`, `picnic_table`, `bbq_grill`, `doghouse`, `hedge_run_4`, `wall_low_4`, `wall_low_4_mossy`, `fence_farm_post_rail_4`, `fence_wire_4`, `garage_door_open`, `roof_tarp`, `fence_panel_missing_4`, `boarded_window_set`.
+- Batch 15 (civic): `fountain_round`, `statue_plinth`, `bandstand`, `war_memorial`, `gas_canopy_pumps`, and `church_white_steeple`, built from `FLOORPLAN.gen('church')` with wood-framed walls (studs every 0.5 m, plates, headers, siding, sheathing, plaster), pews, altar, vestry and a bell tower (717 pieces, the heaviest model).
+- Batch 16 (plants and ground): `young_tree`, `willow`, `cattails`, `fallen_log`, `stump`, `boulder_s`.
+- Open doors on cars: no separate models; the driver door is a hinged rig part the game poses open.
+- Not done: church ceiling, interior door leaves and tower stairs; a per-axle wheel radius for the tractor (Workshop chat); none of batches 5 to 16 checked in the game yet.
