@@ -376,7 +376,7 @@ function gtUnpack(o, w){ o.wait = 1;
     .catch(function(e){ o.wait = 0; console.warn('ground tile', e); }); }
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); manageGroundTiles(); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
+  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); manageGroundTiles(); manageMapProps(Math.max(1, budget >> 1)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
@@ -530,7 +530,8 @@ function placeProps(g){
     else if (h < 0.5){ x = d.x - d.nx*1.1 + tx*3.4; y = d.y - d.ny*1.1 + ty*3.4; if (ok(x, y) && ok(x + tx, y + ty) && ok(x - tx, y - ty)) cand.dump.push([x, y, Math.atan2(ty, tx), b.kind]); }
   });
   w.slights = []; w.obstL = []; w.dumps = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'dumpster'){ var di = w.dumps.length; w.dumps.push({dump:1, name:'dumpster', x:c[0], y:c[1], kind:c[3], looted:!!(w.dumpGone && w.dumpGone.indexOf(di) >= 0), t:0, i:di}); } if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
-  put(cand.light, 'streetlight', 700); put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
+  if (!(w.mhas && w.mhas.lamp)) put(cand.light, 'streetlight', 700);   /* 0.123.0: a map with its own street lamps (builder 1.24) keeps only those */
+  put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
 }
 /* 0.80 dressing from the art pack's unused street, plant and road pieces: signs and poles on the streets, mailboxes at houses, bus stops, manholes,
    and in the wild logs, stumps, ferns, mushrooms, brambles, flowers and reeds. All are small and decorative: nothing here blocks you */
@@ -569,7 +570,7 @@ function placeDress(g){
     for (var q = 0; q + 3 < n; q += 2){ var ax = p[q], ay = p[q+1], l = Math.hypot(p[q+2] - ax, p[q+3] - ay); if (l < 0.5) continue; var dx = (p[q+2] - ax)/l, dy = (p[q+3] - ay)/l, yaw = Math.atan2(dx, dy);
       for (; run < l; run += main ? 70 : 60, k++){
         var sd = k % 2 ? 1 : -1, off = r.w/2 + 3.6, x = ax + dx*run - dy*off*sd, y = ay + dy*run + dx*off*sd, h = hash(ri*13 + q, k, 83);
-        if (!main && ok(x, y, 2)) add('street.power_pole', x, y, yaw, 450);
+        if (!main && ok(x, y, 2) && !(w.mhas && w.mhas.pole)) add('street.power_pole', x, y, yaw, 450);
         var h2 = hash(ri*11 + q, k, 97), lat = (hash(ri, k + q, 98) - 0.5)*(r.w - 2.5), xd = ax + dx*run - dy*lat, yd = ay + dy*run + dx*lat;
         if (h2 < 0.45){ for (var cc = 0; cc < 3; cc++) add('ground.decals.crack', xd + (cc - 1)*0.5*dy, yd - (cc - 1)*0.5*dx, yaw + (hash(ri, k, 100 + cc) - 0.5)*1.4, 1500); }
         else if (h2 > 0.93) add('ground.decals.pothole', xd, yd, h2*40, 500); else if (h2 > 0.86 && main) add('ground.decals.skid_marks', xd, yd, yaw, 400);
@@ -585,7 +586,7 @@ function placeDress(g){
   });
   w.buildings.forEach(function(b){
     if (!b.door || b.gone) return; var d = b.door, tx = -d.ny, ty = d.nx, h = hash(b.id, 17, 5), x, y;
-    if (b.cat === 'house'){ if (h < 0.5){ x = d.x - d.nx*7 + tx*2.6; y = d.y - d.ny*7 + ty*2.6; if (ok(x, y, 3)) add('street.mailbox', x, y, Math.atan2(-d.nx, -d.ny), 600); } }
+    if (b.cat === 'house'){ if (h < 0.5 && !(w.mhas && w.mhas.mailbox)){ x = d.x - d.nx*7 + tx*2.6; y = d.y - d.ny*7 + ty*2.6; if (ok(x, y, 3)) add('street.mailbox', x, y, Math.atan2(-d.nx, -d.ny), 600); } }
     else if (b.cat === 'shop' || b.cat === 'food'){
       if (h < 0.35){ x = d.x - d.nx*1.3 - tx*3.2; y = d.y - d.ny*1.3 - ty*3.2; if (ok(x, y, 0.3)) add('street.newspaper_box', x, y, Math.atan2(-d.nx, -d.ny), 150); }
       else if (h > 0.8){ x = d.x - d.nx*1.5 + tx*3.4; y = d.y - d.ny*1.5 + ty*3.4; if (ok(x, y, 0.3)) add('street.bike_rack', x, y, Math.atan2(tx, ty), 120); }
@@ -680,6 +681,34 @@ function placeDress(g){
     for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; if (SOLID[path]){ (w.obstL = w.obstL || []).push([c[0], c[1], SOLID[path]]); w.obst = null; } g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' || path.slice(0, 9) === 'pk.court_' || path.slice(0, 13) === 'pk.field_line' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
   w.dressCount = total; w.dressOut = out;
 }
+/* 0.123.0: the map's own props (builder 1.24 street dressing and props placed in the builder), kept in 96 m cells and meshed only near you, like the buildings.
+   Power poles with an asmb:wire point carry four wires to the next pole: one per insulator on the crossarm (x -0.9, -0.3, 0.3, 0.9 at 8.06 m, the content chat's measure),
+   sagging a fiftieth of the span in the middle, drawn as two thin crossed strips so they read from any side. Street lamps light pools at night like the game's own. */
+var MPC = 96, MPWX = [-0.9, -0.3, 0.3, 0.9], MPWY = 8.06, MPWC = [38, 38, 42];
+function mpPrepare(w){
+  w.gl.mp = []; var L = w.mprops; if (!L || !L.length) return; var cells = new Map(), poles = new Map(), pk = function(x, y){ return Math.round(x*2) + ':' + Math.round(y*2); };
+  L.forEach(function(q){ if (/^vehicles\./.test(q.p)) return; var key = gk(Math.floor(q.x/MPC), Math.floor(q.y/MPC)), c = cells.get(key);
+    if (!c){ c = {x:(Math.floor(q.x/MPC) + 0.5)*MPC, y:(Math.floor(q.y/MPC) + 0.5)*MPC, list:[], g:null}; cells.set(key, c); w.gl.mp.push(c); } c.list.push(q);
+    if (q.p === 'street.power_pole') poles.set(pk(q.x, q.y), q);
+    if (q.p === 'street.street_lamp') (w.slights = w.slights || []).push({x:q.x, y:q.y, sl:true});
+    var r = SOLID[q.p] || (/street_lamp|traffic_light|parking_meter|sign_|bollard|hydrant/.test(q.p) ? 0.2 : /bench|trash|bin|mailbox|newspaper|booth|vending|barrel/.test(q.p) ? 0.35 : 0); if (r){ (w.obstL = w.obstL || []).push([q.x, q.y, r]); w.obst = null; } });
+  L.forEach(function(q){ if (q.wx !== undefined){ var o = poles.get(pk(q.wx, q.wy)); if (!o){ var best = 2.5; poles.forEach(function(z){ var d = Math.hypot(z.x - q.wx, z.y - q.wy); if (d < best){ best = d; o = z; } }); } q.to = o || {x:q.wx, y:q.wy, yw:q.yw}; } });
+}
+function mpWire(m, a, b){
+  var ca = Math.cos(a.yw), sa = Math.sin(a.yw), cb = Math.cos(b.yw), sb = Math.sin(b.yw), flip = ca*cb + sa*sb < 0, ha = hAt(a.x, a.y), hb = hAt(b.x, b.y), span = Math.hypot(b.x - a.x, b.y - a.y), sag = span/50, N = 6;
+  if (span < 4 || span > 90) return; var dx = (b.x - a.x)/span, dy = (b.y - a.y)/span, W = 0.025;
+  for (var i = 0; i < 4; i++){ var la = MPWX[i], lb = MPWX[flip ? 3 - i : i], x0 = a.x + ca*la, y0 = a.y + sa*la, z0 = ha + MPWY, x1 = b.x + cb*lb, y1 = b.y + sb*lb, z1 = hb + MPWY, pv = null;
+    for (var s = 0; s <= N; s++){ var t = s/N, px = x0 + (x1 - x0)*t, py = y0 + (y1 - y0)*t, pz = z0 + (z1 - z0)*t - sag*4*t*(1 - t);
+      if (pv){ m.quad(pv[0] - dy*W, pv[2], pv[1] + dx*W, px - dy*W, pz, py + dx*W, px + dy*W, pz, py - dx*W, pv[0] + dy*W, pv[2], pv[1] - dx*W, MPWC, 255);
+        m.quad(pv[0], pv[2] - W, pv[1], px, pz - W, py, px, pz + W, py, pv[0], pv[2] + W, pv[1], MPWC, 255); }
+      pv = [px, py, pz]; } }
+}
+function manageMapProps(budget){
+  var A = world.gl.mp; if (!A || !A.length) return; var R = QS.chunk + MPC, n = 0;
+  for (var i = 0; i < A.length; i++){ var c = A[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
+    if (!c.g && d < R && n < budget){ var m = new Mesh(); c.list.forEach(function(q){ var M = spB(q.p); if (M) m.modelS(M, q.x, q.y, q.yw, hAt(q.x, q.y) + 0.02, 1); if (q.to) mpWire(m, q, q.to); }); c.g = upload(m); n++; }
+    else if (c.g && d > R + 150){ freeMesh(c.g); c.g = null; } }
+}
 var facs = [], FKIND = {};   /* the old modelled fronts are gone: every front is now painted (tools/paint_buildings.py) */
 function manageFacades(){}
 function dirtyChunk(b){ if (b && b.fac){ freeMesh(b.fac); b.fac = null; } if (b && b.chunk && b.chunk.far){ freeMesh(b.chunk.far); b.chunk.far = null; } if (b && b.chunk && b.chunk.g){ freeMesh(b.chunk.g); freeMesh(b.chunk.l); b.chunk.g = null; b.chunk.l = null; } }
@@ -762,7 +791,7 @@ function prep3D(){
     else ribbon(r.pts, r.w/2, r.kind === 'road' && r.w >= 6 ? RDY : 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap, !(r.kind === 'road' && r.w >= 6));
   });
   g.pl = null; if (w.hg) drape(g, LIFT, true); w.liftY = LIFT;
-  if (w.hg && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
+  if (w.hg && typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
   var gD = g; g = new Mesh();   /* 0.114.92: the draped ground stays as it came back (typed arrays from the Rust core); what follows goes into a second list */
   sunkWalls(w, g, LIFT, SWY, RDY);
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
@@ -797,6 +826,6 @@ function prep3D(){
     for (var i2 = 1; i2 <= nT; i2++) if (i2 === nT || bk[i2] !== bk[r0]){ if (nT) flush(r0, i2); r0 = i2; }
     sm.p = sm.c = sm.t = null; bks[si] = null; if (gD.parts && si < gD.parts.length) gD.parts[si] = null; });
   BK.forEach(function(bm, id){ gt.push({g:null, d:bm, x:bxs[id], y:bys[id]}); BK[id] = null; });
-  w.gl = {ground:gt, chunks:list, terr:new Map()}; setTimeout(function(){ gtPackAll(w); }, 300);
+  w.gl = {ground:gt, chunks:list, terr:new Map()}; try { mpPrepare(w); } catch (er){ console.log('map props', er); } setTimeout(function(){ gtPackAll(w); }, 300);
 }
 

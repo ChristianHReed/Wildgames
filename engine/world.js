@@ -279,6 +279,13 @@ function buildWorld(raw, name){
   world = w;
   raw.pois.forEach(function(p, n){
     var x = (p.lon-lon0)*kx, y = -(p.lat-lat0)*ky, t = p.tags;
+    /* 0.123.0: props the map builder placed (asmb:prop = <category>.<piece>): street dressing (poles with wires, lamps, mailboxes, benches, bins, meters), props a player put down,
+       and cars (vehicles.*, made into parked vehicles in makeVehicles). asmb:yaw is degrees (builder 1.24), asmb:ry quarter turns for older maps */
+    if (t['asmb:prop'] && /^[a-z0-9_]+\.[A-Za-z0-9_]+$/.test(t['asmb:prop'])){
+      var pth = t['asmb:prop'], yw = t['asmb:yaw'] !== undefined && isFinite(+t['asmb:yaw']) ? -(+t['asmb:yaw'])*Math.PI/180 : -(+t['asmb:ry'] || 0)*Math.PI/2, mp = {p:pth, x:x, y:y, yw:yw};
+      if (t['asmb:wire']){ var wl = String(t['asmb:wire']).split(','); if (wl.length === 2 && isFinite(+wl[0]) && isFinite(+wl[1])) mp.wx = (+wl[0] - lon0)*kx, mp.wy = -(+wl[1] - lat0)*ky; }
+      var band = t['asmb:band']; if (band){ var MK = w.mhas || (w.mhas = {}); if (pth === 'street.power_pole') MK.pole = 1; else if (pth === 'street.street_lamp') MK.lamp = 1; else if (pth === 'street.mailbox') MK.mailbox = 1; }
+      (w.mprops || (w.mprops = [])).push(mp); return; }
     if (t.natural === 'tree'){ addTree(x, y, n); return; }
     var pk = kindOf(t), cat = catOf(t, false), bd = buildingAt(x, y); if (!pk && !cat) return;
     if (bd){

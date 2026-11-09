@@ -559,7 +559,7 @@ try { (JSON.parse(localStorage.getItem('afterstreet.station.packs') || '[]') || 
 /* The art lives in the assets folder beside this file. Computers load the full set; phones and "Low" view distance load the lite set. */
 /* BUILD is stamped by tools/stamp_release.py: every script is asked for with ?v=BUILD, so a new game never mixes with old saved files (the offline copy keys on the whole address) */
 if (/[?&]oldplan/.test(location.search)) window.NOFLOORPLAN = 1;   /* 0.114.27: ?oldplan brings back the room splitter on ground floors */
-var BUILD = '0.122.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.123.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
   ['dataver', 'icons', 'btex', 'models', 'nature', 'vehicles', 'rig', 'shaped/shapes', 'shaped/survivor', 'shaped/aliens', 'shaped/animals', 'shaped/props', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/bikes', 'shaped/machinedig', 'shaped/digging', 'shaped/foodservice', 'shaped/farm', 'shaped/world', 'shaped/roadside', 'shaped/parks', 'shaped/autotrade', 'shaped/services', 'shaped/boats', 'shaped/vehiclekit', 'shaped/vehiclefit', 'shaped/held', 'shaped/fx', 'shaped/buildings', 'shaped/ground', 'shaped/land', 'shaped/barriers', 'shaped/machines', 'shaped/floorplan', 'map', set + '/atlas', set + '/atlas3', 'sounds', 'audio/sounds_design', 'audio/sounds_content'].forEach(function(n){ document.write('<script src="assets/' + n + '.js?v=' + BUILD + '"><\/script>'); });
@@ -4526,10 +4526,14 @@ function makeVehicles(saved){
     /* on the street by the spawn: the workshop chat's walk-in truck, semi and trailer, for trying what the Workshop makes */
     [['pk_workshop_crafts_box_truck_walkin', -1.9, -78], ['pk_workshop_crafts_semi_tractor', 1.9, -84], ['pk_workshop_crafts_box_trailer', -1.9, -100]].forEach(function(b5, bi5){ list.push({veh:true, id:'tw' + bi5, t:1, name:'the ' + b5[0].replace(/^pk_workshop_crafts_/, '').replace(/_/g, ' '), dead:0, kind:b5[0], hp:100, x:b5[1] + ox, y:b5[2] + oy, yaw:b5[1] > 0 ? -Math.PI/2 : Math.PI/2, fuel:fuelRoll(b5[0], bi5, 9)}); }); }
   if (saved) for (var sid in saved) if (sid[0] === 'r' && saved[sid].length >= 5){ var tk = saved[sid][5] === 'truck', sck = typeof saved[sid][5] === 'string' && !tk ? saved[sid][5] : undefined; if (sck && sck.slice(0, 2) === 'B:'){ if (SHAPED.boats && SHAPED.boats.models[sck.slice(2)]) list.push({veh:true, id:sid, t:0, boat:sck.slice(2), name:'the ' + stnNice(sck.slice(2)), x:0, y:0, yaw:0, fuel:0}); continue; } list.push({veh:true, id:sid, t:saved[sid][4] ? 1 : 0, kind:tk ? 'truck' : sck, name:tk ? 'the truck' : saved[sid][4] ? 'the car' : 'the bicycle', x:0, y:0, yaw:0, fuel:0}); }
+  /* 0.123.0: cars the map builder placed (asmb:prop = vehicles.<kind>, _wreck or _burnt at the end): parked where they were put, driveway or kerb */
+  (w.mprops || []).forEach(function(q, qi){ if (!/^vehicles\./.test(q.p)) return; var k = q.p.slice(9), dead = /_wreck$/.test(k) ? 'wreck' : /_burnt$/.test(k) ? 'burnt' : 0, base = k.replace(/_(wreck|burnt)$/, '');
+    if (!VMOD[base] && (PACKK || []).indexOf(base) < 0) return; var ix = Math.round(q.x), iy = Math.round(q.y);
+    list.push({veh:true, id:'mp' + qi, t:1, name:dead ? 'the ' + (dead === 'burnt' ? 'burnt-out car' : 'wrecked car') : 'the parked car', dead:dead, kind:dead ? base + '_' + dead : base, hp:dead ? undefined : Math.round(50 + hash(ix, iy, 34)*50), x:q.x, y:q.y, yaw:Math.atan2(Math.cos(q.yw), -Math.sin(q.yw)), fuel:dead ? 0 : fuelRoll(base, ix, iy)}); });
   if (truckHome()){ var tp = truckPose(); list.push({veh:true, id:'truck', t:1, kind:'truck', name:'the truck', x:tp.x, y:tp.y, yaw:tp.yaw, fuel:0}); }
   if (w.edits.junkv) list = list.filter(function(v){ return !w.edits.junkv[v.id]; });
   /* 0.114.86: cars only start on roads: a land vehicle whose middle is not on a drivable road is dropped (the player's own truck, saved vehicles and machines are kept) */
-  list = list.filter(function(v){ if (!v.t || v.id === 'truck' || v.kind === 'truck' || (saved && saved[v.id]) || /^m_/.test(v.kind || '')) return true; return onDriveRoad(w, v.x, v.y); });
+  list = list.filter(function(v){ if (!v.t || v.id === 'truck' || /^mp\d/.test(v.id) || v.kind === 'truck' || (saved && saved[v.id]) || /^m_/.test(v.kind || '')) return true; return onDriveRoad(w, v.x, v.y); });
   w.vehicles = list; w.vmap = {}; list.forEach(function(v){ w.vmap[v.id] = v; var s2 = saved && saved[v.id]; if (s2){ v.x = +s2[0]; v.y = +s2[1]; v.yaw = +s2[2] || 0; v.fuel = (+s2[3] || 0)*(saved._u ? 1 : CAN_M/60); if (s2.length > 6 && isFinite(s2[6])) v.hp = Math.max(0, Math.min(100, +s2[6])); if (s2[7]){ var dh0 = deckHit(v.x, v.y, 'hi'); if (dh0) v.gh = dh0.h; } if (s2[8]){ v.cu = cleanCu(s2[8]); if (v.cu) carName(v); } } });
   bedChest();
 }
@@ -6188,7 +6192,7 @@ function freeWorldGL(w){
   try { var g = w && w.gl; if (!g) return; var fm = function(o){ if (o && o.vb){ try { freeMesh(o); } catch (e){} } };
     if (g.ground) g.ground.forEach(function(o){ fm(o.g); o.g = null; o.d = null; });
     if (g.chunks) g.chunks.forEach(function(c){ fm(c.g); fm(c.l); fm(c.gg); fm(c.far); c.g = c.l = c.gg = c.far = null; });
-    ['trees', 'det', 'terr'].forEach(function(k){ if (g[k]) g[k].forEach(function(o){ fm(o.g); o.g = null; }); if (g[k] && g[k].clear) g[k].clear(); });
+    ['trees', 'det', 'terr', 'mp'].forEach(function(k){ if (g[k]) g[k].forEach(function(o){ fm(o.g); o.g = null; }); if (g[k] && g[k].clear) g[k].clear(); });
     (w.buildings || []).forEach(function(b){ if (b.fac){ fm(b.fac); b.fac = null; } if (b.int){ try { freeInt(b); } catch (e){} b.int = null; } });
     if (w.fence){ fm(w.fence.g); w.fence = null; }
   } catch (e){ console.log('freeWorldGL', e); } }

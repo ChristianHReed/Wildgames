@@ -265,6 +265,7 @@ function drawScene(cam, env){
     if (ch.g && cdx < NR && cdy < NR){ drawMesh(ch.g); if (cdx < 170 && cdy < 170) drawMesh(ch.l, gl.LINES); }
     else if (ch.far && cdx < FRR && cdy < FRR) drawMesh(ch.far);
   }
+  if (world.gl.mp) for (i = 0; i < world.gl.mp.length; i++){ var mq = world.gl.mp[i]; if (mq.g && Math.abs(mq.x - cx) < NR && Math.abs(mq.y - cy) < NR && VIS(mq.x, mq.y, MPC*0.75)) drawMesh(mq.g); }   /* 0.123.0: the map's own props */
   /* see-through window glass (0.114.48): drawn after the solid world, blended, and it does not write depth so what is behind still shows */
   var gls = false; for (i = 0; i < world.gl.chunks.length; i++){ var gc = world.gl.chunks[i]; if (gc.gg && gc.g && Math.abs(gc.x - cx) < 150 && Math.abs(gc.y - cy) < 150 && VIS(gc.x, gc.y, CH*0.75)){ if (!gls){ gls = true; gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(U.gA, 0.26); } drawMesh(gc.gg); } }
   if (gls){ gl.depthMask(true); gl.disable(gl.BLEND); gl.uniform1f(U.gA, 1); }

@@ -185,6 +185,17 @@ function testStreetRaw(){
   line([[0, 45], [60, 45], [140, 45], [250, 45]], {highway:'residential', name:'Gorge Road'});
   /* a gravel track to the mountain's foot */
   line([[0, -170], [-100, -165], [-170, -60], [-200, 20]], {highway:'track', name:'Mountain track'});
+  /* 0.123.0: map props the way the builder writes them (builder 1.24 street dressing): power poles with wires down the west verge, lamps on the east side, a mailbox and bins at the house,
+     and the streetscape pack's camp, barrel, vending machine and booths in the park and along the shops. They stand in for a built map's dressing so the game's reading of it can be checked */
+  var prop = function(x, y, path, yaw, ex){ var t = {'asmb:prop':path, 'asmb:yaw':String(yaw || 0), 'asmb:made':'yes'}; if (ex) for (var k in ex) t[k] = ex[k]; var q = LL(x, y); pois.push({lon:q[0], lat:q[1], tags:t}); };
+  var PY = [-152, -114, -76, -38, 0, 38, 76, 114, 152, 190];
+  PY.forEach(function(y, i){ var ex = {'asmb:band':'verge', power:'pole'}; if (i + 1 < PY.length){ var q = LL(-6.6, PY[i + 1]); ex['asmb:wire'] = q[0] + ',' + q[1]; } prop(-6.6, y, 'street.power_pole', 0, ex); });
+  [-95, -20, 60, 130, 200].forEach(function(y){ prop(6.4, y, 'street.street_lamp', 270, {'asmb:band':'verge'}); });
+  prop(-7, -54, 'street.mailbox', 90, {'asmb:band':'verge'}); prop(-9.5, -62, 'land.wheelie_bins_pair', 90);
+  prop(-8.6, -26, 'land.vending_lit', 90); prop(-8.6, -6, 'land.phone_stand', 90);
+  prop(64, -32, 'land.burning_barrel', 0); prop(72, -36, 'land.dome_tent_orange', 200); prop(80, -28, 'land.dome_tent_blue', 160); prop(70, -22, 'land.dome_tent_green', 240);
+  prop(92, -34, 'land.relief_tent', 180); prop(58, -40, 'land.guard_booth', 90); [52, 56, 60].forEach(function(y){ prop(y + 46, -42, 'land.camp_barrier_4', 90); });
+  [-150, -146, -142].forEach(function(y){ prop(46, y + 100, 'land.tall_grass_patch', 0); });
   return {ways:ways, pois:pois, elev:testStreetElev(), hgCell:2.5, spawn:LL(-3, -40), name:'Test World'};
 }
 function demoRaw(){ var r = demoRaw0(); r.elev = demoElev(); return r; }
