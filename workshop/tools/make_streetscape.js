@@ -620,15 +620,21 @@ function buildChurch(a){
   [1, -1].forEach(function(s){ a.raw('prism', [s*7.97, eaveY + 1.2, 0], {scl:[8.0/0.3118, 3.0/0.27, 0.2/0.4], c:W.sid, m:'wood', rot:[0, 90, 0]}); });
   /* flat ceilings over the back rooms and the narthex porch (plaster under joists); the nave stays open to the rafters */
   a.box(0, eaveY - 0.08, -2.5, 15.8, 0.04, 3.0, W.pla, {m:'sheet'}); for (var cj = -7.5; cj <= 7.5; cj += 0.5) a.box(cj, eaveY - 0.0, -2.5, 0.045, 0.14, 3.0, W.frm, {m:'wood'});
-  a.box(0, eaveY - 0.08, 5.8, 3.7, 0.04, 3.4, W.pla, {m:'sheet'});
   /* tension ties across the nave, every 2 m, so the roof has bones inside */
   for (var t = -7; t <= 7; t += 2) a.box(t, eaveY - 0.1, 0.0, 0.08, 0.18, 8.0, W.frm, {m:'wood'});
   /* the bell tower over the entrance: its own framed walls up to the ceiling, then a clad shaft, a belfry and a spire */
   var tz0 = 4.0, tz1 = 7.6;
-  run(-2, tz0, -2, tz1, -1, 0, [{u:1.8, w:1.0, kind:'window'}], true, H); run(2, tz1, 2, tz0, 1, 0, [{u:1.8, w:1.0, kind:'window'}], true, H); run(-2, tz1, 2, tz1, 0, 1, [{u:2.0, w:1.0, kind:'door', leaf:true}], true, H);
+  if (!process.env.CUT) { run(-2, tz0, -2, tz1, -1, 0, [{u:1.8, w:1.0, kind:'window'}], true, H); run(2, tz1, 2, tz0, 1, 0, [{u:1.8, w:1.0, kind:'window'}], true, H); } run(-2, tz1, 2, tz1, 0, 1, [{u:2.0, w:1.0, kind:'door', leaf:true}], true, H);
   a.box(0, 0.13, 5.8, 4.5, 0.26, 3.9, W.conc, {m:'stone'}); a.box(0, 0.28, 5.8, 3.9, 0.04, 3.4, W.floor, {m:'wood'}); for (var q = 0; q < 3; q++) a.box(0, 0.05 + q*0.08, 7.9 + (2 - q)*0.0 + 0.25 + (2 - q)*0.25*0 + q*0.0 + 0.0, 2.6, 0.1, 0.5 + (2 - q)*0.0, W.conc, {m:'stone'});
-  a.box(0, eaveY + 0.05, 5.8, 4.2, 0.1, 3.8, W.frm, {m:'wood'});
-  a.box(0, 6.3, 5.8, 4.0, 5.0, 3.6, W.sid, {m:'wood'}); a.box(0, 8.95, 5.8, 4.3, 0.3, 3.9, W.trim, {m:'wood'}); [[-1.85, 3.95], [1.85, 3.95], [-1.85, 7.65], [1.85, 7.65]].forEach(function(p){ a.box(p[0] + (p[0] < 0 ? -0.05 : 0.05), 6.3, p[1] + (p[1] < 4.5 ? -0.05 : 0.05), 0.16, 5.0, 0.16, W.trim, {m:'wood'}); });
+  var sb = eaveY, sH = 5.0;
+  if (!process.env.CUT) { run(-2, tz0, -2, tz1, -1, 0, [{u:1.8, w:1.0, kind:'window'}], true, sH, sb); run(2, tz1, 2, tz0, 1, 0, [{u:1.8, w:1.0, kind:'window'}], true, sH, sb); } run(-2, tz1, 2, tz1, 0, 1, [{u:2.0, w:1.0, kind:'window'}], true, sH, sb); run(-2, tz0, 2, tz0, 0, -1, [], true, sH, sb);
+  /* three straight flights, 10 steps each, zig-zagging up the shaft: A (z 6.9) west to east, B (z 4.7) back, A again to the belfry floor */
+  function flight(x0, dir, z, yBase, n){ for (var i = 0; i < n; i++){ var yt = yBase + (i + 1)*0.29, xc = x0 + dir*(i*0.32 + 0.16); a.box(xc, yt - 0.025, z, 0.32, 0.05, 0.9, W.floor, {m:'wood'}); a.box(xc - dir*0.15, yt - 0.145, z, 0.02, 0.24, 0.9, W.frm, {m:'wood'}); } a.box(x0 + dir*n*0.16, yBase + n*0.145, z - 0.46, n*0.32, 0.05, 0.03, W.frm, {m:'wood'}); }
+  flight(-1.6, 1, 6.9, 0.3, 10); a.box(1.75, 3.2 - 0.025, 5.8, 0.5, 0.05, 3.2, W.floor, {m:'wood'}); a.box(1.75, 1.6, 4.3, 0.1, 2.9, 0.1, W.frm, {m:'wood'}); a.box(1.75, 1.6, 7.3, 0.1, 2.9, 0.1, W.frm, {m:'wood'});
+  flight(1.4, -1, 4.7, 3.2, 10); a.box(-1.75, 6.1 - 0.025, 5.8, 0.5, 0.05, 3.2, W.floor, {m:'wood'}); a.box(-1.75, 4.65, 4.3, 0.1, 2.9, 0.1, W.frm, {m:'wood'}); a.box(-1.75, 4.65, 7.3, 0.1, 2.9, 0.1, W.frm, {m:'wood'});
+  flight(-1.6, 1, 6.9, 6.1, 10);
+  a.box(0, 9.0 - 0.025, 5.2, 4.0, 0.05, 2.4, W.floor, {m:'wood'}); a.box(1.7, 9.0 - 0.025, 6.9, 0.6, 0.05, 1.2, W.floor, {m:'wood'}); a.box(0, 9.0 - 0.025, 7.5, 4.0, 0.05, 0.2, W.floor, {m:'wood'});
+  a.pt('stairs', 'stairs', [-1.6, 0.4, 6.9], [1, 0, 0]); a.box(0, 8.95, 5.8, 4.3, 0.3, 3.9, W.trim, {m:'wood'}); [[-1.85, 3.95], [1.85, 3.95], [-1.85, 7.65], [1.85, 7.65]].forEach(function(p){ a.box(p[0] + (p[0] < 0 ? -0.05 : 0.05), 6.3, p[1] + (p[1] < 4.5 ? -0.05 : 0.05), 0.16, 5.0, 0.16, W.trim, {m:'wood'}); });
   a.box(0, 6.4, 7.65, 0.9, 1.9, 0.04, W.gl, 'glass'); a.box(0, 6.4, 7.68, 1.1, 2.1, 0.03, W.trim, {m:'wood'}); a.box(0, 6.4, 7.7, 0.9, 1.9, 0.02, W.gl, {m:'glass'});
   [[-1.7, 4.15], [1.7, 4.15], [-1.7, 7.45], [1.7, 7.45]].forEach(function(p){ a.box(p[0], 10.25, p[1], 0.22, 2.4, 0.22, W.trim, {m:'wood'}); });
   [4.05, 7.55].forEach(function(z){ for (var i = 0; i < 4; i++) a.box(-0.9 + i*0.6, 10.25, z, 0.08, 1.6, 0.04, W.iron, {m:'wood', rot:[0, 0, 0]}); }); [-1.85, 1.85].forEach(function(x){ for (var i = 0; i < 4; i++) a.box(x, 10.25, 4.85 + i*0.6, 0.04, 1.6, 0.08, W.iron, {m:'wood'}); });
