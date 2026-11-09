@@ -54,4 +54,5 @@ Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash
 - Water details, placed at water level (y = 0): `rock_in_water`, `rock_cluster_water`, `stepping_stones_5` (flat tops, 0.8 m apart, each with a white foam ring), and lily pads in three season colours: `lily_pads_green`, `lily_pads_autumn`, `lily_pads_red`.
 - Batch 7: `moss_roof_cap_s` and `_m` (with a tree), `ivy_drips_4`, `panel_fence_blue/pink/brick/mixed`, `scrub_dry_tuft`, `scrub_dry_cluster`, `billboard_blank`, `billboard_message` (made-up message, no brands).
 - Batch 8: `shop_shelf_outdoor`, `water_barrels_3`, `propane_cage` (loot), `lamp_light_pool` (glow decal), `shopfront_glow_4` (lit window, awning and sign), `porch_set` (steps open in the middle), `garden_pool`.
-- Not done yet from the reference list: corn, potato and pumpkin stages, elevated rail, subway entrance, far wind turbine, wreck tractor, broken signs.
+- Batch 9: corn, potato and pumpkin in five stages each (`corn_stage_1_seeds` .. `_5_ripe`, `potato_stage_*`, `pumpkin_stage_*`), same 2 m soil square as the wheat so the game swaps by days since planting.
+- Not done yet from the reference list: elevated rail, subway entrance, far wind turbine, wreck tractor, broken signs.
