@@ -78,6 +78,96 @@ Most of these cost little or nothing per frame. In order of effect for the effor
 
 Each is checked on the iPhone 11 with the benchmark before it is kept.
 
+## Third look: how the worlds are laid out
+
+A study of the layout logic in the board: where things go and why. This matters more for Afterstreet than for the games in the pictures, because our map comes from OpenStreetMap. OpenStreetMap gives the roads, the building outlines, land use and some points (trees, hydrants, lamps, bus stops). It almost never gives the things that make the pictures read: lot lines, yards, fences, driveways, kerbs, verges, clutter, parked cars, the edge of a wood. The builder fills those in (it already adds homes and driveways on empty lots along town streets). The rules below are what it should follow, so the filled-in parts look as if they belong.
+
+### 1. Everything is in bands across the street
+
+Every street picture, from the Japanese suburb to the American town, is the same cross-section, from the middle out:
+
+| Band | Town street | Suburb | Main street | Rural road |
+| --- | --- | --- | --- | --- |
+| Road with markings | 2 lanes, centre line | 2 lanes, often no line | 2 to 4 lanes, parking both sides | 2 lanes, yellow centre, white edge |
+| Kerb | Yes | Yes | Yes | No: a soft shoulder of gravel |
+| Verge (grass strip) | 1 to 2 m, street trees, poles | 2 to 3 m, trees, mailboxes, bins on collection day | None: paved to the wall | Wide grass and ditch, tall grass, poles |
+| Pavement (sidewalk) | 1.5 to 2 m | 1.2 to 1.5 m | 3 to 5 m, benches, bins, meters, lamps | None |
+| Front yard | Small, fence or hedge | 6 to 10 m lawn, path to the door | None: shop fronts on the pavement line | Big, often unfenced |
+| Building | Close to the front | Set back, garage to one side | Built wall to wall | Set far back, barns behind |
+
+The builder knows the road class from OpenStreetMap. The road class picks the column, and the column decides the kerb, the verge, the pavement and how far back a generated building sits. Things belong to a band: trees and poles in the verge, never on the pavement; mailboxes at the verge edge; benches and meters on a main street pavement only.
+
+### 2. Lots: the unit of a neighbourhood
+
+Every house in the suburb pictures sits on a lot with the same parts: front yard to the street, the house, a driveway along one side to a garage, a back yard behind, and a fence or hedge on the side and back lines. Lots on one street are about the same width, and houses line up at about the same setback. That regular rhythm, broken by small differences (one house turned, one lot doubled, one empty), is what makes a street read as a street.
+
+Rules for the builder:
+- Lots face the street. A house faces the road it is closest to, with its door toward it.
+- Driveways are on one side, and on a corner lot they come off the quieter street.
+- The back yard is where things go: a shed, a pool, a vegetable bed, a swing, a trampoline, a boat on a trailer, a wood pile. One or two per yard, chosen from the lot's seed.
+- Fences run along back and side lines, rarely across the front in suburbs, often across the front in older town streets.
+- Back yards meet back yards. Blocks are two rows of lots back to back, so the inside of a block is a patchwork of yards and fences, not open grass. That inside is where a player sneaks through.
+
+### 3. A town has a gradient, centre to edge
+
+Zlín, the Japanese town, the main street and the city diorama all show the same order from the middle outward:
+
+1. **Centre:** tall, wall-to-wall, flat roofs, shops on the ground floor, little green, a square or park as a break. Civic buildings (town hall, church, police, post office) face the square or main street.
+2. **Main street and inner streets:** two to four storeys, shops below, flats above, parking along the kerb, alleys behind with bins and back doors.
+3. **Inner suburbs:** older houses on narrower lots, porches, street trees, a corner shop now and then.
+4. **Outer suburbs:** wider lots, garages, curving streets and cul-de-sacs, a school and a park.
+5. **The edge:** big flat-roofed boxes on big parking lots (supermarket, warehouse, strip mall, car dealer) along the main roads out, then fields, then forest.
+6. **Country:** farms set far back on long driveways, a gas station and country store at a crossroads, scattered houses along the road.
+
+OpenStreetMap gives most of this through land use and building size, but where it is thin the builder should take height, setback, roof type and lot width from the distance to the town centre and from the road class, so a gap is filled with something that fits its ring.
+
+### 4. Roadside buildings follow the car
+
+The gas station, the strip mall, the motel, the fast-food place, the country store, the tractor dealer: all of them sit in the same pattern.
+- The building is set back, with the parking lot between it and the road.
+- Two driveways cut the kerb, often near the ends of the lot.
+- A tall sign stands at the road edge, near a driveway, so it can be read from a car.
+- The back of the lot holds the service side: dumpsters, a loading door, a fence, a storage tank or a trailer.
+- Painted bays face the building; cars park nose in.
+
+For the game this gives a reliable loot and danger layout: the open lot is exposed, the front is glass, the back is the quiet way in.
+
+### 5. Landmarks, sightlines and the way the eye travels
+
+- **One tall thing per area.** A water tower, a church spire, a radio mast, a lighthouse, a grain silo, an office tower. Every town picture has one, placed so it can be seen down a street. Players steer by them. The builder should make sure each map square has at least one tall landmark, using the tallest real building, a water tower or a mast where OpenStreetMap has one.
+- **Streets end on something.** A long straight street that ends on a church, a hill or a big building feels designed. Where a street ends on nothing, a row of trees or a fence line is better than open space.
+- **Corners are special.** Corner buildings are taller, rounded or have a shop, a sign or a clock on them (corner shop tower, rounded block, the convenience store). Corners are where the eye stops.
+- **Open spaces break up density.** A square, a park, a car park, a sports field, a rail yard. Without them a dense town reads as one mass.
+
+### 6. Nature has a layout too
+
+- **Forests have edges.** From open ground inward: tall grass, then shrubs and young trees, then the forest wall. The edge is thicker on the sunny side. Roads through forest have a cleared strip on each side with grass and poles.
+- **Trees follow water and lines.** Rows along streams and rivers, rows along field edges and fences, rows along roads. Lone trees stand in fields or yards with clear ground round them.
+- **Slope decides.** Steep ground is forest, rock or scrub; flat ground is fields or town. Valleys hold water and the greenest growth; ridges are drier, paler and rockier.
+- **Fields are patchwork.** Fields come in blocks of slightly different colours and crops, separated by hedges, fences, tracks or tree lines, with a farm cluster (house, barn, silo, sheds) at one corner by the road.
+- **Water sits low.** Rivers in valley bottoms, ponds in hollows, a band of reeds and wet ground round every one, paths along the bank, a bridge where the road crosses, often a small park by the water in town.
+
+### 7. Vehicles and people show where life was
+
+- Cars park along kerbs, in driveways, nose in at shops; very few stand in the middle of the road in normal life.
+- In the post-apocalyptic pictures the tell is the opposite: cars stopped in lanes, bunched at junctions and bridges, doors open, some crashed into poles. Jams build up where people tried to leave: the main roads out, bridges, on-ramps.
+- Big vehicles sit where work happened: trucks at the warehouse dock, buses at the depot and along bus routes, tractors in the farm yard and at the dealer, police cars at the station and at roadblocks, ambulances at the hospital.
+- Camps and barricades are on purpose: a quarantine camp in a park or school field, a roadblock on a bridge or at the edge of town, sandbags round a police station.
+
+### 8. What the builder should do with this (map chat)
+
+In order of effect:
+
+1. **Street cross-sections by road class:** kerb, verge, pavement and setback from the table in section 1; trees, poles, lamps and mailboxes placed in their band.
+2. **Lot fill:** for generated and real houses alike, a driveway, a fence on side and back lines and one or two back-yard items, from the lot's seed.
+3. **Town rings:** height, setback, roof and lot width taken from distance to the centre where OpenStreetMap is thin.
+4. **Roadside pattern:** shops and stations on big lots get a parking lot to the front, a pole sign at the road, a service side at the back.
+5. **Landmark check:** at least one tall thing per map square.
+6. **Forest edges and tree rows:** edge bands round woods, rows along water, fields and roads.
+7. **Abandoned traffic:** cars parked by the rules above, plus jams on main roads out of town, at bridges and on-ramps.
+
+The main chat then makes these places worth visiting: loot that matches the lot and the building, and danger in the open lots and jammed roads.
+
 ## Set 1: nature, water and mood
 
 | Picture | What it shows | What to take |
