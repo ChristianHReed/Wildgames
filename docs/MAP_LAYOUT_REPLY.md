@@ -172,3 +172,11 @@ Same ids and bands as 1.30.0, same condition: the models live on the content cha
 | Fuel stations with a set-back building | `land.gas_canopy_pumps` in the middle of the car park, facing the road | `canopy` |
 
 Not used: `land.church_white_steeple`, `hedge_run_4`, `wall_low_4`, `fence_*` (for the game to draw along fence and hedge ways), and the dock trucks' loading-door alignment.
+
+## 1.32.0: the content is on main; walls and field fences; the 3D view draws `land.*`
+
+Read the main chat's 0.126.0 commit (fences, hedges and walls drawn and solid, roof props at `asmb:z`, open driver doors) and the merged content branch. The new models (`barn_red`, `swing_set`, `jersey_barrier_3`, `fountain_round`, `young_tree`, `church_white_steeple`, `hedge_run_4`, `wall_low_4`, the Workshop `farm_tractor`, `boat_trailer`, `combine`, `fire_engine_remade`) are now in `main`, so the placements from 1.30.0 and 1.31.0 are live.
+
+- **Fence kinds now match what the game draws** (`barrier` + `fence_type`): lots in the core and inner rings get a low brick **wall** (`barrier=wall`, `wall=brick`, 45% of ring 0 and 1 lots, like the Japanese-street reference) instead of a hedge or board fence; fields get **wire** (`fence_type=wire`) or **split rail** (`split_rail`) fences or a hedge, no longer chain link.
+- **The builder's 3D view draws the `land.*` models** (the Props tool has a "Land (streetscape)" group), so barns, tents, barriers, signs and roof units can be seen and placed by hand. Fences and walls are still not drawn in the builder (the game draws them).
+- Checked: a full Springfield build with no page errors; the farm, park centres and camps on a made-up area earlier. I did not see a farm in the builder because the test map has no fields; the swing set and hedges in a back yard are in the screenshot, the swing set itself was not in frame.

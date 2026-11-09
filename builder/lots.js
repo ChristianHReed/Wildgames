@@ -12,6 +12,9 @@
     var T = {
       wood:{barrier:'fence', fence_type:'wood', height:'1.8', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
       chain:{barrier:'fence', fence_type:'chain_link', height:'1.5', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
+      wall:{barrier:'wall', wall:'brick', height:'1.1', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
+      wire:{barrier:'fence', fence_type:'wire', height:'1.2', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
+      rail:{barrier:'fence', fence_type:'split_rail', height:'1.2', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
       hedge:{barrier:'hedge', height:'1.5', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
       pick:{barrier:'fence', fence_type:'picket', height:'1.0', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
       drive:{highway:'service', service:'driveway', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'},
@@ -166,7 +169,7 @@
           }
         }
         /* ---- fences and hedges on the lot lines ---- */
-        var sty = h3(seedA, seedB, 85), kind = sty < 0.42 ? 'wood' : sty < 0.67 ? 'hedge' : sty < 0.82 ? 'chain' : null;
+        var sty = h3(seedA, seedB, 85), kind = sty < 0.42 ? 'wood' : sty < 0.67 ? 'hedge' : sty < 0.82 ? 'chain' : null; if ((t['asmb:ring'] === '0' || t['asmb:ring'] === '1') && h3(seedA, seedB, 89) < 0.45) kind = 'wall';
         var frontFence = rd.s[6] === 'town' && h3(seedA, seedB, 86) < 0.4;
         if (kind || frontFence){
           var lines = [];   /* each: from (s0,f0) to (s1,f1) in the lot frame */
@@ -258,7 +261,7 @@
           out.fields++;
           if (!t['asmb:crop']){ var CROPS = ['wheat', 'corn', 'soy', 'hay', 'fallow']; t['asmb:crop'] = CROPS[Math.floor(h3(Math.round(pm[0]), Math.round(pm[1]), 130)*CROPS.length)]; t['asmb:shade'] = String(Math.floor(h3(Math.round(pm[0]), Math.round(pm[1]), 131)*4)); }
           var hs = h3(Math.round(pm[0]), Math.round(pm[1]), 132);
-          if (hs < 0.55 && !w.t.barrier){ wayOut(hs < 0.3 ? T.hedge : T.chain, pm, false); out.hedges++; }
+          if (hs < 0.55 && !w.t.barrier){ wayOut(hs < 0.3 ? T.hedge : hs < 0.45 ? T.rail : T.wire, pm, false); out.hedges++; }
           if (ar >= 20000 && h3(Math.round(pm[0]), Math.round(pm[1]), 134) < 0.25){ var kx = 0, ky = 0, kn = 0, ki; for (ki = 0; ki + 1 < pm.length; ki += 2){ kx += pm[ki]; ky += pm[ki + 1]; kn++; } kx /= kn; ky /= kn; if (L.pip(pm, kx, ky) && !inAny(kx, ky, 4, null)){ var cp = ['vehicles.pk_workshop_crafts_combine', 'vehicles.pk_workshop_crafts_farm_tractor'][h3(Math.round(kx), Math.round(ky), 135) < 0.6 ? 0 : 1]; fieldJobs.push([cp, kx, ky, h3(Math.round(kx), Math.round(ky), 136)*360]); } }
           if (hs < 0.3) walk(pm, 24, 8, 133, function(x, y, nx, ny){ var q = outward(x, y, nx, ny, 3); if (okSpot(q[0], q[1], 8)){ addTree(q[0], q[1], 'edge'); out.edgeTrees++; } });
         }
