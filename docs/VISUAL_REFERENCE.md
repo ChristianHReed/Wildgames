@@ -8,6 +8,76 @@ Collected 8 November 2026 from five sets of pictures the owner shared (about 85 
 
 Clean faceted models with flat colour and soft daylight; rounded "puff" trees in clusters; grass that reads as many blades, not a flat green; toon water with white foam rings where it touches rocks, shores and people; warm lit windows at night against dark pines; and American small towns full of the clutter that makes them real: power poles and sagging wires, water towers, gas station canopies, tall price signs, dumpsters, newspaper boxes, hydrants, parking lot lines, roadside lots full of machines. Seen from above, a town is a tidy miniature; seen from the street, it is lived in.
 
+## Second look: why these worlds work
+
+A closer study of the whole board (written the same day). The pictures differ a lot in style, from flat paintings to model railways to clean low-poly kits, but they share the same few habits. Those habits matter more than detail: a 3,000-face tree in a painting looks better than a 30,000-face one in a dull scene. Every habit below is listed with the cheapest way the game could get it, since the game has to run on an iPhone 11.
+
+### 1. Light: one warm source, cool everywhere else
+
+- **The shade is coloured, never grey.** In the freeway, coast road, parking lot and desert paintings, sunlit sides are warm (cream, gold, peach) and shadows are blue or violet. That one contrast makes a scene look lit rather than painted on. Grey or black shade looks dead.
+- **The sun sits low.** Almost none of the best pictures are at noon. Morning and evening give long shadows that run across roads and lawns, and long shadows show the shape of the ground better than any texture.
+- **The sky colour bleeds into everything.** Far hills turn the colour of the sky (the lakeside town, the coast village, the desert mountain). Near things are saturated, far things are pale and blue. This is aerial perspective: it gives depth for free and hides the edge of the world.
+- **At night, light is a place.** In the night shop in the pines, the whole picture is near-black blue with one orange pool of light, lit windows and glowing vending machines. The dark is not black: it is deep blue, so shapes still read. Light comes from things that make sense (a street lamp, a window, a fire barrel).
+- **Bounce light.** Clean renders (toy town, motel, Zlín) are lit by a soft sky from above: tops are bright, undersides darker, and corners where walls meet the ground are slightly shaded (ambient occlusion). That last detail is what makes a building sit on the ground instead of floating.
+
+**What the game already has:** a mood table per hour (sky, horizon and fog colour, sun colour, shade colour, edge darkness), lamp pools and lit windows at night, seasons. **What to push:** make the shade colour bluer and the sun warmer at morning and evening; spend more of the day near those hours; fade far terrain toward the horizon colour more strongly by day; darken the foot of every wall and the ground right next to it (baked into the vertex colour, so it costs nothing per frame); keep night blue-black, not grey-black.
+
+### 2. What makes a place feel lived in
+
+- **Clutter at the edges, not in the middle.** Bins at the kerb, a newspaper box on the corner, a bike against a fence, crates by a back door, an air conditioner under a window, a dumpster behind the shop. The road and pavement stay clear; the stuff gathers where walls meet ground and at property lines. That is exactly how real places collect things.
+- **Wires.** Power poles and sagging lines appear in nearly every American and Japanese street picture. They join the buildings together and draw lines across the sky. One line per span, slightly sagged, is enough.
+- **Every roof is busy.** From above, flat roofs carry units, vents, water tanks, ducts, ladders, satellite dishes, sometimes plants. A plain flat roof reads as unfinished.
+- **Things are slightly wrong.** A car parked crooked, one garage door open, a shutter half down, a fence plank missing, a tarp on a roof, a faded sign. Repetition with small breaks reads as real; perfect rows read as a kit.
+- **Signs and words.** Shop signs, price signs, street signs, exit signs, painted road arrows and parking lines. Words on things make a place feel like it had a purpose. Our signs should use made-up names, and some should be faded or broken.
+- **Ground wear.** Paths worn into grass where people cut corners, oil stains in parking bays, darker tarmac in the wheel tracks, puddles in low spots, cracks with weeds. Wear shows where people used to go.
+- **Gardens and yards differ.** In the suburbs, each lot has a different mix: flowers, a pool, a swing, a vegetable patch, a boat on a trailer, a dog house. Variety per lot matters more than detail per house.
+- **After the fall, it is the same clutter, left.** The post-apocalyptic pictures work because the everyday clutter is still there, just abandoned: cars where they stopped, doors open, tents, a burned sign, plants on roofs. Ruin reads strongest against normal life, not instead of it.
+
+**Cheap ways:** decal-like quads for stains, puddles and worn paths baked into ground tiles; a small "edge clutter" list the builder scatters along building walls and kerbs (seeded per building so it never changes); one line per pole span for wires; a roof-unit set placed on flat roofs by size; a random "one thing off" per lot (open garage, missing fence plank, tarp).
+
+### 3. What makes nature look alive
+
+- **Colour varies tree to tree.** No forest in the board is one green. Each tree is a slightly different hue and brightness, a few are yellow or orange even in summer, and pines are much darker than broadleaf trees. In autumn the mix gets bold (red, orange, gold among dark pines).
+- **Light passes through.** Painted trees have gaps in the crown where sky shows, and their sunlit edges glow yellow-green while the inside is deep blue-green. A crown that is one solid colour looks like a ball.
+- **Clumps and edges.** Trees grow in groups with bushes at their feet and long grass round the bushes. Forests have an edge: small trees and shrubs where the forest meets a field or road. Single trees stand in the open with space round them.
+- **The ground is never flat green.** Grass has patches of lighter and darker, yellow dry patches, flowers in drifts (not scattered evenly), dirt where it is worn, moss near water and in shade.
+- **Everything moves a little.** Grass bends in waves, leaves shimmer, tall grass on the highway shoulder leans in the wind. Movement is the strongest sign of life, even when it is slight.
+- **Nature takes over the built world.** Weeds in cracks, vines on walls, trees through roofs, grass on old cars. In a post-apocalyptic game this is also the clock: how long since the fall.
+
+**Cheap ways:** per-tree random hue and brightness in the vertex colour (no extra draw cost); a few autumn-coloured trees all year; brighter colour on the top and sun-facing side of each crown, darker underneath; a ground tint map with slow noise for light and dark patches and drift-shaped flower patches; wind sway in the vertex shader for grass and leaves, scaled by a wind value that rises with weather; tall-grass and shrub bands along forest edges, road shoulders and fences; overgrowth level that rises with days survived.
+
+### 4. What makes the water beautiful
+
+- **Depth is colour.** Shallow water is pale turquoise or shows the bottom; deep water is dark blue. The change runs in bands away from the shore. This is the single strongest effect in the toon water, the lighthouse, the shallow sea and the suspension bridge pictures.
+- **Foam marks every edge.** A white line where water meets sand, rings round rocks, posts and wading legs, a white band at the foot of falls and rapids. Foam tells the eye where the water ends and that it is moving.
+- **The sky is in it.** Calm water shows a soft reflection of the sky colour, brighter toward the horizon. Even a fake reflection (the sky colour mixed in at shallow angles) does most of the work.
+- **Light sparkles.** Small bright glints on the surface toward the sun. In paintings it is a few dabs of white.
+- **Water is calm, rivers move.** Lakes and ponds are smooth; rivers have streaks running downstream and white where they hit rocks.
+- **Banks are soft.** Wet dark ground at the edge, then reeds or long grass, then normal ground. Hard edges between water and grass look like a hole in the ground.
+
+**Cheap ways (WebGL 1, phone-safe):** water depth from the terrain height already known at each point, used to blend shallow and deep colour; a foam band where depth is near zero, with a slowly moving noise so it breathes; foam rings round props in water and the player; a Fresnel-style mix toward the sky colour at low view angles; sparkle as a high-power specular toward the sun from a scrolling noise normal; flow streaks along the river direction already stored for waterways; wet-dark ground and reed band along every bank (see "Waterways guide" in the Project).
+
+### 5. Colour and the far view
+
+- **A limited palette per scene.** The best pictures use few colours: the desert painting is sand, sage, faded blue; the night shop is blue-black and orange. The game's seasons and times of day should each have a small, firm palette.
+- **One accent colour.** Yellow taxis and buses in grey streets, a red car on a grey bridge, a yellow kiosk on white. Abandoned vehicles and signs are our accents.
+- **The far view is simple.** Distant towns are blocks of colour, far forests are a single toned mass, mountains are flat shapes paler than the land in front. Detail belongs near the player; far away, shape and colour carry the scene. This is also how the game stays fast.
+
+### Order to try them in (main chat)
+
+Most of these cost little or nothing per frame. In order of effect for the effort:
+
+1. Warmer sun and bluer shade, more time near golden hour; stronger haze toward the horizon colour by day.
+2. Darkened wall feet and ground next to walls (baked).
+3. Per-tree colour variety and lit-top/dark-underside crowns.
+4. Water: depth colour bands, foam edge, sky mix at low angles.
+5. Ground tint patches, flower drifts, worn paths.
+6. Wind sway on grass and leaves.
+7. Edge clutter and roof units from the builder; wires between poles.
+8. Overgrowth that grows with days survived.
+
+Each is checked on the iPhone 11 with the benchmark before it is kept.
+
 ## Set 1: nature, water and mood
 
 | Picture | What it shows | What to take |
