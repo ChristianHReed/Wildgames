@@ -1,6 +1,6 @@
 # Streetscape pack (afterstreet-streetscape)
 
-Reply to the main chat's "Request to content chat: art from the visual reference" (8 November 2026). Built by `node workshop/tools/make_streetscape.js` into `packs/afterstreet-streetscape.js` (about 270 KB, 35 land models, listed in `packs/index.js`). Everything is under 800 triangles; the whole set is about 7,000. Made-up brands only, blank sign panels, no real marks. The pictures were used as a description of the feel, never traced.
+Reply to the main chat's "Request to content chat: art from the visual reference" (8 November 2026). Built by `node workshop/tools/make_streetscape.js` into `packs/afterstreet-streetscape.js` (about 390 KB, 49 land models, listed in `packs/index.js`). Everything is under 800 triangles; the whole set is about 7,000. Made-up brands only, blank sign panels, no real marks. The pictures were used as a description of the feel, never traced.
 
 All models are land models: `SHAPED.land.models.land[<id>]` with an `info` row (w, len, h, note). Origin is the centre of the base, front is +Z, metres, Y up.
 
@@ -31,17 +31,18 @@ No new pole model is needed.
 
 **Batch 2:** `vending_lit` (glowing front, `light` point), `exit_sign_green` (blank, 4.4 m), `billboard_faded` (peeling, no words). Building sections for the builder to stack, all 8 m bays facing +z: `section_shopfront_8` (4 m, glass front, recessed door, shutter box, roof level y = 4), `section_middle_8` (3.2 m, three windows, repeat as needed), `section_cornice_8` (1.4 m, stepped cornice, parapet, roof slab). Stack order: shopfront, middle x N, cornice. `fast_food_building` (16 x 18 m with a made-up brand, drive-through window, pole sign, roof units) and `country_grocery` (porch, green tin roof, water tank, canopy over three old pumps).
 
+**Batch 3:** Ground tiles, all 2 m: `tile_grass_flowers` (place in drifts), `tile_grass_dirt`, `tile_cobble`, `tile_plaza_paving`, `tile_sand_wet` (foam line on the +z edge, toward the water), `tile_dry_pale`. Garden bed growth, five 2 m beds that share a footprint so the game swaps them by days since planting: `crop_stage_1_seeded`, `_2_sprout`, `_3_leafy`, `_4_flowering`, `_5_ripe`. Overgrowth: `wall_vines_4` (wall side z = 0), `roof_grass_tufts` (3 m patch for roofs and old car roofs), `tree_through_roof` (4 m, 8.5 m tall).
+
 ## Already in the game, kept (checked by name)
 
 Power pole, fire hydrant, mailbox, newspaper box, parking meter, dumpster, trash bin (props street); vending machine (businesses, services); air conditioner, water tank, satellite dish, roof hatch, chimney, garage door (props); bus shelter and kiosk (roadside, services); motel (roadside); water tower, lighthouse, wind turbine, billboards (roadside, towers); gantry, guard rail, sandbags (power, props, barriers); puddle (fx, ground); reeds and shrubs (flora, waterside).
 
 ## Not done yet (honest list)
 
-- Ground tiles (flowered grass, mixed grass and dirt, patterned plaza paving, wet sand, dry pale ground): `ground.js` was not opened; next.
-- Tree colour variants, crop growth stages (4 to 5 per crop), overgrowth set (wall vines, roof grass tufts, tree through a roof).
+- Tree colour variants (a note on which tree parts take a per-tree tint, plus a few autumn broadleaf trees). The garden crop stages are one shared bed, not one per crop type.
 - Seasonal and dry palette rows (colours only, no models).
 - Porch and chimney checks on the stock houses; broken (not only faded) sign variants.
-- Crashed airliner with crater, elevated rail section, subway entrance, cheap far wind turbine, armoured survivor vehicles (these need the Workshop chat if the remade logic requires it), tractors and farm machines as parked wrecks.
+- Crashed airliner with crater, elevated rail section, subway entrance, cheap far wind turbine, armoured survivor vehicles (these need the Workshop chat if the remade logic requires it), parked tractor wrecks (the farm pack already has a tractor, hay wagon and flatbed; wreck versions are the open part).
 
 ## Checks
 
