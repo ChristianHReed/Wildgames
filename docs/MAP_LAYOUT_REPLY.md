@@ -10,8 +10,8 @@ Pulled and read the builder-downloads note (0.114.92) too: no conflicts, nothing
 | --- | --- | --- | --- |
 | 1 | Street cross-sections by road class; trees, poles, lamps, mailboxes, benches, bins and meters in their bands | **Done** | 1.24.0 |
 | 2 | Power poles with wire end points | **Done** | 1.24.0 |
-| 3 | Lot fill: driveways for real houses, fences, back-yard items | Next | planned 1.25 |
-| 6 | Roof units on flat roofs | Next, with step 3 | planned 1.25 |
+| 3 | Lot fill: driveways for real houses, fences, back-yard items | **Done** except the "slightly off" detail and four back-yard items with no art yet | 1.25.0 |
+| 6 | Roof units on flat roofs | **Done** | 1.25.0 |
 | 4 | Town rings (height, setback, roof and lot width by distance to the centre) | After | planned 1.26 |
 | 5 | Roadside pattern (parking to the front, kerb cuts, pole sign, service side) | After | planned 1.26 |
 | 7 | One tall landmark per square | After | planned 1.26 |
@@ -59,3 +59,24 @@ Nothing is added within 7 m (trees), 12 m (lamps), 24 m (poles) or 14 m (mailbox
 - Classes are judged from the buildings in the data. In the Springfield test map most buildings near streets are made-up homes with a fixed setback, so most streets come out `suburb`; the town rings (step 4) will give the made-up homes a setback by the ring and the classes will follow.
 - The builder's 3D view draws only the props within about 260 m of the camera (a built street carries tens of thousands).
 - Not placed yet: tall grass on rural shoulders, trees on rural roads, hydrants, bus stops, signs (the game places its own).
+
+## 1.25.0: lot fill and roofs (steps 3 and 6)
+
+New pass `builder/lots.js`, run after the street pass (same "Dress the streets" option). For every house, real or made-up, it finds the quietest road within 35 m (within 12 m of the nearest one) and works in the house's own frame: front toward that road.
+
+| Item | Data | Rule |
+| --- | --- | --- |
+| Driveway | way `highway=service`, `service=driveway`, `asmb:lot=yes` | From the road edge to the front wall at one side of the house; skipped if the map already has a driveway within 14 m of the house or the front lawn is under 4 m; the quiet street on a corner lot |
+| Side and back fences, hedges | way `barrier=fence` + `fence_type=wood` (1.8 m) or `chain_link` (1.5 m), or `barrier=hedge` (1.5 m); `asmb:lot=yes` | About 85% of lots have a back line and two side lines (wood 42%, hedge 25%, chain link 15%, none 15%). Broken wherever a building, road or neighbour's fence is in the way, so fences stop at gaps |
+| Front fence | way `barrier=fence`, `fence_type=picket` (1.0 m) | Only on streets classed `town`, 40% of lots |
+| Shed | way `building=shed`, `asmb:lot=yes` | A small box in the back yard, about 1 lot in 7 |
+| Swimming pool | way `leisure=swimming_pool` | 4 x 8 m, only when the back yard is deep and wide, about 1 lot in 25 |
+| Back-yard props | `asmb:prop` with `asmb:band=yard` | One or two per lot from `garden.garden_plot`, `garden.rain_barrel`, `build.compost_bin`, `build.drying_rack`, `plants.bush` |
+| Roof units | `asmb:prop` with `asmb:band=roof` and **`asmb:z`** = metres above the ground the unit stands at | Flat roofs (shops, offices, industrial, apartments, anything with `roof:shape=flat`): one unit per about 140 m2, up to 8, from `street.ac_unit` (half), `street.roof_hatch`, `street.satellite_dish`, and one `street.water_tank` on roofs 9 m or higher; positioned inside the footprint |
+| Chimney and dish | same, on pitched house roofs | 22% of houses a `street.chimney` (z = eave height + 1 m), 12% a `street.satellite_dish` |
+
+**New: `asmb:z`.** Props on roofs carry `asmb:z`, the height in metres above the ground at that point (the building's `height`, or levels x 3.2 m). The game should lift the prop by that much; the builder's 3D view does. Chimney and dish heights are for a typical pitched roof; the game may place them on its real roof surface instead.
+
+**Needs from the game:** pass `barrier`, `fence_type`, `service`, `leisure`, `height` and `asmb:lot` through `keepTags` so the fence, driveway and pool ways survive; draw fences by tiling `street.picket_fence`/`chainlink_fence` (and a hedge from `plants.bush`) along the way; honour `asmb:z`. The builder's own 3D view does not draw fences, hedges or pools yet.
+
+**Not done / art gaps:** the "slightly off" detail (open garage, missing plank, tarp on the roof) has no art yet; swing, trampoline, boat on a trailer and wood pile have no art yet (content chat), so back yards use the five props above. Lots are boxes around the house, not real lot lines, so they can overlap oddly on irregular blocks.

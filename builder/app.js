@@ -2,7 +2,7 @@
    Classic script. The heavy work runs in the background worker (worker.js); this file only drives the page. */
 (function(){
 'use strict';
-var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'uses', 'streets', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
+var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'uses', 'streets', 'lots', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
 var $ = function(id){ return document.getElementById(id); };
 var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]; }); };
 var fmtN = function(n){ return Math.round(n).toLocaleString('en-US'); };

@@ -280,6 +280,7 @@ L.runBuild = async function(job, post, stop){
   /* 3. gaps */
   if (job.opts.fill){ say(0.5, 'Filling gaps in the data with marked made-up homes and farms'); stats.fill = L.fillGaps(F, loc, 6000); }
   if (job.opts.dress !== false && L.streets){ say(0.52, 'Dressing the streets: kerbs, verges, trees, poles, lamps and mailboxes'); stats.dress = L.streets(F, loc); }
+  if (job.opts.dress !== false && L.lots){ say(0.56, 'Filling the lots: driveways, fences, back yards and roof units'); stats.lots = L.lots(F, loc); }
   /* 4. squares */
   say(0.55, 'Cutting the map into squares');
   var S = L.cutSquares(R, F);
