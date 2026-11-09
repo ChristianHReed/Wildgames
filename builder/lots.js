@@ -21,8 +21,8 @@
     var round6 = function(v){ return Math.round(v*1e6)/1e6; };
 
     L.lots = function(F, loc){
-      var out = {houses:0, drives:0, fences:0, fenceKm:0, sheds:0, pools:0, yardItems:0, roofUnits:0, chimneys:0, dishes:0};
-      var CELL = 40, bl = [], bgrid = new Map(), segs = [], drv = new Map(), fg = new Map(), existing = new Map();
+      var out = {shops:0, parking:0, kerbCuts:0, signs:0, dumpsters:0, serviceFences:0, houses:0, drives:0, fences:0, fenceKm:0, sheds:0, pools:0, yardItems:0, roofUnits:0, chimneys:0, dishes:0};
+      var CELL = 40, bl = [], bgrid = new Map(), segs = [], drv = new Map(), pk = new Map(), fg = new Map(), existing = new Map();
       var key = function(x, y, c){ return Math.floor(x/c) + ',' + Math.floor(y/c); };
       var put = function(m, x, y, c, v){ var k = key(x, y, c), l = m.get(k); if (!l) m.set(k, l = []); l.push(v); };
       var each = function(m, x, y, c, r, fn){ var gx = Math.floor(x/c), gy = Math.floor(y/c), n = Math.ceil(r/c), i, j, l, k; for (i = gx - n; i <= gx + n; i++) for (j = gy - n; j <= gy + n; j++){ l = m.get(i + ',' + j); if (l) for (k = 0; k < l.length; k++) if (fn(l[k])) return true; } return false; };
@@ -31,6 +31,7 @@
       /* ---- buildings: oriented boxes, and the roads ---- */
       F.ways.forEach(function(w, wi){
         var t = w.t;
+        if (w.poly && t.amenity === 'parking'){ var pxs = 0, pys = 0, pn = 0; for (var pi = 0; pi + 1 < w.c.length; pi += 2){ var pp = loc.m(w.c[pi], w.c[pi + 1]); pxs += pp[0]; pys += pp[1]; pn++; } if (pn) put(pk, pxs/pn, pys/pn, CELL, 1); return; }
         if (w.poly && t.building){
           var m = new Array(w.c.length), i;
           for (i = 0; i < w.c.length; i += 2){ var p = loc.m(w.c[i], w.c[i + 1]); m[i] = p[0]; m[i + 1] = p[1]; }
@@ -61,7 +62,7 @@
       var yawOf = function(fx, fy){ return Math.atan2(fx, fy)*180/Math.PI; };
       var heightOf = function(t){ var h = parseFloat(t.height); if (h > 0) return h; var lv = parseInt(t['building:levels'], 10); return (lv > 0 ? lv : 1)*3.2; };
 
-      var CAP = 90000, nH = 0;
+      var CAP = 90000, nH = 0, nCom = 0;
       bl.forEach(function(b){
         var t = b.t, ar = b.a, seedA = Math.round(b.x), seedB = Math.round(b.y);
         var comm = !!(t.shop || t.office || t.amenity || FLAT[t.building]);
@@ -83,6 +84,54 @@
         } else if (house){
           if (h3(seedA, seedB, 76) < 0.22){ var a2 = (h3(seedA, seedB, 77) - 0.5)*b.hu*0.8, px2 = b.x + b.ux*a2, py2 = b.y + b.uy*a2; prop('street.chimney', px2, py2, 0, 'roof', h + 1); out.chimneys++; }
           else if (h3(seedA, seedB, 78) < 0.12){ prop('street.satellite_dish', b.x + b.ux*b.hu*0.4, b.y + b.uy*b.hu*0.4, Math.round(h3(seedA, seedB, 79)*360), 'roof', h + 0.6); out.dishes++; }
+        }
+        /* ---- shops, fuel, food and motels on a lot: parking between the building and the road, two kerb cuts, a sign, a service side ---- */
+        var SKIP = {parking:1, school:1, university:1, hospital:1, place_of_worship:1, college:1, kindergarten:1, townhall:1, police:1, fire_station:1, library:1, grave_yard:1};
+        var shopLike = (t.shop || t.amenity || t.tourism === 'motel' || t.tourism === 'hotel' || t.building === 'retail' || t.building === 'commercial' || t.building === 'supermarket') && !SKIP[t.amenity] && t.building !== 'shed';
+        if (shopLike && ar >= 120 && ar <= 9000 && nCom < 40000){
+          var rs0 = nearRoad(b.x, b.y, 70 + b.r);
+          if (rs0.length){
+            var d00 = Infinity; rs0.forEach(function(r){ if (r.d < d00) d00 = r.d; }); rs0 = rs0.filter(function(r){ return r.d <= d00 + 10 && RANK[r.s[5]] >= 1; });
+            if (rs0.length){
+              rs0.sort(function(p, q){ return p.d - q.d; });
+              var c0 = rs0[0], cs = c0.s, cex = cs[2] - cs[0], cey = cs[3] - cs[1], cel = Math.hypot(cex, cey) || 1, ct = Math.max(0, Math.min(1, ((b.x - cs[0])*cex + (b.y - cs[1])*cey)/(cel*cel)));
+              var ctx = cs[0] + cex*ct - b.x, cty = cs[1] + cey*ct - b.y, ctl = Math.hypot(ctx, cty) || 1; ctx /= ctl; cty /= ctl;
+              var cdu = ctx*b.ux + cty*b.uy, cdv = -ctx*b.uy + cty*b.ux, cfx, cfy, cfh, cgh;
+              if (Math.abs(cdu) >= Math.abs(cdv)){ var q1 = cdu >= 0 ? 1 : -1; cfx = b.ux*q1; cfy = b.uy*q1; cfh = b.hu; cgh = b.hv; } else { var q2 = cdv >= 0 ? 1 : -1; cfx = -b.uy*q2; cfy = b.ux*q2; cfh = b.hv; cgh = b.hu; }
+              var cgx = -cfy, cgy = cfx, gap = c0.d - cs[4] - cfh, parkD = Math.min(gap - 3.5, 26);
+              var hasPark = each(pk, b.x + cfx*(cfh + 8), b.y + cfy*(cfh + 8), CELL, 40, function(){ return true; });
+              if (gap >= 8 && parkD >= 7 && !hasPark){
+                var pw = Math.min(cgh*2 + 6, 90), pcx = b.x + cfx*(cfh + 1 + parkD/2), pcy = b.y + cfy*(cfh + 1 + parkD/2), okp = true;
+                [[-1, -1], [1, -1], [1, 1], [-1, 1], [0, 0]].forEach(function(cn){ var qx = pcx + cgx*cn[0]*pw/2 + cfx*cn[1]*parkD/2, qy = pcy + cgy*cn[0]*pw/2 + cfy*cn[1]*parkD/2; if (inAny(qx, qy, 0.5, b) || !clearOfRoads(qx, qy, 1)) okp = false; });
+                if (okp){
+                  var rect = []; [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function(cn){ rect.push(pcx + cgx*cn[0]*pw/2 + cfx*cn[1]*parkD/2, pcy + cgy*cn[0]*pw/2 + cfy*cn[1]*parkD/2); }); rect.push(rect[0], rect[1]);
+                  var pt = {amenity:'parking', parking:'surface', 'parking:orientation':'perpendicular', capacity:String(Math.max(6, Math.round(pw*parkD/25))), 'asmb:bays':'yes', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'};
+                  wayOut(pt, rect, true); out.parking++; put(pk, pcx, pcy, CELL, 1); out.shops++;
+                  /* two kerb cuts from the road edge to the front of the parking, and a pole sign by one of them */
+                  var yawC = yawOf(cfx, cfy), sgn2 = h3(Math.round(b.x), Math.round(b.y), 97) < 0.5 ? 1 : -1;
+                  [-1, 1].forEach(function(sg){
+                    var lat = sg*(pw/2 - 3.2), qx2 = pcx + cgx*lat + cfx*parkD/2, qy2 = pcy + cgy*lat + cfy*parkD/2, rr3 = nearRoad(qx2, qy2, 30); rr3.sort(function(p, q){ return p.d - q.d; }); if (!rr3.length) return;
+                    var s3 = rr3[0].s, e3x = s3[2] - s3[0], e3y = s3[3] - s3[1], e3l = Math.hypot(e3x, e3y) || 1, t3 = Math.max(0, Math.min(1, ((qx2 - s3[0])*e3x + (qy2 - s3[1])*e3y)/(e3l*e3l))), p3x = s3[0] + e3x*t3, p3y = s3[1] + e3y*t3, d3x = qx2 - p3x, d3y = qy2 - p3y, d3l = Math.hypot(d3x, d3y) || 1;
+                    if (d3l - s3[4] < 1.5 || d3l - s3[4] > 14) return;
+                    var tg = {}; for (var kk in T.drive) tg[kk] = T.drive[kk]; tg['asmb:kerbcut'] = 'yes'; tg.width = '7';
+                    wayOut(tg, [p3x + d3x/d3l*(s3[4] + 0.3), p3y + d3y/d3l*(s3[4] + 0.3), qx2, qy2]); out.kerbCuts++;
+                    if (sg === sgn2){ prop('street.hanging_sign', qx2 + cgx*sg*2.5 - cfx*1.5, qy2 + cgy*sg*2.5 - cfy*1.5, yawC, 'sign'); out.signs++; }
+                  });
+                }
+              }
+              /* the service side at the back: a dumpster or two and a chain-link fence round the rear */
+              var bkx = b.x - cfx*(cfh + 3.5) + cgx*cgh*0.5, bky = b.y - cfy*(cfh + 3.5) + cgy*cgh*0.5;
+              if (!inAny(bkx, bky, 0.8, b) && clearOfRoads(bkx, bky, 2)){
+                prop('street.dumpster', bkx, bky, yawOf(cfx, cfy) + 180, 'service'); out.dumpsters++;
+                if (h3(Math.round(b.x), Math.round(b.y), 98) < 0.5 && !inAny(bkx - cgx*3, bky - cgy*3, 0.8, b)){ prop('street.dumpster', bkx - cgx*3, bky - cgy*3, yawOf(cfx, cfy) + 180, 'service'); out.dumpsters++; }
+              }
+              var fhs = cgh + 4, fbk = cfh + 9, fpts = [b.x + cgx*(-fhs), b.y + cgy*(-fhs), 0, 0], ok2 = true, loop = [[-fhs, 0], [-fhs, -fbk], [fhs, -fbk], [fhs, 0]], pts2 = [];
+              loop.forEach(function(q){ pts2.push(b.x + cgx*q[0] + cfx*q[1], b.y + cgy*q[0] + cfy*q[1]); });
+              for (var z = 0; z < 8 && ok2; z += 2){ var mx = pts2[z], my = pts2[z + 1]; if (inAny(mx, my, 0.5, b) || !clearOfRoads(mx, my, 1.5)) ok2 = false; }
+              if (ok2 && h3(Math.round(b.x), Math.round(b.y), 99) < 0.75){ wayOut(T.chain, pts2); out.serviceFences++; }
+              nCom++;
+            }
+          }
         }
         if (!house || nH >= CAP) return;
         nH++;
