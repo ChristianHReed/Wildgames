@@ -121,6 +121,7 @@ $('fOvt').addEventListener('change', function(){ S.overture = S.overture.concat(
 function ovtUI(){ var c = $('cOvt'); c.classList.toggle('ok', S.overture.length > 0); $('stOvt').innerHTML = S.overture.length ? '<b>Ready:</b> ' + S.overture.map(function(f){ return esc(f.name) + ' (' + fmtMB(f.size) + ')'; }).join(', ') + ' <a href="#" id="ovtClr">clear</a>' : 'No files yet.'; var cl = $('ovtClr'); if (cl) cl.onclick = function(e){ e.preventDefault(); S.overture = []; ovtUI(); }; }
 $('optFill').addEventListener('change', function(){ S.opts.fill = this.checked; saveState(); });
 $('optDress').addEventListener('change', function(){ S.opts.dress = this.checked; saveState(); });
+$('optLight').addEventListener('change', function(){ S.opts.light = this.checked; saveState(); });
 $('optStep').addEventListener('change', function(){ S.opts.step = +this.value; saveState(); });
 
 /* ---------------- build ---------------- */
@@ -131,7 +132,7 @@ $('build').addEventListener('click', function(){
   if (S.osm.kind === 'download' && !navigator.onLine){ toast('Downloading needs an internet connection.'); return; }
   S.proj = S.proj || slug(S.area.name) + '-' + Date.now().toString(36); saveState();
   var job = {proj:S.proj, area:{id:S.proj, name:S.area.name || 'My map', lat:S.area.lat, lon:S.area.lon, miles:S.area.miles}, osm:{kind:S.osm.kind, file:S.osm.file || null, name:S.osm.name},
-    tiffs:S.tiffs.slice(), overture:S.overture.slice(), opts:{light:DEV.kind !== 'computer', fill:S.opts.fill, dress:S.opts.dress !== false, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
+    tiffs:S.tiffs.slice(), overture:S.overture.slice(), opts:{light:S.opts.light !== undefined ? !!S.opts.light : DEV.kind !== 'computer', fill:S.opts.fill, dress:S.opts.dress !== false, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
   S.building = true; S.t0 = Date.now(); $('build').disabled = true; $('stop').classList.remove('hidden'); $('barI').style.width = '0%'; $('stage').textContent = 'Starting...';
   W.post({t:'build', job:job});
 });
@@ -406,7 +407,7 @@ cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 cv.addEventListener('wheel', function(e){ e.preventDefault(); var m0 = toM(e.offsetX, e.offsetY); V.s = Math.max(0.0005, Math.min(20, V.s*Math.pow(1.0015, -e.deltaY))); var m1 = toM(e.offsetX, e.offsetY); V.x += m0[0] - m1[0]; V.y += m0[1] - m1[1]; drawSoon(); }, {passive:false});
 
 /* ---------------- start: restore the last map (autosaved on this device) ---------------- */
-areaUI(); setOsm(null); ovtUI(); $('optFill').checked = S.opts.fill; $('optDress').checked = S.opts.dress !== false; $('optStep').value = String(S.opts.step); resize(); fitArea();
+areaUI(); setOsm(null); ovtUI(); $('optFill').checked = S.opts.fill; $('optDress').checked = S.opts.dress !== false; $('optLight').checked = S.opts.light !== undefined ? !!S.opts.light : DEV.kind !== 'computer'; $('optStep').value = String(S.opts.step); resize(); fitArea();
 if (S.proj){
   Promise.all([L.dbGet('projects', S.proj), L.dbGet('preview', S.proj)]).then(function(r){
     if (!r[0] || !r[0].man) return; S.man = r[0].man; S.single = r[0].single || null;

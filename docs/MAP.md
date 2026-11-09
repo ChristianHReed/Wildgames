@@ -172,3 +172,23 @@ OpenStreetMap gives the road line and class but not what is beside it. `builder/
 ## Lots and roofs (1.25.0)
 
 `builder/lots.js` gives each house the things the map never says. It takes the quietest road within reach as the front, draws a driveway to the front wall (unless one is mapped), marks the side and back lot lines with a wooden or chain-link fence or a hedge (a short picket fence at the front on town streets), and puts one or two things in the back yard: a shed, now and then a pool, a vegetable bed, a rain barrel, a compost bin, a drying rack or a bush. Fences stop where a building, road or neighbour's fence is in the way, so a block ends up as two rows of lots with yards between. Flat roofs get air-conditioner boxes, hatches, dishes and sometimes a water tank, counted by roof size; pitched roofs only now and then a chimney or a dish. Roof props carry `asmb:z`, their height above the ground. Everything is seeded by the house's position and marked made-up; mapped fences, hedges and driveways win. See `docs/MAP_LAYOUT_REPLY.md`.
+
+## Roadside pattern, rings and landmarks (1.26.0 and 1.27.0)
+
+Shops, fuel stations, restaurants and motels set back from the road with no mapped parking get a surface car park (`amenity=parking`, `capacity`, `asmb:bays=yes`), two kerb cuts (`asmb:kerbcut=yes`), a pole sign by one cut and a service side at the back (dumpsters, chain-link fence). Made-up homes and shops follow **rings** around the densest part of town: core (under 450 m) wall to wall and tall, inner (under 1,100 m) narrow lots, outer wide lots set back with big-box shops behind car parks (`building:levels`, `roof:shape`, `asmb:ring`). Every 1 km cell gets one tall landmark: a mapped one counts, otherwise a `man_made=water_tower` is added (`asmb:landmark=yes`). The core and inner ring rules are untested on a real city build (the test map has none of those made-up homes).
+
+## Green edges (1.28.0)
+
+Tree runs along streams, rivers and country roads, reeds and cattails round ponds and banks, a band of tall grass, shrubs, young trees, logs and stumps round woods, and fields given `asmb:crop` and `asmb:shade` with hedges, wire or split-rail fences and some tree rows. Real trees keep their place; new ones stay 5 m clear of everything. Woods and fields have been checked on a made-up area only (the Springfield sample has none).
+
+## Abandoned traffic, camps and farms (1.29.0 to 1.32.0)
+
+Cars in driveways, on kerbs and nose-in at shops; jams on the main roads 500 m to 3 km out of town; box trucks, semis and trailers at docks; fire engines, police cars and ambulances at their stations; buses at bus stops; boat trailers in 7% of driveways; combines and tractors in big fields; quarantine camps in parks (tents, barrels, barriers, floodlight, toilets, tape, ambulance); roadblocks where a main road leaves town 1.6 km from the centre. All are `asmb:prop` points (`vehicles.*`, `land.*`) with an `asmb:band` of `drive`, `kerb`, `lot`, `jam`, `dock`, `stop`, `camp` or `roadblock`; some are wrecks or burnt out, and one jam car in five has `asmb:door_open=yes`. A complete **farm** (house, barn, silos, bin, bales, pen, windmill, tractor, drive, `landuse=farmyard`) goes at the road corner of big fields. Park centres get a fountain, bandstand, statue or memorial. One lot in nine has a "slightly off" detail (roof tarp, open garage door). Walls and fences use the game's kinds (wood, picket, chain, wire, split_rail, hedge, wall). The 3D view draws `land.*` models but not fences, pools or water towers.
+
+## Landscape data (1.33.0)
+
+Beside the cuts and fills (`bank`) and creek bends (`bend`) already in `structures`, each square now has `sink` (closed hollows from the ground heights: depth `h`, size `s`, at most 150) and `stand` (tree stand type for each wood, scrub or orchard polygon: broadleaf, conifer, mixed, scrub or orchard, from mapped `leaf_type`/`genus` or a seeded pick). No geology source is loaded, so sinkholes are the ground reading only.
+
+## Phones and tablets (1.33.3 and 1.33.4)
+
+A phone or tablet tab cannot hold what a big city makes. On those devices (and when "Light build" is ticked) the made-up detail is thinned to a budget of about 150,000 pieces: `F.keep` = 150,000 / (buildings x 7), never below 10%. Trees, cars and yard pieces are kept by a fixed hash of their place; fences by the same share (never below 20%); sheds and pools by its square root. Poles, lamps, parking, shops and real map data are never thinned. Measured on Saint Louis, 5 miles: full build 275 MB (squares 17 to 43 MB), phone budget 152 MB (13 to 21.6 MB). The builder also rejects a Parquet file picked as OpenStreetMap data (1.33.1) and says what the OpenStreetMap file holds when the area is empty (1.33.2).
