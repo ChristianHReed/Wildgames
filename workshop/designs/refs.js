@@ -256,6 +256,51 @@ var Q = {
     extra:function(b, c){ var W = '#8a5a34'; H_wall(b, c.hw, c.hw + 0.02, c.bb + 0.18, c.belt - 0.1, c.B + 0.2, c.cabF - 0.05, {c:W, m:'wood', mx:true, name:'wood panel'}, c.ops); }},
   van_remade: {name:'Van (remade)', cls:'van', kind:'van', F:2.45, B:-2.45, hw:1.0, belt:1.1, roof:2.2, cabF:1.15, cabB:0.0, floor:0.62, fz:1.5, rz:-1.5, r:0.43, alpha:36, drop:0.3, inside:'van', paint:['#dcdcd2', '#7a7e84', '#8a8a86'], top:50}
 };
+/* Survivor armour for the rare-find versions of the stock vehicles: welded scrap plates over the side glass (a slit left to see out),
+   a bar cage over the windscreen, a ram bumper with forward spikes, side spikes, a roof plate with spikes and a rear plate. Each plate is a
+   slightly different colour because it was scavenged from something else. `o`: alpha (windscreen rake), z0/z1 (side window span), ram, ratchet. */
+function armour(o){
+  var PL = ['#5b5750', '#6a5f52', '#4a4a48', '#7a5230'], DKP = '#33312d', RUST = '#8a4a22';
+  return function(b, c){
+    var hw = c.hw, belt = c.belt, roof = c.roof, F = c.F, B = c.B, bb = c.bb, al = o.alpha, A = al*Math.PI/180;
+    var z0 = o.z0 != null ? o.z0 : c.cb + 0.2, z1 = o.z1 != null ? o.z1 : c.cabF - 0.15, st = {m:'steel', mx:true};
+    var pa = function(k){ return Object.assign({c:PL[k % PL.length], name:'armour plate'}, st); };
+    /* side plates over the door glass, a slit between lower and upper */
+    var zm = (z0 + z1)/2;
+    b.box([hw, belt + 0.04, z0], [hw + 0.06, belt + 0.4, z1], pa(0));
+    b.box([hw, belt + 0.52, z0], [hw + 0.06, roof - 0.12, zm], pa(1));
+    b.box([hw, belt + 0.52, zm + 0.02], [hw + 0.06, roof - 0.12, z1], pa(3));
+    /* a patch of bare rust on one plate and a dark brace across the join */
+    b.box([hw + 0.055, belt + 0.1, z0 + 0.1], [hw + 0.075, belt + 0.3, zm - 0.1], Object.assign({c:RUST, name:'rust patch'}, st));
+    b.box([hw + 0.055, belt + 0.4, z0], [hw + 0.08, belt + 0.52, z1], Object.assign({c:DKP, name:'slit frame'}, st));
+    /* windscreen cage: three uprights and two cross bars standing off the glass */
+    var wy0 = belt + 0.08, wy1 = roof - 0.08, wh = wy1 - wy0, dz = wh*Math.tan(A), wl = wh/Math.cos(A), zb0 = c.cabF + 0.04, wxw = hw - 0.12;
+    [-wxw*0.66, 0, wxw*0.66].forEach(function(x){ b.block('box', [x, (wy0 + wy1)/2, zb0 - dz/2 + 0.1], [0.05, wl, 0.05], {c:DKP, m:'steel', rot:[-al, 0, 0], name:'cage upright'}); });
+    [0.25, 0.7].forEach(function(t){ b.box([-wxw, wy0 + wh*t - 0.03, zb0 - dz*t + 0.08], [wxw, wy0 + wh*t + 0.03, zb0 - dz*t + 0.13], {c:DKP, m:'steel', name:'cage bar'}); });
+    /* ram bumper and grille guard, with forward spikes */
+    b.box([-hw - 0.06, bb - 0.02, F - 0.02], [hw + 0.06, bb + 0.46, F + 0.2], {c:DKP, m:'steel', name:'ram bumper'});
+    b.box([-hw + 0.1, bb + 0.46, F + 0.04], [hw - 0.1, bb + 0.54, F + 0.14], {c:PL[1], m:'steel', name:'ram top bar'});
+    [-0.6, -0.3, 0, 0.3, 0.6].forEach(function(x){ b.block('cone', [x*hw/0.6*0.85, bb + 0.22, F + 0.2 + 0.18], [0.12, 0.12, 0.36], {c:'#b8b2a4', m:'steel', ax:'z', name:'front spike'}); });
+    /* side spikes low on the body, pointing out */
+    [B + 0.8, (c.cabF + B)/2, c.cabF - 0.2].forEach(function(z){ b.block('cone', [hw + 0.1, bb + 0.28, z], [0.3, 0.1, 0.1], {c:'#b8b2a4', m:'steel', ax:'x', mx:true, name:'side spike'}); });
+    /* roof plate with four spikes up */
+    b.box([-hw + 0.1, roof, z0 + 0.1], [hw - 0.1, roof + 0.07, z1 - 0.05], {c:PL[2], m:'steel', name:'roof plate'});
+    [[-0.45, z0 + 0.3], [0.45, z0 + 0.3], [-0.45, z1 - 0.25], [0.45, z1 - 0.25]].forEach(function(p){ b.block('cone', [p[0], roof + 0.07 + 0.14, p[1]], [0.1, 0.28, 0.1], {c:'#b8b2a4', m:'steel', ax:'y', name:'roof spike'}); });
+    /* rear plate and bar */
+    b.box([-hw + 0.1, belt - 0.5, B - 0.06], [hw - 0.1, belt + 0.25, B + 0.02], {c:PL[3], m:'steel', name:'rear plate'});
+    b.box([-hw - 0.04, bb, B - 0.18], [hw + 0.04, bb + 0.2, B - 0.04], {c:DKP, m:'steel', name:'rear bar'});
+    if (o.more) o.more(b, c, {PL:PL, DKP:DKP});
+  };
+}
+Q.pickup_armoured = Object.assign({}, Q.crew_pickup_remade, {name:'Pickup (armoured)', paint:['#6a6a62', '#33312d', '#8a4a22'], top:50, author:'AfterStreet content', notes:'A rare survivor build of the crew pickup: scrap plates over the side glass with a slit, a bar cage over the windscreen, a ram bumper with spikes. Slower than stock.',
+  extra:armour({alpha:30, z0:-1.0, z1:0.85, more:function(b, c, k){ /* bed cage: bars over the open bed */
+    [-0.7, 0, 0.7].forEach(function(x){ b.box([x - 0.025, c.belt + 0.1, c.B + 0.1], [x + 0.025, c.belt + 0.62, c.B + 0.16], {c:k.DKP, m:'steel', name:'bed cage post'}); });
+    b.box([-c.hw + 0.1, c.belt + 0.58, c.B + 0.1], [c.hw - 0.1, c.belt + 0.64, c.B + 0.16], {c:k.DKP, m:'steel', name:'bed cage bar'});
+  }})});
+Q.offroader_armoured = Object.assign({}, Q.offroader_remade, {name:'Off-roader (armoured)', paint:['#7a5a2e', '#33312d', '#8a8a86'], top:45, author:'AfterStreet content', notes:'A rare survivor build of the off-roader: welded plates, cage, ram bumper and spikes.',
+  extra:armour({alpha:26, z0:-1.2, z1:0.55})});
+Q.van_armoured = Object.assign({}, Q.van_remade, {name:'Van (armoured)', paint:['#7a7e84', '#33312d', '#8a4a22'], top:40, author:'AfterStreet content', notes:'A rare survivor build of the van: cab plated up, cage, ram bumper and spikes. Cargo room unchanged.',
+  extra:armour({alpha:36, z0:0.05, z1:1.0})});
 function fireEngine(WSB, id, nm){
   var b = WSB.create({id:id || 'fire_engine_city', name:nm || 'Fire engine (city)', domain:'land', cls:'truck', paint:{paint1:'#c4302a', paint2:'#6b7078', paint3:'#ecece6'}, topSpeed:65, tank:'large'});
   b.wheels(0.6, 0.3); wheelLook(b, 0.6, 0.3); b.axle(2.7, {steer:true, track:1.1, name:'front axle'}); b.axle(-2.4, {driven:true, track:1.1, name:'rear axle'});
