@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.26.0';
+L.VERSION = '1.27.0';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp', 'waterway', 'bridge:support'];
@@ -288,6 +288,9 @@ L.fillGaps = function(R, loc, centreR){
   if (!nSeg) sIdx.add(-1e9, -1e9, -1e9, -1e9); sIdx.finish();
   function occAdd(x, y, r){ var k = gkey(x, y); if (!occ.has(k)) occ.set(k, []); occ.get(k).push([x, y, r]); }
   function town(x, y){ var i = Math.floor(x/250), j = Math.floor(y/250), s = 0; for (var a = -1; a <= 1; a++) for (var b2 = -1; b2 <= 1; b2++) s += den.get((i + a) + ',' + (j + b2)) || 0; return s/9; }
+  /* the town centre is where the road density is highest, not the middle of the region; rings are measured from it (0 core, 1 inner, 2 outer) */
+  var cenX = 0, cenY = 0, cenV = -1; den.forEach(function(v, k){ var q = k.split(','), x0 = (+q[0] + 0.5)*250, y0 = (+q[1] + 0.5)*250, tv = town(x0, y0); if (tv > cenV){ cenV = tv; cenX = x0; cenY = y0; } });
+  function ringAt(x, y){ var d = Math.hypot(x - cenX, y - cenY); return d < 450 ? 0 : d < 1100 ? 1 : 2; }
   function homes(x, y){ var i = Math.floor(x/250), j = Math.floor(y/250), s = 0; for (var a = -1; a <= 1; a++) for (var b2 = -1; b2 <= 1; b2++) s += bden.get((i + a) + ',' + (j + b2)) || 0; return s; }
   function landAt(x, y){ if (!polys.length) return 0; var list = pIdx.search(x, y, x, y), best = 0; for (var i = 0; i < list.length; i++){ var p = polys[list[i]]; if (L.pip(p.m, x, y)){ if (p.kind === 1) return 1; best = Math.max(best, p.kind); } } return best; }
   function roadClear(x, y, extra){ if (!nSeg) return true; var r = 11 + extra, l = sIdx.search(x - r, y - r, x + r, y + r); for (var i = 0; i < l.length; i++){ var o = l[i]*5; if (L.segDist(x, y, segs[o], segs[o + 1], segs[o + 2], segs[o + 3]) < segs[o + 4] + extra) return false; } return true; }
@@ -314,16 +317,18 @@ L.fillGaps = function(R, loc, centreR){
         if (hw !== 'primary' && lu !== 1 && (tn > 450 || lu === 2)){
           /* lot by lot: a home on every empty lot along a town street. Real buildings always win: a lot is used only when nothing stands
              within a lot's width of it, so a fully mapped street gets nothing and a half-mapped one gets only its missing homes */
-          var dense = homes(x, y) >= 3;
+          var dense = homes(x, y) >= 3, rg0 = ringAt(x, y);
           for (var sd = -1; sd <= 1; sd += 2){
-            var shop = (hw === 'secondary' || hw === 'tertiary' || lu === 3) && h3(ri, k, ti, sd) < (lu === 3 ? 0.7 : 0.25);
-            var w = shop ? 24 + h3(ri, k, ti, 3)*14 : 10 + h3(ri, k, ti, 3)*5, d = shop ? 18 + h3(ri, k, ti, 4)*10 : 8 + h3(ri, k, ti, 4)*4;
-            var off = rw + (shop ? 14 : 6.5) + d/2, cx = x + vx*off*sd, cy = y + vy*off*sd;
+            var rg = ringAt(x, y), art = hw === 'secondary' || hw === 'tertiary';
+            var shop = (art || lu === 3) && h3(ri, k, ti, sd) < (lu === 3 ? 0.7 : rg === 0 ? 0.6 : rg === 1 ? 0.3 : 0.2);
+            /* by ring: the core is wall to wall, tall and flat-roofed; inner streets have narrow lots close to the road; outer ones wide lots set back; shops out on the roads are big boxes behind car parks */
+            var strip = shop && rg === 2, w = shop ? (rg === 2 ? 24 : 12) + h3(ri, k, ti, 3)*(rg === 2 ? 14 : 8) : (rg === 1 ? 8 : rg === 0 ? 7 : 12) + h3(ri, k, ti, 3)*(rg === 2 ? 5 : 3), d = shop ? (rg === 2 ? 18 : 14) + h3(ri, k, ti, 4)*10 : 8 + h3(ri, k, ti, 4)*4;
+            var off = rw + (strip ? 14 : shop ? 2.5 : rg === 2 ? 9 : rg === 1 ? 4.5 : 3.5) + d/2, cx = x + vx*off*sd, cy = y + vy*off*sd;
             if (landAt(cx, cy) === 1 || h3(ri, k, ti, sd, 5) > 0.9) continue;
             var fp = rect(cx, cy, ux, uy, w, d);
-            if (fits(fp, 2) && free(cx, cy, Math.hypot(w, d)/2, dense ? 8 : 2.5)){ put(fp, shop ? {building:'retail'} : {building:'house', 'building:levels':h3(ri, k, ti, 6) < 0.25 ? '2' : '1'}); nGap++; }
+            if (fits(fp, 2) && free(cx, cy, Math.hypot(w, d)/2, rg === 0 ? 0.6 : dense ? 4 : 2.5)){ var lv = shop ? (rg === 0 ? 2 + Math.floor(h3(ri, k, ti, 6)*3) : rg === 1 ? 2 : 1) : (rg === 2 ? (h3(ri, k, ti, 6) < 0.12 ? 2 : 1) : (h3(ri, k, ti, 6) < 0.55 ? 2 : 1)); put(fp, shop ? {building:'retail', 'building:levels':String(lv), 'roof:shape':strip || rg === 0 ? 'flat' : 'gabled', 'asmb:ring':String(rg)} : {building:'house', 'building:levels':String(lv), 'roof:shape':rg === 2 && h3(ri, k, ti, 14) < 0.5 ? 'hipped' : 'gabled', 'asmb:ring':String(rg)}); nGap++; }
           }
-          t += (hw === 'secondary' || hw === 'tertiary') ? 30 + h3(ri, k, ti, 7)*10 : 20 + h3(ri, k, ti, 7)*8; continue;
+          t += rg0 === 0 ? 11 + h3(ri, k, ti, 7)*6 : rg0 === 1 ? 12 + h3(ri, k, ti, 7)*5 : (hw === 'secondary' || hw === 'tertiary') ? 30 + h3(ri, k, ti, 7)*10 : 22 + h3(ri, k, ti, 7)*8; continue;
         }
         if ((hw === 'residential' || hw === 'unclassified') && tn < 400 && (Math.hypot(x, y) > centreR || tn < 150)){
           farmNext -= 25;

@@ -226,3 +226,7 @@ Steps 3 and 6 of the layout request are done; the data contract is in `docs/MAP_
 ## Twenty-first note (builder 1.26.0): roadside pattern, and the reference study
 
 Step 5 is done (details in `docs/MAP_LAYOUT_REPLY.md`). The user attached twenty more reference pictures; I wrote what they teach about layout in `docs/MAP_REFERENCE_STUDY.md` (Project: "Map chat - what the 20 reference images teach about layout"), including a table of what is built and what is next. For the game: parking ways now carry `capacity` and `asmb:bays=yes` (paint bays across them), kerb cuts are `highway=service` ways with `asmb:kerbcut=yes`, and `amenity`, `parking`, `parking:orientation`, `capacity`, `width` need to pass `keepTags`. For the content chat: a tall pole sign, a two-legged billboard, a gas-pump canopy with pumps, a box trailer at a dock, a fountain or statue for squares, and a low lot-line wall.
+
+## Twenty-second note (builder 1.27.0): rings and landmarks
+
+Steps 4 and 7 are done (`docs/MAP_LAYOUT_REPLY.md`). Game: made-up buildings now carry `roof:shape`, `building:levels` and `asmb:ring`; landmark water towers are POIs `man_made=water_tower` with `height=30`: let `man_made`, `tower:type`, `height`, `roof:shape` and `asmb:ring` through `keepTags` and map them to `towers.water_standpipe` as you already do.

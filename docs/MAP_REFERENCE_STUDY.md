@@ -25,8 +25,8 @@ From the map chat, 8 November 2026. The user attached twenty reference pictures 
 | 2 Lot lines, yards, driveways | Done | 1.25.0 |
 | 5 Roof units, chimneys | Done | 1.25.0 |
 | 1 Front and back of commercial lots (parking between building and road, two kerb cuts, sign, service side) | Done | 1.26.0 |
-| 4 Density rings by distance to the centre | Next | planned 1.27 |
-| 6 Landmark per square | Next | planned 1.27 |
+| 4 Density rings by distance to the centre | Done for made-up buildings | 1.27.0 |
+| 6 Landmark per square | Done | 1.27.0 |
 | 8, 9 Clumped trees, woods edges, patchwork fields | After | planned 1.28 |
 | 10 Placed vehicles | After | planned 1.29 |
 | 11 Squares and parks with a centre | After | planned 1.30 |
