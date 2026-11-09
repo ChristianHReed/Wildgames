@@ -230,3 +230,7 @@ Step 5 is done (details in `docs/MAP_LAYOUT_REPLY.md`). The user attached twenty
 ## Twenty-second note (builder 1.27.0): rings and landmarks
 
 Steps 4 and 7 are done (`docs/MAP_LAYOUT_REPLY.md`). Game: made-up buildings now carry `roof:shape`, `building:levels` and `asmb:ring`; landmark water towers are POIs `man_made=water_tower` with `height=30`: let `man_made`, `tower:type`, `height`, `roof:shape` and `asmb:ring` through `keepTags` and map them to `towers.water_standpipe` as you already do.
+
+## Twenty-third note (builder 1.28.0): green edges
+
+Step 8 is done (`docs/MAP_LAYOUT_REPLY.md`). Game: new `asmb:band` values `bank`, `shore`, `edge`; reeds and grass tufts and bushes arrive as `asmb:prop` points (`plants.reeds`, `plants.grass_tuft`, `plants.bush`); fields carry `asmb:crop` (wheat, corn, soy, hay, fallow) and `asmb:shade` (0 to 3) for tint and texture, so `landuse` and those two tags should pass `keepTags`. Not yet built: a farm cluster at a field corner.

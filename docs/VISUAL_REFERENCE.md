@@ -76,6 +76,8 @@ Most of these cost little or nothing per frame. In order of effect for the effor
 7. Edge clutter and roof units from the builder; wires between poles.
 8. Overgrowth that grows with days survived.
 
+Done so far: 1 (toon shading, 0.122.0), 2, 3 and 6 (0.124.0), and 4 in part (lake shallows and shore foam, 0.124.0; rivers already had foam).
+
 Each is checked on the iPhone 11 with the benchmark before it is kept.
 
 ## Third look: how the worlds are laid out

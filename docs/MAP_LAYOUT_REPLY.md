@@ -15,7 +15,7 @@ Pulled and read the builder-downloads note (0.114.92) too: no conflicts, nothing
 | 4 | Town rings (height, setback, roof and lot width by distance to the centre) | **Done** for made-up homes and shops; mapped buildings keep their data | 1.27.0 |
 | 5 | Roadside pattern (parking to the front, kerb cuts, pole sign, service side) | **Done** (pole sign uses `street.hanging_sign` until art exists) | 1.26.0 |
 | 7 | One tall landmark per square | **Done** (per 1 km cell of town) | 1.27.0 |
-| 8 | Forest edges and tree rows | After | planned 1.27 |
+X
 | 9 | Abandoned traffic, big vehicles, camps and roadblocks | After | planned 1.28 |
 
 ## 1.24.0: what the map now carries
@@ -99,3 +99,17 @@ Springfield test map: about 980 lots with parking, 1,900 kerb cuts, 950 signs, 4
 **Rings (`builder/gen.js`, the gap fill).** The town centre is the 250 m cell with the highest road density. Made-up homes and shops are then shaped by distance from it: **core** (under 450 m): wall to wall, lots 7 to 10 m wide, 3.5 m back from the road, shops 2 to 4 storeys with flat roofs, homes mostly 2 storeys; **inner** (450 m to 1.1 km): narrow lots 8 to 11 m, 4.5 m back, shops 2 storeys, gabled roofs; **outer**: wide lots 12 to 17 m, 9 m back, mostly 1 storey, gabled or hipped, shops as big boxes 14 m back behind car parks. New tags on made-up buildings: `building:levels`, `roof:shape`, `asmb:ring` (0, 1, 2). Real mapped buildings keep their own data. Limit: on the Springfield test map every made-up home falls in the outer ring (the real downtown is fully mapped), so the core and inner rules are written but not yet seen in a build.
 
 **Landmarks (`builder/lots.js`).** Each 1 km cell with 15 or more buildings needs one tall thing: a mapped building of 25 m or 8 storeys, a tower, mast, silo, chimney or water tower, or a church with a tower. If a cell has none, a water tower is added in a park or industrial lot, or failing that behind the cell's largest shop or warehouse: POI `man_made=water_tower`, `tower:type=water`, `height=30`, `asmb:landmark=yes`, `generated=yes`, `asmb:made=yes`. Springfield test map: 249 town cells, 10 already had a tall landmark, about 190 got a water tower (the test file has no park or industrial areas, so they stand behind shops). The game already maps `man_made=water_tower` to `towers.water_standpipe`; `man_made`, `tower:type`, `height` must pass `keepTags`. The builder's 3D view does not draw them.
+
+## 1.28.0: green edges (step 8)
+
+In `builder/lots.js` (same option). All new trees are `natural=tree` with `generated=yes`, `asmb:made=yes` and `asmb:band`; they keep 5 m from any real or placed tree and stay clear of buildings and roads.
+
+| Where | What | Data |
+| --- | --- | --- |
+| Rivers, streams, canals | Runs of about six trees on each bank (60% of runs), 2.5 to 5.5 m beyond the bank, every 10 to 20 m; reeds at the water edge | trees `asmb:band=bank`; reeds `asmb:prop=plants.reeds`, `asmb:band=shore` |
+| Ponds and lakes (`natural=water`, not pools; reservoirs, basins) | Reeds round about 45% of the shore | same reeds |
+| Woods, forest, scrub | Outside the edge: tall grass `plants.grass_tuft` (2 to 4.5 m out), shrubs `plants.bush` (5 to 8 m), young trees (8 to 12 m) | `asmb:band=edge` |
+| Farmland, meadow (4,000 m2 or more) | A crop and a shade on the field: `asmb:crop` = wheat, corn, soy, hay or fallow, `asmb:shade` 0 to 3 (the game should tint and texture by these); 55% get a boundary hedge or wire fence (`barrier=hedge`, or `barrier=fence`, `asmb:lot=yes`); 30% also a tree row | trees `asmb:band=edge` |
+| Country roads (`asmb:street=rural`) | Tree runs 4.5 to 7 m from the road in stretches of about 120 m (35% of stretches) | `asmb:band=verge` |
+
+Springfield test map (streams, rivers and ponds but no woods or fields): about 7,000 bank trees, 5,600 reeds, 13,000 road trees. Woods and fields were checked in a made-up test area (286 grass tufts, 143 shrubs, 64 young trees round a 1 km wood edge; two fields tagged). Not done: farm cluster at a field corner, splitting big fields into strips, reeds as ground wet patches (needs the game), and the builder's 3D view does not draw hedges or fences.
