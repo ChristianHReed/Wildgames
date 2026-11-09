@@ -269,5 +269,37 @@ pads('lily_pads_green', 'Lily pads, green', 'A scatter of 14 round lily pads, 0.
 pads('lily_pads_autumn', 'Lily pads, autumn', 'The same lily pad scatter in yellow and orange for autumn.', RK.padY, null, 14);
 pads('lily_pads_red', 'Lily pads, red', 'The same lily pad scatter in red-brown for late autumn and winter dieback.', RK.padR, null, 11);
 
+/* ============================================ batch 7: overgrown roofs, panel fences, scrub, billboards (visual reference 2) ============================================ */
+var PF = {blue:C('#4a6a9a'), blueD:C('#365078'), pink:C('#b8607a'), pinkD:C('#8e4a5e'), brk:C('#9a4a3a'), brkD:C('#783a2e'), post:C('#4a4038'), scr:C('#a89868'), scrD:C('#8a7a4c'), scrL:C('#c4b480'), sage2:C('#8a9a70')};
+/* a moss and grass cap for a flat roof: an uneven green layer 0.14 m deep with a couple of bushes and a small tree on big ones; sits at y = 0 on the roof */
+function mossCap(size, trees){ return function(a){ var h = size/2;
+  blob(a, 0, 0, h*0.98, h*0.98, K.grassD, 0.07, 61, 14); blob(a, h*0.1, -h*0.1, h*0.8, h*0.78, K.grass, 0.14, 62, 13); blob(a, -h*0.2, h*0.25, h*0.45, h*0.4, K.grassL, 0.18, 63, 10);
+  for (var i = 0; i < 3 + trees*2; i++){ var t = i*2.399 + 1, rr = h*0.55*Math.sqrt((i + 0.5)/(3 + trees*2)), r = 0.3 + ((i*3) % 3)*0.12; a.raw('ball', [Math.cos(t)*rr, r*0.7 + 0.12, Math.sin(t)*rr], {scl:[r/0.3, r*0.8/0.3, r/0.3], c:[K.grassD, K.grass, K.sageD][i % 3], m:'plant', n:7}); }
+  if (trees){ a.cyl(h*0.2, 0.9, h*0.1, 0.08, 1.7, 'y', K.wood, {m:'wood', n:6}); [[0, 2.0, 0, 0.9], [-0.5, 1.7, 0.3, 0.6], [0.5, 1.8, -0.3, 0.65]].forEach(function(l, i){ a.raw('ball', [h*0.2 + l[0], l[1], h*0.1 + l[2]], {scl:[l[3]/0.3, l[3]*0.85/0.3, l[3]/0.3], c:i % 2 ? K.grass : K.grassD, m:'plant', n:8}); }); }
+  for (var j = 0; j < 6; j++){ var u = j*1.05, ex = Math.cos(u)*h*0.82, ez = Math.sin(u)*h*0.82; a.bev(ex, 0.06, ez, 0.5, 0.12, 0.35, K.grassD, {m:'plant', rot:[0, j*40, 0]}); } }; }
+model('moss_roof_cap_s', 'Moss roof cap, 3 m', 'A 3 m by 3 m cap of moss and grass on a flat roof with an uneven edge and three small bushes; place over a roof unit or a bare corner. Sits at y = 0 on the roof surface.', 3, 3, 0.6, mossCap(3, 0));
+model('moss_roof_cap_m', 'Moss roof cap, 5 m with tree', 'A 5 m by 5 m cap of moss and grass on a flat roof with bushes and a small tree about 2.5 m tall; the green-roof look from the overgrown-city reference. Sits at y = 0 on the roof surface.', 5, 5, 2.7, mossCap(5, 1));
+model('ivy_drips_4', 'Ivy drips, 4 m', 'Ivy hanging from a roof edge or cliff lip in pointed drips, 4 m wide and up to 2.5 m long (wall side at z = 0, 8 cm proud): seven stepped points of different lengths in three greens, with a green band along the top. Tiles along x.', 4, 0.2, 2.6, function(a){
+  var gs = [K.grass, K.grassD, K.grassL]; a.box(0, 2.55, 0.06, 4, 0.18, 0.1, K.grassD, {m:'plant'});
+  [[-1.7, 1.4], [-1.2, 2.3], [-0.7, 0.9], [-0.1, 1.9], [0.5, 2.5], [1.0, 1.2], [1.6, 2.0]].forEach(function(d, i){ var L = d[1], c = gs[i % 3];
+    [[0.5, 0.4], [0.34, 0.35], [0.2, 0.25]].forEach(function(st, k){ var h = L*st[1]; var y0 = 2.5 - [0, 0.4, 0.75][k]*L; a.bev(d[0], y0 - h/2, 0.07, st[0], h, 0.08, k === 2 ? gs[(i + 1) % 3] : c, {m:'plant'}); }); }); });
+function fence(name, label, cols){ model(name, label, 'A 4 m run of short scavenged panel fence, 1.3 m high: four 1 m panels in slightly different shades, each a little crooked, on dark posts; tiles along x. The post-apocalypse reference fence.', 4, 0.25, 1.4, function(a){
+  for (var i = 0; i < 5; i++) a.box(-2 + i, 0.65, 0, 0.1, 1.3, 0.1, PF.post, {m:'wood'});
+  for (var j = 0; j < 4; j++){ var h = 1.0 + ((j*7) % 3)*0.08; a.box(-1.5 + j, 0.2 + h/2, 0.02, 0.94, h, 0.05, cols[j % cols.length], {m:'sheet', rot:[0, 0, ((j*5) % 3 - 1)*1.5]}); a.box(-1.5 + j, 0.2 + h*0.55, 0.055, 0.9, 0.05, 0.02, cols[(j + 1) % cols.length], {m:'sheet'}); } }); }
+fence('panel_fence_blue', 'Panel fence, blue', [PF.blue, PF.blueD, PF.blue, PF.blueD]);
+fence('panel_fence_pink', 'Panel fence, pink', [PF.pink, PF.pinkD, PF.pink, PF.pinkD]);
+fence('panel_fence_brick', 'Panel fence, brick red', [PF.brk, PF.brkD, PF.brk, PF.brkD]);
+fence('panel_fence_mixed', 'Panel fence, mixed', [PF.blue, PF.pink, PF.brk, PF.blueD]);
+function scrub(a, x, z, r, i){ for (var k = 0; k < 5; k++){ var t = k*1.26 + i, rr = r*0.45*(k ? 1 : 0), rad = r*(0.5 + ((k*3 + i) % 3)*0.12); a.raw('ball', [x + Math.cos(t)*rr, rad*0.5, z + Math.sin(t)*rr], {scl:[rad/0.3, rad*0.7/0.3, rad/0.3], c:[PF.scr, PF.scrD, PF.scrL, PF.sage2, PF.scr][k], m:'plant', n:6}); }
+  for (var q = 0; q < 4; q++) a.box(x + Math.cos(q*1.6 + i)*r*0.5, r*0.5, z + Math.sin(q*1.6 + i)*r*0.5, 0.025, r*1.1, 0.025, K.woodD, {m:'wood', rot:[(q - 1.5)*14, q*50, (q - 1)*12]}); }
+model('scrub_dry_tuft', 'Dry scrub tuft', 'A single 0.9 m round tuft of dry sage scrub with a few bare twigs: the dust-bush from the dry-city reference; scatter it in vacant lots and along fences.', 1.2, 1.2, 0.6, function(a){ scrub(a, 0, 0, 0.55, 1); });
+model('scrub_dry_cluster', 'Dry scrub cluster', 'Three dry scrub tufts of different sizes growing together, 2.4 m across, for empty ground and roadsides.', 2.6, 2.4, 0.7, function(a){ scrub(a, -0.7, 0.2, 0.55, 1); scrub(a, 0.6, -0.3, 0.45, 2); scrub(a, 0.1, 0.7, 0.35, 3); });
+function board(name, label, note, face){ model(name, label, note, 6.4, 0.6, 7.6, function(a){
+  [-2.3, 2.3].forEach(function(x){ a.box(x, 2.5, 0, 0.22, 5.0, 0.22, K.iron, {m:'steel'}); a.box(x, 3.0, -0.2, 0.1, 0.1, 0.35, K.ironL, {m:'steel'}); });
+  a.box(0, 5.2, 0, 6.2, 0.18, 0.3, K.iron, {m:'steel'}); a.box(0, 6.45, 0.02, 6.0, 2.6, 0.12, K.ironL, {m:'sheet'}); a.box(0, 6.45, 0.09, 5.8, 2.4, 0.04, face.bg, {m:'sheet'}); a.box(0, 7.8, 0.08, 6.0, 0.12, 0.2, K.iron, {m:'steel'}); a.box(0, 5.25, 0.15, 5.8, 0.06, 0.18, K.iron, {m:'steel'});
+  if (face.art) face.art(a); a.pt('light', 'light', [0, 7.9, 0.2], [0, -1, 0]); }); }
+board('billboard_blank', 'Billboard, blank', 'A 6 m by 2.6 m roadside billboard on two steel posts, the face bare and dirty grey with a lamp rail on top: for the blank boards in the dry-city reference. Face is +z.', {bg:C('#8a8a84')});
+board('billboard_message', 'Billboard, message', 'A roadside billboard with a made-up message: a dark blue face, a big pink round face figure on the right and three bars of white lettering on the left. No real brands. Face is +z.', {bg:C('#2e3e5a'), art:function(a){ a.raw('ball', [1.5, 6.45, 0.18], {scl:[1.0/0.3, 0.9/0.3, 0.12/0.3], c:C('#d8708a'), m:'sheet', n:8}); a.box(1.2, 6.5, 0.24, 0.12, 0.12, 0.02, C('#2e3e5a'), {m:'sheet'}); [[-1.4, 7.0, 3.0], [-1.6, 6.45, 2.6], [-1.2, 5.9, 3.4]].forEach(function(b){ a.box(b[0], b[1], 0.13, b[2], 0.28, 0.03, K.white, {m:'sheet'}); }); a.box(-1.0, 5.55, 0.13, 1.6, 0.14, 0.03, K.teal, {m:'sheet'}); }});
+
 fs.writeFileSync(root + 'packs/afterstreet-streetscape.js', M.packToJS(pack));
 console.log('wrote packs/afterstreet-streetscape.js:', pack.assets.length, 'models');
