@@ -79,7 +79,7 @@ What the game has now:
 | Hands and grip | Move buttons: every touch button, the stick and the readouts (speed and fuel, health, map, hotbar, menu) can be put anywhere, with separate layouts for upright and sideways. Floating stick: put your thumb anywhere on the left side. Run and Crouch toggle on touch. Hold actions show their progress on the button. |
 | Feeling it | Short vibration on button presses (Android). |
 | Keyboard | WASD or arrow keys to turn, every action on a key. |
-| Pace | Sleeping skips the night. The game saves on its own every few seconds of play. |
+| Pace | Playing alone, the game stops while the menu is open (Settings). Sleeping skips the night. The game saves on its own every few seconds of play. |
 | Hearing | Captions for sounds that matter (Settings): aliens, banging, breaking, crashes, alarms and raids, each with where it came from. |
 | Reporting problems | Menu > Report a bug sends a picture and a note, with the device and browser, so device problems can be fixed. |
 
@@ -92,7 +92,7 @@ What is missing, in the order it should be built:
 5. **Text size** for the start page, the menus and the messages (the screen controls already scale).
 6. **Hold or toggle** choice for every hold action (search, pry, take apart, drink), and a slower double-tap time.
 7. **Less motion:** turn off head bob, screen shake and the sway of the held item.
-8. **Pause in single player** whenever a menu is open.
+8. ~~Pause in single player~~ (0.125.2): while the Menu list, a bug report or the button editor is open.
 9. **Start page for screen readers:** labels on every start-page control (the 3D game itself cannot be read by a screen reader).
 
 ## Order of work for "play anywhere"
