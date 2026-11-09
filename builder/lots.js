@@ -71,14 +71,14 @@
         /* ---- roofs ---- */
         var flat = t['roof:shape'] === 'flat' || (comm && !t['roof:shape']) || (!house && FLAT[t.building] === 1 && !t['roof:shape']);
         if (flat && ar >= 80 && ar < 20000 && t.building !== 'shed'){
-          var nU = Math.max(1, Math.min(8, Math.round(ar/140))), tries = 0, placed = 0;
+          var bigRoof = ar >= 200, nU = bigRoof ? Math.max(1, Math.min(6, Math.round(ar/(ar < 1200 ? 350 : 900)))) : Math.max(1, Math.min(8, Math.round(ar/140))), tries = 0, placed = 0;
           var kinds = ['street.ac_unit', 'street.ac_unit', 'street.ac_unit', 'street.roof_hatch', 'street.satellite_dish', 'street.water_tank'];
           while (placed < nU && tries++ < nU*4){
             var a = (h3(seedA, seedB, tries, 71) - 0.5)*(b.hu*2 - 3), c = (h3(seedA, seedB, tries, 72) - 0.5)*(b.hv*2 - 3);
             var px = b.x + b.ux*a - b.uy*c, py = b.y + b.uy*a + b.ux*c;
             if (!L.pip(b.m, px, py)) continue;
-            var kd = kinds[Math.floor(h3(seedA, seedB, tries, 73)*kinds.length)];
-            if (kd === 'street.water_tank' && (h < 9 || placed > 0 || h3(seedA, seedB, 74) > 0.35)) kd = 'street.ac_unit';
+            var kd = bigRoof ? (ar < 450 ? 'land.roof_units_s' : ar < 1200 ? 'land.roof_units_m' : 'land.roof_units_l') : kinds[Math.floor(h3(seedA, seedB, tries, 73)*kinds.length)];
+            if (bigRoof && placed === 0 && h >= 9 && h3(seedA, seedB, 74) < 0.3) kd = 'street.water_tank'; if (kd === 'street.water_tank' && (h < 9 || placed > 0 || h3(seedA, seedB, 74) > 0.35)) kd = 'street.ac_unit';
             prop(kd, px, py, Math.round(h3(seedA, seedB, tries, 75)*4)*90, 'roof', h); placed++; out.roofUnits++;
           }
         } else if (house){
@@ -116,10 +116,11 @@
                     if (d3l - s3[4] < 1.5 || d3l - s3[4] > 14) return;
                     var tg = {}; for (var kk in T.drive) tg[kk] = T.drive[kk]; tg['asmb:kerbcut'] = 'yes'; tg.width = '7';
                     wayOut(tg, [p3x + d3x/d3l*(s3[4] + 0.3), p3y + d3y/d3l*(s3[4] + 0.3), qx2, qy2]); out.kerbCuts++;
-                    if (sg === sgn2){ prop('street.hanging_sign', qx2 + cgx*sg*2.5 - cfx*1.5, qy2 + cgy*sg*2.5 - cfy*1.5, yawC, 'sign'); out.signs++; }
+                    if (sg === sgn2){ prop(t.amenity === 'fuel' ? 'land.pole_sign_station' : 'land.pole_sign_store', qx2 + cgx*sg*2.5 - cfx*1.5, qy2 + cgy*sg*2.5 - cfy*1.5, yawC, 'sign'); out.signs++; }
                   });
                 }
               }
+              if (h3(Math.round(b.x), Math.round(b.y), 160) < 0.3) prop(h3(Math.round(b.x), Math.round(b.y), 161) < 0.7 ? 'land.shop_shelf_outdoor' : 'land.water_barrels_3', b.x + cfx*(cfh + 0.9) + cgx*(h3(Math.round(b.x), Math.round(b.y), 162) - 0.5)*cgh, b.y + cfy*(cfh + 0.9) + cgy*(h3(Math.round(b.x), Math.round(b.y), 162) - 0.5)*cgh, yawOf(cfx, cfy), 'front');
               /* the service side at the back: a dumpster or two and a chain-link fence round the rear */
               var bkx = b.x - cfx*(cfh + 3.5) + cgx*cgh*0.5, bky = b.y - cfy*(cfh + 3.5) + cgy*cgh*0.5;
               if (!inAny(bkx, bky, 0.8, b) && clearOfRoads(bkx, bky, 2)){
@@ -181,6 +182,10 @@
             flush();
           });
         }
+        /* ---- one slightly-off detail on about one lot in nine: a tarp on the roof, or the garage door standing open ---- */
+        var offD = h3(seedA, seedB, 86 + 40);
+        if (offD < 0.05){ prop('land.roof_tarp', b.x + gx*(h3(seedA, seedB, 150) - 0.5)*gh*0.8, b.y + gy*(h3(seedA, seedB, 150) - 0.5)*gh*0.8, yawOf(fx, fy), 'off', h + 0.2); out.offDetails = (out.offDetails || 0) + 1; }
+        else if (offD < 0.11 && hasDrive && driveJobs.length){ var dj = driveJobs[driveJobs.length - 1]; if (Math.hypot(dj[2] - b.x, dj[3] - b.y) < 30){ prop('land.garage_door_open', dj[2] + fx*0.05, dj[3] + fy*0.05, yawOf(fx, fy), 'off'); out.offDetails = (out.offDetails || 0) + 1; } }
         /* ---- back-yard things: one or two from the seed ---- */
         var nY = h3(seedA, seedB, 87) < 0.35 ? 1 : 2, backD = fb - fh;
         for (var y = 0; y < nY; y++){
@@ -196,7 +201,7 @@
             var fp2 = []; [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function(cn){ fp2.push(px2 + gx*cn[0]*2 + fx*cn[1]*4, py2 + gy*cn[0]*2 + fy*cn[1]*4); }); fp2.push(fp2[0], fp2[1]);
             wayOut(T.pool, fp2, true); out.pools++;
           } else {
-            var items = ['garden.garden_plot', 'garden.garden_plot', 'garden.rain_barrel', 'build.compost_bin', 'build.drying_rack', 'plants.bush'];
+            var items = ['garden.garden_plot', 'garden.garden_plot', 'garden.rain_barrel', 'build.compost_bin', 'build.drying_rack', 'plants.bush', 'land.swing_set', 'land.trampoline', 'land.wood_pile', 'land.picnic_table', 'land.bbq_grill', 'land.doghouse'];
             prop(items[Math.floor(h3(seedA, seedB, 96 + y)*items.length)], px2, py2, yaw, 'yard'); out.yardItems++;
           }
         }
@@ -227,7 +232,7 @@
               if (k % 6 === 0) rowOn = h3(Math.round(x), Math.round(y), 102 + sd) < 0.6;   /* trees come in runs of about six, then a gap */
               if (!rowOn) return;
               var off = hwid + 2.5 + h3(Math.round(x), Math.round(y), 103)*3, px = x + nx*off*sd, py = y + ny*off*sd;
-              if (okSpot(px, py, 5)){ addTree(px, py, 'bank'); out.bankTrees++; }
+              if (okSpot(px, py, 5)){ if (h3(Math.round(x), Math.round(y), 106) < 0.18){ prop('land.willow', px, py, h3(Math.round(x), Math.round(y), 107)*360, 'bank'); nEdge++; put(tg, px, py, 10, [px, py]); } else addTree(px, py, 'bank'); out.bankTrees++; }
               if (t.waterway !== 'canal' && h3(Math.round(x), Math.round(y), 104) < 0.3){ var rx = x + nx*(hwid + 0.6)*sd, ry = y + ny*(hwid + 0.6)*sd; if (!inAny(rx, ry, 1, null) && clearOfRoads(rx, ry, 2)){ prop('plants.reeds', rx, ry, h3(Math.round(rx), Math.round(ry), 105)*360, 'shore'); out.reeds++; nEdge++; } }
             });
           });
@@ -241,13 +246,13 @@
         var pm = toM(w.c), ar = Math.abs(L.area(pm)); if (ar < 400) return;
         var outward = function(x, y, nx, ny, d){ var ax = x + nx*d, ay = y + ny*d; return L.pip(pm, ax, ay) ? [x - nx*d, y - ny*d] : [ax, ay]; };
         if (isWater){
-          walk(pm, 5, 2, 110, function(x, y, nx, ny){ if (h3(Math.round(x), Math.round(y), 111) > 0.45) return; var q = outward(x, y, nx, ny, 0.8); if (!inAny(q[0], q[1], 1, null) && clearOfRoads(q[0], q[1], 2) && nEdge < EDGE_CAP){ prop('plants.reeds', q[0], q[1], h3(Math.round(q[0]), Math.round(q[1]), 112)*360, 'shore'); out.reeds++; nEdge++; } });
+          walk(pm, 5, 2, 110, function(x, y, nx, ny){ if (h3(Math.round(x), Math.round(y), 111) > 0.45) return; var q = outward(x, y, nx, ny, 0.8); if (!inAny(q[0], q[1], 1, null) && clearOfRoads(q[0], q[1], 2) && nEdge < EDGE_CAP){ prop(h3(Math.round(q[0]), Math.round(q[1]), 113) < 0.3 ? 'land.cattails' : 'plants.reeds', q[0], q[1], h3(Math.round(q[0]), Math.round(q[1]), 112)*360, 'shore'); out.reeds++; nEdge++; } });
         } else if (isWood){
           walk(pm, 5, 1.5, 120, function(x, y, nx, ny, k){
             var q = outward(x, y, nx, ny, 2 + h3(Math.round(x), Math.round(y), 121)*2.5);   /* tall grass first */
             if (okSpot(q[0], q[1], 1.5)){ prop('plants.grass_tuft', q[0], q[1], h3(Math.round(q[0]), Math.round(q[1]), 122)*360, 'edge'); out.edgeGrass++; nEdge++; }
             if (k % 2 === 0){ var q2 = outward(x, y, nx, ny, 5 + h3(Math.round(x), Math.round(y), 123)*3); if (okSpot(q2[0], q2[1], 3)){ prop('plants.bush', q2[0], q2[1], h3(Math.round(q2[0]), Math.round(q2[1]), 124)*360, 'edge'); out.edgeShrubs++; nEdge++; } }
-            if (k % 3 === 0 && h3(Math.round(x), Math.round(y), 125) < 0.6){ var q3 = outward(x, y, nx, ny, 8 + h3(Math.round(x), Math.round(y), 126)*4); if (okSpot(q3[0], q3[1], 6)){ addTree(q3[0], q3[1], 'edge'); out.edgeTrees++; } }
+            if (k % 3 === 0 && h3(Math.round(x), Math.round(y), 125) < 0.6){ var q3 = outward(x, y, nx, ny, 8 + h3(Math.round(x), Math.round(y), 126)*4); if (okSpot(q3[0], q3[1], 6)){ if (h3(Math.round(x), Math.round(y), 127) < 0.5){ prop('land.young_tree', q3[0], q3[1], h3(Math.round(x), Math.round(y), 128)*360, 'edge'); nEdge++; out.edgeTrees++; } else { addTree(q3[0], q3[1], 'edge'); out.edgeTrees++; } if (h3(Math.round(x), Math.round(y), 129) < 0.06){ prop(h3(Math.round(x), Math.round(y), 130) < 0.5 ? 'land.fallen_log' : 'land.stump', q3[0] + nx*2, q3[1] + ny*2, h3(Math.round(x), Math.round(y), 131)*360, 'edge'); nEdge++; } } }
           });
         } else if (isField && ar >= 4000){
           out.fields++;
@@ -293,19 +298,36 @@
           var other = nearRoad(x, y, half + 12).some(function(r){ return r.s[7] !== wi; });
           var dc = Math.hypot(x - cenBX, y - cenBY);
           /* jam: 150 m stretches, one in nine, between 500 m and 3 km from the centre, in the lane leading out */
-          if (isMain && dc > 500 && dc < 3000 && !other){ var chunk = Math.floor(k*16/150), on = h3(Math.round(m[0]), Math.round(m[1]), 310 + chunk) < 0.11; if (on){ var outx = x - cenBX, outy = y - cenBY, sgn = (dx*outx + dy*outy) >= 0 ? 1 : -1, rx = -dy*sgn, ry = dx*sgn, big = h3(sx, sy, 320) < 0.1, pc = big ? (h3(sx, sy, 321) < 0.5 ? 'vehicles.pk_afterstreet_fleet_city_bus' : 'vehicles.box_truck') : pickCar(sx, sy, 322, 0.18); var ang = h3(sx, sy, 323) < 0.1 ? 25 + h3(sx, sy, 324)*20 : (h3(sx, sy, 325) - 0.5)*8; if (carAt(pc, x + rx*half*0.5, y + ry*half*0.5, yawOf(dx*sgn, dy*sgn) + ang, 'jam', big ? 9 : 5.2)){ out.jamCars++; return; } } }
+          if (isMain && dc > 500 && dc < 3000 && !other){ var chunk = Math.floor(k*16/150), on = h3(Math.round(m[0]), Math.round(m[1]), 310 + chunk) < 0.11; if (on){ var outx = x - cenBX, outy = y - cenBY, sgn = (dx*outx + dy*outy) >= 0 ? 1 : -1, rx = -dy*sgn, ry = dx*sgn, big = h3(sx, sy, 320) < 0.1, pc = big ? (h3(sx, sy, 321) < 0.5 ? 'vehicles.pk_afterstreet_fleet_city_bus' : 'vehicles.box_truck') : pickCar(sx, sy, 322, 0.18); var ang = h3(sx, sy, 323) < 0.1 ? 25 + h3(sx, sy, 324)*20 : (h3(sx, sy, 325) - 0.5)*8; if (carAt(pc, x + rx*half*0.5, y + ry*half*0.5, yawOf(dx*sgn, dy*sgn) + ang, 'jam', big ? 9 : 5.2)){ out.jamCars++; if (!big && h3(sx, sy, 326) < 0.2) F.pois[F.pois.length - 1].t['asmb:door_open'] = 'yes'; return; } } }
           if (!pr || other) return;
           if (h3(sx, sy, 330) > pr) return;
           var side = h3(sx, sy, 331) < 0.5 ? 1 : -1, off = half - 1.15, px = x + nx*off*side, py = y + ny*off*side;   /* right-hand traffic: cars on the right of travel face along the way, on the left against it */
           var face = side === -1 ? 1 : -1; if (carAt(pickCar(sx, sy, 332, 0.18), px, py, yawOf(dx*face, dy*face), 'kerb')) out.kerbCars++;
         });
       });
+      var campKeys = {};
       /* quarantine camps in parks and pitches (about one in seven, 3,000 m2 or more): tents in two rows, burning barrels, barriers at the corners, a wreck at the gate */
       F.ways.forEach(function(w){ var t = w.t; if (!w.poly || !(t.leisure === 'park' || t.leisure === 'pitch' || t.leisure === 'common')) return; var pm = toM(w.c), ar = Math.abs(L.area(pm)); if (ar < 3000) return; var cx = 0, cy = 0, n = 0, i; for (i = 0; i + 1 < pm.length; i += 2){ cx += pm[i]; cy += pm[i + 1]; n++; } cx /= n; cy /= n; var sx = Math.round(cx), sy = Math.round(cy); if (h3(sx, sy, 340) > 0.14 || !L.pip(pm, cx, cy) || inAny(cx, cy, 4, null)) return;
         var TENTS = ['land.dome_tent_blue', 'land.dome_tent_green', 'land.dome_tent_orange', 'land.relief_tent'], ok = true, items = [];
         for (var r = -1; r <= 1; r += 2) for (var c = -2; c <= 2; c++){ var px = cx + c*5.5, py = cy + r*4.5; if (!L.pip(pm, px, py) || inAny(px, py, 2, null)) { ok = false; break; } items.push([TENTS[Math.floor(h3(sx, sy, 341 + c + r*7)*TENTS.length)], px, py, r > 0 ? 180 : 0, 'camp']); }
-        if (!ok) return; items.push(['land.burning_barrel', cx - 3, cy, 0, 'camp'], ['land.burning_barrel', cx + 3, cy, 0, 'camp'], ['land.camp_barrier_4', cx - 14, cy - 8, 0, 'camp'], ['land.camp_barrier_4', cx + 14, cy - 8, 0, 'camp'], ['land.camp_barrier_4', cx - 14, cy + 8, 0, 'camp'], ['land.camp_barrier_4', cx + 14, cy + 8, 0, 'camp'], ['vehicles.van_wreck', cx, cy + 12, 90, 'camp']);
-        items.forEach(function(it){ if (L.pip(pm, it[1], it[2])) prop(it[0], it[1], it[2], it[3], it[4]); }); out.camps++; });
+        if (!ok) return; items.push(['land.burning_barrel', cx - 3, cy, 0, 'camp'], ['land.burning_barrel', cx + 3, cy, 0, 'camp'], ['land.camp_barrier_4', cx - 14, cy - 8, 0, 'camp'], ['land.camp_barrier_4', cx + 14, cy - 8, 0, 'camp'], ['land.camp_barrier_4', cx - 14, cy + 8, 0, 'camp'], ['land.camp_barrier_4', cx + 14, cy + 8, 0, 'camp'], ['vehicles.van_wreck', cx, cy + 12, 90, 'camp'], ['land.generator_floodlight', cx + 8, cy + 3, 0, 'camp'], ['land.portable_toilets_3', cx - 16, cy + 2, 90, 'camp'], ['land.hazard_tape_fence_6', cx - 6, cy - 12, 0, 'camp'], ['land.hazard_tape_fence_6', cx + 6, cy - 12, 0, 'camp'], ['vehicles.pk_workshop_crafts_ambulance', cx + 14, cy + 10, 200, 'camp']);
+        items.forEach(function(it){ if (L.pip(pm, it[1], it[2])) prop(it[0], it[1], it[2], it[3], it[4]); }); out.camps++; campKeys[sx + ',' + sy] = 1; });
+      /* park centres: a fountain, bandstand, statue or memorial in the middle of a park of 5,000 m2 or more that has no camp */
+      F.ways.forEach(function(w){ var t = w.t; if (!w.poly || t.leisure !== 'park') return; var pm = toM(w.c), ar = Math.abs(L.area(pm)); if (ar < 5000) return; var cx = 0, cy = 0, n = 0, i; for (i = 0; i + 1 < pm.length; i += 2){ cx += pm[i]; cy += pm[i + 1]; n++; } cx /= n; cy /= n; var sx = Math.round(cx), sy = Math.round(cy);
+        if (campKeys[sx + ',' + sy] || !L.pip(pm, cx, cy) || inAny(cx, cy, 5, null) || h3(sx, sy, 360) > 0.6) return; var r = h3(sx, sy, 361), pc = ar >= 8000 && r < 0.4 ? 'land.fountain_round' : r < 0.65 ? 'land.bandstand' : r < 0.85 ? 'land.statue_plinth' : 'land.war_memorial'; prop(pc, cx, cy, 0, 'centre'); out.parkCentres = (out.parkCentres || 0) + 1; });
+      /* a farm at the road corner of a big field (one in three fields of 15,000 m2 or more, one per 1 km cell): farmhouse and barn facing the road, silos, grain bin, hay bales, a pen with a trough, a windmill, a tractor, a drive and a farmyard */
+      var farmCells = {};
+      F.ways.forEach(function(w){ var t = w.t; if (!w.poly || t.landuse !== 'farmland') return; var pm = toM(w.c), ar = Math.abs(L.area(pm)); if (ar < 15000) return; var sx = Math.round(pm[0]), sy = Math.round(pm[1]); if (h3(sx, sy, 400) > 0.35 || farmCells[Math.floor(pm[0]/1000) + ',' + Math.floor(pm[1]/1000)]) return;
+        var best = null, cx = 0, cy = 0, n = 0, i; for (i = 0; i + 1 < pm.length; i += 2){ cx += pm[i]; cy += pm[i + 1]; n++; var rr = nearRoad(pm[i], pm[i + 1], 45); if (rr.length){ rr.sort(function(a, b){ return a.d - b.d; }); if (!best || rr[0].d < best.d) best = {x:pm[i], y:pm[i + 1], d:rr[0].d, s:rr[0].s}; } } if (!best) return; cx /= n; cy /= n;
+        var vx = cx - best.x, vy = cy - best.y, vl = Math.hypot(vx, vy) || 1, Cx = best.x + vx/vl*22, Cy = best.y + vy/vl*22, s = best.s, ex = s[2] - s[0], ey = s[3] - s[1], el = Math.hypot(ex, ey) || 1, tt = Math.max(0, Math.min(1, ((Cx - s[0])*ex + (Cy - s[1])*ey)/(el*el))), rx = s[0] + ex*tt, ry = s[1] + ey*tt, fx = rx - Cx, fy = ry - Cy, fl = Math.hypot(fx, fy) || 1; fx /= fl; fy /= fl; var gx = -fy, gy = fx, yawF = yawOf(fx, fy);
+        if (fl < 12 || !L.pip(pm, Cx, Cy)) return;
+        var PL = [['land.farmhouse_white', -17, 4, 0], ['land.barn_red', 14, -2, 0], ['land.silo_pair', 28, -16, 0], ['land.grain_bin', 6, -20, 0], ['land.hay_bale_round', -4, -10, 40], ['land.hay_bale_round', -7, -12, 80], ['land.hay_bale_stack', -10, -16, 0], ['land.livestock_pen_8', -22, -14, 0], ['land.trough', -22, -8, 0], ['land.farm_windmill', -32, -18, 0]], placed = 0;
+        var sgf = L.pip(pm, Cx - gx*20, Cy - gy*20) ? 1 : -1;
+        PL.forEach(function(q){ var x = Cx + gx*q[1]*sgf + fx*q[2], y = Cy + gy*q[1]*sgf + fy*q[2]; if (!L.pip(pm, x, y) || inAny(x, y, 1, null) || !clearOfRoads(x, y, 3)) return; prop(q[0], x, y, yawF + q[3], 'farm'); placed++; });
+        if (placed < 3) return; var tx = Cx + gx*2 + fx*10, ty = Cy + gy*2 + fy*10; carAt('vehicles.pk_workshop_crafts_farm_tractor', tx, ty, yawF + 90, 'farm', 4);
+        var ed = Math.hypot(rx - Cx, ry - Cy), exx = rx - fx*0, eyy = ry - fy*0; wayOut(T.drive, [rx - fx*0 + (Cx - rx)/ed*(s[4] + 0.3), ry + (Cy - ry)/ed*(s[4] + 0.3), Cx + fx*8, Cy + fy*8]);
+        var yd = []; [[-40, -30], [20, -30], [20, 14], [-40, 14]].forEach(function(c){ yd.push(Cx + gx*c[0] + fx*c[1], Cy + gy*c[0] + fy*c[1]); }); yd.push(yd[0], yd[1]); wayOut({landuse:'farmyard', generated:'yes', 'asmb:made':'yes', 'asmb:lot':'yes'}, yd, true);
+        farmCells[Math.floor(pm[0]/1000) + ',' + Math.floor(pm[1]/1000)] = 1; out.farms = (out.farms || 0) + 1; });
       /* roadblocks: where a main road leaves the town at 1.6 km, one in three: barriers across the road, two wrecks, two burning barrels */
       F.ways.forEach(function(w){
         var t = w.t, half = HALF[t.highway]; if (w.poly || !half || t.bridge || t.tunnel || !(t.highway === 'primary' || t.highway === 'secondary')) return; var m = toM(w.c);
@@ -313,7 +335,7 @@
           for (k2 = 0; k2 < ns; k2++){ var fa = k2/ns, fb = (k2 + 1)/ns, da = Math.hypot(m[i] + (m[i + 2] - m[i])*fa - cenBX, m[i + 1] + (m[i + 3] - m[i + 1])*fa - cenBY), db = Math.hypot(m[i] + (m[i + 2] - m[i])*fb - cenBX, m[i + 1] + (m[i + 3] - m[i + 1])*fb - cenBY); if ((da - 1600)*(db - 1600) < 0){ hit = k2; f = fa + (fb - fa)*(1600 - da)/(db - da); break; } }
           if (hit < 0) continue; x = m[i] + (m[i + 2] - m[i])*f; y = m[i + 1] + (m[i + 3] - m[i + 1])*f; var sx = Math.round(x), sy = Math.round(y); if (h3(sx, sy, 350) > 0.34 || inAny(x, y, 3, null)) continue;
           var dx = m[i + 2] - m[i], dy = m[i + 3] - m[i + 1], dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl; var nx = -dy, ny = dx, yw = yawOf(nx, ny);
-          for (var o = -half + 1.5; o <= half - 1.5; o += 3.6) prop('land.camp_barrier_4', x + nx*o, y + ny*o, yw, 'roadblock');
+          for (var o = -half + 1.5; o <= half - 1.5; o += 3.6) prop(h3(sx, sy, 351 + Math.round(o)) < 0.5 ? 'land.jersey_barrier_3' : 'land.sawhorse_barricade', x + nx*o, y + ny*o, yw, 'roadblock'); prop('land.checkpoint_post', x - dx*3 + nx*(half + 2.2), y - dy*3 + ny*(half + 2.2), yw, 'roadblock'); carAt('vehicles.pk_workshop_crafts_police', x - dx*9 - nx*half*0.4, y - dy*9 - ny*half*0.4, yawOf(dx, dy) + 160, 'roadblock', 3);
           carAt('vehicles.sedan_wreck', x - dx*6 + nx*half*0.45, y - dy*6 + ny*half*0.45, yawOf(dx, dy) + 20, 'roadblock', 3); carAt('vehicles.van_wreck', x + dx*7 - nx*half*0.4, y + dy*7 - ny*half*0.4, yawOf(dx, dy) - 160, 'roadblock', 3);
           prop('land.burning_barrel', x - nx*(half + 1.2), y - ny*(half + 1.2), 0, 'roadblock'); prop('land.burning_barrel', x + nx*(half + 1.2), y + ny*(half + 1.2), 0, 'roadblock'); out.roadblocks++; break; }
       });

@@ -136,3 +136,23 @@ Springfield test map: about 5,900 kerb cars, 16,700 driveway cars, 4,500 shop-lo
 **Needs from the game:** nothing new beyond note 20 to 23 (`keepTags`); the main chat's note says `asmb:prop` vehicles and `land.*` are already read. For the main chat's footprint request: I do not know the sizes of the big land models; if the game prefers `asmb:size` on camps and roadblocks, tell me the sizes and I will tag them.
 
 **Not done / art gaps:** police cars at stations and roadblocks, ambulances at hospitals, tractors at farms and dealers, open car doors, cars crashed into poles (no art or no pole check yet), jams on bridges (bridges are excluded from the road pass), a school-field quarantine camp.
+
+## 1.30.0: the new content (answer to "Content chat reply - art the map builder asked for")
+
+Everything below is placed by id; nothing in the data format changed. **The new models are on the content chat's branch `survivors-v2` and are not in `main` yet** (`packs/afterstreet-streetscape.js` on main still has only the older batch: `pole_sign_*`, `roof_units_*`, tents, barriers). Until the branch is merged and the Workshop pack is installed, the game skips the new ids and the builder's 3D view does not draw them.
+
+| Where | Ids used | `asmb:band` |
+| --- | --- | --- |
+| Shop sign by a kerb cut | `land.pole_sign_station` (fuel), `land.pole_sign_store` (replaces `street.hanging_sign`) | `sign` |
+| Flat roofs of 200 m2 or more | `land.roof_units_s` (under 450 m2), `_m` (under 1,200), `_l`; smaller roofs keep the stock roof props | `roof` |
+| Shop front (3 in 10) | `land.shop_shelf_outdoor`, `land.water_barrels_3` | `front` |
+| Back yards | added `land.swing_set`, `trampoline`, `wood_pile`, `picnic_table`, `bbq_grill`, `doghouse` | `yard` |
+| One lot in nine "slightly off" | `land.roof_tarp` (5%), `land.garage_door_open` at the drive end (6%) | `off` |
+| Roadblocks | `land.jersey_barrier_3` and `land.sawhorse_barricade` across the road, `land.checkpoint_post`, `vehicles.pk_workshop_crafts_police` | `roadblock` |
+| Camps | added `land.generator_floodlight`, `land.portable_toilets_3`, two `land.hazard_tape_fence_6`, `vehicles.pk_workshop_crafts_ambulance` | `camp` |
+| Park centres (parks of 5,000 m2 or more without a camp, 60%) | `land.fountain_round` (8,000 m2 or more), `bandstand`, `statue_plinth`, `war_memorial` | `centre` |
+| Farm at the road corner of a field of 15,000 m2 or more (one in three, one per km) | `land.farmhouse_white`, `barn_red`, `silo_pair`, `grain_bin`, `hay_bale_round` x2, `hay_bale_stack`, `livestock_pen_8`, `trough`, `farm_windmill`, `vehicles.pk_workshop_crafts_farm_tractor`, a driveway, and a `landuse=farmyard` polygon | `farm` |
+| Edges | `land.young_tree` (half the young trees round woods), `land.willow` (18% of bank trees), `land.cattails` (30% of shore reeds), `land.fallen_log` and `land.stump` (about 1 in 17 along woods) | `edge`, `bank`, `shore` |
+| Jams | one in five cars carries `asmb:door_open=yes`: the content chat poses the driver door open on the rig's `front door` part; the main chat sets that pose | `jam` |
+
+Test map: about 6,600 slightly-off details. Park centres, farms and camps were checked on a made-up area (100 parks gave 49 centres and 13 camps; 12 fields gave 4 complete farms). Not used yet: `land.church_white_steeple` (717 pieces; the water tower stays the landmark), `gas_canopy_pumps`, `hedge_run_4`, `wall_low_4`, `fence_*` runs (those are the game's to draw along the fence and hedge ways, or a later builder step), `boat_trailer`, `combine`, `fire_engine`, `box_trailer` (the dock trucks stay `box_truck`/semi until I switch them). Gaps the content chat flagged: the tractor has equal wheel sizes; open-door baking only if the game cannot pose a parked car's door.
