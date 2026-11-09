@@ -71,3 +71,4 @@ Answer with every id, notes and the weak spots: Project doc "Content chat reply 
 - Church also has flat ceilings over the back rooms and porch and ajar interior door leaves; the nave is open to the rafters. The bell tower is hollow with three open stair flights up to the belfry floor (a `stairs` point at the foot). Not done: a per-axle wheel radius for the tractor (Workshop chat); none of batches 5 to 16 checked in the game yet.
 
 - Batch 17: `fence_wood_4` (plain 1.8 m privacy fence, 4 m along x, ends meet; asked by the main chat for builder `fence_type=wood`).
+- Batch 17 also: `elevated_station_stairs` (steel switchback, 7.6 m rise to platform height, 2 x 20 steps, mid landing, rails, `stairs` point at the ground entry; ground entry +z of the left flight, top deck at the +z end of the right flight; rotate so the deck meets the platform edge).

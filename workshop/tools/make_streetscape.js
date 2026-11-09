@@ -407,6 +407,19 @@ function railDeck(a, len, plat){ var H = 6.6, W = 4.4;
   if (plat){ a.box(-W/2 - 1.6, H + 0.8, 0, 3.0, 0.4, len, TB.concD, {m:'stone'}); a.box(-W/2 - 1.6, H + 1.02, 0, 3.0, 0.05, len, TB.yel, {m:'sheet'}); a.box(-W/2 - 3.0, H + 3.4, 0, 0.12, 4.6, 0.12, TB.rail, {m:'steel'}); a.box(-W/2 - 0.2, H + 3.4, -len/2 + 0.2, 0.12, 4.6, 0.12, TB.rail, {m:'steel'}); a.box(-W/2 - 0.2, H + 3.4, len/2 - 0.2, 0.12, 4.6, 0.12, TB.rail, {m:'steel'}); a.box(-W/2 - 1.6, H + 5.7, 0, 3.4, 0.14, len, TB.sub, {m:'sheet'}); a.box(-W/2 - 1.6, H + 1.4, 0, 0.7, 0.08, 3.0, C('#7a5a34'), {m:'wood'}); } }
 model('elevated_rail_8m', 'Elevated rail, 8 m', 'An 8 m section of elevated railway on two concrete piers, deck 7.7 m above the ground: ballast, two rails on sleepers and a low concrete parapet each side. Tiles along z (end to end). Make the track bed walkable; the underside is open so roads can pass beneath. Rails 1.43 m apart.', 4.8, 8, 9.1, function(a){ railDeck(a, 8, false); });
 model('elevated_rail_station_8m', 'Elevated rail station, 8 m', 'An 8 m elevated rail section with a platform on the left side: a raised yellow-edged platform 3 m wide, a bench and a blue roof on posts. Tiles along z and joins the plain 8 m section. Stair down not included yet.', 9.6, 8, 13, function(a){ railDeck(a, 8, true); });
+model('elevated_station_stairs', 'Elevated station stairs', 'A steel switchback stair that climbs 7.6 m to the platform of the elevated rail station: two flights of 20 steps side by side with a mid landing, rails both sides, open underneath. Ground entry at the +z end of the left flight (x = -0.65); the top landing at the +z end of the right flight (x = +0.65) is at y = 7.6, the platform height, with a 1.4 m deck beyond it to bridge to the platform edge. Rotate it so the top deck meets the platform edge.', 3.0, 8.2, 8.7, function(a){
+  var N = 20, rise = 7.6/(2*N), run = 0.29, z0 = 2.9, w = 1.15, stl = TB.concD, stp = TB.rail;
+  function flight(x, dir, y0){ for (var i = 0; i < N; i++){ var z = z0*dir*-1 + 0, zz = (dir > 0 ? -z0 : z0) + dir*(i + 0.5)*run, y = y0 + (i + 1)*rise; a.box(x, y - 0.03, zz, w, 0.05, run + 0.01, stp, {m:'steel'}); a.box(x, y - rise/2, zz - dir*run/2, w, rise, 0.03, stl, {m:'steel'}); }
+    var len = N*run, ang = Math.atan2(N*rise, len)*180/Math.PI, sl = Math.sqrt(len*len + (N*rise)*(N*rise)), zc = dir > 0 ? (-z0 + len/2) : (z0 - len/2);
+    [-1, 1].forEach(function(sd){ a.box(x + sd*(w/2 + 0.04), y0 + N*rise/2 - 0.1, zc, 0.08, 0.28, sl, stl, {m:'steel', rot:[dir > 0 ? -ang : ang, 0, 0]}); a.box(x + sd*(w/2 + 0.04), y0 + N*rise/2 + 0.95, zc, 0.05, 0.05, sl, stp, {m:'steel', rot:[dir > 0 ? -ang : ang, 0, 0]}); }); }
+  flight(-0.65, -1, 0); flight(0.65, 1, N*rise);
+  a.box(0, 3.8 - 0.05, -3.2 + 0.0, 2.5, 0.1, 0.6, stl, {m:'steel'});
+  a.box(0.65, 7.6 - 0.05, 3.5, w, 0.1, 1.2, stl, {m:'steel'});
+  [[-1.35, -3.4], [1.35, -3.4], [1.35, 4.0], [-0.1, -3.4]].forEach(function(p, q){ var hh = q === 2 ? 7.6 : 3.8; a.box(p[0], hh/2, p[1], 0.14, hh, 0.14, TB.rail, {m:'steel'}); });
+  a.box(1.35, 3.8, -3.4, 0.14, 7.6, 0.14, TB.rail, {m:'steel'});
+  a.box(0, 3.8 - 0.4, -3.2, 2.5, 0.08, 0.5, stl, {m:'steel'});
+  [0, 1].forEach(function(q){ a.box(0.65 + (q ? 0.62 : -0.62), 8.1, 3.5, 0.05, 0.05, 1.2, stp, {m:'steel'}); });
+  a.pt('stairs', 'stairs', [-0.65, 0.0, 2.9], [0, 0, -1]); });
 model('subway_entrance', 'Subway entrance', 'A closed underground station entrance 3 m wide and 4 m deep: a stair opening with a steel balustrade on each side, a blue sign pole with a lit round lamp, a roof canopy with a sign bar and a rolled-down steel gate across the top step. Closed: it does not lead anywhere yet. Open side is +z.', 4.2, 4.6, 3.8, function(a){
   a.box(0, 0.1, 0, 3.6, 0.2, 4.4, TB.concD, {m:'stone'}); a.box(0, 0.22, 0.4, 2.6, 0.05, 3.4, C('#2a2a28'), {m:'stone'});
   for (var i = 0; i < 6; i++) a.box(0, 0.3 - i*0.01, 1.8 - i*0.55, 2.4, 0.04, 0.5, TB.conc, {m:'stone'});
