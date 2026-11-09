@@ -236,6 +236,9 @@ function buildWorld(raw, name){
   dedupeRoads(w);
   w.waterLines = w.roads.filter(function(r){ return r.kind === 'water'; });
   w.roads.sort(function(p, q){ return (p.kind === 'water' ? -1 : p.w) - (q.kind === 'water' ? -1 : q.w); });
+  /* 0.125.4: a stream or ditch (4 m or narrower) that meets a road or path runs under it in an unseen culvert, even where the map has
+     no culvert entry: the crossing is cut out of the water ribbon (the road's half width and 1.5 m either side), so no water lies across the road */
+  implicitCulverts(w);
   /* 0.96.1: a `culvert` entry (builder 1.6 structures) is a stretch of stream under a road or building: no water ribbon over its span, and you can walk across it */
   (w.structures || []).forEach(function(e){ if (e.k !== 'culvert') return; var r = null; for (var ri = 0; ri < w.roads.length; ri++) if (w.roads[ri].kind === 'water' && w.roads[ri].wi === e.w){ r = w.roads[ri]; break; } if (!r) return;
     var cx = (e.lon - lon0)*kx, cy = -(e.lat - lat0)*ky, hl = Math.max(4, (e.len || 12)/2 + 2), i0 = -1, i1 = -1;
@@ -684,6 +687,21 @@ function coreDrape(m, lift){
 }
 /* 0.124.3: some maps carry the same road twice (a square's own copy and its neighbour's, or two ways drawn over each other), and two ribbons on one line
    fight for the same pixels: the centre line jitters and jumps. A road or path whose every point lies on a longer road of the same width (within 0.6 m) is dropped */
+function implicitCulverts(w){
+  var G = new Map(), CS = 30, segs = 0;
+  w.roads.forEach(function(r){ if (r.kind === 'water' || r.kind === 'rail' || r.pts.length < 4) return; for (var k = 0; k + 3 < r.pts.length; k += 2){ var sg = [r.pts[k], r.pts[k+1], r.pts[k+2], r.pts[k+3], r.w/2];
+    for (var gx = Math.floor(Math.min(sg[0], sg[2])/CS); gx <= Math.floor(Math.max(sg[0], sg[2])/CS); gx++) for (var gy = Math.floor(Math.min(sg[1], sg[3])/CS); gy <= Math.floor(Math.max(sg[1], sg[3])/CS); gy++){ var key = gx + ',' + gy; (G.get(key) || G.set(key, []).get(key)).push(sg); segs++; } } });
+  if (!segs) return;
+  var cross = function(ax, ay, bx, by, s2){ var dx = bx - ax, dy = by - ay, ex = s2[2] - s2[0], ey = s2[3] - s2[1], den = dx*ey - dy*ex; if (Math.abs(den) < 1e-9) return -1; var t = ((s2[0] - ax)*ey - (s2[1] - ay)*ex)/den, u = ((s2[0] - ax)*dy - (s2[1] - ay)*dx)/den; return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? t : -1; };
+  w.roads.forEach(function(r){ if (r.kind !== 'water' || r.w > 4 || r.pts.length < 4) return; var out = [r.pts[0], r.pts[1]], hide = [], changed = false;
+    for (var k = 0; k + 3 < r.pts.length; k += 2){ var ax = r.pts[k], ay = r.pts[k+1], bx = r.pts[k+2], by = r.pts[k+3], L = Math.hypot(bx - ax, by - ay) || 1, hits = [], seen = {};
+      for (var gx = Math.floor(Math.min(ax, bx)/CS); gx <= Math.floor(Math.max(ax, bx)/CS); gx++) for (var gy = Math.floor(Math.min(ay, by)/CS); gy <= Math.floor(Math.max(ay, by)/CS); gy++){ var Lg = G.get(gx + ',' + gy); if (!Lg) continue;
+        Lg.forEach(function(s2){ var t = cross(ax, ay, bx, by, s2); if (t >= 0){ var kk = Math.round(t*L*4); if (!seen[kk]){ seen[kk] = 1; hits.push([t, (s2[4] + 1.5)/L]); } } }); }
+      hits.sort(function(a, b){ return a[0] - b[0]; });
+      hits.forEach(function(h){ var t0 = Math.max(0.001, h[0] - h[1]), t1 = Math.min(0.999, h[0] + h[1]); out.push(ax + (bx - ax)*t0, ay + (by - ay)*t0); hide.push(out.length/2 - 1); out.push(ax + (bx - ax)*t1, ay + (by - ay)*t1); changed = true; });
+      out.push(bx, by); }
+    if (!changed) return; r.pts = out; bbox(r); hide.forEach(function(i){ (r.cul = r.cul || []).push([i*2, i*2]); }); });
+}
 function dedupeRoads(w){
   var R = w.roads, G = new Map(), CS = 20, drop = new Set(), idx = [];
   R.forEach(function(r, i){ if ((r.kind === 'road' || r.kind === 'path') && r.pts.length >= 4) idx.push(i); });
