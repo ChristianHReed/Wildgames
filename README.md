@@ -2,7 +2,7 @@
 
 Home of **Afterstreet**: a lightweight, low-poly, first-person survival game played on your real city. Aliens and Missouri weather are the threats. The game is `play.html` plus the `engine`, `assets` and `packs` folders beside it, meant to live on a USB stick or SSD and run in a web browser on whatever it is plugged into, with no installer, launcher, host app or website.
 
-Version 0.128.1. Every foundation step in [docs/DESIGN.md](docs/DESIGN.md) has a working first version. It is played and bug-reported on an iPhone 11 and an iPad Pro; no benchmark results from computers have come back yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
+Version 0.128.2. Every foundation step in [docs/DESIGN.md](docs/DESIGN.md) has a working first version. It is played and bug-reported on an iPhone 11 and an iPad Pro; no benchmark results from computers have come back yet. See [docs/ROADMAP.md](docs/ROADMAP.md) for what comes next and which packs to download, and [docs/TESTING.md](docs/TESTING.md) for the testing roadmap.
 
 ## Play
 
