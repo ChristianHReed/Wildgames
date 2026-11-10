@@ -149,6 +149,9 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 - **Gaps**: an octagonal loft's top sits below its radius; leave room for that when touching pieces.
 - **Browsers on iPad**: `confirm()` and `prompt()` are blocked; use in-page "tap again" instead. Sliders snap their minimum and maximum to the step.
 - **The user's terms change** (the main chat renamed "Bonnet" to "Hood" and "Tyre" stays): match the strings in the file as it is now, don't assume.
+- **Start every task by reading the project for notes to me.** Requests arrive as `Request to Workshop chat - …` and as lines inside other chats' notes ("Workshop chat: …"). Search the project for "Workshop chat" and read the newest main chat notes.
+- **Release steps for every chat** (`docs/RELEASE.md`): `node --check`, `node tools/smoke.js` on the worlds the change touches (set `AFTERSTREET_URL` to the test server), a screenshot, a roadmap row, and any new loaded file in `sw.js` `STATIC`, with removed files taken out of it (a listed file that doesn't exist breaks the offline copy). Version stamps and `gh-pages` are the main chat's.
+- **Bake less, make more**: anything the Workshop makes with seeded, position-based noise can be shipped as a recipe and remade in the game exactly. Prove it byte for byte before dropping the baked copy.
 - **Snapping rules** (keep them for every new tool that moves or sizes pieces): snap absolute positions, never step distances; snap the nearest side of the box, not the middle; neighbours (and the middle line for mirrored pieces) before the grid; place by the shape's own box, since domes, quarter rounds and arches are not centred on `pos`. Use `M.snapMove` / `M.snapFace`; never round a delta.
 - **Survivor bodies are mostly clothes**: the body itself is only the head, neck and hands. The torso and limbs are the top, bottoms and shoes, and `spine_02` carries no pieces. Body shape has to scale every piece on a bone (clothes included), not just the body's own pieces.
 - **Test buttons break when labels change**: update the scratchpad tests (for example `ax.mjs` after "Blank car" went away).
@@ -156,6 +159,8 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 ## 7. Where things stand (update at the end of each task)
 
 **Done**
+
+- Slim vehicle packs: damage looks, wrecks and burnt shells made from the body when first read (`dmgGen` recipe, `D.fromPack`, lazy properties in packload). Waiting on the main chat: build wreck and burnt meshes only when one is placed.
 
 - Snapping that lines up: absolute, nearest-edge, whole-step block sizes, neighbours first (Stick), flush placement of off-centre shapes, Line up with the grid, Close small gaps.
 

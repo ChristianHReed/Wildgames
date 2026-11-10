@@ -184,13 +184,15 @@
   }
 
   /* ---------------------------------------------------------------- everything at once */
-  D.generate = function(doc, nat, sp, rig, props){
+  /* only: 'damage', 'wreck' or 'burnt' to make just that (the game makes each when first needed); all three when left out */
+  D.generate = function(doc, nat, sp, rig, props, only){
     props = props || (typeof SHAPED !== 'undefined' && SHAPED.props) || (typeof window !== 'undefined' && window.SHAPED && window.SHAPED.props);
     var seed = (doc.dmg && doc.dmg.seed) || 7, s = (doc.dmg && doc.dmg.strength != null) ? doc.dmg.strength : 1;
     var body = nat.body, bonnet = nat.bonnet || [];
     var all = function(z0){ return function(B){ return B.mx[2] > z0; }; };
     var L = sp.length, light = Math.min(0.5, L*0.11), heavy = Math.min(1.0, L*0.22);
     var dmg = {};
+    if (!only || only === 'damage'){
     dmg.body_crumple_light = deform(body, all(sp.nose - light), crumpleFn(sp, light, 0.1*s, seed));
     dmg.body_crumple_heavy = deform(body, all(sp.nose - heavy), crumpleFn(sp, heavy, 0.32*s, seed), 0.4);
     dmg.body_bumper_bent = deform(body, function(B){ return B.mx[2] > sp.nose - 0.45 && B.mn[1] < sp.bumperY + 0.28; }, bumperFn(sp, seed, s));
@@ -205,18 +207,22 @@
     dmg.windscreen_missing = ws ? missing(ws, seed) : [];
     dmg.smoke = borrowed(props, 'smoke', rig.smokeAt);
     dmg.fire = borrowed(props, 'fire', rig.smokeAt);
+    }
 
     /* the wreck: dented all over, rusted, glass broken, tyres flat */
     var R = doc.setup.wheelR, dent = dentFn(seed + 3, 0.012*s);
-    var wreck = {body:recolour(deform(body, function(){ return true; }, dent), wreckColour, seed)};
-    if (bonnet.length) wreck.bonnet = recolour(deform(bonnet, function(){ return true; }, dent), wreckColour, seed);
+    if (only === 'damage') return {damage:dmg};
+    var wreck = only === 'burnt' ? null : {body:recolour(deform(body, function(){ return true; }, dent), wreckColour, seed)};
+    if (wreck && bonnet.length) wreck.bonnet = recolour(deform(bonnet, function(){ return true; }, dent), wreckColour, seed);
     var flat = -0.8*R;
-    wreck.wheel = [];
+    if (wreck){ wreck.wheel = [];
     nat.wheel.forEach(function(pc){
       if (matOf(pc) === 'rubber') wreck.wheel = wreck.wheel.concat(M.bakePiece(pc, function(q){ if (q[1] >= flat) return q; return [q[0]*1.12, flat + (q[1] - flat)*0.3, q[2]*1.04]; }));
       else { var q = clone(pc); q.c = matOf(pc) === 'steel' ? 'rust' : pc.c; wreck.wheel.push(q); }
     });
+    }
     var wreckDrop = r4(R - (-flat + 0.2*R*0.3));
+    if (only === 'wreck') return {wreck:wreck};
     /* the burnt shell: charred, no glass, no tyres, sat on its rims */
     var burnt = {body:recolour(deform(body, function(){ return true; }, dentFn(seed + 5, 0.02*s)), burntColour, seed)};
     if (bonnet.length) burnt.bonnet = recolour(bonnet, burntColour, seed);
@@ -230,6 +236,15 @@
     return {damage:dmg, wreck:wreck, burnt:burnt, rigWreck:rigW, rigBurnt:rigB};
   };
 
+  /* the game's side: make a pack vehicle's damage looks, wreck or burnt shell from what the pack ships (its body, bonnet and wheel,
+     spec, rig and the recipe asset.dmgGen = {v, seed, strength, mats}). mats names the pieces whose material the colour would not
+     tell (wood trim, a glass the colour guess misses), so the result is exactly what the Workshop made. */
+  D.fromPack = function(model, spec, rig, gen, what, props){
+    var nat = {}; ['body', 'bonnet', 'wheel'].forEach(function(g){ nat[g] = (model[g] || []).map(function(pc, i){ var m = gen.mats && gen.mats[g] && gen.mats[g][i]; if (!m) return pc; var q = {}; for (var k in pc) q[k] = pc[k]; q._m = m; return q; }); });
+    var out = D.generate({dmg:{seed:gen.seed, strength:gen.strength}, setup:{wheelR:spec.wheelR}}, nat, spec, rig, props, what);
+    stripM(out); return what ? out[what] : out;
+  };
+  function stripM(o){ if (Array.isArray(o)) o.forEach(stripM); else if (o && typeof o === 'object'){ delete o._m; for (var k in o) if (o[k] && typeof o[k] === 'object') stripM(o[k]); } }
   /* the looks the game shows at each health, as docs/SHAPED.md describes: [replace body, replace bonnet, drawn on top] */
   D.LOOKS = [
     {key:'whole',    label:'Whole',                 body:null, bonnet:null, over:[]},

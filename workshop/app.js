@@ -1879,7 +1879,7 @@
       '<div class="row" style="justify-content:flex-end"><button class="alt sm" data-m="close">Not yet</button><button class="sm" data-m="sendBuild">Build it</button></div>';
     modal(h);
     MODAL.sendBuild = function(){
-      var pk = M.newPack({id:'station-' + slug(S.doc.id).replace(/_/g, '-'), name:S.doc.name, author:S.doc.author || ''}); pk.version = 2; pk.assets.push(A);
+      var pk = M.newPack({id:'station-' + slug(S.doc.id).replace(/_/g, '-'), name:S.doc.name, author:S.doc.author || ''}); pk.version = 2; pk.assets.push(M.slimAsset(A));
       var msg = STN.handoff({station:STATION, stationId:QS.sid || '', name:S.doc.name, id:S.doc.id, kind:S.doc.type === 'model' ? S.doc.kind : 'vehicle', domain:M.domainOf(S.doc), size:sz, cost:cost, pack:pk});
       if (window.parent && window.parent !== window){ window.parent.postMessage(msg, '*'); closeModal(); toast('Sent to the game.'); return; }
       try { localStorage.setItem(STN.KEY, JSON.stringify(msg)); } catch (e){ closeModal(); toast('Could not hand it to the game (storage full): export a pack instead.'); return; }
