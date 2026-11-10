@@ -538,7 +538,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.128.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.128.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -583,7 +583,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.128.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.128.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -6234,7 +6234,11 @@ async function openAsmap(file){
       await zonePut(R, +ij[1], +ij[2], await z.text(names[i]));
     }
     REGIONS = REGIONS.filter(function(x){ return x.id !== R.id; }); REGIONS.push(R); saveRegions(); await renderRegions();
-    st.textContent = R.name + ' is on this device (' + names.length + ' squares). Press Play.'; info(st.textContent);
+    st.textContent = R.name + ' is on this device (' + names.length + ' squares). Press Play.';
+    /* 0.128.1: the builder says what a map was built for (1.35.0). A full-detail map with big squares can close the page on a phone or tablet: say so before Play, not after */
+    var mb = +(man.maxSquareMB || r0.maxSquareMB) || 0, bud = man.budget || r0.budget;
+    if (lowMemDev() && (bud === 'computer' && mb > 12 || mb > 16)) st.textContent += ' This map was built for computers (its biggest square is ' + mb + ' MB). On a phone or tablet it may close the page: if it does, build it again in the Maps Builder with Light build ticked.';
+    info(st.textContent);
   } catch (e){ st.textContent = 'Could not open the map file: ' + (e.message || e.name || 'unknown error') + '.'; info(st.textContent); try { BUGERR.push('openAsmap ' + file.name + ' ' + file.size + ': ' + (e && (e.name + ' ' + e.message))); } catch (er){} }
 }
 /* 0.112.0: shared edits (.asedit files from the Maps Builder). The files are kept on this device; as each map square loads, the changes that fall inside it (ground, roads, buildings, props, floods) are laid on top with the builder's own `terrainApply`. Positions are latitude and longitude, so a file works on any build of the same place. */

@@ -121,8 +121,16 @@ function spInstall(){ if (SPON) (function(){
     /* wrecks and burnt-out shells of every car: the same parts with their own wheels, sunk by sitDrop */
     var WB = {sedan:'sedan', hatch:'hatchback', suv:'suv', wagon:'wagon', offroad:'offroader', crew:'crew_pickup', flatbed:'flatbed', boxtruck:'box_truck', van:'van'};
     PCV.forEach(function(e){ if (NEWC[e.key]) WB[e.key] = e.key; });
-    for (nm in WB) ['wreck', 'burnt'].forEach(function(st){ var pn = WB[nm] + '_' + st, V2 = PR.models.vehicles[pn], R2 = PR.vehicleRig[pn], key = nm + '_' + st; if (!V2 || !R2 || !VMOD[nm] && !SPCAR[nm]) return;
-      var vc2 = spColour(PR.palette), B2 = spModel(V2.body.concat(V2.bonnet || []), vc2, {car:true}), W2 = spModel(V2.wheel, vc2, {car:true}); VMOD['sp_' + key + '_w'] = W2; B2.w = R2.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + key + '_w']; }); B2.h = (SPCAR[nm] || VMOD[nm]).h; B2.drop = R2.sitDrop || 0; VMOD[key] = B2; });
+    /* 0.128.1: each wreck and burnt shell is built the first time something asks for it, not all of them at the start (the Workshop chat's ask: with its slim
+       packs a wreck's pieces are themselves only made when read, so building all 76 here made every one and kept it). Reading VMOD[key] builds body and wheels */
+    Object.keys(WB).forEach(function(nm){ ['wreck', 'burnt'].forEach(function(st){ var pn = WB[nm] + '_' + st, R2 = PR.vehicleRig[pn], key = nm + '_' + st; if (!(pn in PR.models.vehicles) || !R2 || !VMOD[nm] && !SPCAR[nm]) return;
+      var made, make = function(){ if (made !== undefined) return made; made = null;
+        try { var V2 = PR.models.vehicles[pn]; if (!V2) return null; var vc2 = spColour(PR.palette), B2 = spModel(V2.body.concat(V2.bonnet || []), vc2, {car:true}), W2 = spModel(V2.wheel, vc2, {car:true});
+          Object.defineProperty(VMOD, 'sp_' + key + '_w', {value:W2, writable:true, configurable:true, enumerable:true});
+          B2.w = R2.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + key + '_w']; }); B2.h = (SPCAR[nm] || VMOD[nm]).h; B2.drop = R2.sitDrop || 0; made = B2; } catch (er4){ console.log('wreck ' + key, er4); }
+        return made; };
+      Object.defineProperty(VMOD, key, {get:make, set:function(v){ made = v; }, configurable:true, enumerable:false});
+      Object.defineProperty(VMOD, 'sp_' + key + '_w', {get:function(){ make(); var d = Object.getOwnPropertyDescriptor(VMOD, 'sp_' + key + '_w'); return d && 'value' in d ? d.value : undefined; }, configurable:true, enumerable:false}); }); });
     /* 0.87: the art chat's service and construction vehicles (assets/shaped/machines.js), parked at rest as abandoned wrecks on the roads */
     try { var MC = SHAPED.machines; if (MC) for (var mn in MC.models){
       var mp = [], mw = MC.models[mn]; for (var pn2 in mw) if (pn2 !== 'wheel') mp = mp.concat(mw[pn2]);
