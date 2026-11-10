@@ -200,6 +200,42 @@ def build(sex='masculine'):
     # the crotch strip closes itself on the mirror plane (L0's inner chain lies on x = 0), nothing more to add
     return m
 
+# ---------------------------------------------------------------- measurements for the clothes (read by assets/shaped/src/survivor.py)
+def _slice(m, tags, y, xmin=None):
+    pts = []
+    for f, t in zip(m.f, m.tag):
+        if t not in tags: continue
+        for k in range(len(f)):
+            a, b = m.v[f[k]], m.v[f[(k + 1) % len(f)]]
+            if (a[1] - y)*(b[1] - y) < 0:
+                u = (y - a[1])/(b[1] - a[1]); p = (a[0] + (b[0] - a[0])*u, a[2] + (b[2] - a[2])*u)
+                if xmin is None or p[0] > xmin: pts.append(p)
+    return pts
+def fit(sex, joints):
+    """Torso rows [y, half width, half depth, centre z] (an ellipse that holds every corner of the loop at that height),
+    limb profiles [t, rx, rz] along each bone and where each limb's middle sits against the skeleton line."""
+    m = mirror(build(sex)); torso = []
+    for y in (0.92, 0.98, 1.04, 1.10, 1.16, 1.22, 1.28, 1.34, 1.40, 1.455):
+        P = _slice(m, ('pelvis', 'spine_01', 'spine_02', 'spine_03', 'neck_01'), y)
+        zc = (max(p[1] for p in P) + min(p[1] for p in P))/2; a = max(abs(p[0]) for p in P); b = (max(p[1] for p in P) - min(p[1] for p in P))/2
+        k = min(1.06, max((p[0]/a)**2 + ((p[1] - zc)/b)**2 for p in P)**0.5)      # a little over the loop; the corners may just touch the cloth
+        torso.append([y, round(a*k, 4), round(b*k, 4), round(zc, 4)])
+    prof = {}; off = {}
+    chains = {'UP': ('upperarm', 'sh', 'el', ('upperarm_l', 'lowerarm_l')), 'LO': ('lowerarm', 'el', 'wr', ('upperarm_l', 'lowerarm_l', 'hand_l')),
+              'TH': ('thigh', 'hp', 'kn', ('thigh_l', 'calf_l')), 'CA': ('calf', 'kn', 'an', ('thigh_l', 'calf_l', 'foot_l'))}
+    for key, (bone, ja, jb, tags) in chains.items():
+        A, Bq = joints[ja + 'l'], joints[jb + 'l']; rows = []
+        for t in (0.0, 0.15, 0.3, 0.5, 0.7, 0.85, 1.0):
+            y = A[1] + (Bq[1] - A[1])*t; P = []; tries = 0
+            while len(P) < 4 and tries < 12: P = _slice(m, tags, y - 0.01*tries, xmin=0.0); tries += 1
+            xs = [p[0] for p in P]; zs = [p[1] for p in P]; cx = (max(xs) + min(xs))/2; cz = (max(zs) + min(zs))/2
+            rows.append((t, (max(xs) - min(xs))/2, (max(zs) - min(zs))/2, cx - (A[0] + (Bq[0] - A[0])*t), cz - (A[2] + (Bq[2] - A[2])*t)))
+        dx = sum(r[3] for r in rows)/len(rows); dz = sum(r[4] for r in rows)/len(rows)
+        med = sorted(r[2] for r in rows)[len(rows)//2]
+        rows = [(t, rx, rz if rz > 0.5*med else med, ox, oz) for t, rx, rz, ox, oz in rows]       # a thin sliver at a bone end is not the limb's size
+        prof[key] = [[t, round(rx + 0.4*abs(ox - dx), 4), round(rz + 0.4*abs(oz - dz), 4)] for t, rx, rz, ox, oz in rows]; off[bone] = [round(dx, 4), round(dz, 4)]
+    return {'torso': torso, 'profiles': prof, 'fit': off}
+
 # ---------------------------------------------------------------- preview: small z-buffer renderer with quad edges
 def render(meshes, path, W=2300, H=820, views=((0, 'front'), (35, '3/4'), (90, 'side'), (180, 'back')), wire=True):
     img = np.full((H, W, 3), (236, 232, 224), np.float32); zb = np.full((H, W), -1e9, np.float32)

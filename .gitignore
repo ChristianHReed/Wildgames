@@ -7,3 +7,4 @@ maps/*
 !maps/README.md
 .DS_Store
 Thumbs.db
+__pycache__/

@@ -106,9 +106,12 @@ def head(fem):
 
 # ================= torso: square shoulders, one wedge to the waist =================
 def _torso_rows(rows, fem=False): return [tuple(r) for r in rows]   # read off the body's own torso rings (workshop/tools/fit_rings.py), so clothes fit the loops they sit on
-_LF = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/limb_fit.json')))
-_TT = _json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools/data/superhero_torso.json')))
-TORSO = {False: _torso_rows(_TT['masculine']), True: _torso_rows(_TT['feminine'], True)}   # y, half-width, half-depth, z: hips to shoulder girth
+import sys as _sys
+_sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools'))
+import base_cage as _bc
+_CF = {sx: _bc.fit(sx, J) for sx in ('masculine', 'feminine')}     # measured from the box-modelled base body (workshop/tools/base_cage.py)
+_LF = {'profiles': _CF['masculine']['profiles'], 'fit': {sx: _CF[sx]['fit'] for sx in _CF}}
+TORSO = {False: _torso_rows(_CF['masculine']['torso']), True: _torso_rows(_CF['feminine']['torso'], True)}   # y, half-width, half-depth, z: hips to shoulder girth
 HEM, SPLIT = 0.92, 1.18
 GK = 0.7     # clothes sit this much closer to the body than their nominal thickness (slim cut, 19 October 2026)
 LW = 1.0      # limb thickness: the profiles below are measured from the base body
@@ -605,9 +608,9 @@ def head_design(fem):
 def foot_rings(R, sd, g=0.0):
     """a blocky designed foot (heel block, instep, ball, toe box), placed under the calf's last ring; g grows it for a shoe"""
     import numpy as np
-    c = np.array(R['calf_' + sd][-1]).mean(0); cx, cz = float(c[0]), float(c[2])
-    # z from the heel, half-width, top height, bottom height (the toe lifts a little)
-    st = [(-0.075, 0.030, 0.062, 0.012), (-0.045, 0.038, 0.088, 0.004), (0.0, 0.041, 0.078, 0.0), (0.06, 0.047, 0.056, 0.0), (0.12, 0.049, 0.040, 0.0), (0.17, 0.043, 0.031, 0.004), (0.2, 0.026, 0.022, 0.01)]
+    cx, cz = (0.081 if sd == 'l' else -0.081), -0.012        # the base body's foot (workshop/tools/base_cage.py)
+    # z from the ankle, half-width, top height, bottom height (the toe lifts a little)
+    st = [(-0.085, 0.036, 0.070, 0.012), (-0.052, 0.046, 0.100, 0.004), (0.0, 0.049, 0.104, 0.0), (0.075, 0.055, 0.096, 0.0), (0.150, 0.061, 0.060, 0.0), (0.220, 0.054, 0.040, 0.004), (0.262, 0.032, 0.026, 0.01)]
     rings = []
     for z, w, top, bot in st:
         w += g; top += g; bot = max(bot - g*0.4, 0.0) if g else bot; m = (top + bot)/2; h = (top - bot)/2
@@ -718,7 +721,7 @@ def leg_join(R, sd, hip):
     thigh = [r0] + [rs(mid)] + [rs(r) for r in th[3:]]
     calf = [rs(r) for r in ca]
     return thigh, calf
-def body(fem):
+def body_rings_v10(fem):
     R = reshape(_RINGS['feminine' if fem else 'masculine'], fem); out = {}
     # one joined torso: every loop resampled to 16 corners on a smooth curve through the fitted corners
     import copy
@@ -763,7 +766,19 @@ def body(fem):
             out[b] = [ring_loft(hr2, caps=(False, True), ngon=True), ring_loft(tb, caps=(True, True), ngon=True)]
     for sd in ('l', 'r'): out['foot_' + sd] = [ring_loft(foot_rings(R, sd), caps=(True, True))]
     return out
-HEAD_S = (1.16, 0.97, 1.2); HEAD_O = (0.0, 1.548, 0.0)
+def body(fem):
+    """The base body is the box-modelled quad cage (workshop/tools/base_cage.py), cut into one open shell per bone."""
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools'))
+    import base_cage as _bc
+    m = _bc.mirror(_bc.build('feminine' if fem else 'masculine')); _bc.orient(m); out = {}
+    for f, t in zip(m.f, m.tag):
+        t = t.replace('ball_', 'foot_'); out.setdefault(t, []).append(f)
+    for t, fs in out.items():
+        ids = sorted(set(i for f in fs for i in f)); mp = {v: k for k, v in enumerate(ids)}
+        q = solid([tuple(round(c, 4) for c in m.v[i]) for i in ids], [[mp[i] for i in f] for f in fs], 'SKIN'); q['winding'] = True; out[t] = [q]
+    return out
+HEAD_S = (1.6, 1.26, 1.65); HEAD_O = (0.0, 1.556, 0.056)     # head parts drawn for the old stock head, grown onto the base body's head
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S
     q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]
