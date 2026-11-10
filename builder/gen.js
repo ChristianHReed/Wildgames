@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.34.0';
+L.VERSION = '1.35.0';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp', 'waterway', 'bridge:support'];
@@ -423,9 +423,10 @@ L.fillGaps = function(R, loc, centreR){
 };
 
 /* ---------------- the squares ---------------- */
-L.regionOf = function(area){
-  var lat0 = area.lat, dLat = 0.05, dLon = Math.round(0.05/Math.cos(lat0*Math.PI/180)*1e4)/1e4, my = 0.0045, mx = my/Math.cos(lat0*Math.PI/180);
-  var R = {id:area.id, name:area.name, lat:area.lat, lon:area.lon, miles:area.miles, dLat:dLat, dLon:dLon, my:my, mx:mx};
+L.regionOf = function(area, div){
+  div = div || 1;   /* 1: squares 0.05 degrees (5.5 km) across; 2 or 3: the same cut into 2 x 2 or 3 x 3 for dense cities */
+  var lat0 = area.lat, dLat = Math.round(0.05/div*1e5)/1e5, dLon = Math.round(dLat/Math.cos(lat0*Math.PI/180)*1e5)/1e5, my = 0.0045, mx = my/Math.cos(lat0*Math.PI/180);
+  var R = {id:area.id, name:area.name, lat:area.lat, lon:area.lon, miles:area.miles, dLat:dLat, dLon:dLon, my:my, mx:mx, div:div};
   var n = Math.ceil(area.miles*1.609/(dLat*110.54)) + 1, sq = [];
   for (var j = -n; j <= n; j++) for (var i = -n; i <= n; i++) if (Math.hypot(i*dLon*Math.cos(lat0*Math.PI/180)*111.32, j*dLat*110.54) <= area.miles*1.609 + 3) sq.push([i, j]);
   R.squares = sq;

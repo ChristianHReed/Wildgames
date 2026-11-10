@@ -290,6 +290,13 @@ L.runBuild = async function(job, post, stop){
   if (job.opts.dress !== false && L.lots){ say(0.56, 'Filling the lots: driveways, fences, back yards and roof units'); stats.lots = L.lots(F, loc); }
   /* 4. squares */
   say(0.55, 'Cutting the map into squares');
+  /* square size: a dense city in one 5.5 km square is 40 MB of JSON, too much for a phone page to build. Count the real ways in the densest 5.5 km cell and cut every square into 2 x 2 or 3 x 3
+     when its estimated size is over the target (10 MB on the phone budget, 30 MB otherwise). About 1.07 KB a real way in a full build, 0.55 KB on the light budget (Saint Louis, measured). */
+  var kb = job.opts.light ? 0.00055 : 0.00107, targetMB = job.opts.light ? 10 : 30, cellN = {}, maxReal = 0, c0Lon = R.dLon*R.div, c0Lat = R.dLat*R.div;
+  F.ways.forEach(function(w){ if (w.src === 'gen' || !w.c || w.c.length < 2) return; var k = Math.floor((w.c[0] - A.lon)/c0Lon + 0.5) + ':' + Math.floor((w.c[1] - A.lat)/c0Lat + 0.5); var v = cellN[k] = (cellN[k] || 0) + 1; if (v > maxReal) maxReal = v; });
+  var estMB = maxReal*kb, div = 1; while (div < 3 && estMB/(div*div) > targetMB) div++;
+  if (div !== R.div){ R = L.regionOf(A, div); stats.squareDiv = div; }
+  stats.squareEstMB = Math.round(estMB/(div*div)*10)/10;
   var S = L.cutSquares(R, F);
   /* 5. ground, square by square, saved as it goes */
   var tiffs = [];
@@ -297,7 +304,7 @@ L.runBuild = async function(job, post, stop){
   tiffs.sort(function(a, b){ return a.res - b.res; });
   var terr = job.opts.tiles ? L.Terrarium() : null;
   await L.dbDel('squares', job.proj + ':');
-  var index = [], rep = {struct:{}, uses:{}, squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
+  var maxSq = 0, index = [], rep = {struct:{}, uses:{}, squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
   var credit = '© OpenStreetMap contributors (ODbL)' + (stats.overture && stats.overture.added ? '; buildings also from Overture Maps (ODbL)' : '') + (tiffs.length ? '; elevation: ' + tiffs.map(function(t){ return t.name; }).join(', ') : '') + (terr ? '; elevation: AWS Terrain Tiles (SRTM/3DEP)' : '');
   for (var s = 0; s < R.squares.length; s++){
     if (stop()) throw new Error('stopped');
@@ -309,7 +316,7 @@ L.runBuild = async function(job, post, stop){
     var uc = L.uses ? L.uses(sq) : null; if (uc){ for (var uk in uc) rep.uses[uk] = (rep.uses[uk] || 0) + uc[uk]; }
     var stc = L.structures ? L.structures(b, sq, eg.grid) : null; if (stc && stc.list.length) m.structures = stc.list;
     m.builder = {v:L.VERSION, counts:sq.n, elev:eg.src, step:step}; if (stc) m.builder.structures = stc.counts;
-    var text2 = JSON.stringify(m); bytes += text2.length;
+    var text2 = JSON.stringify(m); bytes += text2.length; if (text2.length > maxSq) maxSq = text2.length;
     await L.dbPut('squares', job.proj + ':' + i + ':' + jj, text2);
     var nb = sq.n.osm + sq.n.overture + sq.n.gen; index.push([i, jj, nb]);
     for (var kk in rep.tot) rep.tot[kk] += sq.n[kk];
@@ -337,6 +344,7 @@ L.runBuild = async function(job, post, stop){
   /* 7. the index, like assets/map.js */
   var man = {format:L.FORMAT, builder:L.VERSION, made:new Date().toISOString(),
     region:{id:A.id, name:A.name, lat:A.lat, lon:A.lon, miles:A.miles, dLat:R.dLat, dLon:R.dLon},
+    budget:job.opts.light ? 'phone' : 'computer', maxSquareMB:Math.round(maxSq/1e5)/10,
     squares:index, places:F.places, attribution:credit, stats:stats, report:rep, bytes:bytes, ms:Date.now() - t0,
     sources:{osm:o.name || o.kind, tiffs:(job.tiffs || []).map(function(f){ return f.name; }), overture:(job.overture || []).map(function(f){ return f.name; }), tiles:!!terr}};
   say(0.99, 'Drawing the preview');
