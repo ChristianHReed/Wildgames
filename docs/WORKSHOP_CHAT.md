@@ -185,6 +185,8 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 
 **Open in the Workshop**
 
+- Wheel size per axle (the tractor's big rear and small front wheels): the content chat asked for this; today there is one wheel radius per vehicle.
+
 - Map the stock keys (`hatchback` and so on) to the remade designs when the game loads `workshop-crafts`. This needs the main chat to agree first.
 - The roll-up door preview sticks up through the roof.
 - Wrecks of the remade vehicles come from `damage.js`; check they look right.
