@@ -7,6 +7,15 @@ var FLOOR = {civic:'#a89f8e', house:'#8a6a48', food:'#b9b4a6', shop:'#b9b4a6', m
 var COLC = {};
 function C(h){ var c = COLC[h]; if (!c){ var n = parseInt(h.slice(1), 16); c = COLC[h] = [n >> 16, (n >> 8) & 255, n & 255]; } return c; }
 function Mesh(){ this.p = []; this.c = []; this.t = []; this.al = 255; this.pl = null; this.wt = null; this.yo = 0; }
+/* 0.128.0: a mesh that is only ever added to (the ground of a whole map square) hands what it has so far over as packed numbers (4 bytes a value, 1 for
+   colours) and starts its plain lists again. A plain list costs 8 bytes a value and copies itself each time it outgrows its room: the square's street
+   dressing alone reached 320 MB that way, with over a gigabyte of throwaway copies behind it, which is where phones and tablets closed the page.
+   Only for meshes nobody reads back by position */
+Mesh.prototype.spill = function(over){
+  if (this.p.length <= (over || 0)) return;
+  (this.parts = this.parts || []).push({p:new Float32Array(this.p), c:new Uint8Array(this.c), t:new Float32Array(this.t)});
+  this.p = []; this.c = []; this.t = [];
+};
 Mesh.prototype.tri = function(ax,ay,az,bx,by,bz,cx,cy,cz,col,a){
   this.p.push(ax,ay,az,bx,by,bz,cx,cy,cz); var r = col[0], g = col[1], b = col[2]; this.c.push(r,g,b,a,r,g,b,a,r,g,b,a);
   var pl = this.pl; if (pl){ var k = pl[1]; this.t.push(ax*k,az*k,pl[0], bx*k,bz*k,pl[0], cx*k,cz*k,pl[0]); } else this.t.push(0,0,-1, 0,0,-1, 0,0,-1);

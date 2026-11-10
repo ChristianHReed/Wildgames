@@ -376,7 +376,7 @@ function gtUnpack(o, w){ o.wait = 1;
     .catch(function(e){ o.wait = 0; console.warn('ground tile', e); }); }
 /* building outsides are meshed only for the map pieces near you, and dropped when you move away */
 function manageChunks(budget){
-  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); manageGroundTiles(); manageMapProps(Math.max(1, budget >> 1)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
+  manageTerrain(budget); manageTrees(Math.max(1, budget >> 1)); manageGround(1); manageGroundTiles(); manageMapProps(Math.max(1, budget >> 1)); manageDress(Math.max(2, budget)); var cs = world.gl.chunks, R = QS.chunk + CH, n = 0, nf = 0;
   for (var i = 0; i < cs.length; i++){
     var c = cs[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
     var wantF = FRON && d < FRD;   /* Art 5: rebuild a piece when it comes near enough for framed walls, or goes far enough for painted ones */
@@ -531,6 +531,19 @@ function seat(b, m, lm, s0, l0){
 /* 0.114.54: scenery you cannot walk or drive through (radius in metres) */
 var SOLID = {'plants.stump':0.45, 'plants.fallen_log':0.5, 'plants.bramble':0.5, 'fm.bale_round':0.9, 'fm.hay_wagon':1.3, 'fm.tractor':1.3, 'fm.water_trough':0.8, 'fm.scarecrow':0.3, 'fm.windmill':1.0, 'street.power_pole':0.2, 'street.bike_rack':0.4, 'street.phone_box':0.5, 'street.newspaper_box':0.3, 'street.mailbox':0.25, 'street.parking_meter':0.15, 'street.bollard':0.2, 'street.traffic_light':0.2, 'rs.pump_island_modern':1.0, 'rs.billboard':0.4};
 var OBR = {streetlight:0.25, firehydrant:0.3, bench:0.75, dumpster:1.3, bush:0.5};
+/* 0.128.0: street dressing (lamps, hydrants, signs, road markings, cracks, plants: 23,000 pieces and 930,000 triangles on a city square) is no longer
+   stamped into the ground of the whole square as it loads. Each piece is only noted in its 128 m cell, and a cell is built when you come near and let
+   go when you leave, like the map's own props. Stamped, it was 80 MB held for good and over a gigabyte of throwaway copies while loading */
+var DRC = 128;
+function drAdd(w, M, x, y, yaw, off){ if (!M) return; var D = w.drM || (w.drM = new Map()), kx = Math.floor(x/DRC), ky = Math.floor(y/DRC), key = gk(kx, ky), c = D.get(key);
+  if (!c){ c = {x:(kx + 0.5)*DRC, y:(ky + 0.5)*DRC, list:[], g:null}; D.set(key, c); } c.list.push([M, x, y, yaw, off]); }
+function drR(){ return Math.min(QS.far, 420); }
+function manageDress(budget){
+  var A = world.gl.dr; if (!A || !A.length) return; var R = drR() + DRC, n = 0;
+  for (var i = 0; i < A.length; i++){ var c = A[i], d = Math.max(Math.abs(c.x - P.x), Math.abs(c.y - P.y));
+    if (!c.g && d < R && n < budget){ var m = new Mesh(), L = c.list; for (var k = 0; k < L.length; k++){ var q = L[k]; m.model(q[0], q[1], q[2], q[3], hAt(q[1], q[2]) + q[4]); } c.g = m.p.length ? upload(m) : {n:0, nil:1}; n++; }
+    else if (c.g && d > R + 160){ if (!c.g.nil) freeMesh(c.g); c.g = null; } }
+}
 function placeProps(g){
   var w = world, M = MODELS; if (!M.streetlight) return;
   var cand = {light:[], hyd:[], bench:[], dump:[], bush:[]}, i, ok = function(x, y){ return !blocked(x, y) && !deckBlock(x, y) && !inWater(x, y, 0.5) && x > w.minx && x < w.maxx && y > w.miny && y < w.maxy; };
@@ -548,7 +561,7 @@ function placeProps(g){
     if (b.cat === 'house'){ if (h < 0.45){ var sd = h < 0.22 ? 1 : -1; x = d.x - d.nx*0.7 + tx*1.7*sd; y = d.y - d.ny*0.7 + ty*1.7*sd; if (ok(x, y)) cand.bush.push([x, y, h*20]); } }
     else if (h < 0.5){ x = d.x - d.nx*1.1 + tx*3.4; y = d.y - d.ny*1.1 + ty*3.4; if (ok(x, y) && ok(x + tx, y + ty) && ok(x - tx, y - ty)) cand.dump.push([x, y, Math.atan2(ty, tx), b.kind]); }
   });
-  w.slights = []; w.obstL = []; w.dumps = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; g.model(M[model], c[0], c[1], c[2], hAt(c[0], c[1]) + 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'dumpster'){ var di = w.dumps.length; w.dumps.push({dump:1, name:'dumpster', x:c[0], y:c[1], kind:c[3], looted:!!(w.dumpGone && w.dumpGone.indexOf(di) >= 0), t:0, i:di}); } if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
+  w.slights = []; w.obstL = []; w.dumps = []; var put = function(list, model, cap){ var st = Math.max(1, Math.ceil(list.length/cap)); for (var k = 0; k < list.length; k += st){ var c = list[k]; drAdd(w, M[model], c[0], c[1], c[2], 0.05); (w.obstL = w.obstL || []).push([c[0], c[1], OBR[model] || 0.4]); if (model === 'dumpster'){ var di = w.dumps.length; w.dumps.push({dump:1, name:'dumpster', x:c[0], y:c[1], kind:c[3], looted:!!(w.dumpGone && w.dumpGone.indexOf(di) >= 0), t:0, i:di}); } if (model === 'streetlight') w.slights.push({x:c[0], y:c[1], sl:true}); } };
   if (!(w.mhas && w.mhas.lamp)) put(cand.light, 'streetlight', 700);   /* 0.123.0: a map with its own street lamps (builder 1.24) keeps only those */
   put(cand.hyd, 'firehydrant', 300); put(cand.bench, 'bench', 200); put(cand.dump, 'dumpster', 250); put(cand.bush, 'bush', 700);
 }
@@ -697,8 +710,8 @@ function placeDress(g){
     if (arA < 30000){ var nl = Math.min(14, Math.floor(arA/900)); for (var k = 0; k < nl; k++){ var lx = ar.minx + hash(ai, k, 43)*bw, ly = ar.miny + hash(ai, k, 44)*bh; if (pip(ar.pts, lx, ly)) add(hash(ai, k, 45) < 0.3 ? 'ws.lily_pads_bloom' : 'ws.lily_pads', lx, ly, hash(ai, k, 46)*6.28, 300); } } });
   var total = 0;
   Object.keys(out).forEach(function(path){ var L = out[path], M = path.indexOf('ground.') === 0 ? gB(path.slice(7)) : spB(path); if (!M) return; var st = Math.max(1, Math.ceil(L.l.length/L.c));
-    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; if (SOLID[path]){ (w.obstL = w.obstL || []).push([c[0], c[1], SOLID[path]]); w.obst = null; } g.model(M, c[0], c[1], c[2], hAt(c[0], c[1]) + (path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' || path.slice(0, 9) === 'pk.court_' || path.slice(0, 13) === 'pk.field_line' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02)); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
-  w.dressCount = total; w.dressOut = out;
+    for (var k = 0; k < L.l.length; k += st){ var c = L.l[k]; if (SOLID[path]){ (w.obstL = w.obstL || []).push([c[0], c[1], SOLID[path]]); w.obst = null; } drAdd(w, M, c[0], c[1], c[2], path.indexOf('ground.') === 0 || path === 'street.manhole' || path.slice(0, 3) === 'wm.' || path.slice(0, 9) === 'pk.court_' || path.slice(0, 13) === 'pk.field_line' ? 0.115 : path.slice(0, 8) === 'ws.lily_' ? 0.07 : 0.02); if (path.indexOf('street.') === 0 && path !== 'street.manhole') (w.obstL = w.obstL || []).push([c[0], c[1], 0.25]); total++; } });
+  w.dressCount = total;
 }
 /* 0.123.0: the map's own props (builder 1.24 street dressing and props placed in the builder), kept in 96 m cells and meshed only near you, like the buildings.
    Power poles with an asmb:wire point carry four wires to the next pole: one per insulator on the crossarm (x -0.9, -0.3, 0.3, 0.9 at 8.06 m, the content chat's measure),
@@ -862,11 +875,11 @@ function prep3D(){
   g.pl = null; if (w.hg) drape(g, LIFT, true); w.liftY = LIFT;
   if (w.hg && typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = pm.c && pm.c[wi*4 + 1] === 0 ? 0.08 : 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
   var gD = g; g = new Mesh();   /* 0.114.92: the draped ground stays as it came back (typed arrays from the Rust core); what follows goes into a second list */
-  sunkWalls(w, g, LIFT, SWY, RDY);
-  try { bridgeBuild(g); } catch (er){ console.log('bridges', er); }
-  try { structBuild(g); } catch (er){ console.log('structures', er); }
-  try { waterwaysBuild(g); } catch (er){ console.log('waterways', er); }
-  try { rackBuild(g); } catch (er){ console.log('rack', er); }
+  sunkWalls(w, g, LIFT, SWY, RDY); g.spill();
+  try { bridgeBuild(g); } catch (er){ console.log('bridges', er); } g.spill();
+  try { structBuild(g); } catch (er){ console.log('structures', er); } g.spill();
+  try { waterwaysBuild(g); } catch (er){ console.log('waterways', er); } g.spill();
+  try { rackBuild(g); } catch (er){ console.log('rack', er); } g.spill();
   w.buildings.forEach(function(b){
     b.base = 0; b.low = 0;
     if (w.hg){ var hi = hAt(b.cx, b.cy), lo = hi; for (var q = 0; q < b.pts.length; q += 2){ var hq = hAt(b.pts[q], b.pts[q+1]); if (hq > hi) hi = hq; if (hq < lo) lo = hq; } b.base = hi + 0.04; b.low = lo; }
@@ -875,26 +888,28 @@ function prep3D(){
     c.list.push(b); b.chunk = c; shell(b, NULLM); b.int = null; b.fac = null; b.got = {};
   });
   facs.forEach(function(fb){ if (fb.fac){ freeMesh(fb.fac); fb.fac = null; } }); facs = [];
-  if (w.gl){ w.gl.ground.forEach(function(o){ if (o.g) freeMesh(o.g); o.g = null; }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); }
+  if (w.gl){ w.gl.ground.forEach(function(o){ if (o.g) freeMesh(o.g); o.g = null; }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); ['mp', 'dr'].forEach(function(k){ (w.gl[k] || []).forEach(function(o){ if (o.g && !o.g.nil) freeMesh(o.g); o.g = null; }); }); }
   var list = []; chunks.forEach(function(c){ list.push(c); });
-  g.pl = null; placeProps(g); try { placeDress(g); } catch (er){ console.log('dress', er); }
+  g.pl = null; w.drM = null; placeProps(g); try { placeDress(g); } catch (er){ console.log('dress', er); }
   /* the ground is cut into squares so only the part near you is drawn */
   /* 0.114.91: counted first, then copied straight into typed arrays (4 and 1 bytes a value, not 8 in growing lists), and the big lists let go before the upload:
      a town square's ground used to need its whole size twice over in plain lists at this point, which is where phones ran out of memory and the page reloaded */
-  var GT = 256, gt = [], ids = new Map(), cnt = [], bxs = [], bys = [], SRC = (gD.parts || [gD]).concat([g]);
+  var GT = 256, gt = [], ids = new Map(), cnt = [], bxs = [], bys = [], SRC = (gD.parts || [gD]).concat(g.parts || [], [g]); gD.parts = g.parts = null;   /* 0.128.0: the later ground pieces come packed too (Mesh.spill) */
   var bks = SRC.map(function(sm){ var nT = sm.p.length/9, bk = new Int32Array(nT);
     for (var i2 = 0; i2 < nT; i2++){ var o9 = i2*9, kx = Math.floor((sm.p[o9] + sm.p[o9+3] + sm.p[o9+6])/3/GT), ky = Math.floor((sm.p[o9+2] + sm.p[o9+5] + sm.p[o9+8])/3/GT), key = gk(kx, ky), id = ids.get(key);
       if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i2] = id; cnt[id]++; }
     return bk; });
   /* 0.117.5: each list's runs are copied out as small pieces into their tile, and the list is let go straight away: the ground is never held twice over (it was 340 MB at the peak for Springfield's centre, and iPhones closed the page) */
   var BK = cnt.map(function(n){ return {pp:[], pc:[], pt:[], n:n}; });
-  SRC.forEach(function(sm, si){ var bk = bks[si], nT = bk.length, typed = !Array.isArray(sm.p), r0 = 0;
-    var flush = function(a, b){ var bb = BK[bk[a]];
-      if (typed){ bb.pp.push(sm.p.slice(a*9, b*9)); bb.pt.push(sm.t.slice(a*9, b*9)); bb.pc.push(sm.c.slice(a*12, b*12)); }
-      else { bb.pp.push(new Float32Array(sm.p.slice(a*9, b*9))); bb.pt.push(new Float32Array(sm.t.slice(a*9, b*9))); bb.pc.push(new Uint8Array(sm.c.slice(a*12, b*12))); } };
-    for (var i2 = 1; i2 <= nT; i2++) if (i2 === nT || bk[i2] !== bk[r0]){ if (nT) flush(r0, i2); r0 = i2; }
-    sm.p = sm.c = sm.t = null; bks[si] = null; if (gD.parts && si < gD.parts.length) gD.parts[si] = null; });
+  /* 0.128.0: one packed piece per tile per list (counted, then filled), not one per run of neighbours: a list of scattered street dressing made hundreds of thousands of tiny pieces, each with its own overhead */
+  SRC.forEach(function(sm, si){ var bk = bks[si], nT = bk.length, loc = new Map(), i2, e, q, P = sm.p, Cc = sm.c, T = sm.t;
+    for (i2 = 0; i2 < nT; i2++){ e = loc.get(bk[i2]); if (e) e.n++; else loc.set(bk[i2], {n:1, k:0, p:null, c:null, t:null}); }
+    loc.forEach(function(e2, id){ e2.p = new Float32Array(e2.n*9); e2.t = new Float32Array(e2.n*9); e2.c = new Uint8Array(e2.n*12); var bb = BK[id]; bb.pp.push(e2.p); bb.pt.push(e2.t); bb.pc.push(e2.c); });
+    for (i2 = 0; i2 < nT; i2++){ e = loc.get(bk[i2]); var a9 = i2*9, b9 = e.k*9, a12 = i2*12, b12 = e.k*12; e.k++;
+      for (q = 0; q < 9; q++){ e.p[b9 + q] = P[a9 + q]; e.t[b9 + q] = T[a9 + q]; } for (q = 0; q < 12; q++) e.c[b12 + q] = Cc[a12 + q]; }
+    sm.p = sm.c = sm.t = null; bks[si] = null; SRC[si] = null; });
   BK.forEach(function(bm, id){ gt.push({g:null, d:bm, x:bxs[id], y:bys[id]}); BK[id] = null; });
-  w.gl = {ground:gt, chunks:list, terr:new Map()}; try { mpPrepare(w); } catch (er){ console.log('map props', er); } setTimeout(function(){ gtPackAll(w); }, 300);
+  var drL = []; if (w.drM) w.drM.forEach(function(c){ drL.push(c); }); w.drM = null;
+  w.gl = {ground:gt, chunks:list, terr:new Map(), dr:drL}; try { mpPrepare(w); } catch (er){ console.log('map props', er); } setTimeout(function(){ gtPackAll(w); }, 300);
 }
 

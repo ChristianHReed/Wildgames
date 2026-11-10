@@ -538,7 +538,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.127.4</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.128.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -583,7 +583,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.127.4', ART = {}, ARTSET = (function(){
+var BUILD = '0.128.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -6330,7 +6330,7 @@ function freeWorldGL(w){
   try { var g = w && w.gl; if (!g) return; var fm = function(o){ if (o && o.vb){ try { freeMesh(o); } catch (e){} } };
     if (g.ground) g.ground.forEach(function(o){ fm(o.g); o.g = null; o.d = null; });
     if (g.chunks) g.chunks.forEach(function(c){ fm(c.g); fm(c.l); fm(c.gg); fm(c.far); c.g = c.l = c.gg = c.far = null; });
-    ['trees', 'det', 'terr', 'mp'].forEach(function(k){ if (g[k]) g[k].forEach(function(o){ fm(o.g); o.g = null; }); if (g[k] && g[k].clear) g[k].clear(); });
+    ['trees', 'det', 'terr', 'mp', 'dr'].forEach(function(k){ if (g[k]) g[k].forEach(function(o){ fm(o.g); o.g = null; }); if (g[k] && g[k].clear) g[k].clear(); });
     (w.buildings || []).forEach(function(b){ if (b.fac){ fm(b.fac); b.fac = null; } if (b.int){ try { freeInt(b); } catch (e){} b.int = null; } });
     if (w.fence){ fm(w.fence.g); w.fence = null; }
   } catch (e){ console.log('freeWorldGL', e); } }

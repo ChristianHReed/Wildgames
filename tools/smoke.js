@@ -26,6 +26,7 @@ const {chromium} = require('playwright');
   await p.waitForFunction(() => typeof running !== 'undefined' && running && world && world.gl, null, {timeout:300000}); await p.waitForTimeout(3000);
   console.log('started', await p.evaluate(() => world.name + ': ' + world.buildings.length + ' buildings, ' + world.roads.length + ' roads, ' + world.vehicles.length + ' vehicles, ' + Object.keys(world.nests).length + ' nests. ' + goalText()));
   for (let round = 0; round < 12; round++){
+    await p.waitForFunction(() => running && !zoneBusy && world && world.gl, null, {timeout:400000});   /* walking off a region square loads the next one: wait for it, as the game itself stops while it does */
     const res = await p.evaluate(round => {
       var out = [], n = 0, codes = ['KeyW','KeyA','KeyS','KeyD','KeyE','KeyF','Space','KeyR','KeyQ','KeyM','KeyI','KeyB','KeyC','KeyT','KeyG','KeyV','KeyX','KeyZ','Tab','Digit1','Digit2','Digit3','Digit4','ShiftLeft','Escape','KeyH','KeyJ','KeyK','KeyL','KeyN','KeyO','KeyU','KeyY','Enter'];
       var note = function(e, w){ var k = w + ': ' + e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 4).join(' | ').replace(/https?:\/\/[^ )]*\//g, ''); if (out.indexOf(k) < 0 && out.length < 10) out.push(k); };
@@ -40,13 +41,14 @@ const {chromium} = require('playwright');
         if (round === 10) for (var it in ITEMS) inv[it] = (inv[it] || 0) + 5;
       } catch (e){ note(e, 'setup ' + round); }
       for (var i = 0; i < 400; i++){
+        if (zoneBusy || !running) break;
         if (i % 7 === 0){ var c = codes[(Math.random()*codes.length) | 0], o = {code:c, key:c.replace(/^Key|^Digit/, '').toLowerCase(), bubbles:true};
           try { window.dispatchEvent(new KeyboardEvent('keydown', o)); } catch (e){ note(e, 'keydown ' + c); } try { window.dispatchEvent(new KeyboardEvent('keyup', o)); } catch (e){ note(e, 'keyup ' + c); } }
         if (i % 50 === 0){ try { var cv = document.querySelector('canvas'); ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(function(t){ cv.dispatchEvent(new MouseEvent(t, {bubbles:true, clientX:200, clientY:130, button:0})); }); } catch (e){ note(e, 'click'); } }
         try { update(0.05); n++; } catch (e){ note(e, 'update'); }
         if (i % 100 === 0) P.hp = 100;
       }
-      return {steps:n, faults:out, aliens:zombies.length, day:dayNum()};
+      return {steps:n, faults:out, aliens:zombies.length, day:dayNum(), square:typeof mapSrc !== 'undefined' && mapSrc && mapSrc.zi !== undefined ? mapSrc.zi + ',' + mapSrc.zj : ''};
     }, round);
     res.faults.forEach(f => add('GAME ' + f)); console.log('round', round, JSON.stringify(res)); await p.waitForTimeout(2500);
   }
