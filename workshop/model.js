@@ -505,6 +505,10 @@
     if (nat.bonnet.length) model.bonnet = nat.bonnet;
     if (nat.boot.length) model.boot = nat.boot;
     var gen = DMG ? DMG.generate(doc, nat, sp, rig) : null, damage = {}, wreck = null, burnt = null;
+    /* the recipe the game makes the damage looks, wreck and burnt shell from (so packs need not carry them): seed, strength and the
+       materials the colour guess would get wrong */
+    var mats = {}; ['body', 'bonnet', 'wheel'].forEach(function(g){ (nat[g] || []).forEach(function(pc, i){ if (pc._m && pc._m !== M.guessMaterial(pc.c)) (mats[g] = mats[g] || {})[i] = pc._m; }); });
+    var dmgGen = {v:1, seed:(doc.dmg && doc.dmg.seed) || 7, strength:(doc.dmg && doc.dmg.strength != null) ? doc.dmg.strength : 1, mats:mats};
     if (gen){
       for (var k in gen.damage) damage[k] = doc.states && doc.states[k] ? M.groupNativeList(doc.states[k]) : gen.damage[k];
       wreck = gen.wreck; burnt = gen.burnt;
@@ -514,7 +518,7 @@
     var sal = M.salvage(doc), lists = [nat.body, nat.bonnet, nat.boot, nat.wheel];
     for (var dk in damage) lists.push(damage[dk]);
     if (wreck){ lists.push(wreck.body, wreck.bonnet || [], wreck.wheel); lists.push(burnt.body, burnt.bonnet || [], burnt.wheel); }
-    var A = {type:'vehicle', id:doc.id, name:doc.name, cls:doc.cls, author:doc.author, notes:doc.notes,
+    var A = {type:'vehicle', id:doc.id, name:doc.name, cls:doc.cls, author:doc.author, notes:doc.notes, dmgGen:dmgGen,
       paint:clone(doc.paint), palette:usedCustom(doc, lists),
       model:model, rig:rig, spec:sp, kit:kit,
       functions:F, game:Object.assign(M.gameStats(doc, F), {drive:DT.layout, axles:DT.axles.length}), salvage:sal, buildCost:M.buildCost(sal),
@@ -582,7 +586,18 @@
   M.newPack = function(o){ o = o || {}; return {format:'afterstreet-pack', version:1, id:o.id || 'my-pack', name:o.name || 'My pack', author:o.author || '', licence:o.licence || 'MIT',
     made:o.made || new Date().toISOString().slice(0, 10), madeWith:'AfterStreet Workshop ' + M.VERSION, notes:o.notes || '', assets:[], prefabs:[]}; };
   /* a pack is a .js file the game can load from a drive (file://) with a script tag; the same text is valid JSON after the first '{' */
-  M.packToJS = function(pack){
+  /* a pack ready to ship: a land vehicle with a damage recipe (dmgGen) leaves out its ten damage looks, wreck and burnt shell, since the
+     game makes them from the body when first needed (packs/packload.js with workshop/damage.js); its wreck and burnt rigs stay (tiny).
+     About three quarters of a vehicle pack's size. full:true keeps everything (for games older than this). */
+  M.slimAsset = function(A){
+    if (!A || A.type !== 'vehicle' || !A.dmgGen || (A.domain && A.domain !== 'land')) return A;
+    var o = {}; for (var k in A) if (k !== 'wreck' && k !== 'burnt') o[k] = A[k];
+    if (A.model){ o.model = {}; for (var m in A.model) if (m !== 'damage') o.model[m] = A.model[m]; }
+    return o;
+  };
+  M.slimPack = function(pack){ var o = {}; for (var k in pack) o[k] = pack[k]; o.assets = (pack.assets || []).map(M.slimAsset); return o; };
+  M.packToJS = function(pack, opt){
+    if (!(opt && opt.full)) pack = M.slimPack(pack);
     return '/* AfterStreet content pack "' + String(pack.name).replace(/\*\//g, '') + '": made with the AfterStreet Workshop (workshop.html). Load packs/packload.js, then this file. */\n' +
       '(window.AFTERSTREET_PACKS = window.AFTERSTREET_PACKS || []).push(' + JSON.stringify(pack) + ');\n';
   };

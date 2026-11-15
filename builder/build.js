@@ -72,16 +72,34 @@ L.terrainApply = function(text, ops){
     }
     out.forEach(function(q){ h[q[0]] = q[1]; });
   };
+  /* a trench (cut) or a ramp (slope) along a drawn line: fn(cellIndex, distanceMetres, fractionAlongTheLine) for every cell within `reach` of the line */
+  var along = function(o, reach, fn){
+    var P = [], i; for (i = 0; i + 1 < o.c.length; i += 2) P.push([(o.c[i] - E.w)/(E.e - E.w)*(E.cols - 1), (E.n - o.c[i + 1])/(E.n - E.s)*(E.rows - 1)]); if (P.length < 2) return;
+    var seg = [], tot = 0; for (i = 0; i + 1 < P.length; i++){ var l = Math.hypot((P[i + 1][0] - P[i][0])*cw, (P[i + 1][1] - P[i][1])*ch); seg.push([tot, l]); tot += l; } if (!tot) return;
+    var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; P.forEach(function(p){ x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
+    var ca = Math.max(0, Math.floor(x0 - reach/cw - 1)), cb = Math.min(E.cols - 1, Math.ceil(x1 + reach/cw + 1)), ra = Math.max(0, Math.floor(y0 - reach/ch - 1)), rb = Math.min(E.rows - 1, Math.ceil(y1 + reach/ch + 1));
+    for (var r = ra; r <= rb; r++) for (var c = ca; c <= cb; c++){
+      var best = 1e9, bt = 0;
+      for (i = 0; i + 1 < P.length; i++){ var ax = (P[i][0])*cw, ay = P[i][1]*ch, dx = (P[i + 1][0] - P[i][0])*cw, dy = (P[i + 1][1] - P[i][1])*ch, l2 = dx*dx + dy*dy || 1, t = Math.max(0, Math.min(1, ((c*cw - ax)*dx + (r*ch - ay)*dy)/l2)), d = Math.hypot(ax + dx*t - c*cw, ay + dy*t - r*ch);
+        if (d < best){ best = d; bt = (seg[i][0] + t*seg[i][1])/tot; } }
+      if (best < reach) fn(r*E.cols + c, best, bt);
+    }
+  };
+  var smooth3 = function(f){ f = Math.max(0, Math.min(1, f)); return f*f*(3 - 2*f); };
   var ptH = function(lon, lat){ return at(Math.round((lon - E.w)/(E.e - E.w)*(E.cols - 1)), Math.round((E.n - lat)/(E.n - E.s)*(E.rows - 1))); };
   ops.forEach(function(o){
     if (o.t === 'river'){ river(o); return; }
+    if (o.t === 'cut' && o.c){   /* a trench: o.tw wide at the bottom, o.d metres below the ground, sides sloping 1 to 2 */
+      var tw = o.tw || 8, dd = (o.d || 2)*10, rch = (o.d || 2)*2; along(o, tw/2 + rch, function(k2, dist){ var f = dist <= tw/2 ? 1 : smooth3(1 - (dist - tw/2)/rch); h[k2] = Math.max(-32000, Math.round(h[k2] - dd*f)); }); return; }
+    if (o.t === 'slope' && o.c){   /* a ramp: the ground along the line runs smoothly from the height at its first point to the height at its last, o.tw wide, blended into the ground beside it */
+      var tw2 = o.tw || 8, ha = ptH(o.c[0], o.c[1]), hb = ptH(o.c[o.c.length - 2], o.c[o.c.length - 1]), bank2 = 8 + Math.abs(hb - ha)/10*1.2; along(o, tw2/2 + bank2, function(k2, dist, t){ var tgt = ha + (hb - ha)*t, f = dist <= tw2/2 ? 1 : smooth3(1 - (dist - tw2/2)/bank2); h[k2] = Math.round(h[k2] + (tgt - h[k2])*f); }); return; }
     if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road' || o.t === 'bset' || o.t === 'prop' || o.t === 'flood' || o.t === 'basin') return;   /* these only add or take away map features, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
     var cells = [];   /* [index, weight] of the cells under the brush: a smooth fall-off from full strength at the middle to nothing at the edge */
     for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++){
-      var d = Math.hypot((c - cx)*cw, (r - cy)*ch)/o.r; if (d >= 1) continue; var f = 1 - d; f = f*f*(3 - 2*f); cells.push([r*E.cols + c, f]);
+      var d = Math.hypot((c - cx)*cw, (r - cy)*ch)/o.r; if (d >= 1) continue; var f = 1 - d; f = f*f*(3 - 2*f); cells.push([r*E.cols + c, f, d]);
     }
     if (!cells.length) return;
     var k = o.k || 0.5, t = o.t;
@@ -89,6 +107,8 @@ L.terrainApply = function(text, ops){
     else if (t === 'smooth'){
       var nh = cells.map(function(q){ var x = q[0] % E.cols, y = (q[0] - x)/E.cols, sum = 0; for (var b = -1; b <= 1; b++) for (var a = -1; a <= 1; a++) sum += at(x + a, y + b); return sum/9; });
       cells.forEach(function(q, m){ h[q[0]] = Math.round(h[q[0]] + (nh[m] - h[q[0]])*Math.min(1, q[1]*k*1.6)); });
+    } else if (t === 'hill'){ var hm = k*300; cells.forEach(function(q){ h[q[0]] = Math.max(-32000, Math.min(32000, Math.round(h[q[0]] + hm*q[1]))); });   /* a round mound: k = 1 is 30 m high at the middle */
+    } else if (t === 'flat'){ var tg3 = at(Math.round(cx), Math.round(cy)); cells.forEach(function(q){ var fp = q[2] < 0.6 ? 1 : smooth3(1 - (q[2] - 0.6)/0.4); h[q[0]] = Math.round(h[q[0]] + (tg3 - h[q[0]])*fp); });   /* a flat pad at the height under the middle, 60% of the brush, blended out beyond */
     } else if (t === 'level'){
       var tg = at(Math.round(cx), Math.round(cy)); cells.forEach(function(q){ h[q[0]] = Math.round(h[q[0]] + (tg - h[q[0]])*Math.min(1, q[1]*(0.35 + k*0.65)*1.4)); });
     }
@@ -135,7 +155,7 @@ L.terrainApply = function(text, ops){
     else if (o.t === 'river') sq.ways.push([{waterway:o.w >= 10 ? 'river' : o.w >= 6 ? 'canal' : 'stream', 'asmb:made':'yes', src:'edit'}, o.c]);
   });
   /* the structures list belongs to the ways: worked out again when the edits changed ways */
-  if (L.structures && sq.zone && ops.some(function(o){ return o.t !== 'raise' && o.t !== 'lower' && o.t !== 'smooth' && o.t !== 'level' && o.t !== 'tree'; })){
+  if (L.structures && sq.zone && ops.some(function(o){ return o.t !== 'raise' && o.t !== 'lower' && o.t !== 'smooth' && o.t !== 'level' && o.t !== 'tree' && o.t !== 'hill' && o.t !== 'flat'; })){
     var stc = L.structures(sq.zone, sq, sq.elev); if (stc.list.length) sq.structures = stc.list; else delete sq.structures; sq.builder = sq.builder || {}; sq.builder.structures = stc.counts; }
   sq.builder = sq.builder || {}; sq.builder.edits = (sq.builder.edits || 0) + ops.length;
   return JSON.stringify(sq);
@@ -290,6 +310,13 @@ L.runBuild = async function(job, post, stop){
   if (job.opts.dress !== false && L.lots){ say(0.56, 'Filling the lots: driveways, fences, back yards and roof units'); stats.lots = L.lots(F, loc); }
   /* 4. squares */
   say(0.55, 'Cutting the map into squares');
+  /* square size: a dense city in one 5.5 km square is 40 MB of JSON, too much for a phone page to build. Count the real ways in the densest 5.5 km cell and cut every square into 2 x 2 or 3 x 3
+     when its estimated size is over the target (10 MB on the phone budget, 30 MB otherwise). About 1.07 KB a real way in a full build, 0.55 KB on the light budget (Saint Louis, measured). */
+  var kb = job.opts.light ? 0.00055 : 0.00107, targetMB = job.opts.light ? 10 : 30, cellN = {}, maxReal = 0, c0Lon = R.dLon*R.div, c0Lat = R.dLat*R.div;
+  F.ways.forEach(function(w){ if (w.src === 'gen' || !w.c || w.c.length < 2) return; var k = Math.floor((w.c[0] - A.lon)/c0Lon + 0.5) + ':' + Math.floor((w.c[1] - A.lat)/c0Lat + 0.5); var v = cellN[k] = (cellN[k] || 0) + 1; if (v > maxReal) maxReal = v; });
+  var estMB = maxReal*kb, div = 1; while (div < 3 && estMB/(div*div) > targetMB) div++;
+  if (div !== R.div){ R = L.regionOf(A, div); stats.squareDiv = div; }
+  stats.squareEstMB = Math.round(estMB/(div*div)*10)/10;
   var S = L.cutSquares(R, F);
   /* 5. ground, square by square, saved as it goes */
   var tiffs = [];
@@ -297,7 +324,7 @@ L.runBuild = async function(job, post, stop){
   tiffs.sort(function(a, b){ return a.res - b.res; });
   var terr = job.opts.tiles ? L.Terrarium() : null;
   await L.dbDel('squares', job.proj + ':');
-  var index = [], rep = {struct:{}, uses:{}, squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
+  var maxSq = 0, index = [], rep = {struct:{}, uses:{}, squares:[], tot:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}, elev:{file:0, tiles:0, none:0}, fileRes:0}, done = 0, total = R.squares.length, bytes = 0;
   var credit = '© OpenStreetMap contributors (ODbL)' + (stats.overture && stats.overture.added ? '; buildings also from Overture Maps (ODbL)' : '') + (tiffs.length ? '; elevation: ' + tiffs.map(function(t){ return t.name; }).join(', ') : '') + (terr ? '; elevation: AWS Terrain Tiles (SRTM/3DEP)' : '');
   for (var s = 0; s < R.squares.length; s++){
     if (stop()) throw new Error('stopped');
@@ -309,7 +336,7 @@ L.runBuild = async function(job, post, stop){
     var uc = L.uses ? L.uses(sq) : null; if (uc){ for (var uk in uc) rep.uses[uk] = (rep.uses[uk] || 0) + uc[uk]; }
     var stc = L.structures ? L.structures(b, sq, eg.grid) : null; if (stc && stc.list.length) m.structures = stc.list;
     m.builder = {v:L.VERSION, counts:sq.n, elev:eg.src, step:step}; if (stc) m.builder.structures = stc.counts;
-    var text2 = JSON.stringify(m); bytes += text2.length;
+    var text2 = JSON.stringify(m); bytes += text2.length; if (text2.length > maxSq) maxSq = text2.length;
     await L.dbPut('squares', job.proj + ':' + i + ':' + jj, text2);
     var nb = sq.n.osm + sq.n.overture + sq.n.gen; index.push([i, jj, nb]);
     for (var kk in rep.tot) rep.tot[kk] += sq.n[kk];
@@ -337,6 +364,7 @@ L.runBuild = async function(job, post, stop){
   /* 7. the index, like assets/map.js */
   var man = {format:L.FORMAT, builder:L.VERSION, made:new Date().toISOString(),
     region:{id:A.id, name:A.name, lat:A.lat, lon:A.lon, miles:A.miles, dLat:R.dLat, dLon:R.dLon},
+    budget:job.opts.light ? 'phone' : 'computer', maxSquareMB:Math.round(maxSq/1e5)/10,
     squares:index, places:F.places, attribution:credit, stats:stats, report:rep, bytes:bytes, ms:Date.now() - t0,
     sources:{osm:o.name || o.kind, tiffs:(job.tiffs || []).map(function(f){ return f.name; }), overture:(job.overture || []).map(function(f){ return f.name; }), tiles:!!terr}};
   say(0.99, 'Drawing the preview');

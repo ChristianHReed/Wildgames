@@ -76,21 +76,28 @@ var good = results.filter(function(r){ return !r.problems.length; });
 if (good.length){
   require(root + 'assets/shaped/boats.js'); require(root + 'assets/shaped/vehiclekit.js');
   global.AFTERSTREET_PACKS = []; var text = WSB.pack({id:'workshop-crafts', name:'Workshop vehicles', author:'AfterStreet content chat', licence:'MIT', notes:'Vehicles built with workshop/build.js: walk-in trucks and trailers, a semi, boats and aircraft.'}, good);
+  global.WSM = M; global.WSD = D;   /* what the game loads (writeTags) to make slim packs' damage looks, wrecks and burnt shells */
   require(root + 'packs/packload.js'); var P = global.AfterstreetPacks; P.add(P.parse(text)); P.install(SHAPED);
+  /* the pack ships no damage looks, wrecks or burnt shells: check the ones the game makes are exactly what the Workshop made */
+  var full = 0, slimFail = 0, VV = SHAPED.props.models.vehicles;
+  good.forEach(function(r){ var A = r.asset, k = P.keyOf({id:'workshop-crafts'}, A); if (!A.dmgGen || (A.domain && A.domain !== 'land')) return; full++;
+    var eq = function(x, y){ return JSON.stringify(x) === JSON.stringify(y); };
+    if (!eq(VV[k].damage, A.model.damage) || !eq(VV[k + '_wreck'], A.wreck) || !eq(VV[k + '_burnt'], A.burnt)){ slimFail++; console.log('FAIL made looks differ from the Workshop\'s: ' + A.id); } });
+  var fat = M.packToJS({format:'afterstreet-pack', version:2, id:'x', name:'x', assets:good.map(function(r){ return r.asset; })}, {full:true}).length;
+  console.log((slimFail ? 'FAIL ' : 'ok   ') + 'damage looks, wrecks and burnt shells made from the body for ' + full + ' land vehicles, ' + (full - slimFail) + ' exactly as the Workshop made them; pack ' + Math.round(text.length/1048576*10)/10 + ' MB instead of ' + Math.round(fat/1048576*10)/10 + ' MB');
+  if (slimFail) failed++;
   console.log('pack: ' + Math.round(text.length/1024) + ' KB; installed ' + P.vehicles.length + ' land, ' + (P.boats || []).length + ' boats, ' + (P.aircraft || []).length + ' aircraft' + (P.errors.length ? '; errors: ' + P.errors.join('; ') : ''));
   if (P.errors.length) failed++;
   if (makePack){
-    /* phones: the ten damage looks of each vehicle go to their own file (loaded when a vehicle is first hit), and the editable source to a file only the Workshop loads */
-    var pk = P.parse(text), dmg = {}, src = {}, head = text.slice(0, text.indexOf('(window.')), nDmg = 0;
-    pk.assets.forEach(function(a){
-      if (a.model && a.model.damage && Object.keys(a.model.damage).length){ dmg[a.id] = a.model.damage; a.model.damage = {}; nDmg++; }
-      if (a.source){ src[a.id] = a.source; delete a.source; }
-    });
+    /* phones: the pack is slim (the game makes damage looks, wrecks and burnt shells from each body when first needed),
+       and the editable source goes to a file only the Workshop loads */
+    var pk = P.parse(text), src = {}, head = text.slice(0, text.indexOf('(window.'));
+    pk.assets.forEach(function(a){ if (a.source){ src[a.id] = a.source; delete a.source; } });
     var pre = function(what){ return '/* AfterStreet content pack "Workshop vehicles": ' + what + ' */\n'; };
     fs.writeFileSync(root + 'packs/workshop-crafts.js', head + '(window.AFTERSTREET_PACKS = window.AFTERSTREET_PACKS || []).push(' + JSON.stringify(pk) + ');\n');
-    fs.writeFileSync(root + 'packs/workshop-crafts.damage.js', pre('damage looks, loaded by AfterstreetPacks.loadDamage the first time one of its vehicles is hit') + '(window.AFTERSTREET_PACK_DAMAGE = window.AFTERSTREET_PACK_DAMAGE || []).push(' + JSON.stringify({format:'afterstreet-pack-damage', pack:'workshop-crafts', damage:dmg}) + ');\n');
+    try { fs.unlinkSync(root + 'packs/workshop-crafts.damage.js'); } catch (e){}   /* no longer needed: the looks are made, not loaded */
     fs.writeFileSync(root + 'packs/workshop-crafts.source.js', pre('editable designs, loaded only by the Workshop') + '(window.AFTERSTREET_PACK_SOURCE = window.AFTERSTREET_PACK_SOURCE || []).push(' + JSON.stringify({format:'afterstreet-pack-source', pack:'workshop-crafts', source:src}) + ');\n');
-    console.log('wrote packs/workshop-crafts.js, .damage.js and .source.js (the game loads it once its name is in packs/index.js: the main chat adds it with walk-in rooms, trailers, boats and aircraft)');
+    console.log('wrote packs/workshop-crafts.js and .source.js (the game loads it once its name is in packs/index.js: the main chat adds it with walk-in rooms, trailers, boats and aircraft)');
   }
 }
 console.log(results.length + ' designs, ' + failed + ' failed');

@@ -192,3 +192,5 @@ Beside the cuts and fills (`bank`) and creek bends (`bend`) already in `structur
 ## Phones and tablets (1.33.3 and 1.33.4)
 
 A phone or tablet tab cannot hold what a big city makes. On those devices (and when "Light build" is ticked) the made-up detail is thinned to a budget of about 150,000 pieces: `F.keep` = 150,000 / (buildings x 7), never below 10%. Trees, cars and yard pieces are kept by a fixed hash of their place; fences by the same share (never below 20%); sheds and pools by its square root. Poles, lamps, parking, shops and real map data are never thinned. Measured on Saint Louis, 5 miles: full build 275 MB (squares 17 to 43 MB), phone budget 152 MB (13 to 21.6 MB). The builder also rejects a Parquet file picked as OpenStreetMap data (1.33.1) and says what the OpenStreetMap file holds when the area is empty (1.33.2).
+
+Square size (1.35.0): the builder counts the real ways in the densest 5.5 km cell and, if the estimated size is over 10 MB (light budget) or 30 MB, cuts every square into 2 x 2 or 3 x 3 (`region.dLat/dLon` in the manifest; `budget` and `maxSquareMB` say what it was built for). Saint Louis at 5 miles, light: 45 squares, largest 11.2 MB.

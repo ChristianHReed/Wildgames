@@ -74,6 +74,17 @@ The same rules apply when placing, dragging, using the move arrows, dragging a f
 
 Typed numbers are never snapped.
 
+## Slim vehicle packs: damage looks, wrecks and burnt shells made when needed (9 November 2026)
+
+A land vehicle's ten damage looks, its wreck and its burnt shell are all made by `workshop/damage.js` from the vehicle's own body, with noise that depends only on where each corner is and the design's seed. So a pack doesn't need to carry them:
+
+- Every land vehicle asset has a recipe: `dmgGen = {v:1, seed, strength, mats}`. `mats` names the few pieces whose material the colour doesn't tell (wood trim, for example), by part and index.
+- `M.packToJS` writes **slim** packs by default: no `model.damage`, `wreck` or `burnt`. `rigWreck` and `rigBurnt` stay, since they are tiny. `{full:true}` keeps everything. Station builds are slim too.
+- `packs/packload.js` loads `workshop/model.js` and `workshop/damage.js` before the packs (about 70 KB, in `writeTags` and `load`). It puts each look in place as a property that is made the first time something reads it: `models.vehicles[key].damage`, `[key_wreck]`, `[key_burnt]`. After that it is kept. `AfterstreetPacks.made` counts them. `loadDamage(key, cb)` still works, and answers at once.
+- `workshop/tools/test_crafts.js` checks that the made looks are exactly what the Workshop made (all 38 land vehicles), and no longer writes `workshop-crafts.damage.js`.
+
+`packs/workshop-crafts.js` went from 5.9 MB to 1.2 MB, and the 9.7 MB damage file is gone. Making one vehicle's damage looks takes about 11 ms in desktop Chrome.
+
 ## Files
 
 | File | What it is |

@@ -32,10 +32,14 @@
   /* script tags for every listed pack, while the page is still being read */
   P.writeTags = function(base, files){
     files = files || root.AFTERSTREET_PACK_FILES || [];
+    /* the Workshop's model and damage code, so slim packs can make their damage looks, wrecks and burnt shells (about 70 KB) */
+    if (!root.WSD){ var wb = String(base || 'packs/').replace(/packs\/?$/, '') + 'workshop/'; document.write('<script src="' + wb + 'model.js"><\/script><script src="' + wb + 'damage.js"><\/script>'); }
     files.forEach(function(f){ document.write('<script src="' + base + String(f).replace(/\.js$/, '') + '.js"><\/script>'); });
   };
   /* the same after the page has loaded; cb() when all have loaded or failed */
   P.load = function(base, files, cb){
+    if (!root.WSD && !P._genTried){ P._genTried = true; var wb = String(base || 'packs/').replace(/packs\/?$/, '') + 'workshop/', one = function(src, next){ var t = document.createElement('script'); t.src = src; t.onload = t.onerror = next; document.head.appendChild(t); };
+      one(wb + 'model.js', function(){ one(wb + 'damage.js', function(){ P.load(base, files, cb); }); }); return; }
     files = files || root.AFTERSTREET_PACK_FILES || []; var left = files.length;
     if (!left){ if (cb) cb(); return; }
     files.forEach(function(f){ var s = document.createElement('script'); s.src = base + String(f).replace(/\.js$/, '') + '.js';
@@ -66,6 +70,21 @@
     s.onload = function(){ st.state = 'done'; var ok = apply(); st.waiting.splice(0).forEach(function(f){ f(ok); }); };
     s.onerror = function(){ st.state = 'failed'; P.errors.push('could not load damage looks for pack ' + v.pack); st.waiting.splice(0).forEach(function(f){ f(false); }); };
     document.head.appendChild(s);
+  };
+  /* making a slim pack's looks: workshop/model.js and workshop/damage.js do it (writeTags loads them before the packs).
+     P.lazy puts a property on obj that makes the look the first time it is read, then keeps it (P.made counts them) */
+  P.made = 0;
+  P.canMake = function(SH){
+    var M = root.WSM, D = root.WSD; if (!M || !D || !D.fromPack) return false;
+    if (!P._ready){ try { if (M.setShaped && !M._shapedSet){ M.setShaped(SH); M._shapedSet = true; } if (D.setModel) D.setModel(M); P._ready = true; } catch (e){ P.errors.push('cannot make damage looks: ' + e.message); return false; } }
+    return true;
+  };
+  P.lazy = function(obj, prop, key, what, a, SH){
+    Object.defineProperty(obj, prop, {configurable:true, enumerable:true,
+      get:function(){ var v; try { var V = SH.props.models.vehicles[key]; v = root.WSD.fromPack({body:V.body, bonnet:V.bonnet, wheel:V.wheel}, a.spec, a.rig, a.dmgGen, what, SH.props); P.made++; }
+        catch (e){ P.errors.push('could not make the ' + what + ' of ' + key + ': ' + e.message); v = what === 'damage' ? {} : undefined; }
+        Object.defineProperty(obj, prop, {value:v, writable:true, configurable:true, enumerable:true}); return v; },
+      set:function(v){ Object.defineProperty(obj, prop, {value:v, writable:true, configurable:true, enumerable:true}); }});
   };
   /* a pack from text (a file the player picked, or one kept in the browser) */
   P.parse = function(text){ var a = text.indexOf('{'), b = text.lastIndexOf('}'); var p = JSON.parse(text.slice(a, b + 1)); if (p.format !== P.FORMAT) throw new Error('not an AfterStreet pack'); return p; };
@@ -147,6 +166,13 @@
           PR.vehicleRig[key] = a.rig; PR.vehicleSpec[key] = a.spec;
           if (a.wreck){ PR.models.vehicles[key + '_wreck'] = a.wreck; PR.vehicleRig[key + '_wreck'] = a.rigWreck; }
           if (a.burnt){ PR.models.vehicles[key + '_burnt'] = a.burnt; PR.vehicleRig[key + '_burnt'] = a.rigBurnt; }
+          /* a slim pack ships a recipe instead: the looks are made from the body the first time something reads them */
+          if (a.dmgGen && P.canMake(SH)){
+            var V = PR.models.vehicles[key];
+            if (!m.damage || !Object.keys(m.damage).length) P.lazy(V, 'damage', key, 'damage', a, SH);
+            if (!a.wreck && a.rigWreck){ P.lazy(PR.models.vehicles, key + '_wreck', key, 'wreck', a, SH); PR.vehicleRig[key + '_wreck'] = a.rigWreck; }
+            if (!a.burnt && a.rigBurnt){ P.lazy(PR.models.vehicles, key + '_burnt', key, 'burnt', a, SH); PR.vehicleRig[key + '_burnt'] = a.rigBurnt; }
+          }
           for (var c in (a.palette || {})) if (/^(x[0-9a-f]{6}|glass[A-Za-z0-9]*)$/i.test(c)) PR.palette[c] = a.palette[c];
           if (K && K.vehicles && a.kit) K.vehicles[key] = a.kit;
           P.vehicles.push({key:key, name:a.name, cls:a.cls || 'car', pack:pack.id, packName:pack.name, author:a.author || pack.author, paint:a.paint || {},
