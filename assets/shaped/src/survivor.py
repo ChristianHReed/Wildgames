@@ -373,6 +373,10 @@ def grown(col, g, lo=None, hi=None, where=None, bone='Head'):
     for b, (V, T) in _bc.shell('masculine', (bone,), g, ymin=lo, ymax=hi, where=where, dome=0.05).items():
         q = solid(V, T, col); q['winding'] = True; out.append(q)
     return out
+def hem(front_drop, hem_y, front=1.757):
+    """hair that stays at the hairline on the forehead and falls to hem_y at the sides and back"""
+    hl = hairline(front_drop, front=front)
+    return lambda p: hl(p) if float(p[2]) > 0.07 else min(hl(p), hem_y)
 def hair():
     H = {'none': []}
     skull = lambda g=0.008, lo=0.2, **k: grown('HAIR', g + 0.004, hairline(0.05 - lo*0.25))    # lo is the old dome's cut: higher means a higher hairline
@@ -380,13 +384,11 @@ def hair():
     # short: a fuller crown with a side parting (two tones) and a back that comes low on the neck
     H['short'] = under_hat(skull(0.012, 0.02) + [box([0.03, 1.765, 0.052], [0.05, 0.016, 0.05], 'HAIR_D'), curtain(1.66, 1.6, 0.074, 0.066, -0.07, -0.074, 0.02)])
     # afro: one huge round mass, the widest silhouette
-    H['afro'] = under_hat([blob('HAIR', 0.128, 0.132, cy=1.69, ry=0.13, cz=0.0, lo=-0.6, rows=8, n=12)])
+    H['afro'] = under_hat(grown('HAIR', 0.07, hairline(-0.01, front=1.745, side=1.68, nape=1.64)))
     # bob: round crown, chin-length curtains on every side, a heavy fringe
-    H['bob'] = under_hat(grown('HAIR', 0.022, hairline(0.03)) + [
-        box([0, 1.713, 0.09], [0.08, 0.034, 0.025], 'HAIR_D')]) + [curtain(1.66, 1.52, 0.092, 0.095, -0.07, -0.074, 0.03), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=0.083), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=-0.083)]
+    H['bob'] = under_hat(grown('HAIR', 0.024, hem(0.03, 1.55), None) + [box([0, 1.713, 0.09], [0.08, 0.034, 0.025], 'HAIR_D')])
     # long: like the bob but falling to the shoulder blades, wider at the end
-    H['long'] = under_hat(grown('HAIR', 0.02, hairline(0.03)) + [box([0, 1.715, 0.088], [0.045, 0.03, 0.025], 'HAIR_D')]) + [
-        curtain(1.68, 1.36, 0.09, 0.105, -0.07, -0.085, 0.034), curtain(1.66, 1.46, 0.016, 0.02, 0.0, -0.015, 0.07, x=0.088), curtain(1.66, 1.46, 0.016, 0.02, 0.0, -0.015, 0.07, x=-0.088)]
+    H['long'] = under_hat(grown('HAIR', 0.022, hem(0.03, 1.545), None) + [box([0, 1.715, 0.088], [0.045, 0.03, 0.025], 'HAIR_D')]) + grown('HAIR', 0.026, 1.42, 1.56, where=lambda c: float(c[2]) < -0.02, bone='neck_01')
     # ponytail: tight skull cap, tied high at the back, a tail swinging out and down
     H['ponytail'] = under_hat(skull(0.006, 0.12) + [box([0, 1.74, -0.083], [0.03, 0.026, 0.026], 'ACC')]) + [
         loft([[0, 1.74, -0.095, 0.03, 0.03], [0, 1.65, -0.14, 0.036, 0.036], [0, 1.52, -0.158, 0.028, 0.028], [0, 1.44, -0.152, 0.012, 0.012]], 'HAIR', n=7)]
