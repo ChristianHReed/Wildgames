@@ -21,7 +21,7 @@ function makeOverlay(){
     '<button id="v3fly" class="sm on">Fly</button><button id="v3walk" class="sm alt">Walk</button>' +
     '<label class="v3lab">Time <input id="v3hour" type="range" min="0" max="24" step="0.25" value="10"><b id="v3hourV"></b></label>' +
     '<select id="v3sea"><option value="0">Spring</option><option value="1" selected>Summer</option><option value="2">Autumn</option><option value="3">Winter</option></select>' +
-    '<button id="v3lay" class="sm alt">Layers</button><button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Edit</button><button id="v3help" class="sm alt">?</button></div>' +
+    '<button id="v3lay" class="sm alt">Layers</button><button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Editor</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3lays" class="hidden"><b>Show</b><div class="v3row" id="v3lt"></div><small>Hiding is for looking only: nothing is deleted from your map.</small></div>' +
     '<div id="v3tools" class="hidden"><b>Edit the map</b><div class="v3row" id="v3tt">' +
     '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="basin" class="sm alt">Lake</button><button data-t="flood" class="sm alt">Flood</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="info" class="sm alt">What is it?</button><button data-t="prop" class="sm alt">Props</button><button data-t="remove" class="sm alt">Remove</button></div>' +
@@ -42,6 +42,8 @@ function makeOverlay(){
     '<b>Game controller:</b> left stick moves, right stick looks, triggers go up and down, A switches Fly and Walk.<br>' +
     'Fly past the edge of a map square and the next one loads. Walking keeps you on the ground and out of walls.</div>' +
     '<div id="v3stick"><i></i></div><div id="v3ud"><button id="v3up" class="alt">&#9650;</button><button id="v3dn" class="alt">&#9660;</button></div>';
+  d.insertAdjacentHTML('beforeend', '<div id="v3pal" class="hidden"><input id="v3ps" type="search" placeholder="Search pieces"><select id="v3pk2"><option value="">All packs</option><option value="stock">Stock pieces</option><option value="pack">Workshop packs</option></select><div id="v3pcat"></div><div id="v3plist"></div><small id="v3pn"></small></div>' +
+    '<div id="v3flyout" class="hidden"></div><div id="v3dock" class="hidden"></div>');
   document.body.appendChild(d);
   var st = document.createElement('style'); st.textContent =
     '#v3{position:fixed;inset:0;z-index:50;background:#9db7c9;touch-action:none;user-select:none;-webkit-user-select:none}' +
@@ -58,6 +60,15 @@ function makeOverlay(){
     '#v3lays{position:absolute;right:12px;top:64px;width:210px;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:6px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}#v3lays small{font-size:11px;color:var(--soft)}' +
     '#v3tools{position:absolute;left:12px;top:64px;width:250px;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:6px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}' +
     '#v3tools.hidden{display:none}#v3tools label{display:flex;gap:6px;align-items:center}#v3tools label input{flex:1;min-width:0}.v3row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#v3tools small{color:#6b5f52;line-height:1.35}' +
+    '#v3tools{left:auto!important;right:12px;top:64px;bottom:84px;width:260px!important;overflow-y:auto;max-height:none}#v3tt{display:none!important}#v3pc,#v3pp{display:none}' +
+    '#v3lays,#v3helpBox{right:284px!important}' +
+    '#v3pal{position:absolute;left:12px;top:64px;bottom:84px;width:250px;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);font-size:13px}#v3pal.hidden{display:none}' +
+    '#v3pal input,#v3pal select{width:100%;font-size:14px;padding:7px;box-sizing:border-box}#v3pcat{display:flex;gap:4px;flex-wrap:wrap}#v3pcat button{padding:5px 9px;font-size:12px}' +
+    '#v3plist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;min-height:0}#v3plist button{text-align:left;font-size:13px;padding:9px 10px;border-radius:5px;display:flex;justify-content:space-between;gap:6px;min-height:40px}#v3plist button i{font-style:normal;opacity:.6;font-size:11px}' +
+    '#v3dock{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:10px;padding:6px 8px;box-shadow:var(--shadow);max-width:96vw;overflow-x:auto}#v3dock.hidden,#v3flyout.hidden{display:none}' +
+    '#v3dock button{min-height:48px;min-width:56px;padding:6px 12px;font-size:14px}#v3dock .dsp{width:1px;align-self:stretch;background:var(--edge);margin:0 4px}#v3dock button[disabled]{opacity:.45}' +
+    '#v3flyout{position:absolute;left:50%;bottom:78px;transform:translateX(-50%);display:flex;gap:6px;background:rgba(251,243,228,.96);border:1px solid var(--edge);border-radius:10px;padding:6px 8px;box-shadow:var(--shadow)}#v3flyout button{min-height:48px;min-width:64px;padding:6px 14px;font-size:14px}' +
+    '.touch #v3stick{bottom:100px}.touch #v3ud{bottom:100px}.touch #v3pal,.touch #v3tools{bottom:236px!important}' +
     '.touch #v3stick{display:block}.touch #v3ud{display:flex}.touch.walk #v3ud{display:none}';
   document.head.appendChild(st);
   if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) d.classList.add('touch');
@@ -82,6 +93,40 @@ function makeOverlay(){
     if (!Object.keys(M).length){ propM = null; return; } cats.concat(['land', 'ws', 'f2']).forEach(function(c){ if (!M[c]) return; var o = document.createElement('option'); o.value = c; o.textContent = ({land:'Land (streetscape)', street:'Street', plants:'Plants', garden:'Garden', shop:'Shop', vehicles:'Vehicles', containers:'Containers', build:'Building bits', ws:'Waterside', f2:'Furniture'})[c]; $('v3pc').appendChild(o); });
     var fill = function(){ var c = $('v3pc').value, m = M[c] || {}; $('v3pp').innerHTML = ''; Object.keys(m).sort().forEach(function(n){ var o = document.createElement('option'); o.value = n; o.textContent = n.replace(/_/g, ' '); $('v3pp').appendChild(o); }); };
     $('v3pc').onchange = fill; fill(); propM = M; }
+  /* ---- editor shell: bottom dock of tool groups, left palette of pieces, right inspector (the old panel). The old tool buttons stay as the engine; the dock clicks them. ---- */
+  var GROUPS = [['Select', [['info', 'What is it?']]], ['Terrain', [['raise', 'Raise'], ['lower', 'Lower'], ['smooth', 'Smooth'], ['level', 'Level']]], ['Water', [['basin', 'Lake'], ['flood', 'Flood'], ['river', 'River']]], ['Paint', [['paint', 'Paint']]],
+    ['Build', [['place', 'Building'], ['road', 'Road'], ['bset', 'Change']]], ['Place', [['prop', 'Pieces']]], ['Nature', [['tree', 'Tree']]], ['Creatures', null], ['Erase', [['remove', 'Remove']]]], openG = null, palCat = '';
+  var setTool = function(t){ var b = $('v3tt').querySelector('[data-t="' + t + '"]'); if (b) b.click(); };
+  var dock = $('v3dock'); GROUPS.forEach(function(g){ var b = document.createElement('button'); b.className = 'alt'; b.textContent = g[0]; b.setAttribute('data-g', g[0]);
+    if (!g[1]){ b.disabled = true; b.title = 'Aliens and nests: coming, the game has to read them first'; }
+    b.onclick = function(){ if (g[1].length === 1){ openG = null; setTool(g[1][0][0]); } else { openG = openG === g[0] ? null : g[0]; if (openG && g[1].indexOf(g[1].filter(function(x){ return x[0] === tool; })[0]) < 0) setTool(g[1][0][0]); } V3.shellSync(); };
+    dock.appendChild(b); });
+  var sp = document.createElement('span'); sp.className = 'dsp'; dock.appendChild(sp);
+  [['v3dundo', 'Undo', function(){ undo(); }], ['v3dredo', 'Redo', function(){ redo(); }]].forEach(function(x){ var b = document.createElement('button'); b.id = x[0]; b.className = 'alt'; b.textContent = x[1]; b.onclick = x[2]; dock.appendChild(b); });
+  V3.shellSync = function(){
+    var on2 = sculpt; $('v3dock').classList.toggle('hidden', !on2); $('v3pal').classList.toggle('hidden', !(on2 && tool === 'prop')); $('v3tools').classList.toggle('hidden', !on2);
+    var fl = $('v3flyout'); fl.innerHTML = ''; fl.classList.add('hidden');
+    Array.prototype.forEach.call(dock.querySelectorAll('[data-g]'), function(b){ var g = GROUPS.filter(function(x){ return x[0] === b.getAttribute('data-g'); })[0], has = g[1] && g[1].some(function(x){ return x[0] === tool; }); b.className = has ? 'on' : 'alt';
+      if (openG === g[0] && g[1]){ fl.classList.remove('hidden'); g[1].forEach(function(x){ var tb = document.createElement('button'); tb.className = x[0] === tool ? 'on' : 'alt'; tb.textContent = x[1]; tb.onclick = function(){ setTool(x[0]); }; fl.appendChild(tb); }); } });
+    $('v3dundo').disabled = $('v3undo').disabled; $('v3dredo').disabled = $('v3redo').disabled;
+    if (tool === 'prop') palRender();
+  };
+  var palItems = function(){ var out = []; if (!propM) return out; Object.keys(propM).forEach(function(c){ Object.keys(propM[c] || {}).forEach(function(n){ out.push({c:c, n:n, l:n.replace(/^pk_/, '').replace(/_/g, ' '), pk:n.indexOf('pk_') === 0}); }); }); return out; };
+  var CATN = {land:'Land', street:'Street', plants:'Plants', garden:'Garden', shop:'Shop', vehicles:'Vehicles', containers:'Containers', build:'Building bits', ws:'Waterside', f2:'Furniture'};
+  function palRender(){
+    V3.propInit(); var all = palItems(), q = $('v3ps').value.trim().toLowerCase(), pk = $('v3pk2').value, cats = {}; all.forEach(function(x){ cats[x.c] = (cats[x.c] || 0) + 1; });
+    var ch = $('v3pcat'); ch.innerHTML = ''; [''].concat(Object.keys(cats)).forEach(function(c){ var b = document.createElement('button'); b.className = c === palCat ? 'on' : 'alt'; b.textContent = c ? (CATN[c] || c) + ' ' + cats[c] : 'All ' + all.length; b.onclick = function(){ palCat = c; palRender(); }; ch.appendChild(b); });
+    var f = all.filter(function(x){ return (!palCat || x.c === palCat) && (!q || x.l.indexOf(q) >= 0 || (CATN[x.c] || x.c).toLowerCase().indexOf(q) >= 0) && (!pk || (pk === 'pack') === x.pk); }), L2 = $('v3plist'); L2.innerHTML = '';
+    f.slice(0, 150).forEach(function(x){ var b = document.createElement('button'), on3 = $('v3pc').value === x.c && $('v3pp').value === x.n; b.className = on3 ? 'on' : 'alt'; b.innerHTML = '<span>' + x.l + '</span><i>' + (x.pk ? 'pack' : (CATN[x.c] || x.c)) + '</i>';
+      b.onclick = function(){ $('v3pc').value = x.c; if ($('v3pc').onchange) $('v3pc').onchange(); $('v3pp').value = x.n; palRender(); V3.note('Ready: ' + x.l + '. Tap the ground to place it.', 2.5); }; L2.appendChild(b); });
+    $('v3pn').textContent = f.length > 150 ? f.length + ' pieces; showing 150, type to narrow' : f.length + ' pieces';
+  }
+  $('v3ps').oninput = palRender; $('v3pk2').onchange = palRender;
+  $('v3sculpt').addEventListener('click', function(){ openG = null; V3.shellSync(); });
+  window.addEventListener('keydown', function(e){ if (!on || !sculpt || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ'){ e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
+    else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY'){ e.preventDefault(); redo(); }
+    else if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey){ if (tool === 'prop'){ var t2 = $('v3py'); t2.selectedIndex = (t2.selectedIndex + 1) % t2.options.length; V3.note('Turned to ' + t2.value + '°', 1.2); } else if (tool === 'place'){ var r2 = $('v3rot'); r2.value = (+r2.value + 90) % 360; r2.oninput(); } } });
   Object.keys(L3.ROADT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.ROADT[k][0]; $('v3rt').appendChild(o); }); $('v3rt').value = 'residential'; $('v3rt').onchange = function(){ var t = L3.ROADT[this.value]; $('v3rl').style.display = (t[1] === 'highway' || t[1] === 'railway') ? '' : 'none'; };
   Object.keys(L3.ROADT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = L3.ROADT[k][0]; $('v3rt').appendChild(o); }); $('v3rt').value = 'residential';
   $('v3rdone').onclick = finishRiver; $('v3rcancel').onclick = function(){ riv = []; toolUI(); }; $('v3undo').onclick = undo; $('v3redo').onclick = redo;
@@ -121,7 +166,7 @@ async function boot(){
   await load('builder/host.js');
   /* the art the engine draws with (as play.html loads it, minus people, creatures and sound). Only the textures and building art are required:
      if another file is missing (the art changes over time), the view still opens without it */
-  var set = ARTSET, A = ['dataver', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', set + '/atlas', set + '/atlas3'];
+  var set = ARTSET, A = ['dataver', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/land', 'shaped/digging', set + '/atlas', set + '/atlas3'];
   var NEED = {btex:1, 'shaped/shapes':1, 'shaped/buildings':1}; NEED[set + '/atlas'] = 1; NEED[set + '/atlas3'] = 1;
   for (var i = 0; i < A.length; i++){ V3.note('Loading the art: ' + Math.round(i/A.length*100) + '%', 30); try { await load('assets/' + A[i] + '.js'); } catch (e){ if (NEED[A[i]]) throw e; if (window.console) console.warn('3D view: skipped missing assets/' + A[i] + '.js'); } }
   /* cars made in the Workshop (packs/*.js): loaded after the shaped art, installed beside the stock cars as vehicles.pk_<pack>_<id> */
@@ -233,7 +278,7 @@ async function redraw(msg){
   try { await enterAt(ll[1], ll[0], yaw); } finally { P.pitch = pitch; busy = false; }
   V3.note(msg || '', 2);
 }
-async function refreshCount(){ try { var n = await L3.editCount(cur.proj); $('v3cnt').textContent = n + (n === 1 ? ' dab' : ' dabs') + ' saved'; $('v3undo').disabled = !undoSt.length; $('v3redo').disabled = !redoSt.length; } catch (er){} }
+async function refreshCount(){ try { var n = await L3.editCount(cur.proj); $('v3cnt').textContent = n + (n === 1 ? ' dab' : ' dabs') + ' saved'; $('v3undo').disabled = !undoSt.length; $('v3redo').disabled = !redoSt.length; if (V3.shellSync) V3.shellSync(); } catch (er){} }
 
 
 
@@ -249,6 +294,7 @@ function nearRoadAngle(x, y){
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function riverWidth(){ return brushR < 30 ? 3 : brushR < 60 ? 8 : 11; }   /* the game's stream, canal and river widths */
 function toolUI(){
+  if (V3.shellSync) setTimeout(function(){ V3.shellSync(); }, 0);
   $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road'; $('v3riv').classList.toggle('hidden', !isR);
   if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : tool === 'road' ? 'tap along the road' : 'tap along the river, downstream';
 }
