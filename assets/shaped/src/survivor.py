@@ -382,7 +382,7 @@ def hair():
     skull = lambda g=0.008, lo=0.2, **k: grown('HAIR', g + 0.004, hairline(0.05 - lo*0.25))    # lo is the old dome's cut: higher means a higher hairline
     H['buzzed'] = under_hat(skull(0.0, 0.22))
     # short: a fuller crown with a side parting (two tones) and a back that comes low on the neck
-    H['short'] = under_hat(skull(0.012, 0.02) + [box([0.03, 1.765, 0.052], [0.05, 0.016, 0.05], 'HAIR_D'), curtain(1.66, 1.6, 0.074, 0.066, -0.07, -0.074, 0.02)])
+    H['short'] = under_hat(skull(0.012, 0.02) + grown('HAIR_D', 0.026, hairline(0.05), where=lambda c: float(c[0]) > 0.012 and float(c[1]) > 1.74 and float(c[2]) > -0.01))
     # afro: one huge round mass, the widest silhouette
     H['afro'] = under_hat(grown('HAIR', 0.07, hairline(-0.01, front=1.745, side=1.68, nape=1.64)))
     # bob: round crown, chin-length curtains on every side, a heavy fringe
@@ -393,7 +393,7 @@ def hair():
     H['ponytail'] = under_hat(skull(0.006, 0.12) + [box([0, 1.74, -0.083], [0.03, 0.026, 0.026], 'ACC')]) + [
         loft([[0, 1.74, -0.095, 0.03, 0.03], [0, 1.65, -0.14, 0.036, 0.036], [0, 1.52, -0.158, 0.028, 0.028], [0, 1.44, -0.152, 0.012, 0.012]], 'HAIR', n=7)]
     # mohawk: shaved sides, a tall ridge of blocks
-    H['mohawk'] = under_hat(skull(0.0, 0.3)) + under_hat([box([0, 1.775 + 0.024*(i % 2 + (1 - abs(i - 2.5)/3)), 0.075 - i*0.03], [0.02, 0.04 + 0.03*(1 - abs(i - 2.5)/3), 0.016], 'HAIR_D' if i % 2 else 'HAIR') for i in range(6)])
+    H['mohawk'] = under_hat(skull(0.0, 0.3)) + under_hat(grown('HAIR', 0.05, 1.70, where=lambda c: abs(float(c[0])) < 0.028 and float(c[1]) > 1.70) + grown('HAIR_D', 0.062, 1.745, where=lambda c: abs(float(c[0])) < 0.016 and float(c[1]) > 1.745))
     # top knot: tight sides, one round bun
     H['topknot'] = under_hat(skull(0.004, 0.2) + [blob('HAIR', 0.042, 0.042, cy=1.8, ry=0.045, cz=-0.01, lo=-0.9, rows=5, n=8)])
     H['buns'] = H['topknot']
