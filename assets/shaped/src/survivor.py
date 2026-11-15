@@ -767,20 +767,13 @@ def body_rings_v10(fem):
     for sd in ('l', 'r'): out['foot_' + sd] = [ring_loft(foot_rings(R, sd), caps=(True, True))]
     return out
 def body(fem):
-    """The base body is the box-modelled quad cage (workshop/tools/base_cage.py), cut into one open shell per bone."""
+    """The base body is the box-modelled quad cage (workshop/tools/base_cage.py), cut into one shell per bone."""
     import sys as _sys
     _sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../workshop/tools'))
     import base_cage as _bc
-    m = _bc.mirror(_bc.build('feminine' if fem else 'masculine')); _bc.orient(m); out = {}
-    for f, t in zip(m.f, m.tag):
-        t = t.replace('ball_', 'foot_'); out.setdefault(t, []).append(f)
-    for t, fs in out.items():
-        ids = sorted(set(i for f in fs for i in f)); mp = {v: k for k, v in enumerate(ids)}
-        tris = []
-        for f in fs:                # two triangles a quad, cut along the shorter diagonal, so a bent quad cannot be drawn wrong
-            g = [mp[i] for i in f]; P = [m.v[i] for i in f]; d = lambda u, w: sum((P[u][k] - P[w][k])**2 for k in range(3))
-            tris += [[g[0], g[1], g[2]], [g[0], g[2], g[3]]] if d(0, 2) <= d(1, 3) else [[g[0], g[1], g[3]], [g[1], g[2], g[3]]]
-        q = solid([tuple(round(c, 4) for c in m.v[i]) for i in ids], tris, 'SKIN'); q['winding'] = True; out[t] = [q]
+    out = {}
+    for t, (V, tris) in _bc.pieces('feminine' if fem else 'masculine').items():      # joint ends are domed so a bent joint shows no hole
+        q = solid(V, tris, 'SKIN'); q['winding'] = True; out[t] = [q]
     return out
 HEAD_S = (1.6, 1.26, 1.65); HEAD_O = (0.0, 1.556, 0.056)     # head parts drawn for the old stock head, grown onto the base body's head
 def xf(q, S, O):

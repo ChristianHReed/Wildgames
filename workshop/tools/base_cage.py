@@ -88,7 +88,7 @@ BODY = {
      (0.985, .140, .094, -.118, .82, .92, .84, .94),     # hips: small and boxy
      (1.085, .126, .090, -.074, .78, .90, .80, .88),     # waist
      (1.165, .138, .096, -.086, .74, .88, .76, .86),     # lower ribs
-     (1.235, .150, .104, -.100, .76, .90, .78, .88),     # under the chest
+     (1.235, .150, .118, -.100, .76, .90, .78, .88),     # under the chest
      (1.300, .153, .138, -.112, .78, .93, .80, .88)],    # chest plane, at the armpit
    a1=[(0, 1.378, .120), (.118, 1.378, .114), None, (.118, 1.380, -.102), (0, 1.384, -.112)],
    a2=[(0, 1.434, .078), (.100, 1.444, .054), (.144, 1.438, -.004), (.100, 1.450, -.066), (0, 1.452, -.092)],
@@ -98,8 +98,8 @@ BODY = {
      [(0, 1.545, .100), (.038, 1.550, .090), (.068, 1.585, .020), (.050, 1.580, -.050), (0, 1.575, -.066)],
      [(0, 1.590, .116), (.052, 1.592, .098), (.086, 1.622, .020), (.064, 1.618, -.074), (0, 1.615, -.092)],
      [(0, 1.632, .120), (.064, 1.634, .100), (.093, 1.642, .020), (.070, 1.644, -.084), (0, 1.648, -.104)],
-     [(0, 1.682, .117), (.066, 1.682, .103), (.095, 1.700, .020), (.072, 1.700, -.090), (0, 1.694, -.112)],
-     [(0, 1.712, .123), (.068, 1.712, .108), (.096, 1.722, .010), (.074, 1.724, -.090), (0, 1.720, -.114)],
+     [(0, 1.682, .121), (.066, 1.682, .106), (.095, 1.700, .020), (.072, 1.700, -.090), (0, 1.694, -.112)],
+     [(0, 1.712, .124), (.068, 1.712, .108), (.096, 1.722, .010), (.074, 1.724, -.090), (0, 1.720, -.114)],
      [(0, 1.765, .112), (.062, 1.768, .094), (.088, 1.770, .006), (.066, 1.770, -.080), (0, 1.768, -.102)],
      [(0, 1.802, .062), (.040, 1.806, .050), (.056, 1.808, .002), (.042, 1.806, -.050), (0, 1.802, -.066)]],
    crown=(0, 1.816, .000), head_scale=(1.04, 1.02, 1.04),
@@ -108,8 +108,9 @@ BODY = {
    arm=[  # centre x, y, centre z, radius x, radius z, tilt (outer side raised)
      (.180, 1.362, -.002, .052, .066, .026, 'upperarm'),  # deltoid
      (.189, 1.270, -.004, .047, .054, .010, 'upperarm'),  # biceps
-     (.196, 1.190, -.020, .039, .044, .000, 'upperarm'),
+     (.196, 1.186, -.021, .039, .044, .000, 'upperarm'),  # three loops across the elbow
      (.198, 1.150, -.026, .037, .041, .000, 'lowerarm'),  # elbow
+     (.201, 1.114, -.021, .039, .043, .000, 'lowerarm'),
      (.204, 1.080, -.012, .042, .046, .000, 'lowerarm'),  # forearm swell
      (.210, 0.980, .008, .032, .036, .000, 'lowerarm'),
      (.214, 0.905, .018, .023, .033, .000, 'hand'),       # wrist
@@ -122,7 +123,9 @@ BODY = {
      (.077, .800, -.006, .066, .096, 1.0, 'thigh'),
      (.078, .700, .002, .064, .090, 0.5, 'thigh'),       # quads
      (.081, .580, .006, .060, .072, 0.0, 'thigh'),
+     (.079, .540, .012, .056, .065, 0.0, 'thigh'),        # three loops across the knee
      (.078, .505, .016, .053, .060, 0.0, 'calf'),         # knee block, forward
+     (.078, .470, .011, .049, .055, 0.0, 'calf'),
      (.078, .445, .004, .047, .052, 0.0, 'calf'),
      (.081, .345, -.018, .056, .066, 0.0, 'calf'),        # calf muscle, back
      (.078, .200, -.014, .038, .044, 0.0, 'calf'),
@@ -131,14 +134,14 @@ BODY = {
    foot=[(.080, .080, .050, .088), (.084, .160, .057, .052), (.085, .236, .047, .032)]),   # centre x, z, half width, top y
 }
 def _bulk(B, arm, leg):
-    B['arm'] = [(cx + (rx*(arm - 1) if i < 6 else 0), y, cz, rx*(arm if i < 6 else 1), rz*(arm if i < 6 else 1), t, g) for i, (cx, y, cz, rx, rz, t, g) in enumerate(B['arm'])]
-    B['leg'] = [(cx + rx*(leg - 1)*(1 if i < 3 else .3), y, cz, rx*leg, rz*leg, bl, g) for i, (cx, y, cz, rx, rz, bl, g) in enumerate(B['leg'])]
+    B['arm'] = [(cx + (rx*(arm - 1) if g != 'hand' else 0), y, cz, rx*(arm if g != 'hand' else 1), rz*(arm if g != 'hand' else 1), t, g) for i, (cx, y, cz, rx, rz, t, g) in enumerate(B['arm'])]
+    B['leg'] = [(cx + rx*(leg - 1)*(1 if g == 'thigh' else .3), y, cz, rx*leg, rz*leg, bl, g) for i, (cx, y, cz, rx, rz, bl, g) in enumerate(B['leg'])]
 def _fem():
     import copy
     B = copy.deepcopy(BODY['masculine'])
     B['pelvis'] = [(0, .868, .088), (.098, .890, .092), (.178, .912, -.004), (.110, .884, -.124), (0, .862, -.116)]
     B['torso'] = [(0.975, .160, .092, -.128, .70, .88, .74, .92), (1.040, .132, .088, -.098, .72, .88, .74, .88), (1.100, .104, .082, -.064, .72, .86, .74, .84), (1.165, .114, .090, -.074, .74, .88, .76, .84),
-                  (1.235, .126, .098, -.086, .74, .90, .76, .84), (1.300, .132, .144, -.096, .70, .96, .78, .84)]
+                  (1.235, .126, .114, -.086, .74, .90, .76, .84), (1.300, .132, .144, -.096, .70, .96, .78, .84)]
     B['a1'] = [(0, 1.378, .108), (.100, 1.378, .106), None, (.100, 1.380, -.082), (0, 1.384, -.100)]
     B['a2'] = [(0, 1.434, .072), (.092, 1.444, .050), (.134, 1.438, -.004), (.094, 1.450, -.060), (0, 1.452, -.082)]
     B['n0'] = [(0, 1.462, .050), (.038, 1.478, .038), (.056, 1.494, .000), (.040, 1.494, -.042), (0, 1.488, -.058)]
@@ -147,11 +150,11 @@ def _fem():
     H[0] = [(0, 1.548, .098), (.030, 1.553, .088), (.058, 1.588, .020), (.046, 1.582, -.050), (0, 1.577, -.066)]
     H[1] = [(0, 1.590, .112), (.046, 1.592, .096), (.078, 1.622, .020), (.062, 1.618, -.074), (0, 1.615, -.092)]
     H[2] = [(0, 1.632, .118), (.060, 1.634, .098), (.089, 1.642, .020), (.068, 1.644, -.084), (0, 1.648, -.104)]
-    H[3] = [(0, 1.682, .116), (.064, 1.682, .102), (.092, 1.700, .020), (.070, 1.700, -.090), (0, 1.694, -.112)]
+    H[3] = [(0, 1.682, .119), (.064, 1.682, .104), (.092, 1.700, .020), (.070, 1.700, -.090), (0, 1.694, -.112)]
     H[4] = [(0, 1.712, .120), (.066, 1.712, .106), (.093, 1.722, .010), (.072, 1.724, -.090), (0, 1.720, -.114)]
     B['nose'] = [(0, 1.638, .140), (.018, 1.640, .124), (.012, 1.680, .116), (0, 1.684, .122)]
     B['arm'] = [(cx - (.010 if i < 2 else .004), y, cz, rx*.94, rz*.94, t, g) for i, (cx, y, cz, rx, rz, t, g) in enumerate(B['arm'])]
-    B['leg'] = [(.093, .800, -.010, .083, .102, 1.0, 'thigh'), (.089, .700, -.002, .075, .092, 0.5, 'thigh'), (.083, .580, .004, .058, .067, 0.0, 'thigh'), (.077, .505, .014, .049, .055, 0.0, 'calf'),
+    B['leg'] = [(.093, .800, -.010, .083, .102, 1.0, 'thigh'), (.089, .700, -.002, .075, .092, 0.5, 'thigh'), (.083, .580, .004, .058, .067, 0.0, 'thigh'), (.079, .540, .010, .053, .061, 0.0, 'thigh'), (.077, .505, .014, .049, .055, 0.0, 'calf'), (.077, .470, .009, .046, .051, 0.0, 'calf'),
                 (.077, .445, .002, .043, .048, 0.0, 'calf'), (.079, .345, -.018, .049, .060, 0.0, 'calf'), (.078, .200, -.014, .034, .040, 0.0, 'calf'), (.077, .095, -.012, .029, .035, 0.0, 'foot')]
     B['sole'] = (.077, 0.0, -.022, .037, .046); B['foot'] = [(.080, .078, .046, .082), (.083, .152, .052, .048), (.084, .222, .043, .030)]
     return B
@@ -193,10 +196,10 @@ def build(sex='masculine'):
         rings.append((r, tag))
     prev = hole
     for k, (r, tag) in enumerate(rings):
-        skip = (7,) if k == 8 else ()        # the thumb grows from the front-inner quad between the palm and the knuckles
+        skip = (7,) if k == len(rings) - 3 else ()        # the thumb grows from the front-inner quad between the palm and the knuckles
         m.bridge(prev, r, tag + '_l', skip=skip); prev = r
     m.cap8(prev, 'hand_l')
-    pa, kn = rings[7][0], rings[8][0]; q = [pa[7], pa[0], kn[0], kn[7]]; P = [np.array(m.v[i]) for i in q]; c = sum(P)/4
+    pa, kn = rings[-4][0], rings[-3][0]; q = [pa[7], pa[0], kn[0], kn[7]]; P = [np.array(m.v[i]) for i in q]; c = sum(P)/4
     for off, s in B['thumb']:
         r = [m.V(*(c + (p - c)*s + np.array(off))) for p in P]; m.bridge(q, r, 'hand_l'); q = r
     m.F(q[0], q[1], q[2], q[3], 'hand_l')
@@ -219,6 +222,49 @@ def build(sex='masculine'):
         m.bridge(q, r, 'foot_l' if k == 0 else 'ball_l'); q = r
     m.F(q[0], q[1], q[6], q[7], 'ball_l'); m.F(q[1], q[2], q[5], q[6], 'ball_l'); m.F(q[2], q[3], q[4], q[5], 'ball_l')
     return m
+
+# ---------------------------------------------------------------- game pieces: one shell per bone, joint ends closed
+def pieces(sex, dome=0.35):
+    """Cut the cage into one triangle shell per bone. The game moves each bone's piece rigidly, so every open end gets a
+    low dome: when a joint bends, the two domes overlap and no hole opens (the tutorials' rule for separate body blocks)."""
+    m = mirror(build(sex)); orient(m); groups = {}
+    for f, t in zip(m.f, m.tag): groups.setdefault(t.replace('ball_', 'foot_'), []).append(f)
+    out = {}
+    for t, fs in groups.items():
+        ids = sorted(set(i for f in fs for i in f)); mp = {v: k for k, v in enumerate(ids)}; V = [list(m.v[i]) for i in ids]; tris = []
+        for f in fs:                # two triangles a quad, cut along the shorter diagonal, so a bent quad cannot be drawn wrong
+            g = [mp[i] for i in f]; P = [m.v[i] for i in f]; d = lambda u, w: sum((P[u][k] - P[w][k])**2 for k in range(3))
+            tris += [[g[0], g[1], g[2]], [g[0], g[2], g[3]]] if d(0, 2) <= d(1, 3) else [[g[0], g[1], g[3]], [g[1], g[2], g[3]]]
+        cnt = {}
+        for a, b, c in tris:
+            for u, w in ((a, b), (b, c), (c, a)): cnt[(u, w)] = cnt.get((u, w), 0) + 1
+        nxt = {u: w for (u, w) in cnt if (w, u) not in cnt}      # open edges, in face order
+        mid = np.mean(np.array(V), 0)
+        while nxt:
+            s0 = next(iter(nxt)); loop = [s0]; u = nxt.pop(s0)
+            while u != s0 and u in nxt: loop.append(u); u = nxt.pop(u)
+            if len(loop) < 3: continue
+            P = np.array([V[i] for i in loop]); c = P.mean(0); n = np.zeros(3)
+            for i in range(len(P)): n += np.cross(P[i] - c, P[(i + 1) % len(P)] - c)
+            ln = np.linalg.norm(n)
+            if ln < 1e-12: continue
+            n /= ln
+            if n @ (c - mid) < 0: n = -n
+            r = float(np.mean(np.linalg.norm(P - c, axis=1))); V.append(list(c + n*r*dome)); ci = len(V) - 1
+            for i in range(len(loop)): tris.append([loop[(i + 1) % len(loop)], loop[i], ci])
+        out[t] = ([tuple(round(float(x), 4) for x in p) for p in V], tris)
+    return out
+
+def bend_test(sex, path, elbow=(0.198, 1.15, -0.026), knee=(0.074, 0.5, 0.01), deg=90):
+    """The skills' bend test for a rigid-piece rig: fold the left elbow and knee and look for holes."""
+    pc = pieces(sex); m = Mesh()
+    def rot(p, o, a):
+        y, z = p[1] - o[1], p[2] - o[2]; return (p[0], o[1] + y*math.cos(a) - z*math.sin(a), o[2] + y*math.sin(a) + z*math.cos(a))
+    for t, (V, T) in pc.items():
+        if t in ('lowerarm_l', 'hand_l'): V = [rot(p, elbow, math.radians(-deg)) for p in V]
+        if t in ('calf_l', 'foot_l'): V = [rot(p, knee, math.radians(deg)) for p in V]
+        b = len(m.v); m.v += [list(p) for p in V]; m.f += [tuple(b + i for i in tr) for tr in T]; m.tag += [t]*len(T)
+    render([m], path, W=2400, H=900, views=((35, ''), (90, ''), (-90, ''), (145, '')), wire=False)
 
 # ---------------------------------------------------------------- measurements for the clothes (read by assets/shaped/src/survivor.py)
 def _slice(m, tags, y, xmin=None):
@@ -316,4 +362,5 @@ if __name__ == '__main__':
         print(sex, 'cage quads', len(cage.f), 'open or shared-by-3 edges', bad, '| subdivided quads', len(sub.f), 'tris', 2*len(sub.f), '| height %.3f width %.3f' % (P[:, 1].max(), P[:, 0].max()*2), 'volume %.4f' % vol)
         write_obj(cage, os.path.join(out, 'survivor_base_%s_cage.obj' % sex), 'AfterStreet survivor base, %s, cage' % sex)
         write_obj(sub, os.path.join(out, 'survivor_base_%s.obj' % sex), 'AfterStreet survivor base, %s, one subdivision level' % sex)
+        bend_test(sex, os.path.join(out, 'survivor_bend_%s.png' % sex))
         render([cage], os.path.join(out, 'survivor_base_%s.png' % sex), W=1900, H=900, views=((0, 'front'), (35, '3/4'), (90, 'side'), (145, 'back 3/4'), (180, 'back')))
