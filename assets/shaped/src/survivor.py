@@ -127,9 +127,9 @@ def t_rings(fem, y0, y1, g):
     g *= GK
     return [[0, y, t_at(fem, y)[2], t_at(fem, y)[0] + g, t_at(fem, y)[1] + g] for y in ys]
 def fz(fem, y, g, lift=0.003):
-    a, b, z = t_at(fem, y); return z + b + g*GK + lift
+    a, b, z = t_at(fem, y); return z + b + g*GK + lift + 0.004
 def bz(fem, y, g, lift=0.003):
-    a, b, z = t_at(fem, y); return z - b - g*GK - lift
+    a, b, z = t_at(fem, y); return z - b - g*GK - lift - 0.004
 TORSO_BONES = ('pelvis', 'spine_01', 'spine_02', 'spine_03')
 SKIN_GAP = 0.004     # the thinnest cloth still clears the skin by this much
 def shell(fem, bones, col, g=0.0, **k):
@@ -142,7 +142,7 @@ def chest(fem, col, g=0.0, hem=HEM, flare=0.0, belly=None):
     if belly: return join(shell(fem, ('spine_02', 'spine_03'), col, g), shell(fem, ('pelvis', 'spine_01'), belly, g, ymin=hem, flare=flare))
     o = shell(fem, TORSO_BONES, col, g, ymin=max(hem, 0.9), flare=0.0 if hem < 0.9 else flare)
     if hem < 0.9:      # a long coat: a skirt hangs from the hips below the body's own faces
-        a0, b0, z0 = t_at(fem, 0.96); o = join(o, {'pelvis': [frustum([[0, hem, z0, a0 + g*GK + flare + 0.012, b0 + g*GK + flare*0.6 + 0.012], [0, 0.96, z0, a0 + g*GK + 0.012, b0 + g*GK + 0.012]], col, caps=[True, False])]})
+        a0, b0, z0 = t_at(fem, 0.96); o = join(o, {'pelvis': [loft([[0, hem, z0, a0 + g*GK + flare + 0.014, b0 + g*GK + flare*0.6 + 0.014], [0, 0.78, z0, a0 + g*GK + flare*0.5 + 0.014, b0 + g*GK + flare*0.3 + 0.014], [0, 0.97, z0, a0 + g*GK + 0.012, b0 + g*GK + 0.012]], col, n=10, caps=[True, False])]})
     return o
 def band(fem, y, h, g, col):
     return shell(fem, TORSO_BONES, col, g + 0.004, ymin=y, ymax=y + h)
@@ -298,13 +298,20 @@ def shoes():
     S['rain_boots'] = both_sides(lambda sg, sd: {'foot_' + sd: shoe(sd, 'rainboot', 'sole', 0.09),
                                                  'calf_' + sd: [frustum([[J['an' + sd][0], 0.08, -0.01, 0.056, 0.062], [J['an' + sd][0], 0.33, -0.006, 0.062, 0.068]], 'rainboot'),
                                                                 frustum([[J['an' + sd][0], 0.31, -0.006, 0.066, 0.072], [J['an' + sd][0], 0.345, -0.006, 0.066, 0.072]], 'rainbootD', caps=[False, False])]})
-    S['trainers'] = both_sides(lambda sg, sd: ring_shoe(sd, 'trainer', 'trainerSole'))
-    S['boots'] = both_sides(lambda sg, sd: ring_shoe(sd, 'boot', 'sole', shaft=0.29))
-    S['rain_boots'] = both_sides(lambda sg, sd: ring_shoe(sd, 'rainboot', 'sole', shaft=0.34, g=0.014))
+    FT, CAF = ('foot_l', 'foot_r'), ('calf_l', 'calf_r')
+    def grown(col, sole, g=0.012, shaft=None, cuff=None, top=None):
+        """a shoe is the base body's foot grown outward, with a thicker sole layer under it; a boot adds the calf up to shaft"""
+        o = join(shell(False, FT, col, g, ymax=top), shell(False, FT, sole, g + 0.008, ymax=0.022))
+        if shaft: o = join(o, shell(False, CAF, col, g, ymax=shaft))
+        if cuff: o = join(o, shell(False, CAF, cuff, g + 0.008, ymin=shaft - 0.04, ymax=shaft))
+        return o
+    S['trainers'] = grown('trainer', 'trainerSole', top=0.115)
+    S['boots'] = grown('boot', 'sole', 0.014, shaft=0.29, cuff='bootCuff')
+    S['rain_boots'] = grown('rainboot', 'sole', 0.018, shaft=0.34, cuff='rainbootD')
     return S
 
 # ================= faces: no eyes; glasses and hair carry the character =================
-def bar(col, y=EYE_Y, w=0.064, h=0.016, lift=0.012, d=0.012):
+def bar(col, y=EYE_Y, w=0.05, h=0.016, lift=0.012, d=0.012):
     z = face_z(0, y) + lift
     return [box([0, y, z - d/2], [w*2, h, d], col),
             *[box([sg*0.068, y + 0.002, z - 0.045], [0.006, 0.006, 0.09], col) for sg in (1, -1)]]
@@ -380,10 +387,10 @@ def hats():
 # ================= gear =================
 def gear():
     back = bz(False, 1.3, 0.026, 0)
-    body = frustum([[0, 1.0, back - 0.09, 0.13, 0.08], [0, 1.52, back - 0.09, 0.13, 0.08]], 'pack')
-    flap = frustum([[0, 1.48, back - 0.1, 0.155, 0.095], [0, 1.55, back - 0.1, 0.155, 0.095]], 'packD', caps=[False, True])
-    pocket = frustum([[0, 1.04, back - 0.2, 0.1, 0.022], [0, 1.22, back - 0.2, 0.1, 0.022]], 'packD')
-    roll = loft([[0.18, 1.6, back - 0.1, 0.05, 0.05], [-0.18, 1.6, back - 0.1, 0.05, 0.05]], 'roll', ax='x', n=6)
+    body = frustum([[0, 0.98, back - 0.09, 0.13, 0.08], [0, 1.42, back - 0.09, 0.13, 0.08]], 'pack')
+    flap = frustum([[0, 1.38, back - 0.1, 0.155, 0.095], [0, 1.45, back - 0.1, 0.155, 0.095]], 'packD', caps=[False, True])
+    pocket = frustum([[0, 1.02, back - 0.2, 0.1, 0.022], [0, 1.2, back - 0.2, 0.1, 0.022]], 'packD')
+    roll = loft([[0.18, 1.5, back - 0.1, 0.05, 0.05], [-0.18, 1.5, back - 0.1, 0.05, 0.05]], 'roll', ax='x', n=6)
     straps = [flat([(sg*0.06, 1.455, fz(False, 1.43, 0.026, 0.005)), (sg*0.09, 1.455, fz(False, 1.43, 0.026, 0.005)), (sg*0.085, 1.12, fz(False, 1.12, 0.026, 0.005)), (sg*0.055, 1.12, fz(False, 1.12, 0.026, 0.005))], 'strap') for sg in (1, -1)]
     pack = {'spine_03': [body, flap, pocket, roll] + straps}
     ty = TORSO[False][-1][0]
@@ -391,7 +398,7 @@ def gear():
              'spine_03': [frustum([[0.05, ty, fz(False, ty, 0.03, 0.012), 0.032, 0.008], [0.056, 1.25, fz(False, 1.25, 0.03, 0.012), 0.034, 0.008]], 'ACC'),
                           *[flat([(0.05 + dx - 0.012, y - 0.012, fz(False, y, 0.03, 0.021)), (0.05 + dx + 0.012, y - 0.012, fz(False, y, 0.03, 0.021)), (0.05 + dx + 0.012, y + 0.012, fz(False, y, 0.03, 0.021)), (0.05 + dx - 0.012, y + 0.012, fz(False, y, 0.03, 0.021))], 'ACC_D')
                             for dx, y in ((-0.012, 1.38), (0.012, 1.34), (-0.012, 1.3))]]}
-    gloves = both_sides(lambda sg, sd: {'hand_' + sd: hand(sd, 'glove', 0.006) + [frustum([[J['wr' + sd][0], J['wr' + sd][1] + 0.04, J['wr' + sd][2], 0.034, 0.036], [J['wr' + sd][0], J['wr' + sd][1] - 0.01, J['wr' + sd][2] + 0.003, 0.032, 0.034]], 'gloveD')]})
+    gloves = join(shell(False, ('hand_l', 'hand_r'), 'glove', 0.008), shell(False, ('hand_l', 'hand_r', 'lowerarm_l', 'lowerarm_r'), 'gloveD', 0.02, ymin=0.875, ymax=0.925))
     return {'backpack': pack, 'scarf': scarf, 'gloves': gloves}
 
 # ================= worn clothes (the game's 0.40 slots): layers over the creator's top, or new legs =================
@@ -417,7 +424,7 @@ def worn(fem):
     # work trousers (legs): canvas, knee patches at the joint, a hammer loop
     trousers = {k: v for k, v in bottoms(fem)['jeans'].items()}
     W['trousers'] = recolour(join(bottoms(fem)['cargo_trousers']), {'PANTS': 'trousers', 'PANTS_D': 'trousers_D'})
-    W['trousers'] = join(W['trousers'], both_sides(lambda sg, sd: {'calf_' + sd: [frustum(calf(sd, 0.024, 0.0, 0.16, straight=True), 'trousers_D')]}))
+    W['trousers'] = join(W['trousers'], shell(fem, ('calf_l', 'calf_r', 'thigh_l', 'thigh_r'), 'trousers_D', 0.02, ymin=0.45, ymax=0.555))
     # puffer jacket (outer, v9): quilted bands, a tall collar and big cuffs, the bulkiest shape in the set
     pcol = {'spine_03': [frustum([[0, ty - 0.04, 0.0, t_at(fem, ty)[0] + 0.04, t_at(fem, ty)[1] + 0.06], [0, ty + 0.075, -0.004, 0.1, 0.09]], 'puffer_D', caps=[False, False])]}
     W['puffer'] = join(chest(fem, 'puffer', 0.056, hem=0.82, flare=0.03), sleeves(fem, 'puffer', 'long', 0.056, cuff='puffer_D'), pcol,
@@ -771,7 +778,7 @@ def body(fem):
     for t, (V, tris) in _bc.pieces('feminine' if fem else 'masculine').items():      # joint ends are domed so a bent joint shows no hole
         q = solid(V, tris, 'SKIN'); q['winding'] = True; out[t] = [q]
     return out
-HEAD_S = (1.6, 1.26, 1.65); HEAD_O = (0.0, 1.556, 0.056)     # head parts drawn for the old stock head, grown onto the base body's head
+HEAD_S = (1.5, 1.27, 1.6); HEAD_O = (0.0, 1.559, 0.056)     # head parts drawn for the old stock head, grown onto the base body's head
 def xf(q, S, O):
     q = dict(q); sx, sy, sz = S
     q['p'] = [R4(O[i] + (q['p'][i] - O[i])*S[i]) for i in range(3)]
