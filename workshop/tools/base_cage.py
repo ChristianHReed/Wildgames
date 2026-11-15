@@ -224,17 +224,44 @@ def build(sex='masculine'):
     return m
 
 # ---------------------------------------------------------------- game pieces: one shell per bone, joint ends closed
-def pieces(sex, dome=0.35):
-    """Cut the cage into one triangle shell per bone. The game moves each bone's piece rigidly, so every open end gets a
-    low dome: when a joint bends, the two domes overlap and no hole opens (the tutorials' rule for separate body blocks)."""
-    m = mirror(build(sex)); orient(m); groups = {}
-    for f, t in zip(m.f, m.tag): groups.setdefault(t.replace('ball_', 'foot_'), []).append(f)
+_CAGE = {}
+def _cage(sex):
+    """the mirrored, outward-wound cage with a normal at every point (cached)"""
+    if sex not in _CAGE:
+        m = mirror(build(sex)); orient(m); P = np.array(m.v); N = np.zeros_like(P)
+        for f in m.f:
+            n = np.cross(P[f[2]] - P[f[0]], P[f[3]] - P[f[1]])
+            for i in f: N[i] += n
+        N /= np.maximum(np.linalg.norm(N, axis=1), 1e-12)[:, None]; _CAGE[sex] = (m, P, N)
+    return _CAGE[sex]
+
+def shell(sex, tags=None, g=0.0, ymin=None, ymax=None, flare=0.0, dome=0.35):
+    """Faces of the cage, by bone, pushed g metres out along the surface: the body itself at g = 0, clothes at g > 0
+    (the tutorials grow clothes from the body's own faces). ymin and ymax trim a hem or a cuff; flare widens a trimmed hem.
+    One triangle shell per bone. The game moves each bone's piece rigidly, so every open end gets a low dome: when a joint
+    bends, the two domes overlap and no hole opens."""
+    m, P0, N = _cage(sex); P = P0 + N*g; groups = {}
+    if ymin is not None or ymax is not None:
+        P = P.copy()
+        for i in range(len(P)):
+            y = P[i, 1]
+            if ymin is not None and y < ymin:
+                P[i, 1] = ymin; h = np.array([N[i, 0], 0.0, N[i, 2]]); ln = np.linalg.norm(h)
+                if flare and ln > 1e-9: P[i] += h/ln*flare
+            if ymax is not None and y > ymax: P[i, 1] = ymax
+    for f, t in zip(m.f, m.tag):
+        t = t.replace('ball_', 'foot_')
+        if tags is not None and t not in tags: continue
+        ys = [P0[i, 1] + N[i, 1]*g for i in f]
+        if (ymin is not None and max(ys) <= ymin + 1e-6) or (ymax is not None and min(ys) >= ymax - 1e-6): continue
+        groups.setdefault(t, []).append(f)
     out = {}
     for t, fs in groups.items():
-        ids = sorted(set(i for f in fs for i in f)); mp = {v: k for k, v in enumerate(ids)}; V = [list(m.v[i]) for i in ids]; tris = []
+        ids = sorted(set(i for f in fs for i in f)); mp = {v: k for k, v in enumerate(ids)}; V = [list(P[i]) for i in ids]; tris = []
         for f in fs:                # two triangles a quad, cut along the shorter diagonal, so a bent quad cannot be drawn wrong
-            g = [mp[i] for i in f]; P = [m.v[i] for i in f]; d = lambda u, w: sum((P[u][k] - P[w][k])**2 for k in range(3))
-            tris += [[g[0], g[1], g[2]], [g[0], g[2], g[3]]] if d(0, 2) <= d(1, 3) else [[g[0], g[1], g[3]], [g[1], g[2], g[3]]]
+            g4 = [mp[i] for i in f]; Q = [P[i] for i in f]; d = lambda u, w: float(np.sum((Q[u] - Q[w])**2))
+            for tr in ([[0, 1, 2], [0, 2, 3]] if d(0, 2) <= d(1, 3) else [[0, 1, 3], [1, 2, 3]]):
+                if np.linalg.norm(np.cross(Q[tr[1]] - Q[tr[0]], Q[tr[2]] - Q[tr[0]])) > 1e-9: tris.append([g4[k] for k in tr])
         cnt = {}
         for a, b, c in tris:
             for u, w in ((a, b), (b, c), (c, a)): cnt[(u, w)] = cnt.get((u, w), 0) + 1
@@ -244,16 +271,20 @@ def pieces(sex, dome=0.35):
             s0 = next(iter(nxt)); loop = [s0]; u = nxt.pop(s0)
             while u != s0 and u in nxt: loop.append(u); u = nxt.pop(u)
             if len(loop) < 3: continue
-            P = np.array([V[i] for i in loop]); c = P.mean(0); n = np.zeros(3)
-            for i in range(len(P)): n += np.cross(P[i] - c, P[(i + 1) % len(P)] - c)
+            Q = np.array([V[i] for i in loop]); c = Q.mean(0); n = np.zeros(3)
+            for i in range(len(Q)): n += np.cross(Q[i] - c, Q[(i + 1) % len(Q)] - c)
             ln = np.linalg.norm(n)
             if ln < 1e-12: continue
             n /= ln
             if n @ (c - mid) < 0: n = -n
-            r = float(np.mean(np.linalg.norm(P - c, axis=1))); V.append(list(c + n*r*dome)); ci = len(V) - 1
+            r = float(np.mean(np.linalg.norm(Q - c, axis=1))); V.append(list(c + n*r*dome)); ci = len(V) - 1
             for i in range(len(loop)): tris.append([loop[(i + 1) % len(loop)], loop[i], ci])
-        out[t] = ([tuple(round(float(x), 4) for x in p) for p in V], tris)
+        out[t] = ([tuple(round(float(x), 4) for x in q) for q in V], tris)
     return out
+
+def pieces(sex, dome=0.35):
+    """the body: one closed triangle shell per bone"""
+    return shell(sex, None, 0.0, dome=dome)
 
 def bend_test(sex, path, elbow=(0.198, 1.15, -0.026), knee=(0.074, 0.5, 0.01), deg=90):
     """The skills' bend test for a rigid-piece rig: fold the left elbow and knee and look for holes."""

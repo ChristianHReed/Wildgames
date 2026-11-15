@@ -130,13 +130,22 @@ def fz(fem, y, g, lift=0.003):
     a, b, z = t_at(fem, y); return z + b + g*GK + lift
 def bz(fem, y, g, lift=0.003):
     a, b, z = t_at(fem, y); return z - b - g*GK - lift
+TORSO_BONES = ('pelvis', 'spine_01', 'spine_02', 'spine_03')
+SKIN_GAP = 0.004     # the thinnest cloth still clears the skin by this much
+def shell(fem, bones, col, g=0.0, **k):
+    """cloth grown from the base body's own faces (workshop/tools/base_cage.py), g metres off the skin, one piece per bone"""
+    out = {}
+    for b, (V, T) in _bc.shell('feminine' if fem else 'masculine', bones, g*GK + SKIN_GAP, dome=0.12, **k).items():
+        q = solid(V, T, col); q['winding'] = True; out[b] = [q]
+    return out
 def chest(fem, col, g=0.0, hem=HEM, flare=0.0, belly=None):
-    top = TORSO[fem][-1][0]
-    lo = t_rings(fem, HEM, SPLIT, g); hi = t_rings(fem, SPLIT, top, g)
-    lo[0][1] = hem; lo[0][3] += flare; lo[0][4] += flare*0.6
-    return {'spine_01': [frustum(lo, belly or col, caps=[True, False])], 'spine_03': [frustum(hi, col, caps=[False, True])]}
+    if belly: return join(shell(fem, ('spine_02', 'spine_03'), col, g), shell(fem, ('pelvis', 'spine_01'), belly, g, ymin=hem, flare=flare))
+    o = shell(fem, TORSO_BONES, col, g, ymin=max(hem, 0.9), flare=0.0 if hem < 0.9 else flare)
+    if hem < 0.9:      # a long coat: a skirt hangs from the hips below the body's own faces
+        a0, b0, z0 = t_at(fem, 0.96); o = join(o, {'pelvis': [frustum([[0, hem, z0, a0 + g*GK + flare + 0.012, b0 + g*GK + flare*0.6 + 0.012], [0, 0.96, z0, a0 + g*GK + 0.012, b0 + g*GK + 0.012]], col, caps=[True, False])]})
+    return o
 def band(fem, y, h, g, col):
-    return {('spine_01' if y < SPLIT else 'spine_03'): [frustum(t_rings(fem, y, y + h, g), col, caps=[False, False])]}
+    return shell(fem, TORSO_BONES, col, g + 0.004, ymin=y, ymax=y + h)
 def front(fem, x0, x1, y0, y1, g, col, lift=0.003, back=False):
     """a flat panel on the front (or back) plane of the torso"""
     z = (lambda y: bz(fem, y, g, lift)) if back else (lambda y: fz(fem, y, g, lift))
@@ -178,19 +187,12 @@ def hand(sd, col='SKIN', g=0.0):
             frustum([[*mixp(W, F, 0.45), 0.021*w + g, 0.034*w + g], [*mixp(W, F, 0.85), 0.017*w + g, 0.03*w + g], [*F, 0.008*w + g, 0.014*w + g]], col),   # a blunt mitten, not a spike
             box([W[0] - sg*0.02, W[1] - 0.045, W[2] + 0.02 + g], [0.018, 0.05, 0.022], col)]    # thumb
 def hands(): return both_sides(lambda sg, sd: {'hand_' + sd: hand(sd)})
-def sleeves(col, style='long', g=0.014, cuff=None):
+def sleeves(fem, col, style='long', g=0.014, cuff=None):
     """style: 'long' (to the wrist, with a cuff), 'short' (to mid upper arm) or 'rolled' (to mid forearm, rolled cuff)"""
-    def f(sg, sd):
-        if style == 'short':
-            s = upper(sd, g, 0.5); s[-1][3] += 0.01; s[-1][4] += 0.01
-            return {'upperarm_' + sd: [frustum(upper(sd), 'SKIN', caps=[False, True]), frustum(s, col)], 'lowerarm_' + sd: [frustum(lower(sd), 'SKIN')]}
-        o = {'upperarm_' + sd: [frustum(upper(sd, g), col)]}
-        if style == 'rolled':
-            o['lowerarm_' + sd] = [frustum(lower(sd, g, 0.0, 0.36), col, caps=[True, False]), frustum(lower(sd, g + 0.012, 0.3, 0.44), cuff or col + '_D'), frustum(lower(sd, 0.0, 0.4, 1.0), 'SKIN', caps=[False, True])]
-        else:
-            o['lowerarm_' + sd] = [frustum(lower(sd, g, 0.0, 0.84), col, caps=[True, False]), frustum(lower(sd, g + 0.008, 0.82, 1.0), cuff or col)]
-        return o
-    return both_sides(f)
+    up, lo = ('upperarm_l', 'upperarm_r'), ('lowerarm_l', 'lowerarm_r')
+    if style == 'short': return shell(fem, up, col, g, ymin=1.25)
+    if style == 'rolled': return join(shell(fem, up, col, g), shell(fem, lo, col, g, ymin=1.06), shell(fem, lo, cuff or col + '_D', g + 0.012, ymin=1.05, ymax=1.09))
+    return join(shell(fem, up, col, g), shell(fem, lo, col, g, ymin=0.935), shell(fem, lo, cuff or col, g + 0.008, ymin=0.93, ymax=0.965))
 def thigh(sd, g=0.0, t1=1.0):
     H, K = J['hp' + sd], J['kn' + sd]; return prof_rows(H, K, TH, 0.0, t1, g*GK, (0, 0.04, 0))
 def calf(sd, g=0.0, t0=0.0, t1=1.0, straight=False):
@@ -202,53 +204,47 @@ def calf(sd, g=0.0, t0=0.0, t1=1.0, straight=False):
 # ================= tops =================
 def tops(fem):
     T = {}; ty = TORSO[fem][-1][0]
-    tee = join(chest(fem, 'SHIRT', 0.006), sleeves('SHIRT', 'short', 0.006), vee(fem, 0.006, 'SKIN', 0.045, 1.38), band(fem, ty - 0.02, 0.02, 0.008, 'SHIRT_D'))
+    tee = join(chest(fem, 'SHIRT', 0.006), sleeves(fem, 'SHIRT', 'short', 0.006), vee(fem, 0.006, 'SKIN', 0.045, 1.38), band(fem, ty - 0.02, 0.02, 0.008, 'SHIRT_D'))
     T['tshirt'] = tee
     T['striped_tee'] = join(tee, *[band(fem, y, 0.035, 0.009, 'ACC') for y in (1.0, 1.14, 1.28)])
     collar = {'spine_03': [wedge([sg*0.05, ty + 0.012, fz(fem, ty, 0.012) - 0.03], [0.07, 0.03, 0.05], 'SHIRT_D') for sg in (1, -1)]}
-    T['flannel_shirt'] = join(chest(fem, 'SHIRT', 0.012, flare=0.006), sleeves('SHIRT', 'rolled', 0.012), vee(fem, 0.012, 'SKIN', 0.04, 1.39),
+    T['flannel_shirt'] = join(chest(fem, 'SHIRT', 0.012, flare=0.006), sleeves(fem, 'SHIRT', 'rolled', 0.012), vee(fem, 0.012, 'SKIN', 0.04, 1.39),
                               front(fem, -0.012, 0.012, HEM, SPLIT, 0.012, 'SHIRT_D'), front(fem, -0.012, 0.012, SPLIT, 1.38, 0.012, 'SHIRT_D'),
                               *[band(fem, y, 0.03, 0.015, 'ACC') for y in (1.02, 1.26)], collar)
     dots = [(-0.07, 1.36), (0.06, 1.33), (0.0, 1.24), (-0.05, 1.12), (0.07, 1.06), (-0.03, 0.98)]
     T['spotted_top'] = join(tee, *[front(fem, x - 0.012, x + 0.012, y - 0.012, y + 0.012, 0.006, 'ACC', 0.004) for x, y in dots])
     hood = {'spine_03': [frustum([[0, ty - 0.04, bz(fem, ty, 0.02, 0) - 0.03, 0.12, 0.05], [0, ty + 0.06, bz(fem, ty, 0.02, 0) - 0.01, 0.1, 0.045]], 'SHIRT_D')]}
-    T['hoodie'] = join(chest(fem, 'SHIRT', 0.02), sleeves('SHIRT', 'long', 0.02, cuff='SHIRT_D'), band(fem, HEM, 0.05, 0.026, 'SHIRT_D'), hood,
+    T['hoodie'] = join(chest(fem, 'SHIRT', 0.02), sleeves(fem, 'SHIRT', 'long', 0.02, cuff='SHIRT_D'), band(fem, HEM, 0.05, 0.026, 'SHIRT_D'), hood,
                        front(fem, -0.09, 0.09, 0.97, 1.08, 0.02, 'SHIRT_D', 0.005), front(fem, -0.03, -0.022, 1.3, ty - 0.01, 0.02, 'ACC', 0.006), front(fem, 0.022, 0.03, 1.3, ty - 0.01, 0.02, 'ACC', 0.006))
     # long coat open over a shirt and tie, with a sheepskin collar (the first figure of the reference)
     fur = {'spine_03': [frustum([[0, ty - 0.03, 0.0, t_at(fem, ty)[0] + 0.03, t_at(fem, ty)[1] + 0.035], [0, ty + 0.04, -0.005, 0.11, 0.085]], 'fur', caps=[False, True])]}
     tie = {'spine_03': [flat([(-0.012, ty - 0.035, fz(fem, ty - 0.035, 0.026, 0.008)), (0.012, ty - 0.035, fz(fem, ty - 0.035, 0.026, 0.008)),
                               (0.016, 1.2, fz(fem, 1.2, 0.026, 0.008)), (0, 1.17, fz(fem, 1.17, 0.026, 0.008)), (-0.016, 1.2, fz(fem, 1.2, 0.026, 0.008))], 'tie')]}
-    T['open_jacket'] = join(chest(fem, 'SHIRT', 0.026, hem=0.74, flare=0.03), sleeves('SHIRT', 'long', 0.024, cuff='SHIRT_D'), fur,
+    T['open_jacket'] = join(chest(fem, 'SHIRT', 0.026, hem=0.74, flare=0.03), sleeves(fem, 'SHIRT', 'long', 0.024, cuff='SHIRT_D'), fur,
                             vee(fem, 0.026, 'ACC', 0.06, 1.16, ty - 0.03), tie, front(fem, -0.006, 0.006, 0.74, SPLIT, 0.026, 'SHIRT_D', 0.004))
     # V-neck pullover over a collared shirt and tie (the last figure of the reference)
-    T['jumper'] = join(chest(fem, 'SHIRT', 0.014), sleeves('SHIRT', 'long', 0.014, cuff='SHIRT_D'), band(fem, HEM, 0.045, 0.02, 'SHIRT_D'), vee(fem, 0.014, 'ACC', 0.065, 1.22),
+    T['jumper'] = join(chest(fem, 'SHIRT', 0.014), sleeves(fem, 'SHIRT', 'long', 0.014, cuff='SHIRT_D'), band(fem, HEM, 0.045, 0.02, 'SHIRT_D'), vee(fem, 0.014, 'ACC', 0.065, 1.22),
                        {'spine_03': [flat([(-0.01, ty - 0.01, fz(fem, ty - 0.01, 0.014, 0.008)), (0.01, ty - 0.01, fz(fem, ty - 0.01, 0.014, 0.008)), (0, 1.25, fz(fem, 1.25, 0.014, 0.008))], 'tie')]},
                        collar)
     bib = join(front(fem, -0.08, 0.08, 1.1, 1.32, 0.016, 'PANTS', 0.004), front(fem, 0.05, 0.075, 1.32, ty, 0.016, 'PANTS', 0.004), front(fem, -0.075, -0.05, 1.32, ty, 0.016, 'PANTS', 0.004),
                front(fem, 0.05, 0.075, 1.12, ty, 0.016, 'PANTS', 0.004, back=True), front(fem, -0.075, -0.05, 1.12, ty, 0.016, 'PANTS', 0.004, back=True))
-    T['dungarees'] = join(chest(fem, 'ACC', 0.006, belly='PANTS'), sleeves('ACC', 'short', 0.006), bib)
+    T['dungarees'] = join(chest(fem, 'ACC', 0.006, belly='PANTS'), sleeves(fem, 'ACC', 'short', 0.006), bib)
     return T
 
 # ================= bottoms: straight columns =================
 def bottoms(fem):
-    hip = 0.16 if fem else 0.134
+    LEG = lambda sd: ('thigh_' + sd, 'calf_' + sd)
     def pelvis(col, g=0.008):
-        return {'pelvis': [frustum([[0, 0.84, 0.0, 0.115 + g, 0.082 + g], [0, 0.94, 0.0, hip + g, 0.094 + g], [0, 1.0, 0.0, hip - 0.004 + g, 0.092 + g]], col)]}
-    belt = {'pelvis': [frustum([[0, 0.955, 0.0, hip + 0.014, 0.092], [0, 0.985, 0.0, hip + 0.012, 0.09]], 'belt', caps=[False, False]), box([0, 0.97, 0.096], [0.054, 0.034, 0.008], 'buckle')]}
+        return shell(fem, ('pelvis', 'spine_01'), col, g, ymax=1.0)
+    belt = join(shell(fem, ('pelvis', 'spine_01'), 'belt', 0.016, ymin=0.955, ymax=0.99), {'pelvis': [box([0, 0.972, fz(fem, 0.972, 0.016, 0.006)], [0.054, 0.034, 0.008], 'buckle')]})
     def legs(col, g=0.008, knee=None, calf_to=None, cuff=None, hem=0.1):
-        def f(sg, sd):
-            K, A = J['kn' + sd], J['an' + sd]
-            if knee:   # shorts to above the knee, bare calves
-                return {'thigh_' + sd: [frustum(thigh(sd, g + 0.012, knee), col, caps=[True, True]), frustum(thigh(sd, 0, 1.0), 'SKIN', caps=[False, True])],
-                        'calf_' + sd: [frustum(calf(sd), 'SKIN', caps=[True, False])]}
-            o = {'thigh_' + sd: [frustum(thigh(sd, g), col, caps=[False, True])]}
-            t1 = (K[1] - (calf_to or hem))/(K[1] - A[1])
-            o['calf_' + sd] = [frustum(calf(sd, g, 0.0, t1, straight=True), col)]
-            if calf_to: o['calf_' + sd].append(frustum(calf(sd, 0, t1 - 0.05, 1.0), 'SKIN', caps=[False, False]))
-            if cuff:
-                y0, y1, cc = cuff; o['calf_' + sd].append(frustum(calf(sd, g + 0.008, (K[1] - y0)/(K[1] - A[1]), (K[1] - y1)/(K[1] - A[1]), straight=True), cc))
-            return o
-        return both_sides(f)
+        th, ca = ('thigh_l', 'thigh_r'), ('calf_l', 'calf_r')
+        if knee:   # shorts to above the knee, bare calves
+            return shell(fem, th, col, g + 0.012, ymin=J['hpl'][1] + (J['knl'][1] - J['hpl'][1])*knee)
+        o = join(shell(fem, th, col, g), shell(fem, ca, col, g, ymin=calf_to or hem))
+        if cuff:
+            y0, y1, cc = cuff; o = join(o, shell(fem, ca, cc, g + 0.008, ymin=y1, ymax=y0))
+        return o
     def stripes(sg, sd):
         H, K, A = J['hp' + sd], J['kn' + sd], J['an' + sd]; x = lambda P, w: P[0] + sg*(w + 0.0025)
         return {'thigh_' + sd: [flat([(x(H, 0.068), 0.97, H[2] - 0.01), (x(H, 0.068), 0.97, H[2] + 0.01), (x(K, 0.054), K[1], K[2] + 0.01), (x(K, 0.054), K[1], K[2] - 0.01)], 'ACC', (sg, 0, 0))],
@@ -402,21 +398,21 @@ def gear():
 def worn(fem):
     W = {}; ty = TORSO[fem][-1][0]
     # sweater (top slot): a chunky knit layer over any creator top, roll collar, ribbed hem and cuffs
-    W['sweater'] = join(chest(fem, 'sweater', 0.03), sleeves('sweater', 'long', 0.03, cuff='sweater_D'), band(fem, HEM - 0.01, 0.05, 0.036, 'sweater_D'),
+    W['sweater'] = join(chest(fem, 'sweater', 0.03), sleeves(fem, 'sweater', 'long', 0.03, cuff='sweater_D'), band(fem, HEM - 0.01, 0.05, 0.036, 'sweater_D'),
                         {'spine_03': [frustum([[0, ty - 0.03, 0.0, t_at(fem, ty)[0] - 0.08, t_at(fem, ty)[1] - 0.012], [0, ty + 0.05, 0.004, 0.072, 0.07]], 'sweater_D', caps=[False, False])]},
                         band(fem, 1.22, 0.05, 0.034, 'sweater_D'))
     # winter coat (outer): to the knee, open over the top, deep fur collar, toggles, big cuffs
     toggles = join(*[front(fem, 0.03, 0.06, y, y + 0.02, 0.046, 'toggle', 0.006) for y in (0.98, 1.1, 1.22)])
-    W['coat'] = join(chest(fem, 'coat', 0.042, hem=0.6, flare=0.05), sleeves('coat', 'long', 0.04, cuff='coat_D'),
+    W['coat'] = join(chest(fem, 'coat', 0.042, hem=0.6, flare=0.05), sleeves(fem, 'coat', 'long', 0.04, cuff='coat_D'),
                      {'spine_03': [frustum([[0, ty - 0.04, 0.0, t_at(fem, ty)[0] + 0.05, t_at(fem, ty)[1] + 0.052], [0, ty + 0.07, -0.01, 0.13, 0.1]], 'fur', caps=[False, True])]},
                      front(fem, -0.008, 0.008, 0.6, SPLIT, 0.042, 'coat_D', 0.004), toggles)
     # rain jacket (outer): hip length, hood down on the back, a front zip and reflective band at the joints
     hood = {'spine_03': [frustum([[0, ty - 0.05, bz(fem, ty, 0.04, 0) - 0.03, 0.13, 0.055], [0, ty + 0.07, bz(fem, ty, 0.04, 0) - 0.01, 0.11, 0.05]], 'raincoat_D')]}
-    W['raincoat'] = join(chest(fem, 'raincoat', 0.04, hem=0.82, flare=0.02), sleeves('raincoat', 'long', 0.038, cuff='raincoat_D'), hood,
+    W['raincoat'] = join(chest(fem, 'raincoat', 0.04, hem=0.82, flare=0.02), sleeves(fem, 'raincoat', 'long', 0.038, cuff='raincoat_D'), hood,
                          front(fem, -0.006, 0.006, 0.82, SPLIT, 0.04, 'zip', 0.004), front(fem, -0.006, 0.006, SPLIT, ty, 0.04, 'zip', 0.004), band(fem, 0.84, 0.03, 0.046, 'stripe'))
     # leather jacket (outer): waist length, wide collar wedges, belt at the hem, zip off-centre
     lcol = {'spine_03': [wedge([sg*0.07, ty + 0.005, fz(fem, ty, 0.04) - 0.03], [0.1, 0.035, 0.07], 'leather_D') for sg in (1, -1)]}
-    W['leather'] = join(chest(fem, 'leather', 0.038, hem=0.95), sleeves('leather', 'long', 0.036, cuff='leather_D'), lcol, band(fem, 0.95, 0.045, 0.044, 'leather_D'),
+    W['leather'] = join(chest(fem, 'leather', 0.038, hem=0.95), sleeves(fem, 'leather', 'long', 0.036, cuff='leather_D'), lcol, band(fem, 0.95, 0.045, 0.044, 'leather_D'),
                         front(fem, 0.03, 0.04, 0.95, SPLIT, 0.038, 'zip', 0.004), front(fem, 0.03, 0.04, SPLIT, ty - 0.02, 0.038, 'zip', 0.004), vee(fem, 0.038, 'leather_D', 0.06, 1.3))
     # work trousers (legs): canvas, knee patches at the joint, a hammer loop
     trousers = {k: v for k, v in bottoms(fem)['jeans'].items()}
@@ -424,7 +420,7 @@ def worn(fem):
     W['trousers'] = join(W['trousers'], both_sides(lambda sg, sd: {'calf_' + sd: [frustum(calf(sd, 0.024, 0.0, 0.16, straight=True), 'trousers_D')]}))
     # puffer jacket (outer, v9): quilted bands, a tall collar and big cuffs, the bulkiest shape in the set
     pcol = {'spine_03': [frustum([[0, ty - 0.04, 0.0, t_at(fem, ty)[0] + 0.04, t_at(fem, ty)[1] + 0.06], [0, ty + 0.075, -0.004, 0.1, 0.09]], 'puffer_D', caps=[False, False])]}
-    W['puffer'] = join(chest(fem, 'puffer', 0.056, hem=0.82, flare=0.03), sleeves('puffer', 'long', 0.056, cuff='puffer_D'), pcol,
+    W['puffer'] = join(chest(fem, 'puffer', 0.056, hem=0.82, flare=0.03), sleeves(fem, 'puffer', 'long', 0.056, cuff='puffer_D'), pcol,
                        *[band(fem, y, 0.035, 0.07, 'puffer_D') for y in (0.96, 1.08, 1.2, 1.32)], front(fem, -0.006, 0.006, 0.82, ty, 0.058, 'zip', 0.004))
     # utility vest (outer, v9): sleeveless, chest pockets and shoulder straps
     vp = [front(fem, x0, x0 + 0.075, y, y + 0.075, 0.058, 'vest_D', 0.004) for x0 in (-0.14, 0.065) for y in (1.2,)] + [front(fem, x0, x0 + 0.075, 0.99, 1.06, 0.058, 'vest_D', 0.004) for x0 in (-0.14, 0.065)]
