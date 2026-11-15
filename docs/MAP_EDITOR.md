@@ -84,7 +84,7 @@ Workshop pieces: the packs the game already loads (`AfterstreetPacks.install`, `
 ## Build order
 
 1. **Shell (this step).** Bottom dock with groups, left palette with search and packs, right inspector, ghost and ring, Place and Cancel for touch, Ctrl+Z, Ctrl+Y and R. Existing tools move in unchanged. Tested on a computer and an iPad-sized touch screen.
-2. **Terrain.** Hill, Cut, Slope, Flatten to height, with a preview and the game applying the same code. Needs the new operations in `terrainApply`.
+2. **Terrain. Done in 1.37.0** (Hill, Flatten, Cut, Slope; no preview of the shape before you commit yet). The new operations are in `terrainApply`, which the game already uses.
 3. **Select and edit.** Select a placed piece or building, move, turn, resize, delete; box select; copy.
 4. **Plants and woodland.** Brush scatter of plants, woodland fill.
 5. **Creatures and nests.** Placement, group size, preview models in the 3D view, hand-off note to the main chat; per-map switch.
