@@ -235,7 +235,7 @@ def _cage(sex):
         N /= np.maximum(np.linalg.norm(N, axis=1), 1e-12)[:, None]; _CAGE[sex] = (m, P, N)
     return _CAGE[sex]
 
-def shell(sex, tags=None, g=0.0, ymin=None, ymax=None, flare=0.0, dome=0.35):
+def shell(sex, tags=None, g=0.0, ymin=None, ymax=None, flare=0.0, dome=0.35, where=None):
     """Faces of the cage, by bone, pushed g metres out along the surface: the body itself at g = 0, clothes at g > 0
     (the tutorials grow clothes from the body's own faces). ymin and ymax trim a hem or a cuff; flare widens a trimmed hem.
     One triangle shell per bone. The game moves each bone's piece rigidly, so every open end gets a low dome: when a joint
@@ -243,17 +243,20 @@ def shell(sex, tags=None, g=0.0, ymin=None, ymax=None, flare=0.0, dome=0.35):
     m, P0, N = _cage(sex); P = P0 + N*g; groups = {}
     if ymin is not None or ymax is not None:
         P = P.copy()
+        lo = (lambda q: ymin(q)) if callable(ymin) else (lambda q: ymin); hi = (lambda q: ymax(q)) if callable(ymax) else (lambda q: ymax)
+        LO = [lo(P0[i]) for i in range(len(P))]; HI = [hi(P0[i]) for i in range(len(P))]      # a hem may be a line that rises and falls (a hairline)
         for i in range(len(P)):
             y = P[i, 1]
-            if ymin is not None and y < ymin:
-                P[i, 1] = ymin; h = np.array([N[i, 0], 0.0, N[i, 2]]); ln = np.linalg.norm(h)
+            if LO[i] is not None and y < LO[i]:
+                P[i, 1] = LO[i]; h = np.array([N[i, 0], 0.0, N[i, 2]]); ln = np.linalg.norm(h)
                 if flare and ln > 1e-9: P[i] += h/ln*flare
-            if ymax is not None and y > ymax: P[i, 1] = ymax
+            if HI[i] is not None and y > HI[i]: P[i, 1] = HI[i]
     for f, t in zip(m.f, m.tag):
         t = t.replace('ball_', 'foot_')
         if tags is not None and t not in tags: continue
-        ys = [P0[i, 1] + N[i, 1]*g for i in f]
-        if (ymin is not None and max(ys) <= ymin + 1e-6) or (ymax is not None and min(ys) >= ymax - 1e-6): continue
+        if where is not None and not where(P0[list(f)].mean(0)): continue
+        if ymin is not None and all(P0[i, 1] + N[i, 1]*g <= LO[i] + 1e-6 for i in f): continue
+        if ymax is not None and all(P0[i, 1] + N[i, 1]*g >= HI[i] - 1e-6 for i in f): continue
         groups.setdefault(t, []).append(f)
     out = {}
     for t, fs in groups.items():

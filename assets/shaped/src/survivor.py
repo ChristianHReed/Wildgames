@@ -315,19 +315,33 @@ def bar(col, y=EYE_Y, w=0.05, h=0.016, lift=0.012, d=0.012):
     z = face_z(0, y) + lift
     return [box([0, y, z - d/2], [w*2, h, d], col),
             *[box([sg*0.068, y + 0.002, z - 0.045], [0.006, 0.006, 0.09], col) for sg in (1, -1)]]
+def nh(q):
+    """a loose piece drawn on the base body's head: un-scaled here so the pack's head scaling puts it back exactly"""
+    return xf(q, [1.0/v for v in HEAD_S], HEAD_O)
+_FROWS = [(1.545, 0.1037, 0.0933, 0.0395), (1.59, 0.1203, 0.1016, 0.054), (1.633, 0.1245, 0.1037, 0.0666), (1.685, 0.1255, 0.1068, 0.0686), (1.715, 0.1286, 0.112, 0.0707), (1.769, 0.116, 0.0974, 0.0645)]
+def nfz(x, y, lift=0.003):
+    """the front of the base body's face at (x, y): between the centre line and the front corner of the head's loops"""
+    R = _FROWS; y = max(R[0][0], min(R[-1][0], y))
+    for (y0, a0, b0, c0), (y1, a1, b1, c1) in zip(R, R[1:]):
+        if y0 <= y <= y1:
+            f = (y - y0)/(y1 - y0); zc, zk, xk = lerp(a0, a1, f), lerp(b0, b1, f), lerp(c0, c1, f)
+            return lerp(zc, zk, min(1.0, abs(x)/xk)) + lift
+def jaw(c):      # the jaw and chin, the mouth left clear, and the strip in front of the ear up to the hair
+    x, y, z = abs(float(c[0])), float(c[1]), float(c[2])
+    return (y < 1.636 and z > 0.0 and not (x < 0.045 and y > 1.585)) or (1.636 <= y < 1.705 and x > 0.07 and z > 0.03)
 def faces():
-    F = {}
+    F = {}; ey = 1.692; zg = 0.137
+    def frame(col, h): return [nh(box([0, ey, zg], [0.136, h, 0.01], col)), *[nh(box([sg*0.086, ey + 0.002, zg - 0.058], [0.006, 0.006, 0.112], col)) for sg in (1, -1)]]
     F['calm'] = []
-    zl = face_z(0, EYE_Y) + 0.0125
-    F['glasses'] = bar('frame', h=0.018) + [flat([(sg*0.033 - 0.022, EYE_Y - 0.007, zl), (sg*0.033 + 0.022, EYE_Y - 0.007, zl), (sg*0.033 + 0.022, EYE_Y + 0.007, zl), (sg*0.033 - 0.022, EYE_Y + 0.007, zl)], 'lens') for sg in (1, -1)]
-    F['dark_glasses'] = bar('shades', h=0.022)
-    F['stubble'] = [loft(head_rings(0.003, 1.548, 1.62), 'HAIR_MIX', ang=HEAD_ANG, caps=[True, False])]
-    F['freckles'] = [flat(on_face([(x - 0.004, y - 0.004), (x + 0.004, y - 0.004), (x + 0.004, y + 0.004), (x - 0.004, y + 0.004)]), 'freckle')
-                     for x, y in ((-0.038, 1.65), (-0.028, 1.643), (0.038, 1.65), (0.028, 1.643))]
-    F['tired'] = [flat(on_face([(sg*0.016, EYE_Y - 0.004), (sg*0.05, EYE_Y - 0.004), (sg*0.048, EYE_Y - 0.012), (sg*0.018, EYE_Y - 0.012)]), 'SKIN_D') for sg in (1, -1)]
-    my = 1.612
-    F['moustache'] = [box([0, my, face_z(0, my) - 0.002], [0.05, 0.014, 0.02], 'HAIR_D')]
-    F['scar'] = [flat(on_face([(0.026, 1.72), (0.032, 1.72), (0.048, 1.645), (0.042, 1.645)]), 'scar')]
+    F['glasses'] = frame('frame', 0.022) + [nh(flat([(sg*0.034 - 0.024, ey - 0.008, zg + 0.0055), (sg*0.034 + 0.024, ey - 0.008, zg + 0.0055), (sg*0.034 + 0.024, ey + 0.008, zg + 0.0055), (sg*0.034 - 0.024, ey + 0.008, zg + 0.0055)], 'lens')) for sg in (1, -1)]
+    F['dark_glasses'] = frame('shades', 0.028)
+    F['stubble'] = grown('HAIR_MIX', 0.003, where=jaw)
+    on = lambda pts: [(x, y, nfz(x, y)) for x, y in pts]
+    F['freckles'] = [nh(flat(on([(x - 0.005, y - 0.005), (x + 0.005, y - 0.005), (x + 0.005, y + 0.005), (x - 0.005, y + 0.005)]), 'freckle'))
+                     for x, y in ((-0.04, 1.655), (-0.028, 1.647), (0.04, 1.655), (0.028, 1.647))]
+    F['tired'] = [nh(flat(on([(sg*0.018, 1.676), (sg*0.052, 1.676), (sg*0.05, 1.666), (sg*0.02, 1.666)]), 'SKIN_D')) for sg in (1, -1)]
+    F['moustache'] = [nh(box([0, 1.614, nfz(0, 1.614) + 0.004], [0.066, 0.016, 0.02], 'HAIR_D'))]
+    F['scar'] = [nh(flat(on([(0.028, 1.75), (0.035, 1.75), (0.052, 1.655), (0.045, 1.655)]), 'scar'))]
     return F
 
 # ================= hair and hats: round masses with different silhouettes (v9) =================
@@ -343,45 +357,60 @@ def under_hat(ps):
     return ps
 def curtain(y_top, y_bot, w_top, w_bot, z_top, z_bot, d, c='HAIR', x=0.0):
     return frustum([[x, y_top, z_top, w_top, d], [x, y_bot, z_bot, w_bot, d]], c)
+def hairline(drop=0.0, front=1.757, side=1.705, nape=1.60):
+    """the height of the hairline around the head: high on the forehead, over the ear, low on the nape; drop lowers all of it"""
+    pts = [(-0.10, nape), (-0.05, nape + 0.02), (0.0, side), (0.035, side + 0.022), (0.09, front)]
+    def f(p):
+        z = float(p[2])
+        if z <= pts[0][0]: return pts[0][1] - drop
+        for (z0, y0), (z1, y1) in zip(pts, pts[1:]):
+            if z0 <= z <= z1: return lerp(y0, y1, (z - z0)/(z1 - z0)) - drop
+        return pts[-1][1] - drop
+    return f
+def grown(col, g, lo=None, hi=None, where=None, bone='Head'):
+    """hair and hats grown from the head's own faces (the scalp-cap method): the head pushed out g metres and trimmed at a line"""
+    out = []
+    for b, (V, T) in _bc.shell('masculine', (bone,), g, ymin=lo, ymax=hi, where=where, dome=0.05).items():
+        q = solid(V, T, col); q['winding'] = True; out.append(q)
+    return out
 def hair():
     H = {'none': []}
-    skull = lambda g=0.008, lo=0.2, **k: blob('HAIR', 0.075 + g, 0.087 + g, lo=lo, **k)
-    H['buzzed'] = under_hat([skull(0.004, 0.22)])
+    skull = lambda g=0.008, lo=0.2, **k: grown('HAIR', g + 0.004, hairline(0.05 - lo*0.25))    # lo is the old dome's cut: higher means a higher hairline
+    H['buzzed'] = under_hat(skull(0.0, 0.22))
     # short: a fuller crown with a side parting (two tones) and a back that comes low on the neck
-    H['short'] = under_hat([skull(0.014, 0.02), box([0.03, 1.765, 0.052], [0.05, 0.016, 0.05], 'HAIR_D'), curtain(1.66, 1.6, 0.074, 0.066, -0.07, -0.074, 0.02)])
+    H['short'] = under_hat(skull(0.012, 0.02) + [box([0.03, 1.765, 0.052], [0.05, 0.016, 0.05], 'HAIR_D'), curtain(1.66, 1.6, 0.074, 0.066, -0.07, -0.074, 0.02)])
     # afro: one huge round mass, the widest silhouette
     H['afro'] = under_hat([blob('HAIR', 0.128, 0.132, cy=1.69, ry=0.13, cz=0.0, lo=-0.6, rows=8, n=12)])
     # bob: round crown, chin-length curtains on every side, a heavy fringe
-    H['bob'] = under_hat([blob('HAIR', 0.092, 0.1, lo=-0.1, cz=0.015),
+    H['bob'] = under_hat(grown('HAIR', 0.022, hairline(0.03)) + [
         box([0, 1.713, 0.09], [0.08, 0.034, 0.025], 'HAIR_D')]) + [curtain(1.66, 1.52, 0.092, 0.095, -0.07, -0.074, 0.03), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=0.083), curtain(1.66, 1.52, 0.015, 0.012, 0.0, 0.0, 0.08, x=-0.083)]
     # long: like the bob but falling to the shoulder blades, wider at the end
-    H['long'] = under_hat([blob('HAIR', 0.09, 0.098, lo=-0.1, cz=0.015), box([0, 1.715, 0.088], [0.045, 0.03, 0.025], 'HAIR_D')]) + [
+    H['long'] = under_hat(grown('HAIR', 0.02, hairline(0.03)) + [box([0, 1.715, 0.088], [0.045, 0.03, 0.025], 'HAIR_D')]) + [
         curtain(1.68, 1.36, 0.09, 0.105, -0.07, -0.085, 0.034), curtain(1.66, 1.46, 0.016, 0.02, 0.0, -0.015, 0.07, x=0.088), curtain(1.66, 1.46, 0.016, 0.02, 0.0, -0.015, 0.07, x=-0.088)]
     # ponytail: tight skull cap, tied high at the back, a tail swinging out and down
-    H['ponytail'] = under_hat([skull(0.006, 0.12), box([0, 1.74, -0.083], [0.03, 0.026, 0.026], 'ACC')]) + [
+    H['ponytail'] = under_hat(skull(0.006, 0.12) + [box([0, 1.74, -0.083], [0.03, 0.026, 0.026], 'ACC')]) + [
         loft([[0, 1.74, -0.095, 0.03, 0.03], [0, 1.65, -0.14, 0.036, 0.036], [0, 1.52, -0.158, 0.028, 0.028], [0, 1.44, -0.152, 0.012, 0.012]], 'HAIR', n=7)]
     # mohawk: shaved sides, a tall ridge of blocks
-    H['mohawk'] = under_hat([skull(0.0, 0.3)]) + under_hat([box([0, 1.775 + 0.024*(i % 2 + (1 - abs(i - 2.5)/3)), 0.075 - i*0.03], [0.02, 0.04 + 0.03*(1 - abs(i - 2.5)/3), 0.016], 'HAIR_D' if i % 2 else 'HAIR') for i in range(6)])
+    H['mohawk'] = under_hat(skull(0.0, 0.3)) + under_hat([box([0, 1.775 + 0.024*(i % 2 + (1 - abs(i - 2.5)/3)), 0.075 - i*0.03], [0.02, 0.04 + 0.03*(1 - abs(i - 2.5)/3), 0.016], 'HAIR_D' if i % 2 else 'HAIR') for i in range(6)])
     # top knot: tight sides, one round bun
-    H['topknot'] = under_hat([skull(0.004, 0.2), blob('HAIR', 0.042, 0.042, cy=1.8, ry=0.045, cz=-0.01, lo=-0.9, rows=5, n=8)])
+    H['topknot'] = under_hat(skull(0.004, 0.2) + [blob('HAIR', 0.042, 0.042, cy=1.8, ry=0.045, cz=-0.01, lo=-0.9, rows=5, n=8)])
     H['buns'] = H['topknot']
     # slick: swept back, a quiff blob at the front and the back flowing to the nape
-    H['slick'] = under_hat([skull(0.012, 0.0), blob('HAIR', 0.064, 0.05, cy=1.745, ry=0.05, cz=0.056, lo=-0.1, rows=5), curtain(1.66, 1.6, 0.072, 0.064, -0.07, -0.076, 0.022)])
-    beard = [r[:5] + [[r[5][i] for i in (0, 1, 2)]] for r in head_rings(0.008, 1.548, 1.6)]
-    H['beard'] = H['short'] + [loft(beard, 'HAIR', ang=[30, 90, 150], closed=False, both=True, cin='HAIR_D'),
-                               box([0, 1.55, face_z(0, 1.56) - 0.01], [0.06, 0.026, 0.04], 'HAIR')]
+    H['slick'] = under_hat(skull(0.012, 0.0) + [blob('HAIR', 0.064, 0.05, cy=1.745, ry=0.05, cz=0.056, lo=-0.1, rows=5), curtain(1.66, 1.6, 0.072, 0.064, -0.07, -0.076, 0.022)])
+    H['beard'] = H['short'] + grown('HAIR', 0.014, where=jaw)
     return H
 
 # ================= hats =================
 def hats():
     H = {'none': []}
-    H['beanie'] = [blob('ACC', 0.085, 0.097, cy=1.672, ry=0.118, lo=-0.1, rows=6), loft([[0, 1.665, 0.02, 0.089, 0.1], [0, 1.715, 0.02, 0.089, 0.1]], 'ACC_D', n=10),
-                   blob('ACC_D', 0.022, 0.022, cy=1.78, ry=0.026, cz=0.02, lo=-0.7, rows=3, n=8)]
+    # soft and close-fitting headwear is the head grown outward and trimmed at the hat line; brims and peaks are added shapes
+    line = lambda front, back: (lambda p: lerp(back, front, max(0.0, min(1.0, (float(p[2]) + 0.1)/0.2))))
+    def band(col, g, front, back, h): return grown(col, g, line(front, back), (lambda p, f=line(front, back): f(p) + h))
+    H['beanie'] = grown('ACC', 0.022, line(1.735, 1.655)) + band('ACC_D', 0.03, 1.735, 1.655, 0.05) + [blob('ACC_D', 0.022, 0.022, cy=1.78, ry=0.026, cz=0.02, lo=-0.7, rows=3, n=8)]
     fzb = face_z(0, 1.72)
-    H['cap'] = [blob('ACC', 0.082, 0.094, cy=1.68, ry=0.1, lo=0.0), wedge([0, 1.712, fzb + 0.045], [0.15, 0.014, 0.1], 'ACC_D', fy=True)]
-    H['helmet'] = [blob('helmet', 0.098, 0.11, cy=1.675, ry=0.115, lo=-0.1, rows=6), loft([[0, 1.665, 0.02, 0.105, 0.116], [0, 1.69, 0.02, 0.105, 0.116]], 'helmetD', n=10)]
-    H['wide_brim'] = [blob('ACC', 0.078, 0.09, cy=1.7, ry=0.07, lo=0.1, rows=4), loft([[0, 1.703, 0.02, 0.082, 0.094], [0, 1.74, 0.02, 0.084, 0.096]], 'ACC_D', n=10),
-                      loft([[0, 1.704, 0.02, 0.17, 0.18], [0, 1.708, 0.02, 0.17, 0.18]], 'ACC', n=12)]
+    H['cap'] = grown('ACC', 0.02, line(1.745, 1.70)) + [wedge([0, 1.712, fzb + 0.045], [0.15, 0.014, 0.1], 'ACC_D', fy=True)]
+    H['helmet'] = grown('helmet', 0.034, line(1.74, 1.63)) + band('helmetD', 0.04, 1.74, 1.63, 0.03)
+    H['wide_brim'] = grown('ACC', 0.02, line(1.75, 1.72)) + band('ACC_D', 0.026, 1.75, 1.72, 0.04) + [loft([[0, 1.704, 0.02, 0.17, 0.18], [0, 1.708, 0.02, 0.17, 0.18]], 'ACC', n=12)]
     return H
 
 # ================= gear =================
