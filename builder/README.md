@@ -2,7 +2,7 @@
 
 The AfterStreet Maps Builder (`builder.html` beside `play.html`). Owned by the map chat; the scope is `docs/MAPS_BUILDER.md`.
 
-Version 1.37.0 (9 November 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
+Version 1.38.0 (15 November 2026) is the **data side of builder version 1** (1.0.0), plus open-source libraries (1.1.0):
 - choose the area;
 - give it map data (upload or download);
 - build the map squares;
@@ -39,6 +39,7 @@ All are plain classic scripts, so the builder opens from a USB drive (`file://`)
 | polylabel (with tinyqueue) | ISC | A point surely inside each building, so L- and U-shaped buildings are matched correctly in the Overture merge |
 | fflate | MIT | Compressed map files (5 times smaller in the test); a much faster fallback when a browser has no built-in decompression |
 | hyparquet and fzstd | MIT | Reading Overture's own GeoParquet files, ZSTD-compressed as Overture publishes them |
+| laz-perf | Apache-2.0 | Unpacking LAZ lidar files (WebAssembly); plain LAS needs no library |
 | earcut | ISC | In `lib/` but not loaded yet: for the 3D view and roofs |
 
 To update a library: clone it from GitHub, run `node tools/bundle_lib.mjs <name> <entry file> [dependency=path ...] --version v --repo owner/name --licence L`, and update `lib/LICENSES.md`. The packed file keeps the library's code unchanged.

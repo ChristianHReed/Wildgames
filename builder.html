@@ -145,10 +145,15 @@
         <div class="st" id="stOvt">No files yet.</div>
       </div>
 
-      <div class="src later" id="cLidar">
-        <h3>Lidar <span class="tag">later version</span></h3>
-        <p class="muted">Laser scans: real building heights and roof shapes, and every tree. Reading lidar comes in a later version of the builder.</p>
-        <ul><li><a href="https://apps.nationalmap.gov/lidar-explorer/" target="_blank" rel="noopener">USGS Lidar Explorer</a> (<code>.laz</code> tiles).</li></ul>
+      <div class="src" id="cLidar">
+        <h3>Lidar <span class="tag">optional</span></h3>
+        <p class="muted">Laser scans from aircraft: real building heights and roof shapes, and every tree where it really stands. Best on a computer; a big area is a lot of points.</p>
+        <ul>
+          <li><a href="https://apps.nationalmap.gov/lidar-explorer/" target="_blank" rel="noopener">USGS Lidar Explorer</a> (US, free): pick your area, download the <code>.laz</code> tiles. Other countries publish theirs too (search your national mapping agency for "lidar download").</li>
+          <li>Reads <b>.las</b> and <b>.laz</b>. The file must say which coordinate system it uses (UTM, latitude and longitude, or Web Mercator). Files that were classified by the provider (ground, building, vegetation) give the best result.</li>
+        </ul>
+        <div class="row"><label class="btn sm">Upload lidar<input id="fLas" type="file" multiple hidden></label></div>
+        <div class="st" id="stLas">No files yet.</div>
       </div>
 
       <div class="src later" id="cAir">
@@ -211,10 +216,12 @@
 <script src="builder/lib/fflate.js"></script>
 <script src="builder/lib/fzstd.js"></script>
 <script src="builder/lib/hyparquet.js"></script>
+<script src="builder/lib/lazperf.js"></script>
 <script src="builder/inflate.js"></script>
 <script src="builder/geo.js"></script>
 <script src="builder/pbf.js"></script>
 <script src="builder/tiff.js"></script>
+<script src="builder/lidar.js"></script>
 <script src="builder/gen.js"></script>
 <script src="builder/uses.js"></script>
 <script src="builder/streets.js"></script>

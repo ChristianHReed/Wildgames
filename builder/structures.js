@@ -96,6 +96,7 @@ L.structures = function(box, sq, elev){
   var segs = [], total = 0; lines.forEach(function(w){ total += info[w].m.length/2 - 1; });
   var idx = L.spatial(Math.max(1, total)), SW = [], SK = [];
   lines.forEach(function(w){ var m = info[w].m; for (var q = 0; q + 3 < m.length; q += 2){ idx.add(Math.min(m[q], m[q + 2]), Math.min(m[q + 1], m[q + 3]), Math.max(m[q], m[q + 2]), Math.max(m[q + 1], m[q + 3])); SW.push(w); SK.push(q); } });
+  if (!SW.length) idx.add(1e18, 1e18, 1e18, 1e18);
   idx.finish();
   var seen = {};   /* one record per pair of ways close together */
   var near = function(a, b, x, y){ var k = Math.min(a, b) + ':' + Math.max(a, b), l = seen[k]; if (l) for (var q = 0; q < l.length; q++) if (Math.hypot(l[q][0] - x, l[q][1] - y) < 40) return true; (seen[k] = seen[k] || []).push([x, y]); return false; };
@@ -103,7 +104,7 @@ L.structures = function(box, sq, elev){
   var wetRuns = [];   /* inferred bridges over water areas, so a river's centreline does not make a second one */
   /* water areas: where a road or rail at ground level runs through a lake, river or pond */
   if (areas.length){
-    var ai = L.spatial(areas.length); areas.forEach(function(w){ var m = info[w].m, b = [1e18, 1e18, -1e18, -1e18]; for (var q = 0; q < m.length; q += 2){ b[0] = Math.min(b[0], m[q]); b[2] = Math.max(b[2], m[q]); b[1] = Math.min(b[1], m[q + 1]); b[3] = Math.max(b[3], m[q + 1]); } ai.add(b[0], b[1], b[2], b[3]); }); ai.finish();
+    var ai = L.spatial(Math.max(1, areas.length)); if (!areas.length) ai.add(1e18, 1e18, 1e18, 1e18); areas.forEach(function(w){ var m = info[w].m, b = [1e18, 1e18, -1e18, -1e18]; for (var q = 0; q < m.length; q += 2){ b[0] = Math.min(b[0], m[q]); b[2] = Math.max(b[2], m[q]); b[1] = Math.min(b[1], m[q + 1]); b[3] = Math.max(b[3], m[q + 1]); } ai.add(b[0], b[1], b[2], b[3]); }); ai.finish();
     lines.forEach(function(w){
       var I = info[w]; if ((I.cls !== 'road' && I.cls !== 'rail') || I.lv !== 0 || I.t.ford || I.t.bridge === 'low_water_crossing') return;
       var m = I.m, b = [1e18, 1e18, -1e18, -1e18], q; for (q = 0; q < m.length; q += 2){ b[0] = Math.min(b[0], m[q]); b[2] = Math.max(b[2], m[q]); b[1] = Math.min(b[1], m[q + 1]); b[3] = Math.max(b[3], m[q + 1]); }
