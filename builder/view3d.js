@@ -29,10 +29,11 @@ function makeOverlay(){
     '<div class="v3row hidden" id="v3pr"><select id="v3pc"></select><select id="v3pp"></select><label>Turn <select id="v3py"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><small style="width:100%">Tap the ground to put the piece down. Props are saved on the map as points, so the game can place them too.</small></div>' +
     '<div class="v3row hidden" id="v3sc"><select id="v3sk"></select><small style="width:100%">Tap or hold to scatter. Brush size is the area, Density is how thick. Each plant is its own piece: Select can move or delete it, and Undo takes back the whole stroke.</small></div>' +
     '<div class="v3row hidden" id="v3cr"><select id="v3ck"></select><label>Group <select id="v3cn"><option>1</option><option>2</option><option>3</option><option>5</option><option>8</option><option>12</option><option>20</option></select></label><label>Turn <select id="v3cy"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><label style="width:100%"><input type="checkbox" id="v3cg" checked> The game may add its own nests and aliens as the days go on</label><small style="width:100%">Aliens: tap to put down a group; it waits there when the game starts. Nest: tap on a building and the building becomes a nest, tap in the open and a nest stands alone. Select moves, turns or deletes them.</small></div>' +
-    '<div class="v3row hidden" id="v3sel"><span id="v3si" style="width:100%">Tap a building, tree or piece you placed.</span><label>Turn <input id="v3sa" type="range" min="0" max="345" step="15" value="0"><b id="v3saV">0</b></label><button id="v3smv" class="sm alt">Move</button><button id="v3sdl" class="sm alt">Delete</button><button id="v3sdn" class="sm alt">Done</button></div>' +
+    '<div class="v3row hidden" id="v3sel"><span id="v3si" style="width:100%">Tap a building, tree or piece you placed.</span><label>Turn <input id="v3sa" type="range" min="0" max="345" step="15" value="0"><b id="v3saV">0</b></label><button id="v3sbx" class="sm alt">Box</button><button id="v3scp" class="sm alt">Copy</button><button id="v3smv" class="sm alt">Move</button><button id="v3sdl" class="sm alt">Delete</button><button id="v3sdn" class="sm alt">Done</button></div>' +
     '<div id="v3ring" style="display:none;position:fixed;pointer-events:none;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #0007,inset 0 0 0 1px #0007;z-index:5;transform:translate(-50%,-50%)"></div>' +
     '<div id="v3gh" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:150px;z-index:7;gap:10px"><button id="v3ghp" class="sm on" style="min-width:110px;min-height:52px;font-size:18px">Place</button><button id="v3ghr" class="sm alt" style="min-height:52px;font-size:16px">Turn 90°</button><button id="v3ghc" class="sm alt" style="min-width:100px;min-height:52px;font-size:18px">Cancel</button></div>' +
     '<div id="v3ghm" style="display:none;position:fixed;pointer-events:none;border:3px dashed #7CFC9A;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
+    '<svg id="v3pv" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5"></svg>' +
     '<div id="v3selm" style="display:none;position:fixed;pointer-events:none;border:3px solid #ffd54a;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
     '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select></div>' +
     '<div class="v3row hidden" id="v3bld"><select id="v3bk"></select><label>Frame <select id="v3bpf"><option value="">auto</option><option value="wood_siding">Wood frame, siding</option><option value="wood_brick">Wood frame, brick</option><option value="lightsteel_sheet">Light steel frame</option><option value="steel_cladding">Steel frame, cladding</option><option value="steel_curtain">Steel frame, glass</option><option value="concrete_poured">Poured concrete</option><option value="concrete_block">Concrete block</option><option value="concrete_brick">Brick on block</option></select></label><label>Size <input id="v3sz" type="range" min="0.6" max="2" step="0.1" value="1"><b id="v3szV">1.0</b></label><label>Turn <input id="v3rot" type="range" min="0" max="345" step="15" value="0"><b id="v3rotV">0&deg;</b></label><label style="width:100%"><input id="v3al" type="checkbox" checked> Line up with the nearest street</label></div>' +
@@ -133,7 +134,7 @@ function makeOverlay(){
   $('v3sa').oninput = function(){ $('v3saV').textContent = this.value + '°'; };
   $('v3sa').onchange = function(){ if (!sel || sel.t === 'tree') return; var d = +this.value; selApply(sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest' ? Object.assign({}, sel, {ry:d}) : Object.assign({}, sel, {a:+(d*Math.PI/180).toFixed(3)}), 'Turned to ' + d + '°.'); };
   $('v3smv').onclick = function(){ if (!sel) return; selMove = !selMove; selUI(); };
-  $('v3sdl').onclick = selDelete; $('v3sdn').onclick = function(){ sel = null; selMove = false; selUI(); };
+  $('v3sdl').onclick = selDelete; $('v3sbx').onclick = function(){ selBox = selBox ? null : {c:null}; selMove = false; if (selBox) sel = null; selUI(); if (selBox) V3.note('Tap two opposite corners of the box.', 3); }; $('v3scp').onclick = selCopy; $('v3sdn').onclick = function(){ sel = null; selMove = false; selUI(); };
   $('v3ps').oninput = palRender; $('v3pk2').onchange = palRender;
   $('v3sculpt').addEventListener('click', function(){ openG = null; V3.shellSync(); });
   window.addEventListener('keydown', function(e){ if (!on || !sculpt || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
@@ -261,7 +262,7 @@ function dabAt(px, py, again, forced){
   var h = forced ? forced.h : groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
   var ll = forced ? forced.ll : llOf(h[0], h[1]);
   if (!forced && V3.ghostMode && GHOSTT[tool]){ if (again) return; ghost = {h:h, ll:ll}; ghostUI(); return; }
-  if (tool === 'sel'){ if (again || working || busy) return; if (selMove && sel){ selMove = false; selApply(Object.assign({}, sel, {lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6)}), 'Moved.'); } else selectAt(ll); return; }
+  if (tool === 'sel'){ if (again || working || busy) return; if (selBox){ selBoxTap(ll); return; } if (selMove && sel){ selMove = false; if (sel.t === 'multi') selMoveMany(ll); else selApply(Object.assign({}, sel, {lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6)}), 'Moved.'); } else selectAt(ll); return; }
   if (tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'){ riv.push(+ll[0].toFixed(6), +ll[1].toFixed(6)); toolUI(); return; }
   if (tool === 'flood'){ pend.push({id:uid(), t:'flood', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, lv:+Math.max(0.3, brushK*6).toFixed(1)}); V3.note('Flood: water up ' + Math.max(0.3, brushK*6).toFixed(1) + ' m from here, inside the brush circle.', 3); return; }
   if (tool === 'basin'){ pend.push({id:uid(), t:'basin', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:+(brushK*4).toFixed(1)}); V3.note('Lake', 1.5); return; }
@@ -292,8 +293,8 @@ async function endStroke(){
   catch (er){ V3.note('Could not save the change: ' + er.message, 6); }
   working = false; refreshCount(); if (pend.length) endStroke();   /* taps made while the ground was rebuilding */
 }
-async function undo(){ if (working || !undoSt.length) return; working = true; var d = undoSt.pop(); try { sel = null; if (d.swap) await L3.editSwap(cur.proj, cur.region, d.swap[1], d.swap[0]); else await L3.editRemove(cur.proj, d); redoSt.push(d); await redraw('Undone.'); } catch (er){ V3.note('Could not undo: ' + er.message, 5); } working = false; refreshCount(); }
-async function redo(){ if (working || !redoSt.length) return; working = true; var d = redoSt.pop(); try { sel = null; if (d.swap) await L3.editSwap(cur.proj, cur.region, d.swap[0], d.swap[1]); else await L3.editAdd(cur.proj, cur.region, d); undoSt.push(d); await redraw('Redone.'); } catch (er){ V3.note('Could not redo: ' + er.message, 5); } working = false; refreshCount(); }
+async function undo(){ if (working || !undoSt.length) return; working = true; var d = undoSt.pop(); try { sel = null; if (d.swaps){ for (var q = d.swaps.length - 1; q >= 0; q--) await L3.editSwap(cur.proj, cur.region, d.swaps[q][1], d.swaps[q][0]); } else if (d.swap) await L3.editSwap(cur.proj, cur.region, d.swap[1], d.swap[0]); else await L3.editRemove(cur.proj, d); redoSt.push(d); await redraw('Undone.'); } catch (er){ V3.note('Could not undo: ' + er.message, 5); } working = false; refreshCount(); }
+async function redo(){ if (working || !redoSt.length) return; working = true; var d = redoSt.pop(); try { sel = null; if (d.swaps){ for (var q2 = 0; q2 < d.swaps.length; q2++) await L3.editSwap(cur.proj, cur.region, d.swaps[q2][0], d.swaps[q2][1]); } else if (d.swap) await L3.editSwap(cur.proj, cur.region, d.swap[0], d.swap[1]); else await L3.editAdd(cur.proj, cur.region, d); undoSt.push(d); await redraw('Redone.'); } catch (er){ V3.note('Could not redo: ' + er.message, 5); } working = false; refreshCount(); }
 /* build the current square again with the edits on top, staying where we are */
 async function redraw(msg){
   busy = true; V3.note('Rebuilding the ground...', 30); var ll = llOf(P.x, P.y), pitch = P.pitch, yaw = P.yaw;
@@ -412,18 +413,55 @@ function scatterArea(c){
   V3.note(got + ' plants over ' + Math.round(area) + ' square metres' + (got < n ? ' (the rest was road, water or building, or too tight)' : ''), 4);
 }
 /* ---- Select: pick something you placed, then turn, move or delete it ---- */
-var sel = null, selMove = false;
+var sel = null, selMove = false, selBox = null;
+var SELT = {place:1, tree:1, prop:1, creature:1, nest:1};
 async function selectAt(ll){
   var g = world.geo, best = null, bd = 10; (await L3.editAll(cur.proj)).forEach(function(o){ if (o.t !== 'place' && o.t !== 'tree' && o.t !== 'prop' && o.t !== 'creature' && o.t !== 'nest') return; var d = Math.hypot((o.lon - ll[0])*g.kx, (o.lat - ll[1])*g.ky); if (d < bd){ bd = d; best = o; } });
-  sel = best; selMove = false; selUI(); if (!best) V3.note('Nothing you placed is here. (Buildings and roads from the real map cannot be selected; use Change or Remove.)', 4);
+  if (!best && cur && cur.text){   /* nothing placed here: the map's own building or tree (this square) */
+    try { var J = cur.json || (cur.json = JSON.parse(cur.text)), hit = null, i;
+      for (i = J.ways.length - 1; i >= 0 && !hit; i--){ var wy = J.ways[i]; if (wy[0].building && wy[1].length >= 8 && L3.pip(wy[1], ll[0], ll[1])) hit = wy; }
+      if (hit){ var c = hit[1], x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (i = 0; i < c.length; i += 2){ x0 = Math.min(x0, c[i]); x1 = Math.max(x1, c[i]); y0 = Math.min(y0, c[i + 1]); y1 = Math.max(y1, c[i + 1]); }
+        best = {t:'real', kind:'building', name:hit[0].name || hit[0]['addr:housename'] || (hit[0].building === 'yes' ? 'Building' : hit[0].building.replace(/_/g, ' ')), lon:ll[0], lat:ll[1], r:Math.max(3, Math.hypot((x1 - x0)*g.kx, (y1 - y0)*g.ky)/2)}; }
+      else { var bt = 5; (J.pois || []).forEach(function(p){ if (!p[2] || p[2].natural !== 'tree') return; var d2 = Math.hypot((p[0] - ll[0])*g.kx, (p[1] - ll[1])*g.ky); if (d2 < bt){ bt = d2; best = {t:'real', kind:'tree', name:'Tree from the map', lon:p[0], lat:p[1], r:2.5}; } }); }
+    } catch (er){}
+  }
+  sel = best; selMove = false; selUI(); if (!best) V3.note('Nothing is here to select.', 3);
 }
-function selName(o){ return o.t === 'creature' ? o.n + ' ' + o.k + (o.n > 1 ? 's' : '') : o.t === 'nest' ? 'Nest' : o.t === 'prop' ? o.p.replace(/\./, ': ').replace(/_/g, ' ') : o.t === 'tree' ? 'Tree' : (L3.BUILD[o.b] ? L3.BUILD[o.b][0] : 'Building'); }
+function selName(o){ return o.t === 'multi' ? o.items.length + ' things' : o.t === 'real' ? o.name + ' (from the map)' : o.t === 'creature' ? o.n + ' ' + o.k + (o.n > 1 ? 's' : '') : o.t === 'nest' ? 'Nest' : o.t === 'prop' ? o.p.replace(/\./, ': ').replace(/_/g, ' ') : o.t === 'tree' ? 'Tree' : (L3.BUILD[o.b] ? L3.BUILD[o.b][0] : 'Building'); }
 function selUI(){
-  var has = !!sel, turn = has && (sel.t === 'prop' || sel.t === 'place' || sel.t === 'creature' || sel.t === 'nest'), deg = !has ? 0 : (sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest') ? (sel.ry || 0) : sel.t === 'place' ? Math.round(((sel.a || 0)*180/Math.PI)/15)*15 : 0;
+  var has = !!sel, turn = has && sel.t !== 'multi' && (sel.t === 'prop' || sel.t === 'place' || sel.t === 'creature' || sel.t === 'nest'), deg = !has ? 0 : (sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest') ? (sel.ry || 0) : sel.t === 'place' ? Math.round(((sel.a || 0)*180/Math.PI)/15)*15 : 0;
   deg = ((deg % 360) + 360) % 360;
   $('v3si').textContent = !has ? 'Tap a building, tree or piece you placed.' : selMove ? selName(sel) + ': tap the ground where it should go.' : 'Selected: ' + selName(sel);
-  $('v3sa').disabled = !turn; $('v3sa').value = deg; $('v3saV').textContent = deg + '°'; $('v3smv').disabled = !has; $('v3sdl').disabled = !has; $('v3sdn').disabled = !has;
+  if (has && sel.t === 'real'){ $('v3si').textContent = 'Selected: ' + selName(sel) + '. Delete removes it.'; } if (selBox && !has) $('v3si').textContent = selBox.c ? 'Tap the opposite corner.' : 'Tap one corner of the box.'; $('v3sa').disabled = !turn || sel.t === 'multi'; $('v3sa').value = deg; $('v3saV').textContent = deg + '°'; $('v3smv').disabled = !has || sel.t === 'real'; $('v3scp').disabled = !has || sel.t === 'real'; $('v3sbx').className = 'sm ' + (selBox ? 'on' : 'alt'); $('v3sdl').disabled = !has; $('v3sdn').disabled = !has;
   $('v3smv').className = 'sm ' + (selMove ? 'on' : 'alt');
+}
+function selBoxTap(ll){
+  if (!selBox.c){ selBox.c = ll; selUI(); V3.note('Now the opposite corner.', 3); return; }
+  var a = selBox.c, x0 = Math.min(a[0], ll[0]), x1 = Math.max(a[0], ll[0]), y0 = Math.min(a[1], ll[1]), y1 = Math.max(a[1], ll[1]); selBox = null;
+  L3.editAll(cur.proj).then(function(all){
+    var it = all.filter(function(o){ return SELT[o.t] && o.lon >= x0 && o.lon <= x1 && o.lat >= y0 && o.lat <= y1; }), g = world.geo;
+    if (!it.length){ sel = null; V3.note('Nothing you placed is inside that box.', 3); selUI(); return; }
+    var cx = 0, cy = 0; it.forEach(function(o){ cx += o.lon; cy += o.lat; }); cx /= it.length; cy /= it.length;
+    var r = 3; it.forEach(function(o){ r = Math.max(r, Math.hypot((o.lon - cx)*g.kx, (o.lat - cy)*g.ky) + 2); });
+    sel = it.length === 1 ? it[0] : {t:'multi', items:it, lon:cx, lat:cy, r:r}; selMove = false; selUI(); V3.note(it.length + ' selected.', 2);
+  });
+}
+async function swapMany(pairs, msg, push){
+  if (working || busy) return; working = true;
+  try { for (var i = 0; i < pairs.length; i++) await L3.editSwap(cur.proj, cur.region, pairs[i][0], pairs[i][1]); if (push){ undoSt.push({swaps:pairs}); redoSt = []; } await redraw(msg); }
+  catch (er){ V3.note('Could not save the change: ' + er.message, 6); }
+  working = false; selUI(); refreshCount();
+}
+async function selMoveMany(ll){
+  var dx = ll[0] - sel.lon, dy = ll[1] - sel.lat, pairs = sel.items.map(function(o){ return [o, Object.assign({}, o, {lon:+(o.lon + dx).toFixed(6), lat:+(o.lat + dy).toFixed(6)})]; });
+  sel = Object.assign({}, sel, {items:pairs.map(function(p){ return p[1]; }), lon:ll[0], lat:ll[1]}); await swapMany(pairs, 'Moved ' + pairs.length + '.', true);
+}
+async function selCopy(){
+  if (working || busy || !sel || sel.t === 'real') return; var g = world.geo, dx = 4/g.kx, dy = -4/g.ky, src = sel.t === 'multi' ? sel.items : [sel];
+  var cp = src.map(function(o){ return Object.assign({}, o, {id:uid(), lon:+(o.lon + dx).toFixed(6), lat:+(o.lat + dy).toFixed(6)}); }); working = true;
+  try { await L3.editAdd(cur.proj, cur.region, cp); undoSt.push(cp); redoSt = []; sel = sel.t === 'multi' ? Object.assign({}, sel, {items:cp, lon:sel.lon + dx, lat:sel.lat + dy}) : cp[0]; await redraw('Copied: the copy is selected, 4 m away. Move it where you want it.'); }
+  catch (er){ V3.note('Could not copy: ' + er.message, 6); }
+  working = false; selUI(); refreshCount();
 }
 async function selApply(nw, msg){
   if (working || busy || !sel) return; working = true; var old = sel;
@@ -433,7 +471,7 @@ async function selApply(nw, msg){
 }
 async function selDelete(){
   if (working || busy || !sel) return; working = true; var old = sel;
-  try { await L3.editSwap(cur.proj, cur.region, old, null); undoSt.push({swap:[old, null]}); redoSt = []; sel = null; selMove = false; await redraw('Deleted.'); }
+  try { if (old.t === 'multi'){ working = false; sel = null; selUI(); await swapMany(old.items.map(function(o){ return [o, null]; }), 'Deleted ' + old.items.length + '.', true); return; } if (old.t === 'real'){ var op = {id:uid(), t:'remove', lat:+old.lat.toFixed(6), lon:+old.lon.toFixed(6), r:3}; await L3.editAdd(cur.proj, cur.region, [op]); undoSt.push([op]); redoSt = []; sel = null; await redraw('Removed.'); working = false; selUI(); refreshCount(); return; } await L3.editSwap(cur.proj, cur.region, old, null); undoSt.push({swap:[old, null]}); redoSt = []; sel = null; selMove = false; await redraw('Deleted.'); }
   catch (er){ V3.note('Could not delete: ' + er.message, 6); }
   working = false; selUI(); refreshCount();
 }
@@ -447,6 +485,24 @@ function ringMark(){
   var cv = $('game').getBoundingClientRect(), rpx = Math.max(6, Math.min(600, brushR/(dep*c.tv)*cv.height/2)), sq = Math.max(0.18, Math.abs(c.f[1]));
   m.style.display = 'block'; m.style.left = ptr[0] + 'px'; m.style.top = ptr[1] + 'px'; m.style.width = rpx*2 + 'px'; m.style.height = rpx*2*sq + 'px';
 }
+/* the shape you are drawing (river, road, cut, slope, fill area): points, the line between them and how wide it will be, before you press Finish */
+var PVC = {river:'#3aa0ff', road:'#cfcfcf', cut:'#c98b4a', slope:'#ffa733', fill:'#5fd36b'};
+function pvWidth(){ return tool === 'river' ? riverWidth() : tool === 'road' ? 12 : tool === 'cut' ? Math.max(4, Math.round(brushR/4)) : tool === 'slope' ? Math.max(4, Math.round(brushR/4)) : 0; }
+function pvMark(){
+  var m = $('v3pv'); if (!m) return; if (!PVC[tool] || !riv.length || !lastCam || !world || !world.geo){ if (m.style.display !== 'none') m.style.display = 'none'; return; }
+  var c = lastCam, g = world.geo, cv = $('game').getBoundingClientRect(), pts = [], pxw = 0, i;
+  for (i = 0; i + 1 < riv.length; i += 2){
+    var x = (riv[i] - g.lon0)*g.kx, y = (g.lat0 - riv[i + 1])*g.ky, v = [x - c.e[0], hAt(x, y) + 0.5 - c.e[1], y - c.e[2]], dep = v[0]*c.f[0] + v[1]*c.f[1] + v[2]*c.f[2]; if (dep < 1) continue;
+    var nx = (v[0]*c.s[0] + v[1]*c.s[1] + v[2]*c.s[2])/(dep*c.tv*c.asp), ny = (v[0]*c.u[0] + v[1]*c.u[1] + v[2]*c.u[2])/(dep*c.tv);
+    pts.push([cv.left + (nx + 1)/2*cv.width, cv.top + (1 - ny)/2*cv.height]); pxw += (pvWidth()/(dep*c.tv))*cv.height;
+  }
+  if (pts.length) pxw /= pts.length;
+  var col = PVC[tool], h = '', pl = pts.map(function(p){ return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+  if (tool === 'fill' && pts.length > 2) h += '<polygon points="' + pl + '" fill="' + col + '" fill-opacity="0.28" stroke="' + col + '" stroke-width="2" stroke-dasharray="6 4"/>';
+  else if (pts.length > 1){ var w = Math.max(3, Math.min(400, pxw)); h += '<polyline points="' + pl + '" fill="none" stroke="' + col + '" stroke-opacity="0.35" stroke-width="' + w.toFixed(1) + '" stroke-linecap="round" stroke-linejoin="round"/><polyline points="' + pl + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-dasharray="6 4"/>'; }
+  pts.forEach(function(p, k){ h += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (k === 0 ? 7 : 5) + '" fill="' + (k === 0 ? '#fff' : col) + '" stroke="#000" stroke-width="1.5"/>'; });
+  m.style.display = 'block'; m.innerHTML = h;
+}
 function selMark(){
   var m = $('v3selm'); if (!m) return; if (!sel || tool !== 'sel' || !lastCam || !world || !world.geo){ m.style.display = 'none'; return; }
   var c = lastCam, g = world.geo, x = (sel.lon - g.lon0)*g.kx, y = (g.lat0 - sel.lat)*g.ky, v = [x - c.e[0], hAt(x, y) + 1 - c.e[1], y - c.e[2]], dep = v[0]*c.f[0] + v[1]*c.f[1] + v[2]*c.f[2];
@@ -458,9 +514,10 @@ function uid(){ return Date.now().toString(36) + Math.random().toString(36).slic
 function riverWidth(){ return brushR < 30 ? 3 : brushR < 60 ? 8 : 11; }   /* the game's stream, canal and river widths */
 function kText(){ return tool === 'hill' ? Math.round(brushK*30) + ' m' : tool === 'cut' ? (brushK*20).toFixed(1) + ' m' : String(brushK); }
 function toolUI(){
+  pvMark();
   var kl = $('v3k').parentNode.firstChild; if (kl && kl.nodeType === 3) kl.nodeValue = tool === 'scat' || tool === 'fill' ? 'Density ' : tool === 'hill' ? 'Height ' : tool === 'cut' ? 'Depth ' : 'Strength '; $('v3kV').textContent = kText();
   if (V3.shellSync) setTimeout(function(){ V3.shellSync(); }, 0);
-  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); ghost = null; ghostUI(); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); $('v3cr').classList.toggle('hidden', tool !== 'alien' && tool !== 'nest'); $('v3ck').style.display = tool === 'alien' ? '' : 'none'; $('v3cn').parentNode.style.display = tool === 'alien' ? '' : 'none'; if (tool === 'alien' || tool === 'nest') creInit(); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
+  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); ghost = null; ghostUI(); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); $('v3cr').classList.toggle('hidden', tool !== 'alien' && tool !== 'nest'); $('v3ck').style.display = tool === 'alien' ? '' : 'none'; $('v3cn').parentNode.style.display = tool === 'alien' ? '' : 'none'; if (tool === 'alien' || tool === 'nest') creInit(); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; selBox = null; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
   if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : tool === 'road' ? 'tap along the road' : tool === 'fill' ? 'tap the corners of the area, then Finish' : tool === 'cut' ? 'tap along the trench' : tool === 'slope' ? 'tap the start, then the end' : 'tap along the river, downstream';
 }
 async function finishRiver(){
@@ -586,7 +643,7 @@ function propMesh(){
 
 /* ---------------- each frame ---------------- */
 function frame(ts){
-  if (!on) return; selMark(); ringMark(); ghostMark();
+  if (!on) return; selMark(); ringMark(); ghostMark(); pvMark();
   var dt = Math.min(0.1, Math.max(0, (ts - last)/1000)); last = ts;   /* at most a tenth of a second per frame, so a slow frame does not jump far */
   if (!busy && world && world.geo){
     move(dt);
