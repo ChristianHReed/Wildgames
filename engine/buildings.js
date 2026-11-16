@@ -280,7 +280,7 @@ function shell(b, m, lm){
   if (gab){
     /* ridge along the long side, eaves past the long walls, rakes past the gable ends, the gable ends walled in the house's own siding */
     var A = gab[0], B = gab[1], Cc = gab[2], D = gab[3], ex = (B[0] - A[0])/Math.hypot(B[0] - A[0], B[1] - A[1]), ez = (B[1] - A[1])/Math.hypot(B[0] - A[0], B[1] - A[1]), wid = Math.hypot(Cc[0] - B[0], Cc[1] - B[1]);
-    var rise = Math.min(3.4, 0.9 + wid*0.32), top = Ht + rise, R1 = [(A[0] + D[0])/2, (A[1] + D[1])/2], R2 = [(B[0] + Cc[0])/2, (B[1] + Cc[1])/2], gx = -ez, gz = ex;   /* g points from AB toward DC */
+    var rise = b.rh || Math.min(3.4, 0.9 + wid*0.32), top = Ht + rise, R1 = [(A[0] + D[0])/2, (A[1] + D[1])/2], R2 = [(B[0] + Cc[0])/2, (B[1] + Cc[1])/2], gx = -ez, gz = ex;   /* g points from AB toward DC */
     var ext = function(P0, along, out){ return [P0[0] + ex*along - gx*out, P0[1] + ez*along - gz*out]; }, dy = rise/(wid/2), lowY = Ht - EV*dy;
     var a1 = ext(A, -EV, EV), b1 = ext(B, EV, EV), d1 = ext(D, -EV, -EV), c1 = ext(Cc, EV, -EV), r1 = ext(R1, -EV, 0), r2 = ext(R2, EV, 0);
     m.pl = [200 + BT.roof_shingle, 1/4];
@@ -294,7 +294,7 @@ function shell(b, m, lm){
   }
   if (hip){
     /* a pitched roof: every wall leans in to a smaller copy of the outline held above the middle */
-    var rise = b.kind === 'church' ? Math.min(6, Math.sqrt(b.area)*0.45) : Math.min(3.2, 0.8 + Math.sqrt(b.area)*0.2), f = 0.3, top = Ht + rise, ip = [], er = eaveRing(), eY = Ht - 0.22;
+    var rise = b.rh || (b.kind === 'church' ? Math.min(6, Math.sqrt(b.area)*0.45) : Math.min(3.2, 0.8 + Math.sqrt(b.area)*0.2)), f = 0.3, top = Ht + rise, ip = [], er = eaveRing(), eY = Ht - 0.22;
     for (i = 0; i < n; i += 2) ip.push(cxr + (p[i] - cxr)*f, czr + (p[i+1] - czr)*f);
     m.pl = [200 + BT['roof_' + (ST.roof === 'flat' ? 'shingle' : ST.roof)], 1/4];
     for (i = 0; i < n; i += 2){ j = (i+2) % n; m.quad(er[i], eY, er[i+1], er[j], eY, er[j+1], ip[j], top, ip[j+1], ip[i], top, ip[i+1], rcol, 255); lm.line(er[i], eY, er[i+1], ip[i], top, ip[i+1], INK); lm.line(ip[i], top, ip[i+1], ip[j], top, ip[j+1], INK); lm.line(er[i], eY, er[i+1], er[j], eY, er[j+1], INK); }

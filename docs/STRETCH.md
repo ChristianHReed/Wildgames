@@ -70,3 +70,4 @@ From docs/DEVICES.md. Gamepad support, detail presets, saves on the drive in eve
 - **Low-memory map squares**: squares cut smaller (or loaded in parts) for devices with 1 to 2 GB.
 - **Battery and heat mode** on phones and tablets: frame cap and lower resolution when on battery or warm.
 
+- **Free-standing alien nests**: the builder can put a nest in the open (`asmb:nest` outside any building). The game snaps it to the nearest building with a door within 40 m, because nests, their core, the burst hive and the spread rules all hang on a building. A real free-standing nest needs its own object with a core the player can destroy.

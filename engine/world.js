@@ -220,7 +220,7 @@ function buildWorld(raw, name){
       var hls = holesOf[wayIx]; if (hls) hls.forEach(function(hp){ var ha = 0; for (var hi = 0; hi < hp.length; hi += 2){ var hj = (hi + 2) % hp.length; ha += hp[hi]*hp[hj+1] - hp[hj]*hp[hi+1]; } ar = Math.max(6, ar - Math.abs(ha)/2); });   /* courtyards and light wells (map format 2) do not count as floor */
       var id = w.buildings.length, kind = kindOf(t), kg = !kind; if (kg){ var hk = hash(id, 17, 4); kind = ar < 280 ? 'house' : hk < 0.45 ? 'office' : hk < 0.7 ? 'shop' : 'apartments'; }
       var cat = KIND[kind].cat;
-      w.buildings.push(bbox({bt:t.building || '', use:t['asmb:use'] || '', wall:t['asmb:wall'] || '', frame:t['asmb:frame'] || '', bstate:t['asmb:state'] || '', alabel:t['asmb:label'] || '', pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', hn:t['addr:housenumber'] || '', st:t['addr:street'] || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels']) || levelsOfHeight(t), rs:roofShape(t), civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
+      w.buildings.push(bbox({bt:t.building || '', use:t['asmb:use'] || '', wall:t['asmb:wall'] || '', frame:t['asmb:frame'] || '', bstate:t['asmb:state'] || '', alabel:t['asmb:label'] || '', pts:pts, cat:cat, kind:kind, kg:kg, name:t.name || '', hn:t['addr:housenumber'] || '', st:t['addr:street'] || '', area:ar, cx:cx/(n/2), cy:cy/(n/2), levels:Math.round(+t['building:levels']) || levelsOfHeight(t), rs:roofShape(t), rh:(+t['roof:height'] > 0.3 ? Math.min(8, +t['roof:height']) : 0), civic:IN(t.amenity, CIVIC), looted:false, stamp:0,
         col:CAT[cat].cols[Math.floor(hash(id, 3, 5)*CAT[cat].cols.length)], rolls:Math.max(1, Math.min(6, Math.round(1 + ar/160))), time:Math.min(4, 1.2 + ar/400), id:id}));
       return;
     }
@@ -288,12 +288,16 @@ function buildWorld(raw, name){
     var x = (p.lon-lon0)*kx, y = -(p.lat-lat0)*ky, t = p.tags;
     /* 0.123.0: props the map builder placed (asmb:prop = <category>.<piece>): street dressing (poles with wires, lamps, mailboxes, benches, bins, meters), props a player put down,
        and cars (vehicles.*, made into parked vehicles in makeVehicles). asmb:yaw is degrees (builder 1.24), asmb:ry quarter turns for older maps */
+    /* 0.129.0: what the map's builder put down for the aliens (hand-off note 31): groups to spawn, nests to start, and the map's rule on whether the game adds its own */
+    if (t['asmb:creature']){ (w.mcre || (w.mcre = [])).push({k:String(t['asmb:creature']), n:Math.max(1, Math.min(60, Math.round(+t['asmb:n']) || 1)), x:x, y:y, key:p.lat + ',' + p.lon}); return; }
+    if (t['asmb:nest'] === 'yes'){ (w.mnest || (w.mnest = [])).push({x:x, y:y}); return; }
+    if (t['asmb:rule'] === 'creatures'){ w.mrule = t['asmb:value'] === 'map' ? 'map' : 'both'; return; }
     if (t['asmb:prop'] && /^[a-z0-9_]+\.[A-Za-z0-9_]+$/.test(t['asmb:prop'])){
       var pth = t['asmb:prop'], yw = t['asmb:yaw'] !== undefined && isFinite(+t['asmb:yaw']) ? -(+t['asmb:yaw'])*Math.PI/180 : -(+t['asmb:ry'] || 0)*Math.PI/2, mp = {p:pth, x:x, y:y, yw:yw, z:isFinite(+t['asmb:z']) ? Math.max(0, Math.min(400, +t['asmb:z'])) : 0}; if (t['asmb:door_open'] === 'yes') mp.door = 1;
       if (t['asmb:wire']){ var wl = String(t['asmb:wire']).split(','); if (wl.length === 2 && isFinite(+wl[0]) && isFinite(+wl[1])) mp.wx = (+wl[0] - lon0)*kx, mp.wy = -(+wl[1] - lat0)*ky; }
       var band = t['asmb:band']; if (band){ var MK = w.mhas || (w.mhas = {}); if (pth === 'street.power_pole') MK.pole = 1; else if (pth === 'street.street_lamp') MK.lamp = 1; else if (pth === 'street.mailbox') MK.mailbox = 1; }
       (w.mprops || (w.mprops = [])).push(mp); return; }
-    if (t.natural === 'tree'){ addTree(x, y, n); return; }
+    if (t.natural === 'tree'){ addTree(x, y, n, undefined, +t.height > 0 ? +t.height : 0, +t.diameter_crown > 0 ? +t.diameter_crown : 0); return; }   /* 0.129.0: lidar trees (asmb:lidar) carry their measured height and crown width */
     var pk = kindOf(t), cat = catOf(t, false), bd = buildingAt(x, y); if (!pk && !cat) return;
     if (bd){
       if (IN(t.amenity, CIVIC)) bd.civic = true;
@@ -942,7 +946,8 @@ function plantTrees(w, cov){
 }
 /* 0.38: which kind of tree, by where it grows (Kenney Nature Kit models): 0 oak, 1 maple, 2 sycamore, 3 poplar, 4 pine, 5 cedar */
 var SPECIES = {street:[0, 1, 1, 0], yard:[1, 0, 5, 3, 1], park:[0, 2, 1, 0], river:[2, 2, 3], field:[0, 5, 5], poi:[0, 1, 2]};
-function addTree(x, y, n, h){ var L = SPECIES[h || 'poi'] || SPECIES.poi; world.trees.push({x:x, y:y, h:h || 'poi', r:1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:L[Math.floor(hash(n, 4, 9)*L.length)], yw:hash(n, 5, 9)*6.283, sc:0.75 + hash(n, 6, 9)*0.4}); }
+function addTree(x, y, n, h, mh, mc){ var L = SPECIES[h || 'poi'] || SPECIES.poi, sc = 0.75 + hash(n, 6, 9)*0.4; if (mh || mc) sc = Math.max(0.45, Math.min(2.2, mh && mc ? 0.5*(mh/9 + mc/6) : mh ? mh/9 : mc/6));
+  world.trees.push({x:x, y:y, h:h || 'poi', r:(mh || mc) ? Math.max(0.8, Math.min(3.2, 1.2*sc + 0.6)) : 1.5 + hash(n, 1, 3)*1.2, hp:3, alive:true, shake:0, sp:L[Math.floor(hash(n, 4, 9)*L.length)], yw:hash(n, 5, 9)*6.283, sc:sc}); }
 /* the model and picture for a tree: deciduous trees turn in autumn */
 /* 0.95.0: every tree has three shapes (the content chat's flora pack); which one grows where is fixed by the spot */
 /* 0.98.2: trees standing in woods are the woods pack's close-grown, clear-trunked forms (not in autumn: they have no autumn colours yet) */
