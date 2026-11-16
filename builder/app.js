@@ -2,7 +2,7 @@
    Classic script. The heavy work runs in the background worker (worker.js); this file only drives the page. */
 (function(){
 'use strict';
-var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'inflate', 'geo', 'pbf', 'tiff', 'gen', 'uses', 'streets', 'lots', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
+var L = {}; ['lib_flatbush', 'lib_polylabel', 'lib_fflate', 'lib_fzstd', 'lib_hyparquet', 'lib_lazperf', 'inflate', 'geo', 'pbf', 'tiff', 'lidar', 'gen', 'uses', 'streets', 'lots', 'structures', 'build'].forEach(function(k){ if (window.BLIB[k]) window.BLIB[k](L); });
 var $ = function(id){ return document.getElementById(id); };
 var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]; }); };
 var fmtN = function(n){ return Math.round(n).toLocaleString('en-US'); };
@@ -15,7 +15,7 @@ $('ver').textContent = 'v' + L.VERSION;
 
 /* ---------------- state ---------------- */
 var SGF = {lat:37.2089, lon:-93.2923, name:'Springfield, MO'};
-var S = {area:{lat:SGF.lat, lon:SGF.lon, miles:5, name:SGF.name}, opts:{fill:true, dress:true, step:10, tiles:true}, proj:null, osm:null, tiffs:[], tiffInfo:[], overture:[], man:null, single:null, preview:null, building:false};
+var S = {area:{lat:SGF.lat, lon:SGF.lon, miles:5, name:SGF.name}, opts:{fill:true, dress:true, step:10, tiles:true}, proj:null, osm:null, tiffs:[], tiffInfo:[], lidar:[], overture:[], man:null, single:null, preview:null, building:false};
 try { var saved = JSON.parse(lsGet('asmb:state') || 'null'); if (saved && saved.area && isFinite(saved.area.lat)){ S.area = saved.area; S.opts = saved.opts || S.opts; S.proj = saved.proj || null; } } catch (e){}
 function saveState(){ lsSet('asmb:state', JSON.stringify({area:S.area, opts:S.opts, proj:S.proj})); }
 
@@ -80,13 +80,13 @@ $('fOsm').addEventListener('change', function(){ var f = this.files[0]; this.val
 
 /* Drop files on the page (iPad: drag them out of the Files app in Split View). A second way in that skips the file picker, which some iPad browsers grey files out of. */
 (function(){
-  var route = function(f){ var n = f.name.toLowerCase(); return /\.(pbf|osm|xml)$/.test(n) ? 'fOsm' : /\.tiff?$/.test(n) ? 'fTif' : /\.(parquet|geoparquet)$/.test(n) ? 'fOvt' : /\.(asmap|zip)$/.test(n) ? 'openAsmap' : /\.(geo)?json$/.test(n) ? 'fOvt' : 'fOsm'; };
+  var route = function(f){ var n = f.name.toLowerCase(); return /\.(pbf|osm|xml)$/.test(n) ? 'fOsm' : /\.tiff?$/.test(n) ? 'fTif' : /\.la[sz]$/.test(n) ? 'fLas' : /\.(parquet|geoparquet)$/.test(n) ? 'fOvt' : /\.(asmap|zip)$/.test(n) ? 'openAsmap' : /\.(geo)?json$/.test(n) ? 'fOvt' : 'fOsm'; };
   window.addEventListener('dragover', function(e){ if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0){ e.preventDefault(); document.body.classList.add('dropping'); } });
   window.addEventListener('dragleave', function(e){ if (!e.relatedTarget) document.body.classList.remove('dropping'); });
   window.addEventListener('drop', function(e){
     document.body.classList.remove('dropping'); if (!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return; e.preventDefault();
     var by = {}; Array.prototype.forEach.call(e.dataTransfer.files, function(f){ (by[route(f)] = by[route(f)] || []).push(f); });
-    Object.keys(by).forEach(function(id){ var dt = new DataTransfer(); (id === 'fTif' || id === 'fOvt' ? by[id] : by[id].slice(0, 1)).forEach(function(f){ dt.items.add(f); }); var inp = $(id); inp.files = dt.files; inp.dispatchEvent(new Event('change')); });
+    Object.keys(by).forEach(function(id){ var dt = new DataTransfer(); (id === 'fTif' || id === 'fOvt' || id === 'fLas' ? by[id] : by[id].slice(0, 1)).forEach(function(f){ dt.items.add(f); }); var inp = $(id); inp.files = dt.files; inp.dispatchEvent(new Event('change')); });
     toast('Got ' + e.dataTransfer.files.length + (e.dataTransfer.files.length === 1 ? ' file' : ' files') + '.', 3);
   });
 })();
@@ -117,6 +117,24 @@ function checkElev(){
   st.innerHTML = h; c.classList.toggle('ok', cov > 0.98 || (S.opts.tiles && navigator.onLine));
 }
 $('stElev').addEventListener('click', function(e){ var i = e.target.getAttribute('data-rm'); if (i === null) return; e.preventDefault(); S.tiffs.splice(+i, 1); S.tiffInfo.splice(+i, 1); checkElev(); drawSoon(); });
+$('fLas').addEventListener('change', async function(){
+  var fs = Array.prototype.slice.call(this.files); this.value = '';
+  for (var i = 0; i < fs.length; i++){
+    try { var H = await L.lidarOpen(fs[i]); S.lidar.push({file:fs[i], name:fs[i].name, size:fs[i].size, n:H.count, fmt:H.fmt, laz:H.compressed, crs:H.proj.name, box:H.box, H:H}); }
+    catch (e){ toast(e.message, 9); }
+  }
+  lasUI();
+});
+function lasUI(){
+  var c = $('cLidar'), st = $('stLas'); c.classList.toggle('ok', S.lidar.length > 0);
+  if (!S.lidar.length){ st.innerHTML = 'No files yet.'; return; }
+  var loc = L.local(S.area.lat, S.area.lon), hit = 0;
+  st.innerHTML = S.lidar.map(function(f, i){
+    var H = f.H, cx = (H.box[0] + H.box[2])/2, cy = (H.box[1] + H.box[3])/2, ll = H.proj.inv(cx, cy), m = loc.m(ll[0], ll[1]), near = Math.hypot(m[0], m[1]) < S.area.miles*1609 + 3000; if (near) hit++;
+    return '<div>' + esc(f.name) + ' &middot; ' + fmtMB(f.size) + ' &middot; ' + fmtN(f.n) + ' points &middot; ' + (f.laz ? 'LAZ' : 'LAS') + ' &middot; ' + esc(f.crs) + (near ? '' : ' &middot; <b>not near your area</b>') + ' <a href="#" data-rm="' + i + '">remove</a></div>'; }).join('')
+    + (hit ? '' : '<div><b>None of these files is near your chosen area.</b></div>');
+}
+$('stLas').addEventListener('click', function(e){ var i = e.target.getAttribute('data-rm'); if (i === null) return; e.preventDefault(); S.lidar.splice(+i, 1); lasUI(); });
 $('fOvt').addEventListener('change', function(){ S.overture = S.overture.concat(Array.prototype.slice.call(this.files)); this.value = ''; ovtUI(); });
 function ovtUI(){ var c = $('cOvt'); c.classList.toggle('ok', S.overture.length > 0); $('stOvt').innerHTML = S.overture.length ? '<b>Ready:</b> ' + S.overture.map(function(f){ return esc(f.name) + ' (' + fmtMB(f.size) + ')'; }).join(', ') + ' <a href="#" id="ovtClr">clear</a>' : 'No files yet.'; var cl = $('ovtClr'); if (cl) cl.onclick = function(e){ e.preventDefault(); S.overture = []; ovtUI(); }; }
 $('optFill').addEventListener('change', function(){ S.opts.fill = this.checked; saveState(); });
@@ -132,7 +150,7 @@ $('build').addEventListener('click', function(){
   if (S.osm.kind === 'download' && !navigator.onLine){ toast('Downloading needs an internet connection.'); return; }
   S.proj = S.proj || slug(S.area.name) + '-' + Date.now().toString(36); saveState();
   var job = {proj:S.proj, area:{id:S.proj, name:S.area.name || 'My map', lat:S.area.lat, lon:S.area.lon, miles:S.area.miles}, osm:{kind:S.osm.kind, file:S.osm.file || null, name:S.osm.name},
-    tiffs:S.tiffs.slice(), overture:S.overture.slice(), opts:{light:S.opts.light !== undefined ? !!S.opts.light : DEV.kind !== 'computer', fill:S.opts.fill, dress:S.opts.dress !== false, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
+    tiffs:S.tiffs.slice(), lidar:S.lidar.map(function(f){ return f.file; }), overture:S.overture.slice(), opts:{light:S.opts.light !== undefined ? !!S.opts.light : DEV.kind !== 'computer', fill:S.opts.fill, dress:S.opts.dress !== false, step:S.opts.step, tiles:S.opts.tiles && navigator.onLine}};
   S.building = true; S.t0 = Date.now(); $('build').disabled = true; $('stop').classList.remove('hidden'); $('barI').style.width = '0%'; $('stage').textContent = 'Starting...';
   W.post({t:'build', job:job});
 });
@@ -169,6 +187,10 @@ function report(){
   h += '<tr><td>Road pieces with lanes / width mapped</td><td class="n">' + pct(t.lanes, t.roads) + ' / ' + pct(t.width, t.roads) + '</td></tr>';
   h += '<tr><td>Ground from your files / terrain tiles / guessed</td><td class="n">' + pct(e.file, 1) + ' / ' + pct(e.tiles, 1) + ' / ' + pct(e.none, 1) + '</td></tr>';
   if (M.report.fileRes) h += '<tr><td>Finest ground detail used</td><td class="n">' + (M.report.fileRes < 2 ? M.report.fileRes.toFixed(1) : Math.round(M.report.fileRes)) + ' m</td></tr>';
+  if (st.lidar){ var ld = st.lidar, lb = ld.buildings || {}, lt = ld.trees || {};
+    h += '<tr><td>Lidar points used</td><td class="n">' + fmtN(ld.points) + '</td></tr>';
+    h += '<tr><td>Buildings measured by lidar (flat / pitched roof)</td><td class="n">' + fmtN((lb.set || 0) + (lb.kept || 0)) + ' (' + fmtN(lb.flat || 0) + ' / ' + fmtN(lb.pitched || 0) + ')</td></tr>';
+    h += '<tr><td>Trees found by lidar, average height</td><td class="n">' + fmtN(lt.trees || 0) + ', ' + (lt.mean || 0) + ' m</td></tr>'; }
   if (st.overture) h += '<tr><td>Overture buildings skipped (already mapped)</td><td class="n">' + fmtN(st.overture.skipped) + '</td></tr>';
   var sx = M.report.struct || {}, sn = function(k){ var o = sx[k]; return o ? o.osm + o.inferred : 0; }, sm = function(k){ var o = sx[k]; return o ? o.inferred : 0; };
   if (Object.keys(sx).length){
@@ -213,7 +235,7 @@ $('exAsmap').addEventListener('click', async function(){
     var man = JSON.parse(JSON.stringify(M)); man.kind = 'afterstreet-map'; man.required = []; man.layers = {base:'squares/', edits:null, game:null, models:null};
     ents.push({name:'manifest.json', data:enc.encode(JSON.stringify(man, null, 1))});
     ents.push({name:'CREDITS.txt', data:enc.encode('Map: ' + M.region.name + '\nMade with AfterStreet Maps Builder ' + L.VERSION + ' on ' + M.made + '\n\n' + M.attribution + '\n\nOpenStreetMap data is available under the Open Database Licence: https://www.openstreetmap.org/copyright\n' +
-      (M.stats && M.stats.overture ? 'Overture Maps data: https://docs.overturemaps.org/attribution/\n' : '') + 'USGS 3DEP elevation is in the public domain.\nBuildings tagged generated=yes are made up by the builder where the data had nothing.\n')});
+      (M.stats && M.stats.overture ? 'Overture Maps data: https://docs.overturemaps.org/attribution/\n' : '') + (M.stats && M.stats.lidar ? 'Lidar point clouds: building heights, roof shapes and trees measured from the files you supplied (check their provider\'s terms; USGS 3DEP lidar is public domain).\n' : '') + 'USGS 3DEP elevation is in the public domain.\nBuildings tagged generated=yes are made up by the builder where the data had nothing.\n')});
     ents.push({name:'README.txt', data:enc.encode('This is an AfterStreet map file (a zip). Open it in the AfterStreet game or the Maps Builder.\nmanifest.json describes the map; squares/I_J.json are the game\'s map squares (0.05 degree squares around the centre).\n')});
     sq.forEach(function(q){ ents.push({name:'squares/' + q.i + '_' + q.j + '.json', data:enc.encode(q.text)}); });
     /* compressed with fflate (101arrowz/fflate, MIT): map squares shrink several times. A few at a time, so the page stays responsive */
@@ -407,7 +429,7 @@ cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 cv.addEventListener('wheel', function(e){ e.preventDefault(); var m0 = toM(e.offsetX, e.offsetY); V.s = Math.max(0.0005, Math.min(20, V.s*Math.pow(1.0015, -e.deltaY))); var m1 = toM(e.offsetX, e.offsetY); V.x += m0[0] - m1[0]; V.y += m0[1] - m1[1]; drawSoon(); }, {passive:false});
 
 /* ---------------- start: restore the last map (autosaved on this device) ---------------- */
-areaUI(); setOsm(null); ovtUI(); $('optFill').checked = S.opts.fill; $('optDress').checked = S.opts.dress !== false; $('optLight').checked = S.opts.light !== undefined ? !!S.opts.light : DEV.kind !== 'computer'; $('optStep').value = String(S.opts.step); resize(); fitArea();
+areaUI(); setOsm(null); ovtUI(); lasUI(); $('optFill').checked = S.opts.fill; $('optDress').checked = S.opts.dress !== false; $('optLight').checked = S.opts.light !== undefined ? !!S.opts.light : DEV.kind !== 'computer'; $('optStep').value = String(S.opts.step); resize(); fitArea();
 if (S.proj){
   Promise.all([L.dbGet('projects', S.proj), L.dbGet('preview', S.proj)]).then(function(r){
     if (!r[0] || !r[0].man) return; S.man = r[0].man; S.single = r[0].single || null;
