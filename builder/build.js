@@ -93,7 +93,7 @@ L.terrainApply = function(text, ops){
       var tw = o.tw || 8, dd = (o.d || 2)*10, rch = (o.d || 2)*2; along(o, tw/2 + rch, function(k2, dist){ var f = dist <= tw/2 ? 1 : smooth3(1 - (dist - tw/2)/rch); h[k2] = Math.max(-32000, Math.round(h[k2] - dd*f)); }); return; }
     if (o.t === 'slope' && o.c){   /* a ramp: the ground along the line runs smoothly from the height at its first point to the height at its last, o.tw wide, blended into the ground beside it */
       var tw2 = o.tw || 8, ha = ptH(o.c[0], o.c[1]), hb = ptH(o.c[o.c.length - 2], o.c[o.c.length - 1]), bank2 = 8 + Math.abs(hb - ha)/10*1.2; along(o, tw2/2 + bank2, function(k2, dist, t){ var tgt = ha + (hb - ha)*t, f = dist <= tw2/2 ? 1 : smooth3(1 - (dist - tw2/2)/bank2); h[k2] = Math.round(h[k2] + (tgt - h[k2])*f); }); return; }
-    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road' || o.t === 'bset' || o.t === 'prop' || o.t === 'flood' || o.t === 'basin') return;   /* these only add or take away map features, below */
+    if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road' || o.t === 'bset' || o.t === 'prop' || o.t === 'creature' || o.t === 'nest' || o.t === 'rule' || o.t === 'flood' || o.t === 'basin') return;   /* these only add or take away map features, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
     if (c0 > c1 || r0 > r1) return;
@@ -130,6 +130,9 @@ L.terrainApply = function(text, ops){
       var rt = L.ROADT[o.h], tg3 = {'asmb:made':'yes', src:'edit'}; tg3[rt[1]] = rt[2]; if (rt[3]) for (var k5 in rt[3]) tg3[k5] = rt[3][k5];
       if (rt[1] === 'highway' || rt[1] === 'railway'){ if (o.lv > 0){ tg3.bridge = 'yes'; tg3.layer = String(o.lv); } else if (o.lv < 0){ tg3.tunnel = 'yes'; tg3.layer = String(o.lv); } }
       sq.ways.push([tg3, o.c.slice()]); }
+    else if (o.t === 'creature' && /^[a-z]+$/.test(o.k || '')){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {'asmb:creature':o.k, 'asmb:n':String(Math.max(1, Math.min(60, Math.round(o.n || 1)))), 'asmb:yaw':String(Math.round(o.ry || 0)), 'asmb:made':'yes'}]); }
+    else if (o.t === 'nest'){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {'asmb:nest':'yes', 'asmb:yaw':String(Math.round(o.ry || 0)), 'asmb:made':'yes'}]); }
+    else if (o.t === 'rule'){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {'asmb:rule':'creatures', 'asmb:value':o.nests === 'map' ? 'map' : 'both', 'asmb:made':'yes'}]); }
     else if (o.t === 'prop' && /^[a-z0-9_]+\.[A-Za-z0-9_]+$/.test(o.p || '')){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {'asmb:prop':o.p, 'asmb:ry':String(((Math.round((o.ry || 0)/90) % 4) + 4) % 4), 'asmb:made':'yes'}]); }
     else if (o.t === 'tree'){ sq.pois.push([+o.lon.toFixed(6), +o.lat.toFixed(6), {natural:'tree', 'asmb:made':'yes'}]); }
     else if (o.t === 'bset'){
@@ -198,6 +201,7 @@ L.floodRing = function(E, h, o){
 /* add dabs to the squares they touch. region is the project's region record; returns the squares changed */
 /* the box (lon0, lat0, lon1, lat1) an edit can change; a river's reaches 3 widths beyond its line */
 L.opBox = function(o){
+  if (o.t === 'rule' && o.lat !== undefined){ var cl0 = Math.cos(o.lat*Math.PI/180); return [o.lon - o.r/(111320*cl0), o.lat - o.r/110540, o.lon + o.r/(111320*cl0), o.lat + o.r/110540]; }   /* a map-wide setting reaches every square */
   var cl = Math.cos((o.lat || (o.c ? o.c[1] : 0))*Math.PI/180);
   if (o.c){ var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (var i = 0; i < o.c.length; i += 2){ x0 = Math.min(x0, o.c[i]); x1 = Math.max(x1, o.c[i]); y0 = Math.min(y0, o.c[i + 1]); y1 = Math.max(y1, o.c[i + 1]); } var m = (o.w || 10)*3; return [x0 - m/(111320*cl), y0 - m/110540, x1 + m/(111320*cl), y1 + m/110540]; }
   return [o.lon - o.r/(111320*cl), o.lat - o.r/110540, o.lon + o.r/(111320*cl), o.lat + o.r/110540];

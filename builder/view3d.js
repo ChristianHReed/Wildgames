@@ -24,10 +24,11 @@ function makeOverlay(){
     '<button id="v3lay" class="sm alt">Layers</button><button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Editor</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3lays" class="hidden"><b>Show</b><div class="v3row" id="v3lt"></div><small>Hiding is for looking only: nothing is deleted from your map.</small></div>' +
     '<div id="v3tools" class="hidden"><b>Edit the map</b><div class="v3row" id="v3tt">' +
-    '<button data-t="sel" class="sm alt">Select</button><button data-t="scat" class="sm alt">Plants</button><button data-t="fill" class="sm alt">Fill area</button><button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="flat" class="sm alt">Flatten</button><button data-t="hill" class="sm alt">Hill</button><button data-t="cut" class="sm alt">Cut</button><button data-t="slope" class="sm alt">Slope</button><button data-t="basin" class="sm alt">Lake</button><button data-t="flood" class="sm alt">Flood</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="info" class="sm alt">What is it?</button><button data-t="prop" class="sm alt">Props</button><button data-t="remove" class="sm alt">Remove</button></div>' +
+    '<button data-t="sel" class="sm alt">Select</button><button data-t="scat" class="sm alt">Plants</button><button data-t="alien" class="sm alt">Aliens</button><button data-t="nest" class="sm alt">Nest</button><button data-t="fill" class="sm alt">Fill area</button><button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="flat" class="sm alt">Flatten</button><button data-t="hill" class="sm alt">Hill</button><button data-t="cut" class="sm alt">Cut</button><button data-t="slope" class="sm alt">Slope</button><button data-t="basin" class="sm alt">Lake</button><button data-t="flood" class="sm alt">Flood</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="info" class="sm alt">What is it?</button><button data-t="prop" class="sm alt">Props</button><button data-t="remove" class="sm alt">Remove</button></div>' +
     '<div class="v3row hidden" id="v3bs"><label>Floors <select id="v3bf"><option value="">keep</option></select></label><label>Roof <select id="v3br"><option value="">keep</option><option>flat</option><option>gabled</option><option>hipped</option><option>pyramidal</option><option>skillion</option><option>half-hipped</option><option>gambrel</option><option>mansard</option><option>dome</option></select></label><label>Frame <select id="v3bfw"><option value="">keep</option><option value="wood_siding">Wood frame, siding</option><option value="wood_brick">Wood frame, brick</option><option value="lightsteel_sheet">Light steel frame</option><option value="steel_cladding">Steel frame, cladding</option><option value="steel_curtain">Steel frame, glass</option><option value="concrete_poured">Poured concrete</option><option value="concrete_block">Concrete block</option><option value="concrete_brick">Brick on block</option></select></label><label>Walls <select id="v3bw"><option value="">keep</option><option>brick</option><option>concrete</option><option>wood</option><option>glass</option><option>stone</option><option>plaster</option><option>metal</option></select></label><small style="width:100%">Tap a building to change it. Only the boxes you set are changed.</small></div>' +
     '<div class="v3row hidden" id="v3pr"><select id="v3pc"></select><select id="v3pp"></select><label>Turn <select id="v3py"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><small style="width:100%">Tap the ground to put the piece down. Props are saved on the map as points, so the game can place them too.</small></div>' +
     '<div class="v3row hidden" id="v3sc"><select id="v3sk"></select><small style="width:100%">Tap or hold to scatter. Brush size is the area, Density is how thick. Each plant is its own piece: Select can move or delete it, and Undo takes back the whole stroke.</small></div>' +
+    '<div class="v3row hidden" id="v3cr"><select id="v3ck"></select><label>Group <select id="v3cn"><option>1</option><option>2</option><option>3</option><option>5</option><option>8</option><option>12</option><option>20</option></select></label><label>Turn <select id="v3cy"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><label style="width:100%"><input type="checkbox" id="v3cg" checked> The game may add its own nests and aliens as the days go on</label><small style="width:100%">Aliens: tap to put down a group; it waits there when the game starts. Nest: tap on a building and the building becomes a nest, tap in the open and a nest stands alone. Select moves, turns or deletes them.</small></div>' +
     '<div class="v3row hidden" id="v3sel"><span id="v3si" style="width:100%">Tap a building, tree or piece you placed.</span><label>Turn <input id="v3sa" type="range" min="0" max="345" step="15" value="0"><b id="v3saV">0</b></label><button id="v3smv" class="sm alt">Move</button><button id="v3sdl" class="sm alt">Delete</button><button id="v3sdn" class="sm alt">Done</button></div>' +
     '<div id="v3ring" style="display:none;position:fixed;pointer-events:none;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #0007,inset 0 0 0 1px #0007;z-index:5;transform:translate(-50%,-50%)"></div>' +
     '<div id="v3selm" style="display:none;position:fixed;pointer-events:none;border:3px solid #ffd54a;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
@@ -99,7 +100,7 @@ function makeOverlay(){
     $('v3pc').onchange = fill; fill(); propM = M; }
   /* ---- editor shell: bottom dock of tool groups, left palette of pieces, right inspector (the old panel). The old tool buttons stay as the engine; the dock clicks them. ---- */
   var GROUPS = [['Select', [['sel', 'Select'], ['info', 'What is it?']]], ['Terrain', [['raise', 'Raise'], ['lower', 'Lower'], ['smooth', 'Smooth'], ['level', 'Level'], ['flat', 'Flatten'], ['hill', 'Hill'], ['cut', 'Cut'], ['slope', 'Slope']]], ['Water', [['basin', 'Lake'], ['flood', 'Flood'], ['river', 'River']]], ['Paint', [['paint', 'Paint']]],
-    ['Build', [['place', 'Building'], ['road', 'Road'], ['bset', 'Change']]], ['Place', [['prop', 'Pieces']]], ['Nature', [['tree', 'Tree'], ['scat', 'Plants'], ['fill', 'Fill area']]], ['Creatures', null], ['Erase', [['remove', 'Remove']]]], openG = null, palCat = '';
+    ['Build', [['place', 'Building'], ['road', 'Road'], ['bset', 'Change']]], ['Place', [['prop', 'Pieces']]], ['Nature', [['tree', 'Tree'], ['scat', 'Plants'], ['fill', 'Fill area']]], ['Creatures', [['alien', 'Aliens'], ['nest', 'Nest']]], ['Erase', [['remove', 'Remove']]]], openG = null, palCat = '';
   var setTool = function(t){ var b = $('v3tt').querySelector('[data-t="' + t + '"]'); if (b) b.click(); };
   var dock = $('v3dock'); GROUPS.forEach(function(g){ var b = document.createElement('button'); b.className = 'alt'; b.textContent = g[0]; b.setAttribute('data-g', g[0]);
     if (!g[1]){ b.disabled = true; b.title = 'Aliens and nests: coming, the game has to read them first'; }
@@ -126,7 +127,7 @@ function makeOverlay(){
     $('v3pn').textContent = f.length > 150 ? f.length + ' pieces; showing 150, type to narrow' : f.length + ' pieces';
   }
   $('v3sa').oninput = function(){ $('v3saV').textContent = this.value + '°'; };
-  $('v3sa').onchange = function(){ if (!sel || sel.t === 'tree') return; var d = +this.value; selApply(sel.t === 'prop' ? Object.assign({}, sel, {ry:d}) : Object.assign({}, sel, {a:+(d*Math.PI/180).toFixed(3)}), 'Turned to ' + d + '°.'); };
+  $('v3sa').onchange = function(){ if (!sel || sel.t === 'tree') return; var d = +this.value; selApply(sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest' ? Object.assign({}, sel, {ry:d}) : Object.assign({}, sel, {a:+(d*Math.PI/180).toFixed(3)}), 'Turned to ' + d + '°.'); };
   $('v3smv').onclick = function(){ if (!sel) return; selMove = !selMove; selUI(); };
   $('v3sdl').onclick = selDelete; $('v3sdn').onclick = function(){ sel = null; selMove = false; selUI(); };
   $('v3ps').oninput = palRender; $('v3pk2').onchange = palRender;
@@ -178,7 +179,7 @@ async function boot(){
   await load('builder/host.js');
   /* the art the engine draws with (as play.html loads it, minus people, creatures and sound). Only the textures and building art are required:
      if another file is missing (the art changes over time), the view still opens without it */
-  var set = ARTSET, A = ['dataver', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/land', 'shaped/digging', set + '/atlas', set + '/atlas3'];
+  var set = ARTSET, A = ['dataver', 'btex', 'models', 'nature', 'vehicles', 'shaped/shapes', 'shaped/props', 'shaped/buildings', 'shaped/ground', 'shaped/machines', 'shaped/walls', 'shaped/power', 'shaped/furniture2', 'shaped/structures', 'shaped/waterside', 'shaped/land', 'shaped/digging', 'shaped/aliens', set + '/atlas', set + '/atlas3'];
   var NEED = {btex:1, 'shaped/shapes':1, 'shaped/buildings':1}; NEED[set + '/atlas'] = 1; NEED[set + '/atlas3'] = 1;
   for (var i = 0; i < A.length; i++){ V3.note('Loading the art: ' + Math.round(i/A.length*100) + '%', 30); try { await load('assets/' + A[i] + '.js'); } catch (e){ if (NEED[A[i]]) throw e; if (window.console) console.warn('3D view: skipped missing assets/' + A[i] + '.js'); } }
   /* cars made in the Workshop (packs/*.js): loaded after the shaped art, installed beside the stock cars as vehicles.pk_<pack>_<id> */
@@ -191,7 +192,7 @@ async function boot(){
 
 /* ---------------- opening a square of the built map ---------------- */
 async function open(o){   /* o: {proj, region:{id,name,lat,lon,dLat,dLon}, lat, lon, yaw}; onClose: called when going back */
-  cur = {proj:o.proj, region:o.region}; undoSt = []; redoSt = []; pend = []; sel = null; selMove = false; onClose = o.onClose || null;
+  cur = {proj:o.proj, region:o.region}; undoSt = []; redoSt = []; pend = []; sel = null; selMove = false; creInit.done = false; onClose = o.onClose || null;
   makeOverlay(); $('v3').classList.remove('hidden'); on = true; document.body.style.overflow = 'hidden';
   try {
     if (!ready) ready = boot(); await ready;
@@ -261,6 +262,8 @@ function dabAt(px, py, again){
   if (tool === 'basin'){ pend.push({id:uid(), t:'basin', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:+(brushK*4).toFixed(1)}); V3.note('Lake', 1.5); return; }
   if (tool === 'place'){ if (again) return; var B = L3.BUILD[bldKind], ang = bldTurn*Math.PI/180; if ($('v3al').checked){ var ra = nearRoadAngle(h[0], h[1]); if (ra !== null) ang = ra + bldTurn*Math.PI/180; }
     pend.push({id:uid(), t:'place', b:bldKind, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), a:+ang.toFixed(3), w:Math.round(B[1]*bldSize), d:Math.round(B[2]*bldSize), r:Math.max(B[1], B[2])*bldSize, fw:$('v3bpf').value}); V3.note(B[0], 1.5); return; }
+  if (tool === 'alien'){ if (again) return; var kk = $('v3ck').value, nn = +$('v3cn').value; pend.push({id:uid(), t:'creature', k:kk, n:nn, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), ry:+$('v3cy').value, r:Math.max(3, Math.sqrt(nn)*2)}); V3.note(nn + ' ' + kk + (nn > 1 ? 's' : '') + ' placed', 1.5); return; }
+  if (tool === 'nest'){ if (again) return; pend.push({id:uid(), t:'nest', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), ry:+$('v3cy').value, r:3}); V3.note('Nest placed', 1.5); return; }
   if (tool === 'scat'){ scatter(ll); return; }
   if (tool === 'tree'){ if (again) return; pend.push({id:uid(), t:'tree', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:3}); return; }
   if (tool === 'prop'){ if (again) return; var pk = $('v3pc').value + '.' + $('v3pp').value; if (!$('v3pp').value){ V3.note('Pick a piece first.', 2); return; }
@@ -304,6 +307,24 @@ function nearRoadAngle(x, y){
       if (d < best){ best = d; ang = Math.atan2(-dy, dx); } }
   });
   return ang;
+}
+/* ---- Creatures and nests: groups of aliens and nests the map starts with ---- */
+var CRE = ['swarmer', 'stalker', 'giant', 'spitter', 'clinger'], ALM = {};
+function creInit(){
+  var s = $('v3ck'); if (!s.options.length) CRE.forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = k.charAt(0).toUpperCase() + k.slice(1); s.appendChild(o); });
+  if (!creInit.done){ creInit.done = true; L3.editAll(cur.proj).then(function(all){ var r = all.filter(function(o){ return o.t === 'rule'; })[0]; if (r) $('v3cg').checked = r.nests !== 'map'; }); $('v3cg').onchange = ruleSet; }
+}
+async function ruleSet(){
+  if (working) return; working = true;
+  try { var all = await L3.editAll(cur.proj), old = all.filter(function(o){ return o.t === 'rule'; })[0] || null, rg = cur.region, nw = {id:old ? old.id : uid(), t:'rule', nests:$('v3cg').checked ? 'both' : 'map', lat:rg.lat, lon:rg.lon, r:Math.max(2000, (rg.miles || 3)*1609*1.3)};
+    await L3.editSwap(cur.proj, rg, old, nw); V3.note($('v3cg').checked ? 'The game may add its own nests and aliens on top of yours.' : 'Only the nests and aliens you placed. The game adds none of its own.', 4); }
+  catch (er){ V3.note('Could not save: ' + er.message, 5); }
+  working = false;
+}
+function alienM(k){
+  if (ALM[k] !== undefined) return ALM[k]; ALM[k] = null;
+  try { var AL = window.SHAPED && SHAPED.aliens, P = AL && AL.parts[k]; if (!P) return null; var pcs = []; Object.keys(P).forEach(function(b){ pcs = pcs.concat(P[b]); }); ALM[k] = spModel(pcs, spColour(AL.palette)); } catch (e) {}
+  return ALM[k];
 }
 /* ---- Plants: scatter trees, bushes, grass, rocks and so on in the brush circle. Each plant is an ordinary tree or prop operation, so the game needs nothing new ---- */
 var SCAT = {wood:['Woodland (mixed trees)', null, 5], pine:['Pines', ['plants.pine'], 4.5], oak:['Oaks and birches', ['plants.oak', 'plants.oak', 'plants.birch', 'plants.autumn_oak'], 6], bush:['Bushes and ferns', ['plants.bush', 'plants.bush', 'plants.fern', 'plants.bramble'], 2], grass:['Grass and flowers', ['plants.grass_tuft', 'plants.grass_tuft', 'plants.grass_tuft', 'plants.flowers_yellow', 'plants.flowers_purple', 'plants.flowers_red'], 1.3], rocks:['Rocks and logs', ['plants.rock', 'plants.rock', 'plants.stump', 'plants.fallen_log'], 3], marsh:['Reeds', ['plants.reeds'], 1.5], dead:['Dead trees', ['plants.dead_tree', 'plants.stump'], 6], wild:['Forest floor', ['plants.fern', 'plants.mushrooms', 'plants.fern', 'plants.bramble', 'plants.fallen_log'], 3]};
@@ -367,12 +388,12 @@ function scatterArea(c){
 /* ---- Select: pick something you placed, then turn, move or delete it ---- */
 var sel = null, selMove = false;
 async function selectAt(ll){
-  var g = world.geo, best = null, bd = 10; (await L3.editAll(cur.proj)).forEach(function(o){ if (o.t !== 'place' && o.t !== 'tree' && o.t !== 'prop') return; var d = Math.hypot((o.lon - ll[0])*g.kx, (o.lat - ll[1])*g.ky); if (d < bd){ bd = d; best = o; } });
+  var g = world.geo, best = null, bd = 10; (await L3.editAll(cur.proj)).forEach(function(o){ if (o.t !== 'place' && o.t !== 'tree' && o.t !== 'prop' && o.t !== 'creature' && o.t !== 'nest') return; var d = Math.hypot((o.lon - ll[0])*g.kx, (o.lat - ll[1])*g.ky); if (d < bd){ bd = d; best = o; } });
   sel = best; selMove = false; selUI(); if (!best) V3.note('Nothing you placed is here. (Buildings and roads from the real map cannot be selected; use Change or Remove.)', 4);
 }
-function selName(o){ return o.t === 'prop' ? o.p.replace(/\./, ': ').replace(/_/g, ' ') : o.t === 'tree' ? 'Tree' : (L3.BUILD[o.b] ? L3.BUILD[o.b][0] : 'Building'); }
+function selName(o){ return o.t === 'creature' ? o.n + ' ' + o.k + (o.n > 1 ? 's' : '') : o.t === 'nest' ? 'Nest' : o.t === 'prop' ? o.p.replace(/\./, ': ').replace(/_/g, ' ') : o.t === 'tree' ? 'Tree' : (L3.BUILD[o.b] ? L3.BUILD[o.b][0] : 'Building'); }
 function selUI(){
-  var has = !!sel, turn = has && (sel.t === 'prop' || sel.t === 'place'), deg = !has ? 0 : sel.t === 'prop' ? (sel.ry || 0) : sel.t === 'place' ? Math.round(((sel.a || 0)*180/Math.PI)/15)*15 : 0;
+  var has = !!sel, turn = has && (sel.t === 'prop' || sel.t === 'place' || sel.t === 'creature' || sel.t === 'nest'), deg = !has ? 0 : (sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest') ? (sel.ry || 0) : sel.t === 'place' ? Math.round(((sel.a || 0)*180/Math.PI)/15)*15 : 0;
   deg = ((deg % 360) + 360) % 360;
   $('v3si').textContent = !has ? 'Tap a building, tree or piece you placed.' : selMove ? selName(sel) + ': tap the ground where it should go.' : 'Selected: ' + selName(sel);
   $('v3sa').disabled = !turn; $('v3sa').value = deg; $('v3saV').textContent = deg + '°'; $('v3smv').disabled = !has; $('v3sdl').disabled = !has; $('v3sdn').disabled = !has;
@@ -413,7 +434,7 @@ function kText(){ return tool === 'hill' ? Math.round(brushK*30) + ' m' : tool =
 function toolUI(){
   var kl = $('v3k').parentNode.firstChild; if (kl && kl.nodeType === 3) kl.nodeValue = tool === 'scat' || tool === 'fill' ? 'Density ' : tool === 'hill' ? 'Height ' : tool === 'cut' ? 'Depth ' : 'Strength '; $('v3kV').textContent = kText();
   if (V3.shellSync) setTimeout(function(){ V3.shellSync(); }, 0);
-  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
+  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); $('v3cr').classList.toggle('hidden', tool !== 'alien' && tool !== 'nest'); $('v3ck').style.display = tool === 'alien' ? '' : 'none'; $('v3cn').parentNode.style.display = tool === 'alien' ? '' : 'none'; if (tool === 'alien' || tool === 'nest') creInit(); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
   if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : tool === 'road' ? 'tap along the road' : tool === 'fill' ? 'tap the corners of the area, then Finish' : tool === 'cut' ? 'tap along the trench' : tool === 'slope' ? 'tap the start, then the end' : 'tap along the river, downstream';
 }
 async function finishRiver(){
@@ -525,7 +546,7 @@ function carParts(key){
   return carC[key];
 }
 function propMesh(){
-  if (!propList){ try { var J = cur.json || (cur.json = JSON.parse(cur.text)), g = world.geo; propList = []; (J.pois || []).forEach(function(q){ var t = q[2]; if (t && t['asmb:prop']) propList.push({p:t['asmb:prop'], x:(q[0] - g.lon0)*g.kx, y:-(q[1] - g.lat0)*g.ky, ry:(+t['asmb:ry'] || 0), yaw:t['asmb:yaw'] !== undefined ? +t['asmb:yaw'] : undefined, z:+t['asmb:z'] || 0}); }); } catch (e) { propList = []; } }
+  if (!propList){ try { var J = cur.json || (cur.json = JSON.parse(cur.text)), g = world.geo; propList = []; (J.pois || []).forEach(function(q){ var t = q[2]; if (t && (t['asmb:creature'] || t['asmb:nest'])){ var cn = t['asmb:creature'] ? Math.min(8, +t['asmb:n'] || 1) : 1, x0 = (q[0] - g.lon0)*g.kx, y0 = -(q[1] - g.lat0)*g.ky; for (var ci = 0; ci < cn; ci++){ var ca = ci*2.4 + 0.7, cd = ci ? 1.2 + Math.sqrt(ci)*1.1 : 0; propList.push({p:'alien:' + (t['asmb:creature'] || 'nest'), x:x0 + Math.cos(ca)*cd, y:y0 + Math.sin(ca)*cd, ry:0, yaw:(+t['asmb:yaw'] || 0) + ci*53, z:0}); } return; } if (t && t['asmb:prop']) propList.push({p:t['asmb:prop'], x:(q[0] - g.lon0)*g.kx, y:-(q[1] - g.lat0)*g.ky, ry:(+t['asmb:ry'] || 0), yaw:t['asmb:yaw'] !== undefined ? +t['asmb:yaw'] : undefined, z:+t['asmb:z'] || 0}); }); } catch (e) { propList = []; } }
   if (!propList.length) return null;
   /* only what is near the camera is drawn: a built street carries tens of thousands of poles, lamps and mailboxes */
   propAt = {x:P.x, y:P.y}; var rr = 260 + (mode === 'fly' ? flyH*1.5 : 0), near = propList.filter(function(q){ return Math.abs(q.x - P.x) < rr && Math.abs(q.y - P.y) < rr; });
@@ -533,7 +554,7 @@ function propMesh(){
   var m = new Mesh(), any = false; near.forEach(function(q){ var yw = q.yaw !== undefined ? -q.yaw*Math.PI/180 : -q.ry*Math.PI/2, y0 = hAt(q.x, q.y) + (q.z || 0), car = /^vehicles\./.test(q.p) ? carParts(q.p) : null;
     if (car){ yw += Math.PI/2;   /* cars are modelled facing +x, other props +z: a vehicle prop faces the way asmb:yaw says, like every other prop */
       m.modelS(car.B, q.x, q.y, yw, y0, 1); if (car.W){ var cs = Math.cos(yw), sn = Math.sin(yw); car.w.forEach(function(w){ m.modelS(car.W, q.x + cs*w[0] - sn*w[2], q.y + sn*w[0] + cs*w[2], yw, y0 + w[1], 1); }); } any = true; return; }
-    var M = spB(q.p); if (!M) return; m.modelS(M, q.x, q.y, yw, y0, 1); any = true; });
+    var M = q.p.slice(0, 6) === 'alien:' ? alienM(q.p.slice(6)) : spB(q.p); if (!M) return; m.modelS(M, q.x, q.y, yw, y0, 1); any = true; });
   return any ? m : null;
 }
 
