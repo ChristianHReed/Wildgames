@@ -31,6 +31,8 @@ function makeOverlay(){
     '<div class="v3row hidden" id="v3cr"><select id="v3ck"></select><label>Group <select id="v3cn"><option>1</option><option>2</option><option>3</option><option>5</option><option>8</option><option>12</option><option>20</option></select></label><label>Turn <select id="v3cy"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><label style="width:100%"><input type="checkbox" id="v3cg" checked> The game may add its own nests and aliens as the days go on</label><small style="width:100%">Aliens: tap to put down a group; it waits there when the game starts. Nest: tap on a building and the building becomes a nest, tap in the open and a nest stands alone. Select moves, turns or deletes them.</small></div>' +
     '<div class="v3row hidden" id="v3sel"><span id="v3si" style="width:100%">Tap a building, tree or piece you placed.</span><label>Turn <input id="v3sa" type="range" min="0" max="345" step="15" value="0"><b id="v3saV">0</b></label><button id="v3smv" class="sm alt">Move</button><button id="v3sdl" class="sm alt">Delete</button><button id="v3sdn" class="sm alt">Done</button></div>' +
     '<div id="v3ring" style="display:none;position:fixed;pointer-events:none;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #0007,inset 0 0 0 1px #0007;z-index:5;transform:translate(-50%,-50%)"></div>' +
+    '<div id="v3gh" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:150px;z-index:7;gap:10px"><button id="v3ghp" class="sm on" style="min-width:110px;min-height:52px;font-size:18px">Place</button><button id="v3ghr" class="sm alt" style="min-height:52px;font-size:16px">Turn 90°</button><button id="v3ghc" class="sm alt" style="min-width:100px;min-height:52px;font-size:18px">Cancel</button></div>' +
+    '<div id="v3ghm" style="display:none;position:fixed;pointer-events:none;border:3px dashed #7CFC9A;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
     '<div id="v3selm" style="display:none;position:fixed;pointer-events:none;border:3px solid #ffd54a;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
     '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select></div>' +
     '<div class="v3row hidden" id="v3bld"><select id="v3bk"></select><label>Frame <select id="v3bpf"><option value="">auto</option><option value="wood_siding">Wood frame, siding</option><option value="wood_brick">Wood frame, brick</option><option value="lightsteel_sheet">Light steel frame</option><option value="steel_cladding">Steel frame, cladding</option><option value="steel_curtain">Steel frame, glass</option><option value="concrete_poured">Poured concrete</option><option value="concrete_block">Concrete block</option><option value="concrete_brick">Brick on block</option></select></label><label>Size <input id="v3sz" type="range" min="0.6" max="2" step="0.1" value="1"><b id="v3szV">1.0</b></label><label>Turn <input id="v3rot" type="range" min="0" max="345" step="15" value="0"><b id="v3rotV">0&deg;</b></label><label style="width:100%"><input id="v3al" type="checkbox" checked> Line up with the nearest street</label></div>' +
@@ -126,6 +128,8 @@ function makeOverlay(){
       b.onclick = function(){ $('v3pc').value = x.c; if ($('v3pc').onchange) $('v3pc').onchange(); $('v3pp').value = x.n; palRender(); V3.note('Ready: ' + x.l + '. Tap the ground to place it.', 2.5); }; L2.appendChild(b); });
     $('v3pn').textContent = f.length > 150 ? f.length + ' pieces; showing 150, type to narrow' : f.length + ' pieces';
   }
+  $('v3ghp').onclick = ghostPlace; $('v3ghc').onclick = function(){ ghost = null; ghostUI(); };
+  $('v3ghr').onclick = function(){ var t2 = tool === 'prop' ? $('v3py') : $('v3cy'); if (!t2) return; t2.selectedIndex = (t2.selectedIndex + 1) % t2.options.length; V3.note('Turn: ' + t2.value + '°', 1.2); };
   $('v3sa').oninput = function(){ $('v3saV').textContent = this.value + '°'; };
   $('v3sa').onchange = function(){ if (!sel || sel.t === 'tree') return; var d = +this.value; selApply(sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest' ? Object.assign({}, sel, {ry:d}) : Object.assign({}, sel, {a:+(d*Math.PI/180).toFixed(3)}), 'Turned to ' + d + '°.'); };
   $('v3smv').onclick = function(){ if (!sel) return; selMove = !selMove; selUI(); };
@@ -253,9 +257,10 @@ function groundHit(px, py){
   }
   return null;
 }
-function dabAt(px, py, again){
-  var h = groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
-  var ll = llOf(h[0], h[1]);
+function dabAt(px, py, again, forced){
+  var h = forced ? forced.h : groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
+  var ll = forced ? forced.ll : llOf(h[0], h[1]);
+  if (!forced && V3.ghostMode && GHOSTT[tool]){ if (again) return; ghost = {h:h, ll:ll}; ghostUI(); return; }
   if (tool === 'sel'){ if (again || working || busy) return; if (selMove && sel){ selMove = false; selApply(Object.assign({}, sel, {lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6)}), 'Moved.'); } else selectAt(ll); return; }
   if (tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'){ riv.push(+ll[0].toFixed(6), +ll[1].toFixed(6)); toolUI(); return; }
   if (tool === 'flood'){ pend.push({id:uid(), t:'flood', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, lv:+Math.max(0.3, brushK*6).toFixed(1)}); V3.note('Flood: water up ' + Math.max(0.3, brushK*6).toFixed(1) + ' m from here, inside the brush circle.', 3); return; }
@@ -307,6 +312,21 @@ function nearRoadAngle(x, y){
       if (d < best){ best = d; ang = Math.atan2(-dy, dx); } }
   });
   return ang;
+}
+/* ---- touch: a tap only moves a ghost; Place commits it, Cancel drops it, Turn quarter-turns it (so a stray tap never places anything) ---- */
+var ghost = null, GHOSTT = {prop:1, tree:1, place:1, alien:1, nest:1};
+V3.ghostMode = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+function ghostUI(){
+  var on3 = !!ghost && V3.ghostMode && !!GHOSTT[tool]; $('v3gh').style.display = on3 ? 'flex' : 'none';
+  var tn = tool === 'prop' ? $('v3py') : tool === 'alien' || tool === 'nest' ? $('v3cy') : null; $('v3ghr').style.display = tn ? '' : 'none';
+  if (!on3) $('v3ghm').style.display = 'none';
+}
+function ghostPlace(){ if (!ghost) return; var g = ghost; ghost = null; ghostUI(); dabAt(0, 0, false, g); endStroke(); }
+function ghostMark(){
+  var m = $('v3ghm'); if (!m) return; if (!ghost || !V3.ghostMode || !GHOSTT[tool] || !lastCam || !world || !world.geo){ m.style.display = 'none'; return; }
+  var c = lastCam, v = [ghost.h[0] - c.e[0], hAt(ghost.h[0], ghost.h[1]) - c.e[1], ghost.h[1] - c.e[2]], dep = v[0]*c.f[0] + v[1]*c.f[1] + v[2]*c.f[2]; if (dep < 1){ m.style.display = 'none'; return; }
+  var nx = (v[0]*c.s[0] + v[1]*c.s[1] + v[2]*c.s[2])/(dep*c.tv*c.asp), ny = (v[0]*c.u[0] + v[1]*c.u[1] + v[2]*c.u[2])/(dep*c.tv), cv = $('game').getBoundingClientRect(), px = Math.max(14, Math.min(200, 2.5/(dep*c.tv)*cv.height/2));
+  m.style.display = 'block'; m.style.left = (cv.left + (nx + 1)/2*cv.width) + 'px'; m.style.top = (cv.top + (1 - ny)/2*cv.height) + 'px'; m.style.width = m.style.height = px*2 + 'px';
 }
 /* ---- Creatures and nests: groups of aliens and nests the map starts with ---- */
 var CRE = ['swarmer', 'stalker', 'giant', 'spitter', 'clinger'], ALM = {};
@@ -434,7 +454,7 @@ function kText(){ return tool === 'hill' ? Math.round(brushK*30) + ' m' : tool =
 function toolUI(){
   var kl = $('v3k').parentNode.firstChild; if (kl && kl.nodeType === 3) kl.nodeValue = tool === 'scat' || tool === 'fill' ? 'Density ' : tool === 'hill' ? 'Height ' : tool === 'cut' ? 'Depth ' : 'Strength '; $('v3kV').textContent = kText();
   if (V3.shellSync) setTimeout(function(){ V3.shellSync(); }, 0);
-  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); $('v3cr').classList.toggle('hidden', tool !== 'alien' && tool !== 'nest'); $('v3ck').style.display = tool === 'alien' ? '' : 'none'; $('v3cn').parentNode.style.display = tool === 'alien' ? '' : 'none'; if (tool === 'alien' || tool === 'nest') creInit(); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
+  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); ghost = null; ghostUI(); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); $('v3cr').classList.toggle('hidden', tool !== 'alien' && tool !== 'nest'); $('v3ck').style.display = tool === 'alien' ? '' : 'none'; $('v3cn').parentNode.style.display = tool === 'alien' ? '' : 'none'; if (tool === 'alien' || tool === 'nest') creInit(); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
   if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : tool === 'road' ? 'tap along the road' : tool === 'fill' ? 'tap the corners of the area, then Finish' : tool === 'cut' ? 'tap along the trench' : tool === 'slope' ? 'tap the start, then the end' : 'tap along the river, downstream';
 }
 async function finishRiver(){
@@ -560,7 +580,7 @@ function propMesh(){
 
 /* ---------------- each frame ---------------- */
 function frame(ts){
-  if (!on) return; selMark(); ringMark();
+  if (!on) return; selMark(); ringMark(); ghostMark();
   var dt = Math.min(0.1, Math.max(0, (ts - last)/1000)); last = ts;   /* at most a tenth of a second per frame, so a slow frame does not jump far */
   if (!busy && world && world.geo){
     move(dt);

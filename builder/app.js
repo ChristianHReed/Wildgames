@@ -232,7 +232,13 @@ $('exAsmap').addEventListener('click', async function(){
   if (!S.man) return; var b = this; b.disabled = true; b.textContent = 'Packing...';
   try {
     var enc = new TextEncoder(), sq = await squaresOf(S.proj), M = S.man, ents = [];
-    var man = JSON.parse(JSON.stringify(M)); man.kind = 'afterstreet-map'; man.required = []; man.layers = {base:'squares/', edits:null, game:null, models:null};
+    var man = JSON.parse(JSON.stringify(M)); man.kind = 'afterstreet-map';
+    /* man.packs lists the Workshop packs the map uses: every placed piece named pk_<pack>_<piece> belongs to the pack whose slug starts it */
+    var used = {}, slug = function(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'x'; }, packs = window.AFTERSTREET_PACKS || [], unk = {};
+    sq.forEach(function(q){ var re = /"asmb:prop":"[a-z0-9_]+\.(pk_[a-z0-9_]+)"/g, m; while ((m = re.exec(q.text))){ var hit = null; packs.forEach(function(pk){ if (m[1].indexOf('pk_' + slug(pk.id) + '_') === 0 && (!hit || slug(pk.id).length > slug(hit.id).length)) hit = pk; }); if (hit) used[hit.id] = {pack:hit.id, name:hit.name || hit.id, version:hit.version || 1}; else unk[m[1].split('_')[1]] = 1; } });
+    man.required = [];   /* the game refuses a map whose required list is not empty, so the packs go in their own field */
+    man.packs = Object.keys(used).map(function(k){ return used[k]; });
+    if (Object.keys(unk).length) man.packsUnresolved = Object.keys(unk); man.layers = {base:'squares/', edits:null, game:null, models:null};
     ents.push({name:'manifest.json', data:enc.encode(JSON.stringify(man, null, 1))});
     ents.push({name:'CREDITS.txt', data:enc.encode('Map: ' + M.region.name + '\nMade with AfterStreet Maps Builder ' + L.VERSION + ' on ' + M.made + '\n\n' + M.attribution + '\n\nOpenStreetMap data is available under the Open Database Licence: https://www.openstreetmap.org/copyright\n' +
       (M.stats && M.stats.overture ? 'Overture Maps data: https://docs.overturemaps.org/attribution/\n' : '') + (M.stats && M.stats.lidar ? 'Lidar point clouds: building heights, roof shapes and trees measured from the files you supplied (check their provider\'s terms; USGS 3DEP lidar is public domain).\n' : '') + 'USGS 3DEP elevation is in the public domain.\nBuildings tagged generated=yes are made up by the builder where the data had nothing.\n')});
