@@ -384,21 +384,25 @@ def hair():
     # short: a fuller crown with a side parting (two tones) and a back that comes low on the neck
     H['short'] = under_hat(skull(0.012, 0.02) + grown('HAIR_D', 0.026, hairline(0.05), where=lambda c: float(c[0]) > 0.012 and float(c[1]) > 1.74 and float(c[2]) > -0.01))
     # afro: one huge round mass, the widest silhouette
-    H['afro'] = under_hat(grown('HAIR', 0.07, hairline(-0.01, front=1.745, side=1.68, nape=1.64)))
+    H['afro'] = under_hat(grown('HAIR', 0.07, hairline(-0.01, front=1.745, side=1.665, nape=1.585)))
     # bob: round crown, chin-length curtains on every side, a heavy fringe
     H['bob'] = under_hat(grown('HAIR', 0.024, hem(0.03, 1.55), None) + [box([0, 1.713, 0.09], [0.08, 0.034, 0.025], 'HAIR_D')])
     # long: like the bob but falling to the shoulder blades, wider at the end
     H['long'] = under_hat(grown('HAIR', 0.022, hem(0.03, 1.545), None) + [box([0, 1.715, 0.088], [0.045, 0.03, 0.025], 'HAIR_D')]) + grown('HAIR', 0.026, 1.42, 1.56, where=lambda c: float(c[2]) < -0.02, bone='neck_01')
     # ponytail: tight skull cap, tied high at the back, a tail swinging out and down
-    H['ponytail'] = under_hat(skull(0.006, 0.12) + [box([0, 1.74, -0.083], [0.03, 0.026, 0.026], 'ACC')]) + [
-        loft([[0, 1.74, -0.095, 0.03, 0.03], [0, 1.65, -0.14, 0.036, 0.036], [0, 1.52, -0.158, 0.028, 0.028], [0, 1.44, -0.152, 0.012, 0.012]], 'HAIR', n=7)]
+    # ponytail (the skill's method: the cap, a tie, then a clump extruded down an angled path, flat in section, tapering, swung to one side)
+    tail = [[0.0, 1.742, -0.094, 0.026, 0.022], [0.004, 1.70, -0.128, 0.038, 0.026], [0.012, 1.62, -0.15, 0.04, 0.024],
+            [0.02, 1.53, -0.156, 0.032, 0.02], [0.026, 1.46, -0.15, 0.016, 0.012], [0.028, 1.43, -0.146, 0.004, 0.004]]
+    H['ponytail'] = under_hat(skull(0.006, 0.12) + [loft([[0, 1.742, -0.082, 0.024, 0.02], [0, 1.742, -0.1, 0.024, 0.02]], 'ACC', n=8)]) + [
+        loft(tail, 'HAIR', n=8), loft([[t[0], t[1], t[2] - 0.004, t[3]*0.55, t[4]*0.6] for t in tail[1:4]], 'HAIR_D', n=6)]
     # mohawk: shaved sides, a tall ridge of blocks
-    H['mohawk'] = under_hat(skull(0.0, 0.3)) + under_hat(grown('HAIR', 0.05, 1.70, where=lambda c: abs(float(c[0])) < 0.028 and float(c[1]) > 1.70) + grown('HAIR_D', 0.062, 1.745, where=lambda c: abs(float(c[0])) < 0.016 and float(c[1]) > 1.745))
+    H['mohawk'] = under_hat(skull(0.0, 0.3)) + under_hat(grown('HAIR', 0.05, 1.70, where=lambda c: abs(float(c[0])) < 0.03 and float(c[1]) > 1.70))
     # top knot: tight sides, one round bun
-    H['topknot'] = under_hat(skull(0.004, 0.2) + [blob('HAIR', 0.042, 0.042, cy=1.8, ry=0.045, cz=-0.01, lo=-0.9, rows=5, n=8)])
+    H['topknot'] = under_hat(skull(0.004, 0.2) + [loft([[0, 1.758, -0.012, 0.03, 0.03], [0, 1.774, -0.012, 0.03, 0.03]], 'ACC', n=10),
+        blob('HAIR', 0.044, 0.04, cy=1.786, ry=0.04, cz=-0.014, cx=0.004, lo=-0.7, rows=5, n=10)])
     H['buns'] = H['topknot']
     # slick: swept back, a quiff blob at the front and the back flowing to the nape
-    H['slick'] = under_hat(skull(0.012, 0.0) + [blob('HAIR', 0.064, 0.05, cy=1.745, ry=0.05, cz=0.056, lo=-0.1, rows=5), curtain(1.66, 1.6, 0.072, 0.064, -0.07, -0.076, 0.022)])
+    H['slick'] = under_hat(skull(0.012, 0.0) + [blob('HAIR', 0.064, 0.05, cy=1.745, ry=0.05, cz=0.056, lo=-0.1, rows=5)] + grown('HAIR', 0.016, hairline(0.05, nape=1.575), where=lambda c: float(c[2]) < -0.02))
     H['beard'] = H['short'] + grown('HAIR', 0.014, where=jaw)
     return H
 
