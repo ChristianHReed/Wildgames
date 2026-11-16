@@ -5,7 +5,7 @@
 (window.BLIB = window.BLIB || {}).gen = function(L){
 'use strict';
 L.FORMAT = 2;
-L.VERSION = '1.43.0';
+L.VERSION = '1.44.0';
 /* ---------------- which OpenStreetMap things are kept, and which of their tags ---------------- */
 var WAYK = ['building', 'building:part', 'highway', 'railway', 'waterway', 'natural', 'landuse', 'leisure', 'amenity', 'man_made', 'power', 'barrier', 'aeroway', 'place', 'area:highway', 'public_transport', 'shop', 'tourism', 'military', 'historic', 'bridge:support', 'golf'];
 var NODEK = ['shop', 'amenity', 'healthcare', 'craft', 'office', 'tourism', 'emergency', 'power', 'man_made', 'barrier', 'entrance', 'leisure', 'railway', 'public_transport', 'traffic_sign', 'traffic_calming', 'historic', 'military', 'place', 'addr:housenumber', 'natural', 'highway', 'advertising', 'street_lamp', 'waterway', 'bridge:support'];
@@ -436,6 +436,51 @@ L.regionOf = function(area, div){
   R.read = [bw - mx*1.4, bs - my*1.4, be + mx*1.4, bn + my*1.4];
   return R;
 };
+/* ---- big land polygons: simplify the rings and cut each to the squares it touches ---- */
+/* Douglas-Peucker on a flat [x, y, ...] ring (first point repeated at the end). tol in metres; x is scaled by cos(latitude) so the distance is real. Keeps at least 4 points. */
+L.dpRing = function(c, tolM){
+  var n = c.length/2; if (n < 12) return c;
+  var kx = Math.cos(c[1]*Math.PI/180), ky = 111320, kx2 = kx*111320, X = new Float64Array(n), Y = new Float64Array(n), i;
+  for (i = 0; i < n; i++){ X[i] = c[i*2]*kx2; Y[i] = c[i*2 + 1]*ky; }
+  var keep = new Uint8Array(n), far = 0, fd = -1; keep[0] = keep[n - 1] = 1;
+  for (i = 1; i < n - 1; i++){ var d0 = Math.hypot(X[i] - X[0], Y[i] - Y[0]); if (d0 > fd){ fd = d0; far = i; } }
+  keep[far] = 1; var st = [[0, far], [far, n - 1]], tol2 = tolM*tolM;
+  while (st.length){
+    var s = st.pop(), a = s[0], b = s[1]; if (b - a < 2) continue;
+    var ax = X[a], ay = Y[a], dx = X[b] - ax, dy = Y[b] - ay, l2 = dx*dx + dy*dy, md = -1, mi = -1;
+    for (i = a + 1; i < b; i++){ var px = X[i] - ax, py = Y[i] - ay, d2; if (l2 === 0) d2 = px*px + py*py; else { var t = (px*dx + py*dy)/l2; t = t < 0 ? 0 : t > 1 ? 1 : t; var qx = px - t*dx, qy = py - t*dy; d2 = qx*qx + qy*qy; } if (d2 > md){ md = d2; mi = i; } }
+    if (md > tol2){ keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  var out = []; for (i = 0; i < n; i++) if (keep[i]) out.push(c[i*2], c[i*2 + 1]);
+  return out.length >= 8 ? out : c;
+};
+/* ring area in square metres */
+L.ringM2 = function(c){ var kx = Math.cos(c[1]*Math.PI/180)*111320, ky = 111320, a = 0, n = c.length/2; for (var i = 0; i < n - 1; i++) a += (c[i*2]*kx)*(c[i*2 + 3]*ky) - (c[i*2 + 2]*kx)*(c[i*2 + 1]*ky); return Math.abs(a)/2; };
+/* Sutherland-Hodgman clip of a flat ring to a box; returns a flat closed ring or null */
+L.clipRing = function(c, w, s, e, n){
+  var pts = []; for (var i = 0; i + 1 < c.length; i += 2) pts.push([c[i], c[i + 1]]); if (pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) pts.pop();
+  var edges = [[0, w, 1], [0, e, -1], [1, s, 1], [1, n, -1]];   /* axis, limit, inside sign */
+  for (var k = 0; k < 4 && pts.length; k++){
+    var ax = edges[k][0], lim = edges[k][1], sg = edges[k][2], out = [], prev = pts[pts.length - 1];
+    for (var j = 0; j < pts.length; j++){
+      var cu = pts[j], pin = (prev[ax] - lim)*sg >= 0, cin = (cu[ax] - lim)*sg >= 0;
+      if (cin !== pin){ var t = (lim - prev[ax])/(cu[ax] - prev[ax]), ip = [prev[0] + (cu[0] - prev[0])*t, prev[1] + (cu[1] - prev[1])*t]; ip[ax] = lim; out.push(ip); }
+      if (cin) out.push(cu); prev = cu;
+    }
+    pts = out;
+  }
+  if (pts.length < 3) return null; var r = []; pts.forEach(function(p){ r.push(p[0], p[1]); }); r.push(pts[0][0], pts[0][1]); return r;
+};
+/* the whole step: tolM 0 does nothing. Buildings and building parts are left exactly as they are. Returns counts. */
+L.simplifyAreas = function(F, tolM){
+  var out = {rings:0, before:0, after:0, holesDropped:0}; if (!tolM) return out;
+  F.ways.forEach(function(w){
+    if (!w.poly || w.t.building || w.t['building:part'] || w.src === 'gen' || w.c.length < 24) return;
+    var t = tolM*((w.t.natural === 'water' || w.t.waterway) ? 0.5 : 1); out.before += w.c.length/2; var nc = L.dpRing(w.c, t); w.c = nc; out.after += nc.length/2; out.rings++;
+    if (w.holes){ var keep = []; w.holes.forEach(function(h){ if (L.ringM2(h) < Math.max(40, t*t*12)){ out.holesDropped++; return; } keep.push(L.dpRing(h, t)); }); if (keep.length) w.holes = keep; else delete w.holes; }
+  });
+  return out;
+};
 L.cutSquares = function(R, F){
   var S = new Map(); R.squares.forEach(function(q){ S.set(q[0] + ':' + q[1], {ways:[], holes:[], pois:[], n:{osm:0, overture:0, gen:0, height:0, levels:0, roof:0, addr:0, roads:0, named:0, lanes:0, width:0}}); });
   var range = function(w, s, e, n){
@@ -452,6 +497,11 @@ L.cutSquares = function(R, F){
       else if (t.highway && RW[t.highway]){ q.n.roads++; if (t.name || t.ref) q.n.named++; if (t.lanes) q.n.lanes++; if (t.width) q.n.width++; }
     };
     if (w.poly){
+      if (list.length > 1 && c.length > 60 && !t.building && !t['building:part']){   /* a big ground polygon is cut to each square (plus its margin) instead of being stored whole in every square it touches */
+        list.forEach(function(e){ var b = R.box(e[0], e[1]), q = e[2], rcl = L.clipRing(c, b.w - R.mx*1.2, b.s - R.my*1.2, b.e + R.mx*1.2, b.n + R.my*1.2); if (!rcl) return;
+          q.ways.push([t, round(rcl)]); if (w.holes) w.holes.forEach(function(h){ var hc = L.clipRing(h, b.w - R.mx*1.2, b.s - R.my*1.2, b.e + R.mx*1.2, b.n + R.my*1.2); if (hc) q.holes.push([q.ways.length - 1, round(hc)]); }); cnt(q); });
+        return;
+      }
       var rc = round(c);
       list.forEach(function(e){ var q = e[2]; q.ways.push([t, rc]); if (w.holes) w.holes.forEach(function(h){ q.holes.push([q.ways.length - 1, round(h)]); }); cnt(q); });
       return;

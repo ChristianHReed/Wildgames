@@ -268,7 +268,7 @@ function dabAt(px, py, again, forced){
   if (tool === 'place'){ if (again) return; var B = L3.BUILD[bldKind], ang = bldTurn*Math.PI/180; if ($('v3al').checked){ var ra = nearRoadAngle(h[0], h[1]); if (ra !== null) ang = ra + bldTurn*Math.PI/180; }
     pend.push({id:uid(), t:'place', b:bldKind, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), a:+ang.toFixed(3), w:Math.round(B[1]*bldSize), d:Math.round(B[2]*bldSize), r:Math.max(B[1], B[2])*bldSize, fw:$('v3bpf').value}); V3.note(B[0], 1.5); return; }
   if (tool === 'alien'){ if (again) return; var kk = $('v3ck').value, nn = +$('v3cn').value; pend.push({id:uid(), t:'creature', k:kk, n:nn, lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), ry:+$('v3cy').value, r:Math.max(3, Math.sqrt(nn)*2)}); V3.note(nn + ' ' + kk + (nn > 1 ? 's' : '') + ' placed', 1.5); return; }
-  if (tool === 'nest'){ if (again) return; pend.push({id:uid(), t:'nest', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), ry:+$('v3cy').value, r:3}); V3.note('Nest placed', 1.5); return; }
+  if (tool === 'nest'){ if (again) return; pend.push({id:uid(), t:'nest', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), ry:+$('v3cy').value, r:3}); var gg = world.geo; pendMsg = (inBuilding((ll[0] - gg.lon0)*gg.kx, (gg.lat0 - ll[1])*gg.ky) ? 'Nest placed: this building becomes a nest.' : 'Nest placed in the open. The game has no free-standing nest yet: it moves this one to the nearest building with a door within 40 m.'); return; }
   if (tool === 'scat'){ scatter(ll); return; }
   if (tool === 'tree'){ if (again) return; pend.push({id:uid(), t:'tree', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:3}); return; }
   if (tool === 'prop'){ if (again) return; var pk = $('v3pc').value + '.' + $('v3pp').value; if (!$('v3pp').value){ V3.note('Pick a piece first.', 2); return; }
@@ -288,7 +288,7 @@ function dabAt(px, py, again, forced){
 }
 async function endStroke(){
   if (!pend.length || working || busy) return; var dabs = pend; pend = []; working = true;
-  try { await L3.editAdd(cur.proj, cur.region, dabs); undoSt.push(dabs); redoSt = []; await redraw('Ground changed.'); }
+  try { await L3.editAdd(cur.proj, cur.region, dabs); undoSt.push(dabs); redoSt = []; var pm = pendMsg; pendMsg = null; await redraw(pm || 'Ground changed.'); }
   catch (er){ V3.note('Could not save the change: ' + er.message, 6); }
   working = false; refreshCount(); if (pend.length) endStroke();   /* taps made while the ground was rebuilding */
 }
@@ -337,7 +337,7 @@ function creInit(){
 async function ruleSet(){
   if (working) return; working = true;
   try { var all = await L3.editAll(cur.proj), old = all.filter(function(o){ return o.t === 'rule'; })[0] || null, rg = cur.region, nw = {id:old ? old.id : uid(), t:'rule', nests:$('v3cg').checked ? 'both' : 'map', lat:rg.lat, lon:rg.lon, r:Math.max(2000, (rg.miles || 3)*1609*1.3)};
-    await L3.editSwap(cur.proj, rg, old, nw); V3.note($('v3cg').checked ? 'The game may add its own nests and aliens on top of yours.' : 'Only the nests and aliens you placed. The game adds none of its own.', 4); }
+    await L3.editSwap(cur.proj, rg, old, nw); var hasNest = all.some(function(o){ return o.t === 'nest'; }); V3.note($('v3cg').checked ? 'The game may add its own nests and aliens on top of yours.' : 'Only the nests and aliens you placed. The game adds none of its own.' + (hasNest ? '' : ' You have placed no nest yet: with none, the game falls back to its own picks.'), 6); }
   catch (er){ V3.note('Could not save: ' + er.message, 5); }
   working = false;
 }
@@ -348,7 +348,7 @@ function alienM(k){
 }
 /* ---- Plants: scatter trees, bushes, grass, rocks and so on in the brush circle. Each plant is an ordinary tree or prop operation, so the game needs nothing new ---- */
 var SCAT = {wood:['Woodland (mixed trees)', null, 5], pine:['Pines', ['plants.pine'], 4.5], oak:['Oaks and birches', ['plants.oak', 'plants.oak', 'plants.birch', 'plants.autumn_oak'], 6], bush:['Bushes and ferns', ['plants.bush', 'plants.bush', 'plants.fern', 'plants.bramble'], 2], grass:['Grass and flowers', ['plants.grass_tuft', 'plants.grass_tuft', 'plants.grass_tuft', 'plants.flowers_yellow', 'plants.flowers_purple', 'plants.flowers_red'], 1.3], rocks:['Rocks and logs', ['plants.rock', 'plants.rock', 'plants.stump', 'plants.fallen_log'], 3], marsh:['Reeds', ['plants.reeds'], 1.5], dead:['Dead trees', ['plants.dead_tree', 'plants.stump'], 6], wild:['Forest floor', ['plants.fern', 'plants.mushrooms', 'plants.fern', 'plants.bramble', 'plants.fallen_log'], 3]};
-var scatPts = null;
+var scatPts = null, pendMsg = null;
 function scatInit(){ var s = $('v3sk'); if (s.options.length) return; Object.keys(SCAT).forEach(function(k){ var o = document.createElement('option'); o.value = k; o.textContent = SCAT[k][0]; s.appendChild(o); }); }
 /* plants are not put on buildings, roads, rails or water: the shapes of the square being edited, tested by bounding box first */
 function blockInit(){
@@ -356,7 +356,7 @@ function blockInit(){
   J.ways.forEach(function(w){
     var t = w[0], c = w[1]; if (!c || c.length < 4) return; var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, i;
     for (i = 0; i < c.length; i += 2){ if (c[i] < x0) x0 = c[i]; if (c[i] > x1) x1 = c[i]; if (c[i + 1] < y0) y0 = c[i + 1]; if (c[i + 1] > y1) y1 = c[i + 1]; }
-    if ((t.building || t['building:part']) && c.length >= 8) cur.blk.push({p:1, b:[x0, y0, x1, y1], c:c});
+    if ((t.building || t['building:part']) && c.length >= 8) cur.blk.push({p:1, bd:1, b:[x0, y0, x1, y1], c:c});
     else if ((t.natural === 'water' || t.landuse === 'reservoir' || t.landuse === 'basin' || t.water) && c.length >= 8) cur.blk.push({p:1, b:[x0, y0, x1, y1], c:c});
     else if (t.waterway || t.highway || t.railway){
       var half = t.waterway ? (parseFloat(t.width) || (t.waterway === 'river' ? 12 : 3))/2 + 1 : (parseFloat(t.width) || (parseInt(t.lanes, 10) || (/footway|path|cycleway|steps|track/.test(t.highway || '') ? 1 : 2))*3.2)/2 + 1.5;
@@ -376,6 +376,12 @@ function blocked(x, y){
         if (Math.hypot(ax + dx*tt, ay + dy*tt) < o.h) return true; }
     }
   } catch (e) {}
+  return false;
+}
+/* is a spot inside a building footprint of this square */
+function inBuilding(x, y){
+  var g = world.geo, lon = g.lon0 + x/g.kx, lat = g.lat0 - y/g.ky;
+  try { if (!cur.blk) blockInit(); for (var k = 0; k < cur.blk.length; k++){ var o = cur.blk[k], b = o.b; if (o.bd && lon >= b[0] && lon <= b[2] && lat >= b[1] && lat <= b[3] && L3.pip(o.c, lon, lat)) return true; } } catch (e) {}
   return false;
 }
 /* one try at one plant: spacing, blocked ground, then it goes in the stroke */

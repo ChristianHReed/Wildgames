@@ -187,6 +187,7 @@ function report(){
   h += '<tr><td>Road pieces with lanes / width mapped</td><td class="n">' + pct(t.lanes, t.roads) + ' / ' + pct(t.width, t.roads) + '</td></tr>';
   h += '<tr><td>Ground from your files / terrain tiles / guessed</td><td class="n">' + pct(e.file, 1) + ' / ' + pct(e.tiles, 1) + ' / ' + pct(e.none, 1) + '</td></tr>';
   if (M.report.fileRes) h += '<tr><td>Finest ground detail used</td><td class="n">' + (M.report.fileRes < 2 ? M.report.fileRes.toFixed(1) : Math.round(M.report.fileRes)) + ' m</td></tr>';
+  if (st.simplify) h += '<tr><td>Land polygons simplified (points before / after), tiny holes dropped</td><td class="n">' + fmtN(st.simplify.before) + ' / ' + fmtN(st.simplify.after) + ', ' + fmtN(st.simplify.holesDropped) + '</td></tr>';
   if (st.lidar){ var ld = st.lidar, lb = ld.buildings || {}, lt = ld.trees || {};
     h += '<tr><td>Lidar points used</td><td class="n">' + fmtN(ld.points) + '</td></tr>';
     h += '<tr><td>Buildings measured by lidar (flat / pitched roof)</td><td class="n">' + fmtN((lb.set || 0) + (lb.kept || 0)) + ' (' + fmtN(lb.flat || 0) + ' / ' + fmtN(lb.pitched || 0) + ')</td></tr>';

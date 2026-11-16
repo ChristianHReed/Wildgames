@@ -353,6 +353,7 @@ L.runBuild = async function(job, post, stop){
   var estMB = maxReal*kb, div = 1; while (div < 3 && estMB/(div*div) > targetMB) div++;
   if (div !== R.div){ R = L.regionOf(A, div); stats.squareDiv = div; }
   stats.squareEstMB = Math.round(estMB/(div*div)*10)/10;
+  var simp = L.simplifyAreas(F, F.keep < 1 ? 3 : 1.5); if (simp.rings) stats.simplify = simp;
   var S = L.cutSquares(R, F);
   /* 5. ground, square by square, saved as it goes */
   var tiffs = [];
