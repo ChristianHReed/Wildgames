@@ -24,9 +24,11 @@ function makeOverlay(){
     '<button id="v3lay" class="sm alt">Layers</button><button id="v3str" class="sm alt">Structures</button><button id="v3sculpt" class="sm alt">Editor</button><button id="v3help" class="sm alt">?</button></div>' +
     '<div id="v3lays" class="hidden"><b>Show</b><div class="v3row" id="v3lt"></div><small>Hiding is for looking only: nothing is deleted from your map.</small></div>' +
     '<div id="v3tools" class="hidden"><b>Edit the map</b><div class="v3row" id="v3tt">' +
-    '<button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="flat" class="sm alt">Flatten</button><button data-t="hill" class="sm alt">Hill</button><button data-t="cut" class="sm alt">Cut</button><button data-t="slope" class="sm alt">Slope</button><button data-t="basin" class="sm alt">Lake</button><button data-t="flood" class="sm alt">Flood</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="info" class="sm alt">What is it?</button><button data-t="prop" class="sm alt">Props</button><button data-t="remove" class="sm alt">Remove</button></div>' +
+    '<button data-t="sel" class="sm alt">Select</button><button data-t="raise" class="sm on">Raise</button><button data-t="lower" class="sm alt">Lower</button><button data-t="smooth" class="sm alt">Smooth</button><button data-t="level" class="sm alt">Level</button><button data-t="flat" class="sm alt">Flatten</button><button data-t="hill" class="sm alt">Hill</button><button data-t="cut" class="sm alt">Cut</button><button data-t="slope" class="sm alt">Slope</button><button data-t="basin" class="sm alt">Lake</button><button data-t="flood" class="sm alt">Flood</button><button data-t="river" class="sm alt">River</button><button data-t="paint" class="sm alt">Paint</button><button data-t="place" class="sm alt">Building</button><button data-t="tree" class="sm alt">Tree</button><button data-t="road" class="sm alt">Road</button><button data-t="bset" class="sm alt">Change</button><button data-t="info" class="sm alt">What is it?</button><button data-t="prop" class="sm alt">Props</button><button data-t="remove" class="sm alt">Remove</button></div>' +
     '<div class="v3row hidden" id="v3bs"><label>Floors <select id="v3bf"><option value="">keep</option></select></label><label>Roof <select id="v3br"><option value="">keep</option><option>flat</option><option>gabled</option><option>hipped</option><option>pyramidal</option><option>skillion</option><option>half-hipped</option><option>gambrel</option><option>mansard</option><option>dome</option></select></label><label>Frame <select id="v3bfw"><option value="">keep</option><option value="wood_siding">Wood frame, siding</option><option value="wood_brick">Wood frame, brick</option><option value="lightsteel_sheet">Light steel frame</option><option value="steel_cladding">Steel frame, cladding</option><option value="steel_curtain">Steel frame, glass</option><option value="concrete_poured">Poured concrete</option><option value="concrete_block">Concrete block</option><option value="concrete_brick">Brick on block</option></select></label><label>Walls <select id="v3bw"><option value="">keep</option><option>brick</option><option>concrete</option><option>wood</option><option>glass</option><option>stone</option><option>plaster</option><option>metal</option></select></label><small style="width:100%">Tap a building to change it. Only the boxes you set are changed.</small></div>' +
     '<div class="v3row hidden" id="v3pr"><select id="v3pc"></select><select id="v3pp"></select><label>Turn <select id="v3py"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><small style="width:100%">Tap the ground to put the piece down. Props are saved on the map as points, so the game can place them too.</small></div>' +
+    '<div class="v3row hidden" id="v3sel"><span id="v3si" style="width:100%">Tap a building, tree or piece you placed.</span><label>Turn <input id="v3sa" type="range" min="0" max="345" step="15" value="0"><b id="v3saV">0</b></label><button id="v3smv" class="sm alt">Move</button><button id="v3sdl" class="sm alt">Delete</button><button id="v3sdn" class="sm alt">Done</button></div>' +
+    '<div id="v3selm" style="display:none;position:fixed;pointer-events:none;border:3px solid #ffd54a;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
     '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select></div>' +
     '<div class="v3row hidden" id="v3bld"><select id="v3bk"></select><label>Frame <select id="v3bpf"><option value="">auto</option><option value="wood_siding">Wood frame, siding</option><option value="wood_brick">Wood frame, brick</option><option value="lightsteel_sheet">Light steel frame</option><option value="steel_cladding">Steel frame, cladding</option><option value="steel_curtain">Steel frame, glass</option><option value="concrete_poured">Poured concrete</option><option value="concrete_block">Concrete block</option><option value="concrete_brick">Brick on block</option></select></label><label>Size <input id="v3sz" type="range" min="0.6" max="2" step="0.1" value="1"><b id="v3szV">1.0</b></label><label>Turn <input id="v3rot" type="range" min="0" max="345" step="15" value="0"><b id="v3rotV">0&deg;</b></label><label style="width:100%"><input id="v3al" type="checkbox" checked> Line up with the nearest street</label></div>' +
     '<div class="v3row hidden" id="v3pnt"><select id="v3pk"></select></div>' +
@@ -94,7 +96,7 @@ function makeOverlay(){
     var fill = function(){ var c = $('v3pc').value, m = M[c] || {}; $('v3pp').innerHTML = ''; Object.keys(m).sort().forEach(function(n){ var o = document.createElement('option'); o.value = n; o.textContent = n.replace(/_/g, ' '); $('v3pp').appendChild(o); }); };
     $('v3pc').onchange = fill; fill(); propM = M; }
   /* ---- editor shell: bottom dock of tool groups, left palette of pieces, right inspector (the old panel). The old tool buttons stay as the engine; the dock clicks them. ---- */
-  var GROUPS = [['Select', [['info', 'What is it?']]], ['Terrain', [['raise', 'Raise'], ['lower', 'Lower'], ['smooth', 'Smooth'], ['level', 'Level'], ['flat', 'Flatten'], ['hill', 'Hill'], ['cut', 'Cut'], ['slope', 'Slope']]], ['Water', [['basin', 'Lake'], ['flood', 'Flood'], ['river', 'River']]], ['Paint', [['paint', 'Paint']]],
+  var GROUPS = [['Select', [['sel', 'Select'], ['info', 'What is it?']]], ['Terrain', [['raise', 'Raise'], ['lower', 'Lower'], ['smooth', 'Smooth'], ['level', 'Level'], ['flat', 'Flatten'], ['hill', 'Hill'], ['cut', 'Cut'], ['slope', 'Slope']]], ['Water', [['basin', 'Lake'], ['flood', 'Flood'], ['river', 'River']]], ['Paint', [['paint', 'Paint']]],
     ['Build', [['place', 'Building'], ['road', 'Road'], ['bset', 'Change']]], ['Place', [['prop', 'Pieces']]], ['Nature', [['tree', 'Tree']]], ['Creatures', null], ['Erase', [['remove', 'Remove']]]], openG = null, palCat = '';
   var setTool = function(t){ var b = $('v3tt').querySelector('[data-t="' + t + '"]'); if (b) b.click(); };
   var dock = $('v3dock'); GROUPS.forEach(function(g){ var b = document.createElement('button'); b.className = 'alt'; b.textContent = g[0]; b.setAttribute('data-g', g[0]);
@@ -121,9 +123,15 @@ function makeOverlay(){
       b.onclick = function(){ $('v3pc').value = x.c; if ($('v3pc').onchange) $('v3pc').onchange(); $('v3pp').value = x.n; palRender(); V3.note('Ready: ' + x.l + '. Tap the ground to place it.', 2.5); }; L2.appendChild(b); });
     $('v3pn').textContent = f.length > 150 ? f.length + ' pieces; showing 150, type to narrow' : f.length + ' pieces';
   }
+  $('v3sa').oninput = function(){ $('v3saV').textContent = this.value + '°'; };
+  $('v3sa').onchange = function(){ if (!sel || sel.t === 'tree') return; var d = +this.value; selApply(sel.t === 'prop' ? Object.assign({}, sel, {ry:d}) : Object.assign({}, sel, {a:+(d*Math.PI/180).toFixed(3)}), 'Turned to ' + d + '°.'); };
+  $('v3smv').onclick = function(){ if (!sel) return; selMove = !selMove; selUI(); };
+  $('v3sdl').onclick = selDelete; $('v3sdn').onclick = function(){ sel = null; selMove = false; selUI(); };
   $('v3ps').oninput = palRender; $('v3pk2').onchange = palRender;
   $('v3sculpt').addEventListener('click', function(){ openG = null; V3.shellSync(); });
   window.addEventListener('keydown', function(e){ if (!on || !sculpt || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    if (tool === 'sel' && (e.code === 'Delete' || e.code === 'Backspace') && sel){ e.preventDefault(); selDelete(); return; }
+    if (tool === 'sel' && e.code === 'Escape'){ sel = null; selMove = false; selUI(); return; }
     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ'){ e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
     else if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY'){ e.preventDefault(); redo(); }
     else if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey){ if (tool === 'prop'){ var t2 = $('v3py'); t2.selectedIndex = (t2.selectedIndex + 1) % t2.options.length; V3.note('Turned to ' + t2.value + '°', 1.2); } else if (tool === 'place'){ var r2 = $('v3rot'); r2.value = (+r2.value + 90) % 360; r2.oninput(); } } });
@@ -179,7 +187,7 @@ async function boot(){
 
 /* ---------------- opening a square of the built map ---------------- */
 async function open(o){   /* o: {proj, region:{id,name,lat,lon,dLat,dLon}, lat, lon, yaw}; onClose: called when going back */
-  cur = {proj:o.proj, region:o.region}; undoSt = []; redoSt = []; pend = []; onClose = o.onClose || null;
+  cur = {proj:o.proj, region:o.region}; undoSt = []; redoSt = []; pend = []; sel = null; selMove = false; onClose = o.onClose || null;
   makeOverlay(); $('v3').classList.remove('hidden'); on = true; document.body.style.overflow = 'hidden';
   try {
     if (!ready) ready = boot(); await ready;
@@ -243,6 +251,7 @@ function groundHit(px, py){
 function dabAt(px, py, again){
   var h = groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
   var ll = llOf(h[0], h[1]);
+  if (tool === 'sel'){ if (again || working || busy) return; if (selMove && sel){ selMove = false; selApply(Object.assign({}, sel, {lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6)}), 'Moved.'); } else selectAt(ll); return; }
   if (tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope'){ riv.push(+ll[0].toFixed(6), +ll[1].toFixed(6)); toolUI(); return; }
   if (tool === 'flood'){ pend.push({id:uid(), t:'flood', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, lv:+Math.max(0.3, brushK*6).toFixed(1)}); V3.note('Flood: water up ' + Math.max(0.3, brushK*6).toFixed(1) + ' m from here, inside the brush circle.', 3); return; }
   if (tool === 'basin'){ pend.push({id:uid(), t:'basin', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:+(brushK*4).toFixed(1)}); V3.note('Lake', 1.5); return; }
@@ -270,8 +279,8 @@ async function endStroke(){
   catch (er){ V3.note('Could not save the change: ' + er.message, 6); }
   working = false; refreshCount(); if (pend.length) endStroke();   /* taps made while the ground was rebuilding */
 }
-async function undo(){ if (working || !undoSt.length) return; working = true; var d = undoSt.pop(); try { await L3.editRemove(cur.proj, d); redoSt.push(d); await redraw('Undone.'); } catch (er){ V3.note('Could not undo: ' + er.message, 5); } working = false; refreshCount(); }
-async function redo(){ if (working || !redoSt.length) return; working = true; var d = redoSt.pop(); try { await L3.editAdd(cur.proj, cur.region, d); undoSt.push(d); await redraw('Redone.'); } catch (er){ V3.note('Could not redo: ' + er.message, 5); } working = false; refreshCount(); }
+async function undo(){ if (working || !undoSt.length) return; working = true; var d = undoSt.pop(); try { sel = null; if (d.swap) await L3.editSwap(cur.proj, cur.region, d.swap[1], d.swap[0]); else await L3.editRemove(cur.proj, d); redoSt.push(d); await redraw('Undone.'); } catch (er){ V3.note('Could not undo: ' + er.message, 5); } working = false; refreshCount(); }
+async function redo(){ if (working || !redoSt.length) return; working = true; var d = redoSt.pop(); try { sel = null; if (d.swap) await L3.editSwap(cur.proj, cur.region, d.swap[0], d.swap[1]); else await L3.editAdd(cur.proj, cur.region, d); undoSt.push(d); await redraw('Redone.'); } catch (er){ V3.note('Could not redo: ' + er.message, 5); } working = false; refreshCount(); }
 /* build the current square again with the edits on top, staying where we are */
 async function redraw(msg){
   busy = true; V3.note('Rebuilding the ground...', 30); var ll = llOf(P.x, P.y), pitch = P.pitch, yaw = P.yaw;
@@ -291,13 +300,47 @@ function nearRoadAngle(x, y){
   });
   return ang;
 }
+/* ---- Select: pick something you placed, then turn, move or delete it ---- */
+var sel = null, selMove = false;
+async function selectAt(ll){
+  var g = world.geo, best = null, bd = 10; (await L3.editAll(cur.proj)).forEach(function(o){ if (o.t !== 'place' && o.t !== 'tree' && o.t !== 'prop') return; var d = Math.hypot((o.lon - ll[0])*g.kx, (o.lat - ll[1])*g.ky); if (d < bd){ bd = d; best = o; } });
+  sel = best; selMove = false; selUI(); if (!best) V3.note('Nothing you placed is here. (Buildings and roads from the real map cannot be selected; use Change or Remove.)', 4);
+}
+function selName(o){ return o.t === 'prop' ? o.p.replace(/\./, ': ').replace(/_/g, ' ') : o.t === 'tree' ? 'Tree' : (L3.BUILD[o.b] ? L3.BUILD[o.b][0] : 'Building'); }
+function selUI(){
+  var has = !!sel, turn = has && (sel.t === 'prop' || sel.t === 'place'), deg = !has ? 0 : sel.t === 'prop' ? (sel.ry || 0) : sel.t === 'place' ? Math.round(((sel.a || 0)*180/Math.PI)/15)*15 : 0;
+  deg = ((deg % 360) + 360) % 360;
+  $('v3si').textContent = !has ? 'Tap a building, tree or piece you placed.' : selMove ? selName(sel) + ': tap the ground where it should go.' : 'Selected: ' + selName(sel);
+  $('v3sa').disabled = !turn; $('v3sa').value = deg; $('v3saV').textContent = deg + '°'; $('v3smv').disabled = !has; $('v3sdl').disabled = !has; $('v3sdn').disabled = !has;
+  $('v3smv').className = 'sm ' + (selMove ? 'on' : 'alt');
+}
+async function selApply(nw, msg){
+  if (working || busy || !sel) return; working = true; var old = sel;
+  try { await L3.editSwap(cur.proj, cur.region, old, nw); undoSt.push({swap:[old, nw]}); redoSt = []; sel = nw; await redraw(msg); }
+  catch (er){ V3.note('Could not save the change: ' + er.message, 6); }
+  working = false; selUI(); refreshCount();
+}
+async function selDelete(){
+  if (working || busy || !sel) return; working = true; var old = sel;
+  try { await L3.editSwap(cur.proj, cur.region, old, null); undoSt.push({swap:[old, null]}); redoSt = []; sel = null; selMove = false; await redraw('Deleted.'); }
+  catch (er){ V3.note('Could not delete: ' + er.message, 6); }
+  working = false; selUI(); refreshCount();
+}
+/* the yellow ring on the selected thing: its place on the ground, projected through the camera */
+function selMark(){
+  var m = $('v3selm'); if (!m) return; if (!sel || tool !== 'sel' || !lastCam || !world || !world.geo){ m.style.display = 'none'; return; }
+  var c = lastCam, g = world.geo, x = (sel.lon - g.lon0)*g.kx, y = (g.lat0 - sel.lat)*g.ky, v = [x - c.e[0], hAt(x, y) + 1 - c.e[1], y - c.e[2]], dep = v[0]*c.f[0] + v[1]*c.f[1] + v[2]*c.f[2];
+  if (dep < 1){ m.style.display = 'none'; return; }
+  var nx = (v[0]*c.s[0] + v[1]*c.s[1] + v[2]*c.s[2])/(dep*c.tv*c.asp), ny = (v[0]*c.u[0] + v[1]*c.u[1] + v[2]*c.u[2])/(dep*c.tv), cv = $('game').getBoundingClientRect(), px = Math.max(16, Math.min(300, (Math.max(sel.r || 3, 2)/(dep*c.tv))*cv.height/2));
+  m.style.display = 'block'; m.style.left = (cv.left + (nx + 1)/2*cv.width) + 'px'; m.style.top = (cv.top + (1 - ny)/2*cv.height) + 'px'; m.style.width = m.style.height = px*2 + 'px';
+}
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function riverWidth(){ return brushR < 30 ? 3 : brushR < 60 ? 8 : 11; }   /* the game's stream, canal and river widths */
 function kText(){ return tool === 'hill' ? Math.round(brushK*30) + ' m' : tool === 'cut' ? (brushK*20).toFixed(1) + ' m' : String(brushK); }
 function toolUI(){
   var kl = $('v3k').parentNode.firstChild; if (kl && kl.nodeType === 3) kl.nodeValue = tool === 'hill' ? 'Height ' : tool === 'cut' ? 'Depth ' : 'Strength '; $('v3kV').textContent = kText();
   if (V3.shellSync) setTimeout(function(){ V3.shellSync(); }, 0);
-  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope'; $('v3riv').classList.toggle('hidden', !isR);
+  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); if (tool !== 'sel'){ sel = null; selMove = false; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope'; $('v3riv').classList.toggle('hidden', !isR);
   if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : tool === 'road' ? 'tap along the road' : tool === 'cut' ? 'tap along the trench' : tool === 'slope' ? 'tap the start, then the end' : 'tap along the river, downstream';
 }
 async function finishRiver(){
@@ -421,7 +464,7 @@ function propMesh(){
 
 /* ---------------- each frame ---------------- */
 function frame(ts){
-  if (!on) return;
+  if (!on) return; selMark();
   var dt = Math.min(0.1, Math.max(0, (ts - last)/1000)); last = ts;   /* at most a tenth of a second per frame, so a slow frame does not jump far */
   if (!busy && world && world.geo){
     move(dt);

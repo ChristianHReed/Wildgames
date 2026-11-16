@@ -218,6 +218,26 @@ L.editRemove = async function(proj, dabs){
   for (var k = 0; k < keys.length; k++){ var cur = await L.dbGet('edits', keys[k]) || [], nx = cur.filter(function(o){ return !set.has(o.id); }); if (nx.length !== cur.length) await L.dbPut('edits', keys[k], nx); }
   return keys;
 };
+/* the squares ('i:j') an operation reaches */
+L.opKeys = function(region, o){
+  var bb = L.opBox(o), i0 = Math.floor((bb[0] - region.lon)/region.dLon + 0.5), i1 = Math.floor((bb[2] - region.lon)/region.dLon + 0.5), j0 = Math.floor((bb[1] - region.lat)/region.dLat + 0.5), j1 = Math.floor((bb[3] - region.lat)/region.dLat + 0.5), out = [];
+  for (var i = i0; i <= i1; i++) for (var j = j0; j <= j1; j++) out.push(i + ':' + j);
+  return out;
+};
+/* every saved operation once (an operation that reaches two squares is stored in both) */
+L.editAll = async function(proj){ var keys = await L.dbKeys('edits', proj + ':'), seen = {}, out = []; for (var k = 0; k < keys.length; k++) ((await L.dbGet('edits', keys[k])) || []).forEach(function(o){ if (!seen[o.id]){ seen[o.id] = 1; out.push(o); } }); return out; };
+/* change one saved operation in place (same id, same place in the order), or remove it (nw null), or add it back (oldOp null). Used by Select: move, turn, delete, and their undo */
+L.editSwap = async function(proj, region, oldOp, nw){
+  var keys = await L.dbKeys('edits', proj + ':'), has = {};
+  if (oldOp) for (var k = 0; k < keys.length; k++){
+    var cur = (await L.dbGet('edits', keys[k])) || [], ix = -1; for (var q = 0; q < cur.length; q++) if (cur[q].id === oldOp.id){ ix = q; break; }
+    if (ix < 0) continue;
+    var key = keys[k].slice(proj.length + 1);
+    if (nw && L.opKeys(region, nw).indexOf(key) >= 0){ cur[ix] = nw; has[key] = 1; } else cur.splice(ix, 1);
+    await L.dbPut('edits', keys[k], cur);
+  }
+  if (nw){ var want = L.opKeys(region, nw); for (var w = 0; w < want.length; w++) if (!has[want[w]]){ var kk = proj + ':' + want[w], c2 = (await L.dbGet('edits', kk)) || []; await L.dbPut('edits', kk, c2.concat([nw])); } }
+};
 L.editCount = async function(proj){ var keys = await L.dbKeys('edits', proj + ':'), ids = new Set(); for (var k = 0; k < keys.length; k++) ((await L.dbGet('edits', keys[k])) || []).forEach(function(o){ ids.add(o.id); }); return ids.size; };
 L.editClear = function(proj){ return L.dbDel('edits', proj + ':'); };
 
