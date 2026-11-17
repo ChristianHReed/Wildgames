@@ -35,7 +35,7 @@ function makeOverlay(){
     '<div id="v3ghm" style="display:none;position:fixed;pointer-events:none;border:3px dashed #7CFC9A;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
     '<svg id="v3pv" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5"></svg>' +
     '<div id="v3selm" style="display:none;position:fixed;pointer-events:none;border:3px solid #ffd54a;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
-    '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select></div>' +
+    '<div class="v3row hidden" id="v3rd"><select id="v3rt"></select><select id="v3rl"><option value="0">On the ground</option><option value="1">Bridge</option><option value="-1">Tunnel</option></select><label><input type="checkbox" id="v3rb" checked> Level the ground</label></div>' +
     '<div class="v3row hidden" id="v3bld"><select id="v3bk"></select><label>Frame <select id="v3bpf"><option value="">auto</option><option value="wood_siding">Wood frame, siding</option><option value="wood_brick">Wood frame, brick</option><option value="lightsteel_sheet">Light steel frame</option><option value="steel_cladding">Steel frame, cladding</option><option value="steel_curtain">Steel frame, glass</option><option value="concrete_poured">Poured concrete</option><option value="concrete_block">Concrete block</option><option value="concrete_brick">Brick on block</option></select></label><label>Size <input id="v3sz" type="range" min="0.6" max="2" step="0.1" value="1"><b id="v3szV">1.0</b></label><label>Turn <input id="v3rot" type="range" min="0" max="345" step="15" value="0"><b id="v3rotV">0&deg;</b></label><label style="width:100%"><input id="v3al" type="checkbox" checked> Line up with the nearest street</label></div>' +
     '<div class="v3row hidden" id="v3pnt"><select id="v3pk"></select></div>' +
     '<div class="v3row hidden" id="v3riv"><button id="v3rdone" class="sm">Finish</button><button id="v3rcancel" class="sm alt">Cancel</button><span id="v3rn"></span></div>' +
@@ -527,7 +527,7 @@ async function finishRiver(){
   if (tool === 'fill'){ scatterArea(c); endStroke(); return; }
   if (tool === 'cut'){ var tw = Math.max(4, Math.round(brushR/4)), dp = Math.max(0.5, +(brushK*20).toFixed(1)); pend.push({id:uid(), t:'cut', c:c, tw:tw, d:dp, w:Math.round(tw + 2*dp), lat:c[1], lon:c[0]}); V3.note('Cut: ' + tw + ' m wide, ' + dp + ' m deep.', 3); endStroke(); return; }
   if (tool === 'slope'){ var tw3 = Math.max(4, Math.round(brushR/4)); pend.push({id:uid(), t:'slope', c:c, tw:tw3, w:Math.round(tw3 + 30), lat:c[1], lon:c[0]}); V3.note('Slope: ' + tw3 + ' m wide, from the first point to the last.', 3); endStroke(); return; }
-  if (tool === 'road'){ pend.push({id:uid(), t:'road', h:$('v3rt').value, lv:+$('v3rl').value, c:c, w:12, lat:c[1], lon:c[0]}); endStroke(); return; }
+  if (tool === 'road'){ pend.push({id:uid(), t:'road', h:$('v3rt').value, lv:+$('v3rl').value, bed:$('v3rb').checked && +$('v3rl').value === 0 && (L3.ROADT[$('v3rt').value][1] === 'highway' || L3.ROADT[$('v3rt').value][1] === 'railway') ? 1 : 0, c:c, w:12, lat:c[1], lon:c[0]}); endStroke(); return; }
   pend.push({id:uid(), t:'river', c:c, w:riverWidth(), k:+(1 + brushK*1.5).toFixed(1), lat:c[1], lon:c[0]}); endStroke();
 }
 

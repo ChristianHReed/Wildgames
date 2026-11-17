@@ -38,6 +38,9 @@ L.BUILD = {
 L.ROADT = {motorway:['Motorway', 'highway', 'motorway', {lanes:'4', oneway:'yes'}], primary:['Main road', 'highway', 'primary', {lanes:'2'}], secondary:['Secondary road', 'highway', 'secondary'], tertiary:['Side road', 'highway', 'tertiary'],
   residential:['Street', 'highway', 'residential'], service:['Service road or drive', 'highway', 'service'], track:['Dirt track', 'highway', 'track'], footway:['Footpath', 'highway', 'footway'], cycleway:['Bike path', 'highway', 'cycleway'], rail:['Railway', 'railway', 'rail'],
   dam:['Dam', 'waterway', 'dam', {height:'8'}], weir:['Weir', 'waterway', 'weir'], pier:['Pier', 'man_made', 'pier'], breakwater:['Breakwater', 'man_made', 'breakwater'], wall:['Retaining wall', 'barrier', 'retaining_wall', {height:'3'}]};
+/* length in metres and the point at fraction t of a flat lon,lat line (E: the elevation grid, for the metre scale) */
+L.lineLen = function(c, E){ var cl = Math.cos(c[1]*Math.PI/180), l = 0; for (var i = 0; i + 3 < c.length; i += 2) l += Math.hypot((c[i + 2] - c[i])*111320*cl, (c[i + 3] - c[i + 1])*110540); return l; };
+L.linePt = function(c, t){ var cl = Math.cos(c[1]*Math.PI/180), seg = [], tot = 0, i; for (i = 0; i + 3 < c.length; i += 2){ var l = Math.hypot((c[i + 2] - c[i])*111320*cl, (c[i + 3] - c[i + 1])*110540); seg.push(l); tot += l; } var want = t*tot, a = 0; for (i = 0; i < seg.length; i++){ if (want <= a + seg[i] || i === seg.length - 1){ var u = seg[i] ? Math.max(0, Math.min(1, (want - a)/seg[i])) : 0; return [c[2*i] + (c[2*i + 2] - c[2*i])*u, c[2*i + 1] + (c[2*i + 3] - c[2*i + 1])*u]; } a += seg[i]; } return [c[0], c[1]]; };
 L.terrainApply = function(text, ops){
   if (!ops || !ops.length) return text;
   var sq = JSON.parse(text), E = sq.elev; if (!E || !E.d) return text;
@@ -93,6 +96,12 @@ L.terrainApply = function(text, ops){
       var tw = o.tw || 8, dd = (o.d || 2)*10, rch = (o.d || 2)*2; along(o, tw/2 + rch, function(k2, dist){ var f = dist <= tw/2 ? 1 : smooth3(1 - (dist - tw/2)/rch); h[k2] = Math.max(-32000, Math.round(h[k2] - dd*f)); }); return; }
     if (o.t === 'slope' && o.c){   /* a ramp: the ground along the line runs smoothly from the height at its first point to the height at its last, o.tw wide, blended into the ground beside it */
       var tw2 = o.tw || 8, ha = ptH(o.c[0], o.c[1]), hb = ptH(o.c[o.c.length - 2], o.c[o.c.length - 1]), bank2 = 8 + Math.abs(hb - ha)/10*1.2; along(o, tw2/2 + bank2, function(k2, dist, t){ var tgt = ha + (hb - ha)*t, f = dist <= tw2/2 ? 1 : smooth3(1 - (dist - tw2/2)/bank2); h[k2] = Math.round(h[k2] + (tgt - h[k2])*f); }); return; }
+    if (o.t === 'road' && o.bed && !o.lv && o.c && o.c.length >= 4){   /* road bed: the ground along the road is evened out (its own height smoothed along the line, bumps and dips taken out), blended into the ground beside it */
+      var hwb = (o.w || 12)/2, bnk = 8, np = Math.max(4, Math.min(400, Math.round(L.lineLen(o.c, E)/Math.max(cw, 1)))), prof = [], ii, jj;
+      for (ii = 0; ii <= np; ii++){ var tt = ii/np, pp = L.linePt(o.c, tt); prof.push(ptH(pp[0], pp[1])); }
+      var win = Math.max(2, Math.round(np/8)), sp = prof.map(function(v, i2){ var s2 = 0, n2 = 0; for (jj = Math.max(0, i2 - win); jj <= Math.min(np, i2 + win); jj++){ s2 += prof[jj]; n2++; } return s2/n2; });
+      along(o, hwb + bnk, function(k2, dist, t){ var q = t*np, i0 = Math.min(np - 1, Math.floor(q)), tgt = sp[i0] + (sp[i0 + 1] - sp[i0])*(q - i0), f = dist <= hwb ? 1 : smooth3(1 - (dist - hwb)/bnk); h[k2] = Math.round(h[k2] + (tgt - h[k2])*f); });
+    }
     if (o.t === 'paint' || o.t === 'place' || o.t === 'tree' || o.t === 'remove' || o.t === 'road' || o.t === 'bset' || o.t === 'prop' || o.t === 'creature' || o.t === 'nest' || o.t === 'rule' || o.t === 'flood' || o.t === 'basin') return;   /* these only add or take away map features, below */
     var cx = (o.lon - E.w)/(E.e - E.w)*(E.cols - 1), cy = (E.n - o.lat)/(E.n - E.s)*(E.rows - 1), rc = o.r/cw + 1, rr = o.r/ch + 1;
     var c0 = Math.max(0, Math.floor(cx - rc)), c1 = Math.min(E.cols - 1, Math.ceil(cx + rc)), r0 = Math.max(0, Math.floor(cy - rr)), r1 = Math.min(E.rows - 1, Math.ceil(cy + rr));
