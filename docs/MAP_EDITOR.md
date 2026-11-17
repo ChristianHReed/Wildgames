@@ -99,3 +99,5 @@ Touch placing (1.43.0): on a touch screen, in Pieces, Tree, Building, Aliens and
 - Whether the game should let a player edit a map in play (not asked).
 
 **1.45.0:** Select reaches the map's own buildings and trees (delete only), Box select, Copy, and a live shape preview for river/road/cut/slope/fill. Resize is waiting on the game: a prop or tree has no scale field. Still open: move real buildings, Workshop building and character pieces as placeable kinds, the game telling players which pack to add, drawing fences/pools/water towers, lighting points.
+
+**1.46.0 and 1.47.0:** road bed (level the ground under a drawn road); shareable groups (`.asgroup.json`, save a selection, put it down on any map).

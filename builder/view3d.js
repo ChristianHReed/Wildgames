@@ -29,7 +29,7 @@ function makeOverlay(){
     '<div class="v3row hidden" id="v3pr"><select id="v3pc"></select><select id="v3pp"></select><label>Turn <select id="v3py"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><small style="width:100%">Tap the ground to put the piece down. Props are saved on the map as points, so the game can place them too.</small></div>' +
     '<div class="v3row hidden" id="v3sc"><select id="v3sk"></select><small style="width:100%">Tap or hold to scatter. Brush size is the area, Density is how thick. Each plant is its own piece: Select can move or delete it, and Undo takes back the whole stroke.</small></div>' +
     '<div class="v3row hidden" id="v3cr"><select id="v3ck"></select><label>Group <select id="v3cn"><option>1</option><option>2</option><option>3</option><option>5</option><option>8</option><option>12</option><option>20</option></select></label><label>Turn <select id="v3cy"><option value="0">0</option><option value="90">90</option><option value="180">180</option><option value="270">270</option></select></label><label style="width:100%"><input type="checkbox" id="v3cg" checked> The game may add its own nests and aliens as the days go on</label><small style="width:100%">Aliens: tap to put down a group; it waits there when the game starts. Nest: tap on a building and the building becomes a nest, tap in the open and a nest stands alone. Select moves, turns or deletes them.</small></div>' +
-    '<div class="v3row hidden" id="v3sel"><span id="v3si" style="width:100%">Tap a building, tree or piece you placed.</span><label>Turn <input id="v3sa" type="range" min="0" max="345" step="15" value="0"><b id="v3saV">0</b></label><button id="v3sbx" class="sm alt">Box</button><button id="v3scp" class="sm alt">Copy</button><button id="v3smv" class="sm alt">Move</button><button id="v3sdl" class="sm alt">Delete</button><button id="v3sdn" class="sm alt">Done</button></div>' +
+    '<div class="v3row hidden" id="v3sel"><span id="v3si" style="width:100%">Tap a building, tree or piece you placed.</span><label>Turn <input id="v3sa" type="range" min="0" max="345" step="15" value="0"><b id="v3saV">0</b></label><span id="v3sgr" style="width:100%"><input id="v3sgn" placeholder="Group name" maxlength="40" style="width:9em"> <button id="v3sgs" class="sm alt">Save group</button> <select id="v3sgl"></select> <button id="v3sgf" class="sm alt">Open file</button><input type="file" id="v3sgi" accept=".json,.asgroup" style="display:none"></span><button id="v3sbx" class="sm alt">Box</button><button id="v3scp" class="sm alt">Copy</button><button id="v3smv" class="sm alt">Move</button><button id="v3sdl" class="sm alt">Delete</button><button id="v3sdn" class="sm alt">Done</button></div>' +
     '<div id="v3ring" style="display:none;position:fixed;pointer-events:none;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #0007,inset 0 0 0 1px #0007;z-index:5;transform:translate(-50%,-50%)"></div>' +
     '<div id="v3gh" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:150px;z-index:7;gap:10px"><button id="v3ghp" class="sm on" style="min-width:110px;min-height:52px;font-size:18px">Place</button><button id="v3ghr" class="sm alt" style="min-height:52px;font-size:16px">Turn 90°</button><button id="v3ghc" class="sm alt" style="min-width:100px;min-height:52px;font-size:18px">Cancel</button></div>' +
     '<div id="v3ghm" style="display:none;position:fixed;pointer-events:none;border:3px dashed #7CFC9A;border-radius:50%;box-shadow:0 0 0 2px #0008;z-index:6;transform:translate(-50%,-50%)"></div>' +
@@ -134,7 +134,7 @@ function makeOverlay(){
   $('v3sa').oninput = function(){ $('v3saV').textContent = this.value + '°'; };
   $('v3sa').onchange = function(){ if (!sel || sel.t === 'tree') return; var d = +this.value; selApply(sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest' ? Object.assign({}, sel, {ry:d}) : Object.assign({}, sel, {a:+(d*Math.PI/180).toFixed(3)}), 'Turned to ' + d + '°.'); };
   $('v3smv').onclick = function(){ if (!sel) return; selMove = !selMove; selUI(); };
-  $('v3sdl').onclick = selDelete; $('v3sbx').onclick = function(){ selBox = selBox ? null : {c:null}; selMove = false; if (selBox) sel = null; selUI(); if (selBox) V3.note('Tap two opposite corners of the box.', 3); }; $('v3scp').onclick = selCopy; $('v3sdn').onclick = function(){ sel = null; selMove = false; selUI(); };
+  $('v3sdl').onclick = selDelete; $('v3sbx').onclick = function(){ selBox = selBox ? null : {c:null}; selMove = false; if (selBox) sel = null; selUI(); if (selBox) V3.note('Tap two opposite corners of the box.', 3); }; $('v3scp').onclick = selCopy; $('v3sgs').onclick = grpSave; $('v3sgl').onchange = function(){ grpArm(+this.value); }; $('v3sgf').onclick = function(){ $('v3sgi').click(); }; $('v3sgi').onchange = grpFile; grpList(); $('v3sdn').onclick = function(){ sel = null; selMove = false; selUI(); };
   $('v3ps').oninput = palRender; $('v3pk2').onchange = palRender;
   $('v3sculpt').addEventListener('click', function(){ openG = null; V3.shellSync(); });
   window.addEventListener('keydown', function(e){ if (!on || !sculpt || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
@@ -262,7 +262,7 @@ function dabAt(px, py, again, forced){
   var h = forced ? forced.h : groundHit(px, py); if (!h){ V3.note('Aim at the ground.', 2); return; }
   var ll = forced ? forced.ll : llOf(h[0], h[1]);
   if (!forced && V3.ghostMode && GHOSTT[tool]){ if (again) return; ghost = {h:h, ll:ll}; ghostUI(); return; }
-  if (tool === 'sel'){ if (again || working || busy) return; if (selBox){ selBoxTap(ll); return; } if (selMove && sel){ selMove = false; if (sel.t === 'multi') selMoveMany(ll); else selApply(Object.assign({}, sel, {lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6)}), 'Moved.'); } else selectAt(ll); return; }
+  if (tool === 'sel'){ if (again || working || busy) return; if (selGrp){ grpPlace(ll); return; } if (selBox){ selBoxTap(ll); return; } if (selMove && sel){ selMove = false; if (sel.t === 'multi') selMoveMany(ll); else selApply(Object.assign({}, sel, {lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6)}), 'Moved.'); } else selectAt(ll); return; }
   if (tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'){ riv.push(+ll[0].toFixed(6), +ll[1].toFixed(6)); toolUI(); return; }
   if (tool === 'flood'){ pend.push({id:uid(), t:'flood', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, lv:+Math.max(0.3, brushK*6).toFixed(1)}); V3.note('Flood: water up ' + Math.max(0.3, brushK*6).toFixed(1) + ' m from here, inside the brush circle.', 3); return; }
   if (tool === 'basin'){ pend.push({id:uid(), t:'basin', lat:+ll[1].toFixed(6), lon:+ll[0].toFixed(6), r:brushR, k:+(brushK*4).toFixed(1)}); V3.note('Lake', 1.5); return; }
@@ -413,7 +413,7 @@ function scatterArea(c){
   V3.note(got + ' plants over ' + Math.round(area) + ' square metres' + (got < n ? ' (the rest was road, water or building, or too tight)' : ''), 4);
 }
 /* ---- Select: pick something you placed, then turn, move or delete it ---- */
-var sel = null, selMove = false, selBox = null;
+var sel = null, selMove = false, selBox = null, selGrp = null;
 var SELT = {place:1, tree:1, prop:1, creature:1, nest:1};
 async function selectAt(ll){
   var g = world.geo, best = null, bd = 10; (await L3.editAll(cur.proj)).forEach(function(o){ if (o.t !== 'place' && o.t !== 'tree' && o.t !== 'prop' && o.t !== 'creature' && o.t !== 'nest') return; var d = Math.hypot((o.lon - ll[0])*g.kx, (o.lat - ll[1])*g.ky); if (d < bd){ bd = d; best = o; } });
@@ -432,8 +432,41 @@ function selUI(){
   var has = !!sel, turn = has && sel.t !== 'multi' && (sel.t === 'prop' || sel.t === 'place' || sel.t === 'creature' || sel.t === 'nest'), deg = !has ? 0 : (sel.t === 'prop' || sel.t === 'creature' || sel.t === 'nest') ? (sel.ry || 0) : sel.t === 'place' ? Math.round(((sel.a || 0)*180/Math.PI)/15)*15 : 0;
   deg = ((deg % 360) + 360) % 360;
   $('v3si').textContent = !has ? 'Tap a building, tree or piece you placed.' : selMove ? selName(sel) + ': tap the ground where it should go.' : 'Selected: ' + selName(sel);
-  if (has && sel.t === 'real'){ $('v3si').textContent = 'Selected: ' + selName(sel) + '. Delete removes it.'; } if (selBox && !has) $('v3si').textContent = selBox.c ? 'Tap the opposite corner.' : 'Tap one corner of the box.'; $('v3sa').disabled = !turn || sel.t === 'multi'; $('v3sa').value = deg; $('v3saV').textContent = deg + '°'; $('v3smv').disabled = !has || sel.t === 'real'; $('v3scp').disabled = !has || sel.t === 'real'; $('v3sbx').className = 'sm ' + (selBox ? 'on' : 'alt'); $('v3sdl').disabled = !has; $('v3sdn').disabled = !has;
+  if (has && sel.t === 'real'){ $('v3si').textContent = 'Selected: ' + selName(sel) + '. Delete removes it.'; } if (selGrp && !has) $('v3si').textContent = 'Tap the ground where "' + selGrp.name + '" goes.'; $('v3sgs').disabled = !has || sel.t === 'real'; if (selBox && !has) $('v3si').textContent = selBox.c ? 'Tap the opposite corner.' : 'Tap one corner of the box.'; $('v3sa').disabled = !turn || sel.t === 'multi'; $('v3sa').value = deg; $('v3saV').textContent = deg + '°'; $('v3smv').disabled = !has || sel.t === 'real'; $('v3scp').disabled = !has || sel.t === 'real'; $('v3sbx').className = 'sm ' + (selBox ? 'on' : 'alt'); $('v3sdl').disabled = !has; $('v3sdn').disabled = !has;
   $('v3smv').className = 'sm ' + (selMove ? 'on' : 'alt');
+}
+/* ---- groups: save what you selected as a file anyone can open on another map, and put it down with one tap ---- */
+var GKEYS = ['t', 'p', 'b', 'a', 'w', 'd', 'lv', 'fw', 'ry', 'k', 'n', 'nests', 'r', 'fl', 'rf', 'wl', 'wc'];
+function grpLoad(){ try { var a = JSON.parse(localStorage.getItem('asmb:groups') || '[]'); return Array.isArray(a) ? a : []; } catch (er){ return []; } }
+function grpStore(a){ try { localStorage.setItem('asmb:groups', JSON.stringify(a)); return true; } catch (er){ return false; } }
+function grpList(){
+  var sl = $('v3sgl'), a = grpLoad(); if (!sl) return; sl.innerHTML = '<option value="-1">Put down a saved group...</option>' + a.map(function(g, i){ return '<option value="' + i + '">' + String(g.name).replace(/[<>&"]/g, '') + ' (' + g.items.length + ')</option>'; }).join('');
+}
+function grpClean(g){   /* only what the editor itself writes: known kinds, known fields, numbers that are numbers */
+  if (!g || g.format !== 'afterstreet-group' || !Array.isArray(g.items) || !g.items.length || g.items.length > 500) return null;
+  var items = []; for (var i = 0; i < g.items.length; i++){ var o = g.items[i], c = {}; if (!o || !SELT[o.t] || !isFinite(o.dx) || !isFinite(o.dy) || Math.abs(o.dx) > 2000 || Math.abs(o.dy) > 2000) return null;
+    GKEYS.forEach(function(k){ if (o[k] !== undefined && (typeof o[k] === 'number' ? isFinite(o[k]) : typeof o[k] === 'string' && o[k].length < 80)) c[k] = o[k]; }); c.dx = +o.dx; c.dy = +o.dy; items.push(c); }
+  return {format:'afterstreet-group', v:1, name:String(g.name || 'Group').slice(0, 40), items:items};
+}
+function grpSave(){
+  var src = !sel || sel.t === 'real' ? null : sel.t === 'multi' ? sel.items : [sel]; if (!src){ V3.note('Select something you placed first (Box selects several).', 4); return; }
+  var g = world.geo, cx = 0, cy = 0; src.forEach(function(o){ cx += o.lon; cy += o.lat; }); cx /= src.length; cy /= src.length;
+  var name = ($('v3sgn').value || '').trim() || 'Group of ' + src.length, grp = {format:'afterstreet-group', v:1, name:name, builder:L3.VERSION || '', items:src.map(function(o){ var c = {dx:+((o.lon - cx)*g.kx).toFixed(2), dy:+((o.lat - cy)*g.ky).toFixed(2)}; GKEYS.forEach(function(k){ if (o[k] !== undefined) c[k] = o[k]; }); return c; })};
+  var a = grpLoad(); a.push(grp); var ok = grpStore(a); grpList();
+  try { var bl = new Blob([JSON.stringify(grp)], {type:'application/json'}), u = URL.createObjectURL(bl), el = document.createElement('a'); el.href = u; el.download = name.replace(/[^A-Za-z0-9_-]+/g, '_') + '.asgroup.json'; document.body.appendChild(el); el.click(); setTimeout(function(){ el.remove(); URL.revokeObjectURL(u); }, 500); } catch (er){}
+  V3.note('Saved "' + name + '" (' + src.length + ') as a file' + (ok ? ' and in the list.' : '; the list could not be kept.'), 4);
+}
+function grpArm(i){ var a = grpLoad(); if (i < 0 || !a[i]){ selGrp = null; selUI(); return; } selGrp = a[i]; sel = null; selBox = null; selMove = false; selUI(); V3.note('Tap the ground where "' + selGrp.name + '" goes.', 4); }
+function grpFile(){
+  var f = this.files && this.files[0]; this.value = ''; if (!f) return; if (f.size > 1000000){ V3.note('That file is too big to be a group.', 4); return; }
+  var rd = new FileReader(); rd.onload = function(){ var g = null; try { g = grpClean(JSON.parse(rd.result)); } catch (er){} if (!g){ V3.note('That is not a group file this builder can read.', 5); return; }
+    var a = grpLoad(); a.push(g); grpStore(a); grpList(); $('v3sgl').value = String(a.length - 1); grpArm(a.length - 1); }; rd.readAsText(f);
+}
+async function grpPlace(ll){
+  if (working || busy || !selGrp) return; var g = world.geo, G = selGrp, ops = G.items.map(function(o){ var c = {id:uid()}; GKEYS.forEach(function(k){ if (o[k] !== undefined) c[k] = o[k]; }); c.lon = +(ll[0] + o.dx/g.kx).toFixed(6); c.lat = +(ll[1] + o.dy/g.ky).toFixed(6); return c; }); working = true;
+  try { await L3.editAdd(cur.proj, cur.region, ops); undoSt.push(ops); redoSt = []; selGrp = null; $('v3sgl').value = '-1'; sel = ops.length === 1 ? ops[0] : {t:'multi', items:ops, lon:ll[0], lat:ll[1], r:Math.max(3, Math.max.apply(null, G.items.map(function(o){ return Math.hypot(o.dx, o.dy); })) + 2)}; await redraw('Put down "' + G.name + '". It is selected: Move, Copy or Delete work on it.'); }
+  catch (er){ V3.note('Could not put the group down: ' + er.message, 6); }
+  working = false; selUI(); refreshCount();
 }
 function selBoxTap(ll){
   if (!selBox.c){ selBox.c = ll; selUI(); V3.note('Now the opposite corner.', 3); return; }
@@ -517,7 +550,7 @@ function toolUI(){
   pvMark();
   var kl = $('v3k').parentNode.firstChild; if (kl && kl.nodeType === 3) kl.nodeValue = tool === 'scat' || tool === 'fill' ? 'Density ' : tool === 'hill' ? 'Height ' : tool === 'cut' ? 'Depth ' : 'Strength '; $('v3kV').textContent = kText();
   if (V3.shellSync) setTimeout(function(){ V3.shellSync(); }, 0);
-  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); ghost = null; ghostUI(); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); $('v3cr').classList.toggle('hidden', tool !== 'alien' && tool !== 'nest'); $('v3ck').style.display = tool === 'alien' ? '' : 'none'; $('v3cn').parentNode.style.display = tool === 'alien' ? '' : 'none'; if (tool === 'alien' || tool === 'nest') creInit(); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; selBox = null; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
+  $('v3pnt').classList.toggle('hidden', tool !== 'paint'); $('v3rd').classList.toggle('hidden', tool !== 'road'); $('v3bs').classList.toggle('hidden', tool !== 'bset'); $('v3pr').classList.toggle('hidden', tool !== 'prop'); $('v3sel').classList.toggle('hidden', tool !== 'sel'); ghost = null; ghostUI(); $('v3sc').classList.toggle('hidden', tool !== 'scat' && tool !== 'fill'); $('v3cr').classList.toggle('hidden', tool !== 'alien' && tool !== 'nest'); $('v3ck').style.display = tool === 'alien' ? '' : 'none'; $('v3cn').parentNode.style.display = tool === 'alien' ? '' : 'none'; if (tool === 'alien' || tool === 'nest') creInit(); if (tool === 'scat' || tool === 'fill') scatInit(); if (tool !== 'sel'){ sel = null; selMove = false; selBox = null; selGrp = null; } selUI(); if (tool === 'prop') V3.propInit(); $('v3bld').classList.toggle('hidden', tool !== 'place'); var isR = tool === 'river' || tool === 'road' || tool === 'cut' || tool === 'slope' || tool === 'fill'; $('v3riv').classList.toggle('hidden', !isR);
   if (isR) $('v3rn').textContent = riv.length >= 4 ? (riv.length/2) + ' points' : riv.length ? '1 point, tap more' : tool === 'road' ? 'tap along the road' : tool === 'fill' ? 'tap the corners of the area, then Finish' : tool === 'cut' ? 'tap along the trench' : tool === 'slope' ? 'tap the start, then the end' : 'tap along the river, downstream';
 }
 async function finishRiver(){
