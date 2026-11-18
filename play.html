@@ -428,6 +428,10 @@
         <label>Searched loot<select id="lootRule"><option value="refill">Refills after about five days</option><option value="never">Never comes back</option></select></label>
         <label>Visitors' gear, when you host<select id="vRule"><option value="accept">Accept everything they bring</option><option value="cap">Cap: at most 5 of each item, skills limited</option><option value="empty">Visitors arrive empty-handed</option></select></label>
       </div>
+      <details id="kbEd" style="margin-top:10px"><summary><b>Keys (change which key does what)</b></summary>
+        <div style="margin:6px 0">Press Change, then the key you want. A key that is already used swaps with it. Your keys stay on this device. Number keys 1 to 4 and Enter are fixed.</div>
+        <div id="kbList"></div><button id="kbReset" type="button">Put every key back</button>
+      </details>
       <details id="lootEd" style="margin-top:10px"><summary><b>What is inside things (loot)</b></summary>
         <div style="margin:6px 0">Pick something you can search, and where it is. Change what it can hold and how likely each thing is (a bigger number means it turns up more; none means nothing is there). Your changes stay on this device and apply to your own searches.</div>
         <div class="prow">
@@ -538,7 +542,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.129.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.129.2</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -583,7 +587,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.129.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.129.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -677,8 +681,24 @@ async function respawnHome(why){
 
 /* ================= input ================= */
 var keys = {}, wantSwing = false, wantShoot = false, wantJump = false, locked = false, tapUse = false, autoUse = null;
+/* 0.129.2: keys can be changed (Settings, Keys). A key is turned into the key the game expects before anything reads it: KB maps an action's own key to the key you chose; a key you moved away from is dead. */
+var KB = {}, KBO = {}, KBACT = [['KeyW','Walk forward'],['KeyS','Walk back'],['KeyA','Step left'],['KeyD','Step right'],['Space','Jump'],['KeyE','Use, open, pick up'],['ShiftLeft','Sprint'],['KeyZ','Crouch'],['KeyF','Shoot'],['KeyO','Reload'],['KeyQ','Change weapon'],['KeyI','Items and crafting'],['KeyN','Build'],['KeyL','Flashlight'],['KeyG','Switch seat or quick item'],['KeyH','Help'],['KeyP','Change view'],['KeyV','Throw a stone']];
+function kbLoad(){ try { KB = JSON.parse(localStorage.getItem('afterstreet.keys') || '{}') || {}; } catch (e){ KB = {}; } KBO = {}; for (var k in KB) KBO[KB[k]] = k; }
+function kbCode(c){ if (KBO[c]) return KBO[c]; for (var k in KB) if (k === c && KB[k] !== c) return ''; return c; }
+function kbSave(){ try { localStorage.setItem('afterstreet.keys', JSON.stringify(KB)); } catch (e){} kbLoad(); kbRender(); }
+function kbName(c){ return String(c).replace(/^Key/, '').replace(/^Digit/, '').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift').replace('ControlLeft', 'Left Ctrl').replace('Arrow', 'Arrow ').replace('Space', 'Space bar'); }
+var kbWait = null;
+function kbRender(){ var h = ''; KBACT.forEach(function(a, i){ h += '<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:1">' + a[1] + '</span><b style="min-width:84px">' + (kbWait === i ? 'press a key...' : kbName(KB[a[0]] || a[0])) + '</b><button type="button" data-kb="' + i + '">Change</button></div>'; }); var L = document.getElementById('kbList'); if (L) L.innerHTML = h; }
+kbLoad();
+window.addEventListener('keydown', function(e){
+  if (kbWait === null) return; e.preventDefault(); e.stopImmediatePropagation(); var a = KBACT[kbWait][0], nc = e.code; kbWait = null;
+  if (nc !== 'Escape' && !/^(Digit[1-4]|Enter|F\d+|Tab|Meta.*)$/.test(nc)){ var cur = KB[a] || a, other = null; KBACT.forEach(function(q){ if (q[0] !== a && (KB[q[0]] || q[0]) === nc) other = q[0]; }); if (other) KB[other] = cur; KB[a] = nc; for (var k in KB) if (KB[k] === k) delete KB[k]; kbSave(); } else kbRender();
+}, true);
+document.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-kb]'); if (b){ kbWait = +b.getAttribute('data-kb'); kbRender(); } if (e.target.id === 'kbReset'){ KB = {}; kbSave(); } });
+document.addEventListener('DOMContentLoaded', kbRender); kbRender();
 window.addEventListener('keydown', function(e){
   if (!running || /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) return;
+  var ec = kbCode(e.code); if (ec !== e.code){ if (!ec) return; var oe = e; e = {code:ec, repeat:e.repeat, target:e.target, preventDefault:function(){ oe.preventDefault(); }, stopPropagation:function(){}}; }
   keys[e.code] = true;
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit'); if (e.code === 'Digit4') useItem('bandage');
   if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
@@ -689,7 +709,7 @@ window.addEventListener('keydown', function(e){
   if (e.code === 'KeyF') wantShoot = true; if (e.code === 'KeyB') place('cade'); if (e.code === 'KeyC') place('fire');
   if (e.code === 'Space' || e.code.indexOf('Arrow') === 0) e.preventDefault(); if (e.code === 'Space' && !e.repeat) wantJump = true;
 });
-window.addEventListener('keyup', function(e){ keys[e.code] = false; });
+window.addEventListener('keyup', function(e){ var c = kbCode(e.code); keys[c || e.code] = false; keys[e.code] = false; });
 window.addEventListener('blur', function(){ keys = {}; });
 document.addEventListener('pointerlockchange', function(){ locked = document.pointerLockElement === cv; el('lockhint').classList.toggle('hidden', locked); });
 document.addEventListener('mousemove', function(e){
