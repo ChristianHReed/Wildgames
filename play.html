@@ -538,7 +538,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.129.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.129.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -583,7 +583,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.129.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.129.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -6264,6 +6264,10 @@ async function openAsmap(file){
     /* 0.128.1: the builder says what a map was built for (1.35.0). A full-detail map with big squares can close the page on a phone or tablet: say so before Play, not after */
     var mb = +(man.maxSquareMB || r0.maxSquareMB) || 0, bud = man.budget || r0.budget;
     if (lowMemDev() && (bud === 'computer' && mb > 12 || mb > 16)) st.textContent += ' This map was built for computers (its biggest square is ' + mb + ' MB). On a phone or tablet it may close the page: if it does, build it again in the Maps Builder with Light build ticked.';
+    /* 0.129.1: the builder lists the Workshop packs a map's placed pieces come from (manifest.packs, builder 1.43): say which ones this copy of the game does not have, and where the pieces will be missing */
+    if (Array.isArray(man.packs) && man.packs.length){ var have = {}; (window.AFTERSTREET_PACKS || []).forEach(function(pk){ if (pk && pk.id) have[String(pk.id)] = 1; });
+      var miss = man.packs.filter(function(q){ return q && q.pack && !have[String(q.pack)]; }).map(function(q){ return txt(q.name || q.pack, 40); });
+      if (miss.length) st.textContent += ' This map uses content packs that are not in this copy of the game (' + miss.slice(0, 4).join(', ') + (miss.length > 4 ? ' and ' + (miss.length - 4) + ' more' : '') + '): the pieces from them will not show.'; }
     info(st.textContent);
   } catch (e){ st.textContent = 'Could not open the map file: ' + (e.message || e.name || 'unknown error') + '.'; info(st.textContent); try { BUGERR.push('openAsmap ' + file.name + ' ' + file.size + ': ' + (e && (e.name + ' ' + e.message))); } catch (er){} }
 }
