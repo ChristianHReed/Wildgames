@@ -419,6 +419,7 @@
         <label>Screen controls and readouts size<select id="hudS"><option value="0.85">Small</option><option value="1">Normal</option><option value="1.15">Large</option><option value="1.3">Extra large</option></select></label>
         <label>High-contrast screen controls<select id="hudHC"><option value="0">Off</option><option value="1">On</option></select></label>
         <div id="gpuLine" style="margin:6px 0;color:var(--muted)"></div>
+        <label><input type="checkbox" id="gpuTest"> Test the graphics card on the ground (the next map you play does its ground work twice and shows the result above; for tests)</label>
         <label>Camera effects (sprint zoom, hit shake, weapon sway)<select id="fxS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Goal, for a new world<select id="scen"></select></label>
         <label>Cars from content packs<select id="packCars"><option value="mix">Mixed in among the parked cars</option><option value="off">Stock cars only</option></select></label>
@@ -543,7 +544,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.129.3</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.130.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -588,7 +589,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.129.3', ART = {}, ARTSET = (function(){
+var BUILD = '0.130.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -822,8 +823,13 @@ var GPUINFO = {ok:false, text:(navigator.gpu ? 'checking' : 'not in this browser
     gpuShow();
   }, function(e){ GPUINFO.text = 'error ' + String(e && e.message || e).slice(0, 60); gpuShow(); });
 })();
-function gpuShow(){ var d = document.getElementById('gpuLine'); if (d) d.textContent = 'WebGPU on this device: ' + GPUINFO.text + '. The game does not use it yet; this is for tests.'; }
-function bugState(){ var g = world && world.geo, o = {build:BUILD, time:Math.round(time), view:VIEW, touch:!!touchMode, screen:innerWidth + 'x' + innerHeight, ua:navigator.userAgent.slice(0, 140), webgpu:GPUINFO.text};
+function gpuShow(){ var d = document.getElementById('gpuLine'); if (!d) return; var T = window.GPUTEST, t = '';
+  if (T) t = T.state === 'running' ? ' Ground test: running on the next map load...' : T.state === 'failed' ? ' Ground test failed: ' + T.error : ' Ground test: the processor took ' + T.cpu.ms + ' ms, the graphics card ' + T.gpu.ms + ' ms (' + T.gpu.msBlocked + ' ms of it held up the page), ' + T.speed + ' times as fast, ' + T.same + '.';
+  d.textContent = 'WebGPU on this device: ' + GPUINFO.text + '. The game does not use it to play yet; this is for tests.' + t; }
+/* 0.130.0: Settings > "Test the graphics card on the ground" loads engine/gpudrape.js, which repeats the ground drape of the next map load on the graphics card and compares it with the processor's */
+function gpuTestPrefs(){ var on = lsGet('lastblock:gputest') === '1', c = document.getElementById('gpuTest'); if (c) c.checked = on;
+  if (on && navigator.gpu && !window.AfterstreetGPUDrape && !document.getElementById('gpuDrapeJs')){ var sc = document.createElement('script'); sc.id = 'gpuDrapeJs'; sc.src = 'engine/gpudrape.js?v=' + BUILD; document.body.appendChild(sc); } }
+function bugState(){ var g = world && world.geo, o = {build:BUILD, time:Math.round(time), view:VIEW, touch:!!touchMode, screen:innerWidth + 'x' + innerHeight, ua:navigator.userAgent.slice(0, 140), webgpu:GPUINFO.text, gputest:window.GPUTEST || null};
   try { o.mode = world && world.scen ? world.scen.type + ' / ' + (world.scen.name || '') : ''; o.x = Math.round(P.x*10)/10; o.y = Math.round(P.y*10)/10; if (g){ o.lat = Math.round((g.lat0 - P.y/g.ky)*1e6)/1e6; o.lon = Math.round((g.lon0 + P.x/g.kx)*1e6)/1e6; }
     o.hp = Math.round(P.hp); o.inside = P.inside ? 1 : 0; o.vehicle = P.veh ? (P.veh.kind || P.veh.boat || P.veh.moto || 'vehicle') + ' seat ' + (P.seat | 0) : ''; o.weapon = P.weapon || P.gun || ''; o.weather = wx.w; o.diff = world && world.diff; o.map = mapSrc && (mapSrc.name || (mapSrc.street ? 'test street' : 'map')) || ''; } catch (e){ o.err = String(e); }
   o.errors = BUGERR.slice(); return o; }
@@ -6649,7 +6655,7 @@ el('pauseS').checked = PAUSEON; el('pauseS').addEventListener('change', function
 el('capsS').checked = CAPON; el('capsS').addEventListener('change', function(){ CAPON = el('capsS').checked; lsSet('lastblock:caps', CAPON ? '1' : '0'); });
 el('fxS').addEventListener('change', function(){ CAMS.fx = +el('fxS').value; lsSet('lastblock:fx', CAMS.fx); });
 function hudPrefs(){ var hs = lsGet('lastblock:hudscale') || '1', hc = lsGet('lastblock:hudhc') || '0'; el('hudS').value = hs; el('hudHC').value = hc; document.documentElement.style.setProperty('--hs', hs); document.body.classList.toggle('hc', hc === '1'); }   /* 0.114.86 */
-gpuShow(); el('hudS').addEventListener('change', function(){ lsSet('lastblock:hudscale', el('hudS').value); hudPrefs(); }); el('hudHC').addEventListener('change', function(){ lsSet('lastblock:hudhc', el('hudHC').value); hudPrefs(); }); hudPrefs();
+gpuShow(); gpuTestPrefs(); el('gpuTest').addEventListener('change', function(){ lsSet('lastblock:gputest', el('gpuTest').checked ? '1' : '0'); gpuTestPrefs(); }); el('hudS').addEventListener('change', function(){ lsSet('lastblock:hudscale', el('hudS').value); hudPrefs(); }); el('hudHC').addEventListener('change', function(){ lsSet('lastblock:hudhc', el('hudHC').value); hudPrefs(); }); hudPrefs();
 (function(){ var r0 = String(RSCALE), o = el('rscale'); if (![].some.call(o.options, function(q){ return q.value === r0; })){ var op = document.createElement('option'); op.value = r0; op.textContent = Math.round(RSCALE*100) + '%'; o.appendChild(op); } o.value = r0;
   o.addEventListener('change', function(){ RSCALE = +o.value; lsSet('lastblock:rscale', o.value); resize(); });
   var fq = /[?&]cap=(\d+)/.exec(location.search); FCAP = fq ? +fq[1] : +(lsGet('lastblock:fcap') || 0); el('fcap').value = String(FCAP === 30 ? 30 : 0);

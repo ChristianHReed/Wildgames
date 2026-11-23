@@ -681,6 +681,7 @@ function coreDrape(m, lift){
   var hgAt = base, tri = (hgAt + g.d.length*4 + 15) & ~15, col = tri + BT*36, uv = (col + BT*12 + 15) & ~15, op = uv + BT*36, cap = BT*3*40, oc, ot, end;
   var lay = function(){ oc = op + cap*12; ot = (oc + cap*4 + 15) & ~15; end = ot + cap*12; var have = mem.buffer.byteLength; if (end > have) mem.grow(Math.ceil((end - have)/65536)); };
   lay(); new Float32Array(mem.buffer, hgAt, g.d.length).set(g.d);
+  var gpuIn = null, gpuT0 = 0; if (window.gpuTestCapture && !window.GPUTEST){ try { gpuIn = window.gpuTestCapture(m, lift); } catch (e){ console.warn('gpu test capture', e); } } gpuT0 = performance.now();   /* 0.130.0: the optional WebGPU ground test (engine/gpudrape.js) */
   var P0 = m.p, C0 = m.c, T0 = m.t;
   for (var s0 = 0; s0 < N; s0 += BT){
     var n = Math.min(BT, N - s0), B = mem.buffer;
@@ -690,6 +691,7 @@ function coreDrape(m, lift){
     if (need){ B = mem.buffer; parts.push({p:new Float32Array(B.slice(op, op + need*12)), c:new Uint8Array(B.slice(oc, oc + need*4)), t:new Float32Array(B.slice(ot, ot + need*12))}); }
   }
   m.parts = parts; m.p = []; m.c = []; m.t = [];
+  if (gpuIn){ var gpuMs = performance.now() - gpuT0, gpuSt = window.gpuTestStats(parts); setTimeout(function(){ window.gpuTestRun(gpuIn, gpuMs, gpuSt); }, 1500); }
   if (mem.buffer.byteLength > 32*1048576) coreFresh();
   return true;
 }
