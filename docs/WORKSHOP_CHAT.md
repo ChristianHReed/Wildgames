@@ -185,6 +185,8 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 
 **Open in the Workshop**
 
+- Self evaluation and improvement plan (23 November 2026): project doc "Workshop chat - self evaluation and improvement plan". Main finding: the engine is strong, but content is made by scripts and outside tools because the editor can't do enough (no corner editing for a third of all pieces, the content chat's helpers live outside the engine, no look check, cramped on phones). Ten ranked changes, waiting for the user to pick.
+
 - Wheel size per axle (the tractor's big rear and small front wheels): the content chat asked for this; today there is one wheel radius per vehicle.
 
 - Map the stock keys (`hatchback` and so on) to the remade designs when the game loads `workshop-crafts`. This needs the main chat to agree first.
