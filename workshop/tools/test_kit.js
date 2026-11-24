@@ -70,5 +70,16 @@ ok(!r.bad.length, 'kit van: ' + r.report.tris + ' triangles, ' + r.doc.pieces.le
 var stw = r.asset.rig && r.asset.rig.parts ? Object.keys(r.asset.rig.parts).filter(function(k){ return r.asset.rig.parts[k].kind === 'steer'; }) : [];
 ok(stw.length === 1, 'kit van: the steering wheel turns (' + stw.join(', ') + ')');
 
+/* 9. smooth cages: a cube cage smooths into a closed rounded body inside the cage, winding outwards; tubes and blocks become cages */
+var cube = M.SHAPES.cage.make(), sd = M.subdivide(cube.v, cube.f, 2), SB = M.boundsOf([{s:'poly', p:[0, 0, 0], v:sd.v, f:sd.f, c:'paint1'}]);
+ok(sd.f.length === 96 && sd.v.length === 98 && K.cageVolume(sd.v, sd.f) > 0 && SB.mx[0] < 0.2 && SB.mx[0] > 0.12, 'cage: a cube smooths to 96 faces, closed, inside its cage (' + SB.mx[0].toFixed(3) + ' of 0.2)');
+var cp = {id:'c1', g:'body', s:'cage', pos:[0, 1, 0], rot:[0, 90, 0], scl:[1, 1, 1], c:'paint1', m:'sheet', sub:1, v:cube.v, f:cube.f}, nat = M.toNative(cp);
+ok(nat.length === 1 && nat[0].s === 'poly' && nat[0].f.length === 24 && !nat[0].sub, 'cage: the game gets one shaped piece (' + nat[0].f.length + ' faces at smoothness 1)');
+var tube = K.cageFrom({id:'t', g:'body', s:'loft', ax:'z', n:8, pos:[0, 0, 0], rot:[0, 0, 0], scl:[1, 1, 1], c:'paint1', r:[[0, 0, -0.5, 0.2, 0.15], [0, 0, 0, 0.25, 0.2], [0, 0, 0.5, 0, 0]]});
+ok(tube && tube.v.length === 17 && K.cageVolume(tube.v, tube.f) > 0 && M.subdivide(tube.v, tube.f, 1).f.length > 0, 'cage from a tube: ' + tube.v.length + ' corners, ' + tube.f.length + ' faces, winding outwards');
+var bx = K.cageFrom({id:'b', g:'body', s:'box', pos:[1, 1, 1], rot:[0, 0, 0], scl:[1, 1, 1], c:'paint1', d:[1, 0.5, 2], name:'torso'});
+var fi = K.extrudeFace(bx.v, bx.f, 2, 0.4), ext = M.subdivide(bx.v, bx.f, 1);
+ok(bx.v.length === 12 && bx.f.length === 10 && K.cageVolume(bx.v, bx.f) > 1*0.5*2 && ext.f.length === 40 && bx.name === 'torso' && bx.pos[0] === 1, 'cage: pull out a face (12 corners, 10 faces, bigger inside), name and place kept');
+
 console.log(fails ? fails + ' failed' : 'all kit tests passed');
 process.exit(fails ? 1 : 0);

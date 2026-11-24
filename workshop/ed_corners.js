@@ -8,7 +8,7 @@
 (window.WSX = window.WSX || []).push(function(A){
   var S = A.S, X = A.X, M = A.M, r4 = A.r4, clone = A.clone, esc = A.esc;
   var TOL = 0.002, AXW = ['across (x)', 'up (y)', 'front to back (z)'];
-  function editable(p){ return p && (p.s === 'poly' || p.s === 'decal') && Array.isArray(p.v) && p.v.length >= 3; }
+  function editable(p){ return p && (p.s === 'poly' || p.s === 'decal' || p.s === 'cage') && Array.isArray(p.v) && p.v.length >= 3; }
   function target(){
     if (!S.gz || !S.gz.corners || S.gz.mode !== 'shape' || !S.doc || S.layer === 'look' || S.placing || !A.view) return null;
     var sel = A.selected(); return sel.length === 1 && editable(sel[0]) ? sel[0] : null;
@@ -51,10 +51,37 @@
     var p = target(); if (!p) return null;
     var H = [], k = corner(), W = p.v.map(function(v){ return toWorld(p, v); });
     W.forEach(function(w, i){ H.push({type:'corner', i:i, sg:0, pos:w, dir:[0, 0, 0], box:true, col:i === k ? '#f0922a' : '#e8c24a'}); });
+    /* a smooth cage: a handle in the middle of each face too, to pick the face and push or pull it */
+    if (p.s === 'cage') (p.f || []).forEach(function(f, fi){ var c = [0, 0, 0]; f.forEach(function(j){ for (var a = 0; a < 3; a++) c[a] += W[j][a]/f.length; });
+      var n = faceN(p, fi); H.push({type:'cface', i:fi, sg:0, pos:c, dir:n, box:true, col:fi === S.cageFace ? '#f0922a' : '#5f8a9a'}); });
     if (p.s === 'decal') H.push({type:'outline', pts:W.concat([W[0]]), col:'#f0922a', pos:W[0]});
     else (p.f || []).forEach(function(f){ H.push({type:'outline', pts:f.map(function(j){ return W[j]; }).concat([W[f[0]]]), col:'#e8c24a', pos:W[f[0]]}); });
     return H;
   });
+  /* a face's outward direction in the world */
+  function faceN(p, fi){ var W = p.f[fi].map(function(j){ return toWorld(p, p.v[j]); }), n = [0, 0, 0];
+    for (var i = 0; i < W.length; i++){ var a = W[i], b = W[(i + 1) % W.length]; n[0] += (a[1] - b[1])*(a[2] + b[2]); n[1] += (a[2] - b[2])*(a[0] + b[0]); n[2] += (a[0] - b[0])*(a[1] + b[1]); }
+    var l = Math.hypot(n[0], n[1], n[2]) || 1; return [n[0]/l, n[1]/l, n[2]/l]; }
+  /* the face across the middle from face fi (its middle mirrored in x = 0), if there is one */
+  function partnerFace(p, fi){
+    var mid = function(f){ var c = [0, 0, 0]; f.forEach(function(j){ var w = toWorld(p, p.v[j]); for (var a = 0; a < 3; a++) c[a] += w[a]/f.length; }); return c; }, c = mid(p.f[fi]), best = -1;
+    if (Math.abs(c[0]) < TOL) return -1;
+    p.f.forEach(function(f, j){ if (j === fi) return; var q = mid(f); if (Math.abs(q[0] + c[0]) < TOL && Math.abs(q[1] - c[1]) < TOL && Math.abs(q[2] - c[2]) < TOL) best = j; });
+    return best;
+  }
+  A.cageFaces = {normal:faceN, partner:partnerFace};
+  /* push or pull a cage face along its direction (with its partner across the middle when Both sides is on) */
+  X.gz.cface = {
+    start:function(h, x, y, D){ var p = D.sel[0].p; S.cageFace = h.i; D.n = h.dir; D.t0 = A.lineParam(h.pos, h.dir, x, y); D.v0 = clone(p.v); D.j = S.gz.both ? partnerFace(p, h.i) : -1; A.renderPanel(); },
+    move:function(h, x, y, D){
+      var p = D.sel[0].p, t = A.lineParam(h.pos, D.n, x, y); if (t == null || D.t0 == null) return;
+      var d = t - D.t0, st = S.snap; if (st) d = Math.round(d/st)*st;
+      p.v = clone(D.v0); var moved = {};
+      var push = function(fi, n){ p.f[fi].forEach(function(j){ if (moved[j]) return; moved[j] = 1; var w = toWorld(p, D.v0[j]); p.v[j] = toLocal(p, [w[0] + n[0]*d, w[1] + n[1]*d, w[2] + n[2]*d]); }); };
+      push(h.i, D.n); if (D.j >= 0) push(D.j, [-D.n[0], D.n[1], D.n[2]]);
+      A.gzLabel('Face ' + (h.i + 1) + (d >= 0 ? ' out ' : ' in ') + A.fmtLen(Math.abs(d)), x, y);
+    }
+  };
   function hit(R, k, c){ if (Math.abs(R.d[k]) < 1e-6) return null; var t = (c - R.o[k])/R.d[k]; return [R.o[0] + R.d[0]*t, R.o[1] + R.d[1]*t, R.o[2] + R.d[2]*t]; }
   X.gz.corner = {
     start:function(h, x, y, D){

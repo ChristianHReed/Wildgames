@@ -305,6 +305,48 @@
     return {hw:hw, cabF:cabF, cabB:cabB, g:g, belt:belt, roof:roof, seatY:seatY, rear:cabF - cabB > 1.8 ? [r4(cabF - 1.7), r4(cabF - 1.7)] : []};
   };
 
+  /* ---------------------------------------------------------------- smooth cages (bodies and animals) */
+  function newell(V, f){ var n = [0, 0, 0]; for (var i = 0; i < f.length; i++){ var a = V[f[i]], b = V[f[(i + 1) % f.length]]; n[0] += (a[1] - b[1])*(a[2] + b[2]); n[1] += (a[2] - b[2])*(a[0] + b[0]); n[2] += (a[0] - b[0])*(a[1] + b[1]); }
+    var l = Math.hypot(n[0], n[1], n[2]) || 1; return [n[0]/l, n[1]/l, n[2]/l]; }
+  K.faceNormal = newell;
+  /* the volume inside a closed cage (negative when its faces wind inwards) */
+  K.cageVolume = function(V, F){ var s = 0; F.forEach(function(f){ for (var i = 1; i < f.length - 1; i++){ var a = V[f[0]], b = V[f[i]], c = V[f[i + 1]];
+    s += (a[0]*(b[1]*c[2] - b[2]*c[1]) - a[1]*(b[0]*c[2] - b[2]*c[0]) + a[2]*(b[0]*c[1] - b[1]*c[0]))/6; } }); return s; };
+  /* pull a new section out of face fi by h along its normal (Blender's extrude): the face moves out and four sides join it to where it was */
+  K.extrudeFace = function(V, F, fi, h){
+    var f = F[fi], n = newell(V, f), base = V.length, nf = f.map(function(_, i){ return base + i; });
+    f.forEach(function(i){ var q = V[i]; V.push([r4(q[0] + n[0]*h), r4(q[1] + n[1]*h), r4(q[2] + n[2]*h)]); });
+    var sides = f.map(function(a, i){ var j = (i + 1) % f.length; return [a, f[j], nf[j], nf[i]]; });   /* each side shares its edges the other way round from its neighbours */
+    F[fi] = nf; Array.prototype.push.apply(F, sides);
+    return fi;
+  };
+  /* a smooth cage from a block, soft block, tube or shaped piece, in the same place: the start of a body or an animal */
+  K.cageFrom = function(p){
+    var V, F, c;
+    if (p.s === 'box' || p.s === 'bev' || p.s === 'wedge' || p.s === 'cyl'){ var d = p.d || [0.4, 0.3, 0.4], x = d[0]/2, y = d[1]/2, z = d[2]/2;
+      c = M.SHAPES.cage.make(); V = c.v.map(function(q){ return [r4(Math.sign(q[0])*x), r4(Math.sign(q[1])*y), r4(Math.sign(q[2])*z)]; }); F = c.f; }
+    else if (p.s === 'loft' && p.r && p.r.length >= 2){
+      var ax = p.ax || 'y', A = ax === 'z' ? {a:0, b:1} : ax === 'x' ? {a:2, b:1} : {a:0, b:2}, n = Math.max(3, Math.min(16, p.n || 8)), rings = [];
+      V = []; F = [];
+      p.r.forEach(function(r){ var tip = !(r[3] > 1e-4 || r[4] > 1e-4), ids = [];
+        if (tip) { V.push([r4(r[0]), r4(r[1]), r4(r[2])]); for (var t = 0; t < n; t++) ids.push(V.length - 1); }
+        else for (var k = 0; k < n; k++){ var t2 = k/n*Math.PI*2, q = [r[0], r[1], r[2]]; q[A.a] += Math.cos(t2)*r[3]; q[A.b] += Math.sin(t2)*r[4]; V.push(q.map(r4)); ids.push(V.length - 1); }
+        rings.push({ids:ids, tip:tip}); });
+      for (var i = 0; i < rings.length - 1; i++){ var R0 = rings[i], R1 = rings[i + 1];
+        for (var k2 = 0; k2 < n; k2++){ var a = R0.ids[k2], b = R0.ids[(k2 + 1) % n], cc = R1.ids[(k2 + 1) % n], dd = R1.ids[k2], q4 = [a, b, cc, dd].filter(function(v, j, L){ return L.indexOf(v) === j; });
+          if (q4.length >= 3) F.push(q4); } }
+      if (!rings[0].tip) F.push(rings[0].ids.slice().reverse());
+      if (!rings[rings.length - 1].tip) F.push(rings[rings.length - 1].ids.slice());
+    }
+    else if (p.s === 'poly' && p.v && p.f){ V = p.v.map(function(q){ return q.slice(); }); F = p.f.map(function(f){ return f.slice(); }); }
+    else return null;
+    if (K.cageVolume(V, F) < 0) F = F.map(function(f){ return f.slice().reverse(); });
+    var out = {s:'cage', sub:2, v:V, f:F};
+    var keep = ['id', 'g', 'pos', 'rot', 'scl', 'c', 'm', 'name', 'fn', 'mx', 'mz', 'hidden', 'fitting', 'glow', 'kit'];
+    keep.forEach(function(k){ if (p[k] !== undefined) out[k] = clone(p[k]); });
+    return out;
+  };
+
   M.kit = K;
   if (node) module.exports = K; else root.WSK = K;
 })(typeof window !== 'undefined' ? window : this);

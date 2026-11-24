@@ -647,7 +647,7 @@
   }
   function shapeName(p){
     if (p.s === 'loft') return p.r.length === 2 && (p.r[1][3] === 0 || p.r[0][3] === 0) ? 'Cone' : 'Tube';
-    return {box:'Block', bev:'Soft block', wedge:'Slope', cyl:'Cylinder', decal:'Plate', poly:'Shaped piece'}[p.s] || p.s;
+    return {box:'Block', bev:'Soft block', wedge:'Slope', cyl:'Cylinder', decal:'Plate', poly:'Shaped piece', cage:'Smooth cage'}[p.s] || p.s;
   }
   function simpleTube(p){ return p.s === 'loft' && p.r.length === 2 && !p.ang && p.r.every(function(r){ return r.length <= 5 && !r[0] && (p.ax === 'y' ? !r[2] : p.ax === 'x' ? !r[2] && !r[1] : !r[1]) && (p.ax === 'z' ? !r[0] && !r[1] : true); }); }
   function rectPlate(p){ return p.s === 'decal' && p.v.length === 4 && !p.v.some(function(v){ return Math.abs(v[2]) > 1e-6; }) && Math.abs(p.v[0][0] + p.v[1][0]) < 1e-6 && Math.abs(p.v[0][1] - p.v[1][1]) < 1e-6 && (p.n || [0,0,1])[2] > 0.999; }

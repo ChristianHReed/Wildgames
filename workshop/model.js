@@ -62,7 +62,11 @@
     quarter: {label:'Quarter round', make:function(){ var k = [1,1,1,1,1,0]; return {s:'loft', ax:'z', ang:[0,22.5,45,67.5,90,225], r:[[0,0,-0.2,0.2,0.2,k],[0,0,0.2,0.2,0.2,k]]}; }}
   };
   M.SHAPE_ORDER = ['box','bev','wedge','cyl','tube','cone','plate'];
-  M.SHAPE_MORE = ['corner','incorner','pyramid','prism','hex','ball','dome','arch','quarter'];
+  /* a smooth cage: a few corners you move, smoothed into a body (Catmull-Clark subdivision, as Blender's Subdivision Surface);
+     the game gets the smoothed result as an ordinary shaped piece. sub: how smooth (0 the cage itself, 1, 2 or 3) */
+  M.SHAPES.cage = {label:'Smooth cage', make:function(){ var x = 0.2, y = 0.15, z = 0.2;
+    return {s:'cage', sub:2, v:[[-x,-y,-z],[x,-y,-z],[x,-y,z],[-x,-y,z],[-x,y,-z],[x,y,-z],[x,y,z],[-x,y,z]], f:[[0,1,2,3],[4,7,6,5],[3,2,6,7],[0,4,5,1],[1,5,6,2],[0,3,7,4]]}; }};
+  M.SHAPE_MORE = ['corner','incorner','pyramid','prism','hex','ball','dome','arch','quarter','cage'];
 
   /* materials: how a piece breaks, what it salvages into and what it costs to build */
   M.MATERIALS = {
@@ -150,11 +154,43 @@
       return o;
     });
   }
-  var GEO = ['d','fy','ax','r','n','lrot','ang','closed','caps','both','cin','v','f'];   /* a loft's ring turn 'rot' is kept as 'lrot' in the editor, since rot is the piece's rotation */
+  var GEO = ['d','fy','ax','r','n','lrot','ang','closed','caps','both','cin','v','f','sub'];   /* a loft's ring turn 'rot' is kept as 'lrot' in the editor, since rot is the piece's rotation */
   /* the piece's own shape at the origin, with its scale folded in */
+  /* Catmull-Clark subdivision of a polygon mesh (any number of sides; open edges kept as edges), levels times.
+     Faces wind anticlockwise seen from outside, and stay that way. Returns {v, f} with quads only after one level. */
+  M.subdivide = function(V, F, levels){
+    levels = Math.max(0, Math.min(3, levels | 0)); V = V.map(function(q){ return q.slice(); }); F = F.map(function(f){ return f.slice(); });
+    for (var L = 0; L < levels; L++){
+      var nv = V.length, E = {}, EL = [], fp = F.map(function(f){ var c = [0, 0, 0]; f.forEach(function(i){ c[0] += V[i][0]; c[1] += V[i][1]; c[2] += V[i][2]; }); return [c[0]/f.length, c[1]/f.length, c[2]/f.length]; });
+      var key = function(a, b){ return a < b ? a + '_' + b : b + '_' + a; };
+      F.forEach(function(f, fi){ f.forEach(function(a, i){ var b = f[(i + 1) % f.length], k = key(a, b), e = E[k]; if (!e){ e = E[k] = {a:a, b:b, faces:[], i:EL.length}; EL.push(e); } e.faces.push(fi); }); });
+      var vf = V.map(function(){ return []; }), ve = V.map(function(){ return []; });
+      F.forEach(function(f, fi){ f.forEach(function(a){ vf[a].push(fi); }); });
+      EL.forEach(function(e){ ve[e.a].push(e); ve[e.b].push(e); });
+      var ep = EL.map(function(e){ var A = V[e.a], B = V[e.b];
+        if (e.faces.length === 2){ var P = fp[e.faces[0]], Q = fp[e.faces[1]]; return [(A[0] + B[0] + P[0] + Q[0])/4, (A[1] + B[1] + P[1] + Q[1])/4, (A[2] + B[2] + P[2] + Q[2])/4]; }
+        return [(A[0] + B[0])/2, (A[1] + B[1])/2, (A[2] + B[2])/2]; });
+      var vp = V.map(function(P, i){
+        var bnd = ve[i].filter(function(e){ return e.faces.length !== 2; });
+        if (bnd.length){ if (bnd.length !== 2) return P.slice(); var a = V[bnd[0].a === i ? bnd[0].b : bnd[0].a], b = V[bnd[1].a === i ? bnd[1].b : bnd[1].a];
+          return [(a[0] + b[0] + 6*P[0])/8, (a[1] + b[1] + 6*P[1])/8, (a[2] + b[2] + 6*P[2])/8]; }
+        var n = ve[i].length; if (n < 3) return P.slice();
+        var Fa = [0, 0, 0], R = [0, 0, 0];
+        vf[i].forEach(function(fi){ for (var k = 0; k < 3; k++) Fa[k] += fp[fi][k]/vf[i].length; });
+        ve[i].forEach(function(e){ var A = V[e.a], B = V[e.b]; for (var k = 0; k < 3; k++) R[k] += (A[k] + B[k])/2/n; });
+        return [0, 1, 2].map(function(k){ return (Fa[k] + 2*R[k] + (n - 3)*P[k])/n; }); });
+      var NF = [], base = nv + EL.length;
+      F.forEach(function(f, fi){ var m = f.length; f.forEach(function(a, i){ var nx = f[(i + 1) % m], pv = f[(i + m - 1) % m];
+        NF.push([a, nv + E[key(a, nx)].i, base + fi, nv + E[key(pv, a)].i]); }); });
+      V = vp.concat(ep, fp); F = NF;
+    }
+    return {v:V.map(function(q){ return [r4(q[0]), r4(q[1]), r4(q[2])]; }), f:F};
+  };
   function localNative(ep){
     var o = {s:ep.s, p:[0,0,0]}, s = ep.scl || [1,1,1];
     GEO.forEach(function(k){ if (ep[k] !== undefined && ep[k] !== null) o[k === 'lrot' ? 'rot' : k] = clone(ep[k]); });
+    if (o.s === 'cage'){ var sd = M.subdivide(ep.v, ep.f, ep.sub == null ? 2 : ep.sub); o.s = 'poly'; o.v = sd.v; o.f = sd.f; delete o.sub; }
+    delete o.sub;
     if (o.s === 'loft') o.r = loftScale(o.r, o.ax || 'y', s);
     else if (o.s === 'poly') o.v = o.v.map(function(v){ return [v[0]*s[0], v[1]*s[1], v[2]*s[2]]; });
     else if (o.s === 'decal'){ o.v = o.v.map(function(v){ return [v[0]*s[0], v[1]*s[1], v[2]*s[2]]; }); var n = o.n || [0,0,1]; o.n = norm([n[0]/(s[0]||1), n[1]/(s[1]||1), n[2]/(s[2]||1)]); }

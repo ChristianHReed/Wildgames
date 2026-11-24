@@ -69,6 +69,24 @@ srv.listen(0, async function(){
   await p.waitForTimeout(900);
   ok(tr.m && tr.m.station === 'carshop' && tr.m.tr && tr.m.assets === 1 && /play\.html\?try=1/.test(p.url()), 'try it in the game: ' + (tr.err || (tr.m ? 'hand-off for the ' + tr.m.station + ', opened ' + p.url().replace(/^.*\//, '') : 'no hand-off: ' + tr.modal)));
   await p.goto('http://localhost:' + port + '/workshop.html'); await p.waitForFunction(function(){ return window.WORKSHOP && WORKSHOP.S && WORKSHOP.S.doc; }, null, {timeout:30000});
+  /* smooth cage: a block becomes a cage; pull a face out in the side view; pull out a new section on both sides */
+  var cg = await p.evaluate(function(){ var A = WORKSHOP.api, M = A.M, S = A.S, K = window.WSK; A.setDoc(M.blankDoc());
+    var q = M.addPiece(S.doc, 'box', [0, 1.2, 0], {d:[0.8, 0.5, 1.2]}); S.sel = [q.id]; S.tab = 'piece'; S.gz.both = true; A.refresh(true);
+    var mk = document.querySelector('button[data-a=cgMake]'); if (!mk) return {err:'no Make it a smooth cage'}; mk.click();
+    var c = A.selected()[0]; if (!c || c.s !== 'cage') return {err:'not a cage'};
+    var fb = [].filter.call(document.querySelectorAll('#viewBar button'), function(b){ return b.dataset.v === 'right'; })[0]; if (fb) fb.click();
+    return {v0:K.cageVolume(c.v, c.f), handles:!!S.gz.corners}; });
+  await p.waitForTimeout(400);
+  var fh = await p.evaluate(function(){ var A = WORKSHOP.api, c = A.selected()[0], best = -1, bz = -1e9;
+    c.f.forEach(function(f, i){ var n = A.cageFaces.normal(c, i); if (n[2] > bz){ bz = n[2]; best = i; } });   /* the face looking to the front (+z) */
+    var mid = [0, 0, 0]; c.f[best].forEach(function(j){ var w = A.corners.toWorld(c, c.v[j]); for (var k = 0; k < 3; k++) mid[k] += w[k]/4; });
+    var s2 = A.view.project(mid), r = A.view.canvas.getBoundingClientRect(); return {i:best, x:s2[0] + r.left, y:s2[1] + r.top}; });
+  await p.mouse.move(fh.x, fh.y); await p.mouse.down(); await p.mouse.move(fh.x - 30, fh.y, {steps:3}); await p.mouse.move(fh.x - 70, fh.y, {steps:3});   /* the side view looks from +x: left on screen is +z */ await p.mouse.up();
+  var cg2 = await p.evaluate(function(i){ var A = WORKSHOP.api, S = A.S, K = window.WSK, c = A.selected()[0], v1 = K.cageVolume(c.v, c.f);
+    S.cageFace = 4; A.renderPanel(); var pull = document.querySelector('button[data-a=cgPull]'); if (pull) pull.click(); c = A.selected()[0];
+    var nat = A.M.toNative(c); return {v1:v1, faces:c.f.length, corners:c.v.length, nat:nat.length && nat[0].s, tris:A.asset().stats.total}; }, fh.i);
+  ok(!cg.err && cg.handles && cg2.v1 > cg.v0*1.05 && cg2.faces === 6 + 4*2 && cg2.nat === 'poly', 'smooth cage: ' + (cg.err || 'from a block; face pulled out (inside ' + cg.v0.toFixed(2) + ' to ' + cg2.v1.toFixed(2) + ' cu m); new sections on both sides (' + cg2.corners + ' corners, ' + cg2.faces + ' faces, ' + cg2.tris + ' triangles in the game)'));
+  if (shots) await p.screenshot({path:shots + '/cage.png'});
   /* the design still builds */
   var chk = await p.evaluate(function(){ var A = WORKSHOP.api, As = A.asset(), C = A.M.check(A.S.doc, As); return {bad:C.filter(function(c){ return c[0] === 'bad'; }).map(function(c){ return c[1]; }), tris:As.stats.total}; });
   ok(true, 'the design builds: ' + chk.tris + ' triangles' + (chk.bad.length ? ' (checks say: ' + chk.bad.slice(0, 3).join('; ') + ')' : ''));
