@@ -92,6 +92,12 @@ var SP_OLD = {bed_single_A:'furniture.bed', bed_double_A:'furniture.bed', bed_do
 var SP_NEW = {locker:'furniture.locker', pew:'furniture.pew', crate:'furniture.crate', wardrobe:'furniture.bookshelf', shelf:'furniture.shop_shelf'};
 function spPieces(path){ var a = path.split('.'), m; if (a[0] === 'land'){ m = window.SHAPED && SHAPED.land && SHAPED.land.models.land; return m && m[a[1]]; } if (a[0] === 'ws'){ m = window.SHAPED && SHAPED.waterside && SHAPED.waterside.models.waterside; return m && m[a[1]]; } if (a[0] === 'fm'){ m = window.SHAPED && SHAPED.farm && SHAPED.farm.models.farm; return m && m[a[1]]; } if (a[0] === 'rs'){ m = window.SHAPED && SHAPED.roadside && SHAPED.roadside.models.roadside; return m && m[a[1]]; } if (a[0] === 'pk'){ m = window.SHAPED && SHAPED.parks && SHAPED.parks.models.parks; return m && m[a[1]]; } if (a[0] === 'wm'){ m = window.SHAPED && SHAPED.world && SHAPED.world.models; return m && (m.markings[a[1]] || m.kerbs[a[1]] || m.sidewalks[a[1]]); } if (a[0] === 'f2'){ m = window.SHAPED && SHAPED.furniture2 && SHAPED.furniture2.models.furniture; return m && m[a[1]]; } if (a[0] === 'st'){ m = window.SHAPED && SHAPED.structures && SHAPED.structures.models.structures; return m && m[a[1]]; } if (a[0] === 'at'){ m = window.SHAPED && SHAPED.autotrade && SHAPED.autotrade.models.autotrade; return m && m[a[1]]; } m = SHAPED.props.models[a[0]]; return m && m[a[1]]; }
 function spFitQ(pcs, hx, hz){ var M = spModel(pcs, function(){ return [0, 0, 0]; }); return (hx > hz*1.4 && M.hz > M.hx*1.4) || (hz > hx*1.4 && M.hx > M.hz*1.4) ? 1 : 0; }
+/* 0.131.0: the wheels of a car from its rig. An axle can have its own wheel size (rig.wheelSizes, one [radius, width] per wheel in rig.wheels order, Workshop 2026-11-23):
+   that wheel gets its own copy of the wheel model, scaled by radius/spec.wheelR across the wheel and width/spec.wheelW along the axle */
+function spWheelList(R, sp, Wm, base){ var S = R.wheelSizes;
+  return R.wheels.map(function(w, i){ var key = base, z = S && S[i], rs = z && sp && sp.wheelR ? z[0]/sp.wheelR : 1, ws = z && sp && sp.wheelW ? z[1]/sp.wheelW : 1;
+    if (Wm && (Math.abs(rs - 1) > 0.01 || Math.abs(ws - 1) > 0.01)){ key = base + i; var p = new Float32Array(Wm.p); for (var q = 0; q < p.length; q += 3){ p[q] *= rs; p[q+1] *= rs; p[q+2] *= ws; } VMOD[key] = Object.assign({}, Wm, {p:p}); }
+    return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, key]; }); }
 var SPCAR = {}, MACH = [];
 function spInstall(){ if (SPON) (function(){
   try {
@@ -108,7 +114,7 @@ function spInstall(){ if (SPON) (function(){
     PCV.forEach(function(e){ if (NEWC[e.key]) CK[e.key] = [e.key, e.paint || {}]; });
     for (nm in CK){ var V = PR.models.vehicles[CK[nm][0]], R = PR.vehicleRig[CK[nm][0]]; if (!V || !R || !VMOD[nm]) continue;
       var vc = spColour(PR.palette, CK[nm][1]), B = spModel(V.body.concat(V.bonnet || []), vc, {car:true}), Wm = spModel(V.wheel, vc, {car:true});
-      VMOD['sp_' + nm + '_w'] = Wm; B.w = R.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + nm + '_w']; }); B.h = VMOD[nm].h; SPCAR[nm] = VMOD[nm]; VMOD[nm] = B; }
+      VMOD['sp_' + nm + '_w'] = Wm; B.w = spWheelList(R, PR.vehicleSpec[CK[nm][0]], Wm, 'sp_' + nm + '_w'); B.h = VMOD[nm].h; SPCAR[nm] = VMOD[nm]; VMOD[nm] = B; }
     /* 0.95.0: the safe-house truck is the pickup in its own red; its bonnet (copied, hinged at its back edge), driver's door, the gap the door leaves
        and the loose tyre are the content chat's pieces (vehicles.pickup.door_l / door_gap, items.tyre_loose) */
     try { var TV = PR.models.vehicles.pickup, TR = PR.vehicleRig.pickup, tcol = spColour(PR.palette, {paint2:'#963e30'}), TH = spModel(TV.bonnet, tcol, {car:true}), hpx = TR.bonnetHinge[2], hpy = TR.bonnetHinge[1], ti, tb = {};
@@ -127,7 +133,7 @@ function spInstall(){ if (SPON) (function(){
       var made, make = function(){ if (made !== undefined) return made; made = null;
         try { var V2 = PR.models.vehicles[pn]; if (!V2) return null; var vc2 = spColour(PR.palette), B2 = spModel(V2.body.concat(V2.bonnet || []), vc2, {car:true}), W2 = spModel(V2.wheel, vc2, {car:true});
           Object.defineProperty(VMOD, 'sp_' + key + '_w', {value:W2, writable:true, configurable:true, enumerable:true});
-          B2.w = R2.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + key + '_w']; }); B2.h = (SPCAR[nm] || VMOD[nm]).h; B2.drop = R2.sitDrop || 0; made = B2; } catch (er4){ console.log('wreck ' + key, er4); }
+          B2.w = spWheelList(R2, PR.vehicleSpec[pn] || PR.vehicleSpec[WB[nm]], W2, 'sp_' + key + '_w'); B2.h = (SPCAR[nm] || VMOD[nm]).h; B2.drop = R2.sitDrop || 0; made = B2; } catch (er4){ console.log('wreck ' + key, er4); }
         return made; };
       Object.defineProperty(VMOD, key, {get:make, set:function(v){ made = v; }, configurable:true, enumerable:false});
       Object.defineProperty(VMOD, 'sp_' + key + '_w', {get:function(){ make(); var d = Object.getOwnPropertyDescriptor(VMOD, 'sp_' + key + '_w'); return d && 'value' in d ? d.value : undefined; }, configurable:true, enumerable:false}); }); });
@@ -980,8 +986,8 @@ var SPB = {};
 /* 0.114.88: a Workshop car installed while the game runs (built at a car shop): the same model, wheels, wreck and burnt looks the start-up pass makes */
 function spPackCarLive(e){ if (!SPON) return false; var PR = SHAPED.props, sp1 = PR.vehicleSpec[e.key], V = PR.models.vehicles[e.key], R = PR.vehicleRig[e.key]; if (!sp1 || !V || !R) return false; var k = e.key;
   var stub = {n:0, p:new Float32Array(0), c:new Uint8Array(0), hx:sp1.length/2, hz:sp1.width/2, h:sp1.roof.y, drop:0}, vc = spColour(PR.palette, e.paint || {});
-  var B = spModel(V.body.concat(V.bonnet || []), vc, {car:true}), Wm = spModel(V.wheel, vc, {car:true}); VMOD['sp_' + k + '_w'] = Wm; B.w = R.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + k + '_w']; }); B.h = stub.h; SPCAR[k] = stub; VMOD[k] = B;
-  ['wreck', 'burnt'].forEach(function(st){ var V2 = PR.models.vehicles[k + '_' + st], R2 = PR.vehicleRig[k + '_' + st]; if (!V2 || !R2) return; var c2 = spColour(PR.palette), B2 = spModel(V2.body.concat(V2.bonnet || []), c2, {car:true}); VMOD['sp_' + k + '_' + st + '_w'] = spModel(V2.wheel, c2, {car:true}); B2.w = R2.wheels.map(function(w){ return [w[2], w[1], -w[0], w[2] > 0 ? 1 : 0, 'sp_' + k + '_' + st + '_w']; }); B2.h = stub.h; B2.drop = R2.sitDrop || 0; VMOD[k + '_' + st] = B2; });
+  var B = spModel(V.body.concat(V.bonnet || []), vc, {car:true}), Wm = spModel(V.wheel, vc, {car:true}); VMOD['sp_' + k + '_w'] = Wm; B.w = spWheelList(R, sp1, Wm, 'sp_' + k + '_w'); B.h = stub.h; SPCAR[k] = stub; VMOD[k] = B;
+  ['wreck', 'burnt'].forEach(function(st){ var V2 = PR.models.vehicles[k + '_' + st], R2 = PR.vehicleRig[k + '_' + st]; if (!V2 || !R2) return; var c2 = spColour(PR.palette), B2 = spModel(V2.body.concat(V2.bonnet || []), c2, {car:true}); VMOD['sp_' + k + '_' + st + '_w'] = spModel(V2.wheel, c2, {car:true}); B2.w = spWheelList(R2, PR.vehicleSpec[k + '_' + st] || sp1, VMOD['sp_' + k + '_' + st + '_w'], 'sp_' + k + '_' + st + '_w'); B2.h = stub.h; B2.drop = R2.sitDrop || 0; VMOD[k + '_' + st] = B2; });
   return true; }
 function spB(path){ if (!SPON) return null; if (SPB[path] !== undefined) return SPB[path]; SPB[path] = null; var pcs = spPieces(path); if (pcs) try { SPB[path] = spModel(pcs, spColour(path.slice(0, 5) === 'land.' ? SHAPED.land.palette : path.slice(0, 3) === 'ws.' ? SHAPED.waterside.palette : path.slice(0, 3) === 'pk.' ? SHAPED.parks.palette : path.slice(0, 3) === 'rs.' ? SHAPED.roadside.palette : path.slice(0, 3) === 'wm.' ? SHAPED.world.palette : path.slice(0, 3) === 'fm.' ? SHAPED.farm.palette : path.slice(0, 3) === 'at.' ? SHAPED.autotrade.palette : path.slice(0, 3) === 'st.' ? SHAPED.structures.palette : SHAPED.props.palette)); } catch (er){} return SPB[path]; }
 /* the art chat's torn, cracked and boarded wall pieces (buildings.breach), and the house number plaque */
