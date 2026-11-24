@@ -33,6 +33,21 @@ srv.listen(0, async function(){
     var now = S.doc.pieces.filter(function(q){ return q.kit === k; }), w1 = A.M.boundsOf([].concat.apply([], now.map(A.M.toNative)));
     return {same:S.doc.pieces.length === n0, w0:w0.mx[0] - w0.mn[0], w1:w1.mx[0] - w1.mn[0], z0:w0.mn[2], z1:w1.mn[2]}; });
   ok(!re.err && re.same && re.w1 > re.w0*1.8, 'change a made pane: ' + (re.err || 'width ' + re.w0.toFixed(2) + ' m to ' + re.w1.toFixed(2) + ' m, same piece count'));
+  /* corners: drag a plate's corner in the front view with Both sides on; its partner across the middle follows, mirrored */
+  await p.evaluate(function(){ var A = WORKSHOP.api, M = A.M; A.setDoc(M.blankDoc()); var q = M.addPiece(A.S.doc, 'plate', [0, 1, 0.5], {}); A.S.sel = [q.id]; A.S.gz.mode = 'shape'; A.S.gz.both = true; A.refresh();
+    var fb = [].filter.call(document.querySelectorAll('button'), function(b){ return b.textContent.trim() === 'Front'; })[0]; if (fb) fb.click(); });
+  await p.waitForTimeout(400);
+  await p.evaluate(function(){ var b = document.querySelector('#gzBar button[data-gz=corners]'); if (b) b.click(); });
+  await p.waitForTimeout(200);
+  var cs = await p.evaluate(function(){ var A = WORKSHOP.api, q = A.selected()[0], w = A.corners.toWorld(q, q.v[2]), s = A.view.project(w), r = A.view.canvas ? A.view.canvas.getBoundingClientRect() : document.getElementById('vp').getBoundingClientRect();
+    return {x:s[0] + r.left, y:s[1] + r.top, on:A.S.gz.corners, v0:JSON.stringify(q.v)}; });
+  await p.mouse.move(cs.x, cs.y); await p.mouse.down(); await p.mouse.move(cs.x + 30, cs.y - 20, {steps:4}); await p.mouse.move(cs.x + 60, cs.y - 40, {steps:4}); await p.mouse.up();
+  var cr = await p.evaluate(function(){ var A = WORKSHOP.api, q = A.selected()[0], a = A.corners.toWorld(q, q.v[2]), b = A.corners.toWorld(q, q.v[3]); return {a:a, b:b, n:q.v.length, card:!!document.querySelector('select[data-k=crPick]')}; });
+  ok(cs.on && cr.a[0] > 0.25 && cr.a[1] > 1.12 && Math.abs(cr.a[0] + cr.b[0]) < 0.002 && Math.abs(cr.a[1] - cr.b[1]) < 0.002 && Math.abs(cr.a[2] - 0.5) < 0.002,
+    'corners: dragged corner 3 to x ' + cr.a[0].toFixed(3) + ', y ' + cr.a[1].toFixed(3) + '; corner 4 followed to x ' + cr.b[0].toFixed(3) + (cr.card ? ', Corners card shows' : ''));
+  var ad = await p.evaluate(function(){ var b = document.querySelector('button[data-a=crAdd]'); if (!b) return -1; b.click(); return WORKSHOP.api.selected()[0].v.length; });
+  ok(ad === 5, 'corners: a plate gains a corner (' + ad + ')');
+  if (shots) await p.screenshot({path:shots + '/corners.png'});
   /* the design still builds */
   var chk = await p.evaluate(function(){ var A = WORKSHOP.api, As = A.asset(), C = A.M.check(A.S.doc, As); return {bad:C.filter(function(c){ return c[0] === 'bad'; }).map(function(c){ return c[1]; }), tris:As.stats.total}; });
   ok(true, 'the design builds: ' + chk.tris + ' triangles' + (chk.bad.length ? ' (checks say: ' + chk.bad.slice(0, 3).join('; ') + ')' : ''));

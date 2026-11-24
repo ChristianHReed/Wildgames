@@ -14,7 +14,7 @@
      Each file pushes a function onto window.WSX before this one loads; it is called once with WORKSHOP.api (the editor's insides)
      and fills X: cards for the panels, actions for buttons (data-a, data-k, data-m), handles in the view (with their own drag),
      extra drawing in the scene, and toolbar groups. */
-  var X = {piece:[], many:[], check:[], checkModel:[], model:[], handles:[], gz:{}, scene:[], tools:[], toolTap:{}, start:[], tap:[]};
+  var X = {piece:[], many:[], check:[], checkModel:[], model:[], handles:[], gz:{}, scene:[], tools:[], toolTap:{}, start:[], tap:[], bar:[], barTap:{}};
   function ext(list, args){ var h = ''; list.forEach(function(f){ try { var r = f.apply(null, args || []); if (r) h += r; } catch (e){ console.error(e); } }); return h; }
   /* ---------------------------------------------------------------- storage (this browser) */
   var store = {
@@ -1347,9 +1347,10 @@
     var h = '<button class="sm ' + (S.gz.mode === 'shape' ? 'on' : 'alt') + '" data-gz="shape">Shape</button><button class="sm ' + (S.gz.mode === 'turn' ? 'on' : 'alt') + '" data-gz="turn">Turn</button>';
     if (S.gz.mode === 'shape' && selected().length === 1) h += '<button class="sm ' + (S.gz.both ? 'on' : 'alt') + '" data-gz="both" title="Stretch from the middle, both sides at once">Both sides</button>';
     if (S.gz.mode === 'shape' && selected().length === 1 && selected()[0].s === 'loft') h += '<button class="sm ' + (S.gz.rings ? 'on' : 'alt') + '" data-gz="rings" title="Shape it ring by ring">Rings</button>';
+    h += ext(X.bar);
     if (el.innerHTML !== h) el.innerHTML = h;
   }
-  $('gzBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; var g = b.dataset.gz; if (g === 'both') S.gz.both = !S.gz.both; else if (g === 'rings'){ S.gz.rings = !S.gz.rings; renderPanel(); } else S.gz.mode = g; gzDraw(); });
+  $('gzBar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; var g = b.dataset.gz; if (g === 'both') S.gz.both = !S.gz.both; else if (g === 'rings'){ S.gz.rings = !S.gz.rings; renderPanel(); } else if (X.barTap[g]) X.barTap[g](b); else S.gz.mode = g; gzDraw(); });
   /* the handle under a finger or the mouse, in screen space */
   function gzHit(x, y){
     var H = gzHandles(), best = null, bd = 30;
