@@ -244,6 +244,8 @@ function shell(b, m, lm){
       m.quad(ax + ox2*co, 0, az + oz2*co, ax + dx*cw0*2 + ox2*co, 0, az + dz*cw0*2 + oz2*co, ax + dx*cw0*2 + ox2*co, Ht, az + dz*cw0*2 + oz2*co, ax + ox2*co, Ht, az + oz2*co, cc0, 255);
       m.quad(ax + pox*co, 0, az + poz*co, ax - pdx*cw0*2 + pox*co, 0, az - pdz*cw0*2 + poz*co, ax - pdx*cw0*2 + pox*co, Ht, az - pdz*cw0*2 + poz*co, ax + pox*co, Ht, az + poz*co, cc0, 255); }
   }
+  /* 0.132.1: the wall, window and opening lists are kept packed (4 bytes a number, outside the script heap): on a city square they were about 33 MB as plain lists */
+  b.segs = new Float32Array(b.segs); b.wins = new Float32Array(b.wins); b.wsegs = new Float32Array(b.wsegs);
   b.segs0 = b.segs; breachApply(b, m, lhg, FS, ST);   /* 0.69: pieces of the outer wall that have been torn open */
   if (FS && FD && b.door && b.hn && b.kind === 'house'){   /* 0.75: the house number on a plaque beside the front door */
     var hd = String(b.hn).replace(/[^0-9]/g, '').slice(-3), pm0 = hd && bkMod('house', '', 'plaque');

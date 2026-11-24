@@ -546,7 +546,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.132.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.132.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -591,7 +591,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.132.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.132.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -3941,7 +3941,7 @@ function breachApply(b, m, lhg, FS, ST){
     }
     rubbleAt(m, b.id, q, x0, z0, x1, z1, ox, oz);
   }
-  b.segs = keep;
+  b.segs = L.length ? keep : s0;   /* 0.132.1: with no wall torn open the standing wall is the whole wall: share it (two copies were about 12 MB on a city square) */
 }
 function twNear(x, y, r, lvl){   /* the nearest solid piece of any town wall within r: {b, k, d, cx, cy} */
   var best = null, cx0 = Math.floor(x/G), cy0 = Math.floor(y/G), bd = r;
