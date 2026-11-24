@@ -332,10 +332,10 @@
   <div id="invite" class="hidden">
     <b>Invite a player</b>
     <div><b>Quick code</b> (needs internet): type a short code, press Share, and tell your friend the code. They type it on their start page under Together.</div>
-    <div class="row" style="margin:6px 0 10px;justify-content:flex-start"><input id="qcHost" maxlength="24" placeholder="my-code" style="width:150px"><button id="qcShare">Share with this code</button></div>
+    <div class="row" style="margin:6px 0 10px;justify-content:flex-start"><input id="qcHost" aria-label="Your quick code" maxlength="24" placeholder="my-code" style="width:150px"><button id="qcShare">Share with this code</button></div>
     <div id="qcStatus" style="margin-bottom:6px"></div>
     <div>Or without internet: 1. Send this invite code to your friend. They paste it on their start page under Play together.</div>
-    <textarea id="invCode" readonly></textarea>
+    <textarea id="invCode" aria-label="Invite code to send to a friend" readonly></textarea>
     <div class="row" style="margin:2px 0 8px;justify-content:flex-start"><button id="copyInv" class="alt">Copy invite code</button></div>
     <div>2. Paste the reply code they send back, then press Connect.</div>
     <textarea id="invReply" placeholder="Paste reply code"></textarea>
@@ -355,7 +355,7 @@
     <button id="tAtk">Swing</button><button id="tJump" aria-label="Jump"><img src="assets/ui/jump.svg" alt="Jump"></button><button id="tMode" aria-label="Build"><img src="assets/ui/build.svg" alt="Build"></button>
     <button id="tShoot" class="m1">Shoot</button><button id="tGun" class="m1">Gun</button><button id="tCar" class="m1 nx">Trunk</button><button id="tThrow" class="m1">Throw</button><button id="tLight" class="m1">Light</button>
     <button id="tCade" class="m2">Wall</button><button id="tFire" class="m2">Fire</button><button id="tPing" class="m2">Mark</button><button id="tBuild" class="m2">Build menu</button>
-    <button id="tAct" class="act"><b id="tActM"></b><i id="tActS"></i></button><button id="tTake" class="nx">Take apart</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
+    <button id="tAct" class="act" aria-label="Use"><b id="tActM"></b><i id="tActS"></i></button><button id="tTake" class="nx">Take apart</button><button id="tRun">Run</button><button id="tDuck">Crouch</button>
     <button id="tVBrake" class="mv">Brake</button><button id="tVLight" class="mv">Lights</button><button id="tVView" class="mv">View</button><button id="tVOut" class="mv">Get out</button><button id="tVSeat" class="mv">Seat</button>
   </div>
   <div id="lockhint">Click to look around with the mouse<br><span style="font-family:var(--mono);font-size:12px;font-weight:400;color:var(--muted)">Esc frees the mouse &middot; H shows the controls</span></div>
@@ -418,6 +418,8 @@
         <label>Head bob when walking<select id="bobS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
         <label>Screen controls and readouts size<select id="hudS"><option value="0.85">Small</option><option value="1">Normal</option><option value="1.15">Large</option><option value="1.3">Extra large</option></select></label>
         <label>High-contrast screen controls<select id="hudHC"><option value="0">Off</option><option value="1">On</option></select></label>
+        <label>Hold actions (search, pry, drink, dig, take apart)<select id="holdTog"><option value="0">Hold the key or button</option><option value="1">Press once to start, again to stop</option></select></label>
+        <label><input type="checkbox" id="tapSlow"> Slower taps: a tap on the view to use something can last up to 0.7 s and move a little more</label>
         <div id="gpuLine" style="margin:6px 0;color:var(--muted)"></div>
         <label><input type="checkbox" id="gpuTest"> Test the graphics card on the ground (the next map you play does its ground work twice and shows the result above; for tests)</label>
         <label>Camera effects (sprint zoom, hit shake, weapon sway)<select id="fxS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
@@ -525,7 +527,7 @@
       <label class="chk"><input type="checkbox" id="joinCop"> Join as co-pilot: no body in the world; you watch the map and guide a partner (good for a slow device)</label>
       <div class="row"><button id="joinBtn" class="alt">Create reply code</button></div>
       <div id="replyBox" class="hidden">
-        <textarea id="replyCode" readonly></textarea>
+        <textarea id="replyCode" aria-label="Reply code to send back to the host" readonly></textarea>
         <div class="row"><button id="copyReply" class="alt">Copy reply code</button></div>
         <div>Send this reply code back to the host. The game starts when they press Connect.</div>
       </div>
@@ -540,11 +542,11 @@
       <b>Test World: everything that needs checking</b>
       <div>One map for trying changes before they go into the main game. The street runs north to south; the west side has the buildings, the east side is across a river (a wood, a park, a field). Everything on it comes from the content chat's packs. Terrain is voxel (flat blocks in 0.5 m steps). Tick an item once you have checked it; ticks stay on this device.</div>
       <div class="row" style="margin-top:8px"><button id="testStreet">Play the Test World</button> <button id="tsClear" class="ghost">Clear the ticks</button> <button id="tsCopy" class="ghost">Copy results</button></div>
-      <textarea id="tsOut" readonly rows="6" style="display:none;width:100%;margin-top:6px;font-size:12px"></textarea>
+      <textarea id="tsOut" aria-label="Test results" readonly rows="6" style="display:none;width:100%;margin-top:6px;font-size:12px"></textarea>
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.131.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.131.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -589,7 +591,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.131.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.131.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -684,12 +686,27 @@ async function respawnHome(why){
 /* ================= input ================= */
 var keys = {}, wantSwing = false, wantShoot = false, wantJump = false, locked = false, tapUse = false, autoUse = null;
 /* 0.129.2: keys can be changed (Settings, Keys). A key is turned into the key the game expects before anything reads it: KB maps an action's own key to the key you chose; a key you moved away from is dead. */
-var KB = {}, KBO = {}, KBACT = [['KeyW','Walk forward'],['KeyS','Walk back'],['KeyA','Step left'],['KeyD','Step right'],['Space','Jump'],['KeyE','Use, open, pick up'],['ShiftLeft','Sprint'],['KeyZ','Crouch'],['KeyF','Shoot'],['KeyO','Reload'],['KeyQ','Change weapon'],['KeyI','Items and crafting'],['KeyN','Build'],['KeyL','Flashlight'],['KeyG','Switch seat or quick item'],['KeyH','Help'],['KeyP','Change view'],['KeyV','Throw a stone']];
+var KB = {}, KBO = {}, KBACT = [['KeyW','Walk forward'],['KeyS','Walk back'],['KeyA','Step left'],['KeyD','Step right'],['Space','Jump'],['ShiftLeft','Sprint'],['KeyZ','Crouch'],
+  ['KeyE','Search, open, ride (hold)'],['KeyJ','Take apart (hold)'],['KeyY','Car trunk, siphon fuel, carry furniture'],['KeyF','Shoot'],['KeyQ','Switch weapon'],['KeyU','Switch gun'],['KeyO','Reload'],['KeyG','Use item (in a car: switch seat)'],['KeyV','Throw a stone'],
+  ['KeyP','First or third person'],['KeyL','Flashlight'],['KeyT','Lantern'],['KeyR','Radio scan (placing: turn)'],['KeyB','Board a window'],['KeyC','Campfire'],['KeyK','Items'],['KeyI','Backpack'],['KeyM','Map'],['KeyN','Build'],['KeyX','Mark a spot'],['KeyH','Show or hide the keys']];   /* 0.131.1: the list follows what each key really does (0.129.2 had I and K the wrong way round and left out U, J, Y, T, R, B, C, K, M and X) */
+
 function kbLoad(){ try { KB = JSON.parse(localStorage.getItem('afterstreet.keys') || '{}') || {}; } catch (e){ KB = {}; } KBO = {}; for (var k in KB) KBO[KB[k]] = k; }
 function kbCode(c){ if (KBO[c]) return KBO[c]; for (var k in KB) if (k === c && KB[k] !== c) return ''; return c; }
-function kbSave(){ try { localStorage.setItem('afterstreet.keys', JSON.stringify(KB)); } catch (e){} kbLoad(); kbRender(); }
+function kbSave(){ try { localStorage.setItem('afterstreet.keys', JSON.stringify(KB)); } catch (e){} kbLoad(); kbRender(); kbHelp(); }
+/* 0.131.1: the H panel shows your keys, not the defaults */
+function kbK(c){ return kbName(KB[c] || c); }
+function kbPrompt(t){ return t.replace(/\b(Hold|Press) (E|J) to (\w)/g, function(m, v, k, c){ var key = kbK('Key' + k); if (!HOLDTOG) return v + ' ' + key + ' to ' + c; return k === 'E' && autoUse ? 'Press ' + key + ' to stop: ' + c.toLowerCase() : 'Press ' + key + ' to ' + c; }); }
+function kbHelp(){ var h = el('help'); if (!h) return; var K = kbK, hold = HOLDTOG ? 'Press ' : 'Hold ';
+  h.innerHTML = [K('KeyW') + K('KeyA') + K('KeyS') + K('KeyD') + ': move', K('Space') + ': jump', K('ShiftLeft') + ': sprint', K('KeyZ') + ': crouch', K('KeyV') + ': throw a stone', K('KeyU') + ': switch gun', K('KeyO') + ': reload',
+    K('KeyY') + ': search a car trunk, siphon fuel, or pick up and put down furniture', K('KeyP') + ': first or third person', 'Mouse: look (arrows also turn)', K('KeyE') + ': search, open, ride', hold + K('KeyJ') + ': take furniture or a car apart (axe, crowbar, wrench or toolkit)'].join(' &middot; ') + '<br>' +
+    ['Click: swing', 'Right-click / ' + K('KeyF') + ': shoot', K('KeyQ') + ': switch weapon', K('KeyG') + ': use item'].join(' &middot; ') + '<br>' +
+    ['1 eat', '2 drink', '3 medkit', '4 bandage', K('KeyL') + ': flashlight', K('KeyT') + ': lantern', K('KeyR') + ': radio scan', K('KeyB') + ' at a window: board it', K('KeyK') + ': items', K('KeyI') + ': backpack', K('KeyM') + ': map', K('KeyN') + ': build'].join(' &middot; ') + '<br>' +
+    [K('KeyH') + ': hide this', 'Enter: chat', K('KeyX') + ': mark a spot', 'Esc: free the mouse'].join(' &middot; ') + (HOLDTOG ? '<br>Hold actions: press once to start, again to stop (Settings).' : ''); }
 function kbName(c){ return String(c).replace(/^Key/, '').replace(/^Digit/, '').replace('ShiftLeft', 'Left Shift').replace('ShiftRight', 'Right Shift').replace('ControlLeft', 'Left Ctrl').replace('Arrow', 'Arrow ').replace('Space', 'Space bar'); }
 var kbWait = null;
+/* 0.131.1: hold actions can be pressed once to start and again to stop (Settings: Hold actions), for E (search, pry, drink, dig) and J or Take apart; and taps on the view can be slower */
+var HOLDTOG = false, TAPSLOW = false;
+function holdPrefs(){ HOLDTOG = lsGet('lastblock:holdtog') === '1'; TAPSLOW = lsGet('lastblock:tapslow') === '1'; var a = document.getElementById('holdTog'), b = document.getElementById('tapSlow'); if (a) a.value = HOLDTOG ? '1' : '0'; if (b) b.checked = TAPSLOW; if (typeof kbHelp === 'function') kbHelp(); }
 function kbRender(){ var h = ''; KBACT.forEach(function(a, i){ h += '<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:1">' + a[1] + '</span><b style="min-width:84px">' + (kbWait === i ? 'press a key...' : kbName(KB[a[0]] || a[0])) + '</b><button type="button" data-kb="' + i + '">Change</button></div>'; }); var L = document.getElementById('kbList'); if (L) L.innerHTML = h; }
 kbLoad();
 window.addEventListener('keydown', function(e){
@@ -701,6 +718,7 @@ document.addEventListener('DOMContentLoaded', kbRender); kbRender();
 window.addEventListener('keydown', function(e){
   if (!running || /^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) return;
   var ec = kbCode(e.code); if (ec !== e.code){ if (!ec) return; var oe = e; e = {code:ec, repeat:e.repeat, target:e.target, preventDefault:function(){ oe.preventDefault(); }, stopPropagation:function(){}}; }
+  if (HOLDTOG && (e.code === 'KeyE' || e.code === 'KeyJ')){ if (!e.repeat){ if (e.code === 'KeyE') tapUse = true; else SV.tog = !SV.tog; } return; }
   keys[e.code] = true;
   if (e.code === 'Digit1') useItem('food'); if (e.code === 'Digit2') useItem('water'); if (e.code === 'Digit3') useItem('medkit'); if (e.code === 'Digit4') useItem('bandage');
   if (e.code === 'Enter'){ openChat(); e.preventDefault(); return; }
@@ -749,7 +767,7 @@ cv.addEventListener('touchmove', function(e){
   for (var i = 0; i < e.changedTouches.length; i++){ var t = e.changedTouches[i]; if (t.identifier !== look.id) continue;
     P.yaw += (t.clientX - look.x)*0.006; P.pitch = Math.max(-1.45, Math.min(1.45, P.pitch - (t.clientY - look.y)*0.006)); look.x = t.clientX; look.y = t.clientY; }
 }, {passive:false});
-function lookEnd(e){ stickEnd(e); for (var i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === look.id){ var t = e.changedTouches[i]; if (Date.now() - look.t0 < 350 && Math.hypot(t.clientX - look.sx, t.clientY - look.sy) < 14) tapUse = true; look.id = null; } }
+function lookEnd(e){ stickEnd(e); for (var i = 0; i < e.changedTouches.length; i++) if (e.changedTouches[i].identifier === look.id){ var t = e.changedTouches[i]; if (Date.now() - look.t0 < (TAPSLOW ? 700 : 350) && Math.hypot(t.clientX - look.sx, t.clientY - look.sy) < (TAPSLOW ? 24 : 14)) tapUse = true; look.id = null; } }
 el('prompt').addEventListener('click', function(){ if (running) tapUse = true; });
 cv.addEventListener('touchend', lookEnd); cv.addEventListener('touchcancel', lookEnd);
 el('touch').addEventListener('touchstart', function(e){ if (e.target && e.target.closest && e.target.closest('button') && navigator.vibrate) try { navigator.vibrate(8); } catch (er){} }, {passive:true});   /* 0.114.86: a tick on button press where the phone allows it */
@@ -763,7 +781,7 @@ hold('tJump', function(){ wantJump = true; keys.HB = true; }, function(){ keys.H
 hold('tMode', function(){ el('touch').classList.toggle('bmode'); el('tMode').innerHTML = '<img src="assets/ui/' + (el('touch').classList.contains('bmode') ? 'back' : 'build') + '.svg" alt="">'; });
 hold('tBuild', function(){ el('buildBtn').click(); });
 hold('tAct', function(){ if (running) tapUse = true; });
-hold('tTake', function(){ keys.Take = true; }, function(){ keys.Take = false; });
+hold('tTake', function(){ if (HOLDTOG) SV.tog = !SV.tog; else keys.Take = true; }, function(){ keys.Take = false; });
 el('plrot').addEventListener('click', plRotate); el('plsn').addEventListener('click', function(){ if (PL) PL.grid = !PL.grid; }); el('plok').addEventListener('click', plConfirm); el('plno').addEventListener('click', endPlace);
 cv.addEventListener('wheel', function(e){ if (PL){ PL.dist = Math.max(1.4, Math.min(6, PL.dist + (e.deltaY < 0 ? 0.3 : -0.3))); e.preventDefault(); } }, {passive:false});
 hold('tShoot', function(){ wantShoot = true; });
@@ -2454,6 +2472,7 @@ function update(dt){
     else if (target.fix) el('ptxt').textContent = fixText(target);
     else if (document.body.classList.contains('touchmode')) el('ptxt').textContent = autoUse ? el('ptxt').textContent.replace(/^(Hold|Press) E to (\w)/, function(m, a, b){ return b.toUpperCase(); }).replace(/^(\w+)e? /, function(m){ return m; }) + '\u2026' : el('ptxt').textContent.replace(/^(Hold|Press) E to/, 'Tap to');
   } else pr.classList.add('hidden');
+  if (!document.body.classList.contains('touchmode') && (HOLDTOG || KB.KeyE || KB.KeyJ)){ var pt0 = el('ptxt').textContent, pt1 = kbPrompt(pt0); if (pt1 !== pt0) el('ptxt').textContent = pt1; }   /* 0.131.1: prompts name your key, and say Press when hold actions are set to press once */
   actButton(pr);
 
   if (PL){ if (wantSwing) plConfirm(); if (wantShoot) endPlace(); wantSwing = wantShoot = false; keys.Swing = false; }
@@ -2668,15 +2687,17 @@ function drawMap(c, w, h, cx, cy, sc, big){
   (W0.zones || []).forEach(function(z){ c.strokeStyle = '#f3f0e8'; c.lineWidth = 2; c.setLineDash([3, 3]); c.beginPath(); if (z.hw) zoneCorners(z).forEach(function(p, k){ if (k) c.lineTo(p[0]*sc + ox, p[1]*sc + oy); else c.moveTo(p[0]*sc + ox, p[1]*sc + oy); }), c.closePath(); else c.arc(z.x*sc + ox, z.y*sc + oy, z.r*sc, 0, 6.283); c.stroke(); c.setLineDash([]); c.fillStyle = 'rgba(122,170,100,.14)'; c.fill(); });
   mapFog(c, w, h, ox, oy, sc);
   if (big && rzOn()){ c.setLineDash([]); world.rz.Z.forEach(function(z){ if (!z.live || z.x1 < x0 || z.x0 > x1 || z.y1 < y0 || z.y0 > y1) return; var n = rzNests(z), X = z.x0*sc + ox, Y = z.y0*sc + oy, Wz = (z.x1 - z.x0)*sc, Hz = (z.y1 - z.y0)*sc;
-    c.fillStyle = n ? 'rgba(125,90,150,.16)' : 'rgba(122,138,94,.14)'; c.fillRect(X, Y, Wz, Hz); c.strokeStyle = n ? 'rgba(125,90,150,.75)' : 'rgba(92,110,70,.75)'; c.lineWidth = 1.5; c.strokeRect(X, Y, Wz, Hz);
+    c.fillStyle = n ? 'rgba(125,90,150,.16)' : 'rgba(122,138,94,.14)'; c.fillRect(X, Y, Wz, Hz); c.strokeStyle = n ? 'rgba(125,90,150,.75)' : 'rgba(92,110,70,.75)'; c.lineWidth = 1.5; if (n) c.setLineDash([6, 4]); c.strokeRect(X, Y, Wz, Hz); c.setLineDash([]);
     if (Wz > 90){ c.font = '700 12px sans-serif'; c.textAlign = 'left'; c.fillStyle = n ? '#5a3d70' : '#4e5e3a'; c.fillText(z.name + (n ? ' \u00b7 ' + n + ' nest' + (n > 1 ? 's' : '') : ' \u00b7 cleared'), X + 5, Y + 15); } }); }
   var dot = function(x, y, r, col){ c.fillStyle = col; c.beginPath(); c.arc(x*sc + ox, y*sc + oy, r, 0, 6.283); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 1.5; c.stroke(); };
   heat.forEach(function(h){ if (h.v < 8) return; var g = c.createRadialGradient(h.x*sc + ox, h.y*sc + oy, 0, h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc)); g.addColorStop(0, 'rgba(201,74,46,' + Math.min(0.45, h.v/90).toFixed(2) + ')'); g.addColorStop(1, 'rgba(201,74,46,0)'); c.fillStyle = g; c.beginPath(); c.arc(h.x*sc + ox, h.y*sc + oy, Math.max(6, HEAT_C*0.7*sc), 0, 6.283); c.fill(); });   /* noise heat */
   if (wx.tor){ c.strokeStyle = '#4a4a55'; c.lineWidth = 2; for (var tr0 = 0; tr0 < 3; tr0++){ c.beginPath(); c.arc(wx.tor.x*sc + ox, wx.tor.y*sc + oy, 3 + tr0*3, tr0, tr0 + 4.2); c.stroke(); } }   /* the tornado */
-  W0.traders.forEach(function(t){ dot(t.x, t.y, big ? 6 : 4, '#7a8a5e'); });
+  W0.traders.forEach(function(t){ var r = big ? 7 : 5, tx = t.x*sc + ox, ty = t.y*sc + oy; c.fillStyle = '#7a8a5e'; c.beginPath(); c.moveTo(tx, ty - r); c.lineTo(tx + r, ty); c.lineTo(tx, ty + r); c.lineTo(tx - r, ty); c.closePath(); c.fill(); c.strokeStyle = '#f5ead8'; c.lineWidth = 1.5; c.stroke(); if (big){ c.fillStyle = '#201e1d'; c.font = '700 11px sans-serif'; c.textAlign = 'center'; c.fillText('Trader', tx, ty - r - 4); c.textAlign = 'left'; } });
   if (W0.scen.type === 'escape'){ W0.partB.forEach(function(id){ if (!W0.found[id]) dot(W0.buildings[id].cx, W0.buildings[id].cy, big ? 6 : 4, '#d9a845'); }); dot(W0.evac.x, W0.evac.y, big ? 8 : 5, '#ffffff'); }
   pings.forEach(function(q){ c.strokeStyle = '#c67139'; c.lineWidth = 3; c.beginPath(); c.arc(q.x*sc + ox, q.y*sc + oy, big ? 9 : 6, 0, 6.283); c.stroke(); });
-  for (i = 0; i < zombies.length; i++){ var z = zombies[i]; c.fillStyle = z.k === 1 ? '#201e1d' : '#b23a2a'; c.beginPath(); c.arc(z.x*sc + ox, z.y*sc + oy, (z.k === 2 ? 5 : z.k === 1 ? 3 : 2)*(big ? 1.6 : 1), 0, 6.283); c.fill(); }
+  /* 0.131.1: aliens are crosses (shape, not only red), giants a bigger cross with a ring; traders are diamonds, so nothing on the map depends on telling red from green */
+  c.lineCap = 'round'; for (i = 0; i < zombies.length; i++){ var z = zombies[i], zr = (z.k === 2 ? 4.5 : z.k === 1 ? 3 : 2.3)*(big ? 1.6 : 1), zx = z.x*sc + ox, zy = z.y*sc + oy; c.strokeStyle = z.k === 1 ? '#201e1d' : '#b23a2a'; c.lineWidth = big ? 2.4 : 1.7;
+    c.beginPath(); c.moveTo(zx - zr, zy - zr); c.lineTo(zx + zr, zy + zr); c.moveTo(zx + zr, zy - zr); c.lineTo(zx - zr, zy + zr); c.stroke(); if (z.k === 2){ c.lineWidth = 1.2; c.beginPath(); c.arc(zx, zy, zr*1.5, 0, 6.283); c.stroke(); } } c.lineCap = 'butt';
   if (big && sc >= 0.35) shopList().forEach(function(b){ var x = b.cx*sc + ox, y = b.cy*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return; c.fillStyle = '#2c7da0'; c.fillRect(x - 6, y - 6, 12, 12); c.fillStyle = '#fff'; c.font = '700 10px sans-serif'; c.textAlign = 'center'; c.fillText('S', x, y + 3.5); c.textAlign = 'left'; });
   world.vehicles.forEach(function(v){ var u = v.cu; if (!u || !(u.n || u.c || u.t || u.e || u.a) || v.dead) return; var x = v.x*sc + ox, y = v.y*sc + oy; if (x < -20 || y < -20 || x > w + 20 || y > h + 20) return;
     c.save(); c.translate(x, y); c.rotate(v.yaw); var L = big ? 9 : 6, Wd = big ? 5 : 3.5; c.fillStyle = u.c || '#c94a2e'; c.strokeStyle = '#201e1d'; c.lineWidth = 1.5; c.fillRect(-L, -Wd, 2*L, 2*Wd); c.strokeRect(-L, -Wd, 2*L, 2*Wd); c.restore();
@@ -3778,7 +3799,7 @@ function renderPacks(){
   var h = '';
   for (var k in PACKS){
     var p = PACKS[k];
-    h += '<div class="irow"><input type="checkbox" data-p="on" data-id="' + k + '"' + (p.on ? ' checked' : '') + '><span class="n">' + p.name + ' <i>' + p.items.length + ' item' + (p.items.length === 1 ? '' : 's') + ' &middot; by ' + p.author + ' &middot; v' + p.version + '</i><br><i>' + p.items.map(function(d){ return d.name; }).join(', ') + '</i></span>' +
+    h += '<div class="irow"><input type="checkbox" aria-label="Use the ' + esc(p.name) + ' pack" data-p="on" data-id="' + k + '"' + (p.on ? ' checked' : '') + '><span class="n">' + p.name + ' <i>' + p.items.length + ' item' + (p.items.length === 1 ? '' : 's') + ' &middot; by ' + p.author + ' &middot; v' + p.version + '</i><br><i>' + p.items.map(function(d){ return d.name; }).join(', ') + '</i></span>' +
       '<button class="alt" data-p="exp" data-id="' + k + '"' + (p.items.length ? '' : ' disabled') + '>Export</button>' + (k === 'street' ? '' : k === 'workshop' || k === 'collected' ? '<button class="alt" data-p="clr" data-id="' + k + '"' + (p.items.length ? '' : ' disabled') + '>Empty</button>' : '<button class="alt" data-p="del" data-id="' + k + '">Remove</button>') + '</div>';
   }
   el('packList').innerHTML = h;
@@ -4198,15 +4219,15 @@ var BAYO = {};
 var SV = {t:null, p:0, info:null, said:-9, nt:0};
 function wearTool(id, n){ if (!id || id === 'kit' || !DESIGNS[id]) return; var keep = P.weapon; P.weapon = id; wear(n); if (keep && P.items[keep] > 0) P.weapon = keep; else if (P.weapon === id && !(P.items[id] > 0)) P.weapon = null; }
 function salvTick(dt){
-  var s = findSalvage(); if (s !== SV.t){ SV.t = s; SV.p = 0; } var box = el('salv');
+  var s = findSalvage(); if (s !== SV.t){ SV.t = s; SV.p = 0; SV.tog = false; } var box = el('salv');
   if (!s){ box.classList.add('hidden'); el('tTake').classList.add('nx'); return; }
-  var inf = SV.info = salvInfo(s), hold = keys.KeyJ || keys.Take, tch = document.body.classList.contains('touchmode'); el('tTake').classList.remove('nx');
+  var inf = SV.info = salvInfo(s), hold = keys.KeyJ || keys.Take || SV.tog, tch = document.body.classList.contains('touchmode'); el('tTake').classList.remove('nx');
   if (hold){ if (!inf.tool){ if (time - SV.said > 3){ SV.said = time; toast('Taking apart a ' + inf.label + ' needs ' + inf.need + '.', 3.5); } SV.p = 0; }
     else { SV.p += dt/inf.secs; SV.nt -= dt; if (SV.nt <= 0){ SV.nt = 0.55; sfx(inf.mat === 'metal' || inf.mat === 'car' ? 'plank' : 'chop', s.x, s.y, 0.7); makeNoise(s.x, s.y, inf.mat === 'cloth' ? 4 : s.sv === 'bay' ? (inf.mat === 'metal' ? 22 : inf.mat === 'stone' ? 26 : 14) : 10); fxAdd('effects.wood_chips', s.x, s.y, groundAt(s.x, s.y), {life:0.8, s0:0.6, s1:0.9, rise:0.2, up:0.5}); }
       if (SV.p >= 1){ SV.p = 0; doSalvage(s, inf); return; } } } else SV.p = 0;
   var gives = Object.keys(inf.y).map(function(k2){ return '+' + inf.y[k2] + ' ' + (k2 === 'fiber' ? 'fibre' : k2); }).join(' ');
   box.classList.remove('hidden'); el('sbar').style.width = (SV.p*100) + '%';
-  el('stxt').textContent = (inf.tool ? (tch ? 'Hold Take apart' : 'Hold J') + ' to take apart the ' + inf.label + ' (' + gives + ')' : 'The ' + inf.label + ' needs ' + inf.need + ' to take apart');
+  el('stxt').textContent = (inf.tool ? (HOLDTOG ? (SV.tog ? (tch ? 'Tap Take apart' : 'Press ' + kbK('KeyJ')) + ' to stop taking apart' : (tch ? 'Tap Take apart' : 'Press ' + kbK('KeyJ'))) : (tch ? 'Hold Take apart' : 'Hold ' + kbK('KeyJ'))) + ' to take apart the ' + inf.label + ' (' + gives + ')' : 'The ' + inf.label + ' needs ' + inf.need + ' to take apart');
 }
 function doSalvage(o, inf){
   var g = {}, k2, gain = [];
@@ -6666,7 +6687,7 @@ function lootUI(){
   };
   var draw = function(){
     var tab = tableNow(), ks = Object.keys(tab).filter(function(k){ return k !== '_n'; }).sort(function(a, b){ return tab[b] - tab[a]; }), tot = 0; ks.forEach(function(k){ tot += tab[k]; });
-    rows.innerHTML = ks.map(function(k){ return '<div class="irow" style="display:flex;gap:8px;align-items:center;margin:2px 0"><span class="n" style="flex:1">' + esc(iname(k)) + '</span><input type="number" min="0" max="50" step="0.1" value="' + tab[k] + '" data-k="' + esc(k) + '" style="width:70px"><span style="width:44px;text-align:right">' + (tot ? Math.round(tab[k]/tot*100) : 0) + '%</span><button class="alt" data-x="' + esc(k) + '">Remove</button></div>'; }).join('') || '<i>Nothing can be found here.</i>';
+    rows.innerHTML = ks.map(function(k){ return '<div class="irow" style="display:flex;gap:8px;align-items:center;margin:2px 0"><span class="n" style="flex:1">' + esc(iname(k)) + '</span><input type="number" aria-label="How likely: ' + esc(iname(k)) + '" min="0" max="50" step="0.1" value="' + tab[k] + '" data-k="' + esc(k) + '" style="width:70px"><span style="width:44px;text-align:right">' + (tot ? Math.round(tab[k]/tot*100) : 0) + '%</span><button class="alt" data-x="' + esc(k) + '">Remove</button></div>'; }).join('') || '<i>Nothing can be found here.</i>';
     var have = {}; ks.forEach(function(k){ have[k] = 1; }); var opts = ['none'].concat(Object.keys(ITEMS), Object.keys(STREETW)).filter(function(k){ return !have[k]; });
     addS.innerHTML = '<option value="">Choose...</option>' + opts.map(function(k){ return '<option value="' + esc(k) + '">' + esc(iname(k)) + '</option>'; }).join('');
     var c = cur(); nIn.value = tab._n || lootRolls(c.t);
@@ -6710,6 +6731,7 @@ el('pauseS').checked = PAUSEON; el('pauseS').addEventListener('change', function
 el('capsS').checked = CAPON; el('capsS').addEventListener('change', function(){ CAPON = el('capsS').checked; lsSet('lastblock:caps', CAPON ? '1' : '0'); });
 el('fxS').addEventListener('change', function(){ CAMS.fx = +el('fxS').value; lsSet('lastblock:fx', CAMS.fx); });
 function hudPrefs(){ var hs = lsGet('lastblock:hudscale') || '1', hc = lsGet('lastblock:hudhc') || '0'; el('hudS').value = hs; el('hudHC').value = hc; document.documentElement.style.setProperty('--hs', hs); document.body.classList.toggle('hc', hc === '1'); }   /* 0.114.86 */
+holdPrefs(); el('holdTog').addEventListener('change', function(){ lsSet('lastblock:holdtog', el('holdTog').value); holdPrefs(); }); el('tapSlow').addEventListener('change', function(){ lsSet('lastblock:tapslow', el('tapSlow').checked ? '1' : '0'); holdPrefs(); });
 gpuShow(); gpuTestPrefs(); el('gpuTest').addEventListener('change', function(){ lsSet('lastblock:gputest', el('gpuTest').checked ? '1' : '0'); gpuTestPrefs(); }); el('hudS').addEventListener('change', function(){ lsSet('lastblock:hudscale', el('hudS').value); hudPrefs(); }); el('hudHC').addEventListener('change', function(){ lsSet('lastblock:hudhc', el('hudHC').value); hudPrefs(); }); hudPrefs();
 (function(){ var r0 = String(RSCALE), o = el('rscale'); if (![].some.call(o.options, function(q){ return q.value === r0; })){ var op = document.createElement('option'); op.value = r0; op.textContent = Math.round(RSCALE*100) + '%'; o.appendChild(op); } o.value = r0;
   o.addEventListener('change', function(){ RSCALE = +o.value; lsSet('lastblock:rscale', o.value); resize(); });
