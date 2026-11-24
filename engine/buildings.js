@@ -352,13 +352,52 @@ function shell(b, m, lm){
 }
 var NULLM = {box:function(){}, ybox:function(){}, pyr:function(){}, wall:function(){}, tri:function(){}, quad:function(){}, quadV:function(){}, wallT:function(){}, quadUV:function(){}, line:function(){}};
 /* ground tiles (roads, pavements, paths, water) on the graphics chip only near you: up within the draw distance plus a tile, gone when well past it */
-function manageGroundTiles(){ var G = world.gl && world.gl.ground; if (!G) return; var R = Math.min(QS.far, 800) + 130 + 256, n = 0, have = 0, i, o, d;
-  for (i = 0; i < G.length; i++) if (G[i].g) have++;
+function manageGroundTiles(){ var G = world.gl && world.gl.ground; if (!G) return; var R = Math.min(QS.far, 800) + 130 + 256, n = 0, nd = 0, have = 0, i, o, d;
+  for (i = 0; i < G.length; i++) if (G[i].g || G[i].gs) have++;
   var budget = have ? 3 : 64;
   for (i = 0; i < G.length; i++){ o = G[i]; d = Math.max(Math.abs(o.x - P.x), Math.abs(o.y - P.y));
-    if (!o.g && d < R && n < budget){ if (o.d){ o.g = gtLen(o.d) ? upload(gtMesh(o.d)) : {n:0, nil:1}; n++; } else if (o.z && !o.wait){ gtUnpack(o, world); n++; } }
-    else if (o.g && d > R + 320){ if (!o.g.nil) freeMesh(o.g); o.g = null; if (o.z) o.d = null; }
+    if (d < R){ if (n >= budget) continue;
+      if (o.s && !o.gs && nd < (have ? 1 : 64)){ o.gs = gtDrape(o); n++; nd++; }   /* 0.132.0: the tile's ground is draped now, when you come near (one a frame once you are playing: 2 to 7 ms each) */
+      if (!o.g){ if (o.d){ o.g = gtLen(o.d) ? upload(gtMesh(o.d)) : {n:0, nil:1}; n++; } else if (o.z && !o.wait){ gtUnpack(o, world); n++; } } }
+    else if (d > R + 320){ if (o.g){ if (!o.g.nil) freeMesh(o.g); o.g = null; if (o.z) o.d = null; } if (o.gs){ if (!o.gs.nil) freeMesh(o.gs); o.gs = null; } }
   } }
+/* 0.132.0: the ground's own triangles (parks, lawns, roads, paths, water, before draping) are split along the 256 m tile edges and kept per tile in packed arrays.
+   Counted in a first pass and written in a second, so nothing is held twice in plain lists. A piece keeps its colour; its height and texture place are taken
+   from where it sat in the triangle it came from */
+function gtSplit(m, GT, idOf){
+  var P = m.p, Cc = m.c, T = m.t, N = P ? P.length/9 : 0, cnt = [], out = [], i, pass;
+  var clip = function(poly, a, b, cc){ var o = [], k = poly.length; for (var q = 0; q < k; q += 2){ var x0 = poly[q], z0 = poly[q+1], x1 = poly[(q+2) % k], z1 = poly[(q+3) % k], d0 = a*x0 + b*z0 - cc, d1 = a*x1 + b*z1 - cc;
+    if (d0 <= 0) o.push(x0, z0); if ((d0 < 0 && d1 > 0) || (d0 > 0 && d1 < 0)){ var f = d0/(d0 - d1); o.push(x0 + (x1 - x0)*f, z0 + (z1 - z0)*f); } } return o; };
+  for (pass = 0; pass < 2; pass++){
+    if (pass === 1){ for (i = 0; i < cnt.length; i++) out[i] = cnt[i] ? {p:new Float32Array(cnt[i]*9), c:new Uint8Array(cnt[i]*12), t:new Float32Array(cnt[i]*9), k:0} : null; }
+    for (i = 0; i < N; i++){
+      var o9 = i*9, ax = P[o9], az = P[o9+2], bx = P[o9+3], bz = P[o9+5], cx = P[o9+6], cz = P[o9+8];
+      var kx0 = Math.floor(Math.min(ax, bx, cx)/GT), kx1 = Math.floor(Math.max(ax, bx, cx)/GT), ky0 = Math.floor(Math.min(az, bz, cz)/GT), ky1 = Math.floor(Math.max(az, bz, cz)/GT);
+      if (kx0 === kx1 && ky0 === ky1){ var id0 = idOf(kx0, ky0); if (!pass){ cnt[id0] = (cnt[id0] || 0) + 1; continue; }
+        var e0 = out[id0], b9 = e0.k*9, b12 = e0.k*12, q; e0.k++; for (q = 0; q < 9; q++){ e0.p[b9 + q] = P[o9 + q]; e0.t[b9 + q] = T[o9 + q]; } for (q = 0; q < 12; q++) e0.c[b12 + q] = Cc[i*12 + q]; continue; }
+      var den = (bz - cz)*(ax - cx) + (cx - bx)*(az - cz); if (Math.abs(den) < 1e-9) continue;
+      for (var ky = ky0; ky <= ky1; ky++) for (var kx = kx0; kx <= kx1; kx++){
+        var X = kx*GT, Z = ky*GT, poly = clip(clip(clip(clip([ax, az, bx, bz, cx, cz], -1, 0, -X), 1, 0, X + GT), 0, -1, -Z), 0, 1, Z + GT); if (poly.length < 6) continue;
+        var nt = poly.length/2 - 2, id = idOf(kx, ky); if (!pass){ cnt[id] = (cnt[id] || 0) + nt; continue; }
+        var e = out[id];
+        for (var f = 1; f + 1 < poly.length/2; f++){ var vi = [0, f, f + 1], b9b = e.k*9, b12b = e.k*12; e.k++;
+          for (var v = 0; v < 3; v++){ var x = poly[vi[v]*2], z = poly[vi[v]*2 + 1], w0 = ((bz - cz)*(x - cx) + (cx - bx)*(z - cz))/den, w1 = ((cz - az)*(x - cx) + (ax - cx)*(z - cz))/den, w2 = 1 - w0 - w1;
+            e.p[b9b + v*3] = x; e.p[b9b + v*3 + 1] = P[o9+1]*w0 + P[o9+4]*w1 + P[o9+7]*w2; e.p[b9b + v*3 + 2] = z;
+            e.t[b9b + v*3] = T[o9]*w0 + T[o9+3]*w1 + T[o9+6]*w2; e.t[b9b + v*3 + 1] = T[o9+1]*w0 + T[o9+4]*w1 + T[o9+7]*w2; e.t[b9b + v*3 + 2] = T[o9+2];
+            for (var cq = 0; cq < 4; cq++) e.c[b12b + v*4 + cq] = Cc[i*12 + cq]; } } }
+    }
+  }
+  return out.map(function(e){ return e ? {p:e.p, c:e.c, t:e.t} : null; });
+}
+/* the tile's ground, draped onto the hills now that you are near; the result goes to the graphics chip and is not kept here */
+function gtDrape(o){
+  var s = o.s, m = {p:s.p, c:s.c, t:s.t}; if (!s.p.length) return {n:0, nil:1};
+  drape(m, world.liftY || 0, true);
+  var parts = m.parts || (m.p.length ? [{p:new Float32Array(m.p), c:new Uint8Array(m.c), t:new Float32Array(m.t)}] : []);
+  if (typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) parts.forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = pm.c && pm.c[wi*4 + 1] === 0 ? 0.08 : 0.05; });   /* the test river's channel, as before */
+  if (!parts.length) return {n:0, nil:1};
+  return upload(parts.length === 1 ? parts[0] : {p:gtCat(parts.map(function(q){ return q.p; }), Float32Array), c:gtCat(parts.map(function(q){ return q.c; }), Uint8Array), t:gtCat(parts.map(function(q){ return q.t; }), Float32Array)});
+}
 /* 0.117.4: a ground tile far from you is packed into a compressed blob (outside the page's working memory where the browser allows) and unpacked when you come near */
 function gtCat(L, T){ var n = 0, i, o; for (i = 0; i < L.length; i++) n += L[i].length; o = new T(n); n = 0; for (i = 0; i < L.length; i++){ o.set(L[i], n); n += L[i].length; } return o; }
 function gtMesh(d){ return d.pp ? {p:gtCat(d.pp, Float32Array), c:gtCat(d.pc, Uint8Array), t:gtCat(d.pt, Float32Array)} : d; }
@@ -872,8 +911,11 @@ function prep3D(){
     else if (r.kind === 'rail'){ g.pl = null; ribbon(r.pts, r.w/2, 0.075, TX.gravel, WHITE, false, r.tun, true); }
     else ribbon(r.pts, r.w/2, r.kind === 'road' && r.w >= 6 ? RDY : 0.09, TX.asphalt, WHITE, r.w >= 8, r.tun ? (r.gap || []).concat(r.tun) : r.gap, !(r.kind === 'road' && r.w >= 6));
   });
-  g.pl = null; if (w.hg) drape(g, LIFT, true); w.liftY = LIFT;
-  if (w.hg && typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = pm.c && pm.c[wi*4 + 1] === 0 ? 0.08 : 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
+  /* 0.132.0: the ground is no longer draped for the whole square here. Its triangles are kept as they are (about a sixth of the size), split along the 256 m
+     tiles, and each tile is draped when you come near it and let go when you leave (gtDrape). On Springfield the draped ground was 144 MB of the page's
+     165 MB of live memory after loading, held for the whole square while it waited to be packed away */
+  g.pl = null; var LZ = !!w.hg; if (w.hg && !LZ) drape(g, LIFT, true); w.liftY = LIFT;
+  if (w.hg && !LZ && typeof mapSrc !== 'undefined' && mapSrc && mapSrc.street) (g.parts || [g]).forEach(function(pm){ var WT = pm.t, WP = pm.p; for (var wi = 0; wi < WT.length/3; wi++) if (WT[wi*3 + 2] > 18.9 && WT[wi*3 + 2] < 19.5) WP[wi*3 + 1] = pm.c && pm.c[wi*4 + 1] === 0 ? 0.08 : 0.05; });   /* the test river's channel is cut, so its water stands at the level the bank pieces expect */
   var gD = g; g = new Mesh();   /* 0.114.92: the draped ground stays as it came back (typed arrays from the Rust core); what follows goes into a second list */
   sunkWalls(w, g, LIFT, SWY, RDY); g.spill();
   try { bridgeBuild(g); } catch (er){ console.log('bridges', er); } g.spill();
@@ -888,16 +930,17 @@ function prep3D(){
     c.list.push(b); b.chunk = c; shell(b, NULLM); b.int = null; b.fac = null; b.got = {};
   });
   facs.forEach(function(fb){ if (fb.fac){ freeMesh(fb.fac); fb.fac = null; } }); facs = [];
-  if (w.gl){ w.gl.ground.forEach(function(o){ if (o.g) freeMesh(o.g); o.g = null; }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); ['mp', 'dr'].forEach(function(k){ (w.gl[k] || []).forEach(function(o){ if (o.g && !o.g.nil) freeMesh(o.g); o.g = null; }); }); }
+  if (w.gl){ w.gl.ground.forEach(function(o){ if (o.g) freeMesh(o.g); o.g = null; if (o.gs && !o.gs.nil) freeMesh(o.gs); o.gs = null; }); w.gl.chunks.forEach(function(c){ if (c.g){ freeMesh(c.g); freeMesh(c.l); } if (c.far) freeMesh(c.far); }); if (w.gl.trees) w.gl.trees.forEach(function(o){ freeMesh(o.g); }); w.gl.terr.forEach(function(o){ freeMesh(o.g); }); ['mp', 'dr'].forEach(function(k){ (w.gl[k] || []).forEach(function(o){ if (o.g && !o.g.nil) freeMesh(o.g); o.g = null; }); }); }
   var list = []; chunks.forEach(function(c){ list.push(c); });
   g.pl = null; w.drM = null; placeProps(g); try { placeDress(g); } catch (er){ console.log('dress', er); }
   /* the ground is cut into squares so only the part near you is drawn */
   /* 0.114.91: counted first, then copied straight into typed arrays (4 and 1 bytes a value, not 8 in growing lists), and the big lists let go before the upload:
      a town square's ground used to need its whole size twice over in plain lists at this point, which is where phones ran out of memory and the page reloaded */
-  var GT = 256, gt = [], ids = new Map(), cnt = [], bxs = [], bys = [], SRC = (gD.parts || [gD]).concat(g.parts || [], [g]); gD.parts = g.parts = null;   /* 0.128.0: the later ground pieces come packed too (Mesh.spill) */
+  var GT = 256, gt = [], ids = new Map(), cnt = [], bxs = [], bys = [], SRC = (LZ ? [] : gD.parts || [gD]).concat(g.parts || [], [g]); if (!LZ) gD.parts = null; g.parts = null;   /* 0.128.0: the later ground pieces come packed too (Mesh.spill) */
+  var idOf = function(kx, ky){ var key = gk(kx, ky), id = ids.get(key); if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } return id; };
+  var LZS = LZ ? gtSplit(gD, GT, idOf) : []; if (LZ){ gD.p = gD.c = gD.t = null; gD.parts = null; }
   var bks = SRC.map(function(sm){ var nT = sm.p.length/9, bk = new Int32Array(nT);
-    for (var i2 = 0; i2 < nT; i2++){ var o9 = i2*9, kx = Math.floor((sm.p[o9] + sm.p[o9+3] + sm.p[o9+6])/3/GT), ky = Math.floor((sm.p[o9+2] + sm.p[o9+5] + sm.p[o9+8])/3/GT), key = gk(kx, ky), id = ids.get(key);
-      if (id === undefined){ id = cnt.length; ids.set(key, id); cnt.push(0); bxs.push((kx + 0.5)*GT); bys.push((ky + 0.5)*GT); } bk[i2] = id; cnt[id]++; }
+    for (var i2 = 0; i2 < nT; i2++){ var o9 = i2*9, id = idOf(Math.floor((sm.p[o9] + sm.p[o9+3] + sm.p[o9+6])/3/GT), Math.floor((sm.p[o9+2] + sm.p[o9+5] + sm.p[o9+8])/3/GT)); bk[i2] = id; cnt[id]++; }
     return bk; });
   /* 0.117.5: each list's runs are copied out as small pieces into their tile, and the list is let go straight away: the ground is never held twice over (it was 340 MB at the peak for Springfield's centre, and iPhones closed the page) */
   var BK = cnt.map(function(n){ return {pp:[], pc:[], pt:[], n:n}; });
@@ -908,7 +951,7 @@ function prep3D(){
     for (i2 = 0; i2 < nT; i2++){ e = loc.get(bk[i2]); var a9 = i2*9, b9 = e.k*9, a12 = i2*12, b12 = e.k*12; e.k++;
       for (q = 0; q < 9; q++){ e.p[b9 + q] = P[a9 + q]; e.t[b9 + q] = T[a9 + q]; } for (q = 0; q < 12; q++) e.c[b12 + q] = Cc[a12 + q]; }
     sm.p = sm.c = sm.t = null; bks[si] = null; SRC[si] = null; });
-  BK.forEach(function(bm, id){ gt.push({g:null, d:bm, x:bxs[id], y:bys[id]}); BK[id] = null; });
+  BK.forEach(function(bm, id){ gt.push({g:null, d:bm, s:LZS[id] || null, gs:null, x:bxs[id], y:bys[id]}); BK[id] = null; LZS[id] = null; });
   var drL = []; if (w.drM) w.drM.forEach(function(c){ drL.push(c); }); w.drM = null;
   w.gl = {ground:gt, chunks:list, terr:new Map(), dr:drL}; try { mpPrepare(w); } catch (er){ console.log('map props', er); } setTimeout(function(){ gtPackAll(w); }, 300);
 }

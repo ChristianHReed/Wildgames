@@ -681,7 +681,7 @@ function coreDrape(m, lift){
   var hgAt = base, tri = (hgAt + g.d.length*4 + 15) & ~15, col = tri + BT*36, uv = (col + BT*12 + 15) & ~15, op = uv + BT*36, cap = BT*3*40, oc, ot, end;
   var lay = function(){ oc = op + cap*12; ot = (oc + cap*4 + 15) & ~15; end = ot + cap*12; var have = mem.buffer.byteLength; if (end > have) mem.grow(Math.ceil((end - have)/65536)); };
   lay(); new Float32Array(mem.buffer, hgAt, g.d.length).set(g.d);
-  var gpuIn = null, gpuT0 = 0; if (window.gpuTestCapture && !window.GPUTEST){ try { gpuIn = window.gpuTestCapture(m, lift); } catch (e){ console.warn('gpu test capture', e); } } gpuT0 = performance.now();   /* 0.130.0: the optional WebGPU ground test (engine/gpudrape.js) */
+  var gpuIn = null, gpuT0 = 0; if (window.gpuTestCapture && !window.GPUTEST && N > 20000){ try { gpuIn = window.gpuTestCapture(m, lift); } catch (e){ console.warn('gpu test capture', e); } } gpuT0 = performance.now();   /* 0.130.0: the optional WebGPU ground test (engine/gpudrape.js) */
   var P0 = m.p, C0 = m.c, T0 = m.t;
   for (var s0 = 0; s0 < N; s0 += BT){
     var n = Math.min(BT, N - s0), B = mem.buffer;
