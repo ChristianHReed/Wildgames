@@ -70,9 +70,13 @@ These come first in every decision.
 | `app.js` | the editor |
 | `stations.js` | the station table, shared with the game |
 | `build.js` | the scripting library |
-| `tools/` | the tests |
+| `kit.js` (`WSK`) | ready-made parts shared by the Make card and the build library; smooth cages |
+| `ed_*.js` | editor features plugged in through `window.WSX` (Make card, corners, cages, look check, piece list, phone, Try it) |
+| `tools/` | the tests (`test_all.js` runs them all) and `render.js` (look sheets for any chat) |
 
 `craft.js` wraps `M.buildAsset` and `M.check`. Further layers should wrap them the same way, not edit them.
+
+**New editor features go in their own `workshop/ed_*.js` file**, loaded before `app.js` (and listed in `sw.js` STATIC and the artifact test page). Each pushes a function onto `window.WSX`; it gets `API` (state, helpers, `ACTIONS`, `CHANGES`) and fills the hook table `X`: `piece`, `many`, `model`, `check`, `top` (cards), `handles` and `gz[type]` (handles and their drags), `tools` and `toolTap` (toolbar), `bar` and `barTap` (handle bar), `tap`, `scene`, `start`, and `make` (the Make card). Add a hook to `app.js` only when none fits, and keep it one line. **Parts the editor makes go in `kit.js`** first, so the build library gets them too.
 
 ### Vehicle rules (in `docs/VEHICLE_BUILD.md`)
 
@@ -147,6 +151,11 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 - **Colours**: the boats and aircraft exports turn every colour into its own `x<hex>` name, so a pack works without the props palette. Creature details should use custom colours too; palette names the pack doesn't have show up magenta.
 - **Shapes**: `M.addPiece` takes a toolbar shape key (`tube`, not `loft`). Loft rings are relative to `p`, so shift `p`, not the rings.
 - **Gaps**: an octagonal loft's top sits below its radius; leave room for that when touching pieces.
+- **Make, don't add types**: new kinds of part (walls with openings, lettering, smooth cages) are made from the existing piece types, so the game, packs, damage and round trips need nothing new. A cage is smoothed in `localNative`; everything after it sees a shaped piece.
+- **Port a helper exactly, then prove it**: the cabin kit moved into `kit.js` and `test_kit.js` compares every piece with the old helper's (to 0.1 mm; the kit rounds sizes). Two differences hid in field lists (`hidden:false` on seats, doors dropping `fitting`).
+- **Winding**: a pulled-out face's sides share each edge the other way round from their neighbours; check with the signed volume (`WSK.cageVolume`), not by eye.
+- **The side view looks from +x**, so dragging right on screen moves towards the back (-z). Browser tests that drag must allow for the camera.
+- **Measure the layout, don't guess**: `browser_layout.js` counts controls under 44 points and how much of the screen the view gets, on iPhone upright and on its side and on iPad. Sliders were the last small controls.
 - **Browsers on iPad**: `confirm()` and `prompt()` are blocked; use in-page "tap again" instead. Sliders snap their minimum and maximum to the step.
 - **The user's terms change** (the main chat renamed "Bonnet" to "Hood" and "Tyre" stays): match the strings in the file as it is now, don't assume.
 - **Start every task by reading the project for notes to me.** Requests arrive as `Request to Workshop chat - …` and as lines inside other chats' notes ("Workshop chat: …"). Search the project for "Workshop chat" and read the newest main chat notes.
@@ -159,6 +168,8 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 ## 7. Where things stand (update at the end of each task)
 
 **Done**
+
+- The improvement plan (23 November 2026), all ten: the kit and the Make card with fields (parts remember their settings), corner editing, smooth cages (Catmull-Clark), the look check and `render.js`, the piece list, the phone layout (sheet, 44 points), Try it in the game, see-through glass, wheels per axle, the steering wheel job, and the extension layer (`ed_*.js`). Tests: `test_all.js`.
 
 - Slim vehicle packs: damage looks, wrecks and burnt shells made from the body when first read (`dmgGen` recipe, `D.fromPack`, lazy properties in packload). Waiting on the main chat: build wreck and burnt meshes only when one is placed.
 
@@ -182,13 +193,11 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 - Pack cars' `rig.drive` (steering and driven axles, any number of wheels).
 - Creature diet and temper.
 - Stations, walk-in rooms and mobile bases, trailers, Workshop boats and aircraft.
+- `play.html?try=1`: open the Test World and build the waiting hand-off at the free station (Try it in the game). `rig.wheelSizes` and the `steer` rig part.
 
 **Open in the Workshop**
 
-- Self evaluation and improvement plan (23 November 2026): project doc "Workshop chat - self evaluation and improvement plan". Main finding: the engine is strong, but content is made by scripts and outside tools because the editor can't do enough (no corner editing for a third of all pieces, the content chat's helpers live outside the engine, no look check, cramped on phones). Ten ranked changes, waiting for the user to pick.
-
-- Wheel size per axle (the tractor's big rear and small front wheels): the content chat asked for this; today there is one wheel radius per vehicle.
+- Nothing from the improvement plan is open: all ten changes are done (see **Done**). New ideas go to `docs/STRETCH.md`.
 
 - Map the stock keys (`hatchback` and so on) to the remade designs when the game loads `workshop-crafts`. This needs the main chat to agree first.
-- The roll-up door preview sticks up through the roof.
 - Wrecks of the remade vehicles come from `damage.js`; check they look right.

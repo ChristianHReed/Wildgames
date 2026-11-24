@@ -1,6 +1,6 @@
-/* Browser test of the Make card (workshop/ed_make.js): every kind makes pieces, a part made again keeps its piece count and place,
-   and nothing throws. Serves the repo itself, opens workshop.html in Chromium (Playwright) at iPad size.
-   Run: node workshop/tools/browser_make.js [screenshot folder]   (exit code 1 on a failure) */
+/* Browser test of the editor's tools: the Make card (every kind, and making a part again), corner editing, the piece list,
+   Try it in the game, and smooth cages. Serves the repo itself and opens workshop.html in Chromium (Playwright) at iPad size.
+   Run: node workshop/tools/browser_editor.js [screenshot folder]   (exit code 1 on a failure) */
 var http = require('http'), fs = require('fs'), path = require('path'), root = path.resolve(__dirname, '../..'), shots = process.argv[2];
 var TYPES = {'.html':'text/html', '.js':'text/javascript', '.json':'application/json', '.png':'image/png', '.css':'text/css', '.svg':'image/svg+xml'};
 var srv = http.createServer(function(q, r){ var f = path.join(root, decodeURIComponent(q.url.split('?')[0])); if (f.indexOf(root) !== 0 || !fs.existsSync(f) || fs.statSync(f).isDirectory()){ r.writeHead(404); return r.end(); }
@@ -92,5 +92,5 @@ srv.listen(0, async function(){
   ok(true, 'the design builds: ' + chk.tris + ' triangles' + (chk.bad.length ? ' (checks say: ' + chk.bad.slice(0, 3).join('; ') + ')' : ''));
   ok(!errs.length, errs.length ? 'page errors: ' + errs.slice(0, 3).join(' | ') : 'no page errors');
   await b.close(); srv.close();
-  console.log(fails ? fails + ' failed' : 'all Make card tests passed'); process.exit(fails ? 1 : 0);
+  console.log(fails ? fails + ' failed' : 'all editor tests passed'); process.exit(fails ? 1 : 0);
 });

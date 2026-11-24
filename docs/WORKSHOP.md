@@ -85,6 +85,23 @@ A land vehicle's ten damage looks, its wreck and its burnt shell are all made by
 
 `packs/workshop-crafts.js` went from 5.9 MB to 1.2 MB, and the 9.7 MB damage file is gone. Making one vehicle's damage looks takes about 11 ms in desktop Chrome.
 
+## Better tools for making content (23 November 2026)
+
+The self evaluation (project doc "Workshop chat - self evaluation and improvement plan") found the engine strong but the editor thin: the content chat built with scripts and its own helpers, a third of all pack pieces were free-form plates nobody could edit by hand, and on an iPhone the view was 203 px tall. Ten changes, all on the editor's side; the game needs nothing new except the Try it hand-off.
+
+- **The kit** (`workshop/kit.js`, `WSK`): panes that lean back and narrow at the top, walls with doors and windows cut out (glass and frames), raised 3 x 5 lettering (A to Z, 0 to 9, marks), trim round a box body (corner boards, a darker base strip, a fascia), copies in a row, wheel looks (plain, rounded, truck; kept when the wheel size changes) and the cabin kit (dashboard, gauges, a steering wheel that turns, seats, door cards; car cabins and hollow truck cabs). The content chat's helpers now live here, and the build library has them as `b.pane`, `b.wall`, `b.text`, `b.trim`, `b.wheelLook`, `b.carCabin`, `b.truckCab`, `b.quad`. `test_kit.js` checks the cabins come out exactly as `cabin_kit.js` made them.
+- **The Make card** (`ed_make.js`): proper fields (lengths in inches, a list of openings, rows of points) instead of typed codes, for stairs, panes, walls, lettering, trim, copies, spun shapes, raised outlines, pipes, cabins, wheel looks and trees. Every part remembers its settings: select any of its pieces, Change its settings, and it is made again where it is now.
+- **Corners** (`ed_corners.js`): Corners on the handle bar puts a handle on every corner of a free-form piece or plate. A corner slides on the flat the view faces most (front view: across and up), snapping to the grid; Both sides moves the matching corner across the middle; the Corners card takes exact numbers and adds or removes a plate's corners.
+- **Smooth cages** (`ed_cage.js`, `M.subdivide` in `model.js`): a Smooth cage shape, and Make it a smooth cage for blocks, tubes and shaped pieces. Move its corners, push and pull its faces, pull new sections out for limbs, add detail, pick the smoothness (0 to 3). Catmull-Clark subdivision, as Blender's Subdivision Surface; the game gets an ordinary shaped piece.
+- **The look check** (`ed_look.js`, `workshop/tools/render.js`): one sheet with the front, left side, top and three-quarter views, the driver's eye and the 64 px list size. Any chat can make it from the command line for a design, a saved file or a shipped model.
+- **The piece list** (`ed_list.js`): Pieces on the toolbar lists every piece by part, job or shape, with search, select by row or group, and Hide for this view only.
+- **Phones** (`ed_phone.js`, styles in `workshop.html`): upright, the view fills the screen and the panel is a sheet that peeks, opens half way or fills the screen; on its side the view, shapes and panel sit side by side; the view's show buttons sit behind one Show menu; every control on a touch screen is at least 44 points. iPhone view 646 px tall upright (was 439) and 337 px on its side (was 203).
+- **Try it in the game** (`ed_try.js`, `ST.tryHandoff` in `stations.js`): on the Check tab, builds the design and opens `play.html?try=1` with the hand-off waiting. The game's side (open the Test World and build it at the free station) is the main chat's.
+- **See-through glass**, **wheels per axle** (an axle can have its own wheel size: `rig.wheelSizes`) and a **steering wheel job** that turns with the steering (rig part kind `steer`).
+- **Extensions** (`window.WSX`): new editor features are separate `workshop/ed_*.js` files loaded before `app.js`. Each pushes a function that gets the editor's API and fills the hook table `X` (cards on the Piece, many-pieces, Model, Check and top-of-panel spots, handles and their drags, toolbar groups, handle-bar buttons, taps). `app.js` stays the core.
+
+Tests: `node workshop/tools/test_all.js` runs the round trips, the vehicle designs, the kit and cages, the editor in a browser and the phone and iPad layout (`--quick` skips the browser).
+
 ## Files
 
 | File | What it is |
@@ -97,6 +114,9 @@ A land vehicle's ten damage looks, its wreck and its burnt shell are all made by
 | `workshop/damage.js` | the damage, wreck and burnt-shell generator (runs in Node too) |
 | `workshop/view.js` | the 3D view: plain WebGL 1, touch and mouse |
 | `workshop/app.js` | the editor |
+| `workshop/kit.js` | ready-made parts shared by the editor and the build library: panes, walls with openings, lettering, trim, copies, wheel looks, cabins, smooth cages |
+| `workshop/ed_*.js` | editor features plugged in through `window.WSX`: `ed_make` (Make card), `ed_corners` (corner and face handles), `ed_cage` (smooth cages), `ed_look` (look check), `ed_list` (piece list), `ed_phone` (phone layout), `ed_try` (Try it in the game) |
+| `workshop/tools/test_all.js` | every Workshop test; `render.js` makes look sheets for any chat |
 | `workshop/tools/make_sample.js` | builds `packs/workshop-sample.js` from shapes (`node workshop/tools/make_sample.js`) |
 | `packs/packload.js` | the loader the game and the Maps Builder share |
 | `packs/index.js` | the list of pack files to load |

@@ -71,3 +71,14 @@ From docs/DEVICES.md. Gamepad support, detail presets, saves on the drive in eve
 - **Battery and heat mode** on phones and tablets: frame cap and lower resolution when on battery or warm.
 
 - **Free-standing alien nests**: the builder can put a nest in the open (`asmb:nest` outside any building). The game snaps it to the nearest building with a door within 40 m, because nests, their core, the burst hive and the spread rules all hang on a building. A real free-standing nest needs its own object with a core the player can destroy.
+
+## Workshop ideas found while finishing the improvement plan (23 November 2026)
+
+- Cage edges that stay sharp (crease weights), for a car body's swage lines on a smooth cage.
+- Mirror a cage across the middle as one piece with a seam that stays smooth (today: model the whole body with Both sides on).
+- Loop cuts on a cage (a new ring of corners round a limb), as Blender's loop cut.
+- Drag a whole wall opening in the view (today: Change its settings and type the numbers).
+- The look sheet with the design's damage looks (dented, wreck, burnt) as a second row.
+- A Try it in the game for a station already open in the game (the iframe) that keeps the Workshop open beside the game.
+- Lettering in more fonts (a 5 x 7 for big signs) and curved lettering round a tank or a drum.
+

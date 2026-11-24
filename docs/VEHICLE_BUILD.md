@@ -94,6 +94,29 @@ Metres; Y up; the vehicle faces +Z; its right side is +X; the ground (or a boat'
 
 Classes: land `car, pickup, van, truck, bus, rv, semi, trailer`; air `heli, plane, gyro, airship`; water `rowboat, motorboat, sailboat, houseboat, raft, barge`.
 
+### The kit (23 November 2026)
+
+The same parts the Workshop's Make card makes (`workshop/kit.js`), so a script and a hand build come out alike. Your own helpers in `designs/refs.js` and `tools/cabin_kit.js` can move to these:
+
+```js
+b.wheels(0.42, 0.28).wheelLook('truck');            // plain | rounded | truck, kept when the wheel size changes
+b.pane({at:[0, 1.2, 2.5], w:1.8, h:1.0, lean:20, rake:0.05});            // a windscreen: bottom edge at `at`, leaning back 20 degrees
+b.wall({at:[0.92, 0.6, 0], w:5, h:1.6, t:0.06, turn:-90, mx:true,         // a side wall facing -x, mirrored, with a window
+        openings:[{a:3.6, b:4.4, y0:0.6, y1:1.3}], glass:true, frame:0.04});
+b.text('ACME', {at:[0, 1.0, 2.55], h:0.12, c:'white'});                  // raised letters on the front
+b.trim({mn:[-1, 0.5, -2], mx:[1, 2.5, 2]}, {corners:true, base:true, fascia:true});
+b.carCabin({hw:0.86, belt:1.3, roof:2.2, cabF:2.3, cabB:0.6, g:0.4, seatY:0.95, rear:[]});   // as cabin_kit.carCabin
+b.truckCab({hw:1.1, zB:2.0, zF:3.6, fl:1.1, belt:1.9, roof:2.9});                           // as cabin_kit.truckCab
+```
+
+`turn` is the way a pane, wall or lettering faces: 0 the front (+z), 90 the left side (+x), 180 the back, -90 the right side. Openings are measured from the wall's left end, seen from the side it faces, and from its bottom; `y0:0` is a door.
+
+**Wheels per axle**: `b.axle(z, {r:0.8, w:0.45, driven:true})` gives that axle its own wheel size (a tractor's big rear wheels). The game gets `rig.wheelSizes` (`[radius, width]` for each wheel, in the order of `rig.wheels`) only when an axle has its own size.
+
+**Steering wheels**: pieces named `steering wheel` (the cabin kit's) get the Steering wheel job in `b.finish`; the rig gets a part with kind `steer` that turns about the column as the front wheels steer.
+
+**Smooth cages**: a piece with `s:'cage'`, corners `v`, faces `f` (anticlockwise from outside) and smoothness `sub` (0 to 3) is smoothed into an ordinary shaped piece when built. `WSK.cageFrom(piece)` turns a block or tube into one and `WSK.extrudeFace(v, f, face, length)` pulls a new section out of a face.
+
 ## Testing
 
 ```
