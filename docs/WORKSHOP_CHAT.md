@@ -2,7 +2,7 @@
 
 Read this before making a decision in the Workshop chat, and add what you learn when a task ends. The aim is the same output from one session to the next. A copy lives in the claude.ai Project as "Workshop chat - role and working rules".
 
-Last updated: 1 November 2026.
+Last updated: 23 November 2026.
 
 ## 1. Who I am
 
@@ -116,14 +116,12 @@ The Workshop opens with `workshop.html?station=<key>&sid=&return=`. Finished des
 1. **Start**: `cd /home/claude/wildgames && git fetch origin main && git reset --hard origin/main`. Other chats push often, so always start from their latest. (`/home/claude/christianhreed/wildgames` is an old copy; never use it.)
 2. **Plan**: send the user a short plan, then build in the same turn. Research first when the user asks to "look at how games do it", and cite sources.
 3. **After every insert**, run `node --check` on the changed files. Python string escapes have broken JavaScript before.
-4. **Tests**, all of which must pass:
-   - `node workshop/tools/roundtrip.js` (0 differ)
-   - `node workshop/tools/test_install.js`
-   - `node workshop/tools/test_crafts.js`
-   - that the stock cars still export identically
-   - browser tests with Playwright: Chromium at `/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`, served by `python3 -m http.server 8767` from the repo. Restart the server after a session restart.
+4. **Tests**: `node workshop/tools/test_all.js` runs them all and must pass:
+   - round trips (`roundtrip.js`, 0 differ), the vehicle designs (`test_crafts.js`), the kit and cages (`test_kit.js`);
+   - the editor in Chromium (`browser_editor.js`) and the phone and iPad layout (`browser_layout.js`); both serve the repo themselves and use `require('playwright')`;
+   - `test_install.js` when packload changes, and that the stock cars still export identically.
 
-   Look at the screenshots; a test that only "passes" isn't enough.
+   New editor features get a step in `browser_editor.js`. Look at the screenshots (pass a folder to the browser tests) and at a look sheet (`render.js`); a test that only "passes" isn't enough.
 5. **Documents**:
    - update `docs/WORKSHOP.md` (what it does, files, formats);
    - put new ideas on `docs/STRETCH.md`;
