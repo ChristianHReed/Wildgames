@@ -299,9 +299,13 @@
   M.rig = function(doc, nat, sp){
     var S = doc.setup, t = S.track, r = S.wheelR, a = S.axles, AX = M.axlesOf ? M.axlesOf(doc) : [];
     var wheels = AX.length ? [] : [[-t, r, a[1]], [-t, r, a[0]], [t, r, a[1]], [t, r, a[0]]];
-    if (AX.length){ var asc = AX.slice().sort(function(p, q){ return p.z - q.z; }); [-1, 1].forEach(function(sd){ asc.forEach(function(x){ wheels.push([r4(sd*x.track), r, r4(x.z)]); }); }); }
+    var sizes = null;
+    if (AX.length){ var asc = AX.slice().sort(function(p, q){ return p.z - q.z; }); [-1, 1].forEach(function(sd){ asc.forEach(function(x){ wheels.push([r4(sd*x.track), x.r, r4(x.z)]); }); });
+      /* wheels of their own size on some axles: one [radius, width] per entry of wheels; draw the wheel model scaled by radius / wheelR (height and length) and width / wheelW */
+      if (AX.some(function(x){ return x.own; })){ sizes = []; [-1, 1].forEach(function(){ asc.forEach(function(x){ sizes.push([x.r, x.w]); }); }); } }
     var rig = {wheels:wheels, wheelAxis:'x',
       wheelRule:'Place the wheel model at each position (turned half a turn on the left side), spin it about x; the bonnet opens about its hinge.'};
+    if (sizes){ rig.wheelSizes = sizes; rig.wheelSizeRule = 'wheelSizes[i] = [radius, width] of wheels[i]: scale the wheel model by radius / ' + S.wheelR + ' in height and length and by width / ' + (S.wheelW || 0.2) + ' across.'; }
     var bo = boundsOf(nat.bonnet), bt = boundsOf(nat.boot);
     if (bo.ok){ rig.bonnetHinge = v3r([0, bo.mx[1], bo.mn[2]]); rig.bonnetAxis = 'x'; rig.smokeAt = v3r([0, bo.mx[1] + 0.08, (bo.mn[2] + bo.mx[2])/2]); }
     else rig.smokeAt = v3r([0, sp.hood + 0.08, sp.nose - 0.7]);
@@ -332,7 +336,7 @@
   };
   M.kitEntry = function(doc, s){
     var S = doc.setup, wp = [], AX = M.axlesOf(doc);
-    if (AX.length) AX.forEach(function(a){ [1,-1].forEach(function(sx){ wp.push([r4(sx*a.track), s.wheelR, a.z]); }); });
+    if (AX.length) AX.forEach(function(a){ [1,-1].forEach(function(sx){ wp.push([r4(sx*a.track), a.r, a.z]); }); });
     else s.axles.forEach(function(z){ [1,-1].forEach(function(sx){ wp.push([sx*s.track, s.wheelR, z]); }); });
     return {pack:'workshop', group:'car', kind:'car', wheel:{r:S.wheelR, w:S.wheelW, points:wp, archClear:S.archClear, maxR:r4(S.wheelR*1.4), stock:{tyre:S.tyre || 'road', rim:S.rim || 'steel'}},
       paintSlots:['paint1','paint2','paint3'], mounts:M.mounts(s)};
@@ -421,15 +425,18 @@
      its wheels. Each axle steers or not and is driven or not. Power runs engine -> gearbox -> driveshaft -> each driven axle
      (Stormworks' chain); the Workshop draws the shaft and the differential and checks the chain is complete. */
   M.axlesOf = function(doc){
-    var W = doc.setup.wheelW || 0.2;
+    var W0 = doc.setup.wheelW || 0.2, R0 = doc.setup.wheelR || 0.32;
+    /* an axle may have its own wheel size (axle.r radius, axle.w width: a tractor's big rear wheels); else the vehicle's wheel */
     return doc.pieces.filter(function(p){ return p.fn === 'axle' && p.g !== 'wheel'; }).map(function(p){
-      var len = p.d ? p.d[0] : 1.4; return {p:p, z:p.pos[2], y:p.pos[1], track:r4(len/2 + W/2), steer:!!(p.axle && p.axle.steer), driven:!!(p.axle && p.axle.driven)};
+      var ax = p.axle || {}, W = ax.w || W0, len = p.d ? p.d[0] : 1.4;
+      return {p:p, z:p.pos[2], y:p.pos[1], r:ax.r || R0, w:W, own:!!(ax.r || ax.w), track:r4(len/2 + W/2), steer:!!ax.steer, driven:!!ax.driven};
     }).sort(function(a, b){ return b.z - a.z; });
   };
   M.makeAxle = function(doc, z, o){
-    o = o || {}; var S = doc.setup, t = o.track || S.track || 0.78, W = S.wheelW || 0.2;
-    return M.addPiece(doc, 'cyl', [0, S.wheelR, z], {ax:'x', d:[r4(Math.max(0.2, 2*t - W)), 0.07, 0.07], c:'underside', m:'steel', fn:'axle',
-      axle:{steer:!!o.steer, driven:!!o.driven}, name:o.name || (o.steer ? 'front axle' : 'rear axle'), hidden:!!o.hidden});
+    o = o || {}; var S = doc.setup, t = o.track || S.track || 0.78, W = o.w || S.wheelW || 0.2, ax = {steer:!!o.steer, driven:!!o.driven};
+    if (o.r) ax.r = r4(o.r); if (o.w) ax.w = r4(o.w);
+    return M.addPiece(doc, 'cyl', [0, o.r || S.wheelR, z], {ax:'x', d:[r4(Math.max(0.2, 2*t - W)), 0.07, 0.07], c:'underside', m:'steel', fn:'axle',
+      axle:ax, name:o.name || (o.steer ? 'front axle' : 'rear axle'), hidden:!!o.hidden});
   };
   /* older designs kept the axles as numbers: make them axle blocks */
   M.ensureAxles = function(doc){
@@ -444,7 +451,7 @@
   /* the setup numbers follow the axle blocks (wheel height, front and rear positions, track) */
   M.syncAxles = function(doc){
     var A = M.axlesOf(doc); if (!A.length) return A;
-    A.forEach(function(a){ a.p.pos = [0, doc.setup.wheelR, a.p.pos[2]]; a.p.rot = [0, 0, 0]; a.y = doc.setup.wheelR; });
+    A.forEach(function(a){ a.p.pos = [0, a.r, a.p.pos[2]]; a.p.rot = [0, 0, 0]; a.y = a.r; });
     doc.setup.axles = A.map(function(a){ return a.z; }); doc.setup.track = A[0].track;
     return A;
   };

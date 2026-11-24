@@ -10,6 +10,12 @@
   function clone(o){ return JSON.parse(JSON.stringify(o)); }
   function r4(v){ return Math.round(v*1e4)/1e4; }
 
+  /* ---------------------------------------------------------------- extensions: editor features in their own files (workshop/ed_*.js)
+     Each file pushes a function onto window.WSX before this one loads; it is called once with WORKSHOP.api (the editor's insides)
+     and fills X: cards for the panels, actions for buttons (data-a, data-k, data-m), handles in the view (with their own drag),
+     extra drawing in the scene, and toolbar groups. */
+  var X = {piece:[], many:[], check:[], checkModel:[], model:[], handles:[], gz:{}, scene:[], tools:[], toolTap:{}, start:[], tap:[]};
+  function ext(list, args){ var h = ''; list.forEach(function(f){ try { var r = f.apply(null, args || []); if (r) h += r; } catch (e){ console.error(e); } }); return h; }
   /* ---------------------------------------------------------------- storage (this browser) */
   var store = {
     get:function(k, d){ try { var v = localStorage.getItem('afterstreet.workshop.' + k); return v ? JSON.parse(v) : d; } catch (e){ return d; } },
@@ -142,12 +148,15 @@
   function hubs(){ var A = M.axlesOf(S.doc), r = S.doc.setup.wheelR;
     if (!A.length && dom() !== 'land') return [];
     if (!A.length) return S.doc.setup.axles.map(function(z){ return {z:z, track:S.doc.setup.track, y:r, steer:false}; });
-    return A.map(function(a){ return {z:a.z, track:a.track, y:r, steer:a.steer}; }); }
+    return A.map(function(a){ return {z:a.z, track:a.track, y:a.r, steer:a.steer, k:a.r/r, kw:a.w/(S.doc.setup.wheelW || 0.2)}; }); }
   function groupBounds(g){ var pcs = []; S.doc.pieces.forEach(function(p){ if (p.g === g && !p.hidden) pcs = pcs.concat(nativesOf(p)); }); return M.boundsOf(pcs); }
   function openFn(p){
     if (S.layer !== 'car') return null;
     if (p.g === 'part' && S.preview.doors && S.crig){ var R = S.crig, pose = S.cpose, memo = {};
-      return function(q, n){ var nm = M.partNameOf(p, q[0]); if (memo[nm] === undefined) memo[nm] = M.poseFn({rig:R}, nm, pose) || null; return memo[nm] ? memo[nm](q, n) : [q, n]; }; }
+      return function(q, n){ var nm = M.partNameOf(p, q[0]), j = R[nm];
+        /* a roll-up door coils into the roof: squash it up to its top edge instead of sliding it up through the roof */
+        if (j && j.door === 'roll'){ var top = j.pivot[1] + j.range[1]/0.95/2, f = 0.06; return [[q[0], top - (top - q[1])*f, q[2]], n]; }
+        if (memo[nm] === undefined) memo[nm] = M.poseFn({rig:R}, nm, pose) || null; return memo[nm] ? memo[nm](q, n) : [q, n]; }; }
     if (p.g === 'bonnet' && S.preview.bonnet){ var b = groupBounds('bonnet'); if (b.ok) return hingeX([0, b.mx[1], b.mn[2]], -1.0); }
     if (p.g === 'boot' && S.preview.boot){ var t = groupBounds('boot'); if (t.ok) return hingeX([0, t.mx[1], t.mx[2]], 1.0); }
     return null;
@@ -156,23 +165,28 @@
   function wheelMeshes(){
     var wm = trisOf(S.doc.pieces.filter(function(p){ return p.g === 'wheel'; }).reduce(function(a, p){ return a.concat(nativesOf(p)); }, []), 'wheelset:' + JSON.stringify(S.doc.pieces.filter(function(p){ return p.g === 'wheel'; })));
     var out = [], yaw = S.preview.steer ? 0.42 : 0;
-    hubs().forEach(function(h){ var y = h.steer ? yaw : 0; out.push(xform(wm, wheelAt([h.track, h.y, h.z], false, y))); out.push(xform(wm, wheelAt([-h.track, h.y, h.z], true, y))); });
+    hubs().forEach(function(h){ var y = h.steer ? yaw : 0, m = wm;
+      if (h.k && (Math.abs(h.k - 1) > 1e-4 || Math.abs(h.kw - 1) > 1e-4)) m = xform(wm, function(q, n){ return [[q[0]*h.kw, q[1]*h.k, q[2]*h.k], n]; });   /* this axle's own wheel size */
+      out.push(xform(m, wheelAt([h.track, h.y, h.z], false, y))); out.push(xform(m, wheelAt([-h.track, h.y, h.z], true, y))); });
     return out;
   }
   function rebuildScene(){
     if (!view) return;
     var wf = $('wave'); if (wf) wf.classList.toggle('hidden', !isSound());
     var tl = $('tools'); if (tl) tl.classList.toggle('hidden', isSound());
-    if (isSound()){ ['solid','ghost','sel','selLines','pts','bones','person','shadow','planes','fx','grid'].forEach(function(k){ view.set(k, null); }); updateReadout(); drawWave(); return; }
+    if (isSound()){ ['solid','glass','water','ghost','sel','selLines','pts','bones','person','shadow','planes','fx','grid'].forEach(function(k){ view.set(k, null); }); updateReadout(); drawWave(); return; }
     picks = [];
     if (!isModel() && S.doc.setup){ M.syncAxles(S.doc);   /* axles stay on the middle line at wheel height; only front/back moves */
       S.crig = M.rigParts(S.doc); S.cpose = M.openPose(S.crig); }
-    var solid = [], selM = [], ghost = [], lines = [], selIds = {}; S.sel.forEach(function(i){ selIds[i] = 1; });
+    var solid = [], selM = [], ghost = [], glass = [], lines = [], selIds = {}; S.sel.forEach(function(i){ selIds[i] = 1; });
+    /* glass is a thin tinted pane you see through (the glass rule): drawn in its own see-through layer */
+    var isGlass = function(p){ return /^glass/i.test(String(p.c || '')) || p.m === 'glass'; };
     if (S.layer === 'look'){
       var A = asset(), L = D.LOOKS.filter(function(l){ return l.key === S.look; })[0] || D.LOOKS[0], pcs = [], wheel = A.model.wheel, drop = 0;
       if (L.whole){ var W = A[L.whole]; pcs = W.body.concat(W.bonnet || []); wheel = W.wheel; drop = (L.whole === 'wreck' ? A.rigWreck : A.rigBurnt).sitDrop; }
       else { pcs = (L.body ? A.model.damage[L.body] : A.model.body).concat(L.bonnet && A.model.damage[L.bonnet] ? A.model.damage[L.bonnet] : (A.model.bonnet || []), A.model.boot || []);
         L.over.forEach(function(k){ pcs = pcs.concat(A.model.damage[k] || []); }); }
+      var gl = pcs.filter(isGlass); pcs = pcs.filter(function(q){ return !isGlass(q); }); if (gl.length) glass.push(trisOf(gl, 'lookglass:' + S.look + JSON.stringify(S.doc.pieces)));
       var m = trisOf(pcs, 'look:' + S.look + JSON.stringify(S.doc.dmg) + JSON.stringify(S.doc.states) + JSON.stringify(S.doc.pieces));
       solid.push(drop ? xform(m, function(p, n){ return [[p[0], p[1] - drop, p[2]], n]; }) : m);
       var wm = trisOf(wheel, 'lookwheel:' + S.look + JSON.stringify(S.doc.pieces.filter(function(p){ return p.g === 'wheel'; })));
@@ -191,7 +205,7 @@
           var inst = S.part !== p.g && M.instancesOf(S.doc, p.g);
           if (inst){ inst.forEach(function(pt){ var w = pt.pos, left = w[0] < -0.01; solid.push(xform(m, wheelAt(w, left))); }); return; }
         }
-        if (p.hidden) ghost.push(m); else solid.push(m);
+        if (p.hidden) ghost.push(m); else if (isGlass(p) && S.preview.glass !== false) glass.push(m); else solid.push(m);
         if (selIds[p.id]) selM.push(m);
         picks.push({id:p.id, pos:m.pos});
       });
@@ -214,12 +228,14 @@
         wpl = trisOf([{s:'decal', p:[0, bu.waterlineCrewed, cz], v:[[-W2, 0, L2], [W2, 0, L2], [W2, 0, -L2], [-W2, 0, -L2]], n:[0, 1, 0], c:'x3a7aa8', both:true}], 'water:' + bu.waterlineCrewed + ':' + W2 + ':' + L2 + ':' + cz); } }
     view.set('water', wpl ? {tris:wpl} : null, {order:6, alpha:0.38, depthWrite:false});
     view.set('solid', {tris:merge(solid)}, {order:1});
+    view.set('glass', glass.length ? {tris:merge(glass)} : null, {order:2, alpha:0.34, depthWrite:false});
     view.set('ghost', ghost.length ? {tris:merge(ghost)} : null, {order:3, alpha:0.35, depthWrite:false});
     view.set('sel', selM.length ? {tris:merge(selM)} : null, {order:4, tint:[0.85, 0.45, 0.18, 0.38], offset:-1});
     view.set('selLines', selM.length ? {lines:outline(S.sel)} : null, {order:5, depth:false, alpha:0.9, lit:false});
     view.set('bones', isSkel() && S.preview.bones ? {lines:boneLines()} : null, {order:8, depth:false, alpha:0.95, lit:false});
     var ptp = isModel() && S.preview.markers ? pointPieces() : [];
     view.set('pts', ptp.length ? {tris:trisOf(ptp)} : null, {order:7, depth:false, alpha:0.95, lit:false});
+    X.scene.forEach(function(f){ try { f(); } catch (e){ console.error(e); } });
     sceneDecor();
     updateReadout();
     gzDraw();
@@ -322,6 +338,7 @@
   }
   var hooks = {
     tap:function(x, y, ev){
+      for (var ti = 0; ti < X.tap.length; ti++) if (X.tap[ti](x, y, ev)) return;
       if (S.gzTapped){ S.gzTapped = false; return; }
       if (S.layer === 'look') return;
       var h = hit(x, y);
@@ -513,6 +530,8 @@
         h += '<button class="tool' + (on ? ' on' : '') + '" data-veh="' + k + '" title="' + esc(M.FUNCTIONS[k] ? M.FUNCTIONS[k].hint : '') + '">' + (ICON[k] || ICON.part) + esc(lab) + '</button>'; }); }
     if (S.prefabs.length){ h += '<div class="grp">Prefabs</div>'; S.prefabs.forEach(function(pf){ var on = S.placing && S.placing.kind === 'prefab' && S.placing.key === pf.id;
       h += '<button class="tool' + (on ? ' on' : '') + '" data-pf="' + esc(pf.id) + '">' + ICON.prefab + esc(pf.name.slice(0, 12)) + '</button>'; }); }
+    X.tools.forEach(function(g){ var items = g.items(); if (!items || !items.length) return; h += '<div class="grp">' + esc(g.group) + '</div>';
+      items.forEach(function(it){ h += '<button class="tool' + (it.on ? ' on' : '') + '" data-x="' + esc(it.key) + '" title="' + esc(it.title || '') + '">' + (it.icon || ICON.part) + esc(it.label) + '</button>'; }); });
     h += '<div class="grp">Build</div>';
     h += '<button class="tool' + (S.sym.x ? ' on' : '') + '" data-t="symx" title="Mirror new pieces left and right">' + '<svg viewBox="0 0 30 24"><path d="M15 2v20" stroke="#b5523d" stroke-width="2" stroke-dasharray="3 2"/><path d="M4 8h7v8H4z M19 8h7v8h-7z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/></svg>L | R</button>';
     h += '<button class="tool' + (S.sym.z ? ' on' : '') + '" data-t="symz" title="Mirror new pieces front and back">' + '<svg viewBox="0 0 30 24"><path d="M3 12h24" stroke="#4e7393" stroke-width="2" stroke-dasharray="3 2"/><path d="M11 2h8v7h-8z M11 15h8v7h-8z" fill="#e9c7a5" stroke="#3d3029" stroke-width="1.3"/></svg>F | B</button>';
@@ -525,6 +544,7 @@
   }
   $('tools').addEventListener('click', function(e){
     var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.x && X.toolTap[b.dataset.x]){ X.toolTap[b.dataset.x](b); renderTools(); return; }
     if (b.dataset.add) return startPlacing({kind:'shape', key:b.dataset.add, label:M.SHAPES[b.dataset.add].label});
     if (b.dataset.veh){ var vk = b.dataset.veh; return startPlacing({kind:vk === 'axle' || vk === 'gearbox' ? vk : 'job', key:vk, label:vk === 'axle' ? 'Axle' : vk === 'gearbox' ? 'Gearbox' : M.FUNCTIONS[vk].label}); }
     if (b.dataset.pf){ var pf = S.prefabs.filter(function(f){ return f.id === b.dataset.pf; })[0]; return startPlacing({kind:'prefab', key:pf.id, label:pf.name}); }
@@ -650,6 +670,10 @@
       var ax1 = p.axle || {};
       h += '<div class="card"><h3>Axle</h3><div class="row"><label><input type="checkbox" data-k="asteer"' + (ax1.steer ? ' checked' : '') + '>Steers (its wheels turn)</label><label><input type="checkbox" data-k="adrive"' + (ax1.driven ? ' checked' : '') + '>Driven (the engine turns it)</label></div>' +
         '<div class="row"><label class="l">Wheels apart</label>' + num('axle track', M.axlesOf(S.doc).filter(function(a){ return a.p === p; })[0].track*2, 'len', function(v){ edit(function(q){ q.d = (q.d || [1.4, 0.07, 0.07]).slice(); q.d[0] = r4(Math.max(0.2, v - S.doc.setup.wheelW)); }); }, {min:0.3, ax:'x'}) + '</div>' +
+        (function(){ var AA = M.axlesOf(S.doc).filter(function(a){ return a.p === p; })[0], own = !!(ax1.r || ax1.w);
+          return '<div class="row"><label><input type="checkbox" data-k="aown"' + (own ? ' checked' : '') + '>Its own wheel size (a tractor\'s big rear wheels)</label></div>' + (own ?
+            '<div class="row"><label class="l">Wheel size</label>' + num('axle wheel size', AA.r*2, 'len', function(v){ edit(function(q){ q.axle = Object.assign({}, q.axle, {r:r4(Math.max(0.1, v/2))}); }, true); }, {min:0.2}) + '</div>' +
+            '<div class="row"><label class="l">Tyre width</label>' + num('axle wheel width', AA.w, 'len', function(v){ edit(function(q){ q.axle = Object.assign({}, q.axle, {w:r4(Math.max(0.05, v))}); }, true); }, {min:0.05}) + '</div>' : ''); })() +
         '<p class="muted">Its wheels sit on its two ends, so moving it moves them. It stays on the middle line at wheel height; drag it forward or back. Turn on <b>Steer</b> below the view to see the steering wheels turn.</p></div>';
     }
     h += '<div class="card"><h3>Where (' + unitLabel() + ')</h3><div class="trio">' + ['x','y','z'].map(function(a, i){ return num(a, p.pos[i], 'len', function(v){ edit(function(q){ q.pos[i] = v; }); }, {ax:a}); }).join('') + '</div>' +
@@ -676,6 +700,7 @@
         '<div class="row"><label><input type="checkbox" data-k="hidden"' + (p.hidden ? ' checked' : '') + '>Inside part (not drawn in the game)</label></div>' +
         (!p.fn || p.fn === 'seat' || p.fn === 'sleep' || p.fn === 'storage' ? '' : '') + (!p.fn ? '<div class="row"><label><input type="checkbox" data-k="fitting"' + (p.fitting ? ' checked' : '') + '>Furniture (allowed inside a room)</label></div>' : '') : '') + '</div>' + jobCard(p);
     if (S.layer !== 'state' && p.g !== 'wheel') h += '<div class="card"><h3>Symmetry</h3><div class="row"><label><input type="checkbox" data-k="mx"' + (p.mx ? ' checked' : '') + '>Mirror left / right</label><label><input type="checkbox" data-k="mz"' + (p.mz ? ' checked' : '') + '>Mirror front / back</label></div></div>';
+    h += ext(X.piece, [p]);
     h += makeCard();
     h += actionsRow(1);
     return h;
@@ -703,6 +728,7 @@
       (S.layer === 'car' ? '<div class="row"><label class="l">Part of</label><select class="grow" data-k="g"><option value="">(mixed)</option>' + partOpts().map(function(o){ return '<option value="' + esc(o[0]) + '">' + esc(o[1]) + '</option>'; }).join('') + '</select></div>' : '') + '</div>';
     h += makeCard();
     h += '<div class="card"><h3>Prefab</h3><p class="muted">Save these pieces to place again on any design (a headlight cluster, a grille, a roof rack). Prefabs go into packs too.</p><div class="row"><input class="grow" id="pfName" type="text" placeholder="Prefab name"><button class="sm" data-a="prefab">Save prefab</button></div></div>';
+    h += ext(X.many, [sel]);
     h += actionsRow(sel.length);
     return h;
   }
@@ -860,6 +886,7 @@
     h += '<div class="card"><h3>Joined up</h3><p class="muted">As in Space Engineers, every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button><button class="alt sm" data-a="closeGapsAll">Close small gaps</button>' + (S.snap ? '<button class="alt sm" data-a="toGridAll">Line everything up with the grid</button>' : '') + '</div><p class="muted">Close small gaps moves pieces less than ½ in apart to touch. Lining up makes block sizes whole grid steps and puts every edge on a grid line.</p></div>';
     h += '<div class="card"><h3>Pieces</h3><table>' + tr('Pieces you placed', S.doc.pieces.filter(function(p){ return !p.hidden; }).length) + tr('Inside parts', S.doc.pieces.filter(function(p){ return p.hidden; }).length) +
       tr('Mirrored', S.doc.pieces.filter(function(p){ return p.mx || p.mz; }).length) + tr('Pack size', Math.round(JSON.stringify(A).length/1024) + ' KB') + '</table></div>';
+    h += ext(X.check);
     h += '<div class="card"><h3>Units</h3><div class="row"><button class="' + (S.units === 'imp' ? 'on' : 'alt') + ' sm" data-a="units" data-u="imp">Inches and feet</button><button class="' + (S.units === 'met' ? 'on' : 'alt') + ' sm" data-a="units" data-u="met">Centimetres and metres</button></div></div>';
     return h;
   }
@@ -988,6 +1015,7 @@
     var ex = d.extra || [];
     h += '<div class="card"><h3>Game details</h3>' + (ex.length ? ex.map(function(e, i){ return extraFields(e, i); }).join('') : '<p class="muted">Nothing else is stored with it.</p>') +
       (ex.some(function(e){ return e.path[0] === 'sizes' || e.path[0] === 'info'; }) ? '<div class="row"><button class="alt sm" data-a="measure">Measure it again from the pieces</button></div>' : '') + '</div>';
+    h += ext(X.model);
     return h;
   }
   /* ---------------------------------------------------------------- held items in a survivor's hand (W9) */
@@ -1191,6 +1219,7 @@
 
   /* ---------------------------------------------------------------- the Make card: shapes built from settings */
   function makeCard(){
+    if (X.make) return X.make.card();   /* workshop/ed_make.js: the Make card with proper fields */
     var sel = selected(), h = '<div class="card"><h3>Make</h3><div class="row"><select id="mkKind">' +
       [['stairs','Stairs'],['lathe','Spun shape (vase, post, shade)'],['extrude','Raised outline (sign, bracket, counter)'],['pipe','Pipe or cable']].concat(isModel() && S.doc.kind === 'plant' ? [['tree','Tree']] : []).concat(sel.length ? [['array','Copies in a row'],['radial','Copies round the middle']] : []).map(function(o){ return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') + '</select><button class="sm" data-a="mkGo">Make</button></div>' +
       '<div class="row"><input class="grow" id="mkArgs" type="text" placeholder="settings (see below)"></div>' +
@@ -1199,6 +1228,7 @@
   }
   function parsePts(t){ return t.split(';').map(function(q){ return q.split(',').map(function(x){ return parseFloat(x); }); }).filter(function(a){ return a.length && a.every(isFinite); }); }
   function makeGo(){
+    if (X.make) return X.make.go();
     var kind = $('mkKind').value, raw = ($('mkArgs').value || '').trim(), U = function(v){ return fromUnit(v); }, made = [], L = ownerList();
     var at = (function(){ var sel = selected(); if (sel.length){ var B = M.boundsOf([].concat.apply([], sel.map(nativesOf))); if (B.ok) return [(B.mn[0]+B.mx[0])/2, B.mx[1], (B.mn[2]+B.mx[2])/2]; } return [0, 0, 0]; })();
     var g = S.layer === 'wheel' ? 'wheel' : (isModel() ? (S.part || partNames()[0]) : 'body'), o = {g:g, c:S.brush, m:M.guessMaterial(S.brush)};
@@ -1270,6 +1300,7 @@
     return H;
   }
   function gzHandles(){
+    for (var xi = 0; xi < X.handles.length; xi++){ var xh = null; try { xh = X.handles[xi](); } catch (e){ console.error(e); } if (xh) return xh; }
     if (S.doc && S.doc.bodyType && S.bodyRegion && !S.sel.length && !S.placing && view && S.layer !== 'look') return bodyHandles();
     var sel = gzTarget(); if (!sel) return [];
     if (S.gz.rings && sel.length === 1 && sel[0].s === 'loft' && S.gz.mode === 'shape') return ringHandles(sel[0]);
@@ -1299,7 +1330,7 @@
       var isHot = hot && hot.type === h.type && hot.i === h.i && hot.sg === h.sg && hot.a === h.a, hex = isHot ? GZC.hot : h.col, px = wpp(h.pos), cn = M.customName(hex);
       if (h.type === 'outline'){ for (var o2 = 0; o2 < h.pts.length - 1; o2++) line(h.pts[o2], h.pts[o2+1], h.col); return; }
       if (h.type === 'ring' && h.base) line(h.base, h.pos, hex);
-      if (h.type === 'face' || h.type === 'bshape' || h.type === 'ring'){ var sz = (isHot ? 20 : 16)*px; pcs.push({s:'bev', p:h.pos, d:[sz, sz, sz], c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[sz*0.55, sz*0.55, sz*0.55], c:'x' + 'fbf6ec', glow:true});
+      if (h.type === 'face' || h.type === 'bshape' || h.type === 'ring' || h.box){ var sz = (isHot ? 20 : 16)*px; pcs.push({s:'bev', p:h.pos, d:[sz, sz, sz], c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[sz*0.55, sz*0.55, sz*0.55], c:'x' + 'fbf6ec', glow:true});
         line(h.pos, add3(h.pos, mul3(h.dir, 14*px)), hex); }
       else if (h.type === 'move'){ line(h.base, h.pos, hex); var r = (isHot ? 10 : 8)*px, a = h.a, ax = AXN[a], rr = [[0, 0, 0, r, r], [0, 0, 0, 0, 0]]; var d2 = 22*px;
         rr[1][a === 0 ? 0 : a === 1 ? 1 : 2] = d2; pcs.push({s:'loft', p:h.pos, ax:ax, n:8, r:rr, c:cn, glow:true}); pcs.push({s:'bev', p:h.pos, d:[r*1.6, r*1.6, r*1.6], c:cn, glow:true}); }
@@ -1356,6 +1387,7 @@
   function gzStart(h, x, y){
     var sel = selected(); S.gzDrag = {h:h, sel:sel.map(function(p){ return {p:p, p0:clone(p)}; })}; S.liveCommitted = false; commit();
     var D = S.gzDrag;
+    if (X.gz[h.type]){ X.gz[h.type].start(h, x, y, D); gzDraw(); return; }
     if (h.type === 'bshape'){ var RB = regionBounds(S.bodyRegion), sh = S.doc.bodyType.shape = S.doc.bodyType.shape || {}; D.v0 = (sh[S.bodyRegion] || [1, 1, 1]).slice(); D.half = Math.max(0.01, RB.mx[h.i] - RB.c[h.i]); D.t0 = lineParam(h.pos, h.dir, x, y); }
     else if (h.type === 'ring'){ var rp = sel[0]; D.k = Math.max(0, Math.min(rp.r.length - 1, S.ringIdx || 0)); D.v0 = rp.r[D.k][h.i]; D.t0 = lineParam(h.pos, h.dir, x, y); D.sc = (rp.scl || [1, 1, 1])[h.i < 3 ? h.i : ringAxes(rp)[h.i === 3 ? 'a' : 'b']] || 1; }
     else if (h.type === 'face'){ var p = sel[0], B = localBounds(p); D.size0 = B.mx[h.i] - B.mn[h.i]; D.c = (B.mn[h.i] + B.mx[h.i])/2; D.half = D.size0/2; D.t0 = lineParam(h.pos, h.dir, x, y); D.R = M.rotMat(p.rot || [0, 0, 0]);
@@ -1366,6 +1398,7 @@
   }
   function gzMove(x, y){
     var D = S.gzDrag, h = D.h, st = S.snap;
+    if (X.gz[h.type]){ X.gz[h.type].move(h, x, y, D); S.asset = null; rebuildScene(); return; }
     if (h.type === 'bshape'){
       var tb = lineParam(h.pos, h.dir, x, y); if (tb == null || D.t0 == null) return;
       var idx = h.i === 0 ? 0 : h.i === 2 ? 1 : 2, f = Math.max(0.4, Math.min(2.5, Math.round(D.v0[idx]*(D.half + (tb - D.t0))/D.half*100)/100)), v = D.v0.slice(); v[idx] = f; S.doc.bodyType.shape[S.bodyRegion] = v;
@@ -1473,6 +1506,7 @@
     h += '<div class="card"><h3>Detail budget</h3><div class="meter"><i style="width:' + Math.min(100, tot/40) + '%;background:' + (tot > 4000 ? 'var(--bad)' : tot > 2000 ? 'var(--ochre)' : 'var(--sage)') + '"></i></div>' +
       '<table>' + tr('Whole model', tot + ' triangles') + A.parts.map(function(n){ return tr('Part: ' + n, S.doc.pieces.filter(function(p){ return p.g === n; }).length + ' pieces'); }).join('') + tr('Points', (S.doc.points || []).length) + tr('Pack size', Math.round(JSON.stringify(A).length/1024) + ' KB') + '</table></div>';
     if (!isSkel()) h += '<div class="card"><h3>Joined up</h3><p class="muted">Every block should touch the rest; a floating piece usually means a gap.</p><div class="row"><button class="alt sm" data-a="selLoose">Select loose pieces</button><button class="alt sm" data-a="closeGapsAll">Close small gaps</button>' + (S.snap ? '<button class="alt sm" data-a="toGridAll">Line everything up with the grid</button>' : '') + '</div><p class="muted">Close small gaps moves pieces less than ½ in apart to touch. Lining up makes block sizes whole grid steps and puts every edge on a grid line.</p></div>';
+    h += ext(X.check);
     h += '<div class="card"><h3>Units</h3><div class="row"><button class="' + (S.units === 'imp' ? 'on' : 'alt') + ' sm" data-a="units" data-u="imp">Inches and feet</button><button class="' + (S.units === 'met' ? 'on' : 'alt') + ' sm" data-a="units" data-u="met">Centimetres and metres</button></div></div>';
     return h;
   }
@@ -1627,6 +1661,7 @@
     jpose:function(t){ S.pose[t.dataset.n] = +t.value; rebuildScene(); },
     slotcol:function(t){ commit(); S.doc.slotColours = S.doc.slotColours || {}; S.doc.slotColours[t.dataset.slot] = t.value; meshCache = {}; changed(true); },
     dstr:function(t){ commit(); S.doc.dmg.strength = +t.value; changed(true); },
+    aown:function(t){ edit(function(p){ var ax = Object.assign({}, p.axle); if (t.checked){ ax.r = S.doc.setup.wheelR; ax.w = S.doc.setup.wheelW; } else { delete ax.r; delete ax.w; } p.axle = ax; }, true); },
     asteer:function(t){ edit(function(p){ p.axle = Object.assign({}, p.axle, {steer:t.checked}); }, true); },
     adrive:function(t){ edit(function(p){ p.axle = Object.assign({}, p.axle, {driven:t.checked}); }, true); },
     dshaft:function(t){ commit(); S.doc.setup.drawShaft = t.checked; changed(true); },
@@ -1891,12 +1926,20 @@
   try { view = WSV.create($('cv'), hooks); }
   catch (e){ document.body.innerHTML = '<p style="padding:20px">The Workshop needs WebGL, which this browser has turned off: ' + esc(e.message) + '</p>'; return; }
   renderTools();
+  var API = {S:S, X:X, M:M, D:D, SH:SH, PAL:PAL, $:$, esc:esc, clone:clone, r4:r4, store:store, IN:IN, get view(){ return view; },
+    isModel:isModel, isSkel:isSkel, isSound:isSound, isCraft:isCraft, dom:dom, selected:selected, byId:byId, active:active, ownerList:ownerList,
+    commit:commit, changed:changed, refresh:refresh, renderPanel:renderPanel, renderTools:renderTools, rebuildScene:rebuildScene, gzDraw:gzDraw, edit:edit, setDoc:setDoc, saveDraft:saveDraft, uniqueId:uniqueId, asset:asset,
+    toast:toast, banner:banner, modal:modal, closeModal:closeModal, num:num, tr:tr, fmtLen:fmtLen, fmtNum:fmtNum, toUnit:toUnit, fromUnit:fromUnit, unitLabel:unitLabel,
+    nativesOf:nativesOf, trisOf:trisOf, merge:merge, xform:xform, openFn:openFn, colourFn:colourFn, pal:pal, gzOff:gzOff, wpp:wpp, gzLabel:gzLabel, lineParam:lineParam, add3:add3, sub3:sub3, mul3:mul3,
+    AXV:AXV, AXN:AXN, GZC:GZC, ICON:ICON, snapCtx:snapCtx, snapSaid:snapSaid, seat:seat, fitView:fitView, ACTIONS:ACTIONS, CHANGES:CHANGES, MODAL:MODAL, STATION:STATION, QS:QS};
+  (window.WSX || []).forEach(function(f){ try { f(API); } catch (e){ console.error('Workshop extension failed:', e); } });
+  X.start.forEach(function(f){ try { f(); } catch (e){ console.error(e); } });
   var cur = store.get('current', null), all = drafts();
   stationSetup();
   if (STATION && !(cur && all[cur] && STN.allows(STATION, all[cur]))){ var sb = blankForStation(); if (sb){ sb.id = uniqueId(sb.id || 'my_design'); setDoc(sb); S.tab = sb.type === 'vehicle' ? 'car' : 'model'; refresh(true); } else { setDoc(M.blankDoc()); }
     if (STATION === 'wardrobe'){ M.loadStock(['survivor'], 'assets/shaped/', function(){ try { var g = M.survivorIndex(SH).filter(function(x){ return /top|shirt/i.test(x.slot); })[0] || M.survivorIndex(SH)[0]; var gd = M.importGarment(SH, g.slot, g.body || null, g.choice); gd.id = uniqueId(gd.id); setDoc(gd); S.tab = 'model'; refresh(true); } catch (e){ console.error(e); } setTimeout(library, 200); }); }
     else setTimeout(library, 300); }
   else if (cur && all[cur]) setDoc(clone(all[cur]));
-  else { var first = M.fromStock(PROPS, 'pickup'); first.id = uniqueId('my_pickup'); first.name = 'My pickup'; setDoc(first); setTimeout(function(){ toast('Welcome! This is a copy of the pickup to try things on. Designs → Blank car to start from nothing.'); }, 400); }
-  window.WORKSHOP = {S:S, regionBounds:function(k){ return regionBounds(k); }, station:STATION, buildInGame:function(){ buildInGame(); }, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit, changed:changed, fitView:fitView};
+  else { var first = M.fromStock(PROPS, 'pickup'); first.id = uniqueId('my_pickup'); first.name = 'My pickup'; setDoc(first); setTimeout(function(){ toast('Welcome! This is a copy of the pickup to try things on. Designs → New vehicle to start from nothing.'); }, 400); }
+  window.WORKSHOP = {api:API, S:S, regionBounds:function(k){ return regionBounds(k); }, station:STATION, buildInGame:function(){ buildInGame(); }, refresh:refresh, asset:asset, view:view, importText:importText, exportPack:function(ids){ exportIds = ids || [S.doc.id]; }, place:place, hit:hit, changed:changed, fitView:fitView};
 })();

@@ -19,6 +19,7 @@
 (function(root){
   var M = (typeof module !== 'undefined' && module.exports) ? require('./model.js') : root.WSM;
   if (typeof module !== 'undefined' && module.exports){ require('./assets.js'); require('./craft.js'); }
+  var K = (typeof module !== 'undefined' && module.exports) ? require('./kit.js') : root.WSK;
   function r4(v){ return Math.round(v*1e4)/1e4; }
   var B = {};
   function colour(doc, c){ if (typeof c === 'string' && c[0] === '#'){ var n = M.customName(c); doc.colours[n] = c.toLowerCase(); return n; } return c || 'paint1'; }
@@ -47,7 +48,7 @@
     b.job = function(p, fn, set){ M.setJob(p, fn); if (set) for (var k in set) p[k] = set[k]; return p; };
     /* wheels: one wheel model the game copies onto every hub */
     b.wheels = function(r, w){ doc.setup.wheelR = r; doc.setup.wheelW = w; doc.pieces = M.makeWheel(doc, r, w); return b; };
-    b.axle = function(z, opt){ opt = opt || {}; var p = M.makeAxle(doc, z, opt); if (opt.track) p.d[0] = r4(Math.max(0.2, 2*opt.track - doc.setup.wheelW)); M.syncAxles(doc); return p; };
+    b.axle = function(z, opt){ opt = opt || {}; var p = M.makeAxle(doc, z, opt); if (opt.track) p.d[0] = r4(Math.max(0.2, 2*opt.track - (opt.w || doc.setup.wheelW))); M.syncAxles(doc); return p; };
     b.gearbox = function(pos){ return b.block('bev', pos, [0.3, 0.26, 0.45], {c:'underside', m:'steel', fn:'gearbox', name:'gearbox'}); };
     /* jobs that are markers inside the body (not drawn in the game) */
     b.engine = function(pos, sz){ return b.block('box', pos, sz || [0.6, 0.45, 0.7], {c:'underside', m:'steel', fn:'engine', hidden:true, name:'engine'}); };
@@ -101,9 +102,21 @@
     b.rudder = function(mn, mx, opt){ opt = opt || {}; return b.box(mn, mx, {c:opt.c || 'paint1', m:opt.m || 'sheet', fn:'rudder', name:opt.name || 'rudder'}); };
     b.elevator = function(mn, mx, opt){ opt = opt || {}; return b.box(mn, mx, {c:opt.c || 'paint1', m:opt.m || 'sheet', fn:'elevator', name:opt.name || 'elevator'}); };
     b.skid = function(mn, mx, opt){ opt = opt || {}; return b.box(mn, mx, {c:opt.c || 'underside', m:opt.m || 'sheet', fn:'skid', mx:!!opt.mx, name:opt.name || 'skid'}); };
+    /* the Workshop kit (workshop/kit.js): the same parts the editor's Make card makes */
+    var kb = function(){ return K.on(doc); };
+    b.quad = function(c, d, opt){ return K.quad(kb(), c, d, opt || {}); };      /* any four-corner plate pushed by a thickness vector */
+    b.pane = function(o){ return K.pane(kb(), o); };                           /* {at, w, h, t, lean, rake, turn, c} */
+    b.wall = function(o){ return K.wall(kb(), o); };                           /* {at, w, h, t, turn, openings:[{a, b, y0, y1}], glass, frame} */
+    b.text = function(str, o){ return K.text(kb(), str, o); };                 /* {at, h, depth, turn, align, c} */
+    b.trim = function(B, o){ return K.trim(kb(), B, o); };                     /* B {mn, mx}: corner boards, base strip, fascia */
+    b.wheelLook = function(style){ K.setWheelLook(doc, style); return b; };    /* plain | rounded | truck (call after b.wheels) */
+    b.carCabin = function(o){ return K.carCabin(kb(), o); };
+    b.truckCab = function(o){ return K.truckCab(kb(), o); };
     /* build it: the finished pack asset, the checks, and a short report */
     b.finish = function(DMG){
       M.syncAxles(doc);
+      /* pieces named 'steering wheel' (the cabin kit) turn with the steering */
+      doc.pieces.forEach(function(p){ if (!p.fn && /^steering wheel$/i.test(p.name || '')) M.setJob(p, 'steering'); });
       var A = M.buildAsset(doc, DMG || null), C = M.check(doc, A);
       return {doc:doc, asset:A, checks:C, bad:C.filter(function(x){ return x[0] === 'bad'; }), report:B.report(doc, A)};
     };

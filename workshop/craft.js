@@ -45,6 +45,7 @@
     wing:      {label:'Wing',          on:['air'], hint:'its area from above lifts a plane at speed'},
     envelope:  {label:'Gas envelope',  on:['air'], hint:'the bag of an airship or balloon: its volume lifts'},
     skid:      {label:'Skid or float', on:['air'], hint:'what it lands on when it has no wheels'},
+    steering:  {label:'Steering wheel', on:['land', 'air', 'water'], moving:true, hint:'turns about its column (its thin direction) as the driver steers'},
     rudder:    {label:'Rudder',        on:['air', 'water'], moving:true, hint:'turns about its front edge to steer'},
     elevator:  {label:'Elevator or flap', on:['air'], moving:true, hint:'tilts about its front edge to climb and dive'},
     hull:      {label:'Hull (floats)', on:['water'], hint:'the watertight volume: its size below the waterline holds the boat up; use a hidden box filling the inside of the hull'},
@@ -94,7 +95,7 @@
       var natO = M.toNative(one);
       sides.forEach(function(sd){
         var key = base + sd[1], nat = sd[0] ? natO : natO.map(M.mirrorX);
-        if (!parts[key]){ parts[key] = {name:key, fn:p.fn, door:p.door ? clone(p.door) : null, mirrored:!sd[0], natives:[], ids:[]}; order.push(key); }
+        if (!parts[key]){ parts[key] = {name:key, fn:p.fn, door:p.door ? clone(p.door) : null, mirrored:!sd[0], natives:[], ids:[], p0:p}; order.push(key); }
         parts[key].natives = parts[key].natives.concat(nat); parts[key].ids.push(p.id);
       });
     });
@@ -122,6 +123,13 @@
     var B = part.B, c = centre(B), s = size(B), fn = part.fn, j;
     var spin = M.FUNCTIONS[fn].spin;
     if (spin){ j = {pivot:v3r(c), turn:AX[spin].slice(), range:[-3600, 3600], rest:0, kind:'spin', note:'spins with the engine'}; }
+    else if (fn === 'steering'){
+      /* the column is the wheel's thin direction, taken from the first piece as it is turned (a raked column tilts with it) */
+      var sp = part.p0, lb = sp ? M.boundsOf(M.toNativeAlways(Object.assign(clone(sp), {pos:[0, 0, 0], rot:[0, 0, 0], mx:false, mz:false, hidden:false}))) : null, ti = 2;
+      if (lb && lb.ok){ var ls = size(lb); ti = ls[0] <= ls[1] && ls[0] <= ls[2] ? 0 : ls[1] <= ls[2] ? 1 : 2; }
+      var e = [0, 0, 0]; e[ti] = 1; var col = sp ? M.app3(M.rotMat(sp.rot || [0, 0, 0]), e) : [0, 0, 1];
+      if (part.mirrored) col = [-col[0], col[1], col[2]];
+      j = {pivot:v3r(c), turn:col.map(r4), range:[-450, 450], rest:0, kind:'steer', note:'turns with the steering: full lock is range'}; }
     else if (fn === 'rudder' || fn === 'elevator'){ j = {pivot:v3r([c[0], c[1], B.mx[2]]), turn:fn === 'rudder' ? [0, 1, 0] : [1, 0, 0], range:fn === 'rudder' ? [-30, 30] : [-25, 25], rest:0, kind:'steer', note:'turns about its front edge'}; }
     else if (fn === 'outboard'){ j = {pivot:v3r([c[0], B.mx[1] - 0.05, B.mx[2]]), turn:[0, 1, 0], range:[-35, 35], rest:0, kind:'steer', note:'steers the boat: swing the whole motor about Y'}; }
     else if (fn === 'sail'){ j = {pivot:v3r([c[0], c[1], B.mx[2]]), turn:[0, 1, 0], range:[-80, 80], rest:0, kind:'sail', note:'swings about the mast with the wind'}; }
