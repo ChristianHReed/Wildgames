@@ -50,5 +50,11 @@
     return {type:ST.MESSAGE, v:1, station:o.station, stationId:o.stationId || '', made:new Date().toISOString(), name:o.name, id:o.id,
       kind:o.kind, domain:o.domain || null, size:o.size || null, cost:o.cost || {}, pack:o.pack};
   };
+  /* "Try it in the game" from the Workshop on its own page: the hand-off (ST.handoff, with stationId 'try' and try:true) is left in
+     localStorage under KEY and the Workshop opens play.html?try=1. The game then opens the Test World, puts the player by its free
+     station of msg.station, and builds the design there as if it had been made at that station's terminal (free, so no cost). */
+  ST.TRY_ID = 'try';
+  ST.tryURL = function(){ return 'play.html?try=1'; };
+  ST.tryHandoff = function(o){ var m = ST.handoff(Object.assign({}, o, {stationId:ST.TRY_ID})); m['try'] = true; return m; };
   if (typeof module !== 'undefined' && module.exports) module.exports = ST; else root.AFTERSTREET_STATIONS = ST;
 })(typeof window !== 'undefined' ? window : this);

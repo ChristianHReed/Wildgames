@@ -59,6 +59,16 @@ srv.listen(0, async function(){
     return {rows:rows, pieces:S.doc.pieces.length, seats:shown.length, picked:picked.length === 1 && /seat/.test(A.byId(picked[0]).name || ''), hidden:!!S.viewHide[hid] && S.viewHideDoc === S.doc.id}; });
   ok(!pl.err && pl.rows === pl.pieces && pl.seats >= 4 && pl.picked && pl.hidden, 'piece list: ' + (pl.err || pl.rows + ' rows for ' + pl.pieces + ' pieces, ' + pl.seats + ' found for "seat", picked one, hid one in the view'));
   if (shots) await p.screenshot({path:shots + '/list.png'});
+  /* try it in the game: a car that passes its checks leaves the hand-off for the game and opens play.html?try=1 */
+  var tr = await p.evaluate(function(){ var A = WORKSHOP.api, M = A.M, S = A.S; A.setDoc(M.blankDoc()); var b = window.WSK.on(S.doc);
+    b.box([-0.8, 0.4, -2], [0.8, 1.0, 2], {name:'body'}); b.block('box', [0, 0.7, 1.4], [0.5, 0.4, 0.5], {c:'underside', fn:'engine', hidden:true, name:'engine'});
+    b.block('box', [0, 0.6, -1.4], [0.5, 0.25, 0.4], {c:'underside', fn:'tank', hidden:true, name:'tank'}); b.seat([0.35, 1.05, 0]); A.M.syncAxles(S.doc); A.refresh(true);
+    S.tab = 'check'; A.renderPanel(); var btn = document.querySelector('button[data-a=tryGame]'); if (!btn) return {err:'no Try button'};
+    window.__go = null; btn.click(); var m = null; try { m = JSON.parse(localStorage.getItem(AFTERSTREET_STATIONS.KEY)); } catch (e){}
+    return {m:m && {station:m.station, sid:m.stationId, tr:m['try'], assets:m.pack && m.pack.assets.length}, modal:!document.getElementById('modal').classList.contains('hidden') ? document.getElementById('modalBox').textContent.slice(0, 200) : ''}; });
+  await p.waitForTimeout(900);
+  ok(tr.m && tr.m.station === 'carshop' && tr.m.tr && tr.m.assets === 1 && /play\.html\?try=1/.test(p.url()), 'try it in the game: ' + (tr.err || (tr.m ? 'hand-off for the ' + tr.m.station + ', opened ' + p.url().replace(/^.*\//, '') : 'no hand-off: ' + tr.modal)));
+  await p.goto('http://localhost:' + port + '/workshop.html'); await p.waitForFunction(function(){ return window.WORKSHOP && WORKSHOP.S && WORKSHOP.S.doc; }, null, {timeout:30000});
   /* the design still builds */
   var chk = await p.evaluate(function(){ var A = WORKSHOP.api, As = A.asset(), C = A.M.check(A.S.doc, As); return {bad:C.filter(function(c){ return c[0] === 'bad'; }).map(function(c){ return c[1]; }), tris:As.stats.total}; });
   ok(true, 'the design builds: ' + chk.tris + ' triangles' + (chk.bad.length ? ' (checks say: ' + chk.bad.slice(0, 3).join('; ') + ')' : ''));
