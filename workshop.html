@@ -95,18 +95,56 @@
   #modal .box{background:var(--paper);border:1px solid var(--edge);border-radius:8px;box-shadow:var(--shadow);width:min(560px,100%);max-height:88vh;overflow-y:auto;padding:16px}
   #modal h2{font-family:var(--disp);font-weight:400;font-size:22px;margin:0 0 6px;color:var(--outline)}
   #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--cream);padding:9px 16px;border-radius:999px;font-size:14px;z-index:60;box-shadow:var(--shadow);pointer-events:none;max-width:90%}
-  /* phones and narrow tablets: view on top, tools as a strip, panel below */
-  @media (max-width:900px){
-    main{flex-direction:column;overflow-y:auto}
-    #vp{flex:none;height:52vh;order:0}
-    #tools{order:1;width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--edge);padding:6px}
+  /* phones and narrow tablets held upright: the view fills the screen, the shapes are a strip under it, and the panel is a sheet
+     over the view that peeks (its tabs), opens half way or fills the screen (Apple's sheet detents; Shapr3D and Nomad on iPhone) */
+  @media (max-width:900px) and (orientation:portrait){
+    main{flex-direction:column;position:relative;padding-bottom:var(--peek,60px)}
+    #vp{flex:1;min-height:0;order:0}
+    #tools{order:1;width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-top:1px solid var(--edge);padding:6px;flex:none}
     #tools .grp{display:none}
     .tool{min-width:62px}
-    #panel{order:2;width:auto;border-left:0;flex:none}
-    #body{overflow:visible;padding-bottom:30px}
+    #panel{position:absolute;left:0;right:0;bottom:0;width:auto;height:var(--peek,60px);border-left:0;border-top:1px solid var(--edge);border-radius:14px 14px 0 0;box-shadow:0 -6px 18px rgba(70,40,15,.16);z-index:20;transition:height .22s ease}
+    body.sheet-half #panel{height:52%}
+    body.sheet-full #panel{height:calc(100% - 8px)}
+    #sheetGrab{display:block}
+    #body{padding-bottom:30px}
     header h1{font-size:17px}
-    #previewBar{max-width:100%;bottom:52px}
-    #readout{top:auto;bottom:96px;font-size:11px}
+    #readout{top:auto;bottom:56px;font-size:11px}
+    #previewBar{display:none;bottom:56px;max-width:calc(100% - 20px);flex-direction:column;align-items:flex-start}
+    body.pv-open #previewBar{display:flex}
+    #pvToggle{display:block}
+  }
+  /* phones on their side: keep the view, the shapes and the panel side by side; the view gets the height */
+  @media (max-height:520px) and (orientation:landscape){
+    header{padding-top:4px;padding-bottom:4px}
+    header h1,header a.back[href="builder.html"]{display:none}
+    #tools{width:68px;padding:4px}
+    #tools .grp{display:none}
+    .tool{font-size:10px}
+    #panel{width:300px}
+    #previewBar{display:none;flex-direction:column;align-items:flex-start;bottom:10px;max-width:calc(100% - 20px)}
+    body.pv-open #previewBar{display:flex}
+    #pvToggle{display:block}
+    #readout{font-size:11px}
+  }
+  @media (max-width:520px){ header{flex-wrap:nowrap;gap:5px;padding-left:8px;padding-right:8px} header h1,header a.back[href="builder.html"]{display:none} header #docName{min-width:0;flex:1 1 60px} header button.sm{padding-left:8px;padding-right:8px} }
+  #sheetGrab,#pvToggle{display:none}
+  #sheetGrab{width:100%;height:16px;min-height:16px;background:transparent;box-shadow:none;padding:0;border-radius:14px 14px 0 0;position:relative}
+  #sheetGrab::after{content:"";position:absolute;left:50%;top:5px;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:var(--edge)}
+  #pvToggle{position:absolute;left:10px;bottom:10px;z-index:4}
+  /* fingers: controls at least 44 points (Apple's Human Interface Guidelines) on touch screens */
+  @media (pointer:coarse){
+    button,select,input:not([type=checkbox]):not([type=radio]):not([type=range]){min-height:44px}
+    button.sm{min-height:44px;padding:6px 10px}
+    #gzBar button{min-height:44px}
+    #tabs button{min-height:44px}
+    input[type=checkbox],input[type=radio]{width:24px;height:24px;margin:10px 8px 10px 0;vertical-align:middle}
+    label:has(input[type=checkbox]){min-height:44px;display:inline-flex;align-items:center}
+    input[type=range],.num .sl{height:44px}
+    .num{min-height:48px}
+    input[type=range]::-webkit-slider-thumb{width:28px;height:28px}
+    .num .nv{min-width:64px}
+    #sheetGrab{min-height:16px}
   }
 </style>
 </head>
@@ -134,11 +172,13 @@
     <div id="gzBar" class="hidden"></div>
     <div id="gzLabel" class="hidden"></div>
     <div id="previewBar"></div>
+    <button class="alt sm" id="pvToggle" aria-expanded="false">Show ▾</button>
     <div id="viewBar">
       <button class="alt sm" data-v="front">Front</button><button class="alt sm" data-v="right">Side</button><button class="alt sm" data-v="top">Top</button><button class="alt sm" data-v="three">3/4</button><button class="alt sm" data-v="fit">Fit</button>
     </div>
   </section>
   <aside id="panel">
+    <button id="sheetGrab" aria-label="Show more or less of the panel"></button>
     <div id="tabs"></div>
     <div id="body"></div>
   </aside>
@@ -159,6 +199,7 @@
 <script src="workshop/ed_corners.js"></script>
 <script src="workshop/ed_look.js"></script>
 <script src="workshop/ed_list.js"></script>
+<script src="workshop/ed_phone.js"></script>
 <script src="workshop/app.js"></script>
 <script>if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});</script>
 </body>
