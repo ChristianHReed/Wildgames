@@ -14,7 +14,7 @@
      Each file pushes a function onto window.WSX before this one loads; it is called once with WORKSHOP.api (the editor's insides)
      and fills X: cards for the panels, actions for buttons (data-a, data-k, data-m), handles in the view (with their own drag),
      extra drawing in the scene, and toolbar groups. */
-  var X = {piece:[], many:[], check:[], checkModel:[], model:[], handles:[], gz:{}, scene:[], tools:[], toolTap:{}, start:[], tap:[], bar:[], barTap:{}};
+  var X = {piece:[], many:[], check:[], checkModel:[], model:[], handles:[], gz:{}, scene:[], tools:[], toolTap:{}, start:[], tap:[], bar:[], barTap:{}, top:[]};
   function ext(list, args){ var h = ''; list.forEach(function(f){ try { var r = f.apply(null, args || []); if (r) h += r; } catch (e){ console.error(e); } }); return h; }
   /* ---------------------------------------------------------------- storage (this browser) */
   var store = {
@@ -195,6 +195,7 @@
       var list = active();
       list.forEach(function(p){
         if (p.hidden && !S.preview.markers) return;
+        if (S.viewHide && S.viewHide[p.id] && S.viewHideDoc === S.doc.id) return;   /* hidden in the view only (the piece list's eye) */
         if (isModel() && S.hideParts[p.g]) return;
         var m = trisOf(nativesOf(p), 'p:' + JSON.stringify(p)), f = openFn(p);
         if (f) m = xform(m, f);
@@ -642,7 +643,7 @@
   function renderPanel(){
     fieldSeq = 0; fields = {};
     var f = {sound:panelSound, piece:panelPiece, car:panelCar, model:panelModel, moves:panelMoves, anim:panelAnim, paint:panelPaint, damage:panelDamage, check:isModel() ? panelCheckModel : panelCheck}[S.tab] || panelPiece;
-    $('body').innerHTML = f();
+    $('body').innerHTML = (S.tab === 'piece' || !f ? ext(X.top) : '') + f();
   }
   function shapeName(p){
     if (p.s === 'loft') return p.r.length === 2 && (p.r[1][3] === 0 || p.r[0][3] === 0) ? 'Cone' : 'Tube';

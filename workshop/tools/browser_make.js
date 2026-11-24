@@ -48,6 +48,17 @@ srv.listen(0, async function(){
   var ad = await p.evaluate(function(){ var b = document.querySelector('button[data-a=crAdd]'); if (!b) return -1; b.click(); return WORKSHOP.api.selected()[0].v.length; });
   ok(ad === 5, 'corners: a plate gains a corner (' + ad + ')');
   if (shots) await p.screenshot({path:shots + '/corners.png'});
+  /* the piece list: open it, find the seats, select one from the list, hide another in the view */
+  var pl = await p.evaluate(function(){ var A = WORKSHOP.api, M = A.M, S = A.S, d = M.blankDoc(); A.setDoc(d); var K = window.WSK, b = K.on(S.doc);
+    K.carCabin(b, {hw:0.8, belt:1.0, roof:1.4, cabF:0.9, cabB:-0.9, g:0.2, seatY:0.68, rear:[]}); S.sel = []; A.refresh(true);
+    var t = document.querySelector('button[data-x=plist]'); if (!t) return {err:'no Pieces button'}; t.click();
+    var rows = document.querySelectorAll('.plist .plr').length, inp = document.querySelector('input[data-k=plSearch]'); inp.value = 'seat'; inp.dispatchEvent(new Event('input', {bubbles:true}));
+    var shown = [].filter.call(document.querySelectorAll('.plist .plr'), function(r){ return r.style.display !== 'none'; });
+    shown[0].querySelector('.plb').click(); var picked = S.sel.slice();
+    var eye = document.querySelectorAll('.plist .plr')[1].querySelector('.ple'); var hid = eye.dataset.id; eye.click();
+    return {rows:rows, pieces:S.doc.pieces.length, seats:shown.length, picked:picked.length === 1 && /seat/.test(A.byId(picked[0]).name || ''), hidden:!!S.viewHide[hid] && S.viewHideDoc === S.doc.id}; });
+  ok(!pl.err && pl.rows === pl.pieces && pl.seats >= 4 && pl.picked && pl.hidden, 'piece list: ' + (pl.err || pl.rows + ' rows for ' + pl.pieces + ' pieces, ' + pl.seats + ' found for "seat", picked one, hid one in the view'));
+  if (shots) await p.screenshot({path:shots + '/list.png'});
   /* the design still builds */
   var chk = await p.evaluate(function(){ var A = WORKSHOP.api, As = A.asset(), C = A.M.check(A.S.doc, As); return {bad:C.filter(function(c){ return c[0] === 'bad'; }).map(function(c){ return c[1]; }), tris:As.stats.total}; });
   ok(true, 'the design builds: ' + chk.tris + ' triangles' + (chk.bad.length ? ' (checks say: ' + chk.bad.slice(0, 3).join('; ') + ')' : ''));
