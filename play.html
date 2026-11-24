@@ -308,7 +308,7 @@
   <div id="carHud" class="hidden"><div class="chTop"><b id="chSpd">0</b><span>mph</span><em id="chGear">N</em></div><div class="chFuel"><span>E</span><div class="chBar"><i id="chFuelB"></i></div><span>F</span></div><div class="chSub"><span id="chMi"></span><span class="chHpW"><i id="chHp"></i></span></div><button id="chShop" class="hidden" style="pointer-events:auto;margin-top:6px;width:100%;font-size:12px;padding:5px">Car shop: name, paint, tune, repair</button><div class="chHint">W gas &middot; S brake/reverse &middot; A D steer &middot; Space handbrake &middot; E out</div></div>
   <div id="miniWrap"><canvas id="mini" width="200" height="200"></canvas><div id="osm">&copy; OpenStreetMap contributors</div></div>
   <button id="hudMenu" title="Menu">&#9776;</button>
-  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="bugBtn">Report a bug</button><button id="btnMove">Move buttons</button><button id="btnVSleep" class="hidden">Sleep in this seat</button><button id="menuBtn">Save and exit</button><div id="tally"></div></div>
+  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="bugBtn">Report a bug</button><button id="btnMove">Move buttons</button><button id="btnVSleep" class="hidden">Sleep in this seat</button><button id="menuBtn">Save and exit</button><div id="tally"></div><div id="gpuMenu" class="hidden" style="font-size:11px;line-height:1.45;color:rgba(245,234,216,.85);padding:4px 2px 0;max-width:260px;user-select:text;-webkit-user-select:text"></div></div>
   <div id="inv"></div>
   <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car trunk, siphon fuel, or pick up and put down furniture &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="salv" class="hidden"><span id="stxt"></span><div id="sbar"></div></div>
@@ -546,7 +546,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.131.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.131.2</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -591,7 +591,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.131.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.131.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -841,9 +841,16 @@ var GPUINFO = {ok:false, text:(navigator.gpu ? 'checking' : 'not in this browser
     gpuShow();
   }, function(e){ GPUINFO.text = 'error ' + String(e && e.message || e).slice(0, 60); gpuShow(); });
 })();
-function gpuShow(){ var d = document.getElementById('gpuLine'); if (!d) return; var T = window.GPUTEST, t = '';
-  if (T) t = T.state === 'running' ? ' Ground test: running on the next map load...' : T.state === 'failed' ? ' Ground test failed: ' + T.error : ' Ground test: the processor took ' + T.cpu.ms + ' ms, the graphics card ' + T.gpu.ms + ' ms (' + T.gpu.msBlocked + ' ms of it held up the page), ' + T.speed + ' times as fast, ' + T.same + '.';
-  d.textContent = 'WebGPU on this device: ' + GPUINFO.text + '. The game does not use it to play yet; this is for tests.' + t; }
+/* 0.131.2: the line is also in the in-game Menu (under the tally), because the ground test finishes while you play and the start page's Settings are out of reach then; a finished test also says so in a message */
+var GPUSAID = '';
+function gpuShow(){ var T = window.GPUTEST, t = '', on = lsGet('lastblock:gputest') === '1';
+  if (T) t = T.state === 'running' ? ' Ground test: running...' : T.state === 'failed' ? ' Ground test failed: ' + T.error : ' Ground test: the processor took ' + T.cpu.ms + ' ms, the graphics card ' + T.gpu.ms + ' ms (' + T.gpu.msBlocked + ' ms of it held up the page): ' + (T.gpu.ms && T.cpu.ms >= T.gpu.ms ? 'the card was ' + (T.cpu.ms/T.gpu.ms).toFixed(1) + ' times as fast' : 'the card was ' + (T.gpu.ms/Math.max(1, T.cpu.ms)).toFixed(1) + ' times slower') + '; ' + T.same + '.';
+  else if (on) t = ' Ground test: on; it runs on the next map you play.';
+  var line = 'WebGPU on this device: ' + GPUINFO.text + '. The game does not use it to play yet; this is for tests.' + t;
+  var d = document.getElementById('gpuLine'); if (d) d.textContent = line;
+  var m = document.getElementById('gpuMenu'); if (m){ m.textContent = line; m.classList.toggle('hidden', !on && !T); }
+  if (T && T.state !== 'running' && GPUSAID !== T.state && typeof toast === 'function' && typeof running !== 'undefined' && running){ GPUSAID = T.state; try { toast(T.state === 'failed' ? 'Graphics card test failed: ' + T.error : 'Graphics card test done: processor ' + T.cpu.ms + ' ms, graphics card ' + T.gpu.ms + ' ms. The full line is in the Menu.', 9); } catch (e){} } }
+try { gpuShow(); } catch (e){}
 /* 0.130.0: Settings > "Test the graphics card on the ground" loads engine/gpudrape.js, which repeats the ground drape of the next map load on the graphics card and compares it with the processor's */
 function gpuTestPrefs(){ var on = lsGet('lastblock:gputest') === '1', c = document.getElementById('gpuTest'); if (c) c.checked = on;
   if (on && navigator.gpu && !window.AfterstreetGPUDrape && !document.getElementById('gpuDrapeJs')){ var sc = document.createElement('script'); sc.id = 'gpuDrapeJs'; sc.src = 'engine/gpudrape.js?v=' + BUILD; document.body.appendChild(sc); } }
