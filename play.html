@@ -308,7 +308,7 @@
   <div id="carHud" class="hidden"><div class="chTop"><b id="chSpd">0</b><span>mph</span><em id="chGear">N</em></div><div class="chFuel"><span>E</span><div class="chBar"><i id="chFuelB"></i></div><span>F</span></div><div class="chSub"><span id="chMi"></span><span class="chHpW"><i id="chHp"></i></span></div><button id="chShop" class="hidden" style="pointer-events:auto;margin-top:6px;width:100%;font-size:12px;padding:5px">Car shop: name, paint, tune, repair</button><div class="chHint">W gas &middot; S brake/reverse &middot; A D steer &middot; Space handbrake &middot; E out</div></div>
   <div id="miniWrap"><canvas id="mini" width="200" height="200"></canvas><div id="osm">&copy; OpenStreetMap contributors</div></div>
   <button id="hudMenu" title="Menu">&#9776;</button>
-  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="bugBtn">Report a bug</button><button id="btnMove">Move buttons</button><button id="btnVSleep" class="hidden">Sleep in this seat</button><button id="menuBtn">Save and exit</button><div id="tally"></div><div id="gpuMenu" class="hidden" style="font-size:11px;line-height:1.45;color:rgba(245,234,216,.85);padding:4px 2px 0;max-width:260px;user-select:text;-webkit-user-select:text"></div></div>
+  <div id="hudBtns" class="hidden"><button id="itemsBtn">Items and crafting</button><button id="buildBtn">Build</button><button id="chatBtn">Chat</button><button id="inviteBtn">Invite a player</button><button id="viewBtn">First or third person</button><button id="helpBtn">Controls</button><button id="bugBtn">Report a bug</button><button id="shBtn">Sun shadows: off</button><button id="shMeasure" class="hidden">Measure what shadows cost</button><button id="btnMove">Move buttons</button><button id="btnVSleep" class="hidden">Sleep in this seat</button><button id="menuBtn">Save and exit</button><div id="tally"></div><div id="shMenu" class="hidden" style="font-size:11px;line-height:1.45;color:rgba(245,234,216,.85);padding:4px 2px 0;max-width:260px;user-select:text;-webkit-user-select:text"></div><div id="gpuMenu" class="hidden" style="font-size:11px;line-height:1.45;color:rgba(245,234,216,.85);padding:4px 2px 0;max-width:260px;user-select:text;-webkit-user-select:text"></div></div>
   <div id="inv"></div>
   <div id="help">WASD: move &middot; Space: jump &middot; Shift: sprint &middot; Z: crouch &middot; V: throw a stone &middot; U: switch gun &middot; O: reload &middot; Y: search a car trunk, siphon fuel, or pick up and put down furniture &middot; P: first or third person &middot; Mouse: look (arrows also turn) &middot; E: search, open, ride &middot; Hold J: take furniture or a car apart (axe, crowbar, wrench or toolkit)<br>Click: swing &middot; Right-click / F: shoot &middot; Q: switch weapon &middot; G: use item<br>1 eat &middot; 2 drink &middot; 3 medkit &middot; 4 bandage &middot; L: flashlight &middot; T: lantern &middot; R: radio scan &middot; B at a window: board it &middot; K: items &middot; I: backpack &middot; M: map &middot; N: build<br>H: hide this &middot; Enter: chat &middot; X: mark a spot &middot; Esc: free the mouse</div>
   <div id="salv" class="hidden"><span id="stxt"></span><div id="sbar"></div></div>
@@ -420,6 +420,8 @@
         <label>High-contrast screen controls<select id="hudHC"><option value="0">Off</option><option value="1">On</option></select></label>
         <label>Hold actions (search, pry, drink, dig, take apart)<select id="holdTog"><option value="0">Hold the key or button</option><option value="1">Press once to start, again to stop</option></select></label>
         <label><input type="checkbox" id="tapSlow"> Slower taps: a tap on the view to use something can last up to 0.7 s and move a little more</label>
+        <label>Sun shadows (test)<select id="shS"><option value="0">Off</option><option value="1">On</option></select></label>
+        <div id="shLine" style="margin:6px 0;color:var(--muted)"></div>
         <div id="gpuLine" style="margin:6px 0;color:var(--muted)"></div>
         <label><input type="checkbox" id="gpuTest"> Test the graphics card on the ground (the next map you play does its ground work twice and shows the result above; for tests)</label>
         <label>Camera effects (sprint zoom, hit shake, weapon sway)<select id="fxS"><option value="0">Off</option><option value="0.5">Low</option><option value="1">Normal</option></select></label>
@@ -546,7 +548,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.132.2</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.133.0</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -591,7 +593,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.132.2', ART = {}, ARTSET = (function(){
+var BUILD = '0.133.0', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -600,7 +602,7 @@ var BUILD = '0.132.2', ART = {}, ARTSET = (function(){
   return set;
 })();
 /* shared engine files (also loaded by the Maps Builder): same ?v=BUILD rule as the art */
-['core', 'core_wasm', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'loot', 'collision', 'render'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
+['core', 'core_wasm', 'mapparse', 'world', 'dig', 'meshes', 'buildings', 'interiors', 'loot', 'collision', 'render', 'shadow'].forEach(function(n){ document.write('<script src="engine/' + n + '.js?v=' + BUILD + '"><\/script>'); });
 </script>
 <script>
 'use strict';
@@ -852,6 +854,16 @@ function gpuShow(){ var T = window.GPUTEST, t = '', on = lsGet('lastblock:gputes
   if (T && T.state !== 'running' && GPUSAID !== T.state && typeof toast === 'function' && typeof running !== 'undefined' && running){ GPUSAID = T.state; try { toast(T.state === 'failed' ? 'Graphics card test failed: ' + T.error : 'Graphics card test done: processor ' + T.cpu.ms + ' ms, graphics card ' + T.gpu.ms + ' ms. The full line is in the Menu.', 9); } catch (e){} } }
 try { gpuShow(); } catch (e){}
 /* 0.130.0: Settings > "Test the graphics card on the ground" loads engine/gpudrape.js, which repeats the ground drape of the next map load on the graphics card and compares it with the processor's */
+/* 0.133.0 sun shadows: off unless asked for (Settings, the in-game Menu, or ?shadows=1); the choice is kept on the device */
+function shadowPrefs(first){
+  var url = /[?&]shadows=([01])/.exec(location.search), on = url ? url[1] === '1' : lsGet('lastblock:shadows') === '1';
+  if (first || url){ shadowSet(on); } else on = SHD.on;
+  var s = document.getElementById('shS'); if (s) s.value = on ? '1' : '0';
+  var b = document.getElementById('shBtn'); if (b) b.textContent = 'Sun shadows: ' + (on ? 'on' : 'off');
+  var m = document.getElementById('shMeasure'); if (m) m.classList.toggle('hidden', !on);
+  var l = document.getElementById('shLine'); if (l) l.textContent = on ? (SHD.failed ? 'Sun shadows could not start: ' + SHD.failed + '.' : 'Sun shadows are on. They draw what is near you a second time, so they can slow a phone; in the game, Menu > Measure what shadows cost shows by how much.') : 'Sun shadows are off. They show the sun\'s shadows of buildings, trees, cars and people near you by day (a test).';
+}
+function shadowToggle(on){ lsSet('lastblock:shadows', on ? '1' : '0'); shadowSet(on); shadowPrefs(false); }
 function gpuTestPrefs(){ var on = lsGet('lastblock:gputest') === '1', c = document.getElementById('gpuTest'); if (c) c.checked = on;
   if (on && navigator.gpu && !window.AfterstreetGPUDrape && !document.getElementById('gpuDrapeJs')){ var sc = document.createElement('script'); sc.id = 'gpuDrapeJs'; sc.src = 'engine/gpudrape.js?v=' + BUILD; document.body.appendChild(sc); } }
 function bugState(){ var g = world && world.geo, o = {build:BUILD, time:Math.round(time), view:VIEW, touch:!!touchMode, screen:innerWidth + 'x' + innerHeight, ua:navigator.userAgent.slice(0, 140), webgpu:GPUINFO.text, gputest:window.GPUTEST || null};
@@ -3036,16 +3048,16 @@ function drawPeople(){
   for (var i = 0; i < pplQ.length; i++){
     var q = pplQ[i], B = q.B, cb = pplCols(B, q.look); gl.uniform4f(U.inst, q.x, q.gy, q.y, q.yaw); gl.uniform1f(U.iscl, q.sc);
     if (pplTex && B.uv){ gl.uniform1f(U.pplOn, 1); gl.uniform3fv(U.pp, q.look.pal || (q.look.pal = pplPal(q.look))); }
-    drawMesh({vb:B.poses[q.f], cb:cb, tb:pplTb(B, q.look), n:B.n});
-    var bk = q.look.body ? 'female' : 'male', H = q.look.hair ? PPL[bk + ':' + HAIRN[q.look.hair]] : null; if (H) drawMesh({vb:H.poses[q.f], cb:pplCols(H, q.look), tb:pplTb(H, q.look), n:H.n});
-    var HT = q.look.hat ? PPL[bk + ':' + HATN[q.look.hat]] : null; if (HT) drawMesh({vb:HT.poses[q.f], cb:pplCols(HT, q.look), tb:pplTb(HT, q.look), n:HT.n});
+    var pm0 = {vb:B.poses[q.f], cb:cb, tb:pplTb(B, q.look), n:B.n}; drawMesh(pm0); shQ(pm0, q.x, q.gy, q.y, q.yaw, q.sc);   /* shQ: kept for the sun's shadow picture (0.133.0) */
+    var bk = q.look.body ? 'female' : 'male', H = q.look.hair ? PPL[bk + ':' + HAIRN[q.look.hair]] : null; if (H){ var pm1 = {vb:H.poses[q.f], cb:pplCols(H, q.look), tb:pplTb(H, q.look), n:H.n}; drawMesh(pm1); shQ(pm1, q.x, q.gy, q.y, q.yaw, q.sc); }
+    var HT = q.look.hat ? PPL[bk + ':' + HATN[q.look.hat]] : null; if (HT){ var pm2 = {vb:HT.poses[q.f], cb:pplCols(HT, q.look), tb:pplTb(HT, q.look), n:HT.n}; drawMesh(pm2); shQ(pm2, q.x, q.gy, q.y, q.yaw, q.sc); }
   }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform1f(U.pplOn, 0); pplQ.length = 0;
 }
 var CNAME = ['swarmer', 'stalker', 'giant', 'spitter', 'clinger'];
 function drawCreature(c, clip, t, x, gy, y, yaw, hurt){
   var cl = c.clips[clip], f = cl[0] + (Math.floor(t*cl[1]) % cl[1] + cl[1]) % cl[1];
-  gl.uniform4f(U.inst, x, gy, y, yaw); gl.uniform1f(U.hurtU, hurt ? 0.85 : 0); drawMesh(c.poses[f]);
+  gl.uniform4f(U.inst, x, gy, y, yaw); gl.uniform1f(U.hurtU, hurt ? 0.85 : 0); drawMesh(c.poses[f]); shQ(c.poses[f], x, gy, y, yaw, 1);
   return c.poses[f].eye;
 }
 /* glowing green eyes, so aliens read in the dark (Art 1), and the nearest two light the air around them a little */
@@ -3372,7 +3384,7 @@ function render(){
   var cAsp = W/H, tvB = Math.max(Math.tan(22.5*Math.PI/180), Math.min(Math.tan(50*Math.PI/180), Math.tan(CAMS.fov*Math.PI/360)/cAsp)), tvK = Math.min(Math.tan(50*Math.PI/180), tvB*(1 + 0.07*CAM.sprint*CAMS.fx*cVeh)); FOVT = tvK;
   var t = 1/tvK, nr = 0.12, fr = QS.far*1.25 + 300, Pm = [t/(W/H),0,0,0, 0,t,0,0, 0,0,(fr+nr)/(nr-fr),-1, 0,0,2*fr*nr/(nr-fr),0];
   var near = fires.concat(flares, lamps.filter(function(l){ return l.life > 0; }), (world.edits.gens || []).filter(function(g){ return g.on && g.fuel > 0; }).map(function(g){ return {lamp:true, x:g.x, y:g.y, gen:true}; }), gridOn() && dark > 0.3 && world.slights ? world.slights.filter(function(l){ return Math.abs(l.x - P.x) < 70 && Math.abs(l.y - P.y) < 70; }) : [], dark > 0.3 && world.barrels ? world.barrels.filter(function(l){ return Math.abs(l.x - P.x) < 70 && Math.abs(l.y - P.y) < 70; }) : [], dark > 0.3 ? eyeLights() : []).sort(function(a, b){ return Math.hypot(a.x-P.x, a.y-P.y) - Math.hypot(b.x-P.x, b.y-P.y); });
-  var sc = drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:FOVT}, {hour:hour0, wd:wd, fl:fl, wtype:wx.w, dark:dark, grid:gridOn() && !(P.inside && typeof disused === 'function' && disused(P.inside)), season:season(), lightOn:lightOn() || !!(P.veh && P.veh.hl && P.veh.fuel > 0) || !!(P.veh && P.veh.t && (carSt(P.veh).light || 0) >= 15 && dark > 0.3 && P.veh.fuel > 0), lights:near, now:now}), md = sc.md, sky = sc.sky;
+  var sc = drawScene({e:e, f:f, s:s, u:u, V:V, Pm:Pm, cx:P.x, cy:P.y, tz:FOVT}, {hour:hour0, wd:wd, fl:fl, wtype:wx.w, dark:dark, grid:gridOn() && !(P.inside && typeof disused === 'function' && disused(P.inside)), season:season(), lightOn:lightOn() || !!(P.veh && P.veh.hl && P.veh.fuel > 0) || !!(P.veh && P.veh.t && (carSt(P.veh).light || 0) >= 15 && dark > 0.3 && P.veh.fuel > 0), lights:near, now:now, noShadow:!!P.inside}), md = sc.md, sky = sc.sky;   /* noShadow: inside a building the sun does not reach, so no sun shadows (0.133.0) */
   var vg = el('vig'); if (vg){ var vo = (md.vig*(P.inside ? 0.7 : 1)).toFixed(2); if (vg.style.opacity !== vo) vg.style.opacity = vo; }
   var m = new Mesh(), x, y, far = farGround(); m.gm = new Mesh();
   m.pl = [TERR, 0]; var bq = QS.far*1.4 + 400, bi = world.tg ? QS.far*0.8 : 0, fc = [228,236,214];   /* 0.114.86: a frame, not a sheet: inside the range where the ground is drawn there is no far plane, so it cannot show through lakes and rivers */
@@ -3380,7 +3392,7 @@ function render(){
     m.quad(X0, far, Y0, X1, far, Y0, X1, far, y0, X0, far, y0, fc, 255); m.quad(X0, far, y1, X1, far, y1, X1, far, Y1, X0, far, Y1, fc, 255);
     m.quad(X0, far, y0, x0, far, y0, x0, far, y1, X0, far, y1, fc, 255); m.quad(x1, far, y0, X1, far, y0, X1, far, y1, x1, far, y1, fc, 255); }
   else m.quad(P.x - bq, far, P.y - bq, P.x + bq, far, P.y - bq, P.x + bq, far, P.y + bq, P.x - bq, far, P.y + bq, fc, 255);
-  m.pl = null;
+  m.pl = null; m.sk = m.p.length/3;   /* 0.133.0: what comes before this point is the ground fill, which casts no shadow */
   for (i = 0; i < zombies.length; i++) if (!CRE[CNAME[zombies[i].k]]){ m.yo = groundAt(zombies[i].x, zombies[i].y); drawAlien(m, zombies[i]); }
   drawEyes(m);
   drawItemsFx(m, now); drawFxList(m); drawSpits(m); drawBuilt(m); drawExtras(m, now); drawPorts(m); drawZones(m); drawStones(m); drawDrops(m); drawHatch(m);
@@ -3423,7 +3435,7 @@ function render(){
   var dgNow = time - digActT < 0.15 && !digFill(), rv = P.veh && !P.veh.t && !P.veh.mach ? P.veh : null;   /* 0.105.1: you stay visible on a bike, moped or boat */
   if (tp && (!P.veh || rv)){ var rdz = rv ? rideOf(rv) : null; m.yo = (P.gy || 0) + (P.jy || 0) + (rv && !rdz ? (rv.boat ? 0.1 : rv.moto ? 0.2 : 0.32) : rv && rv.boat ? -0.05 : 0); queuePerson(m, {x:P.x, y:P.y, yaw:rv ? rv.yaw : P.yaw, id:0, worn:P.worn, pack:true, mv:rv ? 0 : P.mv, vis:P.vis, sw:P.swing > 0 || dgNow, swk:P.swing > 0 ? 1 - P.swing/0.22 : dgNow ? Math.min(0.99, prog) : undefined, hp:P.hp, shk:P.shootCd > 0 ? 1 - P.shootCd/0.3 : undefined, lit:lightOn(), wpn:dgNow ? 'shovel' : heldWpn(), atk:dgNow ? 'attack_dig' : heldAtk(), ak:rdz ? rdz.ak : pAct()[1], rd:rdz ? rdz.rd : undefined,
       act:rdz ? rdz.clip : pAct()[0] || (time - (P.thrT || -9) < 0.5 ? 'throw' : P.shootCd > 0 ? 'shoot' : prog > 0 && target && target !== 'water' && !target.port ? (target.plant ? 'eat' : 'search') : null), swim:P.swim}, me.look, now); }
-  m.yo = 0; upload(m, dyn); drawMesh(dyn); drawCreatures(); drawPeople(); drawNature();
+  m.yo = 0; upload(m, dyn); dyn.sk = m.sk | 0; drawMesh(dyn); drawCreatures(); drawPeople(); drawNature();
   if (m.gm && m.gm.p.length){ if (!GDYN) GDYN = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; upload(m.gm, GDYN);   /* 0.114.86: vehicle glass, see-through like the building windows (0.114.80: back on the world's own shader first; people and plants switch it) */
     gl.useProgram(prog3); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(U.gA, 0.14); drawMesh(GDYN); gl.uniform1f(U.gA, 1); gl.depthMask(true); gl.disable(gl.BLEND); }
 
@@ -6753,6 +6765,9 @@ el('capsS').checked = CAPON; el('capsS').addEventListener('change', function(){ 
 el('fxS').addEventListener('change', function(){ CAMS.fx = +el('fxS').value; lsSet('lastblock:fx', CAMS.fx); });
 function hudPrefs(){ var hs = lsGet('lastblock:hudscale') || '1', hc = lsGet('lastblock:hudhc') || '0'; el('hudS').value = hs; el('hudHC').value = hc; document.documentElement.style.setProperty('--hs', hs); document.body.classList.toggle('hc', hc === '1'); }   /* 0.114.86 */
 holdPrefs(); el('holdTog').addEventListener('change', function(){ lsSet('lastblock:holdtog', el('holdTog').value); holdPrefs(); }); el('tapSlow').addEventListener('change', function(){ lsSet('lastblock:tapslow', el('tapSlow').checked ? '1' : '0'); holdPrefs(); });
+shadowPrefs(true); el('shS').addEventListener('change', function(){ shadowToggle(el('shS').value === '1'); });
+el('shBtn').addEventListener('click', function(){ shadowToggle(!SHD.on); var sm = el('shMenu'); if (sm){ sm.textContent = SHD.on ? 'Sun shadows on.' : 'Sun shadows off.'; sm.classList.remove('hidden'); } });
+el('shMeasure').addEventListener('click', function(){ var sm = el('shMenu'); sm.classList.remove('hidden'); sm.textContent = 'Measuring: 8 seconds, stand still...'; shadowMeasure(function(t){ sm.textContent = t; if (SHD.failed) sm.textContent += ' (' + SHD.failed + ')'; shadowPrefs(false); }); });
 gpuShow(); gpuTestPrefs(); el('gpuTest').addEventListener('change', function(){ lsSet('lastblock:gputest', el('gpuTest').checked ? '1' : '0'); gpuTestPrefs(); }); el('hudS').addEventListener('change', function(){ lsSet('lastblock:hudscale', el('hudS').value); hudPrefs(); }); el('hudHC').addEventListener('change', function(){ lsSet('lastblock:hudhc', el('hudHC').value); hudPrefs(); }); hudPrefs();
 (function(){ var r0 = String(RSCALE), o = el('rscale'); if (![].some.call(o.options, function(q){ return q.value === r0; })){ var op = document.createElement('option'); op.value = r0; op.textContent = Math.round(RSCALE*100) + '%'; o.appendChild(op); } o.value = r0;
   o.addEventListener('change', function(){ RSCALE = +o.value; lsSet('lastblock:rscale', o.value); resize(); });

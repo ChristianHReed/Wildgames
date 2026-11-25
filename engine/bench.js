@@ -3,7 +3,7 @@
    It measures frame times, how long the update and drawing take, draw calls, triangles, loading times and memory, then shows the result,
    keeps it on the device and, if a GitHub token is set (Menu > Report a bug > Sending settings), sends it to benchmarks/ in the repo.
    Address options: &q=0|1|2 detail (Low, Normal, High; default: what this device would pick), &send=1 send without asking, &quick=1 shorter stages,
-   &close=1 close the tab when done (for unattended runs), &label=text a name for the device (kept on the device after the first time). */
+   &close=1 close the tab when done (for unattended runs), &label=text a name for the device (kept on the device after the first time), &shadows=1 with the sun shadows on (0.133.0; run once without and once with to compare). */
 (function(){
   var Q = location.search, arg = function(k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(Q); return m ? decodeURIComponent(m[1]) : null; };
   var STAGE_S = arg('quick') ? 8 : 15, WARM_S = 2;
@@ -72,7 +72,7 @@
     /* 4: driving, if there is a car near */
     var car = null, cd = 120; (world.vehicles || []).forEach(function(v){ if (!v.t || v.kind === 'truck' || v.dead || v.burnt) return; var d = Math.hypot(v.x - P.x, v.y - P.y); if (d < cd){ cd = d; car = v; } });
     if (car){ try { onRoad(); var q = nearRoad(); car.x = P.x; car.y = P.y; car.yaw = q ? q[2] : car.yaw; car.fuel = 9999; mount(car); } catch (e){} await stage('city centre, driving', function(dt){ keys.KeyW = true; P.yaw += 0.15*dt; }); stopKeys(); }
-    var out = {kind:'afterstreet-benchmark', build:BUILD, when:new Date().toISOString(), seconds:Math.round((Date.now() - t0)/1000), device:device(), loads:B.log, stages:B.stages};
+    var out = {kind:'afterstreet-benchmark', build:BUILD, when:new Date().toISOString(), seconds:Math.round((Date.now() - t0)/1000), device:device(), loads:B.log, stages:B.stages, shadows:(typeof SHD !== 'undefined' && SHD.on) ? {on:true, size:SHD.size, metres:SHD.R*2, bits:SHD.bits || null, failed:SHD.failed || ''} : {on:false}};   /* 0.133.0: run it twice, with and without &shadows=1, to compare */
     finish(out);
   }
   function finish(out){

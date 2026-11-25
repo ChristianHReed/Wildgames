@@ -17,7 +17,7 @@ const {chromium} = require('playwright');
   p.on('requestfailed', r => add('REQUEST FAILED ' + r.url()));
   p.on('response', r => { if (r.status() >= 400) add('HTTP ' + r.status() + ' ' + r.url()); });
   await p.goto(base + 'play.html'); await p.waitForTimeout(2500);
-  await p.evaluate(s => { try { localStorage.clear(); } catch (e){} var e = document.getElementById('scen'); if (e) e.value = s; }, scen);
+  await p.evaluate(a => { try { localStorage.clear(); } catch (e){} var e = document.getElementById('scen'); if (e) e.value = a[0]; if (a[1] && typeof shadowSet === 'function') shadowSet(true); }, [scen, !!process.env.SHADOWS]);   /* SHADOWS=1: play with the sun shadows on (0.133.0) */
   if (mode === 'asmap'){
     await p.setInputFiles('#file', file);
     for (let i = 0; i < 90; i++){ await p.waitForTimeout(2000); if (/Press Play|Could not/.test(await p.evaluate(() => document.getElementById('rgStatus').textContent))) break; }

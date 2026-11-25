@@ -3,14 +3,14 @@
    Load order: after collision.js. */
 'use strict';
 /* ================= renderer ================= */
-var prog3, aP, aC, aT, U = {}, dyn = null, vmb = null, glOK = false, texReady = false, natTex = false, pplTex = false, bldTex = false;
+var prog3, aP, aC, aT, U = {}, dyn = null, vmb = null, SHDUM = null, glOK = false, texReady = false, natTex = false, pplTex = false, bldTex = false;
 function initGL(){
   if (!gl) return false;
   var deriv = gl.getExtension('OES_standard_derivatives'), lod = deriv && gl.getExtension('EXT_shader_texture_lod');
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;uniform vec4 itint;uniform vec3 swy;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){float lf=clamp((c.g-max(c.r,c.b))*5.0,0.0,1.0);vc=vec4(c.rgb*mix(vec3(1.0),itint.rgb,lf),c.a);vt=t;vec3 q=p*iscl;float hy=min(q.y,swy.z);float mxc=max(c.r,max(c.g,c.b));float sat=mxc-min(c.r,min(c.g,c.b));float lm=max(lf,step(0.45,mxc)*step(0.18,sat));float sw=swy.y*hy*hy*0.0007*lm;q.x+=sin(swy.x*1.7+inst.x*0.37+inst.z*0.29)*sw;q.z+=cos(swy.x*1.3+inst.x*0.21+inst.z*0.33)*sw*0.7;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;uniform sampler2D dmask;uniform float dmOn;uniform vec2 dmo;uniform float dmS;' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;uniform sampler2D dmask;uniform float dmOn;uniform vec2 dmo;uniform float dmS;uniform sampler2D shm;uniform mat4 lvp;uniform vec4 shU;uniform float shad;' +
     'vec3 ppl(vec2 uv,float j){vec2 a4=(vec2(mod(j,8.0)*256.0,floor(j/8.0+0.01)*256.0)+1.0+fract(uv)*254.0)/2048.0;vec4 tp=texture2D(atlas4,a4);float idx=floor(tp.g*8.0);vec3 pc=pp[0];for(int i=1;i<8;i++){if(float(i)==idx)pc=pp[i];}return pc*tp.r*1.99;}' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>199.5){float j5=k-200.0;vec2 s5=vec2(252.0/2048.0);vec2 a5=(vec2(mod(j5,8.0)*256.0,floor(j5/8.0+0.01)*256.0)+2.0)/2048.0+fract(uv)*s5;' + (lod ? 'return texture2DGradEXT(atlas5,a5,dFdx(uv)*s5,dFdy(uv)*s5);}' : 'return texture2D(atlas5,a5);}') +
@@ -29,7 +29,8 @@ function initGL(){
     'if(we>0.004){vec4 l=samp(2.0,uv*1.07+0.53);float f=lay(we,l.a,1.0-m);c=mix(c,l.rgb,f);hh=mix(hh,l.a,f);}' +
     'if(wr>0.004){vec4 l=samp(3.0,uv*0.5+0.11);float f=lay(wr,l.a,m);c=mix(c,l.rgb,f);hh=mix(hh,0.4,f);}' +
     'return vec4(c,hh);}' +
-    'uniform float gA;void main(){vec3 V=wp-cam;float d=length(V);' +
+    /* 0.133.0 shadow pass (engine/shadow.js): the same shader draws the solid things seen from the sun into a depth picture, nothing else is worked out */
+    'uniform float gA;void main(){if(shad>0.5){float kk=floor(vt.z+0.5);if(kk>59.5&&kk<79.5){if(samp(kk,vt.xy).a<0.3)discard;}if(vc.a>0.25&&vc.a<0.9)discard;gl_FragColor=vec4(1.0);return;}vec3 V=wp-cam;float d=length(V);' +
     'bool unlit=vc.a>0.6&&vc.a<0.9;bool emis=vc.a>0.25&&vc.a<0.6;bool back=(vc.a<0.25&&!gl_FrontFacing)||(vt.z>190.5&&vt.z<191.5);' +
     'vec3 n=vec3(0.0,1.0,0.0);' + (deriv ? 'if(!unlit){n=normalize(cross(dFdx(wp),dFdy(wp)));if(dot(n,V)>0.0)n=-n;}' : '') +
     'vec3 col=vc.rgb;float glow=0.0;vec3 winc=vec3(1.0,0.8,0.48);float k=floor(vt.z+0.5);' +
@@ -50,7 +51,11 @@ function initGL(){
        colour and the light warm, sunlit edges get a thin warm rim, and colours are a little richer by day. At night the bands stay but the colour
        drains out (see below), so the moonlit town reads in cold, grey-blue steps and only lamps, fires and windows are warm */
     'vec3 LD=normalize(vec3(-0.62,0.72,0.3));float ld=dot(n,LD);float tb=smoothstep(-0.55,0.7,ld);if(k>79.5)tb=smoothstep(-0.45,0.6,ld);' +
-    'float band=mix(tb,0.45*smoothstep(0.2,0.3,tb)+0.55*smoothstep(0.6,0.7,tb),0.85);if(unlit||emis)band=1.0;' +
+    'float band=mix(tb,0.45*smoothstep(0.2,0.3,tb)+0.55*smoothstep(0.6,0.7,tb),0.85);' +
+    /* 0.133.0 sun shadows: the point is nudged out along its own face (so a face does not shade itself), looked up in the sun's depth picture with a 3 by 3 soft edge, and faded out at the picture's border */
+    'float shw=0.0;if(shU.x>0.0&&!unlit&&!emis&&ld>-0.2){vec3 shq=wp+n*(0.05+0.12*(1.0-clamp(ld,0.0,1.0)));vec4 shl=lvp*vec4(shq,1.0);vec3 shp=shl.xyz*0.5+0.5;vec2 she=abs(shp.xy-0.5)*2.0;float shm2=max(she.x,she.y);'+
+    'if(shm2<0.98&&shp.z<1.0){float shz=shp.z-shU.z;float shs=0.0;for(int i=-1;i<=1;i++){for(int j=-1;j<=1;j++){shs+=step(texture2D(shm,shp.xy+vec2(float(i),float(j))*shU.y).r,shz);}}shw=shs/9.0*(1.0-smoothstep(0.7,0.97,shm2));}}' +
+    'if(unlit||emis)band=1.0;else band*=1.0-shw*shU.x;' +
     'bool flatg=(k>44.5&&k<46.5)||(k>18.5&&k<19.5);' +
     'col=mix(col*shd*0.86,col*sunc,band);' +
     'if(!unlit&&!emis&&!flatg){float rim=smoothstep(0.55,0.8,1.0-abs(dot(n,V/d)));col+=col*sunc*rim*band*0.2*(1.0-dark);}' +
@@ -67,8 +72,12 @@ function initGL(){
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','itint','swy','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF','gA'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','itint','swy','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF','gA','shm','lvp','shU','shad'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0); gl.uniform1f(U.gA, 1);
+  /* 0.133.0: texture unit 6 belongs to the sun's depth picture; until shadows are on it holds one white pixel, so the shader's lookup always has something bound */
+  SHDUM = gl.createTexture(); gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, SHDUM); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.activeTexture(gl.TEXTURE0);
+  gl.uniform1i(U.shm, 6); gl.uniform4f(U.shU, 0, 0, 0, 0); gl.uniform1f(U.shad, 0);
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); gl.uniform4f(U.itint, 1, 1, 1, 1); gl.uniform3f(U.swy, 0, 0, 1); gl.uniform1f(U.hurtU, 0); (typeof loadCreatures === 'function' && loadCreatures()); (typeof loadPeople === 'function' && loadPeople());
   gl.enableVertexAttribArray(aP); gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.enable(gl.DEPTH_TEST);
   dyn = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; vmb = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0};
@@ -266,6 +275,7 @@ function drawScene(cam, env){
   md.hor = grey(md.hor); md.top = grey(md.top).map(function(v, j){ return v*(0.75 + 0.25*wd) + (md.hor[j] - v)*(1 - wd); }); var sky = [md.hor[0]*wd + fl, md.hor[1]*wd + fl, md.hor[2]*wd + fl];
   if (env.wtype === 4){ sky[0] = sky[0]*0.6 + 0.36*(1 - dark); sky[1] = sky[1]*0.6 + 0.36*(1 - dark); sky[2] = sky[2]*0.6 + 0.37*(1 - dark); }
   gl.uniform1i(U.atlas, 0); gl.uniform1i(U.atlas3, 2); gl.uniform1i(U.atlas4, 3); gl.uniform1i(U.atlas5, 4); gl.uniform1f(U.bldOn, bldTex ? 1 : 0); gl.uniform1f(U.tm, (performance.now()/1000) % 10000); gl.uniform1f(U.texOn, texReady ? 1 : 0);
+  if (typeof shadowPass === 'function') shadowPass(cam, env);   /* 0.133.0: the sun's depth picture of what is near you, drawn first; the map builder does not load it and has no shadows */
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   if (!fl) drawSky({top:md.top, hor:sky, sun:md.sun}, f, s, u, hour0, dark, cam.tz);
   gl.uniform3fv(U.fogN, [md.fn, md.ff, md.fm]); gl.uniform3fv(U.sunc, md.sun); gl.uniform3fv(U.shd, md.shd); gl.uniform1f(U.winF, env.grid ? 0.35 : 0.04);
