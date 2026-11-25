@@ -546,7 +546,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.132.1</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.132.2</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -591,7 +591,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.132.1', ART = {}, ARTSET = (function(){
+var BUILD = '0.132.2', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -6155,8 +6155,10 @@ function thinGenerated(raw, len, force){
   if (cut) console.log('thinned ' + cut + ' made-up things from a ' + Math.round(len/1e6) + ' MB square for this device');
   return keep;
 }
-async function enterZone(R, lat, lon, yaw, carry, atSafe){
-  var ij = zoneOf(R, lat, lon), text = R.builtin ? await builtinSquare(ij[0], ij[1]) : await zoneGet(R, ij[0], ij[1]);
+/* 0.132.2: a square's text from this device (the built-in file or the saved copy); null when it has to be downloaded first */
+async function zoneOnDevice(R, i, j){ return R.builtin ? await builtinSquare(i, j) : await zoneGet(R, i, j); }
+async function enterZone(R, lat, lon, yaw, carry, atSafe, hold){
+  var ij = zoneOf(R, lat, lon), text = (hold && hold.t) || await zoneOnDevice(R, ij[0], ij[1]); if (hold) hold.t = null;   /* hold: text read before the old part was let go; handed over in a box so this function is the only one keeping it */
   if (!text){ if (!navigator.onLine) throw new Error('offline'); text = await zoneFetch(R, ij[0], ij[1], function(t){ info(t); var rs = el('rgStatus'); if (rs) rs.textContent = t; }); }
   text = await edApply(text);
   var raw = parseText(text); if (R.builtin) raw.name = ''; MAPTHIN = thinGenerated(raw, text.length);   /* each square keeps its own save, named by the square */
@@ -6189,6 +6191,12 @@ async function zoneTravel(){
   if (net.role){ back('Travelling between parts of a region only works when you play alone, for now.'); return; }
   if (!zoneIn(R, ij[0], ij[1])){ back('This is the edge of your region.'); return; }
   zoneBusy = true; running = false; keys = {}; el('travel').classList.remove('hidden');
+  var failMsg = function(e){ return e.message === 'offline' || /fetch|network/i.test(e.message || '') ? 'That part of the map is not downloaded yet. Connect to the internet to travel there.' : 'Could not load the next part of the map: ' + String(e.message || 'unknown error').replace(/\.+$/, '') + '.'; };
+  /* 0.132.2: the next square's text is read first when it is on this device, before anything of this part is let go. If it cannot be read (not downloaded and no connection) nothing has changed:
+     you stay where you are, in your car, with the truck and your followers. Before this the part was freed first and a failure left its ground, roads and water missing */
+  var hold = {t:null};
+  try { hold.t = await zoneOnDevice(R, ij[0], ij[1]); if (!hold.t && !navigator.onLine) throw new Error('offline'); }
+  catch (e){ running = true; el('travel').classList.add('hidden'); zoneBusy = false; back(failMsg(e)); return; }
   var carry = {time:time, veh:P.veh && !P.veh.boat && !P.veh.moto && !P.veh.mach ? {t:P.veh.t, fuel:P.veh.fuel, kind:P.veh.kind === 'truck' ? 'truck' : 0, ck:P.veh.t && P.veh.kind !== 'truck' ? carKind(P.veh) : 0, hp:P.veh.hp, cu:P.veh.cu} : null}, yaw = P.yaw, pitch = P.pitch, old = {world:world, x:P.x, y:P.y};
   /* 0.121.0: a mobile base's fittings, locker and door go with the vehicle, and so does a hooked trailer with its own */
   if (carry.veh && P.veh && P.veh.t && P.veh.kind !== 'truck'){ var BC0 = bootChest(P.veh); if (BC0){ carry.veh.boot = {inv:BC0.inv, items:BC0.items, designs:BC0.designs}; world.edits.chests.splice(world.edits.chests.indexOf(BC0), 1); } }
@@ -6205,10 +6213,15 @@ async function zoneTravel(){
   carry.surv = []; (world.surv || []).forEach(function(q){ if (!q.gone && q.st === 'follow'){ carry.surv.push({key:q.key, hu:q.hu, hp:q.hp, nm:q.base, sk:q.sk, th:q.th, mo:q.mo}); q.gone = 1; } });
   saveNow();
   freeWorldGL(world); await new Promise(function(r){ setTimeout(r, 120); });   /* 0.117.3: the part you leave gives its graphics memory back first, before the next part is downloaded, read and built, so two parts are never held at once */
-  try { await enterZone(R, ll[1], ll[0], yaw, carry); P.pitch = pitch; }
+  try { await enterZone(R, ll[1], ll[0], yaw, carry, false, hold); P.pitch = pitch; }
   catch (e){
-    if (world === old.world && P){ running = true; inRun = true; region = R; back(e.message === 'offline' || /fetch|network/i.test(e.message || '') ? 'That part of the map is not downloaded yet. Connect to the internet to travel there.' : 'Could not load the next part of the map: ' + (e.message || 'unknown error') + '.'); }
-    else exitToMenu('Could not load the next part of the map.');
+    if (world === old.world && P){
+      /* 0.132.2: the new part failed after the old one's graphics were freed (a download, a read or a build that went wrong), so its ground and buildings cannot be drawn again as they were.
+         The part you left is loaded again the way you arrive in any part, with the vehicle and followers you carried, at the edge you stood on; your progress was saved just before */
+      P.x = Math.max(c.x0 + 12, Math.min(c.x1 - 12, P.x)); P.y = Math.max(c.y0 + 12, Math.min(c.y1 - 12, P.y)); var ll2 = toLL(P.x, P.y); info('Going back...');
+      try { await enterZone(R, ll2[1], ll2[0], yaw, carry); P.pitch = pitch; toast(failMsg(e), 7); }
+      catch (e2){ exitToMenu('Could not load the next part of the map.'); }
+    } else exitToMenu('Could not load the next part of the map.');
   }
   el('travel').classList.add('hidden'); zoneBusy = false;
 }
@@ -6475,6 +6488,7 @@ function freeWorldGL(w){
     ['trees', 'det', 'terr', 'mp', 'dr'].forEach(function(k){ if (g[k]) g[k].forEach(function(o){ fm(o.g); o.g = null; }); if (g[k] && g[k].clear) g[k].clear(); });
     (w.buildings || []).forEach(function(b){ if (b.fac){ fm(b.fac); b.fac = null; } if (b.int){ try { freeInt(b); } catch (e){} b.int = null; } });
     if (w.fence){ fm(w.fence.g); w.fence = null; }
+    loaded = []; facs = [];   /* 0.132.2: their interiors and facades are freed just above; left in these lists the next frame read a missing interior */
   } catch (e){ console.log('freeWorldGL', e); } }
 async function enter(raw, name){
   try {
