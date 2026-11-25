@@ -156,6 +156,11 @@ function collide(e, r){
     if (r < 0.9 && !e.cl && typeof obstBuild === 'function' && world.trees){ var om = obstBuild(), ogx, ogy, ol, oi;
       for (ogy = Math.floor((e.y - 2)/8); ogy <= Math.floor((e.y + 2)/8); ogy++) for (ogx = Math.floor((e.x - 2)/8); ogx <= Math.floor((e.x + 2)/8); ogx++){ ol = om.get(gk(ogx, ogy)); if (!ol) continue;
         for (oi = 0; oi < ol.length; oi++){ var oo = ol[oi]; if (oo[3] && !oo[3].alive) continue; var odx = e.x - oo[0], ody = e.y - oo[1], od = Math.hypot(odx, ody), orr = r + oo[2]; if (od < orr && od > 1e-6){ e.x += odx/od*(orr - od); e.y += ody/od*(orr - od); } } } }
+    /* 0.133.2: woodland trunks, and the rocks, logs and stumps lying about, are solid to the player on foot (cars check them in carObst); not while jumping, and not for the others, so a horde is not snagged in a wood */
+    if (e === P && r < 0.9 && !P.inside && typeof wildSolid === 'function'){
+      wildSolid(e.x, e.y, 2, function(t){ if (!t.alive) return; var dx = e.x - t.x, dy = e.y - t.y, d = Math.hypot(dx, dy), rr = r + 0.4; if (d < rr && d > 1e-6){ e.x += dx/d*(rr - d); e.y += dy/d*(rr - d); } });
+      if (!(P.jy > 0.3)) clutterSolid(e.x, e.y, 2, function(c, cr){ var dx = e.x - c.x, dy = e.y - c.y, d = Math.hypot(dx, dy), rr = r + cr; if (d < rr && d > 1e-6){ e.x += dx/d*(rr - d); e.y += dy/d*(rr - d); } });
+    }
     for (var cy = cy0 - 1; cy <= cy0 + 1; cy++) for (var cx = cx0 - 1; cx <= cx0 + 1; cx++){
       var cell = world.grid.get(gk(cx, cy)); if (!cell) continue;
       for (var i = 0; i < cell.length; i++){

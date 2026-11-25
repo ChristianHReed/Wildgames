@@ -238,6 +238,9 @@ function manageNature(){
   }
   clutter.sort(function(a, b){ return a.d - b.d; }); clutter.length = Math.min(clutter.length, QS.clutN);
 }
+/* 0.133.2: the rocks, logs and stumps lying about near you are solid to cars and to the player on foot (a circle, radius in metres at scale 1 times the piece's scale); bushes, ferns and grass are not */
+var CLSOLID = {rock:0.5, w_boulder_moss:0.9, w_boulder_cluster:1.3, log:0.55, w_log_hollow:0.7, w_log_mossy:0.7, stump:0.4, w_stump_big:0.6};
+function clutterSolid(x, y, r, fn){ for (var i = 0; i < clutter.length; i++){ var c = clutter[i], q = CLSOLID[c.nm]; if (q && Math.abs(c.x - x) < r + 2 && Math.abs(c.y - y) < r + 2) fn(c, q*c.sc); } }
 /* which small plants grow at a spot, from the ground cover: woodland, long grass, or mown lawn (bushes and flowers) */
 function coverKind(x, y){
   var g = world.tg; if (!g) return null; var i = Math.round((x - g.x0)/g.cell), j = Math.round((y - g.y0)/g.cell); if (i < 0 || j < 0 || i >= g.cols || j >= g.rows) return null;

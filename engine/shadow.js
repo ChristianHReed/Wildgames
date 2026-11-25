@@ -5,12 +5,15 @@
    0.133.1: the sun is the one in the sky. Each frame SHL is set from lightDir() in render.js, the same direction the toon bands and the sun disc use, so a lit side, its shadow and the sun
    you can see always agree. Shadows fade out as the sun gets low (a low sun throws shadows longer than the picture reaches) and with dusk, as before.
    Cost: a second, smaller drawing of what is near you, so it is a real cost on a phone. shadowMeasure() plays the same scene with shadows off and on and reports both frame rates.
-   Casters: buildings (the plain far version beyond the map's own radius), trees, street dressing, map props, last frame's dynamic mesh (vehicles, aliens, survivors, items),
-   and last frame's people and creatures (queued by drawPeople / drawCreature with shQ). The ground itself casts nothing. */
+   Casters: buildings (the plain far version beyond the map's own radius), trees (the tile meshes, and 0.133.2 the near full-size ones, which are drawn one at a time by drawNature), the
+   bushes, rocks, logs and stumps lying about (SHN), street dressing, map props, last frame's dynamic mesh (vehicles, aliens, items, without the sky range), last frame's people and creatures
+   (queued by drawPeople / drawCreature with shQ) and, 0.133.2, the shaped survivors' skinned buffer (svBuf, which includes you in third person and, in first person, your own body queued
+   for the shadow only). The ground itself casts nothing. */
 'use strict';
 var SHD = {on:false, failed:'', size:0, R:0, tex:null, fb:null, rb:null, lvp:new Float32Array(16), qn:[], cur:[], ms:0, calls:0, live:false, result:null},
     SHL = [0, 1, 0],            /* towards the light: set every frame from lightDir() (render.js), the same direction the shader's bands use */
     SHZ = 230;                  /* the depth picture spans 2 x SHZ metres along the light, so tall towers still cast */
+var SHN = /bush|shrub|rock|boulder|log|stump|thicket|sapling|sumac|berry/;   /* which small things cast a shadow */
 /* map size and how far round you it reaches: by the detail level, so a phone on Low gets a small one */
 function shadowCfg(){ var L = typeof QUAL !== 'undefined' && typeof QS !== 'undefined' ? QUAL.indexOf(QS) : 1; return L >= 2 ? {s:2048, R:80} : L === 1 ? {s:1024, R:60} : {s:1024, R:48}; }
 function shBind(t){ gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, t || SHDUM); gl.activeTexture(gl.TEXTURE0); }
@@ -69,10 +72,20 @@ function shCasters(cx, cy, R){
   var tl = lim + TREE_T*0.75 + 30; if (g.trees) g.trees.forEach(function(o){ if (o.g && o.g.n && Math.abs(o.x - cx) < tl && Math.abs(o.y - cy) < tl){ drawMesh(o.g); SHD.calls++; } });
   var dl = lim + DRC*0.75 + 10; if (g.dr) for (i = 0; i < g.dr.length; i++){ var dq = g.dr[i]; if (dq.g && dq.g.n && Math.abs(dq.x - cx) < dl && Math.abs(dq.y - cy) < dl){ drawMesh(dq.g); SHD.calls++; } }
   var ml = lim + MPC*0.75 + 10; if (g.mp) for (i = 0; i < g.mp.length; i++){ var mq = g.mp[i]; if (mq.g && mq.g.n && Math.abs(mq.x - cx) < ml && Math.abs(mq.y - cy) < ml){ drawMesh(mq.g); SHD.calls++; } }
+  /* 0.133.2: the near full-size trees (one draw each, not part of the tile meshes above) and the bigger small things around you: bushes, rocks, logs, stumps. Not the grass, ferns and flowers. No wind sway in the picture (a few cm) */
+  if (typeof hiTrees !== 'undefined' && typeof NAT !== 'undefined' && NAT.pine && typeof natTex !== 'undefined' && natTex){
+    for (i = 0; i < hiTrees.length; i++){ var tr = hiTrees[i]; if (!tr.alive || Math.abs(tr.x - cx) > lim || Math.abs(tr.y - cy) > lim) continue;
+      var tm = NAT[treeVarKey(tr)] || NAT[treeKey(tr)]; if (!tm) continue; gl.uniform4f(U.inst, tr.x, hAt(tr.x, tr.y) - 0.1, tr.y, tr.yw); gl.uniform1f(U.iscl, tr.sc); drawMesh(tm); SHD.calls++; }
+    if (typeof clutter !== 'undefined') for (i = 0; i < clutter.length; i++){ var cl = clutter[i]; if (!cl.m || !SHN.test(cl.nm) || Math.abs(cl.x - cx) > lim || Math.abs(cl.y - cy) > lim) continue;
+      gl.uniform4f(U.inst, cl.x, cl.gy, cl.y, cl.yw); gl.uniform1f(U.iscl, cl.sc); drawMesh(cl.m); SHD.calls++; }
+    gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1);
+  }
   if (typeof dyn !== 'undefined' && dyn){   /* last frame's vehicles, aliens, survivors, items; the first part is the big ground fill, which casts nothing, and the sky range (clouds, moon, rain) is left out */
     var d0 = dyn.sk | 0, a0 = dyn.ska | 0, b0 = dyn.skb | 0;
     if (b0 > a0 && a0 >= d0){ shFrom(dyn, d0, a0); shFrom(dyn, b0); } else shFrom(dyn, d0);
   }
+  /* the shaped survivors (you in third person, other players, people): last frame's skinned buffer, the part after the shadow-only ones included (your own body in first person) */
+  if (typeof svBuf !== 'undefined' && svBuf && svBuf.sn > 0){ var SG = svBuf.g, sn0 = SG.n; SG.n = svBuf.sn; gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1); drawMesh(SG); SHD.calls++; SG.n = sn0; }
   for (i = 0; i < SHD.cur.length; i++){ var q = SHD.cur[i]; gl.uniform4f(U.inst, q[1], q[2], q[3], q[4]); gl.uniform1f(U.iscl, q[5]); drawMesh(q[0]); SHD.calls++; }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1);
 }

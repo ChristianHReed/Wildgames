@@ -533,9 +533,19 @@ function manageTrees(budget){
   var T = world.gl.trees; if (!T) return; var R = QS.far + CH + 130, n = 0, K = TREE_T;
   for (var ky = Math.floor((P.y - R)/K); ky <= Math.floor((P.y + R)/K); ky++) for (var kx = Math.floor((P.x - R)/K); kx <= Math.floor((P.x + R)/K); kx++){
     var o = treeT(kx, ky, true); if ((o.g && o.sea === season()) || n >= budget) continue;   /* autumn colours come and go with the season */
-    if (!o.wild) o.wild = wildTrees(o); o.sea = season(); treeTile(o.key); n++;
+    if (!o.wild){ o.wild = wildTrees(o); o.wg = null; } o.sea = season(); treeTile(o.key); n++;
   }
-  T.forEach(function(o){ if (o.g && (Math.abs(o.x - P.x) > R + 2*K || Math.abs(o.y - P.y) > R + 2*K)){ freeMesh(o.g); o.g = null; o.wild = null; } });
+  T.forEach(function(o){ if (o.g && (Math.abs(o.x - P.x) > R + 2*K || Math.abs(o.y - P.y) > R + 2*K)){ freeMesh(o.g); o.g = null; o.wild = null; o.wg = null; } });
+}
+/* 0.133.2: the woodland trees (o.wild, made per 256 m tile near you) are solid like the mapped ones: a trunk is a circle of 0.4 m. fn(tree) for each within about r of (x, y);
+   the caller checks .alive and the distance. A lookup of 8 m cells is made for a tile the first time it is asked (reset with the tile's tree list) */
+function wildSolid(x, y, r, fn){
+  var T = world.gl && world.gl.trees; if (!T) return;
+  for (var ky = Math.floor((y - r)/TREE_T); ky <= Math.floor((y + r)/TREE_T); ky++) for (var kx = Math.floor((x - r)/TREE_T); kx <= Math.floor((x + r)/TREE_T); kx++){
+    var o = T.get(gk(kx, ky)); if (!o || !o.wild || !o.wild.length) continue;
+    var G = o.wg; if (!G){ G = o.wg = new Map(); o.wild.forEach(function(t){ var k = gk(Math.floor(t.x/8), Math.floor(t.y/8)), l = G.get(k); if (!l) G.set(k, l = []); l.push(t); }); }
+    for (var gy = Math.floor((y - r)/8); gy <= Math.floor((y + r)/8); gy++) for (var gx = Math.floor((x - r)/8); gx <= Math.floor((x + r)/8); gx++){ var l2 = G.get(gk(gx, gy)); if (l2) for (var i = 0; i < l2.length; i++) fn(l2[i]); }
+  }
 }
 function nearTrees(x, y, r, fn){
   var T = world.gl && world.gl.trees; if (!T) return;
