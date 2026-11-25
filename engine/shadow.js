@@ -2,13 +2,14 @@
    How it works: each frame, before the world is drawn, the solid things near you are drawn once more, seen from the sun, into a depth picture (a depth texture on
    texture unit 6). The shared shader (render.js, "shad" and "shU") then looks each lit surface up in that picture: a surface the sun cannot reach drops to the shade
    tone of the toon bands. It is OFF unless asked for (Settings > Sun shadows, or ?shadows=1 on the address) and falls back to off when the graphics chip has no depth textures.
-   The sun here is the same fixed direction as LD in render.js, so a lit side and a shadow always agree.
+   0.133.1: the sun is the one in the sky. Each frame SHL is set from lightDir() in render.js, the same direction the toon bands and the sun disc use, so a lit side, its shadow and the sun
+   you can see always agree. Shadows fade out as the sun gets low (a low sun throws shadows longer than the picture reaches) and with dusk, as before.
    Cost: a second, smaller drawing of what is near you, so it is a real cost on a phone. shadowMeasure() plays the same scene with shadows off and on and reports both frame rates.
    Casters: buildings (the plain far version beyond the map's own radius), trees, street dressing, map props, last frame's dynamic mesh (vehicles, aliens, survivors, items),
    and last frame's people and creatures (queued by drawPeople / drawCreature with shQ). The ground itself casts nothing. */
 'use strict';
 var SHD = {on:false, failed:'', size:0, R:0, tex:null, fb:null, rb:null, lvp:new Float32Array(16), qn:[], cur:[], ms:0, calls:0, live:false, result:null},
-    SHL = [-0.62, 0.72, 0.3],   /* towards the sun: the same as LD in the fragment shader */
+    SHL = [0, 1, 0],            /* towards the light: set every frame from lightDir() (render.js), the same direction the shader's bands use */
     SHZ = 230;                  /* the depth picture spans 2 x SHZ metres along the light, so tall towers still cast */
 /* map size and how far round you it reaches: by the detail level, so a phone on Low gets a small one */
 function shadowCfg(){ var L = typeof QUAL !== 'undefined' && typeof QS !== 'undefined' ? QUAL.indexOf(QS) : 1; return L >= 2 ? {s:2048, R:80} : L === 1 ? {s:1024, R:60} : {s:1024, R:48}; }
@@ -50,12 +51,12 @@ function shadowMatrix(cx, cy, gy, R){
   m[0] = r[0]/R; m[1] = up[0]/R; m[2] = fw[0]/SHZ; m[3] = 0; m[4] = r[1]/R; m[5] = up[1]/R; m[6] = fw[1]/SHZ; m[7] = 0; m[8] = r[2]/R; m[9] = up[2]/R; m[10] = fw[2]/SHZ; m[11] = 0;
   m[12] = -sx/R; m[13] = -sy/R; m[14] = -pz/SHZ; m[15] = 1;
 }
-function shFrom(o, first){
-  if (!o || o.n <= first) return;
+function shFrom(o, first, end){
+  if (!o) return; end = end === undefined ? o.n : Math.min(end, o.n); if (end <= first) return;
   gl.bindBuffer(gl.ARRAY_BUFFER, o.vb); gl.vertexAttribPointer(aP, 3, gl.FLOAT, false, 0, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, o.cb); gl.vertexAttribPointer(aC, 4, gl.UNSIGNED_BYTE, true, 0, 0);
   gl.bindBuffer(gl.ARRAY_BUFFER, o.tb); gl.vertexAttribPointer(aT, 3, gl.FLOAT, false, 0, 0);
-  gl.drawArrays(gl.TRIANGLES, first, o.n - first); SHD.calls++;
+  gl.drawArrays(gl.TRIANGLES, first, end - first); SHD.calls++;
 }
 /* a person or creature drawn this frame is remembered for the next frame's shadow picture (one frame behind is not seen) */
 function shQ(o, x, gy, y, yaw, sc){ if (SHD.on) SHD.qn.push([o, x, gy, y, yaw, sc || 1]); }
@@ -68,7 +69,10 @@ function shCasters(cx, cy, R){
   var tl = lim + TREE_T*0.75 + 30; if (g.trees) g.trees.forEach(function(o){ if (o.g && o.g.n && Math.abs(o.x - cx) < tl && Math.abs(o.y - cy) < tl){ drawMesh(o.g); SHD.calls++; } });
   var dl = lim + DRC*0.75 + 10; if (g.dr) for (i = 0; i < g.dr.length; i++){ var dq = g.dr[i]; if (dq.g && dq.g.n && Math.abs(dq.x - cx) < dl && Math.abs(dq.y - cy) < dl){ drawMesh(dq.g); SHD.calls++; } }
   var ml = lim + MPC*0.75 + 10; if (g.mp) for (i = 0; i < g.mp.length; i++){ var mq = g.mp[i]; if (mq.g && mq.g.n && Math.abs(mq.x - cx) < ml && Math.abs(mq.y - cy) < ml){ drawMesh(mq.g); SHD.calls++; } }
-  if (typeof dyn !== 'undefined' && dyn) shFrom(dyn, dyn.sk | 0);   /* last frame's vehicles, aliens, survivors, items; the first part is the big ground fill, which casts nothing */
+  if (typeof dyn !== 'undefined' && dyn){   /* last frame's vehicles, aliens, survivors, items; the first part is the big ground fill, which casts nothing, and the sky range (clouds, moon, rain) is left out */
+    var d0 = dyn.sk | 0, a0 = dyn.ska | 0, b0 = dyn.skb | 0;
+    if (b0 > a0 && a0 >= d0){ shFrom(dyn, d0, a0); shFrom(dyn, b0); } else shFrom(dyn, d0);
+  }
   for (i = 0; i < SHD.cur.length; i++){ var q = SHD.cur[i]; gl.uniform4f(U.inst, q[1], q[2], q[3], q[4]); gl.uniform1f(U.iscl, q[5]); drawMesh(q[0]); SHD.calls++; }
   gl.uniform4f(U.inst, 0, 0, 0, 0); gl.uniform1f(U.iscl, 1);
 }
@@ -77,7 +81,10 @@ function shadowOff(){ if (!gl || !prog3) return; gl.useProgram(prog3); gl.unifor
 function shadowPass(cam, env){
   if (!SHD.on){ if (SHD.live) shadowOff(); return; }
   SHD.cur = SHD.qn; SHD.qn = [];
-  if (SHD.failed || env.noShadow || env.dark > 0.9 || typeof world === 'undefined' || !world || !world.gl){ if (SHD.live) shadowOff(); return; }
+  SHL = lightDir(env.hour, env.dark);
+  /* strength: full by day, fading out as it darkens (a moonlit town has no sun to shadow it), a little less under cloud, and none while the sun is low */
+  var str = Math.max(0, 1 - env.dark*1.15)*Math.min(1, env.wd + 0.1), el = Math.min(1, Math.max(0, (SHL[1] - 0.12)/0.26)); str *= el*el*(3 - 2*el);
+  if (SHD.failed || env.noShadow || str < 0.02 || typeof world === 'undefined' || !world || !world.gl){ if (SHD.live) shadowOff(); return; }
   if (!SHD.fb || SHD.size !== shadowCfg().s){ if (!shadowInit()){ shadowOff(); return; } }
   var t0 = performance.now(), R = SHD.R = shadowCfg().R, f = cam.f, hl = Math.hypot(f[0], f[2]) || 1, sx = cam.cx + f[0]/hl*R*0.3, sy = cam.cy + f[2]/hl*R*0.3,
       gy = typeof groundAt === 'function' ? groundAt(sx, sy) : 0;
@@ -89,8 +96,7 @@ function shadowPass(cam, env){
   gl.disable(gl.POLYGON_OFFSET_FILL); gl.uniform1f(U.shad, 0);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.colorMask(true, true, true, true); gl.viewport(0, 0, W, H);
   shBind(SHD.tex); gl.uniformMatrix4fv(U.lvp, false, SHD.lvp);
-  /* strength: full by day, fading out as it darkens (a moonlit town has no sun to shadow it), a little less under cloud */
-  gl.uniform4f(U.shU, Math.max(0, 1 - env.dark*1.15)*Math.min(1, env.wd + 0.1), 1/SHD.size, 0.00035, R);
+  gl.uniform4f(U.shU, str, 1/SHD.size, 0.00035, R);
   SHD.live = true; SHD.ms = performance.now() - t0;
 }
 /* plays the scene for 4 s with shadows off and 4 s with them on, standing still, and reports how long a frame took each way (the first fifth of each run is dropped as warm-up) */

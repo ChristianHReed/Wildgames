@@ -14,8 +14,8 @@ Load order matters (top-level code runs as the files load):
 | `buildings.js` | building shells (walls, roofs, windows) |
 | `interiors.js` | building interiors |
 | `collision.js` | collision against the built world |
-| `render.js` | the renderer: `initGL` (shaders), sky and mood of the hour, nature models, `drawMesh`, and `drawScene(cam, env)` which draws the map itself |
-| `shadow.js` | sun shadows (0.133.0, play.html only; the builder does not load it): `shadowPass(cam, env)` draws what is near you from the sun into a depth texture on unit 6 before the world is drawn, and the shader in `render.js` looks lit surfaces up in it. Off unless `shadowSet(true)`, `?shadows=1`, or Settings. `shQ(mesh, x, gy, y, yaw, sc)` queues a posed person or creature for next frame's pass; `env.noShadow` skips it (inside a building); `shadowMeasure(cb)` times the scene with shadows off and on |
+| `render.js` | the renderer: `initGL` (shaders), sky and mood of the hour, nature models, `drawMesh`, and `drawScene(cam, env)` which draws the map itself. One sun (0.133.1): `sunDir(hour)` is where the sun is (the sky disc), `lightDir(hour, dark)` is where the light comes from (sun by day, moon by night); the toon bands (`ldir`) and `shadow.js` both use it |
+| `shadow.js` | sun shadows (0.133.0, play.html only; the light is `lightDir()` from render.js since 0.133.1; the builder does not load it): `shadowPass(cam, env)` draws what is near you from the sun into a depth texture on unit 6 before the world is drawn, and the shader in `render.js` looks lit surfaces up in it. Off unless `shadowSet(true)`, `?shadows=1`, or Settings. `shQ(mesh, x, gy, y, yaw, sc)` queues a posed person or creature for next frame's pass; `env.noShadow` skips it (inside a building); `shadowMeasure(cb)` times the scene with shadows off and on |
 
 `spB`, `bkMod`, `segX` and `segsX` (with caches `SPB`, `BKM`) now live in `interiors.js` (0.94.1); a host no longer provides them.
 

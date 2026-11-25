@@ -10,7 +10,7 @@ function initGL(){
   var vs = 'attribute vec3 p;attribute vec4 c;attribute vec3 t;uniform mat4 vp;uniform vec4 inst;uniform float iscl;uniform vec4 itint;uniform vec3 swy;varying vec4 vc;varying vec3 wp;varying vec3 vt;void main(){float lf=clamp((c.g-max(c.r,c.b))*5.0,0.0,1.0);vc=vec4(c.rgb*mix(vec3(1.0),itint.rgb,lf),c.a);vt=t;vec3 q=p*iscl;float hy=min(q.y,swy.z);float mxc=max(c.r,max(c.g,c.b));float sat=mxc-min(c.r,min(c.g,c.b));float lm=max(lf,step(0.45,mxc)*step(0.18,sat));float sw=swy.y*hy*hy*0.0007*lm;q.x+=sin(swy.x*1.7+inst.x*0.37+inst.z*0.29)*sw;q.z+=cos(swy.x*1.3+inst.x*0.21+inst.z*0.33)*sw*0.7;float cs=cos(inst.w);float sn=sin(inst.w);wp=vec3(q.x*cs-q.z*sn,q.y,q.x*sn+q.z*cs)+inst.xyz;gl_Position=vp*vec4(wp,1.0);}';
   var fs = (deriv ? '#extension GL_OES_standard_derivatives : enable\n' : '') + (lod ? '#extension GL_EXT_shader_texture_lod : enable\n' : '') +
     '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n' +
-    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;uniform sampler2D dmask;uniform float dmOn;uniform vec2 dmo;uniform float dmS;uniform sampler2D shm;uniform mat4 lvp;uniform vec4 shU;uniform float shad;' +
+    'varying vec4 vc;varying vec3 wp;varying vec3 vt;uniform sampler2D atlas;uniform sampler2D atlas3;uniform sampler2D atlas4;uniform sampler2D atlas5;uniform float bldOn;uniform vec3 pp[8];uniform float texOn;uniform float pplOn;uniform vec3 cam;uniform vec3 fwd;uniform vec3 sky;uniform vec3 fogN;uniform vec3 sunc;uniform vec3 ldir;uniform vec3 shd;uniform float winF;uniform float amb;uniform float dark;uniform float fogK;uniform vec2 fade;uniform float flash;uniform float hurtU;uniform float tm;uniform vec4 fires[8];uniform vec3 fcol[8];uniform vec4 gsea;uniform float gridU;uniform sampler2D dmask;uniform float dmOn;uniform vec2 dmo;uniform float dmS;uniform sampler2D shm;uniform mat4 lvp;uniform vec4 shU;uniform float shad;' +
     'vec3 ppl(vec2 uv,float j){vec2 a4=(vec2(mod(j,8.0)*256.0,floor(j/8.0+0.01)*256.0)+1.0+fract(uv)*254.0)/2048.0;vec4 tp=texture2D(atlas4,a4);float idx=floor(tp.g*8.0);vec3 pc=pp[0];for(int i=1;i<8;i++){if(float(i)==idx)pc=pp[i];}return pc*tp.r*1.99;}' +
     'vec4 samp(float k,vec2 uv){float ss;float sx;float sy;' +
     'if(k>199.5){float j5=k-200.0;vec2 s5=vec2(252.0/2048.0);vec2 a5=(vec2(mod(j5,8.0)*256.0,floor(j5/8.0+0.01)*256.0)+2.0)/2048.0+fract(uv)*s5;' + (lod ? 'return texture2DGradEXT(atlas5,a5,dFdx(uv)*s5,dFdy(uv)*s5);}' : 'return texture2D(atlas5,a5);}') +
@@ -46,11 +46,11 @@ function initGL(){
     'if(d<30.0){float fd=smoothstep(0.6,0.8,vn(wp.xz*0.04+3.1));vec2 fc=floor(wp.xz*3.0);if(fd>0.0&&h2(fc)>1.0-0.08*fd){vec2 ff=fract(wp.xz*3.0)-0.5;float fh=h2(fc+5.0);vec3 fco=fh<0.4?vec3(0.95,0.93,0.86):fh<0.7?vec3(0.95,0.8,0.26):vec3(0.64,0.48,0.86);col=mix(col,fco,step(length(ff),0.2)*smoothstep(30.0,14.0,d)*gg);}}}' +
     'float sn=gsea.a*smoothstep(0.62,0.98,n.y);col=mix(col,vec3(0.9,0.92,0.95),smoothstep(0.0,0.25,sn-(1.0-tr.a)*0.7));}' +
     'else if(k>-0.5){if(texOn>0.5){vec4 tx=samp(k,vt.xy);col=tx.rgb*vc.rgb;glow=(1.0-tx.a)*2.0;if(k>59.5){if(tx.a<0.3)discard;glow=0.0;}if(k>18.5&&k<19.5){float fl=step(0.03,fract(vt.z));float hwr=max(1.0,(fract(vt.z)-0.05)*100.0);float sh=fl*clamp(abs(vt.x)*6.0/hwr,0.0,1.0);bool shr=vc.g<0.5;vec2 wuv=shr?wp.xz*0.12:vt.xy;vec2 u1=wuv+mix(vec2(tm*0.035,tm*0.02),vec2(0.0,-tm*0.16),fl);vec2 u2=wuv*1.9+mix(vec2(-tm*0.03,tm*0.045),vec2(0.0,-tm*0.23),fl);vec3 ww=mix((samp(19.0,u1).rgb+samp(19.0,u2).rgb)*0.5,(samp(19.0,u1*0.12).rgb+samp(19.0,u2*0.09).rgb)*0.5,smoothstep(10.0,40.0,d));float fr=pow(1.0-abs(normalize(V).y),4.0);col=mix(ww*vec3(0.6,0.82,0.94),sky,0.12+fr*0.62);col=mix(col,col*vec3(0.5,0.72,0.9),fl*(1.0-sh)*0.6);float stk=smoothstep(0.82,1.0,sin(vt.x*7.0+sin((vt.y+tm*0.2)*1.7)*1.6));col+=vec3(0.07,0.09,0.1)*stk*fl;float fb=smoothstep(0.8,0.98,sh+0.06*sin(tm*1.4+wp.x*1.3+wp.z*1.1))*fl;col=mix(col,vec3(0.93,0.97,0.99),fb*(0.5+0.5*samp(19.0,u2*2.0).r));float sp=sin(u1.x*31.0+u2.y*17.0)*sin(u2.x*23.0-u1.y*29.0);if(shr&&fl<0.5){float sT=clamp(vt.x,0.0,1.0);col=mix(col,col*vec3(0.84,1.08,1.02)+vec3(0.03,0.08,0.07)*(1.0-dark),sT*sT*0.5);float fbL=smoothstep(0.9,0.985,sT+0.035*sin(tm*1.3+wp.x*0.9+wp.z*1.1));col=mix(col,vec3(0.9,0.95,0.97)*(1.0-dark*0.75),fbL*0.8);}col+=vec3(0.24)*smoothstep(0.84,1.0,sp)*(1.0-dark*0.8)*smoothstep(28.0,8.0,d);glow=0.0;}}else col=vc.rgb*vec3(0.86,0.78,0.66);}' +
-    /* light from the upper left and a little behind, at an uneven angle so the four sides of a house each get their own tone and a corner always shows */
+    /* 0.133.1: the light comes from where the sun is in the sky (ldir, from lightDir below), so it moves through the day and at night comes from the moon; before it was a fixed direction that did not match the sun you could see. The sun is never straight above a wall, so each side of a house still gets its own tone */
     /* 0.122.0 toon shading: the light falls in three soft-edged bands (shade, half light, full light) instead of a smooth ramp, the shade is a cool
        colour and the light warm, sunlit edges get a thin warm rim, and colours are a little richer by day. At night the bands stay but the colour
        drains out (see below), so the moonlit town reads in cold, grey-blue steps and only lamps, fires and windows are warm */
-    'vec3 LD=normalize(vec3(-0.62,0.72,0.3));float ld=dot(n,LD);float tb=smoothstep(-0.55,0.7,ld);if(k>79.5)tb=smoothstep(-0.45,0.6,ld);' +
+    'vec3 LD=ldir;float ld=dot(n,LD);float tb=smoothstep(-0.55,0.7,ld);if(k>79.5)tb=smoothstep(-0.45,0.6,ld);' +
     'float band=mix(tb,0.45*smoothstep(0.2,0.3,tb)+0.55*smoothstep(0.6,0.7,tb),0.85);' +
     /* 0.133.0 sun shadows: the point is nudged out along its own face (so a face does not shade itself), looked up in the sun's depth picture with a 3 by 3 soft edge, and faded out at the picture's border */
     'float shw=0.0;if(shU.x>0.0&&!unlit&&!emis&&ld>-0.2){vec3 shq=wp+n*(0.05+0.12*(1.0-clamp(ld,0.0,1.0)));vec4 shl=lvp*vec4(shq,1.0);vec3 shp=shl.xyz*0.5+0.5;vec2 she=abs(shp.xy-0.5)*2.0;float shm2=max(she.x,she.y);'+
@@ -72,7 +72,7 @@ function initGL(){
   prog3 = gl.createProgram(); gl.attachShader(prog3, mk(gl.VERTEX_SHADER, vs)); gl.attachShader(prog3, mk(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog3);
   if (!gl.getProgramParameter(prog3, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog3));
   gl.useProgram(prog3); aP = gl.getAttribLocation(prog3, 'p'); aC = gl.getAttribLocation(prog3, 'c'); aT = gl.getAttribLocation(prog3, 't');
-  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','itint','swy','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF','gA','shm','lvp','shU','shad'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
+  ['vp','cam','fwd','sky','amb','dark','fogK','fade','fires','fcol','flash','tm','atlas','atlas3','atlas4','atlas5','bldOn','pp','texOn','pplOn','inst','iscl','itint','swy','hurtU','gsea','gridU','dmask','dmOn','dmo','dmS','fogN','sunc','shd','winF','gA','shm','lvp','shU','shad','ldir'].forEach(function(n){ U[n] = gl.getUniformLocation(prog3, n); });
   gl.uniform1f(U.pplOn, 0); gl.uniform1f(U.bldOn, 0); gl.uniform1f(U.gA, 1);
   /* 0.133.0: texture unit 6 belongs to the sun's depth picture; until shadows are on it holds one white pixel, so the shader's lookup always has something bound */
   SHDUM = gl.createTexture(); gl.activeTexture(gl.TEXTURE6); gl.bindTexture(gl.TEXTURE_2D, SHDUM); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
@@ -159,6 +159,18 @@ function moodAt(hour){
   return o;
 }
 function skyAt(hour){ return moodAt(hour).hor; }
+/* 0.133.1 one sun for the whole picture. sunDir(hour) is where the sun is (the sky draws its disc there). lightDir(hour, dark) is where the light on the ground comes from:
+   the sun by day, the moon by night, handed over through dusk and dawn in step with how bright each disc is drawn. The toon bands and the shadows both use lightDir, so a lit wall,
+   the shadow beside it and the disc in the sky always agree. World frame: x, y up, z (the map's y), the same as the shaders' wp */
+var MOONV = (function(){ var v = [0.35, 0.55, -0.76], n = Math.hypot(v[0], v[1], v[2]); return [v[0]/n, v[1]/n, v[2]/n]; })();
+function sunDir(hour){
+  var se = Math.sin((hour - 6)/12*Math.PI), sa = (hour - 12)/12*Math.PI, x = Math.sin(sa)*0.9, y = Math.max(-0.2, se)*0.85 + 0.03, z = -0.42, n = Math.hypot(x, y, z);
+  return [x/n, y/n, z/n];
+}
+function lightDir(hour, dark){
+  var s = sunDir(hour), k = Math.max(0, Math.min(1, dark || 0)), x = s[0] + (MOONV[0] - s[0])*k, y = s[1] + (MOONV[1] - s[1])*k, z = s[2] + (MOONV[2] - s[2])*k, n = Math.hypot(x, y, z) || 1;
+  return [x/n, y/n, z/n];
+}
 /* the sky is drawn first, behind everything: a gradient from the horizon up, the sun by day, the moon and stars at night */
 var skyProg = null, skyU = {}, skyBuf = null;
 function initSky(){
@@ -167,7 +179,7 @@ function initSky(){
     'float hs(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719)))*43758.5453);}' +
     'void main(){vec3 r=normalize(f+s*vq.x*tz.x+u*vq.y*tz.y);float e=r.y;vec3 c=mix(hor,top,smoothstep(0.0,0.55,e));' +
     'float sd=dot(r,sund);c+=sunc*(smoothstep(0.9993,0.9997,sd)*1.2+pow(max(sd,0.0),180.0)*0.35)*(1.0-night);' +
-    'vec3 md=normalize(vec3(0.35,0.55,-0.76));float m=dot(r,md);c+=vec3(0.75,0.82,0.95)*(smoothstep(0.99955,0.9998,m)*0.9+pow(max(m,0.0),400.0)*0.25)*night;' +
+    'vec3 md=vec3(' + MOONV.map(function(v){ return v.toFixed(5); }).join(',') + ');float m=dot(r,md);c+=vec3(0.75,0.82,0.95)*(smoothstep(0.99955,0.9998,m)*0.9+pow(max(m,0.0),400.0)*0.25)*night;' +
     'vec3 g=floor(r*190.0);float st=step(0.9972,hs(g))*smoothstep(0.04,0.3,e)*night;c+=vec3(0.85,0.88,1.0)*st*(0.55+0.45*sin(tm*2.3+hs(g+1.0)*40.0));' +
     'gl_FragColor=vec4(c,1.0);}';
   var mk = function(type, src){ var o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
@@ -177,10 +189,10 @@ function initSky(){
 }
 function drawSky(md, f, sv, u, hour, dk, tz){
   if (!skyProg){ try { initSky(); } catch (er){ skyProg = false; } } if (!skyProg) return;
-  tz = tz || 1.19; var se = Math.sin((hour - 6)/12*Math.PI), sa = (hour - 12)/12*Math.PI, sd = [Math.sin(sa)*0.9, Math.max(-0.2, se)*0.85 + 0.03, -0.42], sl = Math.hypot(sd[0], sd[1], sd[2]);
+  tz = tz || 1.19; var sd = sunDir(hour);
   gl.useProgram(skyProg); gl.disable(gl.DEPTH_TEST); gl.depthMask(false); gl.disableVertexAttribArray(aC); gl.disableVertexAttribArray(aT);
   gl.uniform3fv(skyU.f, f); gl.uniform3fv(skyU.s, sv); gl.uniform3fv(skyU.u, u); gl.uniform2f(skyU.tz, tz*W/H, tz);
-  gl.uniform3fv(skyU.top, md.top); gl.uniform3fv(skyU.hor, md.hor); gl.uniform3f(skyU.sund, sd[0]/sl, sd[1]/sl, sd[2]/sl); gl.uniform3fv(skyU.sunc, md.sun); gl.uniform1f(skyU.night, dk); gl.uniform1f(skyU.tm, (performance.now()/1000) % 1000);
+  gl.uniform3fv(skyU.top, md.top); gl.uniform3fv(skyU.hor, md.hor); gl.uniform3f(skyU.sund, sd[0], sd[1], sd[2]); gl.uniform3fv(skyU.sunc, md.sun); gl.uniform1f(skyU.night, dk); gl.uniform1f(skyU.tm, (performance.now()/1000) % 1000);
   gl.bindBuffer(gl.ARRAY_BUFFER, skyBuf); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.drawArrays(gl.TRIANGLES, 0, 3);
   gl.enableVertexAttribArray(aC); gl.enableVertexAttribArray(aT); gl.depthMask(true); gl.enable(gl.DEPTH_TEST); gl.useProgram(prog3);
 }
@@ -275,6 +287,7 @@ function drawScene(cam, env){
   md.hor = grey(md.hor); md.top = grey(md.top).map(function(v, j){ return v*(0.75 + 0.25*wd) + (md.hor[j] - v)*(1 - wd); }); var sky = [md.hor[0]*wd + fl, md.hor[1]*wd + fl, md.hor[2]*wd + fl];
   if (env.wtype === 4){ sky[0] = sky[0]*0.6 + 0.36*(1 - dark); sky[1] = sky[1]*0.6 + 0.36*(1 - dark); sky[2] = sky[2]*0.6 + 0.37*(1 - dark); }
   gl.uniform1i(U.atlas, 0); gl.uniform1i(U.atlas3, 2); gl.uniform1i(U.atlas4, 3); gl.uniform1i(U.atlas5, 4); gl.uniform1f(U.bldOn, bldTex ? 1 : 0); gl.uniform1f(U.tm, (performance.now()/1000) % 10000); gl.uniform1f(U.texOn, texReady ? 1 : 0);
+  var ld3 = lightDir(hour0, dark); gl.uniform3fv(U.ldir, ld3);   /* 0.133.1: the light the toon bands and the shadows both use */
   if (typeof shadowPass === 'function') shadowPass(cam, env);   /* 0.133.0: the sun's depth picture of what is near you, drawn first; the map builder does not load it and has no shadows */
   gl.clearColor(sky[0], sky[1], sky[2], 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   if (!fl) drawSky({top:md.top, hor:sky, sun:md.sun}, f, s, u, hour0, dark, cam.tz);

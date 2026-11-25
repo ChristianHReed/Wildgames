@@ -548,7 +548,7 @@
       <div id="tsList" style="font-size:13px;margin-top:8px;line-height:1.45"></div>
       <div style="font-size:12px;margin-top:6px">Saved progress is kept apart from your real maps; tick "Start a new world" above to reset it.</div>
     </div>
-    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.133.0</span>.</p>
+    <p class="keys">Up to 6 players. No server or internet is used; devices connect directly. Version <span id="verTxt">0.133.1</span>.</p>
     <p class="keys">Map data &copy; OpenStreetMap contributors, available under the Open Database License.</p>
   </div>
 </div>
@@ -593,7 +593,7 @@ function autoDetail(){
   else bits.push('a computer');
   return {q:q, rs:rs, why:bits.join(', '), gpu:gpu.slice(0, 80)};
 }
-var BUILD = '0.133.0', ART = {}, ARTSET = (function(){
+var BUILD = '0.133.1', ART = {}, ARTSET = (function(){
   var q = null; try { q = localStorage.getItem('lastblock:quality'); } catch (e) {}
   if (q === null && !/[?&]bench/.test(location.search)){ try { var ad = autoDetail(); q = String(ad.q); localStorage.setItem('lastblock:quality', q); if (ad.rs && !localStorage.getItem('lastblock:rscale')) localStorage.setItem('lastblock:rscale', String(ad.rs)); localStorage.setItem('lastblock:autoq', JSON.stringify(ad)); } catch (e){} }
   var set = (q !== null ? q === '0' : (('ontouchstart' in window) || navigator.maxTouchPoints > 0)) ? 'lite' : 'full';
@@ -3216,6 +3216,7 @@ function drawWorldFx(m, e, now){
     var t = wx.tor; m.yo = hAt(t.x, t.y);
     for (i = 0; i < 11; i++){ var r = 1.2 + i*0.85, a = now*(4 - i*0.2) + i; m.ybox(t.x + Math.sin(now*2 + i*0.7)*i*0.25, t.y + Math.cos(now*1.7 + i)*i*0.25, a, 0, 0, 1.5 + i*3, r, 1.5, r, C(i % 2 ? '#5d626b' : '#70757e')); }
   }
+  m.ska = m.p.length/3;   /* 0.133.1: the clouds, moon, aurora and rain from here to skb are not drawn into the shadow picture (clouds were throwing big dark shadows over the town) */
   skyFx(m, e, now);
   if ((wx.w === 1 || wx.w === 2 || wx.w === 4) && !P.inside){
     var RS = wx.w === 4 ? fxModel('sky.snow_flake') : fxModel('sky.rain_streak'), rc = C(wx.w === 4 ? '#e8eef2' : '#a9c4dc'); m.yo = P.gy || 0;
@@ -3223,6 +3224,7 @@ function drawWorldFx(m, e, now){
     for (i = 0; i < 150; i++){ var fall = wx.w === 4 ? 1.6 : 13, py = ((hash(i, 2, 5)*9 - now*fall) % 9 + 9) % 9, qx = e[0] + (hash(i, 1, 5) - 0.5)*26 + (wx.w === 4 ? Math.sin(now*0.7 + i)*0.6 : py*wl), qz = e[2] + (hash(i, 3, 5) - 0.5)*26;
       if (RS) m.modelS(RS, qx, qz, wx.w === 4 ? now*0.4 + i : hash(i, 4, 5)*6.28, py, wx.w === 4 ? 0.12 : 0.55); else m.ybox(qx, qz, 0, 0, 0, py, 0.012, 0.22, 0.012, rc); }
   }
+  m.skb = m.p.length/3;
 }
 /* ---- 0.48.4: the sky pack's clouds (fair, overcast sheets, a thunderhead on the horizon in storms) and the lightning bolt ---- */
 function skyFx(m, e, now){
@@ -3435,7 +3437,7 @@ function render(){
   var dgNow = time - digActT < 0.15 && !digFill(), rv = P.veh && !P.veh.t && !P.veh.mach ? P.veh : null;   /* 0.105.1: you stay visible on a bike, moped or boat */
   if (tp && (!P.veh || rv)){ var rdz = rv ? rideOf(rv) : null; m.yo = (P.gy || 0) + (P.jy || 0) + (rv && !rdz ? (rv.boat ? 0.1 : rv.moto ? 0.2 : 0.32) : rv && rv.boat ? -0.05 : 0); queuePerson(m, {x:P.x, y:P.y, yaw:rv ? rv.yaw : P.yaw, id:0, worn:P.worn, pack:true, mv:rv ? 0 : P.mv, vis:P.vis, sw:P.swing > 0 || dgNow, swk:P.swing > 0 ? 1 - P.swing/0.22 : dgNow ? Math.min(0.99, prog) : undefined, hp:P.hp, shk:P.shootCd > 0 ? 1 - P.shootCd/0.3 : undefined, lit:lightOn(), wpn:dgNow ? 'shovel' : heldWpn(), atk:dgNow ? 'attack_dig' : heldAtk(), ak:rdz ? rdz.ak : pAct()[1], rd:rdz ? rdz.rd : undefined,
       act:rdz ? rdz.clip : pAct()[0] || (time - (P.thrT || -9) < 0.5 ? 'throw' : P.shootCd > 0 ? 'shoot' : prog > 0 && target && target !== 'water' && !target.port ? (target.plant ? 'eat' : 'search') : null), swim:P.swim}, me.look, now); }
-  m.yo = 0; upload(m, dyn); dyn.sk = m.sk | 0; drawMesh(dyn); drawCreatures(); drawPeople(); drawNature();
+  m.yo = 0; upload(m, dyn); dyn.sk = m.sk | 0; dyn.ska = m.ska | 0; dyn.skb = m.skb | 0; drawMesh(dyn); drawCreatures(); drawPeople(); drawNature();
   if (m.gm && m.gm.p.length){ if (!GDYN) GDYN = {vb:gl.createBuffer(), cb:gl.createBuffer(), tb:gl.createBuffer(), n:0}; upload(m.gm, GDYN);   /* 0.114.86: vehicle glass, see-through like the building windows (0.114.80: back on the world's own shader first; people and plants switch it) */
     gl.useProgram(prog3); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(U.gA, 0.14); drawMesh(GDYN); gl.uniform1f(U.gA, 1); gl.depthMask(true); gl.disable(gl.BLEND); }
 

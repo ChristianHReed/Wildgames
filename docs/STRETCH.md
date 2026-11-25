@@ -81,4 +81,4 @@ From docs/DEVICES.md. Gamepad support, detail presets, saves on the drive in eve
 - The look sheet with the design's damage looks (dented, wreck, burnt) as a second row.
 - A Try it in the game for a station already open in the game (the iframe) that keeps the Workshop open beside the game.
 - Lettering in more fonts (a 5 x 7 for big signs) and curved lettering round a tank or a drum.
-
+- Cloud shadows: soft, slow patches of shade drifting across the town (the clouds are left out of the sun-shadow picture in 0.133.1 because as hard-edged casters they looked wrong; a separate soft pass or a tiling shade texture could do it).
