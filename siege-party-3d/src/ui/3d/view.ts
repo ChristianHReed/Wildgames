@@ -9,7 +9,7 @@ import { invert, lookAt, mul, norm, ortho, perspective, program, project, type G
 import { Mesh, STRIDE, hash } from "./mesh";
 import {
   HORSE_PIVOT, PERSON_PIVOT, arrowModel, buildingModel, decorModel, fishModel, nodeModel, personModel, rallyModel, ramModel, riderModel,
-  scaffold, shipModel, siteModel, stumpModel, treeModel,
+  scaffold, shipModel, siteModel, stumpModel, treeModel, bigFlagModel,
 } from "./models";
 import * as S from "./shaders";
 import { BOARD_Y, WATER_Y, buildDecor, buildGround, fieldOf, heightAt, type Chunk, type Decor, type Field } from "./terrain";
@@ -94,11 +94,15 @@ export class View3d {
   /** css pixels per tile at the middle of the view */
   ppt = 32;
   lost = false;
+  /** extra marks on the ground and big flags, for the map maker's preview */
+  marks: { x: number; z: number; w: number; h: number; c: [number, number, number, number] }[] = [];
+  flags: { x: number; z: number; owner: number; scale: number }[] = [];
   /** what the last frame drew: triangles and draw calls */
   stats = { tris: 0, calls: 0 };
 
-  constructor(readonly canvas: HTMLCanvasElement, quality: number) {
-    const gl = canvas.getContext("webgl2", { antialias: true, alpha: false, depth: true, powerPreference: "high-performance", preserveDrawingBuffer: false });
+  /** keep: hold on to the picture between frames (for a still picture drawn only when it changes) */
+  constructor(readonly canvas: HTMLCanvasElement, quality: number, keep = false) {
+    const gl = canvas.getContext("webgl2", { antialias: true, alpha: false, depth: true, powerPreference: "high-performance", preserveDrawingBuffer: keep });
     if (!gl) throw new Error("no webgl2");
     this.gl = gl;
     canvas.addEventListener("webglcontextlost", (e) => {
@@ -288,7 +292,40 @@ export class View3d {
   }
 
   // ── the camera ──
+  /** A view of the whole board from above its middle, as close as fits: for the map maker's preview. */
+  private overview() {
+    const pitch = (58 * Math.PI) / 180;
+    const cx = COLS / 2;
+    const cz = ROWS / 2 + ROWS * 0.02;
+    const make = (D: number) => {
+      this.eye = [cx, D * Math.sin(pitch), cz + D * Math.cos(pitch)];
+      const view = lookAt(this.eye, [cx, 0, cz], [0, 1, 0]);
+      this.vp = mul(perspective(FOV, this.w / this.h, Math.max(0.5, D * 0.2), D * 3 + 60), view);
+    };
+    const fits = () => {
+      for (const x of [0, COLS]) for (const z of [0, ROWS]) for (const y of [0, 1.2]) {
+        const c = project(this.vp, x, y, z);
+        if (c[3] <= 0 || Math.abs(c[0]) > 0.97 || Math.abs(c[1]) > 0.97) return false;
+      }
+      return true;
+    };
+    let lo = 1;
+    let hi = 4000;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      make(mid);
+      if (fits()) hi = mid;
+      else lo = mid;
+    }
+    make(hi);
+    this.inv = invert(this.vp);
+    const a = this.screen(cx, 0, cz);
+    const b = this.screen(cx + 1, 0, cz);
+    this.ppt = a && b ? Math.abs(b[0] - a[0]) : 4;
+  }
+
   private camera(sim: Sim, p: PlayerId, zoom: number) {
+    if (zoom <= 0) return this.overview();
     const north = isNorth(p);
     this.ppt = zoom * 32;
     const D = this.h / (2 * Math.tan(FOV / 2) * this.ppt);
@@ -321,6 +358,11 @@ export class View3d {
     const c = project(this.vp, x, y, z);
     if (c[3] <= 0) return null;
     return [((c[0] + 1) / 2) * this.w, ((1 - c[1]) / 2) * this.h];
+  }
+
+  /** the ground at the four corners of the view, for the minimap */
+  footprint(): [number, number][] {
+    return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => this.ground((sx! * this.w) / 2, (sy! * this.h) / 2) ?? [this.eye[0], this.eye[2]]);
   }
 
   /** the tiles the view can see, with a margin for tall things */
@@ -620,6 +662,7 @@ export class View3d {
       if (u.owner !== p && !canSee(sim, p, u.x, u.y)) continue;
       this.unit(sim, u, put, nodeById);
     }
+    for (const f of this.flags) put("bigflag", bigFlagModel, f.x, heightAt(f.x, f.z), f.z, isNorth(f.owner) ? Math.PI : 0, f.scale, f.owner);
     // arrows and cannonballs
     for (const a of sim.arrows) {
       if (!inView(a.x, a.y) || !canSee(sim, p, a.x, a.y)) continue;
@@ -692,6 +735,7 @@ export class View3d {
         for (let t = 0.35; t < l; t += 0.35) add(x0 + ((x1 - x0) * t) / l, z0 + ((z1 - z0) * t) / l, 0.06, 0.06, [1, 0.97, 0.82, 0.8], 2, 0, 0.06);
       }
     }
+    for (const m of this.marks) add(m.x + m.w / 2, m.z + m.h / 2, m.w / 2, m.h / 2, m.c, 3, 0, 0.06);
     const anchor = sim.place[p] && sim.anchor[p];
     if (anchor) add(anchor.x + 0.5, anchor.y + 0.5, 0.5, 0.5, [1, 0.94, 0.5, 0.55], 1, 0, 0.06);
     const bad = sim.bad[p];

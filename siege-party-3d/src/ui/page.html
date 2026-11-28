@@ -29,7 +29,9 @@ canvas.gl{pointer-events:none}
 body.gl3d canvas.fx{background:none}
 canvas.fx{pointer-events:none;background:radial-gradient(ellipse 120% 90% at 15% 0%,rgba(255,244,210,.13),rgba(255,244,210,0) 55%,rgba(26,44,60,.18))}
 canvas.mini{inset:auto;right:4px;top:4px;width:56px;height:84px;border:2px solid var(--team);image-rendering:pixelated;background:#161b13}
-.zoom{position:absolute;left:5px;top:5px;width:34px;height:34px;font-size:22px;line-height:1;background:#251d15d9}
+.zoom,.zoomin{position:absolute;left:5px;top:5px;width:34px;height:34px;font-size:22px;line-height:1;background:#251d15d9}
+.zoomin{top:44px}
+.zoom.end,.zoomin.end{opacity:.45}
 button.danger{border-color:#e0705c}
 button.label{background:#17130f;cursor:default;box-shadow:none}
 .toast{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);max-width:95%;overflow:hidden;text-overflow:ellipsis;background:#17130fe6;border:1px solid #f2c230;border-radius:20px;padding:4px 14px;white-space:nowrap;pointer-events:none}
@@ -100,6 +102,7 @@ button.alert{border-color:#f2c230;box-shadow:inset 0 0 0 1px #f2c230}
 .editor .file{background:#3f6b2a;border:1px solid #8fd45e;border-radius:7px;font-weight:700;cursor:pointer}
 .editor input{position:absolute;width:1px;height:1px;opacity:0}
 .editor canvas{position:static;align-self:center;height:auto;border:2px solid #7b6444;image-rendering:pixelated;touch-action:none;cursor:crosshair}
+.editor canvas.board{image-rendering:auto;border-radius:10px;background:#8cb8cc}
 .editor .row{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
 .editor .tools{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .editor button.on{outline:2px solid #fff27a;outline-offset:-2px}
@@ -119,7 +122,7 @@ button.alert{border-color:#f2c230;box-shadow:inset 0 0 0 1px #f2c230}
 </head>
 <body>
 <div id="stage">
-  <template id="seat"><section class="panel"><div class="map"><canvas></canvas><canvas class="fx"></canvas><canvas class="mini" aria-label="Minimap"></canvas><button type="button" class="zoom" aria-label="Zoom">−</button><div class="gone" hidden>Your Hall has fallen</div><div class="toast" hidden></div></div><div class="hud"><div class="res"></div><div class="info"></div><div class="actions"></div><div class="groups"></div></div></section></template>
+  <template id="seat"><section class="panel"><div class="map"><canvas></canvas><canvas class="fx"></canvas><canvas class="mini" aria-label="Minimap"></canvas><button type="button" class="zoom" aria-label="Zoom out">−</button><button type="button" class="zoomin" aria-label="Zoom in">+</button><div class="gone" hidden>Your Hall has fallen</div><div class="toast" hidden></div></div><div class="hud"><div class="res"></div><div class="info"></div><div class="actions"></div><div class="groups"></div></div></section></template>
   <div id="mid"><span id="clock">0:00</span><button type="button" id="pause">Pause</button></div>
   <div id="overlay"></div>
 </div>

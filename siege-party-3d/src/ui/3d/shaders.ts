@@ -365,10 +365,15 @@ void main() {
     vec2 e = (1.0 - abs(vUv)) * vSize;
     float edge = 1.0 - smoothstep(0.0, 0.07, min(e.x, e.y));
     a = 0.35 + 0.65 * edge;
-  } else {
+  } else if (vShape.x < 2.5) {
     // a soft round shadow or glow
     float r = length(vUv);
     a = smoothstep(1.0, 0.2, r);
+  } else {
+    // a solid patch with a bright edge
+    vec2 e = (1.0 - abs(vUv)) * vSize;
+    float edge = 1.0 - smoothstep(0.0, 0.18, min(e.x, e.y));
+    a = 0.62 + 0.38 * edge;
   }
   a *= vCol.a;
   o = vec4(vCol.rgb * a, a);

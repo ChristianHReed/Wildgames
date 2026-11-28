@@ -1189,6 +1189,19 @@ export function rallyModel(): Mesh {
   return m;
 }
 
+/** a tall banner on a pole, marking where a player starts */
+export function bigFlagModel(): Mesh {
+  const m = new Mesh();
+  m.block(0, 0, 0.05, 1.2, 0.05, WOOD_DD, GOLD);
+  m.ball(0, 1.22, 0, 0.05, GOLD, 0, 1, 2, 5);
+  m.part = 4.5;
+  m.quad([0.03, 1.15, 0], [0.62, 1.1, 0], [0.62, 0.72, 0], [0.03, 0.75, 0], team(1.05));
+  m.tri([0.62, 1.1, 0], [0.78, 0.93, 0], [0.62, 0.72, 0], team(1.05));
+  m.quad([0.03, 1.15, 0.004], [0.3, 1.13, 0.004], [0.3, 0.98, 0.004], [0.03, 1.0, 0.004], teamLight(1));
+  m.part = 0;
+  return m;
+}
+
 /** a cart of dirt and planks: what stands where a building has been begun */
 export function siteModel(w: number, d: number) {
   const m = new Mesh();

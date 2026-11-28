@@ -22,7 +22,8 @@ be added to the Home Screen and opens without a connection.
 - Village, Town and Castle ages that unlock buildings, units and upgrades
 - Towns that change look with each age; a Market for trading and Castles that work like a second Hall
 - No overall population limit: homes house Folk, barracks house soldiers
-- Map sizes up to 256×384, and maps made from a picture
+- Map sizes up to 256×384, and maps made from a picture, previewed as a little 3D board
+- Eight zoom levels with − and +, two-finger pinch, or the mouse wheel
 - Sound made in code: wind, rustling leaves, water and birdsong, and the knocks and clinks of work and battle
 
 ## Playing on separate devices

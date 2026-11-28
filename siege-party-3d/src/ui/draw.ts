@@ -474,7 +474,7 @@ let ground = new Uint8ClampedArray(0);
 let groundFor: unknown = null;
 
 /** One pixel per tile, turned the same way as the player's own view. */
-export function renderMini(g: G, sim: Sim, p: PlayerId, flipped = isNorth(p)) {
+export function renderMini(g: G, sim: Sim, p: PlayerId, flipped = isNorth(p), area?: [number, number][]) {
   const img = g.createImageData(COLS, ROWS);
   const px = img.data;
   if (groundFor !== GRID || ground.length !== px.length) {
@@ -518,6 +518,12 @@ export function renderMini(g: G, sim: Sim, p: PlayerId, flipped = isNorth(p)) {
   if (flipped) g.setTransform(-1, 0, 0, -1, COLS, ROWS);
   g.strokeStyle = "#fff27a";
   g.lineWidth = Math.max(1, COLS / 100);
-  g.strokeRect(sim.cam[p].x - v.w / 64, sim.cam[p].y - v.h / 64, v.w / 32, v.h / 32);
+  if (area) {
+    // what a tilted 3D view sees: wider at the far edge
+    g.beginPath();
+    area.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.closePath();
+    g.stroke();
+  } else g.strokeRect(sim.cam[p].x - v.w / 64, sim.cam[p].y - v.h / 64, v.w / 32, v.h / 32);
   g.setTransform(1, 0, 0, 1, 0, 0);
 }

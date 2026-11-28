@@ -10,6 +10,7 @@ import { PIXEL, render, renderMini, snapZoom } from "./draw";
 import { groundFrame } from "./ground";
 import { View3d } from "./3d/view";
 import { soundscape } from "./sound";
+import { MapPreview } from "./3d/preview";
 import { chooseSize, loadPlayers, mapEditor, mapSize, savedMap } from "./editor";
 import { sizePicker } from "./sizes";
 import { hostLobby, joinLobby, type HostPlan } from "./lobby";
@@ -71,7 +72,9 @@ const panels = IDS.map((p) => {
     p, root, canvas, g: canvas.getContext("2d")!, fx, fg: fx.getContext("2d")!,
     /** choosing allies */
     diplo: false,
-    mini: q<HTMLCanvasElement>(".mini"), zoomBtn: q<HTMLButtonElement>(".zoom"), far: false, cat: -1,
+    mini: q<HTMLCanvasElement>(".mini"), zoomBtn: q<HTMLButtonElement>(".zoom"), zoomIn: q<HTMLButtonElement>(".zoomin"), cat: -1,
+    /** how far in (over 1) or out (under 1) the view is zoomed */
+    zk: 1,
     /** showing the upgrades of a building that also trains */
     ups: 0,
     /** the market's page: 0 its front, 1 selling, 2 buying (with the market's id) */
@@ -141,14 +144,16 @@ function layout() {
       q.canvas.width = 1;
       q.canvas.height = 1;
       v3.resize(q.w, q.h, Math.min(window.devicePixelRatio || 1, shared() && sim.count > 2 ? 1.5 : 2));
-      q.zoom = Math.max(0.7, Math.min(2.2, q.w / (11 * 32), q.h / (7.5 * 32))) * (q.far ? 0.55 : 1);
+      q.zoom = Math.max(0.7, Math.min(2.2, q.w / (11 * 32), q.h / (7.5 * 32))) * q.zk;
     } else {
       // the painting is made at its own size and the browser enlarges it softly to the screen
       q.canvas.width = Math.max(1, Math.round(q.w / PIXEL));
       q.canvas.height = Math.max(1, Math.round(q.h / PIXEL));
-      q.zoom = snapZoom(Math.max(0.6, Math.min(2, q.w / (12 * 32), q.h / (8 * 32))) * (q.far ? 0.55 : 1));
+      q.zoom = snapZoom(Math.max(0.6, Math.min(2, q.w / (12 * 32), q.h / (8 * 32))) * q.zk);
     }
-    sim.view[q.p] = { w: q.w / q.zoom, h: q.h / q.zoom };
+    // the 3D board sits in an open sea, so the camera may look a little past its edges
+    const loose = v3 ? 0.55 : 1;
+    sim.view[q.p] = { w: (q.w / q.zoom) * loose, h: (q.h / q.zoom) * loose };
     clampCam(sim, q.p);
     // the minimap takes the shape of the map
     if (q.mini.width !== COLS || q.mini.height !== ROWS) {
@@ -170,18 +175,58 @@ function local(q: (typeof panels)[number], e: PointerEvent) {
   return { x: dx * Math.cos(a) + dy * Math.sin(a), y: -dx * Math.sin(a) + dy * Math.cos(a) };
 }
 
+/** zoom levels the − and + buttons step through; a pinch can stop anywhere between the ends */
+const ZOOMS = [0.4, 0.5, 0.62, 0.78, 1, 1.25, 1.55, 1.9];
+function zoomTo(q: (typeof panels)[number], k: number) {
+  const z = Math.max(ZOOMS[0]!, Math.min(ZOOMS[ZOOMS.length - 1]!, k));
+  if (Math.abs(z - q.zk) < 1e-4) return;
+  q.zk = z;
+  zoomMarks(q);
+  layout();
+}
+function zoomStep(q: (typeof panels)[number], dir: number) {
+  const next = dir > 0 ? ZOOMS.find((z) => z > q.zk + 0.01) : [...ZOOMS].reverse().find((z) => z < q.zk - 0.01);
+  if (next !== undefined) zoomTo(q, next);
+}
+/** dim a button that cannot go further */
+function zoomMarks(q: (typeof panels)[number]) {
+  q.zoomBtn.classList.toggle("end", q.zk <= ZOOMS[0]! + 0.01);
+  q.zoomIn.classList.toggle("end", q.zk >= ZOOMS[ZOOMS.length - 1]! - 0.01);
+}
+
 for (const q of panels) {
   const touches = new Map<number, { sx: number; sy: number; x: number; y: number; moved: boolean }>();
+  /** two fingers apart: how far apart they began, and the zoom then */
+  let pinch: { d: number; zk: number } | null = null;
+  const spread = () => {
+    const [a, b] = [...touches.values()];
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  };
   q.canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     try { q.canvas.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
     const at = local(q, e);
     touches.set(e.pointerId, { sx: at.x, sy: at.y, x: at.x, y: at.y, moved: false });
+    if (touches.size === 2) {
+      // a pinch: neither finger taps or drags
+      for (const t of touches.values()) t.moved = true;
+      pinch = { d: Math.max(20, spread()), zk: q.zk };
+    }
   });
+  q.canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    if (sim.phase === "play") zoomTo(q, q.zk * Math.exp(-e.deltaY * 0.0015));
+  }, { passive: false });
   q.canvas.addEventListener("pointermove", (e) => {
     const t = touches.get(e.pointerId);
     if (!t || sim.phase !== "play") return;
     const at = local(q, e);
+    if (pinch && touches.size >= 2) {
+      t.x = at.x;
+      t.y = at.y;
+      zoomTo(q, pinch.zk * (spread() / pinch.d));
+      return;
+    }
     if (!t.moved && Math.hypot(at.x - t.sx, at.y - t.sy) > 10) t.moved = true;
     if (t.moved && q.v3) {
       // the ground follows the finger
@@ -201,6 +246,7 @@ for (const q of panels) {
   q.canvas.addEventListener("pointerup", (e) => {
     const t = touches.get(e.pointerId);
     touches.delete(e.pointerId);
+    if (touches.size < 2) pinch = null;
     if (!t || t.moved) return;
     if (q.v3) {
       const hit = q.v3.tapAt(sim, q.p, t.x, t.y);
@@ -212,7 +258,10 @@ for (const q of panels) {
     const wy = sim.cam[q.p].y + (dir * t.y) / (q.zoom * 32);
     send(q.p, { t: "tap", x: wx, y: wy });
   });
-  q.canvas.addEventListener("pointercancel", (e) => touches.delete(e.pointerId));
+  q.canvas.addEventListener("pointercancel", (e) => {
+    touches.delete(e.pointerId);
+    if (touches.size < 2) pinch = null;
+  });
 }
 
 // Minimap: touch or drag it to jump around. Zoom button: near / far.
@@ -238,11 +287,8 @@ for (const q of panels) {
   });
   q.mini.addEventListener("pointermove", (e) => { if (e.pointerId === finger && sim.phase === "play") jump(e); });
   for (const end of ["pointerup", "pointercancel"] as const) q.mini.addEventListener(end, () => (finger = null));
-  handlers.set(q.zoomBtn, () => {
-    q.far = !q.far;
-    q.zoomBtn.textContent = q.far ? "+" : "−";
-    layout();
-  });
+  handlers.set(q.zoomBtn, () => zoomStep(q, -1));
+  handlers.set(q.zoomIn, () => zoomStep(q, 1));
 }
 
 /** where the last press began: a menu that opens under a finger must not take that press's tap */
@@ -520,8 +566,8 @@ function resetPanels() {
     q.cat = -1;
     q.ups = 0;
     q.diplo = false;
-    q.far = false;
-    q.zoomBtn.textContent = "−";
+    q.zk = 1;
+    zoomMarks(q);
   }
   screenKey = "";
   page = "home";
@@ -785,7 +831,14 @@ function drawOverlay() {
   overlay.replaceChildren();
   if (!want) return;
   if (want === "menu" && editing) {
-    overlay.append(mapEditor({ button, bigScreen: bigScreen(), close: () => { editing = false; screenKey = ""; } }));
+    const preview3d = use3d ? (c: HTMLCanvasElement) => {
+      try {
+        return new MapPreview(c);
+      } catch {
+        return null;
+      }
+    } : undefined;
+    overlay.append(mapEditor({ button, bigScreen: bigScreen(), preview3d, close: () => { editing = false; screenKey = ""; } }));
     return;
   }
   if (want === "menu") {
@@ -885,7 +938,7 @@ function frame(now: number) {
     }
     if (now - miniAt > 250) {
       miniAt = now;
-      for (const q of panels) if (seated(q.p)) renderMini(q.mini.getContext("2d")!, sim, q.p);
+      for (const q of panels) if (seated(q.p)) renderMini(q.mini.getContext("2d")!, sim, q.p, undefined, q.v3?.footprint());
     }
     if (sim.uiDirty || now - hudAt > 150) {
       hudAt = now;

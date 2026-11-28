@@ -94,13 +94,22 @@ const COLORS: Record<Tile, string> = { ".": "#679140", D: "#b08d54", "~": "#2c6f
 type Tool = Tile | number;
 const PAINTS: [Tile, string][] = [[".", "Grass"], ["~", "Water"], ["T", "Trees"], ["D", "Road"], ["G", "Gold"], ["S", "Stone"], ["B", "Berries"]];
 
+/** a 3D preview of the finished map, when the game can draw one */
+export type Preview3d = {
+  show: (grid: string[], bases: Bases, players: number) => void;
+  tileAt: (clientX: number, clientY: number) => { x: number; y: number } | null;
+  dispose: () => void;
+};
+
 type Ui = {
   button: (label: string, fn: () => void, sub?: string, cls?: string) => HTMLButtonElement;
   close: () => void;
   bigScreen: boolean;
+  /** makes a 3D preview on a canvas, or gives null to keep the flat one */
+  preview3d?: (canvas: HTMLCanvasElement) => Preview3d | null;
 };
 
-export function mapEditor({ button, close, bigScreen }: Ui) {
+export function mapEditor({ button, close: closeEditor, bigScreen, preview3d }: Ui) {
   const root = document.createElement("div");
   root.className = "editor";
   let image: HTMLImageElement | null = null;
@@ -117,7 +126,15 @@ export function mapEditor({ button, close, bigScreen }: Ui) {
   const layouts: { 2?: Bases; 4?: Bases } = {};
   const slots = () => (players > 2 ? 4 : 2);
   let preview: HTMLCanvasElement | null = null;
+  /** the 3D preview keeps one canvas for as long as the map maker is open */
+  let solid: Preview3d | null = null;
+  let solidCanvas: HTMLCanvasElement | null = null;
   let message = "";
+  const close = () => {
+    solid?.dispose();
+    solid = null;
+    closeEditor();
+  };
 
   /** Samples the picture, stretched to the shape of the game map. */
   function read() {
@@ -165,8 +182,9 @@ export function mapEditor({ button, close, bigScreen }: Ui) {
 
   function paintPreview() {
     if (!preview || !raw || !bases) return;
-    const g = preview.getContext("2d")!;
     const done = finishMap(raw, bases, mirror);
+    if (solid) return solid.show(done.grid, done.bases, players);
+    const g = preview.getContext("2d")!;
     const k = preview.width / COLS;
     done.grid.forEach((row, y) => {
       for (let x = 0; x < COLS; x++) {
@@ -185,10 +203,18 @@ export function mapEditor({ button, close, bigScreen }: Ui) {
 
   function touch(e: PointerEvent, first: boolean) {
     if (!preview || !raw || !bases) return;
+    let x: number;
+    let y: number;
+    if (solid) {
+      const t = solid.tileAt(e.clientX, e.clientY);
+      if (!t) return;
+      ({ x, y } = t);
+    } else {
+      const r = preview.getBoundingClientRect();
+      x = Math.floor(((e.clientX - r.left - preview.clientLeft) / preview.clientWidth) * COLS);
+      y = Math.floor(((e.clientY - r.top - preview.clientTop) / preview.clientHeight) * ROWS);
+    }
     dirty = true;
-    const r = preview.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - r.left - preview.clientLeft) / preview.clientWidth) * COLS);
-    const y = Math.floor(((e.clientY - r.top - preview.clientTop) / preview.clientHeight) * ROWS);
     if (typeof tool === "number") {
       const n = slots();
       const at: Spot = { x: x - 1, y: y - 1 };
@@ -253,21 +279,36 @@ export function mapEditor({ button, close, bigScreen }: Ui) {
     label.append(input);
 
     if (raw) {
-      preview = add(document.createElement("canvas"));
-      preview.width = COLS * 6;
-      preview.height = ROWS * 6;
-      preview.style.aspectRatio = `${COLS} / ${ROWS}`;
+      // a 3D board when the game draws in 3D; it is made once and kept while the map maker is open
+      if (!solidCanvas && preview3d) {
+        solidCanvas = document.createElement("canvas");
+        solidCanvas.className = "board";
+        solid = preview3d(solidCanvas);
+        if (!solid) solidCanvas = null;
+      }
+      const fresh = !solidCanvas;
+      preview = add(solidCanvas ?? document.createElement("canvas"));
+      if (fresh) {
+        preview.width = COLS * 6;
+        preview.height = ROWS * 6;
+      }
+      preview.style.aspectRatio = solid ? `${COLS} / ${ROWS * 0.82}` : `${COLS} / ${ROWS}`;
       preview.style.width = `min(100%, ${(48 * COLS) / ROWS}vh, ${(480 * COLS) / ROWS}px)`;
-      let finger: number | null = null;
-      preview.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        finger = e.pointerId;
-        try { preview!.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
-        touch(e, true);
-      });
-      preview.addEventListener("pointermove", (e) => e.pointerId === finger && touch(e, false));
-      for (const end of ["pointerup", "pointercancel"] as const)
-        preview.addEventListener(end, () => { finger = null; paintPreview(); });
+      // a kept canvas already listens; a new one starts to
+      if (!preview.dataset.wired) {
+        preview.dataset.wired = "1";
+        const c = preview;
+        let finger: number | null = null;
+        c.addEventListener("pointerdown", (e) => {
+          e.preventDefault();
+          finger = e.pointerId;
+          try { c.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+          touch(e, true);
+        });
+        c.addEventListener("pointermove", (e) => e.pointerId === finger && touch(e, false));
+        for (const end of ["pointerup", "pointercancel"] as const)
+          c.addEventListener(end, () => { finger = null; paintPreview(); });
+      }
       text("p", "Pick a tool, then tap or drag on the map to move a base or fix a spot. The game clears room around each base, adds any missing resources and cuts a route between the bases.");
       const tools = add(document.createElement("div"));
       tools.className = "tools";
