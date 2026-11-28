@@ -10,6 +10,8 @@ export function chips(button: Button, label: string, names: string[], on: number
   const title = document.createElement("h3");
   title.textContent = label;
   const row = document.createElement("div");
+  // many choices wrap onto two rows
+  if (names.length > 6) row.className = "wrap";
   row.append(...names.map((n, i) => button(n, () => pick(i), "", i === on ? "on" : "")));
   box.append(title, row);
   return box;

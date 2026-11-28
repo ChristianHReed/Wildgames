@@ -81,7 +81,7 @@ export class MapPreview {
     let id = 1;
     for (const s of nodeSpawns()) sim.nodes.push({ id: id++, kind: s.kind, x: s.x, y: s.y, amount: s.amount, farm: false, sea: !!s.sea });
     const put = (owner: PlayerId, kind: "town" | "house", tx: number, ty: number) =>
-      sim.buildings.push({ id: id++, owner, kind, tx, ty, hp: 1e6, progress: 1, queue: [], cd: 0, seen: 31, work: 0, research: null });
+      sim.buildings.push({ id: id++, owner, kind, tx, ty, hp: 1e6, progress: 1, queue: [], cd: 0, seen: 1023, work: 0, research: null });
     for (let p = 0; p < players; p++) {
       const at = BASES[p];
       if (!at) continue;

@@ -1,5 +1,6 @@
 import { playSfx, resumeAudio, setMuted, unlockAudio } from "../game/audio";
-import { AGES, BUILDINGS, BUILD_MENU, COLS, GOODS, LEVELS, ROWS, SEATS, SIZE, TECHS, isNorth, UNITS, canAfford, type Cost, type TechKind, type UnitKind, type BuildingKind } from "../game/content";
+import { AGES, BUILDINGS, BUILD_MENU, COLS, GOODS, LEVELS, MAX_SEATS, ROWS, SEATS, SIZE, TECHS, isNorth, UNITS, canAfford, type Cost, type TechKind, type UnitKind, type BuildingKind } from "../game/content";
+import { bigMin } from "../game/mapgen";
 import { act, type Cmd, type Group } from "../game/commands";
 import {
   IDS, allied, begin, techBlock, unitCost, unitStats, createSim, focusHall, hasComplete, panCam, clampCam, quote,
@@ -769,12 +770,15 @@ function menuCard(): HTMLElement {
   if (page === "computer") {
     heading("Play the computer");
     card.append(
-      chips(button, "Computers", ["1", "2", "3", "4"], choices.computers - 1, (i) => { choices.computers = i + 1; redraw(); }),
+      chips(button, "Computers", Array.from({ length: MAX_SEATS - 1 }, (_, i) => String(i + 1)), choices.computers - 1, (i) => { choices.computers = i + 1; redraw(); }),
       chips(button, "Difficulty", [...LEVELS], choices.level, (i) => { choices.level = i; redraw(); }),
     );
     para(["Slow to act and gathers less. Says yes to alliances.", "A fair fight.", "Quick, builds a big army and gathers 30% faster than you."][choices.level]!);
     card.append(stylePicker(button, choices.style, (i) => { choices.style = i; redraw(); }));
-    if (choices.computers > 3) para("Five halls need a map at least 80×96. A smaller map is stretched for this game.");
+    if (choices.computers > 3) {
+      const least = bigMin(choices.computers + 1);
+      para(`${choices.computers + 1} halls need a map at least ${least.w}×${least.h}. A smaller map is stretched for this game.${choices.computers > 5 ? " Many computers are hard work for a phone; a tablet or computer copes best." : ""}`);
+    }
     card.append(button("Start", () => {
       const count = choices.computers + 1;
       start("solo", count, { styles: stylesFor(count, [choices.style]), level: choices.level });
@@ -799,16 +803,16 @@ function menuCard(): HTMLElement {
   }
   if (page === "online") {
     heading("Play on your own devices");
-    para("One device hosts and runs the game. Everyone else joins from theirs, up to 5 players counting computers. Best with all devices on the same Wi-Fi or hotspot.");
+    para(`One device hosts and runs the game. Everyone else joins from theirs, up to ${MAX_SEATS} players counting computers. Best with all devices on the same Wi-Fi or hotspot.`);
     card.append(button("Host a game", () => go("host"), "", "go"), button("Join a game", () => go("join")), button("Back", () => go("home")));
     return card;
   }
   card.innerHTML = `${EMBLEM}<h1 class="title">Siege Party${use3d ? ` <span class="v3">3D</span>` : ""}</h1><p class="motto">Gather, build and march to war</p>`;
   if (notice) para(notice);
   card.append(
-    button("Play the computer", () => go("computer"), "against 1 to 4", "go"),
+    button("Play the computer", () => go("computer"), `against 1 to ${MAX_SEATS - 1}`, "go"),
     button("Share one screen", () => go("shared"), "2 to 4 players", "go"),
-    button("Play on your own devices", () => go("online"), "local online, up to 5", "go"),
+    button("Play on your own devices", () => go("online"), `local online, up to ${MAX_SEATS}`, "go"),
     mapPicker(button, () => { screenKey = ""; }),
     button("Map maker", () => { editing = true; redraw(); }, `make your own · now playing on: ${mapName()}`),
     sizePicker({ button, limits: SIZE, current: mapSize, choose: chooseSize }), soundButton(),

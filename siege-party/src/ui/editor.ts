@@ -1,7 +1,7 @@
 import { COLS, ROWS, SEATS, SIZE, fitSize, setSize } from "../game/content";
 import { setMap } from "../game/map";
 import {
-  FIVE_MIN, SUB, classify, clampBase, evenBases, finishMap, layoutFor, lead, mirrorSpot, randomMap, randomRaw, resample, scaleBases, suggestBases,
+  bigMin, SUB, classify, clampBase, evenBases, finishMap, layoutFor, lead, mirrorSpot, randomMap, randomRaw, resample, scaleBases, suggestBases,
   type Bases, type Extra, type Spot, type Tile,
 } from "../game/mapgen";
 
@@ -48,9 +48,9 @@ function fitted(s: Saved) {
   const same = w === COLS && h === ROWS;
   const raw = same ? original : resample(original, w, h, COLS, ROWS);
   const layout = layoutFor(players);
-  // five halls are placed automatically; their picture cannot be mirrored
-  const saved = layout === 5 ? undefined : layout === 4 ? s.quad : s.bases;
-  const mirror = s.mirror && layout !== 5;
+  // five or more halls are placed automatically; their picture cannot be mirrored
+  const saved = layout > 4 ? undefined : layout === 4 ? s.quad : s.bases;
+  const mirror = s.mirror && layout <= 4;
   const bases = !saved ? suggestBases(raw, mirror, layout) : same ? saved : scaleBases(saved, w, h, COLS, ROWS);
   return { raw, bases, mirror, extra: s.extra ?? 2 };
 }
@@ -72,7 +72,8 @@ export function newGame(n: number) {
 export function loadPlayers(n: number) {
   players = n;
   const grow = n > 4;
-  setSize(grow ? Math.max(chosen.w, FIVE_MIN.w) : chosen.w, grow ? Math.max(chosen.h, FIVE_MIN.h) : chosen.h);
+  const least = bigMin(n);
+  setSize(grow ? Math.max(chosen.w, least.w) : chosen.w, grow ? Math.max(chosen.h, least.h) : chosen.h);
   apply();
 }
 

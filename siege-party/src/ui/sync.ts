@@ -4,10 +4,10 @@
  */
 import { BUILD_KINDS, UNIT_KINDS, setSize, COLS, ROWS } from "../game/content";
 import { BASES, GRID, setMap } from "../game/map";
-import { begin, updateVision, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
+import { allied, begin, updateVision, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
 
 /** Both devices must run the same version of the game. */
-export const VERSION = 5;
+export const VERSION = 6;
 
 const NODE_KINDS = ["wood", "food", "gold", "stone"] as const;
 const ORDERS = ["idle", "move", "gather", "drop", "build", "attack", "board", "unload"] as const;
@@ -30,8 +30,13 @@ export function memory(sim: Sim) {
 }
 export type Memory = ReturnType<typeof memory>;
 
+/** what this device may know about: its own side, its allies, and whatever it can see now */
+const shown = (sim: Sim, you: PlayerId, owner: number, x: number, y: number) =>
+  owner === you || allied(sim, you, owner) || !!sim.visible[you][Math.floor(y) * COLS + Math.floor(x)];
+
 export function snapshot(sim: Sim, you: PlayerId, seen: Memory, sounds: string[]) {
-  const units = sim.units.map((u) => [
+  // only what this player can know about is sent, so ten players do not flood the host's connection
+  const units = sim.units.filter((u) => shown(sim, you, u.owner, u.x, u.y)).map((u) => [
     u.id, u.owner, UNIT_KINDS.indexOf(u.kind), round(u.x), round(u.y), Math.ceil(u.hp), ORDERS.indexOf(u.order.t),
     u.fx < 0 ? -1 : 1, Math.floor(u.carry), CARRY.indexOf(u.carryType), +(u.path.length > 0), +(u.flash > 0),
     u.cargo?.length ? u.cargo.map((c) => UNIT_KINDS.indexOf(c.kind)) : 0,
@@ -78,7 +83,7 @@ export function snapshot(sim: Sim, you: PlayerId, seen: Memory, sounds: string[]
     t: "s", clock: round(sim.clock), phase: sim.phase, winner: sim.winner, winners: sim.winners,
     out: sim.out, ai: sim.ai, allies: sim.allies, offers: sim.offers, breaks: sim.breaks, tech: sim.tech,
     res: sim.res[you], units, changed, razed, nodes, fields, gone,
-    arrows: sim.arrows.map((a) => [round(a.x), round(a.y), round(a.tx), round(a.ty), a.owner, +!!a.ball]),
+    arrows: sim.arrows.filter((a) => shown(sim, you, a.owner, a.x, a.y)).map((a) => [round(a.x), round(a.y), round(a.tx), round(a.ty), a.owner, +!!a.ball]),
     me: {
       sel: sim.sel[you], place: sim.place[you], hunt: sim.hunt[you], anchor: sim.anchor[you],
       bad: sim.bad[you], note: sim.note[you], shake: sim.shake[you], prices: sim.prices[you],

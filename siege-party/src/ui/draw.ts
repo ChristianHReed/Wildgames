@@ -251,9 +251,9 @@ export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: n
   art(lg, jx, jy);
 
   const walls = new Set<number>();
-  for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << p)) walls.add((b.ty * COLS + b.tx) * 4 + b.owner);
+  for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << p)) walls.add((b.ty * COLS + b.tx) * 16 + b.owner);
   const links = (b: Building) =>
-    [[0, -1], [1, 0], [0, 1], [-1, 0]].map(([dx, dy]) => walls.has(((b.ty + dy! * dir) * COLS + b.tx + dx! * dir) * 4 + b.owner));
+    [[0, -1], [1, 0], [0, 1], [-1, 0]].map(([dx, dy]) => walls.has(((b.ty + dy! * dir) * COLS + b.tx + dx! * dir) * 16 + b.owner));
 
   /** drawn sharp on top, at full size: health bars */
   const over: (() => void)[] = [];

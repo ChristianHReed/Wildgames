@@ -86,8 +86,8 @@ function builtIn(players: number) {
   if (players === 2 && COLS === SIZE.w && ROWS === SIZE.h) return DESIGN;
   const raw = resample([...DESIGN.grid.join("")] as Tile[], SIZE.w, SIZE.h, COLS, ROWS);
   const layout = layoutFor(players);
-  // five cannot be mirrored, so each of their areas is stocked on its own
-  return finishMap(raw, startSpots(layout), layout !== 5);
+  // five or more cannot be mirrored, so each of their areas is stocked on its own
+  return finishMap(raw, startSpots(layout), layout <= 4);
 }
 
 /** The map in play: the built-in one, or one made from a picture. */

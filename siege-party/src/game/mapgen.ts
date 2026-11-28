@@ -95,15 +95,24 @@ export function scaleBases(b: Bases, w: number, h: number, toW: number, toH: num
   );
 }
 
-/** How many bases a map is laid out with for this many players. */
-export const layoutFor = (players: number) => (players <= 2 ? 2 : players <= 4 ? 4 : 5);
+/** How many bases a map is laid out with for this many players: two, four, or one each from five up. */
+export const layoutFor = (players: number) => (players <= 2 ? 2 : players <= 4 ? 4 : Math.min(10, players));
 
-/** The smallest map five halls fit on. */
-export const FIVE_MIN = { w: 80, h: 96 };
+/** The smallest map this many halls fit on: from five up, each gets a column at least 18 wide. */
+export function bigMin(players: number) {
+  const across = Math.ceil(Math.max(5, players) / 2);
+  return { w: Math.max(80, across * 18), h: 96 };
+}
 
-/** With five, three share the top of the map and two the bottom. */
-function column(seat: number): [number, number] {
-  const [i, n] = isNorth(seat) ? [[2, 4, 1].indexOf(seat), 3] : [[0, 3].indexOf(seat), 2];
+/** Left to right, the order seats take the columns at the top and at the bottom of the map. */
+const TOP = [2, 4, 1, 6, 8];
+const BOTTOM = [0, 3, 5, 7, 9];
+
+/** From five players up the map is cut into columns: some players share the top, the rest the bottom. */
+function column(seat: number, count: number): [number, number] {
+  const row = (isNorth(seat) ? TOP : BOTTOM).filter((s) => s < count);
+  const i = Math.max(0, row.indexOf(seat));
+  const n = row.length;
   return [Math.floor((i * COLS) / n), Math.floor(((i + 1) * COLS) / n)];
 }
 
@@ -113,7 +122,7 @@ export function clampBase(s: Spot, seat: number, count: number): Spot {
   let x1 = COLS - 8;
   // with more than two players each seat keeps to its own part of the map
   if (count > 4) {
-    const [a, b] = column(seat);
+    const [a, b] = column(seat, count);
     x0 = a + 5;
     x1 = b - 8;
   } else if (count > 2) {
@@ -143,7 +152,7 @@ export function evenBases(one: Spot, count: number): Bases {
 export function startSpots(count: number): Bases {
   if (count > 4)
     return Array.from({ length: count }, (_, seat) => {
-      const [a, b] = column(seat);
+      const [a, b] = column(seat, count);
       return clampBase({ x: Math.round((a + b) / 2) - 1, y: isNorth(seat) ? 9 : ROWS - 12 }, seat, count);
     });
   const x = count > 2 ? Math.round(COLS * 0.22) - 1 : COLS / 2 - 1;
@@ -202,8 +211,8 @@ export function finishMap(raw: Tile[], wanted: Bases, mirror: boolean, extra: Ex
   const areas = bases.map((base, seat) => ({
     base,
     f: isNorth(seat) ? 1 : -1,
-    x0: five ? column(seat)[0] : four && !isLeft(seat) ? MIDX : 0,
-    x1: five ? column(seat)[1] : four && isLeft(seat) ? MIDX : COLS,
+    x0: five ? column(seat, count)[0] : four && !isLeft(seat) ? MIDX : 0,
+    x1: five ? column(seat, count)[1] : four && isLeft(seat) ? MIDX : COLS,
     y0: isNorth(seat) ? 0 : HALF,
     y1: isNorth(seat) ? HALF : ROWS,
   }));

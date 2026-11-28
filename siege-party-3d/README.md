@@ -14,7 +14,7 @@ be added to the Home Screen and opens without a connection.
 
 - You against one to four computers, on Easy, Normal or Hard
 - Two players at the two ends of one screen; three or four on an iPad-sized screen or larger
-- Local online play on separate devices (up to five players, computers fill the rest)
+- Local online play on separate devices (up to ten players, computers fill the rest)
 - Four peoples, each with its own look and a small strength
 - Alliances between players
 - Gathering, building where you tap, walls and gates

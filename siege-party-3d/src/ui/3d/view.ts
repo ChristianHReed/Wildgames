@@ -2,7 +2,7 @@
  * One player's 3D view: a tilted camera over the board, sunlight with shadows, the ground, water,
  * everything standing on it, and marks on the ground. Each panel has its own canvas and GL context.
  */
-import { BUILDINGS, COLS, ROWS, SEATS, UNITS, isNorth, type BuildingKind } from "../../game/content";
+import { BUILDINGS, COLS, MAX_SEATS, ROWS, SEATS, UNITS, isNorth, type BuildingKind } from "../../game/content";
 import { GRID } from "../../game/map";
 import { ageOf, canSee, maxHp as fullHp, type Building, type PlayerId, type Sim, type Unit } from "../../game/sim";
 import { invert, lookAt, mul, norm, ortho, perspective, program, project, type GL, type M4, type Prog, type Vec } from "./gl";
@@ -22,6 +22,8 @@ const SKY: Vec = [0.44, 0.49, 0.58];
 const BOUNCE: Vec = [0.36, 0.34, 0.28];
 const BG: Vec = [0.55, 0.72, 0.8];
 const INST = 12;
+/** the team colour slot of things nobody owns: trees, rocks, fish */
+const NOBODY = MAX_SEATS;
 
 // ── what is shared by every view: models built once, and the ground of the current map ──
 type Model = { v: Float32Array; pivot: readonly number[]; height: number };
@@ -432,8 +434,8 @@ export class View3d {
     const my = Math.round((ly0 + ly1) / 2 / texel) * texel;
     const lvp = mul(ortho(mx - span / 2, mx + span / 2, my - span / 2, my + span / 2, 5, 90), lview);
 
-    const team = new Float32Array(36);
-    for (let i = 0; i < 6; i++) {
+    const team = new Float32Array((MAX_SEATS + 1) * 6);
+    for (let i = 0; i <= MAX_SEATS; i++) {
       const s = SEATS[i];
       const c = s ? [s.main, s.light] : ["#e8e4dc", "#ffffff"];
       for (let k = 0; k < 2; k++) {
@@ -608,30 +610,30 @@ export class View3d {
         for (let k = 0; k < 3; k++) {
           const a = sim.clock * (0.8 + k * 0.15) + k * 2.1 + h1 * 6;
           const rr = 0.18 + k * 0.07;
-          put("fish", fishModel, n.x + 0.5 + Math.cos(a) * rr, WATER_Y + 0.012, n.y + 0.5 + Math.sin(a) * rr, -a, 1, 5);
+          put("fish", fishModel, n.x + 0.5 + Math.cos(a) * rr, WATER_Y + 0.012, n.y + 0.5 + Math.sin(a) * rr, -a, 1, NOBODY);
         }
         continue;
       }
       if (n.kind === "wood") {
         if (n.amount <= 0) {
-          put("stump", stumpModel, x, y, z, h2 * 6.3, 1, 5);
+          put("stump", stumpModel, x, y, z, h2 * 6.3, 1, NOBODY);
           continue;
         }
         const t = h1 < 0.42 ? 0 : h1 < 0.72 ? 1 : h1 < 0.86 ? 2 : 3;
-        put(`tree${t}`, () => treeModel(t), x, y, z, h2 * 6.3, 0.85 + hash(n.x, n.y, 5) * 0.35, 5);
+        put(`tree${t}`, () => treeModel(t), x, y, z, h2 * 6.3, 0.85 + hash(n.x, n.y, 5) * 0.35, NOBODY);
         continue;
       }
       if (n.amount <= 0) continue;
       const full = n.kind === "food" ? 220 : n.kind === "gold" ? 400 : 340;
       const v = (h1 * 3) | 0;
-      put(`node${n.kind}${v}`, () => nodeModel(n.kind as "food", v), n.x + 0.5, y, n.y + 0.5, h2 * 6.3, 0.75 + 0.45 * Math.min(1, n.amount / full), 5);
+      put(`node${n.kind}${v}`, () => nodeModel(n.kind as "food", v), n.x + 0.5, y, n.y + 0.5, h2 * 6.3, 0.75 + 0.45 * Math.min(1, n.amount / full), NOBODY);
     }
     // buildings
     const walls = new Set<number>();
-    for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << p)) walls.add((b.ty * COLS + b.tx) * 8 + b.owner);
+    for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << p)) walls.add((b.ty * COLS + b.tx) * 16 + b.owner);
     const linked = (b: Building) => {
       let m = 0;
-      const at = (dx: number, dy: number) => walls.has(((b.ty + dy) * COLS + b.tx + dx) * 8 + b.owner);
+      const at = (dx: number, dy: number) => walls.has(((b.ty + dy) * COLS + b.tx + dx) * 16 + b.owner);
       if (at(0, -1)) m |= 1;
       if (at(1, 0)) m |= 2;
       if (at(0, 1)) m |= 4;

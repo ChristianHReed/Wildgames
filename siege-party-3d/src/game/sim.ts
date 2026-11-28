@@ -33,11 +33,11 @@ import {
 import { BASES, GRID, assertMap, nodeSpawns, tileChar } from "./map";
 import { findPath } from "./path";
 
-export type PlayerId = 0 | 1 | 2 | 3 | 4;
-export const IDS: readonly PlayerId[] = [0, 1, 2, 3, 4];
+export type PlayerId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export const IDS: readonly PlayerId[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 /** one slot per seat */
-export type Seats<T> = [T, T, T, T, T];
-export const seats = <T>(make: (p: PlayerId) => T): Seats<T> => [make(0), make(1), make(2), make(3), make(4)];
+export type Seats<T> = [T, T, T, T, T, T, T, T, T, T];
+export const seats = <T>(make: (p: PlayerId) => T): Seats<T> => IDS.map(make) as Seats<T>;
 /** duel: one shared screen. solo: you against computers. online: each person on their own device. */
 export type Mode = "duel" | "solo" | "online";
 export type Setup = { ai?: boolean[]; styles?: number[]; level?: number };
@@ -572,7 +572,8 @@ function waterMask() {
 }
 
 /** A field: people walk across it, but nothing can be built on it. */
-const FIELD = 7;
+/** in the map of what stands where: 0 open, 1 solid, 2 and up a gate (2 + its owner), FIELD a farm */
+const FIELD = 20;
 /** 0 open, 1 solid, 2 to 6 a finished gate that its owner (0 to 4) and allies can walk through, 7 a field. */
 function occupancy(sim: Sim) {
   let c = gridCache.get(sim);

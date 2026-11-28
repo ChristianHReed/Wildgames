@@ -17,10 +17,10 @@ export function setSize(w: number, h: number) {
   ROWS = s.h;
 }
 
-export const MAX_SEATS = 5;
+export const MAX_SEATS = 10;
 
-/** Seats 1, 2 and 4 start at the top of the map; 0 and 3 at the bottom. Seats 0 and 2 start on the left. */
-export const isNorth = (p: number) => p === 1 || p === 2 || p === 4;
+/** Seats 1, 2, 4, 6 and 8 start at the top of the map; 0, 3, 5, 7 and 9 at the bottom. Seats 0 and 2 start on the left (with four). */
+export const isNorth = (p: number) => p === 1 || p === 2 || p === 4 || p === 6 || p === 8;
 export const isLeft = (p: number) => p === 0 || p === 2;
 export const SEATS = [
   { name: "Blue", main: "#2f9fb0", dark: "#17606c", light: "#8fe0ea" },
@@ -28,6 +28,11 @@ export const SEATS = [
   { name: "Green", main: "#5aa83c", dark: "#33671f", light: "#b4ee94" },
   { name: "Gold", main: "#d29a1e", dark: "#855d0a", light: "#ffdc82" },
   { name: "Purple", main: "#9a5fd0", dark: "#5c3485", light: "#d9b8f7" },
+  { name: "Orange", main: "#e8792b", dark: "#8f4512", light: "#ffc08f" },
+  { name: "Pink", main: "#d95f9f", dark: "#863661", light: "#ffb6da" },
+  { name: "Navy", main: "#4060cc", dark: "#22357a", light: "#a9bcff" },
+  { name: "Silver", main: "#9aa6b2", dark: "#58626c", light: "#e2e9f0" },
+  { name: "Coal", main: "#4b4b55", dark: "#25252b", light: "#a3a3b0" },
 ] as const;
 
 /** The four peoples a player can choose between. Each has its own look and strengths. */

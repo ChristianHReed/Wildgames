@@ -82,7 +82,7 @@ layout(location=4) in vec4 iMisc;
 layout(location=5) in vec4 iAnim;
 uniform mat4 uVP;
 uniform vec4 uPivot;
-uniform vec3 uTeam[12];
+uniform vec3 uTeam[22];
 uniform float uTime;
 out vec3 vW;
 out vec4 vCol;
