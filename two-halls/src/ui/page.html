@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<!--HEAD-->
+<title>Two Halls</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#17130f;color:#f4ead2;font:14px/1.3 system-ui,sans-serif;touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#stage{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;grid-template:"p1" minmax(0,1fr) "mid" 30px "p0" minmax(0,1fr)/minmax(0,1fr)}
+body.solo #stage{grid-template:"mid" 30px "p0" minmax(0,1fr)/minmax(0,1fr)}
+/* one person on this device: whichever seat is theirs fills it */
+body.solo #stage .panel{grid-area:p0}
+body.quad #stage{grid-template:"p2 p1" minmax(0,1fr) "mid mid" 30px "p0 p3" minmax(0,1fr)/minmax(0,1fr) minmax(0,1fr);column-gap:6px}
+body.quad.three #stage{grid-template-areas:"p2 p1" "mid mid" "p0 p0"}
+#p0{grid-area:p0}body #p1{grid-area:p1}body.quad #p2{grid-area:p2}body.quad #p3{grid-area:p3}
+body.turned #stage{transform:translate(-50%,-50%) rotate(90deg)}
+.panel{min-width:0;min-height:0;display:flex;flex-direction:column}
+.panel[hidden],.gone[hidden]{display:none}
+.panel.north{transform:rotate(180deg)}
+.gone{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0d100bd9;font:700 22px Georgia,serif;color:#ffd98a;z-index:1}
+.panel.out .hud{opacity:.35;pointer-events:none}
+.card .more{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.map{flex:1;position:relative;min-height:0;overflow:hidden}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+canvas.mini{inset:auto;right:4px;top:4px;width:56px;height:84px;border:2px solid var(--team);image-rendering:pixelated;background:#161b13}
+.zoom{position:absolute;left:5px;top:5px;width:34px;height:34px;font-size:22px;line-height:1;background:#251d15d9}
+button.danger{border-color:#e0705c}
+button.label{background:#17130f;cursor:default}
+.toast{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);max-width:95%;overflow:hidden;text-overflow:ellipsis;background:#17130fe6;border:1px solid #f2c230;border-radius:20px;padding:4px 14px;white-space:nowrap;pointer-events:none}
+.hud{flex:none;background:#251d15;border-top:3px solid var(--team);padding:3px 5px 5px;display:flex;flex-direction:column;gap:3px}
+.res{flex:none;height:18px;align-items:center;display:flex;justify-content:space-between;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap}
+i{font-style:normal;font-size:11px;font-weight:700;color:#c9bda0}
+i.food{color:#ff8da6}i.wood{color:#d9a566}i.gold{color:#ffd23f}i.stone{color:#c3cbc8}
+/* always two lines tall: a changing height would stretch the map above it */
+.info{flex:none;font-size:11.5px;line-height:14px;color:#d8cbaa;height:28px;overflow:hidden}
+.info.tall{font-size:10.5px}
+.res .age{font-family:Georgia,serif;color:#ffd98a;border:1px solid #7b6444;border-radius:4px;padding:0 4px;min-width:22px;text-align:center}
+.actions,.groups{display:flex;gap:4px}
+.actions{height:44px}.groups{height:36px}
+button{font:inherit;color:inherit;background:#46382a;border:1px solid #7b6444;border-radius:7px;cursor:pointer;touch-action:none}
+button:active{filter:brightness(1.35)}
+.actions button,.groups button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap}
+button b{font-size:12.5px}button small{display:block;font-size:10px;color:#c9bda0}
+button.go{background:#3f6b2a;border-color:#8fd45e}
+button.poor{opacity:.55}
+button.alert{border-color:#f2c230;box-shadow:inset 0 0 0 1px #f2c230}
+.groups button.x{flex:0 0 42px}
+.groups.many{gap:3px}
+.groups.many button b{font-size:11px;letter-spacing:-.3px}
+.groups.many button.x{flex:0 0 28px}
+.actions button.x{flex:0 0 28px}
+.actions.many{gap:3px}
+.actions.many button b{font-size:10.5px;letter-spacing:-.2px}
+.actions.many button small{font-size:9px;letter-spacing:-.2px}
+@media (min-width:600px) and (min-height:600px){body:not(.quad) .actions.many button b{font-size:12.5px;letter-spacing:0}body:not(.quad) .actions.many button small{font-size:10px;letter-spacing:0}}
+#mid{grid-area:mid;display:flex;align-items:center;justify-content:center;gap:12px;background:#17130f}
+#mid button{height:26px;padding:0 18px}
+#clock{font-variant-numeric:tabular-nums;min-width:44px;text-align:center;color:#c9bda0}
+#overlay{position:absolute;inset:0;background:#0d100bd9;display:flex;overflow:auto;padding:16px;z-index:2;touch-action:pan-y}
+#overlay[hidden],.toast[hidden]{display:none}
+#overlay button{touch-action:pan-y}
+#overlay.menu{background:#17130f}
+.card{margin:auto;width:min(340px,100%);display:flex;flex-direction:column;gap:9px;text-align:center}
+.card h1{font:700 40px/1.1 Georgia,serif;color:#ffd98a}
+.card h2{font:700 30px Georgia,serif;color:#ffd98a}
+.card .flip{transform:rotate(180deg);margin-bottom:20px}
+.card button{min-height:46px;padding:6px}
+.card button b{font-size:16px}
+.card ol{text-align:left;padding:6px 0 0 20px;font-size:13px;color:#d8cbaa}
+.card li{margin-bottom:5px}
+.chips,.styles{display:flex;flex-direction:column;gap:5px;border:1px solid #7b6444;border-radius:8px;padding:7px}
+.chips h3,.styles h3,.card>h3{font-size:14px;color:#ffd98a}
+.chips>div{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
+.styles>div{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.styles p,.card p.status{font-size:12px;color:#c9bda0}
+.card .chips button,.card .styles button{min-height:40px;padding:3px}
+.card .chips button b,.card .styles button b{font-size:13.5px}
+.chips button.on,.styles button.on{outline:2px solid #fff27a;outline-offset:-2px;background:#5a4630}
+.picks,.codes{display:flex;flex-direction:column;gap:8px}
+.codes:empty,.roster:empty{display:none}
+.roster{display:flex;flex-direction:column;gap:4px;text-align:left;font-size:13px}
+.roster div{border-left:6px solid;background:#251d15;padding:5px 8px;border-radius:4px}
+.card input[type=text],.card textarea{font:inherit;font-size:16px;color:#f4ead2;background:#251d15;border:1px solid #7b6444;border-radius:7px;padding:9px;width:100%;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;touch-action:auto;resize:none}
+.card textarea{font:12px/1.35 ui-monospace,monospace;word-break:break-all}
+.editor{margin:auto;width:min(380px,100%);display:flex;flex-direction:column;gap:7px;text-align:center}
+.editor h2{font:700 22px Georgia,serif;color:#ffd98a}
+.editor p{font-size:12.5px;color:#d8cbaa}
+.editor button,.editor .file{min-height:40px;padding:4px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.editor .file{background:#3f6b2a;border:1px solid #8fd45e;border-radius:7px;font-weight:700;cursor:pointer}
+.editor input{position:absolute;width:1px;height:1px;opacity:0}
+.editor canvas{position:static;align-self:center;height:auto;border:2px solid #7b6444;image-rendering:pixelated;touch-action:none;cursor:crosshair}
+.editor .row{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
+.editor .tools{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.editor button.on{outline:2px solid #fff27a;outline-offset:-2px}
+.sizes{border:1px solid #7b6444;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.sizes h3{font-size:15px;color:#ffd98a}
+.sizes .presets{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.card .sizes button{min-height:40px;padding:3px 0}
+.card .sizes button b{font-size:12.5px}
+.sizes button.on{outline:2px solid #fff27a;outline-offset:-2px}
+.sizes .dim{display:grid;grid-template-columns:48px 38px 1fr 38px 34px;gap:5px;align-items:center;font-size:13px}
+.card .sizes .dim button{font-size:20px}
+.sizes input[type=range]{width:100%;height:36px;accent-color:#ffd98a;touch-action:none}
+.sizes output{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.sizes p{font-size:12px;color:#c9bda0}
+.editor .tools i{width:14px;height:10px;display:block;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <template id="seat"><section class="panel"><div class="map"><canvas></canvas><canvas class="mini" aria-label="Minimap"></canvas><button type="button" class="zoom" aria-label="Zoom">−</button><div class="gone" hidden>Your Hall has fallen</div><div class="toast" hidden></div></div><div class="hud"><div class="res"></div><div class="info"></div><div class="actions"></div><div class="groups"></div></div></section></template>
+  <div id="mid"><span id="clock">0:00</span><button type="button" id="pause">Pause</button></div>
+  <div id="overlay"></div>
+</div>
+<script>/*GAME*/</script>
+</body>
+</html>
