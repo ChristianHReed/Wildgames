@@ -1,4 +1,4 @@
-/* This game is now RedWall, at ../redwall/. Remove the old offline copy. */
+/* This game is now Siege Party, at ../siege-party/. Remove the old offline copy. */
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => {
   e.waitUntil(

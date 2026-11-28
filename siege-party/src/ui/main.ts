@@ -609,7 +609,7 @@ function menuCard(): HTMLElement {
     card.append(button("Host a game", () => go("host"), "", "go"), button("Join a game", () => go("join")), button("Back", () => go("home")));
     return card;
   }
-  card.innerHTML = `<h1>RedWall</h1><p>Gather, build and march to war.</p>`;
+  card.innerHTML = `<h1>Siege Party</h1><p>Gather, build and march to war.</p>`;
   if (notice) para(notice);
   card.append(
     button("Play the computer", () => go("computer"), "against 1 to 4", "go"),

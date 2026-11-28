@@ -26,7 +26,7 @@ function b64(bytes: Uint8Array) {
 }
 
 export async function packCode(kind: "offer" | "answer", sdp: string) {
-  const text = JSON.stringify({ g: "redwall", k: kind, s: sdp });
+  const text = JSON.stringify({ g: "siege-party", k: kind, s: sdp });
   if (typeof CompressionStream !== "undefined") {
     try {
       const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("deflate-raw"));
@@ -46,7 +46,7 @@ export async function unpackCode(kind: "offer" | "answer", code: string): Promis
       ? await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text()
       : new TextDecoder().decode(bytes);
   const o = JSON.parse(text);
-  if (o.g !== "redwall" || o.k !== kind || typeof o.s !== "string") throw new Error(`not a RedWall ${kind === "offer" ? "invite" : "reply"} code`);
+  if (o.g !== "siege-party" || o.k !== kind || typeof o.s !== "string") throw new Error(`not a Siege Party ${kind === "offer" ? "invite" : "reply"} code`);
   return o.s;
 }
 
@@ -121,7 +121,7 @@ function wrap(pc: RTCPeerConnection, dc: RTCDataChannel): Link {
 /** Host side: an invite code, then the friend's reply code completes the connection. */
 export async function invite(internet: boolean, onLink: (link: Link) => void) {
   const pc = new RTCPeerConnection({ iceServers: internet ? STUN : [] });
-  const dc = pc.createDataChannel("redwall", { ordered: true });
+  const dc = pc.createDataChannel("siege-party", { ordered: true });
   dc.onopen = () => onLink(wrap(pc, dc));
   await pc.setLocalDescription(await pc.createOffer());
   await gathered(pc);
@@ -151,7 +151,7 @@ const RELAY = "https://ntfy.sh/";
 
 export function topicFor(word: string) {
   const w = word.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 24);
-  return w.length >= 4 ? `redwall-${w}` : null;
+  return w.length >= 4 ? `siege-party-${w}` : null;
 }
 
 export async function relayPost(topic: string, title: "offer" | "answer", body: string): Promise<{ time?: number }> {

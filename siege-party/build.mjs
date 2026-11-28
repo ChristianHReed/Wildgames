@@ -21,7 +21,7 @@ const head = `<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#17130f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="RedWall">
+<meta name="apple-mobile-web-app-title" content="Siege Party">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <script>if ("serviceWorker" in navigator && location.protocol === "https:") addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>`;
 writeFileSync(here("index.html"), page.replace("<!--HEAD-->", () => head).replace("/*GAME*/", () => js));
