@@ -6,7 +6,8 @@ import {
   step, takeSnap, togglePause,
   type Mode, type PlayerId, type Setup, type SideSnap,
 } from "../game/sim";
-import { render, renderMini } from "./draw";
+import { PIXEL, render, renderMini, snapZoom } from "./draw";
+import { groundFrame } from "./ground";
 import { chooseSize, loadPlayers, mapEditor, mapSize, savedMap } from "./editor";
 import { sizePicker } from "./sizes";
 import { hostLobby, joinLobby, type HostPlan } from "./lobby";
@@ -62,8 +63,10 @@ const panels = IDS.map((p) => {
   const root = $(`#p${p}`);
   const q = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector(s) as T;
   const canvas = q<HTMLCanvasElement>("canvas");
+  /** a sharp, see-through layer over the painting, for health bars and numbers */
+  const fx = q<HTMLCanvasElement>("canvas.fx");
   return {
-    p, root, canvas, g: canvas.getContext("2d")!,
+    p, root, canvas, g: canvas.getContext("2d")!, fx, fg: fx.getContext("2d")!,
     /** choosing allies */
     diplo: false,
     mini: q<HTMLCanvasElement>(".mini"), zoomBtn: q<HTMLButtonElement>(".zoom"), far: false, cat: -1,
@@ -101,9 +104,12 @@ function layout() {
     q.w = box.clientWidth;
     q.h = box.clientHeight;
     if (!q.w || !q.h) continue;
-    q.canvas.width = Math.round(q.w * dpr);
-    q.canvas.height = Math.round(q.h * dpr);
-    q.zoom = Math.max(0.6, Math.min(2, q.w / (12 * 32), q.h / (8 * 32))) * (q.far ? 0.55 : 1);
+    // the painting is made at its own size and the browser enlarges it softly to the screen
+    q.canvas.width = Math.max(1, Math.round(q.w / PIXEL));
+    q.canvas.height = Math.max(1, Math.round(q.h / PIXEL));
+    q.fx.width = Math.round(q.w * dpr);
+    q.fx.height = Math.round(q.h * dpr);
+    q.zoom = snapZoom(Math.max(0.6, Math.min(2, q.w / (12 * 32), q.h / (8 * 32))) * (q.far ? 0.55 : 1));
     sim.view[q.p] = { w: q.w / q.zoom, h: q.h / q.zoom };
     clampCam(sim, q.p);
     // the minimap takes the shape of the map
@@ -190,6 +196,9 @@ for (const q of panels) {
   });
 }
 
+/** where the last press began: a menu that opens under a finger must not take that press's tap */
+let pressedOn: EventTarget | null = null;
+document.addEventListener("pointerdown", (e) => { pressedOn = e.target; }, true);
 // Buttons fire on pointerdown so both players can press at the same moment.
 document.addEventListener("pointerdown", (e) => {
   unlockAudio();
@@ -215,6 +224,7 @@ function button(label: string, fn: () => void, sub = "", cls = "") {
   // keyboard activation (pointer presses are handled above)
   b.addEventListener("click", (e) => {
     if (b.closest("#overlay")) {
+      if (e.detail !== 0 && pressedOn && !b.contains(pressedOn as Node)) return;
       fn();
       sim.uiDirty = true;
     } else if (e.detail === 0) fn();
@@ -518,6 +528,28 @@ function flush() {
   heard = [];
 }
 
+/** A castle flying every player's banner, for the home page. */
+const EMBLEM = (() => {
+  const flag = (x: number, y: number, c: string, tall = 16) =>
+    `<rect x="${x - 1}" y="${y - tall}" width="2" height="${tall}" fill="#3b2514"/><path d="M${x + 1} ${y - tall}q8 -2 15 1t13 -1v9q-7 3 -13 0t-15 1z" fill="${c}"/>`;
+  const teeth = (x0: number, x1: number, y: number) => {
+    let out = "";
+    for (let x = x0; x < x1 - 4; x += 9) out += `<rect x="${x}" y="${y}" width="6" height="7" fill="#b9bdb3"/>`;
+    return out;
+  };
+  return `<svg class="emblem" viewBox="0 -12 240 140" role="img" aria-label="A castle flying the players' banners">
+<ellipse cx="120" cy="118" rx="118" ry="16" fill="#3b6b2a"/><ellipse cx="120" cy="114" rx="96" ry="10" fill="#4f8a36"/>
+<rect x="66" y="60" width="108" height="50" fill="#9aa098"/><rect x="140" y="60" width="34" height="50" fill="#7f857e"/>${teeth(66, 176, 53)}
+<rect x="50" y="38" width="30" height="72" fill="#a9aea5"/><rect x="70" y="38" width="10" height="72" fill="#868c85"/>${teeth(48, 84, 31)}
+<rect x="160" y="38" width="30" height="72" fill="#a9aea5"/><rect x="180" y="38" width="10" height="72" fill="#868c85"/>${teeth(158, 194, 31)}
+<rect x="100" y="24" width="40" height="86" fill="#b0b5ab"/><rect x="126" y="24" width="14" height="86" fill="#8d938b"/>${teeth(98, 144, 17)}
+<path d="M108 110v-20a12 12 0 0 1 24 0v20z" fill="#2a1d12"/><path d="M111 92h18M111 98h18M111 104h18M115 84v26M120 81v29M125 84v26" stroke="#6b5434" stroke-width="1.6"/>
+<rect x="117" y="40" width="6" height="12" rx="3" fill="#2a1d12"/><rect x="62" y="56" width="5" height="10" rx="2.5" fill="#2a1d12"/><rect x="173" y="56" width="5" height="10" rx="2.5" fill="#2a1d12"/>
+${flag(65, 31, SEATS[0].main)}${flag(175, 31, SEATS[1].main)}${flag(120, 17, SEATS[3].main, 22)}${flag(86, 53, SEATS[2].main, 13)}${flag(154, 53, SEATS[4].main, 13)}
+<path d="M34 112l14 -46M42 114l14 -46M37 101h9M40 90h9M43 79h9" stroke="#8a5a2b" stroke-width="2.4" stroke-linecap="round"/>
+</svg>`;
+})();
+
 const HELP = `
 <ol>
 <li><b>Move around.</b> Drag the map, or touch the minimap to jump. − / + changes zoom.</li>
@@ -609,7 +641,7 @@ function menuCard(): HTMLElement {
     card.append(button("Host a game", () => go("host"), "", "go"), button("Join a game", () => go("join")), button("Back", () => go("home")));
     return card;
   }
-  card.innerHTML = `<h1>Siege Party</h1><p>Gather, build and march to war.</p>`;
+  card.innerHTML = `${EMBLEM}<h1 class="title">Siege Party</h1><p class="motto">Gather, build and march to war</p>`;
   if (notice) para(notice);
   card.append(
     button("Play the computer", () => go("computer"), "against 1 to 4", "go"),
@@ -702,6 +734,7 @@ let netAt = 0;
 let miniAt = 0;
 let was = sim.phase;
 function frame(now: number) {
+  groundFrame();
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   if (hostLink) guestTick(sim, dt);
@@ -722,7 +755,7 @@ function frame(now: number) {
       if (!seated(q.p)) continue;
       q.gone.hidden = !sim.out[q.p];
       q.root.classList.toggle("out", sim.out[q.p]);
-      render(q.g, sim, q.p, q.w, q.h, q.zoom, q.canvas.width / q.w, (u) => unitStats(sim, u.owner, u.kind).hp);
+      render(q.g, q.fg, sim, q.p, q.w, q.h, q.zoom, (u) => unitStats(sim, u.owner, u.kind).hp);
     }
     if (now - miniAt > 250) {
       miniAt = now;

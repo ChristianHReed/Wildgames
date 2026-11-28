@@ -24,12 +24,13 @@ body.turned #stage{transform:translate(-50%,-50%) rotate(90deg)}
 .card .more{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .map{flex:1;position:relative;min-height:0;overflow:hidden}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+canvas.fx{pointer-events:none;background:radial-gradient(ellipse 120% 90% at 15% 0%,rgba(255,244,210,.13),rgba(255,244,210,0) 55%,rgba(26,44,60,.18))}
 canvas.mini{inset:auto;right:4px;top:4px;width:56px;height:84px;border:2px solid var(--team);image-rendering:pixelated;background:#161b13}
 .zoom{position:absolute;left:5px;top:5px;width:34px;height:34px;font-size:22px;line-height:1;background:#251d15d9}
 button.danger{border-color:#e0705c}
-button.label{background:#17130f;cursor:default}
+button.label{background:#17130f;cursor:default;box-shadow:none}
 .toast{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);max-width:95%;overflow:hidden;text-overflow:ellipsis;background:#17130fe6;border:1px solid #f2c230;border-radius:20px;padding:4px 14px;white-space:nowrap;pointer-events:none}
-.hud{flex:none;background:#251d15;border-top:3px solid var(--team);padding:3px 5px 5px;display:flex;flex-direction:column;gap:3px}
+.hud{flex:none;background:linear-gradient(#2f251a,#1f1811);box-shadow:0 -3px 10px rgba(0,0,0,.35);border-top:3px solid var(--team);padding:3px 5px 5px;display:flex;flex-direction:column;gap:3px}
 .res{flex:none;height:18px;align-items:center;display:flex;justify-content:space-between;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap}
 i{font-style:normal;font-size:11px;font-weight:700;color:#c9bda0}
 i.food{color:#ff8da6}i.wood{color:#d9a566}i.gold{color:#ffd23f}i.stone{color:#c3cbc8}
@@ -39,11 +40,11 @@ i.food{color:#ff8da6}i.wood{color:#d9a566}i.gold{color:#ffd23f}i.stone{color:#c3
 .res .age{font-family:Georgia,serif;color:#ffd98a;border:1px solid #7b6444;border-radius:4px;padding:0 4px;min-width:22px;text-align:center}
 .actions,.groups{display:flex;gap:4px}
 .actions{height:44px}.groups{height:36px}
-button{font:inherit;color:inherit;background:#46382a;border:1px solid #7b6444;border-radius:7px;cursor:pointer;touch-action:none}
-button:active{filter:brightness(1.35)}
+button{font:inherit;color:inherit;background:linear-gradient(#55442f,#3d3022);border:1px solid #84694a;border-radius:8px;cursor:pointer;touch-action:none;box-shadow:inset 0 1px 0 rgba(255,232,180,.14),0 2px 0 rgba(0,0,0,.35)}
+button:active{filter:brightness(1.35);transform:translateY(1px);box-shadow:inset 0 1px 0 rgba(255,232,180,.14)}
 .actions button,.groups button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap}
 button b{font-size:12.5px}button small{display:block;font-size:10px;color:#c9bda0}
-button.go{background:#3f6b2a;border-color:#8fd45e}
+button.go{background:linear-gradient(#4f8a34,#386424);border-color:#8fd45e}
 button.poor{opacity:.55}
 button.alert{border-color:#f2c230;box-shadow:inset 0 0 0 1px #f2c230}
 .groups button.x{flex:0 0 42px}
@@ -55,22 +56,27 @@ button.alert{border-color:#f2c230;box-shadow:inset 0 0 0 1px #f2c230}
 .actions.many button b{font-size:10.5px;letter-spacing:-.2px}
 .actions.many button small{font-size:9px;letter-spacing:-.2px}
 @media (min-width:600px) and (min-height:600px){body:not(.quad) .actions.many button b{font-size:12.5px;letter-spacing:0}body:not(.quad) .actions.many button small{font-size:10px;letter-spacing:0}}
-#mid{grid-area:mid;display:flex;align-items:center;justify-content:center;gap:12px;background:#17130f}
+#mid{grid-area:mid;display:flex;align-items:center;justify-content:center;gap:12px;background:linear-gradient(#211a12,#140f0b)}
 #mid button{height:26px;padding:0 18px}
 #clock{font-variant-numeric:tabular-nums;min-width:44px;text-align:center;color:#c9bda0}
 #overlay{position:absolute;inset:0;background:#0d100bd9;display:flex;overflow:auto;padding:16px;z-index:2;touch-action:pan-y}
 #overlay[hidden],.toast[hidden]{display:none}
 #overlay button{touch-action:pan-y}
-#overlay.menu{background:#17130f}
+#overlay.menu{background:radial-gradient(ellipse 90% 55% at 50% 0%,#3b2b18,transparent),radial-gradient(ellipse 120% 80% at 50% 100%,#0d0a07,transparent),#18130e}
 .card{margin:auto;width:min(340px,100%);display:flex;flex-direction:column;gap:9px;text-align:center}
 .card h1{font:700 40px/1.1 Georgia,serif;color:#ffd98a}
+.card h1.title{font-size:46px;letter-spacing:.5px;background:linear-gradient(#fff0c4,#f2c25a 55%,#c98a2a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 #4a2f10) drop-shadow(0 6px 10px rgba(0,0,0,.45));margin-top:-6px}
+.card .emblem{width:220px;max-width:70%;align-self:center;filter:drop-shadow(0 6px 12px rgba(0,0,0,.5))}
+.card p.motto{display:flex;align-items:center;gap:10px;justify-content:center;color:#d8cbaa;font:italic 15px Georgia,serif;margin-bottom:4px}
+.card p.motto::before,.card p.motto::after{content:"";height:1px;width:34px;background:linear-gradient(90deg,transparent,#c9a25a)}
+.card p.motto::after{transform:scaleX(-1)}
 .card h2{font:700 30px Georgia,serif;color:#ffd98a}
 .card .flip{transform:rotate(180deg);margin-bottom:20px}
 .card button{min-height:46px;padding:6px}
 .card button b{font-size:16px}
 .card ol{text-align:left;padding:6px 0 0 20px;font-size:13px;color:#d8cbaa}
 .card li{margin-bottom:5px}
-.chips,.styles{display:flex;flex-direction:column;gap:5px;border:1px solid #7b6444;border-radius:8px;padding:7px}
+.chips,.styles{display:flex;flex-direction:column;gap:5px;border:1px solid #6b5638;border-radius:10px;padding:8px;background:rgba(255,236,200,.035)}
 .chips h3,.styles h3,.card>h3{font-size:14px;color:#ffd98a}
 .chips>div{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
 .styles>div{display:grid;grid-template-columns:1fr 1fr;gap:4px}
@@ -94,7 +100,7 @@ button.alert{border-color:#f2c230;box-shadow:inset 0 0 0 1px #f2c230}
 .editor .row{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
 .editor .tools{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .editor button.on{outline:2px solid #fff27a;outline-offset:-2px}
-.sizes{border:1px solid #7b6444;border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.sizes{border:1px solid #6b5638;border-radius:10px;padding:8px;background:rgba(255,236,200,.035);display:flex;flex-direction:column;gap:6px}
 .sizes h3{font-size:15px;color:#ffd98a}
 .sizes .presets{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
 .card .sizes button{min-height:40px;padding:3px 0}
@@ -110,7 +116,7 @@ button.alert{border-color:#f2c230;box-shadow:inset 0 0 0 1px #f2c230}
 </head>
 <body>
 <div id="stage">
-  <template id="seat"><section class="panel"><div class="map"><canvas></canvas><canvas class="mini" aria-label="Minimap"></canvas><button type="button" class="zoom" aria-label="Zoom">−</button><div class="gone" hidden>Your Hall has fallen</div><div class="toast" hidden></div></div><div class="hud"><div class="res"></div><div class="info"></div><div class="actions"></div><div class="groups"></div></div></section></template>
+  <template id="seat"><section class="panel"><div class="map"><canvas></canvas><canvas class="fx"></canvas><canvas class="mini" aria-label="Minimap"></canvas><button type="button" class="zoom" aria-label="Zoom">−</button><div class="gone" hidden>Your Hall has fallen</div><div class="toast" hidden></div></div><div class="hud"><div class="res"></div><div class="info"></div><div class="actions"></div><div class="groups"></div></div></section></template>
   <div id="mid"><span id="clock">0:00</span><button type="button" id="pause">Pause</button></div>
   <div id="overlay"></div>
 </div>
