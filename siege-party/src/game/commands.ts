@@ -4,7 +4,7 @@
  */
 import { BUILDINGS, BUILD_KINDS, SEATS, TECHS, UNIT_KINDS, AGES, type BuildingKind, type TechKind, type UnitKind } from "./content";
 import {
-  IDS, ageOf, commandTap, demolish, diplomacy, research, selectGroup, setPlace, toggleHunt, trainUnit, unloadSelected,
+  IDS, ageOf, commandTap, demolish, diplomacy, enlarge, research, selectGroup, setPlace, toggleHunt, toggleSentry, trainUnit, unloadSelected,
   type PlayerId, type Sim,
 } from "./sim";
 
@@ -19,6 +19,8 @@ export type Cmd =
   | { t: "group"; which: Group }
   | { t: "hunt" }
   | { t: "demolish" }
+  | { t: "sentry" }
+  | { t: "enlarge" }
   | { t: "research"; tech: TechKind }
   | { t: "train"; kind: UnitKind }
   | { t: "hall" }
@@ -53,6 +55,12 @@ export function act(sim: Sim, p: PlayerId, c: Cmd) {
       break;
     case "hunt":
       toggleHunt(sim, p);
+      break;
+    case "sentry":
+      toggleSentry(sim, p);
+      break;
+    case "enlarge":
+      enlarge(sim, p);
       break;
     case "demolish":
       demolish(sim, p);

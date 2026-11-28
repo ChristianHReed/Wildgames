@@ -277,7 +277,9 @@ function hud(p: PlayerId, s: SideSnap) {
         info = `${AGES[s.age]} age. ${TECHS[next].name} ${missing ? `needs a ${TECHS[next].needs!.map((k) => BUILDINGS[k].name.toLowerCase()).join(" or ")}` : TECHS[next].effect}`;
         info += b.rally ? ". Tap the Hall to clear the flag." : ". Tap the map: new Folk go there.";
       } else info = `Castle age · health ${s.hp}`;
-    } else if (b.kind === "gate") info += " · only your people pass";
+    } else if (b.upgrade) info += ` · becoming a manor, ${Math.ceil(b.upgrade.left)}s`;
+    else if (b.kind === "house" || b.kind === "manor") info += ` · houses ${BUILDINGS[b.kind].pop}${b.kind === "house" ? ` · a manor houses ${BUILDINGS.manor.pop}` : ""}`;
+    else if (b.kind === "gate") info += " · only your people pass";
     else if (BUILDINGS[b.kind].trains?.length) info += b.rally ? " · tap the map to move the flag, or this building to clear it" : " · tap the map to choose where new units go";
   } else if (s.selCount) {
     const todo = {
@@ -312,11 +314,17 @@ function hud(p: PlayerId, s: SideSnap) {
     if (sim.offers[p] & (1 << o)) return ["asked · undo", ""];
     return ["ask to ally", ""];
   };
+  function sentries() {
+    const army = sim.sel[p].units.map((id) => sim.units.find((u) => u.id === id)).filter((u) => u && u.kind !== "villager" && u.kind !== "ram" && u.kind !== "fisher" && u.kind !== "transport");
+    const on = army.filter((u) => u!.sentry).length;
+    return !army.length || !on ? "none" : on === army.length ? "all" : "some";
+  }
   const key = [
     q.diplo, q.diplo ? others.map((o) => `${o}${relation(o)[0]}${sim.ai[o]}`).join() : "",
     s.load > 0, s.place, s.anchored, s.sel, s.building, sim.sel[p].building, s.train.join(), s.hunt, q.cat, q.ups, s.age,
     upgrades.map((k) => `${k}${techBlock(sim, p, k)}`).join(), shown.map(can).join(),
     q.cat >= 0 ? BUILD_MENU[q.cat]!.kinds.map(open).join() : "", b && b.progress >= 1, sim.tech[p].join(),
+    b?.kind, !!b?.upgrade, sentries(),
     q.sure === sim.sel[p].building && performance.now() - q.sureAt < 3000,
   ].join("|");
   if (key !== q.actionKey) {
@@ -352,6 +360,14 @@ function hud(p: PlayerId, s: SideSnap) {
           else if (upgrades.length) list.push(button("Upgrades", () => { q.ups = b.id; redo(); }, "▸", upgrades.some((k) => !techBlock(sim, p, k) && canAfford(sim.res[p], TECHS[k].cost)) ? "alert" : ""));
         }
       }
+      if (b.kind === "house" && b.progress >= 1) {
+        const spec = BUILDINGS.manor;
+        if (b.upgrade) list.push(button("Becoming a manor", () => {}, "under way", "label"));
+        else {
+          const locked = spec.age > s.age;
+          list.push(button("Enlarge to Manor", () => send(p, { t: "enlarge" }), locked ? `${AGES[spec.age]} age` : `houses ${spec.pop} · ${cost(spec.cost)}`, locked ? "poor" : can(spec.cost)));
+        }
+      }
       if (b.kind !== "town" && !(upsView && s.train.length)) {
         // tearing down a finished building takes a second press, so it cannot happen by accident
         const sure = q.sure === b.id && performance.now() - q.sureAt < 3000;
@@ -383,6 +399,8 @@ function hud(p: PlayerId, s: SideSnap) {
       }
     } else if (s.sel === "host") {
       list.push(button(`Attack-move: ${s.hunt ? "ON" : "OFF"}`, () => send(p, { t: "hunt" }), "fight enemies met on the way", s.hunt ? "go" : ""));
+      const on = sentries() === "all";
+      list.push(button(`Sentry: ${on ? "ON" : sentries() === "some" ? "SOME" : "OFF"}`, () => send(p, { t: "sentry" }), "defend what is nearby", on ? "go" : ""));
     } else if (s.load) {
       list.push(button("Land everyone", () => send(p, { t: "unload" }), "at the nearest shore", "go"));
     } else if (q.diplo && !s.selCount) {
@@ -583,6 +601,8 @@ const HELP = `
 <li><b>Repair</b> by picking Folk and tapping a damaged building.</li>
 <li><b>Gathering point.</b> Tap a building that makes units, then tap the map: a flag shows where new units will go. Tap a tree, berries, gold, stone or one of your fields and new Folk start work there. Tap the building again to clear it.</li>
 <li><b>Demolish</b> a building or field you no longer want: tap it, then press <b>Demolish</b> twice.</li>
+<li><b>Housing.</b> Your Hall houses 5 and each Cottage 5. In the Town age a Cottage can be enlarged into a <b>Manor</b>, which houses 12.</li>
+<li><b>Soldiers fight back</b> against whatever hurts them. Turn on <b>Sentry</b> and they also run to defend buildings and people near their post that come under attack, then return to it.</li>
 <li><b>Allies.</b> With 3 or more players, press <b>Allies</b> to ask, accept or end an alliance (ending one takes 10 seconds). Allies don't fight, share what they see, can pass each other's gates and can win together. You each need someone left to fight when you join up.</li>
 <li><b>Win</b> by being the last side with a Hall standing.</li>
 </ol>`;

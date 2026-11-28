@@ -48,7 +48,7 @@ export const berth = (k: string) => (k === "ram" ? 3 : 1);
 export const UNIT_KINDS = ["villager", "militia", "archer", "rider", "ram", "fisher", "transport", "galley", "bombard"] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 
-export const BUILD_KINDS = ["town", "house", "farm", "barracks", "range", "tower", "palisade", "wall", "gate", "store", "stable", "workshop", "smithy", "dock"] as const;
+export const BUILD_KINDS = ["town", "house", "farm", "barracks", "range", "tower", "palisade", "wall", "gate", "store", "stable", "workshop", "smithy", "dock", "manor"] as const;
 export type BuildingKind = (typeof BUILD_KINDS)[number];
 
 export type Res = "food" | "wood" | "gold" | "stone";
@@ -378,6 +378,8 @@ export const BUILDINGS: Record<BuildingKind, BuildSpec> = {
     vision: 4,
     place: true,
   },
+  /** not built from scratch: a cottage is enlarged into one */
+  manor: { age: 2, name: "Manor", cost: { wood: 120, stone: 80 }, build: 20, hp: 780, w: 2, h: 2, pop: 12, vision: 4 },
   dock: { age: 1, name: "Dock", cost: { wood: 120 }, build: 14, hp: 650, w: 2, h: 2, pop: 0, vision: 6, place: true, shore: true, trains: ["fisher", "transport", "galley", "bombard"] },
 };
 

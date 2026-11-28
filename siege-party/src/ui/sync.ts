@@ -7,7 +7,7 @@ import { BASES, GRID, setMap } from "../game/map";
 import { begin, updateVision, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
 
 /** Both devices must run the same version of the game. */
-export const VERSION = 3;
+export const VERSION = 4;
 
 const NODE_KINDS = ["wood", "food", "gold", "stone"] as const;
 const ORDERS = ["idle", "move", "gather", "drop", "build", "attack", "board", "unload"] as const;
@@ -35,6 +35,7 @@ export function snapshot(sim: Sim, you: PlayerId, seen: Memory, sounds: string[]
     u.id, u.owner, UNIT_KINDS.indexOf(u.kind), round(u.x), round(u.y), Math.ceil(u.hp), ORDERS.indexOf(u.order.t),
     u.fx < 0 ? -1 : 1, Math.floor(u.carry), CARRY.indexOf(u.carryType), +(u.path.length > 0), +(u.flash > 0),
     u.cargo?.length ? u.cargo.map((c) => UNIT_KINDS.indexOf(c.kind)) : 0,
+    +!!u.sentry,
   ]);
   const changed: unknown[] = [];
   const here = new Set<number>();
@@ -45,6 +46,7 @@ export function snapshot(sim: Sim, you: PlayerId, seen: Memory, sounds: string[]
       b.queue.map((q) => [UNIT_KINDS.indexOf(q.kind), Math.ceil(q.left)]),
       b.research ? [b.research.tech, Math.ceil(b.research.left)] : 0,
       b.rally ? [round(b.rally.x), round(b.rally.y)] : 0,
+      b.upgrade ? Math.ceil(b.upgrade.left) : 0,
     ];
     const text = JSON.stringify(row);
     if (seen.buildings.get(b.id) !== text) {
@@ -102,7 +104,7 @@ const targets = new WeakMap<Unit, { x: number; y: number }>();
 export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
   const old = new Map(sim.units.map((u) => [u.id, u]));
   sim.units = m.units.map((a: any[]): Unit => {
-    const [id, owner, kind, x, y, hp, order, face, carry, carryType, moving, flash, cargo] = a;
+    const [id, owner, kind, x, y, hp, order, face, carry, carryType, moving, flash, cargo, sentry] = a;
     const u: Unit = old.get(id) ?? {
       id, owner, kind: UNIT_KINDS[kind]!, x, y, hp, order: { t: "idle" }, path: [], goalKey: "", repath: 0,
       carry: 0, carryType: null, cd: 0, flash: 0, anim: id % 10, fx: 0, fy: 0, stuck: 0,
@@ -113,6 +115,7 @@ export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
       u.y = y;
     }
     u.hp = hp;
+    u.sentry = !!sentry;
     u.order = { t: ORDERS[order]! } as Unit["order"];
     u.fx = face;
     u.carry = carry;
@@ -126,7 +129,7 @@ export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
   if (m.changed.length || m.razed.length) {
     const byId = new Map(sim.buildings.map((b) => [b.id, b]));
     for (const id of m.razed) byId.delete(id);
-    for (const [id, owner, kind, tx, ty, hp, progress, seenBy, queue, research, rally] of m.changed) {
+    for (const [id, owner, kind, tx, ty, hp, progress, seenBy, queue, research, rally, upgrade] of m.changed) {
       byId.set(id, {
         id, owner, kind: BUILD_KINDS[kind]!, tx, ty, hp, progress,
         // what this device has already scouted stays on its map
@@ -134,6 +137,7 @@ export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
         queue: queue.map((q: number[]) => ({ kind: UNIT_KINDS[q[0]!]!, left: q[1]! })),
         research: research ? { tech: research[0], left: research[1] } : null,
         rally: rally ? { x: rally[0], y: rally[1] } : null,
+        upgrade: upgrade ? { left: upgrade } : null,
         cd: 0, work: 0,
       } satisfies Building);
     }

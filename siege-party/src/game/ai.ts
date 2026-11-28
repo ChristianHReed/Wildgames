@@ -1,5 +1,5 @@
 import { BUILDINGS, TECHS, UNITS, canAfford, type BuildingKind, type TechKind, type UnitKind } from "./content";
-import { IDS, ageOf, aiTryBuild, allied, canReachNode, techBlock, hasComplete, orderGather, popCap, popUsed, research, trainUnit, type Node, type PlayerId, type Sim } from "./sim";
+import { IDS, ageOf, aiTryBuild, allied, canReachNode, enlarge, techBlock, hasComplete, orderGather, popCap, popUsed, research, trainUnit, type Node, type PlayerId, type Sim } from "./sim";
 
 type Kind = Node["kind"];
 
@@ -158,6 +158,12 @@ export function aiThink(sim: Sim, p: PlayerId) {
     research(sim, p, tech);
   };
   if (wanted) research1("town", wanted);
+  // short of room in the Town age: enlarge a cottage rather than build another
+  const cottage = mine.find((o) => o.kind === "house" && o.progress >= 1 && !o.upgrade);
+  if (cottage && age >= 2 && !mine.some((o) => o.upgrade) && popUsed(sim, p) >= popCap(sim, p) - 3 && canAfford(sim.res[p], { wood: 160, stone: 110 })) {
+    sim.sel[p] = { units: [], building: cottage.id };
+    enlarge(sim, p);
+  }
   if (folks.length + hall.queue.length < crew && !(saving && folks.length >= 9)) train("town", "villager");
   const have = (k: UnitKind) => military.filter((u) => u.kind === k).length;
   if (fishers.length < (sim.level === 0 ? 1 : 3)) train("dock", "fisher");

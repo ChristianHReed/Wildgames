@@ -186,11 +186,11 @@ function base(g: G, W: number, H: number) {
 }
 
 // ── the four peoples' buildings ─────────────────────────────────────────────────────
-const doors = (kind: Kind) => (kind === "town" ? [18, 22] : kind === "house" ? [11, 15] : [13, 17]);
+const doors = (kind: Kind) => (kind === "town" ? [18, 22] : kind === "house" || kind === "manor" ? [11, 15] : [13, 17]);
 
 /** Forest Folk: log walls under a steep shingled roof. */
 function forest(g: G, kind: Kind, W: number, H: number, c: Team) {
-  const eave = H * (kind === "town" ? 0.47 : 0.5);
+  const eave = H * (kind === "town" ? 0.47 : kind === "manor" ? 0.4 : 0.5);
   const x0 = 7;
   const x1 = W - 7;
   const y0 = eave - 3;
@@ -209,7 +209,7 @@ function forest(g: G, kind: Kind, W: number, H: number, c: Team) {
   rect(g, x0, y0, x1 - x0, 5, "rgba(30,14,4,.32)");
   const [dw, dh] = doors(kind);
   door(g, W / 2, y1, dw!, dh!, false);
-  const wins = kind === "town" ? [W * 0.2, W * 0.8 - 11] : W > 70 ? [W * 0.18, W * 0.82 - 10] : [W * 0.17];
+  const wins = kind === "town" ? [W * 0.2, W * 0.8 - 11] : W > 70 || kind === "manor" ? [W * 0.13, W * 0.87 - 10] : [W * 0.17];
   for (const wx of wins) windowLit(g, wx, y0 + 9, 10, 9, "#5a3a1e", c.light);
   // the roof: a broad front face, lit and shaded hips, shingles and a ridge
   const tl = W * 0.24;
@@ -236,7 +236,21 @@ function forest(g: G, kind: Kind, W: number, H: number, c: Team) {
   shape(g, "rgba(255,250,225,.12)", tl, 2, -1, eave + 2, W * 0.36, eave + 2);
   line(g, lit(c.main, 0.45), 3, tl, 2.5, tr, 2.5);
   rect(g, -1, eave + 1, W + 2, 3, dim(c.main, 0.35));
-  if (kind === "house" || kind === "smithy") {
+  if (kind === "manor") {
+    // a dormer window in the roof
+    const dx = W / 2;
+    const dy = eave * 0.42;
+    shape(g, dim(c.main, 0.1), dx - 9, dy + 9, dx, dy - 4, dx + 9, dy + 9);
+    rect(g, dx - 6, dy + 4, 12, 9, "#b9844f");
+    windowLit(g, dx - 4, dy + 5, 8, 7, "#5a3a1e");
+    line(g, lit(c.main, 0.4), 2, dx - 9, dy + 9, dx, dy - 4, dx + 9, dy + 9);
+    // window boxes with flowers
+    for (const wx of wins) {
+      rect(g, wx - 1, y0 + 18.5, 12, 2.5, "#7a4a26");
+      for (let i = 0; i < 4; i++) dot(g, wx + 0.8 + i * 2.8, y0 + 18, 1.3, i % 2 ? "#f29ab8" : "#ffe27a");
+    }
+  }
+  if (kind === "house" || kind === "smithy" || kind === "manor") {
     const cx = W * 0.7;
     rect(g, cx, -6, 9, 16, "#8a8580");
     for (let y = -5; y < 10; y += 4) rect(g, cx + ((y / 4) % 2 ? 0 : 4), y, 5, 1, "rgba(40,35,30,.35)");
@@ -247,7 +261,7 @@ function forest(g: G, kind: Kind, W: number, H: number, c: Team) {
 
 /** Stone Holds: dressed stone, battlements and a hanging banner. */
 function stone(g: G, kind: Kind, W: number, H: number, c: Team) {
-  const top = H * (kind === "town" ? 0.3 : 0.34);
+  const top = H * (kind === "town" ? 0.3 : kind === "manor" ? 0.26 : 0.34);
   const x0 = 5;
   const x1 = W - 5;
   // the roof behind the battlements
@@ -297,15 +311,25 @@ function stone(g: G, kind: Kind, W: number, H: number, c: Team) {
     // short buildings: the door sits beside the banner
     door(g, W * 0.75, H - 5, dw!, Math.min(dh!, H - 5 - top - 4), true, "#5e3a1e");
   } else door(g, W / 2, H - 5, dw!, dh!, true, "#5e3a1e");
-  for (const sx of kind === "town" || W > 70 ? [W * 0.15, W * 0.85 - 3] : [W * 0.2]) {
+  for (const sx of kind === "town" || kind === "manor" || W > 70 ? [W * 0.15, W * 0.85 - 3] : [W * 0.2]) {
     round(g, sx, top + 8, 3, 9, 1.5, "#2a2620");
   }
 }
 
 /** Horse Clans: round felt tents with patterned cones. */
 function yurt(g: G, kind: Kind, W: number, H: number, c: Team) {
-  const cx = W / 2;
-  const rx = W / 2 - 6;
+  if (kind === "manor") {
+    // a smaller tent joined on behind, for the larger household
+    const ax = W - 9;
+    const ay = H * 0.52;
+    oval(g, ax + 2, H - 9, 12, 4, "rgba(30,44,14,.18)");
+    rect(g, ax - 11, ay, 22, H - 10 - ay, "#e2d2ae");
+    rect(g, ax + 2, ay, 9, H - 10 - ay, "rgba(80,60,30,.18)");
+    shape(g, dim(c.main, 0.12), ax - 13, ay + 1, ax, ay - 14, ax + 13, ay + 1);
+    shape(g, "rgba(20,10,0,.18)", ax, ay - 14, ax + 13, ay + 1, ax + 3, ay + 1);
+  }
+  const cx = kind === "manor" ? W / 2 - 4 : W / 2;
+  const rx = W / 2 - (kind === "manor" ? 9 : 6);
   const y0 = H * 0.46;
   const y1 = H - 7;
   const felt = g.createLinearGradient(cx - rx, 0, cx + rx, 0);
@@ -377,8 +401,8 @@ function sun(g: G, kind: Kind, W: number, H: number, c: Team) {
   rect(g, x0 - 2, top - 5, x1 - x0 + 4, 5, "#fbecc8");
   for (let x = x0; x < x1 - 2; x += 5) rect(g, x, top, 3, 2, "rgba(150,110,60,.35)");
   // domes on drums
-  const domes = W > 70 ? [0.3, 0.7] : [0.5];
-  const r = W > 70 ? Math.min(W * 0.19, top - 6) : Math.min(W * 0.3, top - 6);
+  const domes = W > 70 || kind === "manor" ? [0.3, 0.7] : [0.5];
+  const r = W > 70 ? Math.min(W * 0.19, top - 6) : kind === "manor" ? Math.min(W * 0.21, top - 6) : Math.min(W * 0.3, top - 6);
   for (const k of domes) {
     const dx = W * k;
     rect(g, dx - r * 0.85, top - 9, r * 1.7, 5, "#efd8aa");
@@ -409,7 +433,7 @@ function sun(g: G, kind: Kind, W: number, H: number, c: Team) {
   g.beginPath();
   g.arc(W / 2, H - 5 - dh! + dw! / 2, dw! / 2 + 3, Math.PI, 0);
   g.stroke();
-  for (const wx of W > 70 ? [W * 0.16, W * 0.84 - 8] : [W * 0.17]) {
+  for (const wx of W > 70 || kind === "manor" ? [W * 0.16, W * 0.84 - 8] : [W * 0.17]) {
     g.fillStyle = "#3a4a5a";
     g.beginPath();
     g.moveTo(wx, top + 18);
@@ -798,7 +822,13 @@ export function drawBuilding(g: G, b: Building, x: number, y: number, links: boo
       }
     }
   }
-  if (b.kind === "smithy" || (b.kind === "house" && style === STYLE.forest)) {
+  if (b.upgrade) {
+    // being enlarged: scaffolding and stone waiting by the door
+    for (const px of [x + 3, x + W - 6]) line(g, "#7a5230", 2.2, px, y + H - 2, px, y - 8);
+    for (const yy of [y + H - 12, y + H - 26, y + 2]) line(g, "#a07040", 1.8, x + 2, yy, x + W - 3, yy);
+    for (let i = 0; i < 3; i++) round(g, x + W - 16 + (i % 2) * 6, y + H - 6 - Math.floor(i / 2) * 5, 6, 5, 1, i % 2 ? "#a9a69d" : "#c4c1b6");
+  }
+  if (b.kind === "smithy" || ((b.kind === "house" || b.kind === "manor") && style === STYLE.forest)) {
     // a wisp from the chimney
     const t = (clock * 0.35 + b.id * 0.17) % 1;
     dot(g, x + W * 0.7 + 4.5 + t * 5, y - 9 - t * 16, 2 + t * 3.5, `rgba(235,235,230,${(0.5 * (1 - t)).toFixed(2)})`);

@@ -80,7 +80,17 @@ export type Unit = {
   /** who is riding on this transport */
   cargo?: Unit[];
   aboard?: boolean;
+  /** who last hurt it, and when */
+  hitBy?: Hit;
+  /** the time of the last blow it has already answered */
+  answered?: number;
+  /** a sentry runs to defend buildings and people near its post that come under attack */
+  sentry?: boolean;
+  post?: { x: number; y: number };
 };
+
+/** A blow or a shot, and where it came from. */
+export type Hit = { kind: "unit" | "building"; id: number; at: number };
 
 export type Building = {
   id: number;
@@ -97,6 +107,10 @@ export type Building = {
   research: { tech: TechKind; left: number } | null;
   /** where units it makes go: a spot, or a resource for new Folk to work */
   rally?: { x: number; y: number; node?: number } | null;
+  /** who last hurt it, and when */
+  hitBy?: Hit;
+  /** a cottage being enlarged into a manor: seconds left */
+  upgrade?: { left: number } | null;
 };
 
 export type Node = {
@@ -121,6 +135,8 @@ export type Arrow = {
   id: number;
   /** a bombard's cannonball */
   ball?: boolean;
+  /** who shot it */
+  src?: { kind: "unit" | "building"; id: number };
 };
 
 export type Particle = { x: number; y: number; vx: number; vy: number; life: number; max: number; color: string; size: number };
@@ -932,7 +948,8 @@ function destroyBuilding(sim: Sim, b: Building) {
   }
 }
 
-function hurtUnit(sim: Sim, u: Unit, dmg: number) {
+function hurtUnit(sim: Sim, u: Unit, dmg: number, src?: { kind: "unit" | "building"; id: number }) {
+  if (src) u.hitBy = { ...src, at: sim.clock };
   if (u.kind !== "ram" && SOLDIERS.includes(u.kind)) {
     if (has(sim, u.owner, "armor")) dmg *= 0.8;
     if (has(sim, u.owner, "armor2")) dmg *= 0.8;
@@ -948,13 +965,15 @@ function hurtUnit(sim: Sim, u: Unit, dmg: number) {
     u.cargo = undefined;
     for (const o of sim.units) {
       if (o.order.t === "attack" && o.order.kind === "unit" && o.order.id === u.id) {
-        o.order = o.order.resume ? { t: "move", ...o.order.resume } : { t: "idle" };
+        o.order = o.order.after ?? (o.order.resume ? { t: "move", ...o.order.resume } : { t: "idle" });
+        o.goalKey = "";
       }
     }
   }
 }
 
-function hurtBuilding(sim: Sim, b: Building, dmg: number, from: PlayerId) {
+function hurtBuilding(sim: Sim, b: Building, dmg: number, from: PlayerId, src?: { kind: "unit" | "building"; id: number }) {
+  if (src) b.hitBy = { ...src, at: sim.clock };
   b.hp -= dmg;
   floatText(sim, b.tx + BUILDINGS[b.kind].w / 2, b.ty, String(Math.round(dmg)), "#e2b045");
   if (b.kind === "town") sim.shake[b.owner] = Math.min(1, sim.shake[b.owner] + 0.45);
@@ -962,7 +981,7 @@ function hurtBuilding(sim: Sim, b: Building, dmg: number, from: PlayerId) {
   if (b.hp <= 0) destroyBuilding(sim, b);
 }
 
-function launchArrow(sim: Sim, owner: PlayerId, x: number, y: number, kind: "unit" | "building", id: number, dmg: number, ball = false) {
+function launchArrow(sim: Sim, owner: PlayerId, x: number, y: number, kind: "unit" | "building", id: number, dmg: number, ball = false, src?: { kind: "unit" | "building"; id: number }) {
   let tx = x;
   let ty = y;
   if (kind === "unit") {
@@ -976,7 +995,7 @@ function launchArrow(sim: Sim, owner: PlayerId, x: number, y: number, kind: "uni
     tx = b.tx + BUILDINGS[b.kind].w / 2;
     ty = b.ty + BUILDINGS[b.kind].h / 2;
   }
-  sim.arrows.push({ x, y, tx, ty, owner, dmg, kind, id, ball });
+  sim.arrows.push({ x, y, tx, ty, owner, dmg, kind, id, ball, src });
 }
 
 function nearestEnemy(sim: Sim, u: Unit, radius: number) {
@@ -993,6 +1012,70 @@ function nearestEnemy(sim: Sim, u: Unit, radius: number) {
     }
   }
   return best;
+}
+
+/** The enemy behind a blow, if this unit can get at them. */
+function answerable(sim: Sim, u: Unit, hit: { kind: "unit" | "building"; id: number }): Unit | Building | null {
+  const range = unitStats(sim, u.owner, u.kind).range;
+  if (hit.kind === "unit") {
+    const o = unitById(sim, hit.id);
+    if (!o || o.hp <= 0 || o.aboard || allied(sim, u.owner, o.owner)) return null;
+    const d = Math.hypot(o.x - u.x, o.y - u.y);
+    if (d <= range + 0.5) return o;
+    if (naval(o.kind) !== naval(u.kind) || d > 14) return null;
+    return reaches(sim, u, u.x, u.y, Math.floor(o.x), Math.floor(o.y)) ? o : null;
+  }
+  const b = buildingById(sim, hit.id);
+  if (!b || b.hp <= 0 || allied(sim, u.owner, b.owner)) return null;
+  const s = BUILDINGS[b.kind];
+  const d = distToRect(u.x, u.y, b.tx, b.ty, s.w, s.h);
+  return d <= 14 && (!naval(u.kind) || d <= range + 1.5) ? b : null;
+}
+
+/** How far from its post a sentry will run to defend. */
+const SENTRY_REACH = 12;
+
+/** A sentry looks for its own side's buildings and people under attack near its post, and goes to help. */
+function defend(sim: Sim, u: Unit) {
+  const home = u.post ?? { x: u.x, y: u.y };
+  let best: { kind: "unit" | "building"; id: number } | null = null;
+  let bd = SENTRY_REACH;
+  const consider = (hit: Hit | undefined, d: number) => {
+    if (!hit || sim.clock - hit.at > 4 || d >= bd) return;
+    const foe = answerable(sim, u, hit);
+    if (foe) {
+      best = { kind: hit.kind, id: hit.id };
+      bd = d;
+    }
+  };
+  for (const b of sim.buildings) {
+    if (b.hp <= 0 || !allied(sim, u.owner, b.owner) || !b.hitBy) continue;
+    const s = BUILDINGS[b.kind];
+    consider(b.hitBy, distToRect(home.x, home.y, b.tx, b.ty, s.w, s.h));
+  }
+  for (const o of sim.units) {
+    if (o === u || o.hp <= 0 || !o.hitBy || !allied(sim, u.owner, o.owner)) continue;
+    consider(o.hitBy, Math.hypot(o.x - home.x, o.y - home.y));
+  }
+  const go = best as { kind: "unit" | "building"; id: number } | null;
+  if (go) {
+    u.order = { t: "attack", kind: go.kind, id: go.id, resume: { x: home.x, y: home.y, hunt: true } };
+    u.path = [];
+    u.goalKey = "";
+  }
+}
+
+/** Turns sentry duty on or off for the chosen soldiers. Their post is where they stand (or are going). */
+export function toggleSentry(sim: Sim, p: PlayerId) {
+  const army = selectedUnits(sim, p).filter((u) => fights(u.kind));
+  if (!army.length) return;
+  const on = !army.every((u) => u.sentry);
+  for (const u of army) {
+    u.sentry = on;
+    u.post = on ? (u.order.t === "move" ? { x: u.order.x, y: u.order.y } : { x: u.x, y: u.y }) : undefined;
+  }
+  setNote(sim, p, on ? "Sentries will defend what is near them" : "Sentry duty is off");
+  sim.uiDirty = true;
 }
 
 /** When walls seal off a target, attack the wall or building that is in the way. */
@@ -1169,10 +1252,28 @@ function stepUnit(sim: Sim, u: Unit, dt: number) {
   const spec = { ...unitStats(sim, u.owner, u.kind), cd: UNITS[u.kind].cd, siege: UNITS[u.kind].siege };
   const ship = naval(u.kind);
 
-  if (u.order.t === "idle" && fights(u.kind)) {
-    const foe = nearestEnemy(sim, u, ship ? spec.range + 0.2 : 3.3);
-    if (foe) u.order = { t: "attack", kind: "unit", id: foe.id, resume: null };
+  // whoever just hurt a soldier gets an answer, unless it was told to go somewhere
+  if (u.hitBy && u.hitBy.at !== u.answered) {
+    const hit = u.hitBy;
+    u.answered = hit.at;
+    const o = u.order;
+    if (sim.clock - hit.at < 3 && fights(u.kind) && (o.t === "idle" || (o.t === "move" && o.hunt) || (o.t === "attack" && o.kind === "building" && hit.kind === "unit"))) {
+      const foe = answerable(sim, u, hit);
+      if (foe) {
+        const resume = o.t === "move" ? { x: o.x, y: o.y, hunt: true } : o.t === "idle" ? { x: u.x, y: u.y, hunt: true } : null;
+        u.order = { t: "attack", kind: hit.kind, id: hit.id, resume, after: o.t === "attack" ? o : undefined };
+        u.path = [];
+        u.goalKey = "";
+      }
+    }
   }
+
+  if (u.order.t === "idle" && fights(u.kind)) {
+    const foe = nearestEnemy(sim, u, ship ? spec.range + 0.2 : Math.max(3.3, spec.range + 0.6));
+    if (foe) u.order = { t: "attack", kind: "unit", id: foe.id, resume: u.sentry ? { x: u.x, y: u.y, hunt: true } : null };
+  }
+
+  if (u.sentry && u.order.t === "idle" && fights(u.kind)) defend(sim, u);
 
   if (u.order.t === "move" && u.order.hunt && fights(u.kind)) {
     const foe = nearestEnemy(sim, u, 4.4);
@@ -1326,8 +1427,8 @@ function stepUnit(sim: Sim, u: Unit, dt: number) {
       if (d <= spec.range + 0.25) {
         u.path = [];
         if (u.cd <= 0 && spec.dmg > 0) {
-          if (shoots(u.kind)) launchArrow(sim, u.owner, u.x, u.y, "unit", target.id, spec.dmg, u.kind === "bombard");
-          else hurtUnit(sim, target, spec.dmg);
+          if (shoots(u.kind)) launchArrow(sim, u.owner, u.x, u.y, "unit", target.id, spec.dmg, u.kind === "bombard", { kind: "unit", id: u.id });
+          else hurtUnit(sim, target, spec.dmg, { kind: "unit", id: u.id });
           u.cd = spec.cd;
         }
       } else if (naval(target.kind) === ship && reaches(sim, u, u.x, u.y, Math.floor(target.x), Math.floor(target.y))) {
@@ -1352,8 +1453,8 @@ function stepUnit(sim: Sim, u: Unit, dt: number) {
         u.path = [];
         if (u.cd <= 0 && spec.dmg > 0) {
           const dmg = spec.dmg * spec.siege;
-          if (shoots(u.kind)) launchArrow(sim, u.owner, u.x, u.y, "building", target.id, dmg, u.kind === "bombard");
-          else hurtBuilding(sim, target, dmg, u.owner);
+          if (shoots(u.kind)) launchArrow(sim, u.owner, u.x, u.y, "building", target.id, dmg, u.kind === "bombard", { kind: "unit", id: u.id });
+          else hurtBuilding(sim, target, dmg, u.owner, { kind: "unit", id: u.id });
           u.cd = spec.cd;
         }
       } else if (ship) {
@@ -1413,6 +1514,19 @@ function stepBuildings(sim: Sim, dt: number) {
     }
     b.work = 0;
     if (b.progress < 1) continue;
+    if (b.upgrade) {
+      b.upgrade.left -= dt;
+      if (b.upgrade.left <= 0) {
+        const gain = maxHp(sim, b.owner, "manor") - maxHp(sim, b.owner, b.kind);
+        b.kind = "manor";
+        b.hp += gain;
+        b.upgrade = null;
+        burst(sim, b.tx + 1, b.ty + 1, "#e2b045", 12);
+        ping(sim, "raise");
+        setNote(sim, b.owner, "A cottage has become a manor");
+        sim.uiDirty = true;
+      }
+    }
     if (b.research) {
       b.research.left -= dt;
       if (b.research.left <= 0) {
@@ -1440,6 +1554,11 @@ function stepBuildings(sim: Sim, dt: number) {
           made.order = { t: "move", x: sx, y: sy + toward, hunt: false };
         }
         if (made && b.rally) sendToRally(sim, made, b.rally);
+        // the computer's soldiers stand guard where they are sent
+        if (made && sim.ai[b.owner] && fights(made.kind)) {
+          made.sentry = true;
+          made.post = made.order.t === "move" ? { x: made.order.x, y: made.order.y } : { x: made.x, y: made.y };
+        }
       }
     }
     if (spec.attack && b.cd > 0) b.cd -= dt;
@@ -1458,7 +1577,7 @@ function stepBuildings(sim: Sim, dt: number) {
         }
       }
       if (best) {
-        launchArrow(sim, b.owner, b.tx + spec.w / 2, b.ty + spec.h / 2, best.kind, best.id, spec.attack.dmg);
+        launchArrow(sim, b.owner, b.tx + spec.w / 2, b.ty + spec.h / 2, best.kind, best.id, spec.attack.dmg, false, { kind: "building", id: b.id });
         b.cd = spec.attack.cd;
       }
     }
@@ -1481,10 +1600,10 @@ function stepArrows(sim: Sim, dt: number) {
     if (d < 0.22) {
       if (a.kind === "unit") {
         const u = unitById(sim, a.id);
-        if (u) hurtUnit(sim, u, a.dmg);
+        if (u) hurtUnit(sim, u, a.dmg, a.src);
       } else {
         const b = buildingById(sim, a.id);
-        if (b) hurtBuilding(sim, b, a.dmg, a.owner);
+        if (b) hurtBuilding(sim, b, a.dmg, a.owner, a.src);
       }
       burst(sim, a.tx, a.ty, a.ball ? "#ff9a3c" : "#f0e2c4", a.ball ? 10 : 4);
       a.dmg = -1;
@@ -1898,6 +2017,8 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
   sel.forEach((u, i) => {
     const spot = formation(i, sel.length, wx, wy, ships ? 0.8 : 0.45);
     u.order = { t: "move", x: spot.x, y: spot.y, hunt: hunt && armed(u) };
+    // a sentry sent somewhere stands guard there instead
+    if (u.sentry) u.post = { x: spot.x, y: spot.y };
     u.path = [];
     u.goalKey = "";
   });
@@ -2102,6 +2223,20 @@ function setRally(sim: Sim, p: PlayerId, b: Building, wx: number, wy: number, n:
   sim.uiDirty = true;
 }
 
+/** Starts enlarging the selected cottage into a manor, which houses more people. */
+export function enlarge(sim: Sim, p: PlayerId) {
+  const b = sim.sel[p].building !== null ? buildingById(sim, sim.sel[p].building) : undefined;
+  if (!b || b.owner !== p || b.kind !== "house" || b.progress < 1 || b.upgrade) return;
+  const spec = BUILDINGS.manor;
+  if (ageOf(sim, p) < spec.age) return setNote(sim, p, `${AGES[spec.age]} age is needed first`);
+  if (!canAfford(sim.res[p], spec.cost)) return setNote(sim, p, "Not enough to build a manor");
+  pay(sim.res[p], spec.cost);
+  b.upgrade = { left: spec.build };
+  setNote(sim, p, "The cottage is being enlarged");
+  ping(sim, "click");
+  sim.uiDirty = true;
+}
+
 /** Tear down the selected building. An unfinished one returns its cost. */
 export function demolish(sim: Sim, p: PlayerId) {
   const id = sim.sel[p].building;
@@ -2111,6 +2246,7 @@ export function demolish(sim: Sim, p: PlayerId) {
   for (const q of b.queue) refund(sim.res[p], unitCost(sim, p, q.kind));
   b.queue = [];
   if (b.research) refund(sim.res[p], TECHS[b.research.tech].cost);
+  if (b.upgrade) refund(sim.res[p], BUILDINGS.manor.cost);
   destroyBuilding(sim, b);
   sim.buildings = sim.buildings.filter((o) => o !== b);
   sim.sel[p] = { units: [], building: null };
@@ -2189,6 +2325,7 @@ export function orderMove(sim: Sim, units: Unit[], x: number, y: number, hunt: b
   units.forEach((u, i) => {
     const spot = formation(i, units.length, x, y, ships ? 0.8 : 0.45);
     u.order = { t: "move", x: spot.x, y: spot.y, hunt: hunt && u.kind !== "villager" && !unarmed(u.kind) };
+    if (u.sentry) u.post = { x: spot.x, y: spot.y };
     u.path = [];
     u.goalKey = "";
   });
