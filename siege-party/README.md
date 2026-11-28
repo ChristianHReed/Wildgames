@@ -17,6 +17,8 @@ be added to the Home Screen and opens without a connection.
 - Gathering, building where you tap, walls and gates
 - Docks, fishing boats, transports, galleys and bombard ships
 - Village, Town and Castle ages that unlock buildings, units and upgrades
+- Towns that change look with each age; a Market for trading and Castles that work like a second Hall
+- No overall population limit: homes house Folk, barracks house soldiers
 - Map sizes up to 256×384, and maps made from a picture
 
 ## Playing on separate devices

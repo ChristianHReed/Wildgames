@@ -2,7 +2,7 @@ import { BUILDINGS, COLS, ROWS, SEATS, UNITS, isNorth } from "../game/content";
 import { GRID, terrainAt } from "../game/map";
 import { drawBuilding, drawUnit } from "./art";
 import { drawGlints, drawGround, groundVersion } from "./ground";
-import { canSee, maxHp as fullHp, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
+import { ageOf, canSee, maxHp as fullHp, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
 
 type G = CanvasRenderingContext2D;
 const TEAM = SEATS;
@@ -273,7 +273,7 @@ export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: n
     items.push({
       z: b.kind === "farm" ? y : y + s.h * 32 - 6,
       f: () => {
-        drawBuilding(lg, b, x, y, s.wall ? links(b) : [], sim.style[b.owner], k, sim.clock, fullHp(sim, b.owner, b.kind));
+        drawBuilding(lg, b, x, y, s.wall ? links(b) : [], sim.style[b.owner], k, sim.clock, fullHp(sim, b.owner, b.kind), ageOf(sim, b.owner));
         const picked = sim.sel[p].building === b.id;
         if (picked) {
           lg.strokeStyle = "#fff6a8";

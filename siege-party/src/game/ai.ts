@@ -1,5 +1,5 @@
-import { BUILDINGS, TECHS, UNITS, canAfford, type BuildingKind, type TechKind, type UnitKind } from "./content";
-import { IDS, ageOf, aiTryBuild, allied, canReachNode, enlarge, techBlock, hasComplete, orderGather, popCap, popUsed, research, trainUnit, type Node, type PlayerId, type Sim } from "./sim";
+import { BUILDINGS, GOODS, TECHS, UNITS, canAfford, central, type BuildingKind, type TechKind, type UnitKind } from "./content";
+import { IDS, ageOf, aiTryBuild, allied, armyCap, armyUsed, canReachNode, enlarge, hallOf, quote, techBlock, trade, hasComplete, orderGather, popCap, popUsed, research, trainUnit, type Node, type PlayerId, type Sim } from "./sim";
 
 type Kind = Node["kind"];
 
@@ -43,7 +43,7 @@ export function aiThink(sim: Sim, p: PlayerId) {
   const fishers = sim.units.filter((u) => u.owner === p && u.hp > 0 && u.kind === "fisher");
   const warships = sim.units.filter((u) => u.owner === p && u.hp > 0 && (u.kind === "galley" || u.kind === "bombard"));
   const age = ageOf(sim, p);
-  const hall = mine.find((b) => b.kind === "town" && b.progress >= 1);
+  const hall = hallOf(sim, p);
   if (!hall) return;
   const home = { x: hall.tx + 1.5, y: hall.ty + 1.5 };
 
@@ -111,11 +111,14 @@ export function aiThink(sim: Sim, p: PlayerId) {
       for (const k of ["wood", "gold"] as const) {
         const n = nearestNode(k, home.x, home.y);
         if (!n) continue;
-        const walk = Math.min(...mine.filter((b) => b.kind === "town" || b.kind === "store").map((b) => Math.hypot(b.tx - n.x, b.ty - n.y)));
+        const walk = Math.min(...mine.filter((b) => central(b.kind) || b.kind === "store").map((b) => Math.hypot(b.tx - n.x, b.ty - n.y)));
         if (walk > 12) far = n;
       }
     }
-    if (popUsed(sim, p) >= popCap(sim, p) - 2 && popCap(sim, p) < Math.min(60, crew + level.army + 13)) aiTryBuild(sim, p, "house");
+    const navyRoom = 5;
+    if (popUsed(sim, p) >= popCap(sim, p) - 2 && popCap(sim, p) < crew + 8) aiTryBuild(sim, p, "house");
+    // more barracks when the soldiers have run out of room
+    else if (count("barracks") && !mine.some((b) => b.kind === "barracks" && b.progress < 1) && armyUsed(sim, p) >= armyCap(sim, p) - 1 && armyCap(sim, p) < level.army + navyRoom && wood >= 190) aiTryBuild(sim, p, "barracks");
     else if (far) aiTryBuild(sim, p, "store", far);
     else if (count("farm") < level.farms && folks.length >= 5) aiTryBuild(sim, p, "farm");
     else if (!count("barracks") && folks.length >= 6) aiTryBuild(sim, p, "barracks");
@@ -127,6 +130,8 @@ export function aiThink(sim: Sim, p: PlayerId) {
     else if (age >= 2 && sim.clock > level.tower + 20 && !count("stable") && wood >= 200) aiTryBuild(sim, p, "stable");
     else if (sim.level === 2 && count("barracks") < 2 && wood >= 260) aiTryBuild(sim, p, "barracks");
     else if (age >= 3 && !count("workshop") && wood >= 220) aiTryBuild(sim, p, "workshop");
+    else if (age >= 3 && !count("market") && wood >= 260) aiTryBuild(sim, p, "market");
+    else if (age >= 3 && !count("castle") && sim.level > 0 && sim.res[p].stone >= 520 && wood >= 260) aiTryBuild(sim, p, "castle");
   }
 
   for (const u of fishers) {
@@ -158,13 +163,21 @@ export function aiThink(sim: Sim, p: PlayerId) {
     research(sim, p, tech);
   };
   if (wanted) research1("town", wanted);
+  // at the market: sell what there is far too much of for what is running short
+  if (mine.some((o) => o.kind === "market" && o.progress >= 1)) {
+    const res = sim.res[p];
+    const rich = GOODS.filter((g) => res[g] > 900).sort((x, y) => res[y] - res[x])[0];
+    const poor = GOODS.filter((g) => res[g] < 150).sort((x, y) => res[x] - res[y])[0];
+    if (rich) trade(sim, p, rich, false);
+    if (poor && res.gold > quote(sim, p, poor).buy + 150) trade(sim, p, poor, true);
+  }
   // short of room in the Town age: enlarge a cottage rather than build another
   const cottage = mine.find((o) => o.kind === "house" && o.progress >= 1 && !o.upgrade);
   if (cottage && age >= 2 && !mine.some((o) => o.upgrade) && popUsed(sim, p) >= popCap(sim, p) - 3 && canAfford(sim.res[p], { wood: 160, stone: 110 })) {
     sim.sel[p] = { units: [], building: cottage.id };
     enlarge(sim, p);
   }
-  if (folks.length + hall.queue.length < crew && !(saving && folks.length >= 9)) train("town", "villager");
+  if (folks.length + hall.queue.length < crew && !(saving && folks.length >= 9)) train(hall.kind, "villager");
   const have = (k: UnitKind) => military.filter((u) => u.kind === k).length;
   if (fishers.length < (sim.level === 0 ? 1 : 3)) train("dock", "fisher");
   if (!saving || military.length < 4) {
@@ -205,7 +218,7 @@ export function aiThink(sim: Sim, p: PlayerId) {
   if (sim.aiAttack[p]) {
     // march on the nearest enemy hall
     const enemy = sim.buildings
-      .filter((b) => foes.includes(b.owner) && b.kind === "town" && b.hp > 0)
+      .filter((b) => foes.includes(b.owner) && central(b.kind) && b.hp > 0)
       .sort((a, b) => Math.hypot(a.tx - home.x, a.ty - home.y) - Math.hypot(b.tx - home.x, b.ty - home.y))[0];
     if (!enemy) return;
     const side = home.y < enemy.ty ? -0.5 : BUILDINGS.town.h + 0.5;

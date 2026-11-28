@@ -2,9 +2,9 @@
  * Everything a player can do, as plain data. The same list is used by a player at this
  * screen and by one playing from another device, whose requests are checked here.
  */
-import { BUILDINGS, BUILD_KINDS, SEATS, TECHS, UNIT_KINDS, AGES, type BuildingKind, type TechKind, type UnitKind } from "./content";
+import { BUILDINGS, BUILD_KINDS, GOODS, SEATS, TECHS, UNIT_KINDS, AGES, type BuildingKind, type Good, type TechKind, type UnitKind } from "./content";
 import {
-  IDS, ageOf, commandTap, demolish, diplomacy, enlarge, research, selectGroup, setPlace, toggleHunt, toggleSentry, trainUnit, unloadSelected,
+  IDS, ageOf, commandTap, demolish, diplomacy, enlarge, hallOf, research, trade, selectGroup, setPlace, toggleHunt, toggleSentry, trainUnit, unloadSelected,
   type PlayerId, type Sim,
 } from "./sim";
 
@@ -21,6 +21,7 @@ export type Cmd =
   | { t: "demolish" }
   | { t: "sentry" }
   | { t: "enlarge" }
+  | { t: "trade"; good: Good; buy: boolean }
   | { t: "research"; tech: TechKind }
   | { t: "train"; kind: UnitKind }
   | { t: "hall" }
@@ -62,6 +63,9 @@ export function act(sim: Sim, p: PlayerId, c: Cmd) {
     case "enlarge":
       enlarge(sim, p);
       break;
+    case "trade":
+      if (GOODS.includes(c.good)) trade(sim, p, c.good, !!c.buy);
+      break;
     case "demolish":
       demolish(sim, p);
       break;
@@ -72,7 +76,7 @@ export function act(sim: Sim, p: PlayerId, c: Cmd) {
       if (UNIT_KINDS.includes(c.kind)) trainUnit(sim, p, c.kind);
       break;
     case "hall": {
-      const hall = sim.buildings.find((o) => o.owner === p && o.kind === "town");
+      const hall = hallOf(sim, p);
       if (hall && !sim.place[p]) sim.sel[p] = { units: [], building: hall.id };
       break;
     }

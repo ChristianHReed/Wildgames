@@ -5,7 +5,6 @@ import {
   FARM_RATE,
   FISH_RATE,
   AGES,
-  MAX_POP,
   TECHS,
   type TechKind,
   GATHER,
@@ -24,6 +23,11 @@ import {
   MAX_SEATS,
   STYLE,
   berth,
+  central,
+  soldier,
+  GOODS,
+  BASE_PRICE,
+  type Good,
   type Cost,
 } from "./content";
 import { BASES, GRID, assertMap, nodeSpawns, tileChar } from "./map";
@@ -149,6 +153,8 @@ export type SideSnap = {
   stone: number;
   pop: number;
   cap: number;
+  army: number;
+  armyCap: number;
   place: BuildingKind | null;
   placeOk: boolean;
   placeReason: string;
@@ -213,6 +219,8 @@ export type Sim = {
   sel: Seats<{ units: number[]; building: number | null }>;
   place: Seats<BuildingKind | null>;
   hunt: Seats<boolean>;
+  /** each player's market prices: gold for 100 of each good, before the market's cut */
+  prices: Seats<Record<Good, number>>;
   note: Seats<{ text: string; t: number }>;
   cam: Seats<{ x: number; y: number }>;
   view: Seats<{ w: number; h: number }>;
@@ -267,6 +275,7 @@ export function createSim(): Sim {
     sel: seats(() => ({ units: [], building: null })),
     place: seats(() => null),
     hunt: seats(() => false),
+    prices: seats(() => ({ food: BASE_PRICE, wood: BASE_PRICE, stone: BASE_PRICE })),
     note: seats(() => ({ text: "", t: 0 })),
     cam: seats(() => ({ x: COLS / 2, y: ROWS / 2 })),
     view: seats(() => ({ w: 264, h: 200 })),
@@ -397,6 +406,7 @@ export function rebuild(sim: Sim) {
   sim.winners = 0;
   sim.place = seats(() => null);
   sim.hunt = seats(() => false);
+  sim.prices = seats(() => ({ food: BASE_PRICE, wood: BASE_PRICE, stone: BASE_PRICE }));
   sim.note = seats(() => ({ text: "", t: 0 }));
   sim.shake = seats(() => 0);
   sim.lastTap = seats(() => ({ id: 0, at: -9 }));
@@ -499,27 +509,45 @@ export function togglePause(sim: Sim) {
   sim.uiDirty = true;
 }
 
-export function livingTown(sim: Sim, p: PlayerId) {
-  return sim.buildings.some((b) => b.owner === p && b.kind === "town" && b.hp > 0);
+/** A player's Hall, or failing that a finished Castle. */
+export function hallOf(sim: Sim, p: PlayerId) {
+  let best: Building | undefined;
+  for (const b of sim.buildings)
+    if (b.owner === p && central(b.kind) && b.hp > 0 && (b.kind === "town" || b.progress >= 1) && (!best || (b.kind === "town" && best.kind !== "town"))) best = b;
+  return best;
 }
 
+export function livingTown(sim: Sim, p: PlayerId) {
+  return sim.buildings.some((b) => b.owner === p && central(b.kind) && b.hp > 0 && b.progress >= 1);
+}
+
+/** Room for Folk: the homes a player has. There is no limit beyond building more. */
 export function popCap(sim: Sim, p: PlayerId) {
   let n = 0;
-  for (const b of sim.buildings) {
-    if (b.owner === p && b.hp > 0 && b.progress >= 1) n += BUILDINGS[b.kind].pop;
-  }
-  return Math.min(MAX_POP, n);
-}
-
-export function popUsed(sim: Sim, p: PlayerId) {
-  let n = 0;
-  for (const u of sim.units) if (u.owner === p && u.hp > 0) n += 1 + (u.cargo?.length ?? 0);
-  for (const b of sim.buildings) {
-    if (b.owner !== p || b.hp <= 0) continue;
-    n += b.queue.length;
-  }
+  for (const b of sim.buildings) if (b.owner === p && b.hp > 0 && b.progress >= 1) n += BUILDINGS[b.kind].pop;
   return n;
 }
+
+/** Room for soldiers: the barracks (and castles) a player has. */
+export function armyCap(sim: Sim, p: PlayerId) {
+  let n = 0;
+  for (const b of sim.buildings) if (b.owner === p && b.hp > 0 && b.progress >= 1) n += BUILDINGS[b.kind].room ?? 0;
+  return n;
+}
+
+/** How many of a player's people of one kind (soldiers, or everyone else) there are, counting those in training and aboard ships. */
+function headcount(sim: Sim, p: PlayerId, army: boolean) {
+  let n = 0;
+  for (const u of sim.units) {
+    if (u.owner !== p || u.hp <= 0) continue;
+    if (soldier(u.kind) === army) n++;
+    for (const c of u.cargo ?? []) if (soldier(c.kind) === army) n++;
+  }
+  for (const b of sim.buildings) if (b.owner === p && b.hp > 0) for (const q of b.queue) if (soldier(q.kind) === army) n++;
+  return n;
+}
+export const popUsed = (sim: Sim, p: PlayerId) => headcount(sim, p, false);
+export const armyUsed = (sim: Sim, p: PlayerId) => headcount(sim, p, true);
 
 function setNote(sim: Sim, p: PlayerId, text: string) {
   sim.note[p] = { text, t: 2.4 };
@@ -976,7 +1004,7 @@ function hurtBuilding(sim: Sim, b: Building, dmg: number, from: PlayerId, src?: 
   if (src) b.hitBy = { ...src, at: sim.clock };
   b.hp -= dmg;
   floatText(sim, b.tx + BUILDINGS[b.kind].w / 2, b.ty, String(Math.round(dmg)), "#e2b045");
-  if (b.kind === "town") sim.shake[b.owner] = Math.min(1, sim.shake[b.owner] + 0.45);
+  if (central(b.kind)) sim.shake[b.owner] = Math.min(1, sim.shake[b.owner] + 0.45);
   if (from !== b.owner) b.seen |= 1 << from;
   if (b.hp <= 0) destroyBuilding(sim, b);
 }
@@ -1122,7 +1150,7 @@ function dropSite(sim: Sim, u: Unit) {
   let best: Building | null = null;
   let bd = 1e9;
   for (const b of sim.buildings) {
-    const takes = naval(u.kind) ? b.kind === "dock" : b.kind === "town" || b.kind === "store";
+    const takes = naval(u.kind) ? b.kind === "dock" : central(b.kind) || b.kind === "store";
     if (b.owner !== u.owner || !takes || b.hp <= 0 || b.progress < 1) continue;
     const spec = BUILDINGS[b.kind];
     const d = distToRect(u.x, u.y, b.tx, b.ty, spec.w, spec.h);
@@ -1752,6 +1780,7 @@ export function step(sim: Sim, dt: number) {
   if (sim.units.some((u) => u.aboard)) sim.units = sim.units.filter((u) => !u.aboard);
   separate(sim);
   stepBuildings(sim, dt);
+  settlePrices(sim, dt);
   stepArrows(sim, dt);
   sim.units = sim.units.filter((u) => u.hp > 0);
   const standing = sim.buildings.length;
@@ -1939,7 +1968,7 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
     sim.uiDirty = true;
     return;
   }
-  if (trainer && hit.building?.owner === p && hit.building.kind === "farm" && trainer.kind === "town") {
+  if (trainer && hit.building?.owner === p && hit.building.kind === "farm" && central(trainer.kind)) {
     const field = sim.nodes.find((n) => n.farm && n.x === hit.building!.tx && n.y === hit.building!.ty);
     if (field) return setRally(sim, p, trainer, wx, wy, field);
   }
@@ -2223,6 +2252,42 @@ function setRally(sim: Sim, p: PlayerId, b: Building, wx: number, wy: number, n:
   sim.uiDirty = true;
 }
 
+/** What 100 of a good costs to buy, and fetches when sold, at a player's market. */
+export function quote(sim: Sim, p: PlayerId, good: Good) {
+  const price = sim.prices[p][good];
+  return { buy: Math.round(price * 1.25), sell: Math.round(price * 0.75) };
+}
+
+/** Buys or sells 100 of a good for gold at the player's market. Each trade moves the price. */
+export function trade(sim: Sim, p: PlayerId, good: Good, buy: boolean) {
+  if (!GOODS.includes(good)) return;
+  if (!sim.buildings.some((b) => b.owner === p && b.kind === "market" && b.progress >= 1 && b.hp > 0)) return setNote(sim, p, "Build a market first");
+  const q = quote(sim, p, good);
+  const res = sim.res[p];
+  if (buy) {
+    if (res.gold < q.buy) return setNote(sim, p, `Need ${q.buy} gold`);
+    res.gold -= q.buy;
+    res[good] += 100;
+    sim.prices[p][good] = Math.min(450, sim.prices[p][good] + 7);
+  } else {
+    if (res[good] < 100) return setNote(sim, p, `Need 100 ${good} to sell`);
+    res[good] -= 100;
+    res.gold += q.sell;
+    sim.prices[p][good] = Math.max(20, sim.prices[p][good] - 7);
+  }
+  ping(sim, "click");
+  sim.uiDirty = true;
+}
+
+/** Prices drift slowly back towards normal. */
+function settlePrices(sim: Sim, dt: number) {
+  for (const prices of sim.prices)
+    for (const g of GOODS) {
+      const d = BASE_PRICE - prices[g];
+      if (d) prices[g] += Math.sign(d) * Math.min(Math.abs(d), dt * 0.5);
+    }
+}
+
 /** Starts enlarging the selected cottage into a manor, which houses more people. */
 export function enlarge(sim: Sim, p: PlayerId) {
   const b = sim.sel[p].building !== null ? buildingById(sim, sim.sel[p].building) : undefined;
@@ -2296,8 +2361,8 @@ export function trainUnit(sim: Sim, p: PlayerId, kind: UnitKind) {
     setNote(sim, p, "Queue is full");
     return;
   }
-  if (popUsed(sim, p) + 1 > popCap(sim, p)) {
-    setNote(sim, p, popCap(sim, p) >= MAX_POP ? "Population is at the limit" : "Need a cottage");
+  if (soldier(kind) ? armyUsed(sim, p) + 1 > armyCap(sim, p) : popUsed(sim, p) + 1 > popCap(sim, p)) {
+    setNote(sim, p, soldier(kind) ? "Need room in a barracks" : "Need a cottage");
     return;
   }
   const cost = unitCost(sim, p, kind);
@@ -2333,7 +2398,7 @@ export function orderMove(sim: Sim, units: Unit[], x: number, y: number, hunt: b
 
 export function aiTryBuild(sim: Sim, p: PlayerId, kind: BuildingKind, near?: { x: number; y: number }) {
   const spec = BUILDINGS[kind];
-  const hall = sim.buildings.find((b) => b.owner === p && b.kind === "town" && b.hp > 0);
+  const hall = hallOf(sim, p);
   if (!hall) return false;
   const at = near ?? { x: hall.tx, y: hall.ty };
   for (let r = 2; r <= 14; r++) {
@@ -2363,9 +2428,9 @@ export function aiTryBuild(sim: Sim, p: PlayerId, kind: BuildingKind, near?: { x
 }
 
 export function focusHall(sim: Sim, p: PlayerId) {
-  const hall = sim.buildings.find((b) => b.owner === p && b.kind === "town" && b.hp > 0);
+  const hall = hallOf(sim, p);
   if (!hall) return;
-  const spec = BUILDINGS.town;
+  const spec = BUILDINGS[hall.kind];
   const v = sim.view[p];
   const tilesH = Math.max(4, v.h / 32);
   // keep the hall and the folk in front of it in view
@@ -2435,6 +2500,8 @@ function sideSnap(sim: Sim, p: PlayerId): SideSnap {
     stone: Math.floor(sim.res[p].stone),
     pop: popUsed(sim, p),
     cap: popCap(sim, p),
+    army: armyUsed(sim, p),
+    armyCap: armyCap(sim, p),
     place: placing,
     placeOk,
     placeReason: placeReasonText,

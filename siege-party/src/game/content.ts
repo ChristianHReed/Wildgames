@@ -16,7 +16,6 @@ export function setSize(w: number, h: number) {
   COLS = s.w;
   ROWS = s.h;
 }
-export const MAX_POP = 60;
 
 export const MAX_SEATS = 5;
 
@@ -48,7 +47,7 @@ export const berth = (k: string) => (k === "ram" ? 3 : 1);
 export const UNIT_KINDS = ["villager", "militia", "archer", "rider", "ram", "fisher", "transport", "galley", "bombard"] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 
-export const BUILD_KINDS = ["town", "house", "farm", "barracks", "range", "tower", "palisade", "wall", "gate", "store", "stable", "workshop", "smithy", "dock", "manor"] as const;
+export const BUILD_KINDS = ["town", "house", "farm", "barracks", "range", "tower", "palisade", "wall", "gate", "store", "stable", "workshop", "smithy", "dock", "manor", "market", "castle"] as const;
 export type BuildingKind = (typeof BUILD_KINDS)[number];
 
 export type Res = "food" | "wood" | "gold" | "stone";
@@ -79,7 +78,10 @@ export type BuildSpec = {
   hp: number;
   w: number;
   h: number;
+  /** Folk it houses */
   pop: number;
+  /** soldiers it houses */
+  room?: number;
   vision: number;
   attack?: { dmg: number; range: number; cd: number };
   trains?: UnitKind[];
@@ -92,6 +94,18 @@ export type BuildSpec = {
 };
 
 export const AGES = ["", "Village", "Town", "Castle"] as const;
+
+/** Soldiers and warships live in barracks; everyone else (Folk and their boats) in homes. */
+export const soldier = (k: UnitKind) => k === "militia" || k === "archer" || k === "rider" || k === "ram" || k === "galley" || k === "bombard";
+
+/** A Hall or a Castle: where Folk are made and anything can be dropped off. Losing every one loses the game. */
+export const central = (k: BuildingKind) => k === "town" || k === "castle";
+
+/** what can be bought and sold at a market, for gold */
+export const GOODS = ["food", "wood", "stone"] as const;
+export type Good = (typeof GOODS)[number];
+/** gold for 100 of a good, before the market's cut, at the start */
+export const BASE_PRICE = 100;
 
 export type TechSpec = {
   name: string;
@@ -256,6 +270,7 @@ export const BUILDINGS: Record<BuildingKind, BuildSpec> = {
     w: 3,
     h: 2,
     pop: 0,
+    room: 10,
     vision: 5,
     place: true,
     trains: ["militia"],
@@ -378,6 +393,13 @@ export const BUILDINGS: Record<BuildingKind, BuildSpec> = {
     vision: 4,
     place: true,
   },
+  /** buy and sell food, wood and stone for gold */
+  market: { age: 3, name: "Market", cost: { wood: 175, gold: 50 }, build: 30, hp: 1200, w: 3, h: 3, pop: 0, vision: 5, place: true },
+  /** a fortress that does everything a Hall does, and more */
+  castle: {
+    age: 3, name: "Castle", cost: { stone: 450, wood: 200 }, build: 60, hp: 4800, w: 4, h: 4, pop: 10, room: 10, vision: 10, place: true,
+    attack: { dmg: 14, range: 6.5, cd: 0.9 }, trains: ["villager", "militia", "archer", "rider"],
+  },
   /** not built from scratch: a cottage is enlarged into one */
   manor: { age: 2, name: "Manor", cost: { wood: 120, stone: 80 }, build: 20, hp: 780, w: 2, h: 2, pop: 12, vision: 4 },
   dock: { age: 1, name: "Dock", cost: { wood: 120 }, build: 14, hp: 650, w: 2, h: 2, pop: 0, vision: 6, place: true, shore: true, trains: ["fisher", "transport", "galley", "bombard"] },
@@ -387,6 +409,7 @@ export const BUILD_MENU: { name: string; hint: string; kinds: BuildingKind[] }[]
   { name: "Town", hint: "homes, food, upgrades", kinds: ["house", "farm", "store", "dock", "smithy"] },
   { name: "Military", hint: "train an army", kinds: ["barracks", "range", "stable", "workshop"] },
   { name: "Defence", hint: "walls, gates, towers", kinds: ["palisade", "wall", "gate", "tower"] },
+  { name: "Castle age", hint: "market, castle", kinds: ["market", "castle"] },
 ];
 
 export const GATHER: Record<"wood" | "food" | "gold" | "stone", number> = {

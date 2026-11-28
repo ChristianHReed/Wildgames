@@ -672,8 +672,279 @@ function farm(g: G, W: number, H: number, c: Team) {
   g.strokeRect(2.5, 2.5, W - 5, H - 5);
 }
 
-/** A whole finished building, painted once. */
-function paint(g: G, kind: Kind, style: number, c: Team) {
+// ── grander buildings, and how a town grows with the ages ───────────────────────────
+/** a slim tower of the owner's people, for flanking a Hall and guarding a castle */
+function turret(g: G, x: number, top: number, bottom: number, w: number, c: Team, style: number, crown: boolean) {
+  const cx = x + w / 2;
+  const sun_ = style === STYLE.sun;
+  const body = g.createLinearGradient(x, 0, x + w, 0);
+  body.addColorStop(0, sun_ ? "#f8e6bc" : style === STYLE.horse ? "#b98a52" : "#c9c6bb");
+  body.addColorStop(0.65, sun_ ? "#e6cc98" : style === STYLE.horse ? "#9a6a38" : "#aeaba1");
+  body.addColorStop(1, sun_ ? "#c9a874" : style === STYLE.horse ? "#7a5230" : "#8b887f");
+  g.fillStyle = body;
+  g.fillRect(x, top, w, bottom - top);
+  if (style === STYLE.horse) for (let yy = top + 4; yy < bottom; yy += 6) line(g, "rgba(60,30,10,.35)", 0.8, x, yy, x + w, yy);
+  else if (!sun_)
+    for (let yy = top + 5, row = 0; yy < bottom; yy += 6, row++) {
+      line(g, "rgba(70,64,58,.3)", 0.7, x, yy, x + w, yy);
+      line(g, "rgba(70,64,58,.3)", 0.7, x + (row % 2 ? w / 2 : w / 4), yy - 6, x + (row % 2 ? w / 2 : w / 4), yy);
+    }
+  round(g, cx - 1.2, top + 8, 2.4, 6, 1.2, "#2a2620");
+  if (style === STYLE.stone) {
+    rect(g, x - 2, top - 4, w + 4, 5, "#d2cfc4");
+    for (let i = 0; i < 3; i++) rect(g, x - 2 + i * ((w + 4 - 4) / 2), top - 9, 4.5, 5, "#d8d5ca");
+    if (crown) flag(g, cx, top - 9, 13, c);
+  } else if (sun_) {
+    rect(g, x - 1.5, top - 3, w + 3, 3.5, "#fbecc8");
+    const dome = g.createRadialGradient(cx - w * 0.2, top - w * 0.4, 0.5, cx, top - 3, w * 0.7);
+    dome.addColorStop(0, lit(c.main, 0.4));
+    dome.addColorStop(1, dim(c.main, 0.25));
+    g.fillStyle = dome;
+    g.beginPath();
+    g.arc(cx, top - 3, w / 2, Math.PI, Math.PI * 2);
+    g.fill();
+    line(g, "#a07a30", 1.2, cx, top - 3 - w / 2, cx, top - 9 - w / 2);
+    dot(g, cx, top - 9 - w / 2, 1.8, "#ffd84a");
+  } else {
+    // a steep cone: shingles for the Forest Folk, felt for the Horse Clans
+    shape(g, c.main, x - 3, top + 1, cx, top - w * 1.05, x + w + 3, top + 1);
+    shape(g, dim(c.main, 0.25), cx, top - w * 1.05, x + w + 3, top + 1, cx + 2, top + 1);
+    shape(g, lit(c.main, 0.22), cx, top - w * 1.05, x - 3, top + 1, cx - 3, top + 1);
+    if (crown) flag(g, cx, top - w * 1.05, 9, c);
+  }
+}
+
+/** What a building gains as its people move up the ages: more care, colour and gold. */
+function ageMarks(g: G, kind: Kind, W: number, H: number, c: Team, style: number, age: number) {
+  if (age < 2 || kind === "farm" || kind === "dock" || kind === "tower" || kind === "castle" || kind === "market") return;
+  const gold = "#e8c24a";
+  if (style === STYLE.forest) {
+    // a dressed-stone footing, a pennant on the ridge
+    for (let x = 7, i = 0; x < W - 8; x += 7, i++) round(g, x, H - 9, 6.5, 4.5, 1, i % 2 ? "#a9a69d" : "#bdbab0");
+    flag(g, W * 0.76, 3, 10, c);
+    if (age >= 3) {
+      for (let x = W * 0.26; x <= W * 0.74; x += W * 0.08) dot(g, x, 2.5, 1.5, gold);
+      flag(g, W * 0.24, 3, 10, c);
+    }
+  } else if (style === STYLE.stone) {
+    // torches by the door, gold on the banner
+    const top = H * (kind === "town" ? 0.3 : kind === "manor" ? 0.26 : 0.34);
+    for (const tx of [W / 2 - 13, W / 2 + 11]) {
+      rect(g, tx, H - 20, 2, 6, "#4a3a2a");
+      dot(g, tx + 1, H - 21.5, 2.2, "#ffb347");
+      dot(g, tx + 1, H - 22, 1.1, "#fff0a0");
+    }
+    line(g, gold, 1, W / 2 - (kind === "town" ? 11 : 7.5), top + 2.5, W / 2 + (kind === "town" ? 11 : 7.5), top + 2.5);
+    if (age >= 3) {
+      const n = Math.max(3, Math.round((W - 10) / 13));
+      for (let i = 0; i < n; i++) rect(g, 3 + (i * (W - 13)) / (n - 1), top - 14, 7, 1.6, gold);
+      dot(g, W / 2, top - 18, 3.2, gold);
+      dot(g, W / 2, top - 18, 1.6, c.main);
+    }
+  } else if (style === STYLE.horse) {
+    // a second patterned band and a pennant on the smoke ring
+    const cx = kind === "manor" ? W / 2 - 4 : W / 2;
+    const rx = W / 2 - (kind === "manor" ? 9 : 6);
+    const y0 = H * 0.46;
+    g.strokeStyle = c.light;
+    g.lineWidth = 1.6;
+    g.beginPath();
+    for (let x = cx - rx; x <= cx + rx; x += 3) g.lineTo(x, y0 + 9 + ((x - cx + rx) % 6 < 3 ? 0 : 2));
+    g.stroke();
+    flag(g, cx, 4, 9, c);
+    if (age >= 3) {
+      oval(g, cx, 5, 5.5, 2.4, gold);
+      for (const tx of [cx - rx + 3, cx + rx - 3]) {
+        line(g, "#5a3a1e", 1.4, tx, H - 6, tx, H - 26);
+        shape(g, "#3a2a1a", tx - 2.5, H - 26, tx + 2.5, H - 26, tx + 1.5, H - 18, tx - 1.5, H - 18);
+        dot(g, tx, H - 27, 1.4, gold);
+      }
+    }
+  } else {
+    // a band of blue tiles, lanterns, then gold on the domes
+    const top = H * 0.44;
+    for (let x = 6; x < W - 7; x += 4) rect(g, x, top + 2.5, 3, 3, (x / 4) % 2 ? "#3f7fa8" : "#e8f0f4");
+    for (const lx of [W / 2 - 15, W / 2 + 13]) {
+      line(g, "#5a4a3a", 0.8, lx + 1, top + 6, lx + 1, top + 10);
+      round(g, lx - 1, top + 10, 4, 5, 1.5, "#c88a3a");
+      dot(g, lx + 1, top + 12.5, 1.2, "#fff0a0");
+    }
+    if (age >= 3) {
+      const domes = W > 70 || kind === "manor" ? [0.3, 0.7] : [0.5];
+      const r = W > 70 ? Math.min(W * 0.19, top - 6) : kind === "manor" ? Math.min(W * 0.21, top - 6) : Math.min(W * 0.3, top - 6);
+      for (const k of domes) {
+        g.strokeStyle = gold;
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.arc(W * k, top - 9, r - 0.8, Math.PI * 1.08, Math.PI * 1.92);
+        g.stroke();
+      }
+    }
+  }
+}
+
+/** A Hall grows: flanking towers in the Town age, flags and gold in the Castle age. Drawn behind the Hall. */
+function hallWings(g: G, W: number, H: number, c: Team, style: number, age: number) {
+  if (age < 2) return;
+  for (const x of [-6, W - 14]) {
+    oval(g, x + 12, H - 5, 14, 5, "rgba(30,44,14,.18)");
+    turret(g, x, H * 0.12, H - 6, 20, c, style, age >= 3);
+  }
+}
+
+/** The market: stalls under striped awnings, a little house of the owner's people behind. */
+function market(g: G, W: number, H: number, c: Team, style: number) {
+  const paved = style === STYLE.stone || style === STYLE.sun;
+  round(g, 2, 26, W - 4, H - 28, 6, paved ? "#cfc6b0" : "#bfa47a");
+  for (let i = 0; i < 40; i++) {
+    const x = 6 + hash(i, 1, W) * (W - 12);
+    const y = 30 + hash(i, 2, W) * (H - 36);
+    if (paved) round(g, x, y, 6, 4, 1, i % 2 ? "rgba(150,140,120,.35)" : "rgba(240,232,210,.4)");
+    else dot(g, x, y, 1, "rgba(120,90,50,.35)");
+  }
+  // the house behind
+  g.save();
+  g.translate(W / 2 - 24, -10);
+  g.scale(0.75, 0.75);
+  if (style === STYLE.stone) stone(g, "house", 64, 64, c);
+  else if (style === STYLE.horse) yurt(g, "house", 64, 64, c);
+  else if (style === STYLE.sun) sun(g, "house", 64, 64, c);
+  else forest(g, "house", 64, 64, c);
+  g.restore();
+  // three stalls
+  const goods = ["food", "wood", "stone"] as const;
+  for (let i = 0; i < 3; i++) {
+    const x = 5 + i * 30;
+    const y = 54;
+    oval(g, x + 15, y + 28, 15, 4, "rgba(30,24,10,.2)");
+    for (const px of [x + 2, x + 24]) rect(g, px, y - 2, 2.2, 28, "#6e4524");
+    rect(g, x, y + 12, 27, 9, "#a87a44");
+    rect(g, x, y + 12, 27, 2, "#c99a62");
+    rect(g, x + 16, y + 12, 11, 9, "rgba(40,20,5,.2)");
+    const ware = goods[i]!;
+    if (ware === "food") {
+      for (let k = 0; k < 7; k++) dot(g, x + 4 + k * 3.2, y + 10 - (k % 2) * 1.6, 2.1, k % 3 ? "#d23a2c" : "#7cba3c");
+      oval(g, x + 21, y + 9, 4.5, 2.6, "#d8a04a");
+    } else if (ware === "wood") {
+      for (let k = 0; k < 3; k++) {
+        round(g, x + 3, y + 9.5 - k * 3.2, 20, 3.4, 1.7, k % 2 ? "#9a6a38" : "#b07a44");
+        dot(g, x + 22.5, y + 11.2 - k * 3.2, 1.6, "#d8b07a");
+      }
+    } else {
+      shape(g, "#8e8b83", x + 3, y + 12, x + 5, y + 6, x + 11, y + 5, x + 13, y + 12);
+      shape(g, "#bdbab0", x + 5, y + 7, x + 11, y + 6, x + 10, y + 10);
+      for (let k = 0; k < 4; k++) oval(g, x + 19 + (k % 2) * 3, y + 10 - Math.floor(k / 2) * 2, 2.6, 1.3, k % 2 ? "#c8961e" : "#ffd84a");
+    }
+    // the awning, striped in the owner's colours
+    for (let k = 0; k < 5; k++) shape(g, k % 2 ? "#f6ecd6" : c.main, x - 2 + k * 6.2, y - 4, x + 4.2 + k * 6.2, y - 4, x + 5.2 + k * 6.2, y + 3, x - 1 + k * 6.2, y + 3);
+    rect(g, x - 2, y - 5, 31.5, 1.6, dim(c.main, 0.3));
+    for (let k = 0; k < 5; k++) dot(g, x + 1.1 + k * 6.2, y + 3, 1.6, k % 2 ? "#f6ecd6" : c.main);
+  }
+  // a hanging sign with scales
+  line(g, "#5a3a1e", 2, W - 8, H - 4, W - 8, 34);
+  line(g, "#5a3a1e", 1.6, W - 8, 36, W - 22, 36);
+  round(g, W - 24, 38, 14, 11, 2, "#e8d8b0");
+  line(g, "#8a6a30", 1, W - 17, 40, W - 17, 47, W - 22, 47, W - 12, 47);
+  line(g, "#8a6a30", 1, W - 21, 42, W - 13, 42);
+  oval(g, W - 21, 44, 2.2, 1, "#c8961e");
+  oval(g, W - 13, 44, 2.2, 1, "#c8961e");
+  barrel(g, 9, H - 3);
+  crate(g, 15, H - 10, 8);
+}
+
+/** A castle: curtain walls, four towers, a keep and a gatehouse, built the owner's way. */
+function castle(g: G, W: number, H: number, c: Team, style: number) {
+  const wallTop = style === STYLE.sun ? "#fbecc8" : style === STYLE.horse ? "#b98a52" : "#d2cfc4";
+  const wallFace = style === STYLE.sun ? "#ecd3a2" : style === STYLE.horse ? "#a07040" : "#b6b3a9";
+  const wallDark = style === STYLE.sun ? "#cdae78" : style === STYLE.horse ? "#7a5230" : "#8e8b83";
+  const battlement = (x: number, y: number, w: number) => {
+    rect(g, x, y, w, 5, wallTop);
+    if (style === STYLE.horse) for (let k = x; k < x + w - 2; k += 4) shape(g, "#9a6a35", k, y, k + 2, y - 4, k + 4, y);
+    else for (let k = x; k < x + w - 4; k += 9) rect(g, k, y - 5, 5.5, 5, wallTop);
+  };
+  // the back wall and its towers
+  rect(g, 18, 18, W - 36, 12, wallFace);
+  battlement(18, 14, W - 36);
+  for (const x of [4, W - 28]) turret(g, x, 4, 40, 24, c, style, true);
+  // the keep
+  const kx = 34;
+  const kw = W - 68;
+  const keep = g.createLinearGradient(kx, 0, kx + kw, 0);
+  keep.addColorStop(0, wallTop);
+  keep.addColorStop(0.6, wallFace);
+  keep.addColorStop(1, wallDark);
+  g.fillStyle = keep;
+  g.fillRect(kx, -14, kw, 88);
+  if (style !== STYLE.sun && style !== STYLE.horse)
+    for (let y = -8, row = 0; y < 74; y += 7, row++) {
+      line(g, "rgba(70,64,58,.3)", 0.7, kx, y, kx + kw, y);
+      for (let x = kx + (row % 2) * 7; x < kx + kw; x += 14) line(g, "rgba(70,64,58,.3)", 0.7, x, y - 7, x, y);
+    }
+  if (style === STYLE.sun) {
+    const dome = g.createRadialGradient(W / 2 - 8, -30, 2, W / 2, -16, 28);
+    dome.addColorStop(0, lit(c.main, 0.4));
+    dome.addColorStop(1, dim(c.main, 0.25));
+    g.fillStyle = dome;
+    g.beginPath();
+    g.arc(W / 2, -14, kw / 2 - 4, Math.PI, Math.PI * 2);
+    g.fill();
+    line(g, "#a07a30", 1.6, W / 2, -14 - kw / 2 + 4, W / 2, -24 - kw / 2 + 4);
+    dot(g, W / 2, -24 - kw / 2 + 4, 3, "#ffd84a");
+  } else if (style === STYLE.forest || style === STYLE.horse) {
+    shape(g, c.main, kx - 4, -12, W / 2, -48, kx + kw + 4, -12);
+    shape(g, dim(c.main, 0.25), W / 2, -48, kx + kw + 4, -12, W / 2 + 4, -12);
+    shape(g, lit(c.main, 0.2), W / 2, -48, kx - 4, -12, W / 2 - 6, -12);
+    flag(g, W / 2, -48, 14, c);
+  } else {
+    battlement(kx - 2, -18, kw + 4);
+    flag(g, W / 2, -23, 22, c);
+  }
+  for (const wx of [kx + 10, kx + kw - 16]) for (const wy of [6, 30]) round(g, wx, wy, 6, 10, 3, "#2a2620");
+  // a great banner
+  g.fillStyle = c.main;
+  g.beginPath();
+  g.moveTo(W / 2 - 10, 2);
+  g.lineTo(W / 2 + 10, 2);
+  g.lineTo(W / 2 + 10, 38);
+  g.lineTo(W / 2, 32);
+  g.lineTo(W / 2 - 10, 38);
+  g.closePath();
+  g.fill();
+  rect(g, W / 2, 2, 10, 34, "rgba(20,10,0,.15)");
+  dot(g, W / 2, 16, 5, c.light);
+  dot(g, W / 2, 16, 2.4, "#e8c24a");
+  // side walls, seen from above
+  for (const x of [8, W - 22]) {
+    rect(g, x, 36, 14, 52, wallTop);
+    rect(g, x + 10, 36, 4, 52, "rgba(40,30,20,.18)");
+  }
+  // the front wall and gatehouse
+  rect(g, 20, 86, W - 40, 34, wallFace);
+  for (let y = 92; y < 120; y += 7) line(g, "rgba(70,64,58,.25)", 0.7, 20, y, W - 20, y);
+  rect(g, W - 46, 86, 26, 34, "rgba(30,20,10,.16)");
+  battlement(20, 82, W - 40);
+  const gx = W / 2;
+  rect(g, gx - 16, 76, 32, 44, wallFace);
+  battlement(gx - 18, 72, 36);
+  g.fillStyle = "#2a1a10";
+  g.beginPath();
+  g.moveTo(gx - 10, 120);
+  g.lineTo(gx - 10, 98);
+  g.arc(gx, 98, 10, Math.PI, 0);
+  g.lineTo(gx + 10, 120);
+  g.fill();
+  for (let k = -7; k <= 7; k += 3.5) line(g, "#5c5c58", 1.2, gx + k, 92, gx + k, 120);
+  for (let k = 98; k < 120; k += 5) line(g, "#5c5c58", 1.2, gx - 9, k, gx + 9, k);
+  for (const fx of [gx - 14, gx + 14]) flag(g, fx, 66, 12, c);
+  // the front towers
+  for (const x of [0, W - 26]) {
+    oval(g, x + 14, H - 6, 16, 5, "rgba(30,44,14,.2)");
+    turret(g, x, 64, H - 6, 26, c, style, true);
+  }
+}
+
+/** A whole finished building, painted once for each age. */
+function paint(g: G, kind: Kind, style: number, c: Team, age: number) {
   const s = BUILDINGS[kind];
   const W = s.w * 32;
   const H = s.h * 32;
@@ -681,11 +952,15 @@ function paint(g: G, kind: Kind, style: number, c: Team) {
   if (kind === "dock") return dock(g, W, H, c, style);
   base(g, W, H);
   if (kind === "tower") return tower(g, W, H, c, style);
+  if (kind === "market") return market(g, W, H, c, style);
+  if (kind === "castle") return castle(g, W, H, c, style);
+  if (kind === "town") hallWings(g, W, H, c, style, age);
   if (style === STYLE.stone) stone(g, kind, W, H, c);
   else if (style === STYLE.horse) yurt(g, kind, W, H, c);
   else if (style === STYLE.sun) sun(g, kind, W, H, c);
   else forest(g, kind, W, H, c);
   extras(g, kind, W, H, c, style);
+  ageMarks(g, kind, W, H, c, style, age);
   if (kind === "town") flag(g, W / 2, style === STYLE.forest ? 3 : style === STYLE.horse ? 5 : style === STYLE.sun ? H * 0.44 - 9 - Math.min(W * 0.19, H * 0.44 - 6) - 16 : H * 0.3 - 13, 22, c);
 }
 
@@ -771,14 +1046,16 @@ function wallPiece(g: G, kind: Kind, links: boolean[], c: Team) {
  * Draws a building with its top-left at (x, y). `k` is pixels per unit (for the kept
  * picture's sharpness); `clock` moves smoke and flames.
  */
-export function drawBuilding(g: G, b: Building, x: number, y: number, links: boolean[], style: number, k: number, clock: number, full: number) {
+export function drawBuilding(g: G, b: Building, x: number, y: number, links: boolean[], style: number, k: number, clock: number, full: number, age = 1) {
   const s = BUILDINGS[b.kind];
   const W = s.w * 32;
   const H = s.h * 32;
   const c = SEATS[b.owner];
   const pic = s.wall
     ? sprite(`w${b.kind}${b.owner}${links.map(Number).join("")}`, k, -6, -16, 46, 50, (gg) => wallPiece(gg, b.kind, links, c))
-    : sprite(`b${b.kind}${style}${b.owner}`, k, -10, -46, W + 26, H + 54, (gg) => paint(gg, b.kind, style, c));
+    : b.kind === "castle"
+      ? sprite(`b${b.kind}${style}${b.owner}`, k, -14, -76, W + 28, H + 84, (gg) => paint(gg, b.kind, style, c, 3))
+      : sprite(`b${b.kind}${style}${b.owner}${age}`, k, -10, -46, W + 26, H + 54, (gg) => paint(gg, b.kind, style, c, age));
   if (b.progress < 1) {
     // a building site: worn earth, the building rising, and scaffolding
     round(g, x + 2, y + 2, W - 4, H - 4, 4, "rgba(130,96,56,.5)");

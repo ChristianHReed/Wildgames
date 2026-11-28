@@ -7,7 +7,7 @@ import { BASES, GRID, setMap } from "../game/map";
 import { begin, updateVision, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
 
 /** Both devices must run the same version of the game. */
-export const VERSION = 4;
+export const VERSION = 5;
 
 const NODE_KINDS = ["wood", "food", "gold", "stone"] as const;
 const ORDERS = ["idle", "move", "gather", "drop", "build", "attack", "board", "unload"] as const;
@@ -81,7 +81,7 @@ export function snapshot(sim: Sim, you: PlayerId, seen: Memory, sounds: string[]
     arrows: sim.arrows.map((a) => [round(a.x), round(a.y), round(a.tx), round(a.ty), a.owner, +!!a.ball]),
     me: {
       sel: sim.sel[you], place: sim.place[you], hunt: sim.hunt[you], anchor: sim.anchor[you],
-      bad: sim.bad[you], note: sim.note[you], shake: sim.shake[you],
+      bad: sim.bad[you], note: sim.note[you], shake: sim.shake[you], prices: sim.prices[you],
     },
     sounds,
   };
@@ -169,6 +169,7 @@ export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
   sim.bad[you] = m.me.bad;
   sim.note[you] = m.me.note;
   sim.shake[you] = m.me.shake;
+  if (m.me.prices) sim.prices[you] = m.me.prices;
   if (Array.isArray(m.sounds)) sim.fxQueue.push(...m.sounds);
   sim.uiDirty = true;
 }

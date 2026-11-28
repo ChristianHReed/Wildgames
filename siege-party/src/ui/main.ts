@@ -1,8 +1,8 @@
 import { playSfx, resumeAudio, setMuted, unlockAudio } from "../game/audio";
-import { AGES, BUILDINGS, BUILD_MENU, COLS, LEVELS, ROWS, SEATS, SIZE, TECHS, isNorth, UNITS, canAfford, type Cost, type TechKind, type UnitKind, type BuildingKind } from "../game/content";
+import { AGES, BUILDINGS, BUILD_MENU, COLS, GOODS, LEVELS, ROWS, SEATS, SIZE, TECHS, isNorth, UNITS, canAfford, type Cost, type TechKind, type UnitKind, type BuildingKind } from "../game/content";
 import { act, type Cmd, type Group } from "../game/commands";
 import {
-  IDS, allied, begin, techBlock, unitCost, unitStats, createSim, focusHall, hasComplete, panCam, clampCam,
+  IDS, allied, begin, techBlock, unitCost, unitStats, createSim, focusHall, hasComplete, panCam, clampCam, quote,
   step, takeSnap, togglePause,
   type Mode, type PlayerId, type Setup, type SideSnap,
 } from "../game/sim";
@@ -72,6 +72,8 @@ const panels = IDS.map((p) => {
     mini: q<HTMLCanvasElement>(".mini"), zoomBtn: q<HTMLButtonElement>(".zoom"), far: false, cat: -1,
     /** showing the upgrades of a building that also trains */
     ups: 0,
+    /** the market's page: 0 its front, 1 selling, 2 buying (with the market's id) */
+    mkt: 0, mktOf: 0,
     gone: q(".gone"),
     res: q(".res"), info: q(".info"), actions: q(".actions"), groups: q(".groups"), toast: q(".toast"),
     w: 0, h: 0, zoom: 1, actionKey: "", resKey: "", groupKey: "",
@@ -239,12 +241,12 @@ const cost = (c: Cost) => Object.entries(c).map(([k, v]) => `<i class="${k}">${v
 function hud(p: PlayerId, s: SideSnap) {
   const q = panels[p]!;
   const idle = sim.units.filter((u) => u.owner === p && (u.kind === "villager" || u.kind === "fisher") && u.order.t === "idle").length;
-  const resKey = [s.food, s.wood, s.gold, s.stone, s.pop, s.cap, s.age].join();
+  const resKey = [s.food, s.wood, s.gold, s.stone, s.pop, s.cap, s.army, s.armyCap, s.age].join();
   if (resKey !== q.resKey) {
     q.resKey = resKey;
     q.res.innerHTML =
       (["food", "wood", "gold", "stone"] as const).map((k) => `<span><i class="${k}">${k}</i> ${s[k]}</span>`).join("") +
-      `<span><i>pop</i> ${s.pop}/${s.cap}</span><span class="age" title="${AGES[s.age]} age">${"I".repeat(s.age)}</span>`;
+      `<span title="Folk / room in homes"><i>folk</i> ${s.pop}/${s.cap}</span><span title="soldiers / room in barracks"><i>army</i> ${s.army}/${s.armyCap}</span><span class="age" title="${AGES[s.age]} age">${"I".repeat(s.age)}</span>`;
   }
   const b = sim.buildings.find((o) => o.id === sim.sel[p].building);
   const folkPicked = !s.place && (s.sel === "folk" || s.sel === "mix");
@@ -252,6 +254,10 @@ function hud(p: PlayerId, s: SideSnap) {
   // picking something on the map closes the list of allies
   if (s.place || s.selCount || b) q.diplo = false;
   if (q.ups !== (b?.id ?? 0)) q.ups = 0;
+  if (q.mktOf !== (b?.id ?? 0)) {
+    q.mkt = 0;
+    q.mktOf = b?.id ?? 0;
+  }
   // each building offers the first upgrade of every chain that is not finished yet
   const upgrades = b && b.owner === p
     ? (Object.keys(TECHS) as TechKind[]).filter((k) => {
@@ -278,6 +284,14 @@ function hud(p: PlayerId, s: SideSnap) {
         info += b.rally ? ". Tap the Hall to clear the flag." : ". Tap the map: new Folk go there.";
       } else info = `Castle age · health ${s.hp}`;
     } else if (b.upgrade) info += ` · becoming a manor, ${Math.ceil(b.upgrade.left)}s`;
+    else if (b.kind === "market") {
+      const prices = GOODS.map((g) => {
+        const each = quote(sim, p, g);
+        return `${g} ${each.buy}/${each.sell}`;
+      }).join(" · ");
+      info = q.mkt === 1 ? "Sell 100 at a time for gold. The more you sell, the less it fetches." : q.mkt === 2 ? "Buy 100 at a time with gold. The more you buy, the dearer it gets." : `Gold for 100, buy/sell: ${prices}`;
+    } else if (b.kind === "castle") info += ` · houses ${BUILDINGS.castle.pop} Folk and ${BUILDINGS.castle.room} soldiers`;
+    else if (b.kind === "barracks" && !b.queue.length) info += ` · houses ${BUILDINGS.barracks.room} soldiers`;
     else if (b.kind === "house" || b.kind === "manor") info += ` · houses ${BUILDINGS[b.kind].pop}${b.kind === "house" ? ` · a manor houses ${BUILDINGS.manor.pop}` : ""}`;
     else if (b.kind === "gate") info += " · only your people pass";
     else if (BUILDINGS[b.kind].trains?.length) info += b.rally ? " · tap the map to move the flag, or this building to clear it" : " · tap the map to choose where new units go";
@@ -289,7 +303,7 @@ function hud(p: PlayerId, s: SideSnap) {
     info = s.hold ? `${s.selName} · ${s.load}/${s.hold} aboard · ${s.load ? "tap a shore to land them" : todo[s.sel]}` : `${s.selName} · ${todo[s.sel]}`;
   } else if (q.diplo) info = "Allies don't fight, share what they see and can win together.";
   // upgrade effects and age advice may need a second line
-  const tall = !!b && !s.place && (upsView || b.kind === "town") && !b.research && !b.queue.length && b.progress >= 1;
+  const tall = !!b && !s.place && (upsView || b.kind === "town" || b.kind === "market") && !b.research && !b.queue.length && b.progress >= 1;
   q.info.classList.toggle("tall", tall);
   if (q.info.textContent !== info) q.info.textContent = info;
   q.toast.textContent = s.note;
@@ -322,6 +336,7 @@ function hud(p: PlayerId, s: SideSnap) {
   const key = [
     q.diplo, q.diplo ? others.map((o) => `${o}${relation(o)[0]}${sim.ai[o]}`).join() : "",
     s.load > 0, s.place, s.anchored, s.sel, s.building, sim.sel[p].building, s.train.join(), s.hunt, q.cat, q.ups, s.age,
+    q.mkt, b?.kind === "market" ? GOODS.map((g) => Math.round(sim.prices[p][g])).join() + sim.res[p].gold : "",
     upgrades.map((k) => `${k}${techBlock(sim, p, k)}`).join(), shown.map(can).join(),
     q.cat >= 0 ? BUILD_MENU[q.cat]!.kinds.map(open).join() : "", b && b.progress >= 1, sim.tech[p].join(),
     b?.kind, !!b?.upgrade, sentries(),
@@ -344,7 +359,21 @@ function hud(p: PlayerId, s: SideSnap) {
         const aging = k === "age2" || k === "age3";
         return button(aging ? `▲ ${t.name}` : t.name, () => send(p, { t: "research", tech: k }), sub, no ? "poor" : can(t.cost) || (aging ? "go" : ""));
       };
-      if (b.progress >= 1) {
+      if (b.progress >= 1 && b.kind === "market") {
+        // the market: a page to sell, a page to buy
+        if (q.mkt === 0) {
+          list.push(button("Sell ▸", () => { q.mkt = 1; redo(); }, "goods for gold"));
+          list.push(button("Buy ▸", () => { q.mkt = 2; redo(); }, "goods with gold"));
+        } else {
+          const buy = q.mkt === 2;
+          list.push(button("◂", () => { q.mkt = 0; redo(); }, "", "x"));
+          for (const g of GOODS) {
+            const price = quote(sim, p, g);
+            const able = buy ? sim.res[p].gold >= price.buy : sim.res[p][g] >= 100;
+            list.push(button(`${buy ? "Buy" : "Sell"} ${g}`, () => send(p, { t: "trade", good: g, buy }), buy ? `100 for ${price.buy} gold` : `100 → ${price.sell} gold`, able ? "" : "poor"));
+          }
+        }
+      } else if (b.progress >= 1) {
         if (upsView) {
           if (s.train.length) list.push(button("◂", () => { q.ups = 0; redo(); }, "", "x"));
           list.push(...upgrades.map(upgradeButton));
@@ -601,10 +630,11 @@ const HELP = `
 <li><b>Repair</b> by picking Folk and tapping a damaged building.</li>
 <li><b>Gathering point.</b> Tap a building that makes units, then tap the map: a flag shows where new units will go. Tap a tree, berries, gold, stone or one of your fields and new Folk start work there. Tap the building again to clear it.</li>
 <li><b>Demolish</b> a building or field you no longer want: tap it, then press <b>Demolish</b> twice.</li>
-<li><b>Housing.</b> Your Hall houses 5 and each Cottage 5. In the Town age a Cottage can be enlarged into a <b>Manor</b>, which houses 12.</li>
+<li><b>Castle age.</b> Once your Hall reaches the Castle age, Folk can build a <b>Market</b>, to buy and sell food, wood and stone for gold (handy when the map runs out of something), and a <b>Castle</b>: a fortress that makes Folk and soldiers, takes in anything gathered and keeps you in the game even if your Hall falls.</li>
+<li><b>Housing.</b> Folk live in homes: your Hall houses 5, each Cottage 5, and in the Town age a Cottage can be enlarged into a <b>Manor</b> for 12. Soldiers and warships live in <b>Barracks</b>, 10 to each. Build more homes and barracks for more people; there is no other limit.</li>
 <li><b>Soldiers fight back</b> against whatever hurts them. Turn on <b>Sentry</b> and they also run to defend buildings and people near their post that come under attack, then return to it.</li>
 <li><b>Allies.</b> With 3 or more players, press <b>Allies</b> to ask, accept or end an alliance (ending one takes 10 seconds). Allies don't fight, share what they see, can pass each other's gates and can win together. You each need someone left to fight when you join up.</li>
-<li><b>Win</b> by being the last side with a Hall standing.</li>
+<li><b>Win</b> by being the last side with a Hall or Castle standing.</li>
 </ol>`;
 
 let screenKey = "";
