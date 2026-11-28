@@ -7,7 +7,7 @@ import { BASES, GRID, setMap } from "../game/map";
 import { begin, updateVision, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
 
 /** Both devices must run the same version of the game. */
-export const VERSION = 2;
+export const VERSION = 3;
 
 const NODE_KINDS = ["wood", "food", "gold", "stone"] as const;
 const ORDERS = ["idle", "move", "gather", "drop", "build", "attack", "board", "unload"] as const;
@@ -44,6 +44,7 @@ export function snapshot(sim: Sim, you: PlayerId, seen: Memory, sounds: string[]
       b.id, b.owner, BUILD_KINDS.indexOf(b.kind), b.tx, b.ty, Math.ceil(b.hp), Math.floor(b.progress * 100) / 100, b.seen,
       b.queue.map((q) => [UNIT_KINDS.indexOf(q.kind), Math.ceil(q.left)]),
       b.research ? [b.research.tech, Math.ceil(b.research.left)] : 0,
+      b.rally ? [round(b.rally.x), round(b.rally.y)] : 0,
     ];
     const text = JSON.stringify(row);
     if (seen.buildings.get(b.id) !== text) {
@@ -125,13 +126,14 @@ export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
   if (m.changed.length || m.razed.length) {
     const byId = new Map(sim.buildings.map((b) => [b.id, b]));
     for (const id of m.razed) byId.delete(id);
-    for (const [id, owner, kind, tx, ty, hp, progress, seenBy, queue, research] of m.changed) {
+    for (const [id, owner, kind, tx, ty, hp, progress, seenBy, queue, research, rally] of m.changed) {
       byId.set(id, {
         id, owner, kind: BUILD_KINDS[kind]!, tx, ty, hp, progress,
         // what this device has already scouted stays on its map
         seen: seenBy | (byId.get(id)?.seen ?? 0),
         queue: queue.map((q: number[]) => ({ kind: UNIT_KINDS[q[0]!]!, left: q[1]! })),
         research: research ? { tech: research[0], left: research[1] } : null,
+        rally: rally ? { x: rally[0], y: rally[1] } : null,
         cd: 0, work: 0,
       } satisfies Building);
     }

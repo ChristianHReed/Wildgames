@@ -95,6 +95,8 @@ export type Building = {
   seen: number;
   work: number;
   research: { tech: TechKind; left: number } | null;
+  /** where units it makes go: a spot, or a resource for new Folk to work */
+  rally?: { x: number; y: number; node?: number } | null;
 };
 
 export type Node = {
@@ -522,7 +524,9 @@ function waterMask() {
   return water;
 }
 
-/** 0 open, 1 solid, 2 to 6 a finished gate that its owner (0 to 4) and allies can walk through. */
+/** A field: people walk across it, but nothing can be built on it. */
+const FIELD = 7;
+/** 0 open, 1 solid, 2 to 6 a finished gate that its owner (0 to 4) and allies can walk through, 7 a field. */
 function occupancy(sim: Sim) {
   let c = gridCache.get(sim);
   if (c && c.ver === sim.mapVer) return c;
@@ -531,7 +535,7 @@ function occupancy(sim: Sim) {
   for (const b of sim.buildings) {
     if (b.hp <= 0) continue;
     const spec = BUILDINGS[b.kind];
-    const v = b.kind === "gate" && b.progress >= 1 ? 2 + b.owner : 1;
+    const v = b.kind === "gate" && b.progress >= 1 ? 2 + b.owner : b.kind === "farm" ? FIELD : 1;
     for (let y = b.ty; y < b.ty + spec.h; y++) grid.fill(v, y * COLS + b.tx, y * COLS + b.tx + spec.w);
   }
   c = { ver: sim.mapVer, grid, regions: [null, null, null, null, null], sea: null };
@@ -542,7 +546,13 @@ function occupancy(sim: Sim) {
 export function blockedCell(sim: Sim, x: number, y: number, owner?: PlayerId) {
   if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return true;
   const v = occupancy(sim).grid[y * COLS + x]!;
-  return v !== 0 && (v === 1 || owner === undefined || !allied(sim, owner, v - 2));
+  return v !== 0 && v !== FIELD && (v === 1 || owner === undefined || !allied(sim, owner, v - 2));
+}
+
+/** Whether anything at all stands on this tile (fields included), so nothing new can be built there. */
+export function takenCell(sim: Sim, x: number, y: number) {
+  if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return true;
+  return occupancy(sim).grid[y * COLS + x] !== 0;
 }
 
 function distToRect(x: number, y: number, tx: number, ty: number, w: number, h: number) {
@@ -579,7 +589,10 @@ function label(open: (i: number) => boolean) {
 /** Where a player can walk. */
 function regions(sim: Sim, owner: PlayerId) {
   const c = occupancy(sim);
-  return (c.regions[owner] ??= label((i) => c.grid[i] === 0 || (c.grid[i]! > 1 && allied(sim, owner, c.grid[i]! - 2))));
+  return (c.regions[owner] ??= label((i) => {
+    const v = c.grid[i]!;
+    return v === 0 || v === FIELD || (v > 1 && v < FIELD && allied(sim, owner, v - 2));
+  }));
 }
 
 /** Where ships can sail. */
@@ -838,20 +851,31 @@ function moveToward(sim: Sim, u: Unit, x: number, y: number, dt: number) {
   return dist < 0.22;
 }
 
+/**
+ * People standing close together drift apart. Anyone on the move walks straight through
+ * others (no jams in gaps or on paths); those standing still step aside for them.
+ */
 function separate(sim: Sim) {
-  const list = sim.units.filter((u) => u.hp > 0);
+  const list = sim.units.filter((u) => u.hp > 0 && !u.aboard);
   for (let i = 0; i < list.length; i++) {
     const a = list[i]!;
+    if (a.order.t === "move" || (a.order.t !== "idle" && a.path.length > 0)) continue;
     let px = 0;
     let py = 0;
     for (let j = 0; j < list.length; j++) {
       if (i === j) continue;
       const b = list[j]!;
-      const dx = a.x - b.x;
-      const dy = a.y - b.y;
+      let dx = a.x - b.x;
+      let dy = a.y - b.y;
+      if (!dx && !dy) {
+        // exactly on top of each other: part in a direction set by who they are
+        const ang = (a.id - b.id) * 2.399963;
+        dx = Math.cos(ang) * 0.01;
+        dy = Math.sin(ang) * 0.01;
+      }
       const d = Math.hypot(dx, dy);
       const room = naval(a.kind) && naval(b.kind) ? 0.85 : 0.46;
-      if (d > 0 && d < room) {
+      if (d < room) {
         const push = (room - d) / room;
         px += (dx / d) * push;
         py += (dy / d) * push;
@@ -1403,17 +1427,19 @@ function stepBuildings(sim: Sim, dt: number) {
         const kind = b.queue[0]!.kind;
         b.queue.shift();
         const preferY = isNorth(b.owner) ? b.ty + spec.h + 0.2 : b.ty - 0.2;
+        let made: Unit | null = null;
         if (naval(kind)) {
           const at = mooring(sim, { owner: b.owner, kind }, b.tx + spec.w / 2, preferY, b.tx, b.ty, spec.w, spec.h, true);
-          if (at) spawnUnit(sim, b.owner, kind, at.x, at.y);
+          if (at) made = spawnUnit(sim, b.owner, kind, at.x, at.y);
         } else {
           const spot = nearestStand(sim, b.owner, b.tx + spec.w / 2, preferY, b.tx, b.ty, spec.w, spec.h);
           const sx = spot?.x ?? b.tx + spec.w / 2;
           const sy = spot?.y ?? preferY;
-          const u = spawnUnit(sim, b.owner, kind, sx, sy);
+          made = spawnUnit(sim, b.owner, kind, sx, sy);
           const toward = isNorth(b.owner) ? 1.4 : -1.4;
-          u.order = { t: "move", x: sx, y: sy + toward, hunt: false };
+          made.order = { t: "move", x: sx, y: sy + toward, hunt: false };
         }
+        if (made && b.rally) sendToRally(sim, made, b.rally);
       }
     }
     if (spec.attack && b.cd > 0) b.cd -= dt;
@@ -1783,6 +1809,25 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
     sim.uiDirty = true;
     return;
   }
+  const picked = sim.sel[p].building !== null ? buildingById(sim, sim.sel[p].building) : undefined;
+  const trainer = !sel.length && picked && picked.owner === p && picked.progress >= 1 && BUILDINGS[picked.kind].trains?.length ? picked : undefined;
+  if (trainer && hit.building === trainer) {
+    // tapping the building again clears its gathering point
+    if (trainer.rally) {
+      trainer.rally = null;
+      setNote(sim, p, "New units will wait by the building");
+    }
+    sim.uiDirty = true;
+    return;
+  }
+  if (trainer && hit.building?.owner === p && hit.building.kind === "farm" && trainer.kind === "town") {
+    const field = sim.nodes.find((n) => n.farm && n.x === hit.building!.tx && n.y === hit.building!.ty);
+    if (field) return setRally(sim, p, trainer, wx, wy, field);
+  }
+  if (trainer && !(hit.building && hit.building.owner === p) && !(hit.unit && hit.unit.owner === p)) {
+    const n = hit.node && !hit.node.farm ? hit.node : null;
+    return setRally(sim, p, trainer, wx, wy, n);
+  }
   if (hit.building && hit.building.owner === p) {
     const folks = sel.filter((u) => u.kind === "villager");
     if (folks.length && (hit.building.progress < 1 || hit.building.hp < maxHp(sim, p, hit.building.kind) - 0.5)) {
@@ -1908,7 +1953,7 @@ export function placeReason(sim: Sim, p: PlayerId, kind: BuildingKind, tx: numbe
       if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return "Off the field";
       const c = tileChar(x, y);
       if (c !== "." && c !== "D") return "Blocked ground";
-      if (blockedCell(sim, x, y) && !(kind === "gate" && ownWall(sim, p, x, y))) return "Blocked ground";
+      if (takenCell(sim, x, y) && !(kind === "gate" && ownWall(sim, p, x, y))) return "Blocked ground";
     }
   }
   if (spec.shore && !mooring(sim, { owner: p, kind: "fisher" }, tx, ty, tx, ty, spec.w, spec.h, true)) return "A dock must touch water";
@@ -2026,6 +2071,35 @@ export function placeAt(sim: Sim, p: PlayerId, wx: number, wy: number) {
   assignBuilders(sim, p, found(sim, p, kind, tx, ty));
   // gates are often placed several at a time; other buildings are one per choice
   if (kind !== "gate") sim.place[p] = null;
+}
+
+/** Sends a newly made unit to its building's gathering point. */
+function sendToRally(sim: Sim, u: Unit, r: { x: number; y: number; node?: number }) {
+  const n = r.node !== undefined ? nodeById(sim, r.node) : undefined;
+  if (n && (u.kind === "villager" || u.kind === "fisher") && n.sea === naval(u.kind)) {
+    u.order = { t: "gather", node: n.id };
+    u.path = [];
+    u.goalKey = "";
+    return;
+  }
+  // a little apart, so a crowd does not form on one spot
+  const a = u.id * 2.399963;
+  const spread = Math.min(0.9, 0.25 + (u.id % 5) * 0.15);
+  const x = r.x + Math.cos(a) * spread;
+  const y = r.y + Math.sin(a) * spread;
+  const at = naval(u.kind) ? seaSpot(sim, u, x, y) : { x, y };
+  if (!at) return;
+  u.order = { t: "move", x: at.x, y: at.y, hunt: !unarmed(u.kind) && u.kind !== "villager" };
+  u.path = [];
+  u.goalKey = "";
+}
+
+/** Sets or clears where the selected building sends the units it makes. */
+function setRally(sim: Sim, p: PlayerId, b: Building, wx: number, wy: number, n: Node | null) {
+  if (n) b.rally = { x: n.x + (n.farm ? 1 : 0.5), y: n.y + (n.farm ? 1 : 0.5), node: n.id };
+  else b.rally = { x: wx, y: wy };
+  setNote(sim, p, n && b.kind !== "barracks" && b.kind !== "range" && b.kind !== "stable" && b.kind !== "workshop" ? "New Folk will work there" : "New units will go there");
+  sim.uiDirty = true;
 }
 
 /** Tear down the selected building. An unfinished one returns its cost. */

@@ -75,6 +75,8 @@ const panels = IDS.map((p) => {
     gone: q(".gone"),
     res: q(".res"), info: q(".info"), actions: q(".actions"), groups: q(".groups"), toast: q(".toast"),
     w: 0, h: 0, zoom: 1, actionKey: "", resKey: "", groupKey: "",
+    /** a building whose Demolish button was pressed once, and when (it must be pressed again to tear it down) */
+    sure: 0, sureAt: 0,
   };
 });
 
@@ -273,8 +275,10 @@ function hud(p: PlayerId, s: SideSnap) {
       if (next) {
         const missing = TECHS[next].needs && !TECHS[next].needs!.some((k) => hasComplete(sim, p, k));
         info = `${AGES[s.age]} age. ${TECHS[next].name} ${missing ? `needs a ${TECHS[next].needs!.map((k) => BUILDINGS[k].name.toLowerCase()).join(" or ")}` : TECHS[next].effect}`;
+        info += b.rally ? ". Tap the Hall to clear the flag." : ". Tap the map: new Folk go there.";
       } else info = `Castle age · health ${s.hp}`;
     } else if (b.kind === "gate") info += " · only your people pass";
+    else if (BUILDINGS[b.kind].trains?.length) info += b.rally ? " · tap the map to move the flag, or this building to clear it" : " · tap the map to choose where new units go";
   } else if (s.selCount) {
     const todo = {
       folk: "tap a resource, a damaged building or the ground", boats: "tap fish or water", host: "tap an enemy or where to go", mix: "tap where to go", none: "", hall: "",
@@ -313,6 +317,7 @@ function hud(p: PlayerId, s: SideSnap) {
     s.load > 0, s.place, s.anchored, s.sel, s.building, sim.sel[p].building, s.train.join(), s.hunt, q.cat, q.ups, s.age,
     upgrades.map((k) => `${k}${techBlock(sim, p, k)}`).join(), shown.map(can).join(),
     q.cat >= 0 ? BUILD_MENU[q.cat]!.kinds.map(open).join() : "", b && b.progress >= 1, sim.tech[p].join(),
+    q.sure === sim.sel[p].building && performance.now() - q.sureAt < 3000,
   ].join("|");
   if (key !== q.actionKey) {
     q.actionKey = key;
@@ -347,8 +352,22 @@ function hud(p: PlayerId, s: SideSnap) {
           else if (upgrades.length) list.push(button("Upgrades", () => { q.ups = b.id; redo(); }, "▸", upgrades.some((k) => !techBlock(sim, p, k) && canAfford(sim.res[p], TECHS[k].cost)) ? "alert" : ""));
         }
       }
-      if (b.kind !== "town" && !(upsView && s.train.length))
-        list.push(button(b.progress < 1 ? "Cancel build" : "Remove", () => send(p, { t: "demolish" }), b.progress < 1 ? "refund" : "", "danger"));
+      if (b.kind !== "town" && !(upsView && s.train.length)) {
+        // tearing down a finished building takes a second press, so it cannot happen by accident
+        const sure = q.sure === b.id && performance.now() - q.sureAt < 3000;
+        const id = b.id;
+        list.push(button(b.progress < 1 ? "Cancel build" : sure ? "Tap again" : "Demolish", () => {
+          if (b.progress < 1 || (q.sure === id && performance.now() - q.sureAt < 3000)) {
+            q.sure = 0;
+            send(p, { t: "demolish" });
+          } else {
+            q.sure = id;
+            q.sureAt = performance.now();
+            redo();
+            setTimeout(redo, 3100);
+          }
+        }, b.progress < 1 ? "refund" : sure ? "to tear it down" : b.kind === "farm" ? "remove field" : "tear down", "danger"));
+      }
     } else if (folkPicked) {
       if (q.cat < 0) {
         BUILD_MENU.forEach((m, i) => list.push(button(`${m.name} ▸`, () => { q.cat = i; redo(); }, m.hint)));
@@ -562,6 +581,8 @@ const HELP = `
 <li><b>Transports.</b> Build one at a Dock. Pick your people or army, then tap the Transport to board (10 places; a Ram takes 3). Pick the Transport and tap a far shore to land them, or press <b>Land everyone</b>.</li>
 <li><b>Upgrades.</b> Tap a Storehouse, Smithy, Barracks, Range, Stable or Dock.</li>
 <li><b>Repair</b> by picking Folk and tapping a damaged building.</li>
+<li><b>Gathering point.</b> Tap a building that makes units, then tap the map: a flag shows where new units will go. Tap a tree, berries, gold, stone or one of your fields and new Folk start work there. Tap the building again to clear it.</li>
+<li><b>Demolish</b> a building or field you no longer want: tap it, then press <b>Demolish</b> twice.</li>
 <li><b>Allies.</b> With 3 or more players, press <b>Allies</b> to ask, accept or end an alliance (ending one takes 10 seconds). Allies don't fight, share what they see, can pass each other's gates and can win together. You each need someone left to fight when you join up.</li>
 <li><b>Win</b> by being the last side with a Hall standing.</li>
 </ol>`;

@@ -735,6 +735,32 @@ export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: n
       },
     });
   }
+  // the gathering point of the selected building: a dotted line and a flag
+  const rallyOf = sim.sel[p].building !== null ? sim.buildings.find((b) => b.id === sim.sel[p].building && b.owner === p) : undefined;
+  if (rallyOf?.rally) {
+    const s = BUILDINGS[rallyOf.kind];
+    const fx = sx(rallyOf.rally.x);
+    const fy = sy(rallyOf.rally.y);
+    lg.save();
+    lg.strokeStyle = "rgba(255,248,210,.8)";
+    lg.lineWidth = 2;
+    lg.setLineDash([4, 5]);
+    lg.beginPath();
+    lg.moveTo(sx(rallyOf.tx + s.w / 2), sy(rallyOf.ty + s.h / 2));
+    lg.lineTo(fx, fy);
+    lg.stroke();
+    lg.restore();
+    const c = TEAM[p];
+    items.push({
+      z: fy + 2,
+      f: () => {
+        softShadow(lg, fx + 2, fy + 1, 5, 2);
+        box(lg, fx - 1, fy - 24, 2.5, 25, "#4a2c17");
+        poly(lg, c.main, fx + 1.5, fy - 24, fx + 16, fy - 19, fx + 1.5, fy - 13);
+        poly(lg, c.light, fx + 1.5, fy - 24, fx + 9, fy - 21.5, fx + 1.5, fy - 19);
+      },
+    });
+  }
   items.sort((a, b) => a.z - b.z);
   for (const it of items) it.f();
 
