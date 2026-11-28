@@ -12,7 +12,7 @@ self.addEventListener('install', function(e){ e.waitUntil(caches.open(CACHE).the
 /* leave only this version's files: other game caches go, and squares from an older map are dropped */
 self.addEventListener('activate', function(e){ e.waitUntil(caches.keys().then(function(ks){
   return Promise.all(ks.map(function(k){
-    if (k === CACHE) return null;
+    if (k === CACHE || k.indexOf('siege-party-') === 0) return null;   /* siege-party- belongs to the other game in siege-party/ */
     if (k === SQ) return caches.open(SQ).then(function(c){ return c.keys().then(function(rs){ return Promise.all(rs.filter(function(r){ return new URL(r.url).search !== '?d=' + DATAV; }).map(function(r){ return c.delete(r); })); }); });
     return caches.delete(k);
   }));
