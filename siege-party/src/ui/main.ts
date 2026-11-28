@@ -8,6 +8,7 @@ import {
 } from "../game/sim";
 import { PIXEL, render, renderMini, snapZoom } from "./draw";
 import { groundFrame } from "./ground";
+import { soundscape } from "./sound";
 import { chooseSize, loadPlayers, mapEditor, mapSize, savedMap } from "./editor";
 import { sizePicker } from "./sizes";
 import { hostLobby, joinLobby, type HostPlan } from "./lobby";
@@ -810,6 +811,7 @@ function frame(now: number) {
   last = now;
   if (hostLink) guestTick(sim, dt);
   else for (let left = dt; left > 0; left -= 1 / 30) step(sim, Math.min(left, 1 / 30));
+  soundscape(sim, IDS.filter((p) => seated(p) && p < sim.count), dt, sim.sound && sim.phase === "play");
   for (const name of sim.fxQueue.splice(0)) {
     if (remotes.length && heard.length < 6) heard.push(name);
     if (sim.sound) playSfx(name);

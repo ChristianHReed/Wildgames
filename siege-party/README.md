@@ -2,6 +2,8 @@
 
 A small real-time strategy game in the style of Age of Empires. Play up to four computers,
 share one screen, or link several devices. It is a separate game from Afterstreet and shares no code with it; everything it needs is in this folder.
+This is the painted, flat-looking version. A 3D version of the same game is next door in
+[`../siege-party-3d`](../siege-party-3d).
 
 **To play:** download `index.html` and open it in a browser. It is one
 self-contained page with nothing to install. Served from a web address it can also
@@ -20,6 +22,7 @@ be added to the Home Screen and opens without a connection.
 - Towns that change look with each age; a Market for trading and Castles that work like a second Hall
 - No overall population limit: homes house Folk, barracks house soldiers
 - Map sizes up to 256×384, and maps made from a picture
+- Sound made in code: wind, rustling leaves, water and birdsong, and the knocks and clinks of work and battle
 
 ## Playing on separate devices
 
@@ -41,6 +44,7 @@ The in-game help on the home page explains the controls.
 | `src/game/commands.ts` | Player actions, including those sent from other devices |
 | `src/game/map.ts`, `mapgen.ts` | Built-in map and picture maps |
 | `src/ui/net.ts`, `sync.ts`, `lobby.ts` | Playing on separate devices |
+| `src/ui/sound.ts`, `src/game/audio.ts` | Sounds, all made in code |
 | `src/ui/` | Drawing, touch controls and menus |
 | `manifest.webmanifest`, `sw.js`, icons | Home Screen and offline copy |
 
