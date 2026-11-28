@@ -191,7 +191,7 @@ export const snapZoom = (zoom: number) => (Math.max(6, Math.round((32 * zoom) / 
 
 /** Draws one player's view. North's view is turned around so their own base is nearest to them. */
 export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: number, zoom: number, maxHp: (u: Unit) => number) {
-  const dir = isNorth(p) ? -1 : 1;
+  const dir = sim.flip[p] ? -1 : 1;
   const cam = sim.cam[p];
   /** art pixels per tile, and per unit of the drawing code's own space (32 per tile) */
   const tile = Math.max(6, Math.round((32 * zoom) / PIXEL));
@@ -251,7 +251,7 @@ export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: n
   art(lg, jx, jy);
 
   const walls = new Set<number>();
-  for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << p)) walls.add((b.ty * COLS + b.tx) * 16 + b.owner);
+  for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << sim.lead[p])) walls.add((b.ty * COLS + b.tx) * 16 + b.owner);
   const links = (b: Building) =>
     [[0, -1], [1, 0], [0, 1], [-1, 0]].map(([dx, dy]) => walls.has(((b.ty + dy! * dir) * COLS + b.tx + dx! * dir) * 16 + b.owner));
 
@@ -266,7 +266,7 @@ export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: n
   }
   const chosen = new Set(sim.sel[p].units);
   for (const b of sim.buildings) {
-    if (!(b.seen & (1 << p))) continue;
+    if (!(b.seen & (1 << sim.lead[p]))) continue;
     const s = BUILDINGS[b.kind];
     if (!onScreen(b.tx, b.ty, s.w, s.h)) continue;
     const [x, y] = corner(b.tx, b.ty, s.w, s.h);
@@ -287,7 +287,7 @@ export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: n
   }
   for (const u of sim.units) {
     if (!onScreen(u.x, u.y, 0, 0)) continue;
-    if (u.owner !== p && !canSee(sim, p, u.x, u.y)) continue;
+    if (u.owner !== sim.lead[p] && !canSee(sim, p, u.x, u.y)) continue;
     const x = sx(u.x);
     const y = sy(u.y);
     items.push({
@@ -307,7 +307,7 @@ export function render(lg: G, g: G, sim: Sim, p: PlayerId, cssW: number, cssH: n
     });
   }
   // the gathering point of the selected building: a dotted line and a flag
-  const rallyOf = sim.sel[p].building !== null ? sim.buildings.find((b) => b.id === sim.sel[p].building && b.owner === p) : undefined;
+  const rallyOf = sim.sel[p].building !== null ? sim.buildings.find((b) => b.id === sim.sel[p].building && b.owner === sim.lead[p]) : undefined;
   if (rallyOf?.rally) {
     const s = BUILDINGS[rallyOf.kind];
     const fx = sx(rallyOf.rally.x);
@@ -474,7 +474,7 @@ let ground = new Uint8ClampedArray(0);
 let groundFor: unknown = null;
 
 /** One pixel per tile, turned the same way as the player's own view. */
-export function renderMini(g: G, sim: Sim, p: PlayerId, flipped = isNorth(p), area?: [number, number][]) {
+export function renderMini(g: G, sim: Sim, p: PlayerId, flipped = sim.flip[p], area?: [number, number][]) {
   const img = g.createImageData(COLS, ROWS);
   const px = img.data;
   if (groundFor !== GRID || ground.length !== px.length) {
@@ -503,13 +503,13 @@ export function renderMini(g: G, sim: Sim, p: PlayerId, flipped = isNorth(p), ar
   // on very big maps, dots are drawn larger so they can still be seen
   const dot = Math.max(2, Math.round(COLS / 48));
   for (const b of sim.buildings) {
-    if (!(b.seen & (1 << p))) continue;
+    if (!(b.seen & (1 << sim.lead[p]))) continue;
     const s = BUILDINGS[b.kind];
     for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) put(b.tx + x, b.ty + y, s.wall ? team[b.owner]!.light : team[b.owner]!.main);
   }
   for (const u of sim.units) {
-    if (u.owner !== p && !canSee(sim, p, u.x, u.y)) continue;
-    const c = u.owner === p ? [255, 255, 255] : team[u.owner]!.main;
+    if (u.owner !== sim.lead[p] && !canSee(sim, p, u.x, u.y)) continue;
+    const c = u.owner === sim.lead[p] ? [255, 255, 255] : team[u.owner]!.main;
     for (let y = 0; y < dot; y++) for (let x = 0; x < dot; x++) put(Math.round(u.x - dot / 2) + x, Math.round(u.y - dot / 2) + y, c);
   }
   g.putImageData(img, 0, 0);

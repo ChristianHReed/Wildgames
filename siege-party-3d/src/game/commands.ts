@@ -30,7 +30,7 @@ export type Cmd =
   | { t: "ally"; who: number };
 
 export function act(sim: Sim, p: PlayerId, c: Cmd) {
-  if (sim.phase !== "play" || sim.out[p] || p >= sim.count || !c) return;
+  if (sim.phase !== "play" || sim.out[p] || p >= sim.count + sim.partners || !c) return;
   const isBuilding = (k: unknown): k is BuildingKind => BUILD_KINDS.includes(k as BuildingKind) && !!BUILDINGS[k as BuildingKind].place;
   switch (c.t) {
     case "tap":
@@ -88,7 +88,8 @@ export function act(sim: Sim, p: PlayerId, c: Cmd) {
       unloadSelected(sim, p);
       break;
     case "ally":
-      if (IDS.includes(c.who as PlayerId) && SEATS[c.who]) diplomacy(sim, p, c.who as PlayerId);
+      // alliances are made between kingdoms, whoever of its crew asks
+      if (IDS.includes(c.who as PlayerId) && SEATS[c.who]) diplomacy(sim, sim.lead[p], c.who as PlayerId);
       break;
   }
   sim.uiDirty = true;

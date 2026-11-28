@@ -6,7 +6,8 @@ import { VERSION } from "./sync";
 import { chips, stylePicker, type Button } from "./widgets";
 
 export type Guest = { link: Link; style: number };
-export type HostPlan = { guests: Guest[]; computers: number; level: number; style: number };
+/** coop: every friend helps run the host's kingdom, and the computers are the enemy */
+export type HostPlan = { guests: Guest[]; computers: number; level: number; style: number; coop: boolean };
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = "", text = "") => {
   const node = document.createElement(tag);
@@ -66,7 +67,7 @@ function poll(check: () => Promise<boolean>) {
 
 export function hostLobby(button: Button, begin: (plan: HostPlan) => void, back: () => void) {
   const root = el("div", "card");
-  const plan: HostPlan = { guests: [], computers: 1, level: 1, style: 0 };
+  const plan: HostPlan = { guests: [], computers: 1, level: 1, style: 0, coop: false };
   let pending: Awaited<ReturnType<typeof invite>> | null = null;
   let stopPolling = () => {};
   let word: string | null = null;
@@ -79,16 +80,20 @@ export function hostLobby(button: Button, begin: (plan: HostPlan) => void, back:
   const room = () => MAX_SEATS - 1 - plan.guests.length;
   const total = () => 1 + plan.guests.length + plan.computers;
 
-  /** computers take the peoples nobody else chose, then repeat */
+  /** computers take the peoples nobody else chose, then repeat; in co-op every friend wears the host's colour */
   const rows = () => {
-    const out = [{ who: "You (host)", style: plan.style }, ...plan.guests.map((g, i) => ({ who: `Friend ${i + 1}`, style: g.style }))];
+    const out = [
+      { who: "You (host)", style: plan.style, color: 0 },
+      ...plan.guests.map((g, i) => (plan.coop ? { who: `Friend ${i + 1} (co-op)`, style: plan.style, color: 0 } : { who: `Friend ${i + 1}`, style: g.style, color: i + 1 })),
+    ];
     const spare = [0, 1, 2, 3].filter((s) => !out.some((r) => r.style === s));
-    for (let i = 0; i < plan.computers; i++) out.push({ who: "Computer", style: spare[i] ?? i % 4 });
+    const first = plan.coop ? 1 : 1 + plan.guests.length;
+    for (let i = 0; i < plan.computers; i++) out.push({ who: "Computer", style: spare[i] ?? i % 4, color: first + i });
     return out;
   };
 
   const startBtn = button("Start the game", () => {
-    if (total() < 2) return;
+    if (total() < 2 || (plan.coop && !plan.computers)) return;
     stopPolling();
     pending?.cancel();
     closed = true;
@@ -96,20 +101,21 @@ export function hostLobby(button: Button, begin: (plan: HostPlan) => void, back:
   }, "", "go");
 
   function refresh() {
-    plan.computers = Math.max(0, Math.min(plan.computers, room()));
+    plan.computers = Math.max(plan.coop ? 1 : 0, Math.min(plan.computers, room()));
     const list = rows();
-    roster.replaceChildren(...list.map((r, i) => {
+    roster.replaceChildren(...list.map((r) => {
       const line = el("div");
-      line.style.borderColor = SEATS[i]!.main;
-      line.textContent = `${SEATS[i]!.name}: ${r.who} · ${STYLES[r.style]!.name}`;
+      line.style.borderColor = SEATS[r.color]!.main;
+      line.textContent = `${SEATS[r.color]!.name}: ${r.who} · ${STYLES[r.style]!.name}`;
       return line;
     }));
     picks.replaceChildren(
-      stylePicker(button, plan.style, (s) => { plan.style = s; refresh(); }),
+      chips(button, "Friends play", ["Their own kingdoms", "With me (co-op)"], plan.coop ? 1 : 0, (i) => { plan.coop = i === 1; refresh(); }),
+      stylePicker(button, plan.style, (s) => { plan.style = s; refresh(); }, plan.coop ? "Our kingdom's people" : "Your people"),
       chips(button, "Computers", Array.from({ length: room() + 1 }, (_, i) => String(i)), plan.computers, (i) => { plan.computers = i; refresh(); }),
       chips(button, "Computer difficulty", [...LEVELS], plan.level, (i) => { plan.level = i; refresh(); }),
     );
-    startBtn.classList.toggle("poor", total() < 2);
+    startBtn.classList.toggle("poor", total() < 2 || (plan.coop && !plan.computers));
     plan.guests.forEach((g, i) => g.link.send({ t: "lobby", you: i + 1, rows: list, level: plan.level }));
   }
 
@@ -245,11 +251,12 @@ export function joinLobby(button: Button, begin: (link: Link, start: any) => voi
     link.onMessage = (m) => {
       if (m.t === "lobby") {
         you = m.you;
-        roster.replaceChildren(...m.rows.map((r: { who: string; style: number }, i: number) => {
+        roster.replaceChildren(...m.rows.map((r: { who: string; style: number; color?: number }, i: number) => {
           const line = el("div");
-          line.style.borderColor = SEATS[i]!.main;
-          const who = i === you ? "You" : i === 0 ? "Host" : r.who;
-          line.textContent = `${SEATS[i]!.name}: ${who} · ${STYLES[r.style]!.name}`;
+          const c = SEATS[r.color ?? i] ?? SEATS[0];
+          line.style.borderColor = c.main;
+          const who = i === you ? (r.color === 0 && i > 0 ? "You (co-op with the host)" : "You") : i === 0 ? "Host" : r.who;
+          line.textContent = `${c.name}: ${who} · ${STYLES[r.style]!.name}`;
           return line;
         }));
       } else if (m.t === "nope") {

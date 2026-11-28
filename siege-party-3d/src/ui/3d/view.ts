@@ -337,7 +337,7 @@ export class View3d {
 
   private camera(sim: Sim, p: PlayerId, zoom: number) {
     if (zoom <= 0) return this.overview();
-    const north = isNorth(p);
+    const north = sim.flip[p];
     this.ppt = zoom * 32;
     const D = this.h / (2 * Math.tan(FOV / 2) * this.ppt);
     const s = sim.shake[p] * 0.08;
@@ -630,7 +630,7 @@ export class View3d {
     }
     // buildings
     const walls = new Set<number>();
-    for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << p)) walls.add((b.ty * COLS + b.tx) * 16 + b.owner);
+    for (const b of sim.buildings) if (BUILDINGS[b.kind].wall && b.seen & (1 << sim.lead[p])) walls.add((b.ty * COLS + b.tx) * 16 + b.owner);
     const linked = (b: Building) => {
       let m = 0;
       const at = (dx: number, dy: number) => walls.has(((b.ty + dy) * COLS + b.tx + dx) * 16 + b.owner);
@@ -642,7 +642,7 @@ export class View3d {
     };
     const rallyB = sim.sel[p].building;
     for (const b of sim.buildings) {
-      if (!(b.seen & (1 << p))) continue;
+      if (!(b.seen & (1 << sim.lead[p]))) continue;
       const s = BUILDINGS[b.kind];
       const cx = b.tx + s.w / 2;
       const cz = b.ty + s.h / 2;
@@ -663,14 +663,14 @@ export class View3d {
         if (!built) put(`site${s.w}${s.h}`, () => siteModel(s.w, s.h), cx, 0, cz, yaw, 1, b.owner);
       }
       // a gathering flag for the picked building
-      if (b.id === rallyB && b.owner === p && b.rally) put("rally", rallyModel, b.rally.x, heightAt(b.rally.x, b.rally.y), b.rally.y, 0, 1, b.owner);
+      if (b.id === rallyB && b.owner === sim.lead[p] && b.rally) put("rally", rallyModel, b.rally.x, heightAt(b.rally.x, b.rally.y), b.rally.y, 0, 1, b.owner);
     }
     // units
     const nodeById = new Map<number, (typeof sim.nodes)[number]>();
     for (const n of sim.nodes) nodeById.set(n.id, n);
     for (const u of sim.units) {
       if (!inView(u.x, u.y, 1)) continue;
-      if (u.owner !== p && !canSee(sim, p, u.x, u.y)) continue;
+      if (u.owner !== sim.lead[p] && !canSee(sim, p, u.x, u.y)) continue;
       this.unit(sim, u, put, nodeById);
     }
     for (const f of this.flags) put("bigflag", bigFlagModel, f.x, heightAt(f.x, f.z), f.z, isNorth(f.owner) ? Math.PI : 0, f.scale, f.owner);
@@ -736,10 +736,10 @@ export class View3d {
     for (const b of sim.buildings) {
       const s = BUILDINGS[b.kind];
       // a soft dark patch under each building, so it sits on the ground
-      if (b.seen & (1 << p) && b.kind !== "farm" && !s.wall) add(b.tx + s.w / 2, b.ty + s.h / 2, s.w * 0.58, s.h * 0.58, [0.05, 0.08, 0.02, 0.22], 2, 0, 0.035);
+      if (b.seen & (1 << sim.lead[p]) && b.kind !== "farm" && !s.wall) add(b.tx + s.w / 2, b.ty + s.h / 2, s.w * 0.58, s.h * 0.58, [0.05, 0.08, 0.02, 0.22], 2, 0, 0.035);
       if (b.id !== bsel) continue;
       add(b.tx + s.w / 2, b.ty + s.h / 2, s.w / 2 + 0.06, s.h / 2 + 0.06, [1, 0.96, 0.62, 0.55], 1, 0, 0.05);
-      if (b.owner === p && b.rally) {
+      if (b.owner === sim.lead[p] && b.rally) {
         // a dotted line to the gathering flag
         const x0 = b.tx + s.w / 2, z0 = b.ty + s.h / 2, x1 = b.rally.x, z1 = b.rally.y;
         const l = Math.hypot(x1 - x0, z1 - z0);
@@ -791,7 +791,7 @@ export class View3d {
     const add = (x: number, y: number, z: number, size: number, c: [number, number, number, number]) => d.push(x, y, z, size, c[0], c[1], c[2], c[3]);
     const t = sim.clock;
     for (const b of sim.buildings) {
-      if (!(b.seen & (1 << p)) || b.progress < 1) continue;
+      if (!(b.seen & (1 << sim.lead[p])) || b.progress < 1) continue;
       const s = BUILDINGS[b.kind];
       const cx = b.tx + s.w / 2;
       const cz = b.ty + s.h / 2;
@@ -870,14 +870,14 @@ export class View3d {
     for (const u of sim.units) {
       const full = unitHp(u);
       if (!chosen.has(u.id) && u.hp >= full - 0.5) continue;
-      if (u.owner !== p && !canSee(sim, p, u.x, u.y)) continue;
+      if (u.owner !== sim.lead[p] && !canSee(sim, p, u.x, u.y)) continue;
       const naval = !!UNITS[u.kind].naval;
       const s = this.screen(u.x, naval ? 0.75 : 0.95, u.y);
       if (!s || s[0] < -20 || s[1] < -20 || s[0] > this.w + 20 || s[1] > this.h + 20) continue;
       bar(s[0], s[1], Math.max(12, 18 * k), u.hp / full);
     }
     for (const b of sim.buildings) {
-      if (!(b.seen & (1 << p))) continue;
+      if (!(b.seen & (1 << sim.lead[p]))) continue;
       const full = fullHp(sim, b.owner, b.kind);
       if (sim.sel[p].building !== b.id && b.hp >= full - 0.5) continue;
       const s0 = BUILDINGS[b.kind];
@@ -927,12 +927,12 @@ export class View3d {
     const vx0 = g[0] - 6, vx1 = g[0] + 6, vz0 = g[1] - 6, vz1 = g[1] + 8;
     for (const u of sim.units) {
       if (u.x < vx0 || u.x > vx1 || u.y < vz0 || u.y > vz1) continue;
-      if (u.owner !== p && !canSee(sim, p, u.x, u.y)) continue;
+      if (u.owner !== sim.lead[p] && !canSee(sim, p, u.x, u.y)) continue;
       const naval = !!UNITS[u.kind].naval;
       near(u.x, u.y, naval ? 0.6 : 0.7, naval ? 0.55 : 0.36, u.x, u.y, -0.3);
     }
     for (const b of sim.buildings) {
-      if (!(b.seen & (1 << p))) continue;
+      if (!(b.seen & (1 << sim.lead[p]))) continue;
       const s = BUILDINGS[b.kind];
       const cx = b.tx + s.w / 2, cz = b.ty + s.h / 2;
       if (cx < vx0 - 2 || cx > vx1 + 2 || cz < vz0 - 2 || cz > vz1 + 2) continue;

@@ -26,7 +26,7 @@ function place(sim: Sim, ears: PlayerId[], x: number, y: number) {
     const d = Math.hypot(x - c.x, y - c.y);
     if (d > EAR + 1) continue;
     const vol = 1 - d / (EAR + 1);
-    if (!best || vol > best.vol) best = { pan: ((x - c.x) / EAR) * (isNorth(p) ? -1 : 1) * 0.8, vol };
+    if (!best || vol > best.vol) best = { pan: ((x - c.x) / EAR) * (sim.flip[p] ? -1 : 1) * 0.8, vol };
   }
   return best;
 }

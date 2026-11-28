@@ -4,10 +4,10 @@
  */
 import { BUILD_KINDS, UNIT_KINDS, setSize, COLS, ROWS } from "../game/content";
 import { BASES, GRID, setMap } from "../game/map";
-import { allied, begin, updateVision, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
+import { IDS, allied, begin, updateVision, type Building, type Node, type PlayerId, type Sim, type Unit } from "../game/sim";
 
 /** Both devices must run the same version of the game. */
-export const VERSION = 6;
+export const VERSION = 7;
 
 const NODE_KINDS = ["wood", "food", "gold", "stone"] as const;
 const ORDERS = ["idle", "move", "gather", "drop", "build", "attack", "board", "unload"] as const;
@@ -21,6 +21,7 @@ export function startMessage(sim: Sim, you: PlayerId) {
   return {
     t: "start", v: VERSION, you, count: sim.count, w: COLS, h: ROWS, grid: GRID, bases: BASES,
     ai: sim.ai, styles: sim.style, level: sim.level, nodes: sim.nodes.map(packNode),
+    partners: IDS.slice(sim.count, sim.count + sim.partners).map((q) => sim.lead[q]),
   };
 }
 
@@ -97,7 +98,7 @@ export function applyStart(sim: Sim, m: any) {
   setSize(m.w, m.h);
   if (!Array.isArray(m.grid) || m.grid.length !== ROWS || m.grid.some((r: unknown) => typeof r !== "string" || r.length !== COLS)) throw new Error("bad map");
   setMap({ grid: m.grid, bases: m.bases });
-  begin(sim, "online", m.count, { ai: m.ai, styles: m.styles, level: m.level });
+  begin(sim, "online", m.count, { ai: m.ai, styles: m.styles, level: m.level, partners: Array.isArray(m.partners) ? m.partners : [] });
   sim.nodes = m.nodes.map(unpackNode);
   sim.units = [];
   sim.buildings = [];
@@ -166,7 +167,8 @@ export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
     clock: m.clock, phase: m.phase, winner: m.winner, winners: m.winners, out: m.out, ai: m.ai,
     allies: m.allies, offers: m.offers, breaks: m.breaks, tech: m.tech,
   });
-  sim.res[you] = m.res;
+  // a co-op partner shares its kingdom's stock
+  sim.res[you] = sim.res[sim.lead[you]] = m.res;
   sim.sel[you] = m.me.sel;
   sim.place[you] = m.me.place;
   sim.hunt[you] = m.me.hunt;
@@ -174,7 +176,7 @@ export function applySnapshot(sim: Sim, m: any, you: PlayerId) {
   sim.bad[you] = m.me.bad;
   sim.note[you] = m.me.note;
   sim.shake[you] = m.me.shake;
-  if (m.me.prices) sim.prices[you] = m.me.prices;
+  if (m.me.prices) sim.prices[you] = sim.prices[sim.lead[you]] = m.me.prices;
   if (Array.isArray(m.sounds)) sim.fxQueue.push(...m.sounds);
   sim.uiDirty = true;
 }

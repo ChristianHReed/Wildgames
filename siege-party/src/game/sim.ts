@@ -40,7 +40,8 @@ export type Seats<T> = [T, T, T, T, T, T, T, T, T, T];
 export const seats = <T>(make: (p: PlayerId) => T): Seats<T> => IDS.map(make) as Seats<T>;
 /** duel: one shared screen. solo: you against computers. online: each person on their own device. */
 export type Mode = "duel" | "solo" | "online";
-export type Setup = { ai?: boolean[]; styles?: number[]; level?: number };
+/** partners: for each extra seat after the kingdoms, the kingdom it helps run (co-op) */
+export type Setup = { ai?: boolean[]; styles?: number[]; level?: number; partners?: number[] };
 export type Phase = "menu" | "play" | "pause" | "end";
 
 export type Order =
@@ -190,8 +191,14 @@ export type Sim = {
   phase: Phase;
   mode: Mode | null;
   winner: PlayerId | -1 | null;
-  /** players in this game: 2 to 5 */
+  /** kingdoms in this game: 2 to 10 */
   count: number;
+  /** the kingdom each seat plays for: itself, or (for a co-op partner after the kingdoms) the one it helps run */
+  lead: Seats<PlayerId>;
+  /** co-op partners: extra seats after the kingdoms, sharing a kingdom's people, buildings, stock and sight */
+  partners: number;
+  /** whether a seat's view is turned round, its own side nearest (set by the screen it plays on) */
+  flip: Seats<boolean>;
   ai: Seats<boolean>;
   style: Seats<number>;
   /** computer difficulty: 0 Easy, 1 Normal, 2 Hard */
@@ -255,6 +262,9 @@ export function createSim(): Sim {
     count: 2,
     ai: seats(() => false),
     style: seats((p) => p % 4),
+    lead: seats((p) => p),
+    partners: 0,
+    flip: seats((p) => isNorth(p)),
     level: 1,
     allies: seats(() => 0),
     offers: seats(() => 0),
@@ -301,6 +311,8 @@ export function createSim(): Sim {
 }
 
 export function allied(sim: Sim, a: number, b: number) {
+  a = sim.lead[a as PlayerId] ?? a;
+  b = sim.lead[b as PlayerId] ?? b;
   return a === b || !!(sim.allies[a as PlayerId] & (1 << b));
 }
 
@@ -382,6 +394,23 @@ function uid(sim: Sim) {
   return sim.nextId++;
 }
 
+/** A co-op partner shares its kingdom's stock, upgrades, prices and sight: the very same objects. */
+export function linkPartners(sim: Sim) {
+  for (const q of IDS) {
+    const k = sim.lead[q];
+    if (k === q) continue;
+    sim.res[q] = sim.res[k];
+    sim.tech[q] = sim.tech[k];
+    sim.prices[q] = sim.prices[k];
+    sim.explored[q] = sim.explored[k];
+    sim.visible[q] = sim.visible[k];
+    sim.out[q] = sim.out[k];
+  }
+}
+
+/** the seats playing for a kingdom: the kingdom and its co-op partners */
+export const crew = (sim: Sim, k: number) => IDS.filter((q) => sim.lead[q] === k && q < sim.count + sim.partners);
+
 export function rebuild(sim: Sim) {
   sim.units = [];
   sim.buildings = [];
@@ -414,6 +443,7 @@ export function rebuild(sim: Sim) {
   sim.res = seats(() => ({ ...START_RES }));
   sim.explored = seats(() => new Uint8Array(COLS * ROWS));
   sim.visible = seats(() => new Uint8Array(COLS * ROWS));
+  linkPartners(sim);
   for (const s of nodeSpawns()) {
     sim.nodes.push({ id: uid(sim), kind: s.kind, x: s.x, y: s.y, amount: s.amount, farm: false, sea: !!s.sea });
   }
@@ -492,9 +522,14 @@ function spawnUnit(sim: Sim, owner: PlayerId, kind: UnitKind, x: number, y: numb
 /** The map for this many players must already be loaded. */
 export function begin(sim: Sim, mode: Mode, count = 2, setup: Setup = {}) {
   sim.count = Math.max(2, Math.min(MAX_SEATS, count));
+  // co-op partners take the seats after the kingdoms
+  const partners = (setup.partners ?? []).slice(0, MAX_SEATS - sim.count).map((k) => Math.max(0, Math.min(sim.count - 1, k | 0)) as PlayerId);
+  sim.partners = partners.length;
+  sim.lead = seats((p) => (p < sim.count ? p : partners[p - sim.count] ?? p));
+  sim.flip = seats((p) => isNorth(sim.lead[p]));
   // against the computer, you are seat 0 and everyone else is a computer
   sim.ai = seats((p) => p < sim.count && (setup.ai ? !!setup.ai[p] : mode === "solo" && p > 0));
-  sim.style = seats((p) => (((setup.styles?.[p] ?? p) % 4) + 4) % 4);
+  sim.style = seats((p) => (((setup.styles?.[sim.lead[p]] ?? sim.lead[p]) % 4) + 4) % 4);
   sim.level = Math.max(0, Math.min(2, setup.level ?? 1));
   rebuild(sim);
   sim.mode = mode;
@@ -513,25 +548,25 @@ export function togglePause(sim: Sim) {
 export function hallOf(sim: Sim, p: PlayerId) {
   let best: Building | undefined;
   for (const b of sim.buildings)
-    if (b.owner === p && central(b.kind) && b.hp > 0 && (b.kind === "town" || b.progress >= 1) && (!best || (b.kind === "town" && best.kind !== "town"))) best = b;
+    if (b.owner === sim.lead[p] && central(b.kind) && b.hp > 0 && (b.kind === "town" || b.progress >= 1) && (!best || (b.kind === "town" && best.kind !== "town"))) best = b;
   return best;
 }
 
 export function livingTown(sim: Sim, p: PlayerId) {
-  return sim.buildings.some((b) => b.owner === p && central(b.kind) && b.hp > 0 && b.progress >= 1);
+  return sim.buildings.some((b) => b.owner === sim.lead[p] && central(b.kind) && b.hp > 0 && b.progress >= 1);
 }
 
 /** Room for Folk: the homes a player has. There is no limit beyond building more. */
 export function popCap(sim: Sim, p: PlayerId) {
   let n = 0;
-  for (const b of sim.buildings) if (b.owner === p && b.hp > 0 && b.progress >= 1) n += BUILDINGS[b.kind].pop;
+  for (const b of sim.buildings) if (b.owner === sim.lead[p] && b.hp > 0 && b.progress >= 1) n += BUILDINGS[b.kind].pop;
   return n;
 }
 
 /** Room for soldiers: the barracks (and castles) a player has. */
 export function armyCap(sim: Sim, p: PlayerId) {
   let n = 0;
-  for (const b of sim.buildings) if (b.owner === p && b.hp > 0 && b.progress >= 1) n += BUILDINGS[b.kind].room ?? 0;
+  for (const b of sim.buildings) if (b.owner === sim.lead[p] && b.hp > 0 && b.progress >= 1) n += BUILDINGS[b.kind].room ?? 0;
   return n;
 }
 
@@ -539,18 +574,19 @@ export function armyCap(sim: Sim, p: PlayerId) {
 function headcount(sim: Sim, p: PlayerId, army: boolean) {
   let n = 0;
   for (const u of sim.units) {
-    if (u.owner !== p || u.hp <= 0) continue;
+    if (u.owner !== sim.lead[p] || u.hp <= 0) continue;
     if (soldier(u.kind) === army) n++;
     for (const c of u.cargo ?? []) if (soldier(c.kind) === army) n++;
   }
-  for (const b of sim.buildings) if (b.owner === p && b.hp > 0) for (const q of b.queue) if (soldier(q.kind) === army) n++;
+  for (const b of sim.buildings) if (b.owner === sim.lead[p] && b.hp > 0) for (const q of b.queue) if (soldier(q.kind) === army) n++;
   return n;
 }
 export const popUsed = (sim: Sim, p: PlayerId) => headcount(sim, p, false);
 export const armyUsed = (sim: Sim, p: PlayerId) => headcount(sim, p, true);
 
 function setNote(sim: Sim, p: PlayerId, text: string) {
-  sim.note[p] = { text, t: 2.4 };
+  // news for a kingdom reaches everyone running it
+  for (const q of p < sim.count ? crew(sim, p) : [p]) sim.note[q] = { text, t: 2.4 };
   sim.uiDirty = true;
 }
 
@@ -1514,7 +1550,7 @@ function stepUnit(sim: Sim, u: Unit, dt: number) {
 }
 
 function finishTech(sim: Sim, p: PlayerId, tech: TechKind) {
-  const mine = sim.units.filter((u) => u.owner === p).flatMap((u) => [u, ...(u.cargo ?? [])]);
+  const mine = sim.units.filter((u) => u.owner === sim.lead[p]).flatMap((u) => [u, ...(u.cargo ?? [])]);
   const before = mine.map((u) => unitStats(sim, p, u.kind).hp);
   sim.tech[p].push(tech);
   // a tougher kind of unit gains the extra health straight away
@@ -1740,17 +1776,20 @@ function checkWin(sim: Sim) {
   if (!fallen.length && !sim.allies.some(Boolean)) return;
   for (const p of fallen) {
     sim.out[p] = true;
-    sim.place[p] = null;
-    sim.anchor[p] = null;
-    sim.sel[p] = { units: [], building: null };
+    for (const q of crew(sim, p)) {
+      sim.out[q] = true;
+      sim.place[q] = null;
+      sim.anchor[q] = null;
+      sim.sel[q] = { units: [], building: null };
+    }
     for (const q of players) {
       sim.allies[q] &= ~(1 << p);
       sim.offers[q] &= ~(1 << p);
     }
     sim.allies[p] = sim.offers[p] = 0;
     sim.breaks = sim.breaks.filter((k) => k.a !== p && k.b !== p);
-    for (const b of sim.buildings) if (b.owner === p && b.hp > 0) destroyBuilding(sim, b);
-    for (const u of sim.units) if (u.owner === p) u.hp = 0;
+    for (const b of sim.buildings) if (b.owner === sim.lead[p] && b.hp > 0) destroyBuilding(sim, b);
+    for (const u of sim.units) if (u.owner === sim.lead[p]) u.hp = 0;
     for (const other of players) if (other !== p) setNote(sim, other, `${SEATS[p].name} is out`);
   }
   if (fallen.length) {
@@ -1937,21 +1976,21 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
   }
   const hit = pick(sim, wx, wy);
   // allies are not targets: a tap on them is a tap on the ground
-  if (hit.unit && hit.unit.owner !== p && allied(sim, p, hit.unit.owner)) hit.unit = null;
-  if (hit.building && hit.building.owner !== p && allied(sim, p, hit.building.owner)) hit.building = null;
-  if (hit.unit && hit.unit.owner !== p && !canSee(sim, p, hit.unit.x, hit.unit.y)) hit.unit = null;
-  if (hit.building && hit.building.owner !== p && !(hit.building.seen & (1 << p))) hit.building = null;
+  if (hit.unit && hit.unit.owner !== sim.lead[p] && allied(sim, p, hit.unit.owner)) hit.unit = null;
+  if (hit.building && hit.building.owner !== sim.lead[p] && allied(sim, p, hit.building.owner)) hit.building = null;
+  if (hit.unit && hit.unit.owner !== sim.lead[p] && !canSee(sim, p, hit.unit.x, hit.unit.y)) hit.unit = null;
+  if (hit.building && hit.building.owner !== sim.lead[p] && !(hit.building.seen & (1 << sim.lead[p]))) hit.building = null;
   if (hit.node?.farm && farmOwner(sim, hit.node) !== p) hit.node = null;
   const sel = selectedUnits(sim, p);
-  if (hit.unit && hit.unit.owner === p && hit.unit.kind === "transport" && sel.some((u) => !naval(u.kind))) {
+  if (hit.unit && hit.unit.owner === sim.lead[p] && hit.unit.kind === "transport" && sel.some((u) => !naval(u.kind))) {
     orderBoard(sim, p, hit.unit, sel.filter((u) => !naval(u.kind)));
     sim.uiDirty = true;
     return;
   }
-  if (hit.unit && hit.unit.owner === p) {
+  if (hit.unit && hit.unit.owner === sim.lead[p]) {
     const now = sim.clock;
     if (sim.lastTap[p].id === hit.unit.id && now - sim.lastTap[p].at < 0.45) {
-      sim.sel[p].units = sim.units.filter((u) => u.owner === p && u.hp > 0 && u.kind === hit.unit!.kind).map((u) => u.id);
+      sim.sel[p].units = sim.units.filter((u) => u.owner === sim.lead[p] && u.hp > 0 && u.kind === hit.unit!.kind).map((u) => u.id);
       sim.sel[p].building = null;
     } else {
       sim.sel[p].units = [hit.unit.id];
@@ -1962,7 +2001,7 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
     return;
   }
   const picked = sim.sel[p].building !== null ? buildingById(sim, sim.sel[p].building) : undefined;
-  const trainer = !sel.length && picked && picked.owner === p && picked.progress >= 1 && BUILDINGS[picked.kind].trains?.length ? picked : undefined;
+  const trainer = !sel.length && picked && picked.owner === sim.lead[p] && picked.progress >= 1 && BUILDINGS[picked.kind].trains?.length ? picked : undefined;
   if (trainer && hit.building === trainer) {
     // tapping the building again clears its gathering point
     if (trainer.rally) {
@@ -1972,15 +2011,15 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
     sim.uiDirty = true;
     return;
   }
-  if (trainer && hit.building?.owner === p && hit.building.kind === "farm" && central(trainer.kind)) {
+  if (trainer && hit.building?.owner === sim.lead[p] && hit.building.kind === "farm" && central(trainer.kind)) {
     const field = sim.nodes.find((n) => n.farm && n.x === hit.building!.tx && n.y === hit.building!.ty);
     if (field) return setRally(sim, p, trainer, wx, wy, field);
   }
-  if (trainer && !(hit.building && hit.building.owner === p) && !(hit.unit && hit.unit.owner === p)) {
+  if (trainer && !(hit.building && hit.building.owner === sim.lead[p]) && !(hit.unit && hit.unit.owner === sim.lead[p])) {
     const n = hit.node && !hit.node.farm ? hit.node : null;
     return setRally(sim, p, trainer, wx, wy, n);
   }
-  if (hit.building && hit.building.owner === p) {
+  if (hit.building && hit.building.owner === sim.lead[p]) {
     const folks = sel.filter((u) => u.kind === "villager");
     if (folks.length && (hit.building.progress < 1 || hit.building.hp < maxHp(sim, p, hit.building.kind) - 0.5)) {
       for (const f of folks) {
@@ -2008,7 +2047,7 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
     sim.uiDirty = true;
     return;
   }
-  if (hit.unit && hit.unit.owner !== p) {
+  if (hit.unit && hit.unit.owner !== sim.lead[p]) {
     sel.forEach((u) => {
       u.order = u.kind === "ram" || unarmed(u.kind) ? { t: "move", x: wx, y: wy, hunt: false } : { t: "attack", kind: "unit", id: hit.unit!.id, resume: null };
       u.path = [];
@@ -2017,7 +2056,7 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
     sim.uiDirty = true;
     return;
   }
-  if (hit.building && hit.building.owner !== p) {
+  if (hit.building && hit.building.owner !== sim.lead[p]) {
     for (const u of sel) {
       u.order = unarmed(u.kind) ? { t: "move", x: wx, y: wy, hunt: false } : { t: "attack", kind: "building", id: hit.building!.id, resume: null };
       u.path = [];
@@ -2059,7 +2098,7 @@ export function commandTap(sim: Sim, p: PlayerId, wx: number, wy: number) {
 }
 
 export function selectGroup(sim: Sim, p: PlayerId, which: "folk" | "host" | "idle" | "fleet") {
-  const units = sim.units.filter((u) => u.owner === p && u.hp > 0);
+  const units = sim.units.filter((u) => u.owner === sim.lead[p] && u.hp > 0);
   const warships = units.filter((u) => WARSHIPS.includes(u.kind));
   const picked =
     which === "folk"
@@ -2098,7 +2137,7 @@ export function placeReason(sim: Sim, p: PlayerId, kind: BuildingKind, tx: numbe
   const spec = BUILDINGS[kind];
   if (spec.age > ageOf(sim, p)) return `Needs the ${AGES[spec.age]} age`;
   if (spec.need) {
-    const ok = sim.buildings.some((b) => b.owner === p && b.kind === spec.need && b.hp > 0 && b.progress >= 1);
+    const ok = sim.buildings.some((b) => b.owner === sim.lead[p] && b.kind === spec.need && b.hp > 0 && b.progress >= 1);
     if (!ok) return `Raise a ${BUILDINGS[spec.need].name.toLowerCase()} first`;
   }
   if (!canAfford(sim.res[p], spec.cost)) return "Need resources";
@@ -2110,7 +2149,7 @@ export function placeReason(sim: Sim, p: PlayerId, kind: BuildingKind, tx: numbe
       if (takenCell(sim, x, y) && !(kind === "gate" && ownWall(sim, p, x, y))) return "Blocked ground";
     }
   }
-  if (spec.shore && !mooring(sim, { owner: p, kind: "fisher" }, tx, ty, tx, ty, spec.w, spec.h, true)) return "A dock must touch water";
+  if (spec.shore && !mooring(sim, { owner: sim.lead[p], kind: "fisher" }, tx, ty, tx, ty, spec.w, spec.h, true)) return "A dock must touch water";
   // a foundation cannot be dropped on top of the other player's people
   if (sim.units.some((u) => !allied(sim, p, u.owner) && u.hp > 0 && !naval(u.kind) && u.x >= tx && u.y >= ty && u.x < tx + spec.w && u.y < ty + spec.h)) {
     return "Someone is standing there";
@@ -2125,7 +2164,7 @@ export function placeReason(sim: Sim, p: PlayerId, kind: BuildingKind, tx: numbe
 }
 
 function ownWall(sim: Sim, p: PlayerId, x: number, y: number) {
-  return sim.buildings.find((b) => b.owner === p && (b.kind === "wall" || b.kind === "palisade") && b.hp > 0 && b.tx === x && b.ty === y);
+  return sim.buildings.find((b) => b.owner === sim.lead[p] && (b.kind === "wall" || b.kind === "palisade") && b.hp > 0 && b.tx === x && b.ty === y);
 }
 
 /** Lays a foundation (paying for it) without choosing builders. */
@@ -2136,7 +2175,7 @@ function found(sim: Sim, p: PlayerId, kind: BuildingKind, tx: number, ty: number
     sim.buildings = sim.buildings.filter((b) => b !== old);
   }
   pay(sim.res[p], BUILDINGS[kind].cost);
-  const b = spawnBuilding(sim, p, kind, tx, ty, false);
+  const b = spawnBuilding(sim, sim.lead[p], kind, tx, ty, false);
   clearFoot(sim, b);
   return b;
 }
@@ -2145,7 +2184,7 @@ function found(sim: Sim, p: PlayerId, kind: BuildingKind, tx: number, ty: number
 function assignBuilders(sim: Sim, p: PlayerId, b: Building) {
   let folks = selectedUnits(sim, p).filter((u) => u.kind === "villager");
   if (!folks.length) {
-    const all = sim.units.filter((u) => u.owner === p && u.kind === "villager" && u.hp > 0);
+    const all = sim.units.filter((u) => u.owner === sim.lead[p] && u.kind === "villager" && u.hp > 0);
     if (all.some((u) => u.order.t === "build")) return;
     folks = all.sort((a, c) => Math.hypot(a.x - b.tx, a.y - b.ty) - Math.hypot(c.x - b.tx, c.y - b.ty)).slice(0, 2);
   }
@@ -2265,7 +2304,7 @@ export function quote(sim: Sim, p: PlayerId, good: Good) {
 /** Buys or sells 100 of a good for gold at the player's market. Each trade moves the price. */
 export function trade(sim: Sim, p: PlayerId, good: Good, buy: boolean) {
   if (!GOODS.includes(good)) return;
-  if (!sim.buildings.some((b) => b.owner === p && b.kind === "market" && b.progress >= 1 && b.hp > 0)) return setNote(sim, p, "Build a market first");
+  if (!sim.buildings.some((b) => b.owner === sim.lead[p] && b.kind === "market" && b.progress >= 1 && b.hp > 0)) return setNote(sim, p, "Build a market first");
   const q = quote(sim, p, good);
   const res = sim.res[p];
   if (buy) {
@@ -2295,7 +2334,7 @@ function settlePrices(sim: Sim, dt: number) {
 /** Starts enlarging the selected cottage into a manor, which houses more people. */
 export function enlarge(sim: Sim, p: PlayerId) {
   const b = sim.sel[p].building !== null ? buildingById(sim, sim.sel[p].building) : undefined;
-  if (!b || b.owner !== p || b.kind !== "house" || b.progress < 1 || b.upgrade) return;
+  if (!b || b.owner !== sim.lead[p] || b.kind !== "house" || b.progress < 1 || b.upgrade) return;
   const spec = BUILDINGS.manor;
   if (ageOf(sim, p) < spec.age) return setNote(sim, p, `${AGES[spec.age]} age is needed first`);
   if (!canAfford(sim.res[p], spec.cost)) return setNote(sim, p, "Not enough to build a manor");
@@ -2310,7 +2349,7 @@ export function enlarge(sim: Sim, p: PlayerId) {
 export function demolish(sim: Sim, p: PlayerId) {
   const id = sim.sel[p].building;
   const b = id ? buildingById(sim, id) : undefined;
-  if (!b || b.owner !== p || b.kind === "town") return;
+  if (!b || b.owner !== sim.lead[p] || b.kind === "town") return;
   if (b.progress < 1) refund(sim.res[p], BUILDINGS[b.kind].cost);
   for (const q of b.queue) refund(sim.res[p], unitCost(sim, p, q.kind));
   b.queue = [];
@@ -2326,7 +2365,7 @@ export function demolish(sim: Sim, p: PlayerId) {
 export function techBlock(sim: Sim, p: PlayerId, tech: TechKind): string | null {
   const t = TECHS[tech];
   if (has(sim, p, tech)) return "Done";
-  if (sim.buildings.some((o) => o.owner === p && o.research?.tech === tech)) return "Under way";
+  if (sim.buildings.some((o) => o.owner === sim.lead[p] && o.research?.tech === tech)) return "Under way";
   if (t.after && !has(sim, p, t.after)) return `Research ${TECHS[t.after].name} first`;
   if (t.age > ageOf(sim, p)) return `Needs the ${AGES[t.age]} age`;
   if (t.needs && !t.needs.some((k) => hasComplete(sim, p, k))) return `Build a ${t.needs.map((k) => BUILDINGS[k].name.toLowerCase()).join(" or ")} first`;
@@ -2336,7 +2375,7 @@ export function techBlock(sim: Sim, p: PlayerId, tech: TechKind): string | null 
 export function research(sim: Sim, p: PlayerId, tech: TechKind) {
   const id = sim.sel[p].building;
   const b = id ? buildingById(sim, id) : undefined;
-  if (!b || b.owner !== p || b.kind !== TECHS[tech].at || b.progress < 1 || b.research) return;
+  if (!b || b.owner !== sim.lead[p] || b.kind !== TECHS[tech].at || b.progress < 1 || b.research) return;
   const no = techBlock(sim, p, tech);
   if (no) {
     setNote(sim, p, no);
@@ -2354,7 +2393,7 @@ export function research(sim: Sim, p: PlayerId, tech: TechKind) {
 export function trainUnit(sim: Sim, p: PlayerId, kind: UnitKind) {
   const id = sim.sel[p].building;
   const b = id ? buildingById(sim, id) : undefined;
-  if (!b || b.owner !== p || b.progress < 1) return;
+  if (!b || b.owner !== sim.lead[p] || b.progress < 1) return;
   const trains = BUILDINGS[b.kind].trains ?? [];
   if (!trains.includes(kind)) return;
   if (UNITS[kind].age > ageOf(sim, p)) {
@@ -2416,7 +2455,7 @@ export function aiTryBuild(sim: Sim, p: PlayerId, kind: BuildingKind, near?: { x
         if (!roomy || placeReason(sim, p, kind, x, y)) continue;
         const b = found(sim, p, kind, x, y);
         const folks = sim.units
-          .filter((u) => u.owner === p && u.kind === "villager" && u.hp > 0 && (u.order.t === "idle" || u.order.t === "gather"))
+          .filter((u) => u.owner === sim.lead[p] && u.kind === "villager" && u.hp > 0 && (u.order.t === "idle" || u.order.t === "gather"))
           .sort((a, c) => Math.hypot(a.x - x, a.y - y) - Math.hypot(c.x - x, c.y - y))
           .slice(0, 2);
         for (const f of folks) {
@@ -2441,7 +2480,7 @@ export function focusHall(sim: Sim, p: PlayerId) {
   const cx = hall.tx + spec.w / 2;
   const cy = hall.ty + spec.h / 2;
   sim.cam[p].x = cx;
-  sim.cam[p].y = isNorth(p) ? cy + tilesH * 0.12 : cy - tilesH * 0.12;
+  sim.cam[p].y = isNorth(sim.lead[p]) ? cy + tilesH * 0.12 : cy - tilesH * 0.12;
   clampCam(sim, p);
 }
 
@@ -2513,7 +2552,7 @@ function sideSnap(sim: Sim, p: PlayerId): SideSnap {
     load: sel.reduce((n, u) => n + loadOf(u), 0),
     hold: sel.filter((u) => u.kind === "transport").length * HOLD,
     age: ageOf(sim, p),
-    ships: sim.units.filter((u) => u.owner === p && u.hp > 0 && naval(u.kind)).length,
+    ships: sim.units.filter((u) => u.owner === sim.lead[p] && u.hp > 0 && naval(u.kind)).length,
     anchored,
     selCount: sel.length,
     selName,
@@ -2538,5 +2577,5 @@ export function takeSnap(sim: Sim): Snap {
 }
 
 export function hasComplete(sim: Sim, p: PlayerId, kind: BuildingKind) {
-  return sim.buildings.some((b) => b.owner === p && b.kind === kind && b.hp > 0 && b.progress >= 1);
+  return sim.buildings.some((b) => b.owner === sim.lead[p] && b.kind === kind && b.hp > 0 && b.progress >= 1);
 }
