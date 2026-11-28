@@ -94,6 +94,9 @@ function builtIn(players: number) {
 export let GRID: string[] = DESIGN.grid;
 export let BASES: Bases = DESIGN.bases;
 
+/** the built-in map for this many players, at the current size */
+export const builtInMap = (players = 2) => builtIn(players);
+
 export function setMap(custom: { grid: string[]; bases: Bases } | null, players = 2) {
   const next = custom ?? builtIn(players);
   GRID = next.grid;
@@ -109,7 +112,7 @@ const FISH = 420;
  * so mirrored maps get mirrored fish. Every pool of six tiles or more has at least one.
  */
 function fishSpawns(): NodeSpawn[] {
-  const wet = (x: number, y: number) => x >= 0 && y >= 0 && x < COLS && y < ROWS && GRID[y]![x] === "~";
+  const wet = (x: number, y: number) => x >= 0 && y >= 0 && x < COLS && y < ROWS && (GRID[y]![x] === "~" || GRID[y]![x] === "F");
   const roll = (x: number, y: number) => {
     const a = Math.min(x, COLS - 1 - x);
     const b = Math.min(y, ROWS - 1 - y);
@@ -126,8 +129,10 @@ function fishSpawns(): NodeSpawn[] {
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (x + dx >= 0 && x + dx < COLS && taken.has((y + dy) * COLS + x + dx)) return true;
     return false;
   };
+  // fish placed by hand in the map maker are always there
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (GRID[y]![x] === "F") add(x, y);
   const spots: { x: number; y: number; r: number }[] = [];
-  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (wet(x, y)) spots.push({ x, y, r: roll(x, y) });
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (wet(x, y) && !taken.has(y * COLS + x)) spots.push({ x, y, r: roll(x, y) });
   for (const s of spots) if (s.r < 0.16 && !crowded(s.x, s.y)) add(s.x, s.y);
   const seen = new Set<number>();
   for (const s of spots) {
@@ -168,7 +173,7 @@ export function tileChar(x: number, y: number): string {
 
 export function terrainAt(x: number, y: number): Terrain {
   const c = tileChar(x, y);
-  if (c === "~") return "water";
+  if (c === "~" || c === "F") return "water";
   if (c === "D") return "dirt";
   return "grass";
 }

@@ -9,7 +9,7 @@ import {
 import { PIXEL, render, renderMini, snapZoom } from "./draw";
 import { groundFrame } from "./ground";
 import { soundscape } from "./sound";
-import { chooseSize, loadPlayers, mapEditor, mapSize, savedMap } from "./editor";
+import { chooseSize, loadPlayers, mapEditor, mapName, mapPicker, mapSize, newGame } from "./editor";
 import { sizePicker } from "./sizes";
 import { hostLobby, joinLobby, type HostPlan } from "./lobby";
 import type { Link } from "./net";
@@ -491,7 +491,7 @@ function resetPanels() {
 function start(mode: Mode, count: number, setup: Setup = {}) {
   lastGame = { mode, count, setup };
   if (mode !== "online") me = 0;
-  loadPlayers(count);
+  newGame(count);
   begin(sim, mode, count, setup);
   resetPanels();
   for (const r of remotes) {
@@ -719,7 +719,8 @@ function menuCard(): HTMLElement {
     button("Play the computer", () => go("computer"), "against 1 to 4", "go"),
     button("Share one screen", () => go("shared"), "2 to 4 players", "go"),
     button("Play on your own devices", () => go("online"), "local online, up to 5", "go"),
-    button("Make a map from a picture", () => { editing = true; redraw(); }, savedMap() ? "now playing on: your picture map" : "now playing on: built-in map"),
+    mapPicker(button, () => { screenKey = ""; }),
+    button("Map maker", () => { editing = true; redraw(); }, `make your own · now playing on: ${mapName()}`),
     sizePicker({ button, limits: SIZE, current: mapSize, choose: chooseSize }), soundButton(),
   );
   const how = document.createElement("div");

@@ -1,7 +1,8 @@
 import { COLS, ROWS, isLeft, isNorth } from "./content";
 
-/** Tile letters: "." grass, "D" dirt, "~" water, "T" trees, "B" berries, "G" gold, "S" stone. */
-export type Tile = "." | "D" | "~" | "T" | "B" | "G" | "S";
+/** Tile letters: "." grass, "D" dirt, "~" water, "T" trees, "B" berries, "G" gold, "S" stone, "F" fish. */
+/** grass, road, water, trees, berries, gold, stone, and water with fish placed by hand */
+export type Tile = "." | "D" | "~" | "T" | "B" | "G" | "S" | "F";
 export type Spot = { x: number; y: number };
 /** Top-left tile of each town hall, by seat: two entries for a duel, four or five for bigger games. */
 export type Bases = Spot[];
@@ -55,7 +56,7 @@ export function classify(px: Uint8ClampedArray | Uint8Array): Tile[] {
   const w = COLS * SUB;
   for (let ty = 0; ty < ROWS; ty++) {
     for (let tx = 0; tx < COLS; tx++) {
-      const n: Record<Tile, number> = { ".": 0, D: 0, "~": 0, T: 0, B: 0, G: 0, S: 0 };
+      const n: Record<Tile, number> = { ".": 0, D: 0, "~": 0, T: 0, B: 0, G: 0, S: 0, F: 0 };
       for (let y = 0; y < SUB; y++) {
         for (let x = 0; x < SUB; x++) {
           const i = ((ty * SUB + y) * w + tx * SUB + x) * 4;
@@ -165,7 +166,7 @@ export function suggestBases(raw: Tile[], mirror: boolean, count = 2): Bases {
             const tx = at.x + 1 + dx;
             const ty = at.y + 1 + dy;
             const t = tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS ? "~" : raw[ty * COLS + tx]!;
-            if (t === "~") s += 2;
+            if (t === "~" || t === "F") s += 2;
             else if (!open(t)) s += 0.5;
           }
         }
@@ -180,11 +181,15 @@ export function suggestBases(raw: Tile[], mirror: boolean, count = 2): Bases {
   return mirror ? evenBases(best(lead(count)), count) : home.map((_, seat) => best(seat));
 }
 
+/** how many resources the game adds to a drawn map: 2 fills every side up to a fair amount,
+ * 1 only puts small piles by a Hall that has none, 0 adds nothing */
+export type Extra = 0 | 1 | 2;
+
 /**
  * Turns a tile map into a playable one: dry starting areas, enough of every resource for
- * each player, and a land route between all the halls.
+ * each player (as much as `extra` asks), and a land route between all the halls.
  */
-export function finishMap(raw: Tile[], wanted: Bases, mirror: boolean): { grid: string[]; bases: Bases } {
+export function finishMap(raw: Tile[], wanted: Bases, mirror: boolean, extra: Extra = 2): { grid: string[]; bases: Bases } {
   const HALF = ROWS / 2;
   const MIDX = COLS / 2;
   const count = wanted.length;
@@ -235,7 +240,7 @@ export function finishMap(raw: Tile[], wanted: Bases, mirror: boolean): { grid: 
   ];
   const totals: [Tile, number][] = four ? [["T", 60], ["B", 8], ["G", 10], ["S", 8]] : [["T", 100], ["B", 12], ["G", 18], ["S", 14]];
   const worked = mirror ? [areas[lead(count)]!] : areas;
-  for (const a of worked) {
+  for (const a of extra ? worked : []) {
     for (const s of starters) {
       if (tally(s.c, a, 15) >= s.need) continue;
       for (const [dx, dy, r] of s.at) {
@@ -244,7 +249,7 @@ export function finishMap(raw: Tile[], wanted: Bases, mirror: boolean): { grid: 
         blob(a.base.x + 1 + dx * flip, a.base.y + 1 + dy * a.f, r, s.c, a);
       }
     }
-    for (const [c, need] of totals) {
+    for (const [c, need] of extra > 1 ? totals : []) {
       for (let tries = 0; tries < 80 && tally(c, a) < need; tries++) {
         const x = a.x0 + 2 + Math.floor(rand() * (a.x1 - a.x0 - 4));
         const y = a.y0 + 3 + Math.floor(rand() * (a.y1 - a.y0 - 6));
@@ -254,7 +259,7 @@ export function finishMap(raw: Tile[], wanted: Bases, mirror: boolean): { grid: 
   }
   // Cramped or crowded maps: if a starting resource still did not fit, place it on the nearest free tiles.
   const resource = (c: Tile) => c === "B" || c === "G" || c === "S";
-  for (const a of worked) {
+  for (const a of extra > 1 ? worked : []) {
     for (const [c, min] of [["B", 4], ["G", 4], ["S", 3], ["T", 12]] as const) {
       let short = min - tally(c, a);
       if (short <= 0) continue;
@@ -342,4 +347,100 @@ export function finishMap(raw: Tile[], wanted: Bases, mirror: boolean): { grid: 
   const grid: string[] = [];
   for (let y = 0; y < ROWS; y++) grid.push(t.slice(y * COLS, (y + 1) * COLS).join(""));
   return { grid, bases };
+}
+
+/**
+ * A new random map to start from: woods, water and a few resources laid out by chance in one
+ * player's part, ready for `finishMap` to copy fairly to the others, clear the bases, top up the
+ * resources and cut the roads. The same seed always gives the same map.
+ */
+export function randomRaw(count: number, seed: number): { raw: Tile[]; bases: Bases; mirror: boolean } {
+  let s = seed >>> 0 || 1;
+  const rand = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296);
+  const t: Tile[] = new Array<Tile>(COLS * ROWS).fill(".");
+  const HALF = ROWS / 2;
+  // a smooth random field: a grid of random values, blended, at a few sizes
+  const field = (cell: number) => {
+    const gw = Math.ceil(COLS / cell) + 2;
+    const gh = Math.ceil(ROWS / cell) + 2;
+    const g = Array.from({ length: gw * gh }, rand);
+    return (x: number, y: number) => {
+      const fx = x / cell;
+      const fy = y / cell;
+      const ix = Math.floor(fx);
+      const iy = Math.floor(fy);
+      const u = fx - ix;
+      const v = fy - iy;
+      const a = u * u * (3 - 2 * u);
+      const b = v * v * (3 - 2 * v);
+      const at = (i: number, j: number) => g[(j + 1) * gw + i + 1] ?? 0.5;
+      return (at(ix, iy) * (1 - a) + at(ix + 1, iy) * a) * (1 - b) + (at(ix, iy + 1) * (1 - a) + at(ix + 1, iy + 1) * a) * b;
+    };
+  };
+  const scale = Math.sqrt((COLS * ROWS) / (64 * 96));
+  const big = field(14 * Math.max(0.7, scale * 0.8));
+  const mid = field(6);
+  const small = field(2.5);
+  const woods = field(9);
+  const wet = (x: number, y: number) => big(x, y) * 0.6 + mid(x, y) * 0.3 + small(x, y) * 0.1;
+  const trees = (x: number, y: number) => woods(x, y) * 0.65 + mid(x + 31, y + 17) * 0.25 + small(x + 7, y + 3) * 0.1;
+  // what kind of water this map has
+  const sea = rand() < 0.55;
+  const seaLeft = sea && rand() < 0.8;
+  const seaRight = sea && (!seaLeft || rand() < 0.5);
+  const river = rand() < 0.5;
+  const lakes = 0.65 + rand() * 0.1;
+  const forest = 0.6 + rand() * 0.08;
+  for (let y = 0; y < ROWS; y++)
+    for (let x = 0; x < COLS; x++) {
+      const i = y * COLS + x;
+      const w = wet(x, y);
+      // a coast along one or both sides, wavy
+      const coast = 2 + Math.round(small(x, y + 50) * 3 + mid(x + 90, y) * 4 * scale);
+      if ((seaLeft && x < coast) || (seaRight && x >= COLS - coast)) t[i] = "~";
+      else if (w > lakes) t[i] = "~";
+      else if (trees(x, y) > forest) t[i] = "T";
+      else if (small(x + 13, y + 41) > 0.93) t[i] = "D";
+    }
+  if (river) {
+    // a river between the halves, with fords to cross
+    const width = 2 + Math.round(rand() * Math.max(1, scale));
+    const fords = new Set<number>();
+    const n = 2 + Math.floor(rand() * 2) + Math.floor(scale);
+    for (let k = 0; k < n; k++) {
+      const x = Math.floor(((k + 0.5) / n) * COLS + (rand() - 0.5) * 6);
+      for (let d = -2; d <= 2; d++) fords.add(x + d);
+    }
+    for (let x = 0; x < COLS; x++) {
+      const bend = Math.round((mid(x, 300) - 0.5) * 6 * Math.max(1, scale * 0.7));
+      for (let k = 0; k < width; k++) {
+        const y = HALF - 1 - k + Math.min(0, bend);
+        if (y < 0) continue;
+        t[y * COLS + x] = fords.has(x) ? "D" : "~";
+      }
+    }
+  }
+  // a few piles of each resource here and there; the rest are topped up fairly
+  const scatter = (c: Tile, piles: number, r: number) => {
+    for (let k = 0; k < piles; k++) {
+      const cx = 3 + rand() * (COLS - 6);
+      const cy = 3 + rand() * (HALF - 6);
+      for (let y = Math.floor(cy - r); y <= cy + r; y++)
+        for (let x = Math.floor(cx - r); x <= cx + r; x++)
+          if (x >= 0 && y >= 0 && x < COLS && y < ROWS && Math.hypot(x - cx, y - cy) <= r + 0.2 && t[y * COLS + x] === ".") t[y * COLS + x] = c;
+    }
+  };
+  const area = scale * scale;
+  scatter("G", Math.round(1 + rand() * 2 * area), 1.1);
+  scatter("S", Math.round(1 + rand() * 2 * area), 1.1);
+  scatter("B", Math.round(1 + rand() * 2 * area), 1.2);
+  // with two to four players one part is copied to the others; five share no mirror
+  const mirror = count <= 4;
+  return { raw: t, bases: suggestBases(t, mirror, layoutFor(count)), mirror };
+}
+
+/** A whole random map, finished and fair, for this many players. */
+export function randomMap(count: number, seed: number) {
+  const r = randomRaw(count, seed);
+  return finishMap(r.raw, r.bases, r.mirror, 2);
 }

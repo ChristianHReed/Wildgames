@@ -21,7 +21,8 @@ be added to the Home Screen and opens without a connection.
 - Village, Town and Castle ages that unlock buildings, units and upgrades
 - Towns that change look with each age; a Market for trading and Castles that work like a second Hall
 - No overall population limit: homes house Folk, barracks house soldiers
-- Map sizes up to 256×384, and maps made from a picture
+- Map sizes up to 256×384, a new random map every game
+- A map maker: start from a picture, an empty field or a random map; paint land, water, trees, road, gold, stone, berries and fish with three brush sizes; zoom in; undo and redo; choose how many resources the game adds; save up to two maps of your own
 - Sound made in code: wind, rustling leaves, water and birdsong, and the knocks and clinks of work and battle
 
 ## Playing on separate devices
@@ -42,7 +43,7 @@ The in-game help on the home page explains the controls.
 | `src/game/sim.ts` | Game rules |
 | `src/game/ai.ts` | Computer opponents and difficulty |
 | `src/game/commands.ts` | Player actions, including those sent from other devices |
-| `src/game/map.ts`, `mapgen.ts` | Built-in map and picture maps |
+| `src/game/map.ts`, `mapgen.ts` | Maps: random, built-in and your own |
 | `src/ui/net.ts`, `sync.ts`, `lobby.ts` | Playing on separate devices |
 | `src/ui/sound.ts`, `src/game/audio.ts` | Sounds, all made in code |
 | `src/ui/` | Drawing, touch controls and menus |

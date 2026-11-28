@@ -563,7 +563,10 @@ function waterMask() {
   if (waterFor !== GRID || water.length !== COLS * ROWS) {
     waterFor = GRID;
     water = new Uint8Array(COLS * ROWS);
-    for (let i = 0; i < water.length; i++) water[i] = tileChar(i % COLS, (i / COLS) | 0) === "~" ? 1 : 0;
+    for (let i = 0; i < water.length; i++) {
+      const c = tileChar(i % COLS, (i / COLS) | 0);
+      water[i] = c === "~" || c === "F" ? 1 : 0;
+    }
   }
   return water;
 }

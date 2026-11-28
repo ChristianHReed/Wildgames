@@ -292,11 +292,14 @@ export class View3d {
   }
 
   // ── the camera ──
-  /** A view of the whole board from above its middle, as close as fits: for the map maker's preview. */
+  /** for the map maker: how far in it is zoomed (1 shows the whole board) and where it looks */
+  over = { k: 1, x: 0, z: 0 };
+
+  /** A view of the whole board from above its middle, as close as fits, then zoomed in on a spot: for the map maker's preview. */
   private overview() {
     const pitch = (58 * Math.PI) / 180;
-    const cx = COLS / 2;
-    const cz = ROWS / 2 + ROWS * 0.02;
+    let cx = COLS / 2;
+    let cz = ROWS / 2 + ROWS * 0.02;
     const make = (D: number) => {
       this.eye = [cx, D * Math.sin(pitch), cz + D * Math.cos(pitch)];
       const view = lookAt(this.eye, [cx, 0, cz], [0, 1, 0]);
@@ -317,7 +320,13 @@ export class View3d {
       if (fits()) hi = mid;
       else lo = mid;
     }
-    make(hi);
+    // zoomed in: closer, over the spot asked for (the board's middle sits a little below the camera's aim)
+    const k = Math.max(1, this.over.k);
+    if (k > 1) {
+      cx = this.over.x;
+      cz = this.over.z + (ROWS * 0.02) / k;
+    }
+    make(hi / k);
     this.inv = invert(this.vp);
     const a = this.screen(cx, 0, cz);
     const b = this.screen(cx + 1, 0, cz);

@@ -22,7 +22,8 @@ be added to the Home Screen and opens without a connection.
 - Village, Town and Castle ages that unlock buildings, units and upgrades
 - Towns that change look with each age; a Market for trading and Castles that work like a second Hall
 - No overall population limit: homes house Folk, barracks house soldiers
-- Map sizes up to 256×384, and maps made from a picture, previewed as a little 3D board
+- Map sizes up to 256×384, a new random map every game, previewed as a little 3D board
+- A map maker with a 3D preview: start from a picture, an empty field or a random map; paint land, water, trees, road, gold, stone, berries and fish with three brush sizes; zoom in; undo and redo; choose how many resources the game adds; save up to two maps of your own
 - Eight zoom levels with − and +, two-finger pinch, or the mouse wheel
 - Sound made in code: wind, rustling leaves, water and birdsong, and the knocks and clinks of work and battle
 
@@ -44,7 +45,7 @@ The in-game help on the home page explains the controls.
 | `src/game/sim.ts` | Game rules |
 | `src/game/ai.ts` | Computer opponents and difficulty |
 | `src/game/commands.ts` | Player actions, including those sent from other devices |
-| `src/game/map.ts`, `mapgen.ts` | Built-in map and picture maps |
+| `src/game/map.ts`, `mapgen.ts` | Maps: random, built-in and your own |
 | `src/ui/net.ts`, `sync.ts`, `lobby.ts` | Playing on separate devices |
 | `src/ui/3d/` | The 3D view: models, ground and water, shaders, camera and touch |
 | `src/ui/sound.ts`, `src/game/audio.ts` | Sounds, all made in code |
