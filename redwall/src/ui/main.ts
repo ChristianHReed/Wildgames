@@ -541,6 +541,7 @@ let page: Page = "home";
 let notice = "";
 /** a lobby keeps its own screen while friends come and go */
 let lobbyCard: HTMLElement | null = null;
+// (saved settings keep the game's first name, so a rename loses nothing)
 const KEEP = "two-halls-choices";
 const choices = { computers: 1, level: 1, style: 0, players: 2, seats: [0, 1, 2, 3] };
 try { Object.assign(choices, JSON.parse(localStorage.getItem(KEEP) ?? "{}")); } catch { /* start fresh */ }
@@ -608,7 +609,7 @@ function menuCard(): HTMLElement {
     card.append(button("Host a game", () => go("host"), "", "go"), button("Join a game", () => go("join")), button("Back", () => go("home")));
     return card;
   }
-  card.innerHTML = `<h1>Two Halls</h1><p>Gather, build and march to war.</p>`;
+  card.innerHTML = `<h1>RedWall</h1><p>Gather, build and march to war.</p>`;
   if (notice) para(notice);
   card.append(
     button("Play the computer", () => go("computer"), "against 1 to 4", "go"),

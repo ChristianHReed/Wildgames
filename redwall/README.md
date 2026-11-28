@@ -1,4 +1,4 @@
-# Two Halls
+# RedWall
 
 A small real-time strategy game in the style of Age of Empires. Play up to four computers,
 share one screen, or link several devices. It is a separate game from Afterstreet and shares no code with it; everything it needs is in this folder.
@@ -45,7 +45,7 @@ The in-game help on the home page explains the controls.
 After editing, rebuild `index.html` (needs Node.js):
 
 ```sh
-cd two-halls
+cd redwall
 npm install
 npm run build
 ```
